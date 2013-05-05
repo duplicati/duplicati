@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AMZKeyDescriptionLong" xml:space="preserve">
-    <value>The AWS "Secret Access Key" can be obtained after logging into your AWS account, this can also be supplied through the "ftp-password" property</value>
+    <value>The AWS "Secret Access Key" can be obtained after logging into your AWS account, this can also be supplied through the "auth-password" property</value>
   </data>
   <data name="AMZKeyDescriptionShort" xml:space="preserve">
     <value>The AWS "Secret Access Key"</value>
   </data>
   <data name="AMZUserIDDescriptionLong" xml:space="preserve">
-    <value>The AWS "Access Key ID" can be obtained after logging into your AWS account, this can also be supplied through the "ftp-username" property</value>
+    <value>The AWS "Access Key ID" can be obtained after logging into your AWS account, this can also be supplied through the "auth-username" property</value>
   </data>
   <data name="AMZUserIDDescriptionShort" xml:space="preserve">
     <value>The AWS "Access Key ID"</value>
@@ -132,16 +132,16 @@
   <data name="DisplayName" xml:space="preserve">
     <value>Amazon S3 based</value>
   </data>
-  <data name="FTPPasswordDescriptionLong" xml:space="preserve">
-    <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
+  <data name="AuthPasswordDescriptionLong" xml:space="preserve">
+    <value>The password used to connect to the server. This may also be supplied as the environment variable "AUTH_PASSWORD".</value>
   </data>
-  <data name="FTPPasswordDescriptionShort" xml:space="preserve">
+  <data name="AuthPasswordDescriptionShort" xml:space="preserve">
     <value>Supplies the password used to connect to the server</value>
   </data>
-  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
-    <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
+  <data name="AuthUsernameDescriptionLong" xml:space="preserve">
+    <value>The username used to connect to the server. This may also be supplied as the environment variable "AUTH_USERNAME".</value>
   </data>
-  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
+  <data name="AuthUsernameDescriptionShort" xml:space="preserve">
     <value>Supplies the username used to connect to the server</value>
   </data>
   <data name="NoAMZKeyError" xml:space="preserve">

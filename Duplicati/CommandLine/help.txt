@@ -39,8 +39,8 @@ Make an encrypted backup
   
   %MONO%"%APP_PATH%" backup 
     "%EXAMPLE_SOURCE_PATH%" "ftp://ftp.example.com/target"
-    --ftp-username=username
-    --ftp-password=password
+    --auth-username=username
+    --auth-password=password
     --full-if-more-than-n-incrementals=10
     --auto-cleanup
     --max-upload-pr-second=500kB
@@ -52,8 +52,8 @@ Delete old backups
   
   %MONO%"%APP_PATH%" delete-older-than 10D 
     "ftp://ftp.example.com/target"
-    --ftp-username=username
-    --ftp-password=password
+    --auth-username=username
+    --auth-password=password
     --force
 
 
@@ -63,8 +63,8 @@ Restore a specific file
   
   %MONO%"%APP_PATH%" restore 
     "ftp://ftp.example.com/target" "%EXAMPLE_RESTORE_PATH%"
-    --ftp-username=username
-    --ftp-password=password
+    --auth-username=username
+    --auth-password=password
     --file-to-restore="%EXAMPLE_SOURCE_FILE%"
     
 

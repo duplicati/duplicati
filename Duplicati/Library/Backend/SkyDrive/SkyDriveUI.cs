@@ -293,10 +293,10 @@ namespace Duplicati.Library.Backend
         internal static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             if (guiOptions.ContainsKey(USERNAME) && !string.IsNullOrEmpty(guiOptions[USERNAME]))
-                commandlineOptions["ftp-username"] = guiOptions[USERNAME];
+                commandlineOptions["auth-username"] = guiOptions[USERNAME];
 
             if (guiOptions.ContainsKey(PASSWORD) && !string.IsNullOrEmpty(guiOptions[PASSWORD]))
-                commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
+                commandlineOptions["auth-password"] = guiOptions[PASSWORD];
 
             string folder;
             guiOptions.TryGetValue(FOLDER, out folder);

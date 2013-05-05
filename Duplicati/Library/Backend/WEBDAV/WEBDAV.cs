@@ -71,18 +71,18 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     m_userInfo.UserName = u.UserInfo;
-                    if (options.ContainsKey("ftp-password"))
-                        m_userInfo.Password = options["ftp-password"];
+                    if (options.ContainsKey("auth-password"))
+                        m_userInfo.Password = options["auth-password"];
                 }
             }
             else
             {
-                if (options.ContainsKey("ftp-username"))
+                if (options.ContainsKey("auth-username"))
                 {
                     m_userInfo = new System.Net.NetworkCredential();
-                    m_userInfo.UserName = options["ftp-username"];
-                    if (options.ContainsKey("ftp-password"))
-                        m_userInfo.Password = options["ftp-password"];
+                    m_userInfo.UserName = options["auth-username"];
+                    if (options.ContainsKey("auth-password"))
+                        m_userInfo.Password = options["auth-password"];
                 }
             }
 
@@ -267,8 +267,8 @@ namespace Duplicati.Library.Backend
             get 
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.WEBDAV.DescriptionFTPPasswordShort, Strings.WEBDAV.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionFTPUsernameShort, Strings.WEBDAV.DescriptionFTPUsernameLong),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.WEBDAV.DescriptionAuthPasswordShort, Strings.WEBDAV.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionAuthUsernameShort, Strings.WEBDAV.DescriptionAuthUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),

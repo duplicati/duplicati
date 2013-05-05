@@ -426,9 +426,9 @@ namespace Duplicati.Library.Backend
         public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             if (guiOptions.ContainsKey(USERNAME) && !string.IsNullOrEmpty(guiOptions[USERNAME]))
-                commandlineOptions["ftp-username"] = guiOptions[USERNAME];
+                commandlineOptions["auth-username"] = guiOptions[USERNAME];
             if (guiOptions.ContainsKey(PASSWORD) && !string.IsNullOrEmpty(guiOptions[PASSWORD]))
-                commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
+                commandlineOptions["auth-password"] = guiOptions[PASSWORD];
 
             bool passive;
             if (!guiOptions.ContainsKey(PASSIVE) || !bool.TryParse(guiOptions[PASSIVE], out passive))

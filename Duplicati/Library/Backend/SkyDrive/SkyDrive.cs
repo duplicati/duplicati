@@ -36,10 +36,10 @@ namespace Duplicati.Library.Backend
             if (!m_prefix.EndsWith("/"))
                 m_prefix += "/";
 
-            if (options.ContainsKey("ftp-username"))
-                m_username = options["ftp-username"];
-            if (options.ContainsKey("ftp-password"))
-                m_password = options["ftp-password"];
+            if (options.ContainsKey("auth-username"))
+                m_username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                m_password = options["auth-password"];
             if (options.ContainsKey(USERNAME_OPTION))
                 m_username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
@@ -117,10 +117,10 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionFTPPasswordShort, Strings.SkyDrive.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionFTPUsernameShort, Strings.SkyDrive.DescriptionFTPUsernameLong),
-                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionPassportPasswordShort, Strings.SkyDrive.DescriptionPassportPasswordLong, null, new string[] {"ftp-password"}),
-                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionPassportUsernameShort, Strings.SkyDrive.DescriptionPassportUsernameLong, null, new string[] {"ftp-username"}),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionAuthPasswordShort, Strings.SkyDrive.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionAuthUsernameShort, Strings.SkyDrive.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionPassportPasswordShort, Strings.SkyDrive.DescriptionPassportPasswordLong, null, new string[] {"auth-password"}),
+                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionPassportUsernameShort, Strings.SkyDrive.DescriptionPassportUsernameLong, null, new string[] {"auth-username"}),
                 });
             }
         }

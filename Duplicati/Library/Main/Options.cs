@@ -141,7 +141,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public static string[] KnownDuplicates
         {
-            get { return new string[] { "ftp-password", "ftp-username" }; }
+            get { return new string[] { "auth-password", "auth-username" }; }
         }
 
 

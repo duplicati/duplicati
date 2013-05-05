@@ -70,6 +70,42 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;AUTH_PASSWORD&quot;..
+        /// </summary>
+        internal static string DescriptionAuthPasswordLong {
+            get {
+                return ResourceManager.GetString("DescriptionAuthPasswordLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supplies the password used to connect to the server.
+        /// </summary>
+        internal static string DescriptionAuthPasswordShort {
+            get {
+                return ResourceManager.GetString("DescriptionAuthPasswordShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;AUTH_USERNAME&quot;..
+        /// </summary>
+        internal static string DescriptionAuthUsernameLong {
+            get {
+                return ResourceManager.GetString("DescriptionAuthUsernameLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
+        /// </summary>
+        internal static string DescriptionAuthUsernameShort {
+            get {
+                return ResourceManager.GetString("DescriptionAuthUsernameShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console. Only used if the --use-sftp-application option is supplied..
         /// </summary>
         internal static string DescriptionDebugToConsoleLong {
@@ -84,42 +120,6 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string DescriptionDebugToConsoleShort {
             get {
                 return ResourceManager.GetString("DescriptionDebugToConsoleShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;FTP_PASSWORD&quot;..
-        /// </summary>
-        internal static string DescriptionFTPPasswordLong {
-            get {
-                return ResourceManager.GetString("DescriptionFTPPasswordLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supplies the password used to connect to the server.
-        /// </summary>
-        internal static string DescriptionFTPPasswordShort {
-            get {
-                return ResourceManager.GetString("DescriptionFTPPasswordShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;FTP_USERNAME&quot;..
-        /// </summary>
-        internal static string DescriptionFTPUsernameLong {
-            get {
-                return ResourceManager.GetString("DescriptionFTPUsernameLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
-        /// </summary>
-        internal static string DescriptionFTPUsernameShort {
-            get {
-                return ResourceManager.GetString("DescriptionFTPUsernameShort", resourceCulture);
             }
         }
         

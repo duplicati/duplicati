@@ -79,7 +79,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This option allows multiple targets to be specified. The primary target path is placed before the list of paths supplied with this option. Before starting the backup, each folder in the list is checked for existence and optionally the presence of the marker file supplied by --{0}. The first existing path that optionally contains the marker file is then used as the destination. Multiple destinations are separated with a {1},. On Windows, the path may be a UNC path, and the drive letter may be substituted wit [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to This option allows multiple targets to be specified. The primary target path is placed before the list of paths supplied with this option. Before starting the backup, each folder in the list is checked for existence and optionally the presence of the marker file supplied by --{0}. The first existing path that optionally contains the marker file is then used as the destination. Multiple destinations are separated with a {1},. On Windows, the path may be a UNC path, and the drive letter may be substituted with an asterisk (*), eg.: &quot;*:\backup&quot;, which will examine all drive letters. If a username and password is supplied, the same credentials are used for all destinations..
         /// </summary>
         internal static string AlternateTargetPathsLong {
             get {
@@ -106,38 +106,38 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;FTP_PASSWORD&quot;..
+        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;AUTH_PASSWORD&quot;..
         /// </summary>
-        internal static string DescriptionFTPPasswordLong {
+        internal static string DescriptionAuthPasswordLong {
             get {
-                return ResourceManager.GetString("DescriptionFTPPasswordLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthPasswordLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Supplies the password used to connect to the server.
         /// </summary>
-        internal static string DescriptionFTPPasswordShort {
+        internal static string DescriptionAuthPasswordShort {
             get {
-                return ResourceManager.GetString("DescriptionFTPPasswordShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthPasswordShort", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;FTP_USERNAME&quot;..
+        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;AUTH_USERNAME&quot;..
         /// </summary>
-        internal static string DescriptionFTPUsernameLong {
+        internal static string DescriptionAuthUsernameLong {
             get {
-                return ResourceManager.GetString("DescriptionFTPUsernameLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthUsernameLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Supplies the username used to connect to the server.
         /// </summary>
-        internal static string DescriptionFTPUsernameShort {
+        internal static string DescriptionAuthUsernameShort {
             get {
-                return ResourceManager.GetString("DescriptionFTPUsernameShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthUsernameShort", resourceCulture);
             }
         }
         

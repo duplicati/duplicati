@@ -70,38 +70,56 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible..
+        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;AUTH_PASSWORD&quot;..
         /// </summary>
-        internal static string DescriptionAcceptAnyCertificateLong {
+        internal static string DescriptionAuthPasswordLong {
             get {
-                return ResourceManager.GetString("DescriptionAcceptAnyCertificateLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthPasswordLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Accept any server certificate.
+        ///   Looks up a localized string similar to Supplies the password used to connect to the server.
         /// </summary>
-        internal static string DescriptionAcceptAnyCertificateShort {
+        internal static string DescriptionAuthPasswordShort {
             get {
-                return ResourceManager.GetString("DescriptionAcceptAnyCertificateShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthPasswordShort", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces..
+        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;AUTH_USERNAME&quot;..
         /// </summary>
-        internal static string DescriptionAcceptHashLong {
+        internal static string DescriptionAuthUsernameLong {
             get {
-                return ResourceManager.GetString("DescriptionAcceptHashLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthUsernameLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Optionally accept a known SSL certificate.
+        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
         /// </summary>
-        internal static string DescriptionAcceptHashShort {
+        internal static string DescriptionAuthUsernameShort {
             get {
-                return ResourceManager.GetString("DescriptionAcceptHashShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionAuthUsernameShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe..
+        /// </summary>
+        internal static string DescriptionDisableUploadVerifyLong {
+            get {
+                return ResourceManager.GetString("DescriptionDisableUploadVerifyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disable upload verification.
+        /// </summary>
+        internal static string DescriptionDisableUploadVerifyShort {
+            get {
+                return ResourceManager.GetString("DescriptionDisableUploadVerifyShort", resourceCulture);
             }
         }
         
@@ -142,42 +160,6 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;FTP_PASSWORD&quot;..
-        /// </summary>
-        internal static string DescriptionFTPPasswordLong {
-            get {
-                return ResourceManager.GetString("DescriptionFTPPasswordLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supplies the password used to connect to the server.
-        /// </summary>
-        internal static string DescriptionFTPPasswordShort {
-            get {
-                return ResourceManager.GetString("DescriptionFTPPasswordShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;FTP_USERNAME&quot;..
-        /// </summary>
-        internal static string DescriptionFTPUsernameLong {
-            get {
-                return ResourceManager.GetString("DescriptionFTPUsernameLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
-        /// </summary>
-        internal static string DescriptionFTPUsernameShort {
-            get {
-                return ResourceManager.GetString("DescriptionFTPUsernameShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients..
         /// </summary>
         internal static string DescriptionIntegratedAuthenticationLong {
@@ -192,24 +174,6 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string DescriptionIntegratedAuthenticationShort {
             get {
                 return ResourceManager.GetString("DescriptionIntegratedAuthenticationShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Since the FTP protocol is unable to determine if an upload was correctly completed or interrupted, the upload is verified after the upload. Use this option to disable the verification, which increases the posibillity of errors, but also increases performance..
-        /// </summary>
-        internal static string DescriptionNolistverifyLong {
-            get {
-                return ResourceManager.GetString("DescriptionNolistverifyLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Do not verify uploads.
-        /// </summary>
-        internal static string DescriptionNolistverifyShort {
-            get {
-                return ResourceManager.GetString("DescriptionNolistverifyShort", resourceCulture);
             }
         }
         
@@ -241,33 +205,6 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The folder {0} was not found, message: {1}.
-        /// </summary>
-        internal static string MissingFolderError {
-            get {
-                return ResourceManager.GetString("MissingFolderError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}.
-        /// </summary>
-        internal static string UploadSizeVerificationFailure {
-            get {
-                return ResourceManager.GetString("UploadSizeVerificationFailure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The file {0} was uploaded but not found on the server.
-        /// </summary>
-        internal static string UploadVerificationFailure {
-            get {
-                return ResourceManager.GetString("UploadVerificationFailure", resourceCulture);
-            }
-        }
-
-        /// <summary>
         ///   Looks up a localized string similar to The file {0} was uploaded but not found afterwards, the file listing returned {1}.
         /// </summary>
         internal static string ListVerifyFailure {
@@ -275,7 +212,7 @@ namespace Duplicati.Library.Backend.Strings {
                 return ResourceManager.GetString("ListVerifyFailure", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to The file {0} was uploaded but the returned size was {1} and it was expected to be {2}.
         /// </summary>
@@ -284,23 +221,14 @@ namespace Duplicati.Library.Backend.Strings {
                 return ResourceManager.GetString("ListVerifySizeFailure", resourceCulture);
             }
         }
-
+        
         /// <summary>
-        ///   Looks up a localized string similar to Disable upload verification.
+        ///   Looks up a localized string similar to The folder {0} was not found, message: {1}.
         /// </summary>
-        internal static string DescriptionDisableUploadVerifyShort {
+        internal static string MissingFolderError {
             get {
-                return ResourceManager.GetString("DescriptionDisableUploadVerifyShort", resourceCulture);
+                return ResourceManager.GetString("MissingFolderError", resourceCulture);
             }
         }
-
-        /// <summary>
-        ///   Looks up a localized string similar to To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe..
-        /// </summary>
-        internal static string DescriptionDisableUploadVerifyLong {
-            get {
-                return ResourceManager.GetString("DescriptionDisableUploadVerifyLong", resourceCulture);
-            }
-        }
-}
+    }
 }

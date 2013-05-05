@@ -321,14 +321,14 @@ namespace Duplicati.Library.Backend
         public static string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             if (guiOptions.ContainsKey(USERNAME) && !string.IsNullOrEmpty(guiOptions[USERNAME]))
-                commandlineOptions["ftp-username"] = guiOptions[USERNAME];
+                commandlineOptions["auth-username"] = guiOptions[USERNAME];
 
             bool passwordless;
             if (!guiOptions.ContainsKey(PASWORDLESS) || !bool.TryParse(guiOptions[PASWORDLESS], out passwordless))
                 passwordless = false;
 
             if (!passwordless && guiOptions.ContainsKey(PASSWORD) && !string.IsNullOrEmpty(guiOptions[PASSWORD]))
-                commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
+                commandlineOptions["auth-password"] = guiOptions[PASSWORD];
 
             if (!commandlineOptions.ContainsKey("ssh-options"))
                 commandlineOptions["ssh-options"] = "";

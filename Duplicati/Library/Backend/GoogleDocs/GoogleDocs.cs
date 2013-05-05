@@ -52,10 +52,10 @@ namespace Duplicati.Library.Backend
             string username = null;
             string password = null;
 
-            if (options.ContainsKey("ftp-username"))
-                username = options["ftp-username"];
-            if (options.ContainsKey("ftp-password"))
-                password = options["ftp-password"];
+            if (options.ContainsKey("auth-username"))
+                username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                password = options["auth-password"];
             if (options.ContainsKey(USERNAME_OPTION))
                 username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
@@ -341,10 +341,10 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionFTPPasswordShort, Strings.GoogleDocs.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionFTPUsernameShort, Strings.GoogleDocs.DescriptionFTPUsernameLong),
-                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGooglePasswordShort, Strings.GoogleDocs.DescriptionGooglePasswordLong, null, new string[] {"ftp-password"}),
-                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionGoogleUsernameShort, Strings.GoogleDocs.DescriptionGoogleUsernameLong, null, new string[] {"ftp-username"}),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionAuthPasswordShort, Strings.GoogleDocs.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionAuthUsernameShort, Strings.GoogleDocs.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGooglePasswordShort, Strings.GoogleDocs.DescriptionGooglePasswordLong, null, new string[] {"auth-password"}),
+                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionGoogleUsernameShort, Strings.GoogleDocs.DescriptionGoogleUsernameLong, null, new string[] {"auth-username"}),
                     new CommandLineArgument(ATTRIBUTES_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGoogleLabelsShort, string.Format(Strings.GoogleDocs.DescriptionGoogleLabelsLong, string.Join(",", KNOWN_LABELS)), DEFAULT_LABELS),
                 });
             }
