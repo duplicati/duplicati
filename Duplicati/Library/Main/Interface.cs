@@ -73,17 +73,13 @@ namespace Duplicati.Library.Main
         /// </summary>
         RestoreControlfiles,
         /// <summary>
-        /// A backend file listing
+        /// A backup file listing
         /// </summary>
         List,
         /// <summary>
         /// A list of backup chains found on the backend
         /// </summary>
         GetBackupSets,
-        /// <summary>
-        /// A list of files found in a specific backup set, produced by summing through incremental signature files
-        /// </summary>
-        ListCurrentFiles,
         /// <summary>
         /// A list of the source folders found in a specific backup set
         /// </summary>
@@ -267,7 +263,6 @@ namespace Duplicati.Library.Main
                     return DuplicatiOperation.Restore;
                 case DuplicatiOperationMode.List:
                 case DuplicatiOperationMode.GetBackupSets:
-                case DuplicatiOperationMode.ListCurrentFiles:
                 case DuplicatiOperationMode.ListSourceFolders:
                 case DuplicatiOperationMode.ListActualSignatureFiles:
                 case DuplicatiOperationMode.FindLastFileVersion:
@@ -395,9 +390,9 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public List<string> ListCurrentFiles()
+        public List<string> List()
         {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.ListCurrentFiles);
+            var rs = new RestoreStatistics(DuplicatiOperationMode.List);
             SetupCommonOptions(rs);
 
             var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
@@ -683,10 +678,10 @@ namespace Duplicati.Library.Main
                 return i.Restore(target);
         }
 
-        public static IList<string> ListCurrentFiles(string target, Dictionary<string, string> options)
+        public static IList<string> List(string target, Dictionary<string, string> options)
         {
             using (Interface i = new Interface(target, options))
-                return i.ListCurrentFiles();
+                return i.List();
         }
         
         public static string DeleteAllButN(string target, Dictionary<string, string> options)

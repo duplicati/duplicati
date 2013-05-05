@@ -179,7 +179,7 @@ namespace Duplicati.Server
                                 break;
                             }
                         case DuplicityTaskType.ListFiles:
-                            (task as ListFilesTask).Files = i.ListCurrentFiles();
+                            (task as ListFilesTask).Files = i.List();
                             break;
                         case DuplicityTaskType.Restore:
                             options["file-to-restore"] = ((RestoreTask)task).SourceFiles;

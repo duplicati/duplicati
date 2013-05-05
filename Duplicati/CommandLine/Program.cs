@@ -133,19 +133,20 @@ namespace Duplicati.CommandLine
 
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["help"] = Commands.Help;                
-                knownCommands["list-current-files"] = Commands.ListCurrentFiles;
-                knownCommands["delete-all-but-n"] = Commands.DeleteAllButN;
-                knownCommands["delete-older-than"] = Commands.DeleteOlderThan;
-                knownCommands["cleanup"] = Commands.Cleanup;
-                knownCommands["find-last-version"] = Commands.FindLastVersion;
                 knownCommands["restore"] = Commands.Restore;
                 knownCommands["backup"] = Commands.Backup;
-
-                knownCommands["delete-filesets"] = Commands.DeleteFilesets;
                 knownCommands["repair"] = Commands.Repair;
+                knownCommands["list"] = Commands.List;
+
                 knownCommands["compact"] = Commands.Compact;
                 knownCommands["recreate-database"] = Commands.RecreateDatabase;
                 knownCommands["create-bugreport-database"] = Commands.CreateBugreportDatabase;
+                
+                knownCommands["delete-all-but-n"] = Commands.DeleteAllButN;
+                knownCommands["delete-older-than"] = Commands.DeleteOlderThan;
+                knownCommands["find-last-version"] = Commands.FindLastVersion;
+
+                knownCommands["delete-filesets"] = Commands.DeleteFilesets;
                 
                 if (knownCommands.ContainsKey(command))
                 {

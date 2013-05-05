@@ -32,12 +32,12 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int ListCurrentFiles(List<string> args, Dictionary<string, string> options)
+        public static int List(List<string> args, Dictionary<string, string> options)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
     
-            Console.WriteLine(string.Join(Environment.NewLine, new List<string>(Duplicati.Library.Main.Interface.ListCurrentFiles(args[0], options)).ToArray()));
+            Console.WriteLine(string.Join(Environment.NewLine, new List<string>(Duplicati.Library.Main.Interface.List(args[0], options)).ToArray()));
             
             return 0;
         }
@@ -87,7 +87,7 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int Cleanup(List<string> args, Dictionary<string, string> options)
+        public static int Repair(List<string> args, Dictionary<string, string> options)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
@@ -170,47 +170,20 @@ namespace Duplicati.CommandLine
             Console.WriteLine(Strings.Program.InvalidCommandError, args.Count == 0 ? "" : args[0]);
             return 200;
         }
-
-        private static int PrintRequiresFhDb(string command)
-        {
-            Console.WriteLine(string.Format("The command \"{0}\" requires that the option --{1} is set", command, "fh-dbpath"));
-            return 200;
-        }
-
-		private static int PrintNotSupportedWithFhdb(string command)
-		{
-            Console.WriteLine(string.Format("The command \"{0}\" is not supported when the option --{1} is set", command, "fh-dbpath"));
-            return 200;
-		}
         
         public static int DeleteFilesets(List<string> args, Dictionary<string, string> options)
         {
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);
-            if (options.ContainsKey("fh-dbpath"))
-                return PrintRequiresFhDb("delete-filesets");
                 
             Console.WriteLine(Duplicati.Library.Main.Interface.DeleteFilesets(args[0], args[1], options, null));
             return 0;
         }
         
-        public static int Repair(List<string> args, Dictionary<string, string> options)
-        {
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
-            if (options.ContainsKey("fh-dbpath"))
-                return PrintRequiresFhDb("repair");
-                
-            Console.WriteLine(Duplicati.Library.Main.Interface.Repair(args[0], options));
-            return 0;
-        }
-
         public static int Compact(List<string> args, Dictionary<string, string> options)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
-            if (options.ContainsKey("fh-dbpath"))
-                return PrintRequiresFhDb("compact");
                 
             Console.WriteLine(Duplicati.Library.Main.Interface.CompactBlocks(args[0], options, null));
             return 0;
@@ -220,8 +193,6 @@ namespace Duplicati.CommandLine
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
-            if (options.ContainsKey("fh-dbpath"))
-                return PrintRequiresFhDb("recreate-database");
                 
             Console.WriteLine(Duplicati.Library.Main.Interface.RecreateDatabase(args[0], options, null));
             return 0;
@@ -231,8 +202,6 @@ namespace Duplicati.CommandLine
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
-            if (options.ContainsKey("fh-dbpath"))
-                return PrintRequiresFhDb("create-bugreport-database");
                 
             Console.WriteLine(Duplicati.Library.Main.Interface.CreateLogDatabase(args[0], options, null));
             return 0;

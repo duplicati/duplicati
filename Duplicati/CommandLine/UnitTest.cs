@@ -292,7 +292,7 @@ namespace Duplicati.CommandLine
                                     List<string> testfiles = new List<string>();
                                     using (new Timer("Extract list of files from" + folders[i]))
                                     {
-                                        IList<string> sourcefiles = Duplicati.Library.Main.Interface.ListCurrentFiles(target, options);
+                                        IList<string> sourcefiles = Duplicati.Library.Main.Interface.List(target, options);
         
                                         //Remove all folders from list
                                         for (int j = 0; j < sourcefiles.Count; j++)
