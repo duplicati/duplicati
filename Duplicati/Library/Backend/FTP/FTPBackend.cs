@@ -52,22 +52,16 @@ namespace Duplicati.Library.Backend
             //If you have experience with a stable open source .Net FTP library,
             //please let the Duplicati authors know
 
-            Uri u = new Uri(url);
+            var u = new Utility.Uri(url);
 
-            if (!string.IsNullOrEmpty(u.UserInfo))
+            if (!string.IsNullOrEmpty(u.Username))
             {
                 m_userInfo = new System.Net.NetworkCredential();
-                if (u.UserInfo.IndexOf(":") >= 0)
-                {
-                    m_userInfo.UserName = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
-                    m_userInfo.Password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
-                }
-                else
-                {
-                    m_userInfo.UserName = u.UserInfo;
-                    if (options.ContainsKey("auth-password"))
-                        m_userInfo.Password = options["auth-password"];
-                }
+                m_userInfo.UserName = u.Username;
+                if (!string.IsNullOrEmpty(u.Password))
+                    m_userInfo.Password = u.Password;
+                else if (options.ContainsKey("auth-password"))
+                    m_userInfo.Password = options["auth-password"];
             }
             else
             {
@@ -84,7 +78,7 @@ namespace Duplicati.Library.Backend
             if (m_userInfo != null)
                 m_userInfo.Domain = "";
 
-            m_url = url;
+            m_url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
             if (!m_url.EndsWith("/"))
                 m_url += "/";
 

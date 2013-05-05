@@ -61,6 +61,15 @@ namespace Duplicati.Library.Utility.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The Uri is missing a hostname: {0}.
+        /// </summary>
+        internal static string NoHostname {
+            get {
+                return ResourceManager.GetString("NoHostname", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Uri is invalid: {0}.
         /// </summary>
         internal static string UriParseError {

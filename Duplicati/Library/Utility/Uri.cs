@@ -22,14 +22,15 @@ using System.Web;
 namespace Duplicati.Library.Utility
 {
     /// <summary>
-    /// Represents a relaxed parsing of a URL
+    /// Represents a relaxed parsing of a URL.
+    /// The goal is to cover as 
     /// </summary>
     public struct Uri
     {
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://((?<username>[^\:]+)(\:(?<password>.*))?\@)?(?<hostname>[^/\?\:]+)(\:(?<port>\d+))?(/(?<path>[^\?]*))?(\?(?<query>.+))?");
+        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://((?<username>[^\:]+)(\:(?<password>.*))?\@)?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?(/(?<path>[^\?]*))|(?<path>([^\?]*)))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -38,7 +39,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The server name, e.g. www.example.com
         /// </summary>
-        public readonly string Server;
+        public readonly string Host;
         /// <summary>
         /// The server path, e.g. index.html
         /// </summary>
@@ -91,7 +92,31 @@ namespace Duplicati.Library.Utility
         }
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Utility+Uri"/> struct.
+        /// Gets the host and path.
+        /// </summary>
+        /// <value>The host and path.</value>
+        public string HostAndPath
+        {
+            get
+            {
+                return Host + (Path == null ? "" : "/" + Path);
+            }
+        }
+        
+        /// <summary>
+        /// Gets the path and query.
+        /// </summary>
+        /// <value>The path and query.</value>
+        public string PathAndQuery
+        {
+            get
+            {
+                return (Path ?? "") + (Query == null ? "" : "?" + Query);            
+            }
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Utility.Uri"/> struct.
         /// </summary>
         /// <param name="url">The URL to parse</param>
         public Uri(string url)
@@ -102,6 +127,7 @@ namespace Duplicati.Library.Utility
             m_queryParams = null;
             this.OriginalUri = url;
 
+            //TODO: Does not parse urls with a @ in the path correctly
             var m = URL_PARSER.Match(url);
             if (!m.Success || m.Length != url.Length)
             {
@@ -110,6 +136,7 @@ namespace Duplicati.Library.Utility
                     {
                         var fp = System.IO.Path.GetFullPath(url);
                         this.Scheme = "file";
+                        this.Host = null;
                         this.Path = fp;
                         this.Port = -1;
                         this.Query = null;
@@ -124,7 +151,7 @@ namespace Duplicati.Library.Utility
             }
                 
             this.Scheme = m.Groups["scheme"].Value;
-            this.Server = m.Groups["hostname"].Value;
+            this.Host = m.Groups["hostname"].Value;
             this.Path = m.Groups["path"].Success ? m.Groups["path"].Value : null;
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
             this.Username = m.Groups["username"].Success ? m.Groups["username"].Value : null;
@@ -136,29 +163,141 @@ namespace Duplicati.Library.Utility
         }
         
         /// <summary>
+        /// Constructs a free-form URI from components
+        /// </summary>
+        /// <param name="scheme">The url scheme, e.g. http</param>
+        /// <param name="host">The hostname, e.g. www.example.com</param>
+        /// <param name="path">The path, e.g. index.html</param>
+        /// <param name="query">The query string, e.g. id=1</param>
+        /// <param name="username">The username</param>
+        /// <param name="password">The password</param>
+        /// <param name="port">The port</param>
+        public Uri(string scheme, string host, string path = null, string query = null, string username = null, string password = null, int port = -1)
+        {
+            m_queryParams = null;
+            Scheme = scheme;
+            Host = host;
+            Path = path;
+            Query = query;
+            Username = username;
+            Password = password;
+            Port = port;
+            OriginalUri = AsString(scheme, host, path, query, username, password, port);
+        }
+        
+        /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.Uri"/>.
         /// </summary>
         /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.Uri"/>.</returns>
         public override string ToString ()
         {
-            var s = Scheme + "://";
-            if (Username != null)
+            return AsString(Scheme, Host, Path, Query, Username, Password, Port);
+        }
+
+        /// <summary>
+        /// Throws an exception if the host name is missing.
+        /// </summary>
+        public void RequireHost()
+        {
+            if (string.IsNullOrEmpty(Host))
+                throw new ArgumentException(string.Format(Strings.Uri.NoHostname, OriginalUri));
+        }
+        
+        /// <summary>
+        /// Constructs an url-like string from components.
+        /// </summary>
+        /// <returns>An url-like string</returns>
+        /// <param name="scheme">The url scheme, e.g. http</param>
+        /// <param name="host">The hostname, e.g. www.example.com</param>
+        /// <param name="path">The path, e.g. index.html</param>
+        /// <param name="query">The query string, e.g. id=1</param>
+        /// <param name="username">The username</param>
+        /// <param name="password">The password</param>
+        /// <param name="port">The port</param>
+        private static string AsString(string scheme, string host, string path, string query, string username, string password, int port)
+        {
+            var s = scheme + "://";
+            if (username != null)
             {
-                s += Username;
-                if (Password != null)
-                    s += ":" + Password;
+                s += username;
+                if (password != null)
+                    s += ":" + password;
                 s += "@";
             }
-            s += Server;
-            if (Port != -1)
-                s += ":" + Port.ToString();
-                
-            if (Path != null)
-                s += "/" + Path;
-            if (Query != null)
-                s += "?" + Path;
+            
+            if (host != null)
+            {
+                s += host;
+                if (port != -1)
+                    s += ":" + port.ToString();
+            }
+            
+            if (path != null)
+                s += "/" + path;
+            if (query != null)
+                s += "?" + query;
 
-            return s;            
+            return s;             }
+        
+        /// <summary>
+        /// Creates a new instance with another scheme
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="scheme">The new scheme to use</param>
+        public Uri SetScheme(string scheme)
+        {
+            return new Uri(scheme, Host, Path, Query, Username, Password, Port);
+        }
+        
+        /// <summary>
+        /// Creates a new instance with another host
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="host">The new hostname to use</param>
+        public Uri SetHost(string host)
+        {
+            return new Uri(Scheme, host, Path, Query, Username, Password, Port);
+        }
+        
+        /// <summary>
+        /// Creates a new instance with another path
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="path">The new path to use</param>
+        public Uri SetPath(string path)
+        {
+            return new Uri(Scheme, Host, path, Query, Username, Password, Port);
+        }
+        
+        /// <summary>
+        /// Creates a new instance with another query
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="query">The new query to use</param>
+        public Uri SetQuery(string query)
+        {
+            return new Uri(Scheme, Host, Path, query, Username, Password, Port);
+        }
+
+        /// <summary>
+        /// Creates a new instance with other credentials
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="username">The new username to use</param>
+        /// <param name="password">The new password to use</param>
+        public Uri SetCredentials(string username, string password)
+        {
+            return new Uri(Scheme, Host, Path, Query, username, password, Port);
+        }
+        
+        /// <summary>
+        /// Creates a new instance with another port
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="port">The new port to use</param>
+        public Uri SetPort(int port)
+        {
+            return new Uri(Scheme, Host, Path, Query, Username, Password, port);
         }
     }
 }

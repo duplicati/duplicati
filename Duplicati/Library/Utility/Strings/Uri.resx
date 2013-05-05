@@ -120,4 +120,7 @@
   <data name="UriParseError" xml:space="preserve">
     <value>The Uri is invalid: {0}</value>
   </data>
+  <data name="NoHostname" xml:space="preserve">
+    <value>The Uri is missing a hostname: {0}</value>
+  </data>
 </root>

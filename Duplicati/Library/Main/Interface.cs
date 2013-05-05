@@ -2605,8 +2605,9 @@ namespace Duplicati.Library.Main
             
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
-            foreach(var k in DynamicLoader.BackendLoader.GetExtraCommands(m_backend))
-                ropts[k.Key] = k.Value;
+            var ext = new Utility.Uri(m_backend).QueryParameters;
+            foreach(var k in ext.AllKeys)
+                ropts[k] = ext[k];
 
             //Now run through all supported options, and look for deprecated options
             foreach (IList<Library.Interface.ICommandLineArgument> l in new IList<Library.Interface.ICommandLineArgument>[] { 

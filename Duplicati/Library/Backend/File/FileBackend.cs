@@ -42,56 +42,18 @@ namespace Duplicati.Library.Backend
 
         public File(string url, Dictionary<string, string> options)
         {
-            if (url.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase))
-            {
-                m_path = url.Substring("file://".Length);
-                if (m_path.IndexOf("@") > 0)
-                {
-                    m_username = m_path.Substring(0, m_path.IndexOf("@"));
-                    //Bugfix: cannot access paths with @ in the path
-                    if (m_username.Contains("/") || m_username.Contains("\\") || m_username.Contains(System.IO.Path.DirectorySeparatorChar.ToString()))
-                    {
-                        m_username = null;
-                        if (options.ContainsKey("auth-username"))
-                            m_username = options["auth-username"];
-                        if (options.ContainsKey("auth-password"))
-                            m_password = options["auth-password"];
-                    }
-                    else
-                    {
-                        m_path = m_path.Substring(m_path.IndexOf("@") + 1);
-
-                        if (m_username.IndexOf(":") > 0)
-                        {
-                            m_password = m_username.Substring(0, m_username.IndexOf(":"));
-                            m_username = m_username.Substring(m_username.IndexOf(":") + 1);
-                        }
-                        else
-                        {
-                            if (options.ContainsKey("auth-password"))
-                                m_password = options["auth-password"];
-                        }
-                    }
-                }
-                else
-                {
-                    if (options.ContainsKey("auth-username"))
-                        m_username = options["auth-username"];
-                    if (options.ContainsKey("auth-password"))
-                        m_password = options["auth-password"];
-                }
-            }
-            else
-            {
-                m_path = url;
-
-                //Non-url format paths cannot contain extra arguments
-                if (options.ContainsKey("auth-username"))
-                    m_username = options["auth-username"];
-                if (options.ContainsKey("auth-password"))
-                    m_password = options["auth-password"];
-            }
-
+            var uri = new Utility.Uri(url);
+            m_path = uri.HostAndPath;
+            
+            if (options.ContainsKey("auth-username"))
+                m_username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                m_password = options["auth-password"];
+            if (!string.IsNullOrEmpty(uri.Username))
+                m_username = uri.Username;
+            if (!string.IsNullOrEmpty(uri.Password))
+                m_password = uri.Password;
+            
             if (!System.IO.Path.IsPathRooted(m_path))
                 m_path = System.IO.Path.GetFullPath(m_path);
 

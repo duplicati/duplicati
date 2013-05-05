@@ -36,17 +36,14 @@ namespace Duplicati.Library.Backend
         public TahoeBackend(string url, Dictionary<string, string> options)
         {
             //Validate URL
-            Uri u = new Uri(url);
+            var u = new Utility.Uri(url);
 
-            if (!u.PathAndQuery.StartsWith("/uri/URI:DIR2:"))
+            if (!u.Path.StartsWith("uri/URI:DIR2:"))
                 throw new Exception(Strings.TahoeBackend.UnrecognizedUriError);
-
-            if (!string.IsNullOrEmpty(u.Query))
-                throw new Exception(Strings.TahoeBackend.UriHasQueryError);
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
-            m_url = (m_useSSL ? "https" : "http") + url.Substring(u.Scheme.Length);
+            m_url = u.SetScheme(m_useSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
             if (!m_url.EndsWith("/"))
                 m_url += "/";
         }
