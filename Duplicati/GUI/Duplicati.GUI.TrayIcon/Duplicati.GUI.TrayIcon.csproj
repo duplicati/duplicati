@@ -27,25 +27,6 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
     <DebugType>full</DebugType>
@@ -225,6 +206,22 @@
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\Duplicati.CommandLine.csproj">
+      <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
+      <Name>Duplicati.CommandLine</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+      <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
+      <Name>Duplicati.CommandLine.BackendTester</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+      <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
+      <Name>Duplicati.CommandLine.BackendTool</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj">
+      <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
+      <Name>Duplicati.CommandLine.Decrypter</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
