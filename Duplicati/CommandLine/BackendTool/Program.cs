@@ -59,7 +59,7 @@ namespace Duplicati.CommandLine.BackendTool
                 }
 
 
-                if (args.Count >= 2 || args[0].ToLower() == "help" || args[0] == "?" || command == null)
+                if (args.Count < 2 || args[0].ToLower() == "help" || args[0] == "?" || command == null)
                 {
                     if (command == null && args.Count >= 2)
                     {
@@ -119,6 +119,8 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new Exception("GET requires a filename argument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
+                        if (System.IO.File.Exists(args[2]))
+                            throw new Exception("File already exists, not overwriting!");
                         backend.Get(args[2], args[2]);
                         
                         return 0;
@@ -129,8 +131,6 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new Exception("PUT requires a filename argument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
-                        if (System.IO.File.Exists(args[2]))
-                            throw new Exception("File already exists, not overwriting!");
                            
                         backend.Put(args[2], args[2]);
                         
