@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Utility</RootNamespace>
     <AssemblyName>Duplicati.Library.Utility</AssemblyName>
-    <SignAssembly>True</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -19,9 +19,9 @@
     </UpgradeBackupLocation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -29,28 +29,9 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugSymbols>True</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>False</Optimize>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>True</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -62,7 +43,6 @@
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
     <Compile Include="ComboBoxItemPair.cs" />
-    <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="FilelistFilter.cs" />
     <Compile Include="FilenameFilter.cs" />
     <Compile Include="PlugableEnumerable.cs" />
@@ -73,13 +53,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegularExpressionFilter.cs" />
     <Compile Include="Sizeparser.cs" />
-    <Compile Include="SQLiteLoader.cs" />
     <Compile Include="SslCertificateValidator.cs" />
-    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
-      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Strings\FilenameFilter.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -127,11 +101,6 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\FilenameFilter.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -161,17 +130,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Utility.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SQLite\win32\System.Data.SQLite.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SQLite\win64\System.Data.SQLite.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

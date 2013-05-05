@@ -56,6 +56,39 @@ namespace Duplicati.Library.DynamicLoader
             }
 
             /// <summary>
+            /// Parses the URL into components
+            /// </summary>
+            /// <param name="url">The url to parse, the parser will remove the querystring</param>
+            /// <param name="scheme">The url scheme</param>
+            /// <param name="extraOptions">Extra options from the query string</param>
+            public static void ParseUrl(ref string url, out string scheme, out NameValueCollection extraOptions)
+            {
+                extraOptions = new NameValueCollection();
+                
+                //If possible, we avoid parsing the string as a URL to allow flexible string handling
+                if (false && url.IndexOf("://") > 0)
+                {
+                    scheme = url.Substring(0, url.IndexOf("://"));
+                    var ix = url.IndexOf('?');
+                    if (ix > 0)
+                    {
+                        extraOptions = HttpUtility.ParseQueryString(url.Substring(ix));
+                        url = url.Substring(0, ix);
+                    }
+                }
+                else
+                {
+                    var uri = new Uri(url);
+                    scheme = uri.Scheme.ToLower();
+                    if (!string.IsNullOrEmpty(uri.Query))
+                    {
+                        extraOptions = HttpUtility.ParseQueryString(uri.Query);
+                        url = url.Substring(0, url.Length - uri.Query.Length);
+                    }
+                }
+            }
+
+            /// <summary>
             /// Instanciates a specific backend, given the url and options
             /// </summary>
             /// <param name="url">The url to create the instance for</param>
@@ -67,24 +100,9 @@ namespace Duplicati.Library.DynamicLoader
                     throw new ArgumentNullException("url");
 
                 string scheme;
-                NameValueCollection extraOptions = new NameValueCollection();
+                NameValueCollection extraOptions;
+                ParseUrl(ref url, out scheme, out extraOptions);
                 
-                //If possible, we avoid parsing the string as a URL to allow flexible string handling
-                if (url.IndexOf("://") > 0)
-                {
-                    scheme = url.Substring(0, url.IndexOf("://"));
-                    var ix = url.IndexOf('?');
-                    if (ix > 0)
-                        extraOptions = HttpUtility.ParseQueryString(url.Substring(ix));
-                }
-                else
-                {
-                    var uri = new Uri(url);
-                    scheme = uri.Scheme.ToLower();
-                    if (!string.IsNullOrEmpty(uri.Query))
-                        extraOptions = HttpUtility.ParseQueryString(uri.Query);
-                }
-
                 LoadInterfaces();
                 
                 var newOpts = new Dictionary<string, string>(options);
@@ -117,26 +135,53 @@ namespace Duplicati.Library.DynamicLoader
             }
 
             /// <summary>
-            /// Gets the supported commands for a certain key
+            /// Gets the supported commands for a certain url
             /// </summary>
-            /// <param name="key">The key to find commands for</param>
-            /// <returns>The supported commands or null if the key was not found</returns>
-            public IList<ICommandLineArgument> GetSupportedCommands(string key)
+            /// <param name="url">The url to find commands for</param>
+            /// <returns>The supported commands or null if the url scheme was not supported</returns>
+            public IList<ICommandLineArgument> GetSupportedCommands(string url)
             {
-                if (string.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("key");
+                if (string.IsNullOrEmpty(url))
+                    throw new ArgumentNullException("url");
+
+                string scheme;
+                NameValueCollection extraOptions;
+                ParseUrl(ref url, out scheme, out extraOptions);
 
                 LoadInterfaces();
 
                 lock (m_lock)
                 {
                     IBackend b;
-                    if (m_interfaces.TryGetValue(key, out b) && b != null)
+                    if (m_interfaces.TryGetValue(scheme, out b) && b != null)
                         return b.SupportedCommands;
-                    else
-                        return null;
+                    else if (scheme.EndsWith("s"))
+                    {
+                        var tmpscheme = scheme.Substring(0, scheme.Length - 1);
+                        if (m_interfaces.ContainsKey(tmpscheme))
+                            return m_interfaces[tmpscheme].SupportedCommands;
+                    }
+                    
+                    return null;
                 }
             }
+            
+            /// <summary>
+            /// Gets the extra url commands encoded in the query string
+            /// </summary>
+            /// <param name="url">The url to extract commands from</param>
+            /// <returns>The extra commands</returns>
+            public NameValueCollection GetExtraCommands(string url)
+            {
+                if (string.IsNullOrEmpty(url))
+                    throw new ArgumentNullException("url");
+
+                string scheme;
+                NameValueCollection extraOptions;
+                ParseUrl(ref url, out scheme, out extraOptions);
+                return extraOptions;
+
+            }        
         }
 
         /// <summary>
@@ -159,18 +204,32 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Gets the supported commands for a given backend
         /// </summary>
-        /// <param name="url">The backend to find the commands for, either just the scheme or a full url</param>
-        /// <returns>The supported commands or null if the key is not supported</returns>
-        public static IList<ICommandLineArgument> GetSupportedCommands(string key)
+        /// <param name="url">The url to find the commands for</param>
+        /// <returns>The supported commands or null if the url is not supported</returns>
+        public static IList<ICommandLineArgument> GetSupportedCommands(string url)
         {
-            if (string.IsNullOrEmpty(key))
-                throw new ArgumentNullException("key");
+            if (string.IsNullOrEmpty(url))
+                throw new ArgumentNullException("url");
 
-            //Extract the scheme, don't use new Uri() as the url may not be valid
-            if (key.IndexOf("://") > 0)
-                key = key.Substring(0, key.IndexOf("://"));
+            return _backendLoader.GetSupportedCommands(url);
+        }
 
-            return _backendLoader.GetSupportedCommands(key.ToLower());
+        /// <summary>
+        /// Gets the extra url-encoded commands for a given backend
+        /// </summary>
+        /// <param name="url">The backend to find the commands for</param>
+        /// <returns>The extra supported commands</returns>
+        public static IDictionary<string, string> GetExtraCommands(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                throw new ArgumentNullException("url");
+
+            var tmp = _backendLoader.GetExtraCommands(url);
+            var dict = new Dictionary<string, string>();
+            foreach(var k in tmp.AllKeys)
+                dict[k] = tmp[k];
+                
+            return dict;
         }
 
 

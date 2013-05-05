@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
@@ -20,7 +20,7 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <UpgradeBackupLocation />
-    <SignAssembly>True</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <OldToolsVersion>3.5</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -31,9 +31,9 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <RegisterForComInterop>false</RegisterForComInterop>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <WarningLevel>4</WarningLevel>
@@ -49,35 +49,12 @@
     <DocumentationFile>
     </DocumentationFile>
     <FileAlignment>4096</FileAlignment>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
     <RegisterForComInterop>false</RegisterForComInterop>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <WarningLevel>4</WarningLevel>
     <DebugType>none</DebugType>
     <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugSymbols>True</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>False</Optimize>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>True</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <DebugType>none</DebugType>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -93,7 +70,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="SettingsHelper.cs" />
+    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
+      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Task.Extension.cs" />
     <Compile Include="Task.cs" />
     <Compile Include="Schedule.cs" />
@@ -127,6 +110,11 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
+    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />

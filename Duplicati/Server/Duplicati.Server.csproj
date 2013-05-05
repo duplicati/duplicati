@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</ProjectGuid>
@@ -12,27 +12,8 @@
     <AssemblyName>Duplicati.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
@@ -41,12 +22,12 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <WarningLevel>4</WarningLevel>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -55,7 +36,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>True</SignAssembly>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
@@ -97,6 +78,7 @@
     <Compile Include="Serializable\TreeNode.cs" />
     <Compile Include="Serializable\FilterSet.cs" />
     <Compile Include="SingleInstance.cs" />
+    <Compile Include="SQLiteLoader.cs" />
     <Compile Include="Strings\DuplicatiRunner.Designer.cs">
       <DependentUpon>DuplicatiRunner.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -234,6 +216,10 @@
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
       <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
       <Name>Duplicati.Server.Serialization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+      <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
+      <Name>Duplicati.CommandLine.BackendTool</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

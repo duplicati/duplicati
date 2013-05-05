@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.CommandLine</RootNamespace>
     <AssemblyName>Duplicati.CommandLine</AssemblyName>
-    <SignAssembly>True</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
     <FileUpgradeFlags>
@@ -20,39 +20,20 @@
     </UpgradeBackupLocation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Commandlineparameters>UNITTEST ~/testdata/DSMCBE/r50 ~/testdata/DSMCBE/r100 --no-encryption --fh-dbpath=C:\localdb\fh.sqlite --fh-no-local-blocks --fh-no-local-db --fh-blocksize=1kb </Commandlineparameters>
+    <Commandlineparameters>backup --volsize=100mb Z:\2013 webdavs://sd2dav.1und1.de:443/2013-fh?ftp-username=me@renestach.de&amp;ftp-password=secret --passphrase=123456 --fh-dbpath=C:\Users\Stach\Desktop\2013-fh.sqlite --debug-output</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugSymbols>True</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>False</Optimize>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>True</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>

@@ -13,77 +13,32 @@
     <SuppressXamMacUpsell>True</SuppressXamMacUpsell>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>False</ConsolePause>
-    <EnableCodeSigning>False</EnableCodeSigning>
-    <CreatePackage>False</CreatePackage>
-    <EnablePackageSigning>False</EnablePackageSigning>
-    <IncludeMonoRuntime>False</IncludeMonoRuntime>
-    <UseSGen>False</UseSGen>
+    <ConsolePause>false</ConsolePause>
+    <EnableCodeSigning>false</EnableCodeSigning>
+    <CreatePackage>false</CreatePackage>
+    <EnablePackageSigning>false</EnablePackageSigning>
+    <IncludeMonoRuntime>false</IncludeMonoRuntime>
+    <UseSGen>false</UseSGen>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>False</ConsolePause>
-    <EnableCodeSigning>False</EnableCodeSigning>
-    <CreatePackage>False</CreatePackage>
-    <EnablePackageSigning>False</EnablePackageSigning>
-    <IncludeMonoRuntime>False</IncludeMonoRuntime>
-    <UseSGen>False</UseSGen>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|X86' ">
-    <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\X86\Debug</OutputPath>
-    <WarningLevel>4</WarningLevel>
-    <EnableCodeSigning>False</EnableCodeSigning>
-    <CreatePackage>False</CreatePackage>
-    <EnablePackageSigning>False</EnablePackageSigning>
-    <IncludeMonoRuntime>False</IncludeMonoRuntime>
-    <UseSGen>False</UseSGen>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\x86\Release</OutputPath>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
-    <EnableCodeSigning>False</EnableCodeSigning>
-    <CreatePackage>False</CreatePackage>
-    <EnablePackageSigning>False</EnablePackageSigning>
-    <IncludeMonoRuntime>False</IncludeMonoRuntime>
-    <UseSGen>False</UseSGen>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|X86' ">
-    <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <WarningLevel>4</WarningLevel>
-    <EnableCodeSigning>False</EnableCodeSigning>
-    <CreatePackage>False</CreatePackage>
-    <EnablePackageSigning>False</EnablePackageSigning>
-    <IncludeMonoRuntime>False</IncludeMonoRuntime>
-    <UseSGen>False</UseSGen>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugType>none</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <WarningLevel>4</WarningLevel>
-    <EnableCodeSigning>False</EnableCodeSigning>
-    <CreatePackage>False</CreatePackage>
-    <EnablePackageSigning>False</EnablePackageSigning>
-    <IncludeMonoRuntime>False</IncludeMonoRuntime>
-    <UseSGen>False</UseSGen>
+    <ConsolePause>false</ConsolePause>
+    <EnableCodeSigning>false</EnableCodeSigning>
+    <CreatePackage>false</CreatePackage>
+    <EnablePackageSigning>false</EnablePackageSigning>
+    <IncludeMonoRuntime>false</IncludeMonoRuntime>
+    <UseSGen>false</UseSGen>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
