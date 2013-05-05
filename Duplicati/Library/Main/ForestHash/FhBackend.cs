@@ -13,6 +13,31 @@ namespace Duplicati.Library.Main.ForestHash
     {
     	public const string VOLUME_HASH = "SHA256";
     
+        /// <summary>
+        /// Class to represent hash failures
+        /// </summary>
+        [Serializable]
+        public class HashMismathcException : Exception
+        {
+            /// <summary>
+            /// Default constructor, sets a generic string as the message
+            /// </summary>
+            public HashMismathcException() : base() { }
+
+            /// <summary>
+            /// Constructor with non-default message
+            /// </summary>
+            /// <param name="message">The exception message</param>
+            public HashMismathcException(string message) : base(message) { }
+
+            /// <summary>
+            /// Constructor with non-default message and inner exception details
+            /// </summary>
+            /// <param name="message">The exception message</param>
+            /// <param name="innerException">The exception that caused this exception</param>
+            public HashMismathcException(string message, Exception innerException) : base(message, innerException) { }
+        }
+    
         private enum OperationType
         {
             Get,
@@ -315,12 +340,12 @@ namespace Duplicati.Library.Main.ForestHash
                             m_db.LogDbMessage("warning", string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
 
 							bool recovered = false;
-                            if (ex is Duplicati.Library.Interface.FolderMissingException && m_backend is Duplicati.Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                            if (ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                             {
 	                            try 
 	                            { 
 	                            	// If we successfully create the folder, we can re-use the connection
-	                            	((Duplicati.Library.Interface.IBackend_v2)m_backend).CreateFolder(); 
+	                            	m_backend.CreateFolder(); 
 	                            	recovered = true;
 	                            }
 	                            catch(Exception dex) 
@@ -439,7 +464,7 @@ namespace Duplicati.Library.Main.ForestHash
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (nh != item.Hash)
-                            throw new BackendWrapper.HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, tmpfile, item.Hash, nh));
+                            throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, tmpfile, item.Hash, nh));
                     }
                     else
                     	item.Hash = nh;
@@ -542,7 +567,7 @@ namespace Duplicati.Library.Main.ForestHash
             string result = null;
             try
             {
-                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+                m_backend.CreateFolder();
             } 
             catch (Exception ex)
             {

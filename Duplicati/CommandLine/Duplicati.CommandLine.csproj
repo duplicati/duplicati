@@ -41,6 +41,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Help.cs" />
@@ -122,10 +123,6 @@
     <ProjectReference Include="..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
       <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
       <Name>Duplicati.Library.Modules.Builtin</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\SharpRSync\Duplicati.Library.SharpRSync.csproj">
-      <Project>{47FE73E1-0832-44F7-96B9-2580273206C3}</Project>
-      <Name>Duplicati.Library.SharpRSync</Name>
     </ProjectReference>
     <ProjectReference Include="..\License\Duplicati.License.csproj">
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>

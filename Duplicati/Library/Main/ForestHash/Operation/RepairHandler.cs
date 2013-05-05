@@ -7,13 +7,13 @@ using Duplicati.Library.Main.ForestHash.Volumes;
 
 namespace Duplicati.Library.Main.ForestHash.Operation
 {
-    internal class CleanupHandler : IDisposable
+    internal class RepairHandler : IDisposable
     {
         private string m_backendurl;
         private FhOptions m_options;
         private CommunicationStatistics m_stat;
 
-        public CleanupHandler(string backend, FhOptions options, CommunicationStatistics stat)
+        public RepairHandler(string backend, FhOptions options, CommunicationStatistics stat)
         {
             m_backendurl = backend;
             m_options = options;
@@ -25,7 +25,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			if (!System.IO.File.Exists(m_options.Fhdbpath))
 				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Fhdbpath));
 
-        	using(var db = new LocalCleanupDatabase(m_options.Fhdbpath))
+        	using(var db = new LocalRepairDatabase(m_options.Fhdbpath))
 			using(var backend = new FhBackend(m_backendurl, m_options, m_stat, db))
         	{
 	        	ForestHash.VerifyParameters(db, m_options);

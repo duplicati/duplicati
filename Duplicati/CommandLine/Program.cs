@@ -132,20 +132,12 @@ namespace Duplicati.CommandLine
                         options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, int>>(StringComparer.InvariantCultureIgnoreCase);
-                knownCommands["purge-signature-cache"] = Commands.PurgeSignatureCache;
                 knownCommands["help"] = Commands.Help;                
-                knownCommands["list"] = Commands.List;
                 knownCommands["list-current-files"] = Commands.ListCurrentFiles;
-                knownCommands["list-source-folders"] = Commands.ListSourceFolders;
-                knownCommands["list-actual-signature-files"] = Commands.ListActualSignatureFiles;
-                knownCommands["collection-status"] = Commands.CollectionStatus;
-                knownCommands["delete-all-but-n-full"] = Commands.DeleteAllButNFull;
                 knownCommands["delete-all-but-n"] = Commands.DeleteAllButN;
                 knownCommands["delete-older-than"] = Commands.DeleteOlderThan;
                 knownCommands["cleanup"] = Commands.Cleanup;
-                knownCommands["create-folder"] = Commands.CreateFolder;
                 knownCommands["find-last-version"] = Commands.FindLastVersion;
-                knownCommands["verify"] = Commands.Verify;
                 knownCommands["restore"] = Commands.Restore;
                 knownCommands["backup"] = Commands.Backup;
 

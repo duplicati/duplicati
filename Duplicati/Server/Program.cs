@@ -392,12 +392,7 @@ namespace Duplicati.Server
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private static void LiveControl_ThreadPriorityChanged(object sender, EventArgs e)
-        {
-            if (LiveControl.ThreadPriority == null)
-                Runner.UnsetThreadPriority();
-            else
-                Runner.SetThreadPriority(LiveControl.ThreadPriority.Value);
-        
+        {        
             StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -408,16 +403,6 @@ namespace Duplicati.Server
         /// <param name="e"></param>
         private static void LiveControl_ThrottleSpeedChanged(object sender, EventArgs e)
         {
-            if (LiveControl.DownloadLimit == null)
-                Runner.SetDownloadLimit(null);
-            else
-                Runner.SetDownloadLimit(LiveControl.DownloadLimit.Value.ToString() + "b");
-
-            if (LiveControl.UploadLimit == null)
-                Runner.SetUploadLimit(null);
-            else
-                Runner.SetUploadLimit(LiveControl.UploadLimit.Value.ToString() + "b");
-
             StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -430,11 +415,9 @@ namespace Duplicati.Server
             {
                 case LiveControls.LiveControlState.Paused:
                     WorkThread.Pause();
-                    Runner.Pause();
                     break;
                 case LiveControls.LiveControlState.Running:
                     WorkThread.Resume();
-                    Runner.Resume();
                     break;
             }
 

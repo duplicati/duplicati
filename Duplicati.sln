@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compressi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SharpRSync", "Duplicati\Library\SharpRSync\Duplicati.Library.SharpRSync.csproj", "{47FE73E1-0832-44F7-96B9-2580273206C3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
@@ -101,10 +99,6 @@ Global
 		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47FE73E1-0832-44F7-96B9-2580273206C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47FE73E1-0832-44F7-96B9-2580273206C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47FE73E1-0832-44F7-96B9-2580273206C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47FE73E1-0832-44F7-96B9-2580273206C3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Any CPU.ActiveCfg = Release|Any CPU

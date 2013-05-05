@@ -36,7 +36,7 @@ namespace Duplicati.Server.Serializable
 
         public RunnerState ActiveBackupState
         {
-            get { return Program.Runner.CurrentState; }
+            get { /*return Program.Runner.CurrentState;*/ return RunnerState.Stopped; }
         }
 
         public long ActiveScheduleId

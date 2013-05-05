@@ -78,7 +78,6 @@
     <Compile Include="Serializable\TreeNode.cs" />
     <Compile Include="Serializable\FilterSet.cs" />
     <Compile Include="SingleInstance.cs" />
-    <Compile Include="SQLiteLoader.cs" />
     <Compile Include="Strings\DuplicatiRunner.Designer.cs">
       <DependentUpon>DuplicatiRunner.resx</DependentUpon>
       <AutoGen>True</AutoGen>

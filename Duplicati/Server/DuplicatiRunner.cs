@@ -28,7 +28,7 @@ namespace Duplicati.Server
     /// <summary>
     /// This class translates tasks into Duplicati calls, and executes them
     /// </summary>
-    public class DuplicatiRunner : Duplicati.Library.Main.LiveControl.ILiveControl
+    public class DuplicatiRunner
     {
         public class ProgressEventData : IProgressEventData
         {
@@ -54,7 +54,6 @@ namespace Duplicati.Server
 
         private object m_lock = new object();
         private CloseReason m_stopReason = CloseReason.None;
-        private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
         private bool m_isAborted = false;
 
         private RunnerState m_currentRunnerState = RunnerState.Suspended;
@@ -97,10 +96,7 @@ namespace Duplicati.Server
                     lock (m_lock)
                     {
                         m_stopReason = CloseReason.None;
-                        m_currentBackupControlInterface = i;
                     }
-
-                    SetupControlInterface();
 
                     i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(Duplicati_OperationProgress);
                     i.MetadataReport += new Library.Main.MetadataReportDelegate(new MetadataReportCapture(task).Duplicati_MetadataReport);
@@ -182,35 +178,8 @@ namespace Duplicati.Server
                                 }
                                 break;
                             }
-                        case DuplicityTaskType.ListBackups:
-
-                            List<string> res = new List<string>();
-                            foreach (Duplicati.Library.Main.ManifestEntry be in i.GetBackupSets())
-                            {
-                                res.Add(be.Time.ToString());
-                                foreach (Duplicati.Library.Main.ManifestEntry bei in be.Incrementals)
-                                    res.Add(bei.Time.ToString());
-                            }
-
-                            (task as ListBackupsTask).Backups = res.ToArray();
-                            break;
-                        case DuplicityTaskType.ListBackupEntries:
-                            (task as ListBackupEntriesTask).Backups = i.GetBackupSets();
-                            break;
                         case DuplicityTaskType.ListFiles:
                             (task as ListFilesTask).Files = i.ListCurrentFiles();
-                            break;
-                        case DuplicityTaskType.ListSourceFolders:
-                            (task as ListSourceFoldersTask).Files = new List<string>(i.ListSourceFolders() ?? new string[0]);
-                            break;
-                        case DuplicityTaskType.ListActualFiles:
-                            (task as ListActualFilesTask).Files = i.ListActualSignatureFiles();
-                            break;
-                        case DuplicityTaskType.RemoveAllButNFull:
-                            results = i.DeleteAllButNFull();
-                            break;
-                        case DuplicityTaskType.RemoveOlderThan:
-                            results = i.DeleteOlderThan();
                             break;
                         case DuplicityTaskType.Restore:
                             options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
@@ -248,8 +217,6 @@ namespace Duplicati.Server
                     m_isAborted = true;
                     System.Threading.Thread.ResetAbort();
                 }
-                else if (ex is Library.Main.LiveControl.ExecutionStoppedException)
-                    m_isAborted = true;
 
                 if (m_isAborted && m_stopReason != CloseReason.None)
                 {
@@ -297,11 +264,6 @@ namespace Duplicati.Server
                     results += Environment.NewLine + "InnerError: " + ex.ToString(); //Don't localize
                 }
                 
-            }
-            finally
-            {
-                lock (m_lock)
-                    m_currentBackupControlInterface = null;
             }
 
             try
@@ -492,7 +454,7 @@ namespace Duplicati.Server
             return task.Backups;
         }
 
-        public List<Duplicati.Library.Main.ManifestEntry> ListBackupEntries(Schedule schedule)
+        public List<DateTime> ListBackupEntries(Schedule schedule)
         {
             ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
             ExecuteTask(task);
@@ -504,20 +466,6 @@ namespace Duplicati.Server
                 throw new Exception(task.Result);
 
             return task.Backups;
-        }
-
-        public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> ListActualFiles(Schedule schedule, DateTime when)
-        {
-            ListActualFilesTask task = new ListActualFilesTask(schedule, when);
-            ExecuteTask(task);
-            
-            if (task.IsAborted)
-                return null;
-            
-            if (task.Result.StartsWith("Error:"))
-                throw new Exception(task.Result);
-            
-            return task.Files;
         }
 
         public IList<string> ListFiles(Schedule schedule, DateTime when)
@@ -562,112 +510,5 @@ namespace Duplicati.Server
         /// </summary>
         public bool IsAborted { get { return m_isAborted; } }
 
-        /// <summary>
-        /// Function used to apply settings to a new interface
-        /// </summary>
-        private void SetupControlInterface()
-        {
-            //Copy the values to avoid thread race problems
-            System.Threading.ThreadPriority? priority = Program.LiveControl.ThreadPriority;
-            long? uploadLimit = Program.LiveControl.UploadLimit;
-            long? downloadLimit = Program.LiveControl.DownloadLimit;
-
-            if (priority != null)
-                m_currentBackupControlInterface.SetThreadPriority(priority.Value);
-            if (uploadLimit != null)
-                m_currentBackupControlInterface.SetUploadLimit(uploadLimit.Value.ToString() + "b");
-            if (downloadLimit != null)
-                m_currentBackupControlInterface.SetDownloadLimit(downloadLimit.Value.ToString() + "b");
-        }
-
-        public void Pause()
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.Pause();
-        }
-
-        public void Resume()
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.Resume();
-        }
-
-        public RunnerState CurrentState { get { return m_currentRunnerState; } }
-        public ProgressEventData LastEvent { get { return m_lastEvent; } }
-
-        public void Stop()
-        {
-            Stop(CloseReason.None);
-        }
-
-        public void Stop(CloseReason reason)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                {
-                    m_stopReason = reason;
-                    if (m_currentBackupControlInterface.IsStopRequested)
-                        m_currentBackupControlInterface.Terminate();
-                    else
-                        m_currentBackupControlInterface.Stop();
-                }
-        }
-
-        public void Terminate(CloseReason reason)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                {
-                    m_stopReason = reason;
-                    m_currentBackupControlInterface.Terminate();
-                }
-        }
-
-        public void Terminate()
-        {
-            Terminate(CloseReason.None);
-        }
-
-        public bool IsStopRequested
-        {
-            get 
-            { 
-                lock (m_lock)
-                    if (m_currentBackupControlInterface != null)
-                        return m_currentBackupControlInterface.IsStopRequested;
-                    else
-                        return false;
-            }
-        }
-
-        public void SetUploadLimit(string limit)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.SetUploadLimit(limit);
-        }
-
-        public void SetDownloadLimit(string limit)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.SetDownloadLimit(limit);
-        }
-
-        public void SetThreadPriority(System.Threading.ThreadPriority priority)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.SetThreadPriority(priority);
-        }
-
-        public void UnsetThreadPriority()
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.UnsetThreadPriority();
-        }
     }
 }

@@ -382,9 +382,9 @@ namespace Duplicati.Server
 
     public class ListBackupEntriesTask : BackupTask
     {
-        private List<Library.Main.ManifestEntry> m_backups = null;
+        private List<DateTime> m_backups = null;
         public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListBackupEntries; } }
-        public List<Library.Main.ManifestEntry> Backups { get { return m_backups; } set { m_backups = value; } }
+        public List<DateTime> Backups { get { return m_backups; } set { m_backups = value; } }
 
         public ListBackupEntriesTask(Schedule schedule)
             : base(schedule)
@@ -501,44 +501,6 @@ namespace Duplicati.Server
         {
         }
     }
-
-    public class ListActualFilesTask : BackupTask
-    {
-        protected List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> m_files = null;
-        public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListActualFiles; } }
-        public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> Files { get { return m_files; } set { m_files = value; } }
-        protected DateTime m_when;
-
-        public ListActualFilesTask(Schedule schedule, DateTime when)
-            : base(schedule)
-        {
-            m_when = when;
-        }
-
-        public string When
-        {
-            get
-            {
-                if (m_when.Year < 10)
-                    return null;
-                else
-                    return m_when.ToString("s");
-            }
-        }
-
-        public override string GetConfiguration(Dictionary<string, string> options)
-        {
-            if (!string.IsNullOrEmpty(When))
-                options["restore-time"] = this.When;
-            return base.GetConfiguration(options);
-        }
-
-        public override string LocalPath
-        {
-            get { throw new NotImplementedException(); }
-        }
-    }
-
 
     public class RestoreSetupTask : BackupTask
     {

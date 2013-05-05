@@ -14,16 +14,9 @@ namespace Duplicati.Library.Main
         private long? m_full_backup_count;
         private long? m_total_volume_count;
         private long? m_total_file_count;
-        private long? m_longest_chain_length;
 
-        private long? m_current_chain_length;
-        private DateTime? m_current_full_date;
-        private long? m_current_chain_size;
         private DateTime? m_last_backup_date;
         private long? m_last_backup_size;
-
-        private long? m_orphan_file_count;
-        private long? m_orphan_file_size;
 
         private long? m_alien_file_count;
         private long? m_alien_file_size;
@@ -45,14 +38,8 @@ namespace Duplicati.Library.Main
         public long FullBackupCount { get { return m_full_backup_count ?? 0; } set { m_full_backup_count = value; } }
         public long TotalVolumeCount { get { return m_total_volume_count ?? 0; } set { m_total_volume_count = value; } }
         public long TotalFileCount { get { return m_total_file_count ?? 0; } set { m_total_file_count = value; } }
-        public long LongestChainLength { get { return m_longest_chain_length ?? 0; } set { m_longest_chain_length = value; } }
-        public long CurrentChainLength { get { return m_current_chain_length ?? 0; } set { m_current_chain_length = value; } }
-        public DateTime CurrentFullDate { get { return m_current_full_date ?? new DateTime(0); } set { m_current_full_date = value; } }
-        public long CurrentChainSize { get { return m_current_chain_size ?? 0; } set { m_current_chain_size = value; } }
         public DateTime LastBackupDate { get { return m_last_backup_date ?? new DateTime(0); } set { m_last_backup_date = value; } }
         public long LastBackupSize { get { return m_last_backup_size ?? 0; } set { m_last_backup_size = value; } }
-        public long OrphanFileCount { get { return m_orphan_file_count ?? 0; } set { m_orphan_file_count = value; } }
-        public long OrphanFileSize { get { return m_orphan_file_size ?? 0; } set { m_orphan_file_size = value; } }
         public long SourceFileSize { get { return m_source_file_size ?? 0; } set { m_source_file_size = value; } }
         public long SourceFileCount { get { return m_source_file_count ?? 0; } set { m_source_file_count = value; } }
         public long SourceFolderCount { get { return m_source_folder_count ?? 0; } set { m_source_folder_count = value; } }
@@ -86,9 +73,6 @@ namespace Duplicati.Library.Main
 
         public void RemoveCurrentBackupData()
         {
-            m_current_chain_length = null;
-            m_current_full_date = null;
-            m_current_chain_size = null;
             m_last_backup_date = null;
             m_last_backup_size = null;
         }

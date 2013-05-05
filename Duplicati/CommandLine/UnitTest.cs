@@ -113,8 +113,6 @@ namespace Duplicati.CommandLine
                     if (!System.IO.Directory.Exists(n))
                         throw new Exception(string.Format("Missing source folder: {0}", n));
 
-            var usingFH = options.ContainsKey("fh-dbpath");
-
             try
             {
                 if (System.IO.Directory.Exists(tempdir))
@@ -185,12 +183,9 @@ namespace Duplicati.CommandLine
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
-                if (usingFH)
-                {
-                    options["fh-dbpath"] = System.IO.Path.Combine(tempdir, "fh-unittest.sqlite");
-                    if (System.IO.File.Exists(options["fh-dbpath"]))
-                        System.IO.File.Delete(options["fh-dbpath"]);
-                }
+                options["fh-dbpath"] = System.IO.Path.Combine(tempdir, "fh-unittest.sqlite");
+                if (System.IO.File.Exists(options["fh-dbpath"]))
+                    System.IO.File.Delete(options["fh-dbpath"]);
 
                 if (string.IsNullOrEmpty(target))
                 {
@@ -205,13 +200,13 @@ namespace Duplicati.CommandLine
                     tmp["allow-full-removal"] = "";
 
                     using (new Timer("Cleaning up any existing backups")) 
-                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButNFull(target, tmp));
+                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButN(target, tmp));
                 }
 
                 log.Backupset = "Backup " + folders[0];
                 string fhtempsource = null;
                 
-                bool usingFHWithRestore = usingFH && (!skipfullrestore || !skippartialrestore);
+                bool usingFHWithRestore = (!skipfullrestore || !skippartialrestore);
 
                 using(var fhsourcefolder = usingFHWithRestore ? new Library.Utility.TempFolder() : null)
                 {
@@ -254,47 +249,17 @@ namespace Duplicati.CommandLine
                         }
 
                 IList<DateTime> entries;
-                if (usingFH)
+                entries = new List<DateTime>();
+                foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options, null))
+                    if (el.FileType == Library.Main.ForestHash.RemoteVolumeType.Files)
+                        entries.Add(el.Time.ToLocalTime());
+
+                if (entries.Count != folders.Length)
                 {
-                    entries = new List<DateTime>();
-                    foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options, null))
-                        if (el.FileType == Library.Main.ForestHash.RemoteVolumeType.Files)
-                            entries.Add(el.Time.ToLocalTime());
-
-                    if (entries.Count != folders.Length)
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.AppendLine("Entry count: " + entries.Count.ToString());
-                        sb.Append(string.Format("Found {0} filelists but there were {1} source folders", entries.Count, folders.Length));
-                        throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
-                    }
-                }
-                else
-                {
-                    List<Duplicati.Library.Main.ManifestEntry> mfs = Duplicati.Library.Main.Interface.ParseFileList(target, options);
-
-                    if (mfs.Count != 1 || mfs[0].Incrementals.Count != folders.Length - 1)
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.AppendLine("Entry count: " + mfs.Count.ToString());
-                        if (mfs.Count == 1)
-                            sb.Append(string.Format("Found {0} incrementals but there were {1} source folders", mfs[0].Incrementals.Count, folders.Length));
-                        throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
-                    }
-
-                    Console.WriteLine("Verifying the backup chain");
-                    using (new Timer("Verify backup"))
-                    {
-                        List<KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception>> results = Duplicati.Library.Main.Interface.VerifyBackup(target, options);
-                        foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
-                            if (x.Value != null)
-                                Console.WriteLine(string.Format("Error: {0}: {1}", x.Key.Filename, x.Value.ToString()));
-                    }
-
-                    entries = new List<DateTime>();
-                    entries.Add(mfs[0].Time);
-                    foreach (Duplicati.Library.Main.ManifestEntry mf in mfs[0].Incrementals)
-                        entries.Add(mf.Time);
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Entry count: " + entries.Count.ToString());
+                    sb.Append(string.Format("Found {0} filelists but there were {1} source folders", entries.Count, folders.Length));
+                    throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
                 }
 
                 if (!skipfullrestore || !skippartialrestore)
@@ -358,13 +323,10 @@ namespace Duplicati.CommandLine
                                     {
                                         string f = testfiles[j];
         
-                                        if (usingFH)
-                                        {
-                                            if (!f.StartsWith(usingFHWithRestore ? fhtempsource : folders[i], Utility.ClientFilenameStringComparision))
-                                                throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
+                                        if (!f.StartsWith(usingFHWithRestore ? fhtempsource : folders[i], Utility.ClientFilenameStringComparision))
+                                            throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
         
-                                            f = f.Substring(Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]).Length);
-                                        }
+                                        f = f.Substring(Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]).Length);
         
                                         do
                                         {
@@ -381,29 +343,18 @@ namespace Duplicati.CommandLine
                                     Dictionary<string, string> tops = new Dictionary<string,string>(options);
                                     List<string> filterlist;
         
-                                    if (usingFH)
-                                    {
-                                        var tfe = Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
-                                        
-                                        //We need a minor tweak here because the two models
-                                        // use releative vs. absolute paths
-                                        filterlist = (from n in partialFolders.Keys
-                                                      where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
-                                                      select Utility.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
-                                                      .Union(testfiles) //Add files with full path
-                                                      .Union(new string[] { tfe }) //Ensure root folder is included
-                                                      .Distinct()
-                                                      .ToList();
-        
-                                        testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
-                                        
-                                    }
-                                    else
-                                    {
-                                        filterlist = new List<string>(); 
-                                        filterlist.AddRange(partialFolders.Keys);
-                                        filterlist.AddRange(testfiles);
-                                    }
+                                    var tfe = Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
+                                    
+                                    filterlist = (from n in partialFolders.Keys
+                                                  where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
+                                                  select Utility.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
+                                                  .Union(testfiles) //Add files with full path
+                                                  .Union(new string[] { tfe }) //Ensure root folder is included
+                                                  .Distinct()
+                                                  .ToList();
+    
+                                    testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
+                                    
         
                                     tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
         

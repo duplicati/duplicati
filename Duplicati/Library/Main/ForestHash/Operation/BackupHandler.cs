@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		            		if (m_options.AutoCleanup)
 		            		{
 		            			m_stat.LogWarning("Backend verification failed, attempting automatic cleanup", ex);
-		            			using(var ch = new CleanupHandler(m_backend.BackendUrl, m_options, m_stat))
+		            			using(var ch = new RepairHandler(m_backend.BackendUrl, m_options, m_stat))
 		            				ch.Run();
 		            			
 		            			m_stat.LogMessage("Backend cleanup finished, retrying verification");

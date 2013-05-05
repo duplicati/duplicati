@@ -20,10 +20,10 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-	public class LocalCleanupDatabase : LocalDatabase
+	public class LocalRepairDatabase : LocalDatabase
 	{
-		public LocalCleanupDatabase(string path)
-			: base(LocalDatabase.CreateConnection(path), "Cleanup")
+		public LocalRepairDatabase(string path)
+			: base(LocalDatabase.CreateConnection(path), "Repair")
 		{
 		
 		}

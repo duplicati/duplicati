@@ -95,10 +95,19 @@
     <Compile Include="WorkerThread.cs" />
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="DatabaseUpgrader.cs" />
+    <Compile Include="SQLiteLoader.cs" />
+    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
+      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <None Include="Strings\DatabaseUpgrader.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\FilenameFilter.resx">
