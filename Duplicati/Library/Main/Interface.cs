@@ -2574,7 +2574,7 @@ namespace Duplicati.Library.Main
                 return;
 
             //Keep a list of all supplied options
-            Dictionary<string, string> ropts = m_options.RawOptions;
+            Dictionary<string, string> ropts = new Dictionary<string, string>(m_options.RawOptions);
             
             //Keep a list of all supported options
             Dictionary<string, Library.Interface.ICommandLineArgument> supportedOptions = new Dictionary<string, Library.Interface.ICommandLineArgument>();
@@ -2602,6 +2602,11 @@ namespace Duplicati.Library.Main
                                     disabledModuleOptions[s] = disabledModuleOptions[c.Name];
                         }
                     }
+            
+            // Throw url-encoded options into the mix
+            //TODO: This can hide values if both commandline and url-parameters supply the same key
+            foreach(var k in DynamicLoader.BackendLoader.GetExtraCommands(m_backend))
+                ropts[k.Key] = k.Value;
 
             //Now run through all supported options, and look for deprecated options
             foreach (IList<Library.Interface.ICommandLineArgument> l in new IList<Library.Interface.ICommandLineArgument>[] { 
