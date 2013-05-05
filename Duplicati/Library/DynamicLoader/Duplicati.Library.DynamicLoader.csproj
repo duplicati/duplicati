@@ -69,6 +69,10 @@
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
       <Name>Duplicati.Library.Logging</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -904,7 +904,7 @@ namespace Duplicati.Library.Utility
         /// <returns>True if the hostname is valid, false otherwise</returns>
         public static bool IsValidHostname(string hostname)
         {
-            try { return Uri.CheckHostName(hostname) != UriHostNameType.Unknown; }
+            try { return System.Uri.CheckHostName(hostname) != UriHostNameType.Unknown; }
             catch { return false; }
         }
 

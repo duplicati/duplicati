@@ -16,7 +16,6 @@ namespace Duplicati.Library.Backend
         private const string ATTRIBUTES_OPTION = "google-labels";
         private static readonly string[] KNOWN_LABELS = new string[] { "starred", "viewed", "hidden" };
 
-        private static readonly Regex URL_PARSER = new Regex("googledocs://(?<folder>.*)", RegexOptions.IgnoreCase);
         private static readonly string USER_AGENT = "Duplicati GoogleDocs backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
         private const string CREATE_ITEM_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><entry xmlns=\"http://www.w3.org/2005/Atom\" xmlns:docs=\"http://schemas.google.com/docs/2007\"><category scheme=\"http://schemas.google.com/g/2005#kind\" term=\"http://schemas.google.com/docs/2007#document\"/><title>{0}</title><docs:writersCanInvite value=\"false\"/>{1}</entry>";
@@ -41,11 +40,8 @@ namespace Duplicati.Library.Backend
 
         public GoogleDocs(string url, Dictionary<string, string> options)
         {
-            Match m = URL_PARSER.Match(url);
-            if (!m.Success)
-                throw new Exception(string.Format(Strings.GoogleDocs.InvalidUrlError, url));
-
-            m_folder = m.Groups["folder"].Value;
+            var uri = new Utility.Uri(url);
+            m_folder = uri.HostAndPath;
             if (m_folder.EndsWith("/"))
                 m_folder = m_folder.Substring(0, m_folder.Length - 1);
 
@@ -60,6 +56,10 @@ namespace Duplicati.Library.Backend
                 username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
                 password = options[PASSWORD_OPTION];
+            if (!string.IsNullOrEmpty(uri.Username))
+                username = uri.Username;
+            if (!string.IsNullOrEmpty(uri.Password))
+                password = uri.Password;
 
             string labels;
             if (!options.TryGetValue(ATTRIBUTES_OPTION, out labels))

@@ -39,6 +39,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
@@ -100,6 +101,10 @@
     <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
       <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
     </Compile>
+    <Compile Include="Uri.cs" />
+    <Compile Include="Strings\Uri.Designer.cs">
+      <DependentUpon>Uri.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -138,6 +143,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Utility.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Uri.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Uri.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

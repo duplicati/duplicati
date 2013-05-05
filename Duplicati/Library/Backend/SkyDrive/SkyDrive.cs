@@ -14,8 +14,6 @@ namespace Duplicati.Library.Backend
         private const string USERNAME_OPTION = "passport-username";
         private const string PASSWORD_OPTION = "passport-password";
 
-        private static readonly Regex URL_PARSER = new Regex("skydrive://(?<rootfolder>[^/]+)(?<prefix>.*)", RegexOptions.IgnoreCase);
-
         private string m_username;
         private string m_password;
         private string m_rootfolder;
@@ -27,12 +25,11 @@ namespace Duplicati.Library.Backend
 
         public SkyDrive(string url, Dictionary<string, string> options)
         {
-            Match m = URL_PARSER.Match(url);
-            if (!m.Success)
-                throw new Exception(string.Format(Strings.SkyDrive.InvalidUrlError, url));
-
-            m_rootfolder = m.Groups["rootfolder"].Value;
-            m_prefix = m.Groups["prefix"].Value;
+            var uri = new Utility.Uri(url);
+            uri.RequireHost();
+            
+            m_rootfolder = uri.Host;
+            m_prefix = "/" + uri.Path;
             if (!m_prefix.EndsWith("/"))
                 m_prefix += "/";
 
@@ -44,7 +41,10 @@ namespace Duplicati.Library.Backend
                 m_username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
                 m_password = options[PASSWORD_OPTION];
-
+            if (!string.IsNullOrEmpty(uri.Username))
+                m_username = uri.Username;
+            if (!string.IsNullOrEmpty(uri.Password))
+                m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
                 throw new Exception(Strings.SkyDrive.MissingUsernameError);

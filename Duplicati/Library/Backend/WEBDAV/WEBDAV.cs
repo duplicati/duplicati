@@ -58,22 +58,17 @@ namespace Duplicati.Library.Backend
 
         public WEBDAV(string url, Dictionary<string, string> options)
         {
-            Uri u = new Uri(url);
+            var u = new Utility.Uri(url);
+            u.RequireHost();
 
-            if (!string.IsNullOrEmpty(u.UserInfo))
+            if (!string.IsNullOrEmpty(u.Username))
             {
                 m_userInfo = new System.Net.NetworkCredential();
-                if (u.UserInfo.IndexOf(":") >= 0)
-                {
-                    m_userInfo.UserName = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
-                    m_userInfo.Password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
-                }
-                else
-                {
-                    m_userInfo.UserName = u.UserInfo;
-                    if (options.ContainsKey("auth-password"))
-                        m_userInfo.Password = options["auth-password"];
-                }
+                m_userInfo.UserName = u.Username;
+                if (!string.IsNullOrEmpty(u.Password))
+                    m_userInfo.Password = u.Password;
+                else if (options.ContainsKey("auth-password"))
+                    m_userInfo.Password = options["auth-password"];
             }
             else
             {
@@ -85,6 +80,10 @@ namespace Duplicati.Library.Backend
                         m_userInfo.Password = options["auth-password"];
                 }
             }
+            
+            //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
+            if (m_userInfo != null)
+                m_userInfo.Domain = "";
 
             m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
             m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, "force-digest-authentication");
@@ -94,20 +93,18 @@ namespace Duplicati.Library.Backend
             if (!m_url.EndsWith("/"))
                 m_url += "/";
 
-            m_path = new Uri(m_url).PathAndQuery;
-            if (m_path.IndexOf("?") > 0)
-                m_path = m_path.Substring(0, m_path.IndexOf("?"));
+            m_path = u.Path;
 
             m_path = System.Web.HttpUtility.UrlDecode(m_path);
-            m_rawurl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
+            m_rawurl = new Utility.Uri(m_useSSL ? "https://" : "http://", u.Host, m_path).ToString();
 
             int port = u.Port;
             if (port <= 0)
                 port = m_useSSL ? 443 : 80;
 
-            m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + port + m_path;
-			m_sanitizedUrl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
-			m_reverseProtocolUrl = (m_useSSL ? "http://" : "https://") + u.Host + m_path;
+            m_rawurlPort = new Utility.Uri(m_useSSL ? "https://" : "http://", u.Host, m_path, null, null, null, port).ToString();
+			m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https://" : "http://", u.Host, m_path).ToString();
+			m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http://" : "https://", u.Host, m_path).ToString();
             options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 

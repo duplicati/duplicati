@@ -346,7 +346,7 @@ namespace Duplicati.Library.Modules.Builtin
                         throw new IOException(string.Format(Strings.SendMail.FailedToLookupMXServer, OPTION_SERVER));
                 }
 
-                var serverUri = new Uri(server);
+                var serverUri = new System.Uri(server);
                 var useTls = string.Equals(serverUri.Scheme, "smtptls", StringComparison.InvariantCultureIgnoreCase) || string.Equals(serverUri.Scheme, "tls", StringComparison.InvariantCultureIgnoreCase);
                 var port = serverUri.Port <= 0 ? (useTls ? 587 : 25) : serverUri.Port;
                 var client = new SmtpClient(serverUri.Host, port);

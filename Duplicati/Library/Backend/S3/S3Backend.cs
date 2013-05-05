@@ -69,7 +69,6 @@ namespace Duplicati.Library.Backend
         private string m_bucket;
         private string m_prefix;
 
-        private readonly System.Text.RegularExpressions.Regex URL_PARSING = new Regex("s3://(?<hostname>[^/]+)(/(?<prefix>.+))?", RegexOptions.IgnoreCase); 
         public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
         public const string S3_EU_REGION_NAME = "eu-west-1";
 
@@ -85,13 +84,11 @@ namespace Duplicati.Library.Backend
 
         public S3(string url, Dictionary<string, string> options)
         {
-            //We need to do custom parsing because we allow non-valid urls
-            System.Text.RegularExpressions.Match m = URL_PARSING.Match(url);
-            if (!m.Success)
-                throw new Exception(string.Format(Strings.S3Backend.UnableToParseURLError, url));
-
-            string host = m.Groups["hostname"].Value;
-            m_prefix = m.Groups["prefix"].Value;
+            var uri = new Utility.Uri(url);
+            uri.RequireHost();
+            
+            string host = uri.Host;
+            m_prefix = uri.Path;
 
             string awsID = null;
             string awsKey = null;
@@ -105,6 +102,15 @@ namespace Duplicati.Library.Backend
                 awsID = options["aws_access_key_id"];
             if (options.ContainsKey("aws_secret_access_key"))
                 awsKey = options["aws_secret_access_key"];
+            if (!string.IsNullOrEmpty(uri.Username))
+                awsID = uri.Username;
+            if (!string.IsNullOrEmpty(uri.Password))
+                awsKey = uri.Password;
+
+            if (string.IsNullOrEmpty(awsID))
+                throw new Exception(Strings.S3Backend.NoAMZUserIDError);
+            if (string.IsNullOrEmpty(awsKey))
+                throw new Exception(Strings.S3Backend.NoAMZKeyError);
 
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
             bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
@@ -180,11 +186,6 @@ namespace Duplicati.Library.Backend
                 m_bucket = host;
                 host = s3host;
             }
-
-            if (string.IsNullOrEmpty(awsID))
-                throw new Exception(Strings.S3Backend.NoAMZUserIDError);
-            if (string.IsNullOrEmpty(awsKey))
-                throw new Exception(Strings.S3Backend.NoAMZKeyError);
 
             m_options = options;
             m_prefix = m_prefix.Trim();

@@ -54,6 +54,8 @@ namespace Duplicati.Library.Backend
 
         public CloudFiles(string url, Dictionary<string, string> options)
         {
+            var uri = new Utility.Uri(url);
+            
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -63,6 +65,11 @@ namespace Duplicati.Library.Backend
                 m_username = options["cloudfiles-username"];
             if (options.ContainsKey("cloudfiles-accesskey"))
                 m_password = options["cloudfiles-accesskey"];
+            
+            if (!string.IsNullOrEmpty(uri.Username))
+                m_username = uri.Username;
+            if (!string.IsNullOrEmpty(uri.Password))
+                m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
                 throw new Exception(Strings.CloudFiles.NoUserIDError);
@@ -98,11 +105,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                System.Text.RegularExpressions.Match m = URL_PARSING.Match(url);
-                if (!m.Success)
-                    throw new Exception(string.Format(Strings.CloudFiles.InvalidUrlError, url));
-
-                m_path = m.Groups["path"].Value;
+                m_path = uri.HostAndPath;
             }
 
             if (m_path.EndsWith("/"))

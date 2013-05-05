@@ -50,44 +50,29 @@ namespace Duplicati.Library.Backend
             : this()
         {
             m_options = options;
-            Uri u = new Uri(url);
-            if (!string.IsNullOrEmpty(u.UserInfo))
-            {
-                if (u.UserInfo.IndexOf(":") >= 0)
-                {
-                    m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
-                    m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
-                }
-                else
-                {
-                    m_username = u.UserInfo;
-                    if (options.ContainsKey("auth-password"))
-                        m_password = options["auth-password"];
-                }
-            }
-            else
-            {
-                if (options.ContainsKey("auth-username"))
-                    m_username = options["auth-username"];
-                if (options.ContainsKey("auth-password"))
-                    m_password = options["auth-password"];
-            }
+            var uri = new Utility.Uri(url);
+            uri.RequireHost();
+            
+            if (options.ContainsKey("auth-username"))
+                m_username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                m_password = options["auth-password"];
+            if (!string.IsNullOrEmpty(uri .Username))
+                m_username = uri.Username;
+            if (!string.IsNullOrEmpty(uri .Password))
+                m_password = uri.Password;
 
-            m_path = u.AbsolutePath;
-
-            //Remove 1 leading slash so server/path is mapped to "path",
-            // and server//path is mapped to "/path"
-            m_path = m_path.Substring(1);
+            m_path = uri.Path;
 
             if (!m_path.EndsWith("/"))
                 m_path += "/";
 
-            m_server = u.Host;
+            m_server = uri.Host;
 
-            if (!u.IsDefaultPort)
+            if (uri.Port > 0 && uri.Port != m_port)
             {
-                m_ssh_options += " -P " + u.Port;
-                m_port = u.Port;
+                m_ssh_options += " -P " + uri.Port;
+                m_port = uri.Port;
             }
         }
 
