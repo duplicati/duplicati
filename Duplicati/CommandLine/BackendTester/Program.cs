@@ -146,9 +146,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         try
                         {
-                            if (backend is IBackend_v2)
-                                ((IBackend_v2)backend).CreateFolder();
-
+                            backend.CreateFolder();
                             curlist = backend.List();
                         }
                         catch (Exception ex)

@@ -29,7 +29,7 @@ namespace Duplicati.Library.Encryption
     /// <summary>
     /// Implements AES encryption
     /// </summary>
-    public class AESEncryption : EncryptionBase, IEncryptionGUI, IGUIMiniControl
+    public class AESEncryption : EncryptionBase
     {
         #region Commandline option constants
         /// <summary>
@@ -134,39 +134,6 @@ namespace Duplicati.Library.Encryption
                     new CommandLineArgument(COMMAND_LINE_FALLBACK, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptionallowfallbackdecryptionShort, Strings.AESEncryption.AesencryptionallowfallbackdecryptionLong, "false"),
                 });
             }
-        }
-
-        #endregion
-
-        #region IGUIControl Members
-
-        public string PageTitle
-        {
-            get { return this.DisplayName; }
-        }
-
-        public string PageDescription
-        {
-            get { return this.Description; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new System.Windows.Forms.Control();
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return true;
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return null;
         }
 
         #endregion

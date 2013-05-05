@@ -26,7 +26,7 @@ using Renci.SshNet;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSHv2 : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class SSHv2 : IBackend, IStreamingBackend
     {
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
 
@@ -91,7 +91,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #region IBackend_v2 Implementation
+        #region IBackend Members
         
         public void Test()
         {
@@ -180,40 +180,6 @@ namespace Duplicati.Library.Backend
         public void Get(string remotename, System.IO.Stream stream)
         {
             CreateConnection(true).DownloadFile(remotename, stream);
-        }
-
-        #endregion
-
-        #region IBackendGUI Implementation
-
-        public string PageTitle
-        {
-            get { return SSHv2UI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return SSHv2UI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new SSHv2UI(applicationSettings, options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((SSHv2UI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((SSHv2UI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return SSHv2UI.GetConfiguration(applicationSettings, guiOptions, commandlineOptions);
         }
 
         #endregion

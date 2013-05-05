@@ -97,9 +97,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count != 2)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
 
-                        if (!(backend is IBackend_v2))
-                            throw new Exception(string.Format("{0} backend does not support creating folders", backend.ProtocolKey));
-                        ((IBackend_v2)backend).CreateFolder();
+                        backend.CreateFolder();
                         
                         return 0;
                     }

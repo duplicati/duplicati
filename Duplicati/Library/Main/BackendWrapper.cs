@@ -45,10 +45,6 @@ namespace Duplicati.Library.Main
         /// used to prevent disposing the initally created backend
         /// </summary>
         private bool m_first_backend_use;
-        /// <summary>
-        /// A flag indicating if the backend can create folders
-        /// </summary>
-        private bool m_backendSupportsCreateFolder;
 
         /// <summary>
         /// The statistics gathering object
@@ -237,7 +233,6 @@ namespace Duplicati.Library.Main
 
             m_reuse_backend = !m_options.NoConnectionReuse;
             m_first_backend_use = true;
-            m_backendSupportsCreateFolder = m_backend is Library.Interface.IBackend_v2;
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
@@ -1137,13 +1132,13 @@ namespace Duplicati.Library.Main
                         m_backendInterfaceLogger.RegisterList(null, false, ex.ToString());
                     DisposeBackend();
 
-                    if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
+                    if (ex is Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                     {
                         ResetBackend();
                         try
                         {
                             m_statistics.AddNumberOfRemoteCalls(1);
-                            ((Library.Interface.IBackend_v2)m_backend).CreateFolder();
+                            m_backend.CreateFolder();
                         }
                         catch(Exception exc) 
                         {
@@ -1622,7 +1617,7 @@ namespace Duplicati.Library.Main
             try
             {
                 ResetBackend();
-                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+                m_backend.CreateFolder();
                 if (m_backendInterfaceLogger != null)
                     m_backendInterfaceLogger.RegisterCreateFolder(true, null);
             } catch (Exception ex) {
@@ -1635,10 +1630,7 @@ namespace Duplicati.Library.Main
 
         public void CreateFolder()
         {
-            if (m_backendSupportsCreateFolder)
-                ProtectedInvoke("CreateFolderInternal");
-            else
-                throw new Exception(string.Format(Strings.BackendWrapper.BackendDoesNotSupportCreateFolder, m_backend.DisplayName, m_backend.ProtocolKey));
+            ProtectedInvoke("CreateFolderInternal");
         }
 
         /// <summary>

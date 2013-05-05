@@ -125,8 +125,7 @@ namespace Duplicati.Server
             env["backend-module"] = this.Task.Service;
 
             //If there are any control extensions, let them modify the environment
-            foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
-                ic.GetConfiguration(env, SettingExtension.GetExtensions(this.Task.Schedule.DataParent, ic.Key), options);
+            //TODO: Define how we get application wide settings
 
             //Setup encryption module
             SetupEncryptionModule(env, this.Task.EncryptionSettingsLookup, options);
@@ -152,42 +151,16 @@ namespace Duplicati.Server
 
         protected virtual void SetupEncryptionModule(Dictionary<string, string> env, IDictionary<string, string> guiOptions, Dictionary<string, string> options)
         {
-            foreach (Library.Interface.IEncryption e in Library.DynamicLoader.EncryptionLoader.Modules)
-                if (e.FilenameExtension == this.Task.EncryptionModule)
-                {
-                    if (e is Library.Interface.IEncryptionGUI)
-                    {
-                        (e as Library.Interface.IEncryptionGUI).GetConfiguration(env, guiOptions, options);
-                    }
-                    else
-                    {
-                        foreach (string k in guiOptions.Keys)
-                            if (k.StartsWith("--"))
-                                options[k.Substring(2)] = guiOptions[k];
-                    }
-
-                    return;
-                }
+            foreach (string k in guiOptions.Keys)
+                if (k.StartsWith("--"))
+                    options[k.Substring(2)] = guiOptions[k];
         }
 
         protected virtual void SetupCompressionModule(Dictionary<string, string> env, IDictionary<string, string> guiOptions, Dictionary<string, string> options)
         {
-            foreach (Library.Interface.ICompression e in Library.DynamicLoader.CompressionLoader.Modules)
-                if (e.FilenameExtension == this.Task.CompressionModule)
-                {
-                    if (e is Library.Interface.ICompressionGUI)
-                    {
-                        (e as Library.Interface.ICompressionGUI).GetConfiguration(env, guiOptions, options);
-                    }
-                    else
-                    {
-                        foreach (string k in guiOptions.Keys)
-                            if (k.StartsWith("--"))
-                                options[k.Substring(2)] = guiOptions[k];
-                    }
-
-                    return;
-                }
+            foreach (string k in guiOptions.Keys)
+                if (k.StartsWith("--"))
+                    options[k.Substring(2)] = guiOptions[k];
         }
 
         protected virtual void SetupSchedule(Dictionary<string, string> options)
@@ -255,23 +228,14 @@ namespace Duplicati.Server
             if (selectedBackend == null)
                 throw new Exception("Missing backend");
 
-            string destination;
-            if (selectedBackend is Library.Interface.IBackendGUI)
-            {
-                //Simply invoke the backends setup function
-                destination = ((Library.Interface.IBackendGUI)selectedBackend).GetConfiguration(environment, this.Task.BackendSettingsLookup, options);
-            }
-            else
-            {
-                //We store destination with the key "Destination" and other options with the -- prefix
-                if (!options.ContainsKey(DESTINATION_EXTENSION_KEY))
-                    throw new Exception("Invalid configuration");
+            //We store destination with the key "Destination" and other options with the -- prefix
+            if (!options.ContainsKey(DESTINATION_EXTENSION_KEY))
+                throw new Exception("Invalid configuration");
 
-                destination = options[DESTINATION_EXTENSION_KEY];
-                foreach (KeyValuePair<string, string> k in this.Task.BackendSettingsLookup)
-                    if (k.Key.StartsWith("--")) //All options are prefixed with this
-                        options[k.Key.Substring(2)] = k.Value;
-            }
+            string destination = options[DESTINATION_EXTENSION_KEY];
+            foreach (KeyValuePair<string, string> k in this.Task.BackendSettingsLookup)
+                if (k.Key.StartsWith("--")) //All options are prefixed with this
+                    options[k.Key.Substring(2)] = k.Value;
 
             return destination;
         }

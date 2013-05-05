@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class CloudFiles : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class CloudFiles : IBackend, IStreamingBackend
     {
         public const string AUTH_URL_US = "https://api.mosso.com/auth";
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
@@ -408,40 +408,5 @@ namespace Duplicati.Library.Backend
         {
             return System.Web.HttpUtility.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
         }
-
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return CloudFilesUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return CloudFilesUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new CloudFilesUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((CloudFilesUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((CloudFilesUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return CloudFilesUI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
     }
 }

@@ -9,7 +9,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class GoogleDocs : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class GoogleDocs : IBackend, IStreamingBackend
     {
         private const string USERNAME_OPTION = "google-username";
         private const string PASSWORD_OPTION = "google-password";
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Backend
         }
 
 
-        #region IBackend_v2 Members
+        #region IBackend Members
 
         public void Test()
         {
@@ -260,10 +260,6 @@ namespace Duplicati.Library.Backend
                 parentfolder = docs[curfolder];
             }
         }
-
-        #endregion
-
-        #region IBackend Members
 
         public string DisplayName
         {
@@ -633,40 +629,6 @@ namespace Duplicati.Library.Backend
             {
                 throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
             }
-        }
-
-        #endregion
-
-        #region IGUIControl Members
-
-        public string PageTitle
-        {
-            get { return GoogleDocsUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return GoogleDocsUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new GoogleDocsUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((GoogleDocsUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((GoogleDocsUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return GoogleDocsUI.GetConfiguration(guiOptions, commandlineOptions);
         }
 
         #endregion

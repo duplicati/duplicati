@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class FTP : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class FTP : IBackend, IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
         private readonly string m_url;
@@ -311,6 +311,21 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public void Test()
+        {
+            List();
+        }
+
+        public void CreateFolder()
+        {
+            System.Net.FtpWebRequest req = CreateRequest("", true);
+            req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
+            req.KeepAlive = false;
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (areq.GetResponse())
+            { }
+        }
+
         #endregion
 
         #region IDisposable Members
@@ -348,59 +363,6 @@ namespace Duplicati.Library.Backend
 
             return req;
         }
-
-        #region IBackend_v2 Members
-
-        public void Test()
-        {
-            List();
-        }
-
-        public void CreateFolder()
-        {
-            System.Net.FtpWebRequest req = CreateRequest("", true);
-            req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
-            req.KeepAlive = false;
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (areq.GetResponse())
-            { }
-        }
-
-        #endregion
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return FTPUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return FTPUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new FTPUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((FTPUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((FTPUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return FTPUI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
 
         /// <summary>
         /// Private helper class to fix a bug with the StreamReader

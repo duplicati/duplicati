@@ -45,23 +45,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CloudFiles.cs" />
-    <Compile Include="CloudFilesUI.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="CloudFilesUI.Designer.cs">
-      <DependentUpon>CloudFilesUI.cs</DependentUpon>
-    </Compile>
     <Compile Include="MD5CalculatingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings\CloudFiles.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>CloudFiles.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\CloudFilesUI.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>CloudFilesUI.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\MD5CalculatingStream.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -70,10 +59,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
-      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
-      <Name>Duplicati.Winforms.Controls</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
@@ -84,17 +69,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="CloudFilesUI.resx">
-      <DependentUpon>CloudFilesUI.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\CloudFiles.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>CloudFiles.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\CloudFilesUI.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>CloudFilesUI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\MD5CalculatingStream.resx">
       <SubType>Designer</SubType>

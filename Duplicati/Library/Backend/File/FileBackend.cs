@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IBackend_v2, IStreamingBackend, IBackendGUI, IQuotaEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -281,10 +281,6 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion
-
-        #region IBackend_v2 Members
-
         public void Test()
         {
             List();
@@ -316,40 +312,6 @@ namespace Duplicati.Library.Backend
         {
             return Win32.PreAuthenticate(path, username, password);
         }
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return FileUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return FileUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new FileUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((FileUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((FileUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return FileUI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
 
         private System.IO.DriveInfo GetDrive()
         {

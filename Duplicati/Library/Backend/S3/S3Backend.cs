@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class S3 : IBackend, IStreamingBackend
     {
         public const string RRS_OPTION = "s3-use-rrs";
         public const string EU_BUCKETS_OPTION = "s3-european-buckets";
@@ -339,10 +339,6 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion
-
-        #region IBackend_v2 Members
-
         public void Test()
         {
             List();
@@ -381,40 +377,5 @@ namespace Duplicati.Library.Backend
             //AWS SDK encodes the filenames correctly
             return m_prefix + name;
         }
-
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return S3UI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return S3UI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new S3UI(applicationSettings, options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((S3UI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((S3UI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return S3UI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
     }
 }

@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class WEBDAV : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class WEBDAV : IBackend, IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
@@ -282,10 +282,6 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        #endregion
-
-        #region IBackend_v2 Members
-
         public void Test()
         {
             List();
@@ -415,40 +411,6 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
-        }
-
-        #endregion
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return WebDAVUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return WebDAVUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new WebDAVUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((WebDAVUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((WebDAVUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return WebDAVUI.GetConfiguration(guiOptions, commandlineOptions);
         }
 
         #endregion
