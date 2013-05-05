@@ -49,7 +49,6 @@
     <Compile Include="EncryptionLoader.cs" />
     <Compile Include="GenericLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SettingsControlLoader.cs" />
     <Compile Include="Strings\BackendLoader.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

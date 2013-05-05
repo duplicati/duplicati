@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class CloudFiles : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class CloudFiles : IBackend, IStreamingBackend
     {
         public const string AUTH_URL_US = "https://api.mosso.com/auth";
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
@@ -54,10 +54,10 @@ namespace Duplicati.Library.Backend
 
         public CloudFiles(string url, Dictionary<string, string> options)
         {
-            if (options.ContainsKey("ftp-username"))
-                m_username = options["ftp-username"];
-            if (options.ContainsKey("ftp-password"))
-                m_password = options["ftp-password"];
+            if (options.ContainsKey("auth-username"))
+                m_username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                m_password = options["auth-password"];
 
             if (options.ContainsKey("cloudfiles-username"))
                 m_username = options["cloudfiles-username"];
@@ -224,10 +224,10 @@ namespace Duplicati.Library.Backend
             get 
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionFTPPasswordShort, Strings.CloudFiles.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPUsernameShort, Strings.CloudFiles.DescriptionFTPUsernameLong),
-                    new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
-                    new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionAuthPasswordShort, Strings.CloudFiles.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthUsernameShort, Strings.CloudFiles.DescriptionAuthUsernameLong),
+                    new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong, null, new string[] {"auth-username"} ),
+                    new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong, null, new string[] {"auth-password"}),
                     new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, string.Format(Strings.CloudFiles.DescriptionUKAccountLong, "cloudfiles-authentication-url", AUTH_URL_UK)),
                     new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, string.Format(Strings.CloudFiles.DescriptionAuthenticationURLLong_v2, "cloudfiles-uk-account"), AUTH_URL_US),
                 });
@@ -408,40 +408,5 @@ namespace Duplicati.Library.Backend
         {
             return System.Web.HttpUtility.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
         }
-
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return CloudFilesUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return CloudFilesUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new CloudFilesUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((CloudFilesUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((CloudFilesUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return CloudFilesUI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
     }
 }

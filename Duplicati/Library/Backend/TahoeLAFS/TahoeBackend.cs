@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class TahoeBackend : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class TahoeBackend : IBackend, IStreamingBackend
     {
         private string m_url;
         private bool m_useSSL = false;
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend
             return req;
         }
 
-        #region IBackend_v2 Members
+        #region IBackend Members
 
         public void Test()
         {
@@ -76,10 +76,6 @@ namespace Duplicati.Library.Backend
             using (areq.GetResponse())
             { }
         }
-
-        #endregion
-
-        #region IBackend Members
 
         public string DisplayName
         {
@@ -287,40 +283,6 @@ namespace Duplicati.Library.Backend
                 using (System.IO.Stream s = resp.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream);
             }
-        }
-
-        #endregion
-
-        #region IGUIControl Members
-
-        public string PageTitle
-        {
-            get { return TahoeUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return TahoeUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new TahoeUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((TahoeUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((TahoeUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return TahoeUI.GetConfiguration(guiOptions, commandlineOptions);
         }
 
         #endregion

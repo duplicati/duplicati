@@ -9,7 +9,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class SkyDrive : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class SkyDrive : IBackend, IStreamingBackend
     {
         private const string USERNAME_OPTION = "passport-username";
         private const string PASSWORD_OPTION = "passport-password";
@@ -36,10 +36,10 @@ namespace Duplicati.Library.Backend
             if (!m_prefix.EndsWith("/"))
                 m_prefix += "/";
 
-            if (options.ContainsKey("ftp-username"))
-                m_username = options["ftp-username"];
-            if (options.ContainsKey("ftp-password"))
-                m_password = options["ftp-password"];
+            if (options.ContainsKey("auth-username"))
+                m_username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                m_password = options["auth-password"];
             if (options.ContainsKey(USERNAME_OPTION))
                 m_username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Backend
             return m_session;
         }
 
-        #region IBackend_v2 Members
+        #region IBackend Members
 
         public void Test()
         {
@@ -75,10 +75,6 @@ namespace Duplicati.Library.Backend
             using (SkyDriveSession session = CreateSession(true))
             { }
         }
-
-        #endregion
-
-        #region IBackend Members
 
         public string DisplayName
         {
@@ -117,10 +113,10 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionFTPPasswordShort, Strings.SkyDrive.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionFTPUsernameShort, Strings.SkyDrive.DescriptionFTPUsernameLong),
-                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionPassportPasswordShort, Strings.SkyDrive.DescriptionPassportPasswordLong, null, new string[] {"ftp-password"}),
-                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionPassportUsernameShort, Strings.SkyDrive.DescriptionPassportUsernameLong, null, new string[] {"ftp-username"}),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionAuthPasswordShort, Strings.SkyDrive.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionAuthUsernameShort, Strings.SkyDrive.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionPassportPasswordShort, Strings.SkyDrive.DescriptionPassportPasswordLong, null, new string[] {"auth-password"}),
+                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionPassportUsernameShort, Strings.SkyDrive.DescriptionPassportUsernameLong, null, new string[] {"auth-username"}),
                 });
             }
         }
@@ -152,40 +148,6 @@ namespace Duplicati.Library.Backend
             using (System.Net.HttpWebResponse resp = CreateSession(false).DownloadFile(remotename))
                 using (System.IO.Stream s = resp.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream);
-        }
-
-        #endregion
-
-        #region IGUIControl Members
-
-        public string PageTitle
-        {
-            get { return SkyDriveUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return SkyDriveUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new SkyDriveUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((SkyDriveUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((SkyDriveUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return SkyDriveUI.GetConfiguration(guiOptions, commandlineOptions);
         }
 
         #endregion

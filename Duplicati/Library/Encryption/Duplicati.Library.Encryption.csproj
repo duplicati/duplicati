@@ -46,13 +46,6 @@
     <Compile Include="AESEncryption.cs" />
     <Compile Include="CryptoStreamWrapper.cs" />
     <Compile Include="EncryptionBase.cs" />
-    <Compile Include="GPGCommonOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="GPGCommonOptions.Designer.cs">
-      <DependentUpon>GPGCommonOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="GPGSettingsControl.cs" />
     <Compile Include="GPGStreamWrapper.cs" />
     <Compile Include="GPGEncryption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -103,9 +96,6 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="GPGCommonOptions.resx">
-      <DependentUpon>GPGCommonOptions.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\AESEncryption.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>

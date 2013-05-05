@@ -27,7 +27,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Commandlineparameters>backup --volsize=100mb Z:\2013 webdavs://sd2dav.1und1.de:443/2013-fh?ftp-username=me@renestach.de&amp;ftp-password=secret --passphrase=123456 --fh-dbpath=C:\Users\Stach\Desktop\2013-fh.sqlite --debug-output</Commandlineparameters>
+    <Commandlineparameters>UNITTEST ~/DSMCBE/r50 ~/DSMCBE/r100 --no-encryption --verbose --fh</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

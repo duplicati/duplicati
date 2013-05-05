@@ -9,7 +9,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class GoogleDocs : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class GoogleDocs : IBackend, IStreamingBackend
     {
         private const string USERNAME_OPTION = "google-username";
         private const string PASSWORD_OPTION = "google-password";
@@ -52,10 +52,10 @@ namespace Duplicati.Library.Backend
             string username = null;
             string password = null;
 
-            if (options.ContainsKey("ftp-username"))
-                username = options["ftp-username"];
-            if (options.ContainsKey("ftp-password"))
-                password = options["ftp-password"];
+            if (options.ContainsKey("auth-username"))
+                username = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                password = options["auth-password"];
             if (options.ContainsKey(USERNAME_OPTION))
                 username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Backend
         }
 
 
-        #region IBackend_v2 Members
+        #region IBackend Members
 
         public void Test()
         {
@@ -260,10 +260,6 @@ namespace Duplicati.Library.Backend
                 parentfolder = docs[curfolder];
             }
         }
-
-        #endregion
-
-        #region IBackend Members
 
         public string DisplayName
         {
@@ -341,10 +337,10 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionFTPPasswordShort, Strings.GoogleDocs.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionFTPUsernameShort, Strings.GoogleDocs.DescriptionFTPUsernameLong),
-                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGooglePasswordShort, Strings.GoogleDocs.DescriptionGooglePasswordLong, null, new string[] {"ftp-password"}),
-                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionGoogleUsernameShort, Strings.GoogleDocs.DescriptionGoogleUsernameLong, null, new string[] {"ftp-username"}),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionAuthPasswordShort, Strings.GoogleDocs.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionAuthUsernameShort, Strings.GoogleDocs.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGooglePasswordShort, Strings.GoogleDocs.DescriptionGooglePasswordLong, null, new string[] {"auth-password"}),
+                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionGoogleUsernameShort, Strings.GoogleDocs.DescriptionGoogleUsernameLong, null, new string[] {"auth-username"}),
                     new CommandLineArgument(ATTRIBUTES_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGoogleLabelsShort, string.Format(Strings.GoogleDocs.DescriptionGoogleLabelsLong, string.Join(",", KNOWN_LABELS)), DEFAULT_LABELS),
                 });
             }
@@ -633,40 +629,6 @@ namespace Duplicati.Library.Backend
             {
                 throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
             }
-        }
-
-        #endregion
-
-        #region IGUIControl Members
-
-        public string PageTitle
-        {
-            get { return GoogleDocsUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return GoogleDocsUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new GoogleDocsUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((GoogleDocsUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((GoogleDocsUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return GoogleDocsUI.GetConfiguration(guiOptions, commandlineOptions);
         }
 
         #endregion

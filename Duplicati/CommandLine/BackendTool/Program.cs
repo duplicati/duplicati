@@ -33,11 +33,11 @@ namespace Duplicati.CommandLine.BackendTool
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
-                if (!options.ContainsKey("ftp_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
-                    options["ftp_password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
+                if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
+                    options["auth_password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
 
-                if (!options.ContainsKey("ftp_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
-                    options["ftp_username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
+                if (!options.ContainsKey("auth_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
+                    options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
@@ -97,9 +97,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count != 2)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
 
-                        if (!(backend is IBackend_v2))
-                            throw new Exception(string.Format("{0} backend does not support creating folders", backend.ProtocolKey));
-                        ((IBackend_v2)backend).CreateFolder();
+                        backend.CreateFolder();
                         
                         return 0;
                     }

@@ -49,19 +49,6 @@
   <ItemGroup>
     <Compile Include="S3Backend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="S3CommonOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="S3CommonOptions.Designer.cs">
-      <DependentUpon>S3CommonOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="S3SettingsControl.cs" />
-    <Compile Include="S3UI.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="S3UI.designer.cs">
-      <DependentUpon>S3UI.cs</DependentUpon>
-    </Compile>
     <Compile Include="S3Wrapper.cs" />
     <Compile Include="Strings\S3Backend.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -73,17 +60,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>S3SettingsControl.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\S3UI.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>S3UI.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
-      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
-      <Name>Duplicati.Winforms.Controls</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
@@ -98,12 +76,6 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="S3CommonOptions.resx">
-      <DependentUpon>S3CommonOptions.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="S3UI.resx">
-      <DependentUpon>S3UI.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\S3Backend.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -112,10 +84,6 @@
     <EmbeddedResource Include="Strings\S3SettingsControl.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>S3SettingsControl.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\S3UI.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>S3UI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -44,30 +44,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileBackend.cs" />
-    <Compile Include="FileUI.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="FileUI.designer.cs">
-      <DependentUpon>FileUI.cs</DependentUpon>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings\FileBackend.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>FileBackend.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\FileUI.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FileUI.resx</DependentUpon>
-    </Compile>
     <Compile Include="Win32.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
-      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
-      <Name>Duplicati.Winforms.Controls</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
@@ -82,17 +67,10 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="FileUI.resx">
-      <DependentUpon>FileUI.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\FileBackend.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FileBackend.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\FileUI.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>FileUI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

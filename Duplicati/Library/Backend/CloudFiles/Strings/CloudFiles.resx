@@ -123,16 +123,16 @@
   <data name="DescriptionAuthenticationURLShort" xml:space="preserve">
     <value>Provide another authentication URL</value>
   </data>
-  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
+  <data name="DescriptionAuthPasswordLong" xml:space="preserve">
+    <value>The password used to connect to the server. This may also be supplied as the environment variable "AUTH_PASSWORD".</value>
   </data>
-  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
+  <data name="DescriptionAuthPasswordShort" xml:space="preserve">
     <value>Supplies the password used to connect to the server</value>
   </data>
-  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
-    <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
+  <data name="DescriptionAuthUsernameLong" xml:space="preserve">
+    <value>The username used to connect to the server. This may also be supplied as the environment variable "AUTH_USERNAME".</value>
   </data>
-  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
+  <data name="DescriptionAuthUsernameShort" xml:space="preserve">
     <value>Supplies the username used to connect to the server</value>
   </data>
   <data name="DescriptionPasswordLong" xml:space="preserve">

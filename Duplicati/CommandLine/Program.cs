@@ -123,13 +123,13 @@ namespace Duplicati.CommandLine
                     if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
                         options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
 
-                if (!options.ContainsKey("ftp-password"))
-                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
-                        options["ftp-password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
+                if (!options.ContainsKey("auth-password"))
+                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
+                        options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
 
-                if (!options.ContainsKey("ftp-username"))
-                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
-                        options["ftp-username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
+                if (!options.ContainsKey("auth-username"))
+                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
+                        options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["purge-signature-cache"] = Commands.PurgeSignatureCache;

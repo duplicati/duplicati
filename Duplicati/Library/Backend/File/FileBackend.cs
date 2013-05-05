@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IBackend_v2, IStreamingBackend, IBackendGUI, IQuotaEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -52,10 +52,10 @@ namespace Duplicati.Library.Backend
                     if (m_username.Contains("/") || m_username.Contains("\\") || m_username.Contains(System.IO.Path.DirectorySeparatorChar.ToString()))
                     {
                         m_username = null;
-                        if (options.ContainsKey("ftp-username"))
-                            m_username = options["ftp-username"];
-                        if (options.ContainsKey("ftp-password"))
-                            m_password = options["ftp-password"];
+                        if (options.ContainsKey("auth-username"))
+                            m_username = options["auth-username"];
+                        if (options.ContainsKey("auth-password"))
+                            m_password = options["auth-password"];
                     }
                     else
                     {
@@ -68,17 +68,17 @@ namespace Duplicati.Library.Backend
                         }
                         else
                         {
-                            if (options.ContainsKey("ftp-password"))
-                                m_password = options["ftp-password"];
+                            if (options.ContainsKey("auth-password"))
+                                m_password = options["auth-password"];
                         }
                     }
                 }
                 else
                 {
-                    if (options.ContainsKey("ftp-username"))
-                        m_username = options["ftp-username"];
-                    if (options.ContainsKey("ftp-password"))
-                        m_password = options["ftp-password"];
+                    if (options.ContainsKey("auth-username"))
+                        m_username = options["auth-username"];
+                    if (options.ContainsKey("auth-password"))
+                        m_password = options["auth-password"];
                 }
             }
             else
@@ -86,10 +86,10 @@ namespace Duplicati.Library.Backend
                 m_path = url;
 
                 //Non-url format paths cannot contain extra arguments
-                if (options.ContainsKey("ftp-username"))
-                    m_username = options["ftp-username"];
-                if (options.ContainsKey("ftp-password"))
-                    m_password = options["ftp-password"];
+                if (options.ContainsKey("auth-username"))
+                    m_username = options["auth-username"];
+                if (options.ContainsKey("auth-password"))
+                    m_password = options["auth-password"];
             }
 
             if (!System.IO.Path.IsPathRooted(m_path))
@@ -263,8 +263,8 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionFTPPasswordShort, Strings.FileBackend.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPUsernameShort, Strings.FileBackend.DescriptionFTPUsernameLong),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionAuthPasswordShort, Strings.FileBackend.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionAuthUsernameShort, Strings.FileBackend.DescriptionAuthUsernameLong),
                     new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, string.Format(Strings.FileBackend.AlternateDestinationMarkerLong, OPTION_ALTERNATE_PATHS)),
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, string.Format(Strings.FileBackend.AlternateTargetPathsLong, OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
@@ -280,10 +280,6 @@ namespace Duplicati.Library.Backend
                 return Strings.FileBackend.Description;
             }
         }
-
-        #endregion
-
-        #region IBackend_v2 Members
 
         public void Test()
         {
@@ -316,40 +312,6 @@ namespace Duplicati.Library.Backend
         {
             return Win32.PreAuthenticate(path, username, password);
         }
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return FileUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return FileUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new FileUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((FileUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((FileUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return FileUI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
 
         private System.IO.DriveInfo GetDrive()
         {

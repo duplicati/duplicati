@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class FTP : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class FTP : IBackend, IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
         private readonly string m_url;
@@ -65,18 +65,18 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     m_userInfo.UserName = u.UserInfo;
-                    if (options.ContainsKey("ftp-password"))
-                        m_userInfo.Password = options["ftp-password"];
+                    if (options.ContainsKey("auth-password"))
+                        m_userInfo.Password = options["auth-password"];
                 }
             }
             else
             {
-                if (options.ContainsKey("ftp-username"))
+                if (options.ContainsKey("auth-username"))
                 {
                     m_userInfo = new System.Net.NetworkCredential();
-                    m_userInfo.UserName = options["ftp-username"];
-                    if (options.ContainsKey("ftp-password"))
-                        m_userInfo.Password = options["ftp-password"];
+                    m_userInfo.UserName = options["auth-username"];
+                    if (options.ContainsKey("auth-password"))
+                        m_userInfo.Password = options["auth-password"];
                 }
             }
 
@@ -295,8 +295,8 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("ftp-passive", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPPassiveShort, Strings.FTPBackend.DescriptionFTPPassiveLong, "false"),
                     new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPActiveShort, Strings.FTPBackend.DescriptionFTPActiveLong, "true"),
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.FTPBackend.DescriptionFTPPasswordShort, Strings.FTPBackend.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FTPBackend.DescriptionAuthPasswordShort, Strings.FTPBackend.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionAuthUsernameShort, Strings.FTPBackend.DescriptionAuthUsernameLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
                     new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionDisableUploadVerifyShort, Strings.FTPBackend.DescriptionDisableUploadVerifyLong),
                 });
@@ -309,6 +309,21 @@ namespace Duplicati.Library.Backend
             {
                 return Strings.FTPBackend.Description;
             }
+        }
+
+        public void Test()
+        {
+            List();
+        }
+
+        public void CreateFolder()
+        {
+            System.Net.FtpWebRequest req = CreateRequest("", true);
+            req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
+            req.KeepAlive = false;
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (areq.GetResponse())
+            { }
         }
 
         #endregion
@@ -348,59 +363,6 @@ namespace Duplicati.Library.Backend
 
             return req;
         }
-
-        #region IBackend_v2 Members
-
-        public void Test()
-        {
-            List();
-        }
-
-        public void CreateFolder()
-        {
-            System.Net.FtpWebRequest req = CreateRequest("", true);
-            req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
-            req.KeepAlive = false;
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (areq.GetResponse())
-            { }
-        }
-
-        #endregion
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return FTPUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return FTPUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new FTPUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((FTPUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((FTPUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return FTPUI.GetConfiguration(guiOptions, commandlineOptions);
-        }
-
-        #endregion
 
         /// <summary>
         /// Private helper class to fix a bug with the StreamReader

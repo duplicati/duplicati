@@ -74,9 +74,9 @@ namespace Duplicati.CommandLine
         {
             //Place a file called "unittest_target.txt" in the bin folder, and enter a connection string like "ftp://username:password@example.com"
 
-            string ftp_password = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_ftppassword.txt");
-            if (System.IO.File.Exists(ftp_password))
-                options["ftp-password"] = System.IO.File.ReadAllText(ftp_password).Trim();
+            string auth_password = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_authpassword.txt");
+            if (System.IO.File.Exists(auth_password))
+                options["auth-password"] = System.IO.File.ReadAllText(auth_password).Trim();
 
             string alttarget = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_target.txt");
             if (System.IO.File.Exists(alttarget))

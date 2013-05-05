@@ -62,42 +62,20 @@
   <ItemGroup>
     <Compile Include="GoogleDocs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="GoogleDocsUI.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="GoogleDocsUI.Designer.cs">
-      <DependentUpon>GoogleDocsUI.cs</DependentUpon>
-    </Compile>
     <Compile Include="Strings\GoogleDocs.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>GoogleDocs.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\GoogleDocsUI.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>GoogleDocsUI.resx</DependentUpon>
-    </Compile>
     <Compile Include="TaggedFileEntry.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="GoogleDocsUI.resx">
-      <DependentUpon>GoogleDocsUI.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\GoogleDocs.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>GoogleDocs.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Strings\GoogleDocsUI.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>GoogleDocsUI.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
-      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
-      <Name>Duplicati.Winforms.Controls</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>

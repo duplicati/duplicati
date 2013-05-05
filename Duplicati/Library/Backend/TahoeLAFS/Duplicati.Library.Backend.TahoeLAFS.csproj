@@ -61,9 +61,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>TahoeUI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="TahoeUI.resx">
-      <DependentUpon>TahoeUI.cs</DependentUpon>
-    </EmbeddedResource>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
@@ -90,12 +87,6 @@
       <DependentUpon>TahoeUI.resx</DependentUpon>
     </Compile>
     <Compile Include="TahoeBackend.cs" />
-    <Compile Include="TahoeUI.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="TahoeUI.designer.cs">
-      <DependentUpon>TahoeUI.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">

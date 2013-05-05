@@ -28,7 +28,7 @@ namespace Duplicati.Library.Encryption
     /// <summary>
     /// Implements a encryption/decryption with the GNU Privacy Guard (GPG)
     /// </summary>
-    public class GPGEncryption : EncryptionBase, IEncryptionGUI ,IGUIMiniControl
+    public class GPGEncryption : EncryptionBase
     {
         #region Commandline option constants
         /// <summary>
@@ -300,90 +300,5 @@ namespace Duplicati.Library.Encryption
             Utility.Utility.CopyStream((Stream)tmp[0], (Stream)tmp[1]);
             ((Stream)tmp[1]).Close();
         }
-
-        #region IGUIControl Members
-
-        private class DummyControl : System.Windows.Forms.Control
-        {
-            public IDictionary<string, string> Options;
-            public IDictionary<string, string> ApplicationSettings;
-
-            public DummyControl(IDictionary<string, string> options, IDictionary<string, string> applicationSettings)
-                : base()
-            {
-                this.Options = options;
-                this.ApplicationSettings = applicationSettings;
-            }
-
-            public bool WarnedNoGPG
-            {
-                get 
-                {
-                    string v;
-                    this.Options.TryGetValue("UI: WarnedNoGPG", out v);
-                    return Library.Utility.Utility.ParseBool(v, false);
-                }
-                set
-                {
-                    this.Options["UI: WarnedNoGPG"] = value.ToString();
-                }
-            }
-        }
-
-        public string PageTitle
-        {
-            get { return this.DisplayName; }
-        }
-
-        public string PageDescription
-        {
-            get { return this.Description; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new DummyControl(options, applicationSettings);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            if (!((DummyControl)control).WarnedNoGPG)
-            {
-                System.IO.FileInfo fi = null;
-                try 
-                { 
-                    string filename = System.Environment.ExpandEnvironmentVariables(((DummyControl)control).ApplicationSettings[GPGCommonOptions.GPG_PATH]);
-                    fi = new System.IO.FileInfo(filename);
-                    if (!fi.Exists)
-                    {
-                        filename = Utility.Utility.LocateFileInSystemPath(filename);
-                        if (filename != null)
-                            fi = new System.IO.FileInfo(filename);
-                    }
-                }
-                catch { }
-
-                if (fi == null || !fi.Exists)
-                {
-                    if (System.Windows.Forms.MessageBox.Show(control, Strings.GPGEncryption.GPGNotFoundWarning, System.Windows.Forms.Application.ProductName, System.Windows.Forms.MessageBoxButtons.YesNoCancel, System.Windows.Forms.MessageBoxIcon.Warning) != System.Windows.Forms.DialogResult.Yes)
-                        return false;
-
-                    ((DummyControl)control).WarnedNoGPG = true;
-                }
-            }
-
-            return true;
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return null;
-        }
-
-        #endregion
     }
 }

@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class WEBDAV : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class WEBDAV : IBackend, IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
@@ -71,18 +71,18 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     m_userInfo.UserName = u.UserInfo;
-                    if (options.ContainsKey("ftp-password"))
-                        m_userInfo.Password = options["ftp-password"];
+                    if (options.ContainsKey("auth-password"))
+                        m_userInfo.Password = options["auth-password"];
                 }
             }
             else
             {
-                if (options.ContainsKey("ftp-username"))
+                if (options.ContainsKey("auth-username"))
                 {
                     m_userInfo = new System.Net.NetworkCredential();
-                    m_userInfo.UserName = options["ftp-username"];
-                    if (options.ContainsKey("ftp-password"))
-                        m_userInfo.Password = options["ftp-password"];
+                    m_userInfo.UserName = options["auth-username"];
+                    if (options.ContainsKey("auth-password"))
+                        m_userInfo.Password = options["auth-password"];
                 }
             }
 
@@ -267,8 +267,8 @@ namespace Duplicati.Library.Backend
             get 
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.WEBDAV.DescriptionFTPPasswordShort, Strings.WEBDAV.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionFTPUsernameShort, Strings.WEBDAV.DescriptionFTPUsernameLong),
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.WEBDAV.DescriptionAuthPasswordShort, Strings.WEBDAV.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionAuthUsernameShort, Strings.WEBDAV.DescriptionAuthUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),
@@ -281,10 +281,6 @@ namespace Duplicati.Library.Backend
         {
             get { return Strings.WEBDAV.Description; }
         }
-
-        #endregion
-
-        #region IBackend_v2 Members
 
         public void Test()
         {
@@ -415,40 +411,6 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
-        }
-
-        #endregion
-
-        #region IBackendGUI Members
-
-        public string PageTitle
-        {
-            get { return WebDAVUI.PageTitle; }
-        }
-
-        public string PageDescription
-        {
-            get { return WebDAVUI.PageDescription; }
-        }
-
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
-        {
-            return new WebDAVUI(options);
-        }
-
-        public void Leave(System.Windows.Forms.Control control)
-        {
-            ((WebDAVUI)control).Save(false);
-        }
-
-        public bool Validate(System.Windows.Forms.Control control)
-        {
-            return ((WebDAVUI)control).Save(true);
-        }
-
-        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
-        {
-            return WebDAVUI.GetConfiguration(guiOptions, commandlineOptions);
         }
 
         #endregion
