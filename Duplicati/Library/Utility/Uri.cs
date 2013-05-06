@@ -23,14 +23,17 @@ namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// Represents a relaxed parsing of a URL.
-    /// The goal is to cover as 
+    /// The goal is to cover as many types of url's as possible,
+    /// without being ambiguos.
+    /// The major limitations is that an embedded username may not contain a :,
+    /// and the password may not contain a @.
     /// </summary>
     public struct Uri
     {
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://((?<username>[^\:]+)(\:(?<password>.*))?\@)?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?(/(?<path>[^\?]*))|(?<path>([^\?]*)))?(\?(?<query>.+))?");
+        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:]+)\:((?<password>[^@]*))\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?(/(?<path>[^\?]*))|(?<path>([^\?]*)))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -99,7 +102,12 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return Host + (Path == null ? "" : "/" + Path);
+                if (string.IsNullOrEmpty(Path))
+                    return Host;
+                else if (string.IsNullOrEmpty(Host))
+                    return Path;
+                else
+                    return Host + (Path == null ? "" : "/" + Path);
             }
         }
         
@@ -127,7 +135,6 @@ namespace Duplicati.Library.Utility
             m_queryParams = null;
             this.OriginalUri = url;
 
-            //TODO: Does not parse urls with a @ in the path correctly
             var m = URL_PARSER.Match(url);
             if (!m.Success || m.Length != url.Length)
             {
@@ -217,24 +224,29 @@ namespace Duplicati.Library.Utility
         private static string AsString(string scheme, string host, string path, string query, string username, string password, int port)
         {
             var s = scheme + "://";
-            if (username != null)
+            if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
             {
                 s += username;
-                if (password != null)
-                    s += ":" + password;
+                s += ":";
+                if (!string.IsNullOrEmpty(password))
+                    s += password;
                 s += "@";
             }
             
-            if (host != null)
+            if (!string.IsNullOrEmpty(host))
             {
                 s += host;
                 if (port != -1)
                     s += ":" + port.ToString();
             }
             
-            if (path != null)
-                s += "/" + path;
-            if (query != null)
+            if (!string.IsNullOrEmpty(path))
+            {
+                if (!string.IsNullOrEmpty(host))
+                    s += "/";
+                s += path;
+            }
+            if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
 
             return s;             }
