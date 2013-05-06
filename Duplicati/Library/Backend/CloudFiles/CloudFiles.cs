@@ -31,8 +31,6 @@ namespace Duplicati.Library.Backend
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
 
-        private readonly System.Text.RegularExpressions.Regex URL_PARSING = new System.Text.RegularExpressions.Regex("cloudfiles://(?<path>.+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase); 
-
         public static readonly KeyValuePair<string, string>[] KNOWN_CLOUDFILES_PROVIDERS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("Rackspace US", AUTH_URL_US),
             new KeyValuePair<string, string>("Rackspace UK", AUTH_URL_UK),
@@ -93,7 +91,6 @@ namespace Duplicati.Library.Backend
                         m_username = u.UserInfo;
                     }
                 }
-
 
                 //We use the api.mosso.com hostname.
                 //This allows the use of containers that have names that are not valid hostnames, 
