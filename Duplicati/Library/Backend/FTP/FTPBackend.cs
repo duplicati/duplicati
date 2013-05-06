@@ -53,6 +53,7 @@ namespace Duplicati.Library.Backend
             //please let the Duplicati authors know
 
             var u = new Utility.Uri(url);
+            u.RequireHost();
 
             if (!string.IsNullOrEmpty(u.Username))
             {

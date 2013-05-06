@@ -226,10 +226,10 @@ namespace Duplicati.Library.Utility
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
             {
-                s += HttpUtility.UrlEncode(username);
+                
+                s += HttpUtility.UrlEncode(username ?? "");
                 s += ":";
-                if (!string.IsNullOrEmpty(password))
-                    s += HttpUtility.UrlEncode(password);
+                s += HttpUtility.UrlEncode(password ?? "");
                 s += "@";
             }
             
@@ -311,6 +311,16 @@ namespace Duplicati.Library.Utility
         public Uri SetPort(int port)
         {
             return new Uri(Scheme, Host, Path, Query, Username, Password, port);
+        }
+        
+        /// <summary>
+        /// Initializes the <see cref="Duplicati.Library.Utility.Uri"/> struct.
+        /// </summary>
+        static Uri()
+        {
+            //Mono bug-fix
+            try { HttpUtility.UrlEncode("test@web.de"); }
+            catch {}
         }
     }
 }

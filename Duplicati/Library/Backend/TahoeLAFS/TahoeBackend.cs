@@ -37,7 +37,8 @@ namespace Duplicati.Library.Backend
         {
             //Validate URL
             var u = new Utility.Uri(url);
-
+            u.RequireHost();
+            
             if (!u.Path.StartsWith("uri/URI:DIR2:"))
                 throw new Exception(Strings.TahoeBackend.UnrecognizedUriError);
 

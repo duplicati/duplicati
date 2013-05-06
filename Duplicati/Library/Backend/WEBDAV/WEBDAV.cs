@@ -89,22 +89,22 @@ namespace Duplicati.Library.Backend
             m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, "force-digest-authentication");
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
-            m_url = (m_useSSL ? "https" : "http") + url.Substring(u.Scheme.Length);
+            m_url = u.SetScheme(m_useSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
             if (!m_url.EndsWith("/"))
                 m_url += "/";
 
             m_path = u.Path;
 
             m_path = System.Web.HttpUtility.UrlDecode(m_path);
-            m_rawurl = new Utility.Uri(m_useSSL ? "https://" : "http://", u.Host, m_path).ToString();
+            m_rawurl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
 
             int port = u.Port;
             if (port <= 0)
                 port = m_useSSL ? 443 : 80;
 
-            m_rawurlPort = new Utility.Uri(m_useSSL ? "https://" : "http://", u.Host, m_path, null, null, null, port).ToString();
-			m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https://" : "http://", u.Host, m_path).ToString();
-			m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http://" : "https://", u.Host, m_path).ToString();
+            m_rawurlPort = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path, null, null, null, port).ToString();
+			m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
+			m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http" : "https", u.Host, m_path).ToString();
             options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 

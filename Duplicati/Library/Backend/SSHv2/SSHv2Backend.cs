@@ -36,7 +36,6 @@ namespace Duplicati.Library.Backend
         private string m_path;
         private string m_username;
         private string m_password;
-        private string m_ssh_options;
 
         private int m_port = 22;
 		
@@ -69,11 +68,8 @@ namespace Duplicati.Library.Backend
 
             m_server = uri.Host;
 
-            if (uri.Port > 0 && uri.Port != m_port)
-            {
-                m_ssh_options += " -P " + uri.Port;
+            if (uri.Port > 0)
                 m_port = uri.Port;
-            }
         }
 
         #region IBackend Members
