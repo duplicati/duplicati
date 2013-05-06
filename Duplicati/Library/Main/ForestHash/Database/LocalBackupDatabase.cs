@@ -56,12 +56,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
         
         private long m_filesetId;
 
-        public LocalBackupDatabase(string path, FhOptions options)
+        public LocalBackupDatabase(string path, Options options)
             : this(new LocalDatabase(path, "Backup"), options)
         {
         }
        	
-        public LocalBackupDatabase(LocalDatabase db, FhOptions options)
+        public LocalBackupDatabase(LocalDatabase db, Options options)
         	: base(db)
         {
             m_findblockCommand = m_connection.CreateCommand();

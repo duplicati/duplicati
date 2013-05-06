@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         protected readonly string m_blockhash;
         protected readonly string m_filehash;
 
-        public VolumeBase(FhOptions options)
+        public VolumeBase(Options options)
         {
             m_blocksize = options.Fhblocksize;
             m_blockhash = options.FhBlockHashAlgorithm;

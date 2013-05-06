@@ -21,7 +21,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         public long BlockCount { get { return m_blocks; } }
         public long Blocklists { get { return m_blocklists; } }
 
-        public IndexVolumeWriter(FhOptions options)
+        public IndexVolumeWriter(Options options)
             : base(options)
         {
         }

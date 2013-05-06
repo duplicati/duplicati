@@ -26,7 +26,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	{
 		internal string Filesets { get; set; }
 
-		public DeleteHandler(string backend, FhOptions options, CommunicationStatistics stat)
+		public DeleteHandler(string backend, Options options, CommunicationStatistics stat)
 	        : base(backend, options, stat)
         {
         }

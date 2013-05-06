@@ -381,13 +381,13 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
         private long m_hashsize;
 
-        public IndexVolumeReader(ICompression compression, FhOptions options, long hashsize)
+        public IndexVolumeReader(ICompression compression, Options options, long hashsize)
             : base(compression, options)
         {
             m_hashsize = hashsize;
         }
 
-        public IndexVolumeReader(string compressor, string file, FhOptions options, long hashsize)
+        public IndexVolumeReader(string compressor, string file, Options options, long hashsize)
             : base(compressor, file, options)
         {
             m_hashsize = hashsize;

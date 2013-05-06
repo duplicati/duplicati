@@ -11,11 +11,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     {
         private string m_backendurl;
         private RestoreStatistics m_stat;
-        private FhOptions m_options;
+        private Options m_options;
         private byte[] m_blockbuffer;
         private string m_destination;
 
-        public RestoreHandler(string backendurl, FhOptions options, RestoreStatistics stat, string destination)
+        public RestoreHandler(string backendurl, Options options, RestoreStatistics stat, string destination)
         {
             m_options = options;
             m_stat = stat;
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             }
         }
         
-        private static void PatchWithBlocklist (LocalRestoreDatabase database, BlockVolumeReader blocks, FhOptions options, CommunicationStatistics stat, byte[] blockbuffer)
+        private static void PatchWithBlocklist (LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, CommunicationStatistics stat, byte[] blockbuffer)
         {
             foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
             {
@@ -275,7 +275,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             //TODO: Implement writing metadata
         }
 
-        private static void ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, FhOptions options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
+        private static void ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
         {
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
@@ -347,7 +347,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         }
 
 
-        private static void ScanForExistingSourceBlocks(LocalRestoreDatabase database, FhOptions options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
+        private static void ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
         {
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
@@ -413,7 +413,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             }
         }
 
-        private static void PrepareBlockAndFileList(LocalRestoreDatabase database, FhOptions options, string destination, CommunicationStatistics stat)
+        private static void PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, string destination, CommunicationStatistics stat)
         {
             // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
             // Delete all entries from the temp table that are excluded by the filter(s)
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             database.FindMissingBlocks();
         }
 
-        private static void CreateDirectoryStructure(LocalRestoreDatabase database, FhOptions options, CommunicationStatistics stat)
+        private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, CommunicationStatistics stat)
         {
             foreach (var folder in database.GetTargetFolders())
             {

@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		/// </summary>
 		/// <param name="keep">The number of backups to keep</param>
 		/// <param name="allowRemovingLast">If set to <c>true</c> allow removing last backup, otherwise at least one backup is kept</param>
-		public IEnumerable<string> DeleteAllButN(int keep, bool allowRemovingLast, CommunicationStatistics stat, FhOptions options, System.Data.IDbTransaction transaction)
+		public IEnumerable<string> DeleteAllButN(int keep, bool allowRemovingLast, CommunicationStatistics stat, Options options, System.Data.IDbTransaction transaction)
 		{
 			IEnumerable<string> result;
 
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		/// </summary>
 		/// <param name="keep">The number of backups to keep</param>
 		/// <param name="allowRemovingLast">If set to <c>true</c> allow removing last backup, otherwise at least one backup is kept</param>
-		public IEnumerable<string> DeleteOlderThan(DateTime limit, bool allowRemovingLast, CommunicationStatistics stat, FhOptions options, System.Data.IDbTransaction transaction)
+		public IEnumerable<string> DeleteOlderThan(DateTime limit, bool allowRemovingLast, CommunicationStatistics stat, Options options, System.Data.IDbTransaction transaction)
 		{
 			if (limit.Kind == DateTimeKind.Unspecified)
 				throw new Exception("Time must be either UTC or Local");
@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		/// </summary>
 		/// <param name="dates">The filesets to remove</param>
 		/// <param name="allowRemovingLast">If set to <c>true</c> allow removing last backup, otherwise at least one backup is kept</param>
-		public IEnumerable<string> DeleteFilesets(string filesets, bool allowRemovingLast, CommunicationStatistics stat, FhOptions options, System.Data.IDbTransaction transaction)
+		public IEnumerable<string> DeleteFilesets(string filesets, bool allowRemovingLast, CommunicationStatistics stat, Options options, System.Data.IDbTransaction transaction)
 		{
 			IEnumerable<string> result;
 			using(var cmd = m_connection.CreateCommand())
@@ -353,7 +353,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			private System.Data.IDbCommand m_command;
 			private HashDatabaseProtector<string, long> m_lookup;
 			
-			public BlockQuery(System.Data.IDbConnection con, FhOptions options, System.Data.IDbTransaction transaction)
+			public BlockQuery(System.Data.IDbConnection con, Options options, System.Data.IDbTransaction transaction)
 			{
 				m_command = con.CreateCommand();
 				m_command.Transaction = transaction;
@@ -413,7 +413,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		/// Builds a lookup table to enable faster response to block queries
 		/// </summary>
 		/// <param name="volumename">The name of the volume to prepare for</param>
-		public IBlockQuery CreateBlockQueryHelper(FhOptions options, System.Data.IDbTransaction transaction)
+		public IBlockQuery CreateBlockQueryHelper(Options options, System.Data.IDbTransaction transaction)
 		{
 			return new BlockQuery(m_connection, options, transaction);
 		}

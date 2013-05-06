@@ -17,7 +17,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
         public override RemoteVolumeType FileType { get { return RemoteVolumeType.Files; } }
 
-        public FilesetVolumeWriter(FhOptions options, DateTime timestamp)
+        public FilesetVolumeWriter(Options options, DateTime timestamp)
             : base(options, timestamp)
         {
             m_streamwriter = new StreamWriter(m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow));

@@ -59,7 +59,6 @@
     <Compile Include="ForestHash\Operation\BackupHandler.cs" />
     <Compile Include="ForestHash\Database\ExtensionMethods.cs" />
     <Compile Include="ForestHash\FhBackend.cs" />
-    <Compile Include="ForestHash\FhOptions.cs" />
     <Compile Include="ForestHash\HashlistCollector.cs" />
     <Compile Include="ForestHash\Operation\FindLastFileVersionHandler.cs" />
     <Compile Include="ForestHash\Operation\ListFilesHandler.cs" />
@@ -93,11 +92,6 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>ExecutionStoppedException.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\FhOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FhOptions.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\FilenameStrategy.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -143,6 +137,7 @@
     <Compile Include="ForestHash\Volumes\IndexVolumeReader.cs" />
     <Compile Include="ForestHash\Operation\RepairHandler.cs" />
     <Compile Include="ForestHash\Database\LocalRepairDatabase.cs" />
+    <Compile Include="ForestHash\DatabaseLocator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">
@@ -187,10 +182,6 @@
     <EmbeddedResource Include="Strings\ExecutionStoppedException.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ExecutionStoppedException.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\FhOptions.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>FhOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\FilenameStrategy.resx">
       <SubType>Designer</SubType>

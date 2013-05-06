@@ -11,7 +11,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 {
     internal class BackupHandler : IDisposable
     {
-        private readonly FhOptions m_options;
+        private readonly Options m_options;
         private readonly BackupStatistics m_stat;
         private FhBackend m_backend;
         private string m_backendurl;
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         private readonly TimeSpan FLUSH_TIMESPAN = TimeSpan.FromSeconds(10);
         private DateTime m_backendLogFlushTimer;
 
-        public BackupHandler(string backendurl, FhOptions options, BackupStatistics stat, string[] sources)
+        public BackupHandler(string backendurl, Options options, BackupStatistics stat, string[] sources)
         {
         	EMPTY_METADATA = ForestHash.WrapMetadata(new Dictionary<string, string>(), options);
         	

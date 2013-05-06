@@ -24,12 +24,12 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         	m_volumename = name;
         }
 
-        public VolumeWriterBase(FhOptions options)
+        public VolumeWriterBase(Options options)
             : this(options, DateTime.UtcNow)
         {
         }
         
-        private static string GenerateGuid(FhOptions options)
+        private static string GenerateGuid(Options options)
         {
         	var s = Guid.NewGuid().ToString("N");
         	
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         	
         }
 
-        public VolumeWriterBase(FhOptions options, DateTime timestamp)
+        public VolumeWriterBase(Options options, DateTime timestamp)
             : base(options)
         {
             m_localfile = new Utility.TempFile();

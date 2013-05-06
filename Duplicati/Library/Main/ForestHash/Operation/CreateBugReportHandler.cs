@@ -23,10 +23,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	public class CreateBugReportHandler : IDisposable
 	{
         private string m_targetpath;
-        private FhOptions m_options;
+        private Options m_options;
         private CommunicationStatistics m_stat;
 
-		public CreateBugReportHandler(string targetpath, FhOptions options, CommunicationStatistics stat)
+		public CreateBugReportHandler(string targetpath, Options options, CommunicationStatistics stat)
 		{
             m_targetpath = targetpath;
             m_options = options;

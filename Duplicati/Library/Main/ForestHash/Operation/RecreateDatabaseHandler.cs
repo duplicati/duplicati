@@ -10,14 +10,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     public class RecreateDatabaseHandler : IDisposable
     {
         private string m_backendurl;
-        private FhOptions m_options;
+        private Options m_options;
         private CommunicationStatistics m_stat;
 
         public delegate IEnumerable<IParsedVolume> FilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate IEnumerable<IFileEntry> FilenameFilterDelegate(IEnumerable<IFileEntry> filenamelist);
         public delegate void BlockVolumePostProcessor(string volumename, BlockVolumeReader reader);
 
-        public RecreateDatabaseHandler(string backendurl, FhOptions options, CommunicationStatistics stat)
+        public RecreateDatabaseHandler(string backendurl, Options options, CommunicationStatistics stat)
         {
             m_options = options;
             m_backendurl = backendurl;

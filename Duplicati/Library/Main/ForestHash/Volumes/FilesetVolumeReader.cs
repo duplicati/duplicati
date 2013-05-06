@@ -327,12 +327,12 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
         }
 
-        public FilesetVolumeReader(ICompression compression, FhOptions options)
+        public FilesetVolumeReader(ICompression compression, Options options)
             : base(compression, options)
         {
         }
 
-        public FilesetVolumeReader(string compressor, string file, FhOptions options)
+        public FilesetVolumeReader(string compressor, string file, Options options)
             : base(compressor, file, options)
         {
         }

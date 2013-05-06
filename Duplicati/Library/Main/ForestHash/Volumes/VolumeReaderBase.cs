@@ -13,7 +13,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         protected bool m_disposeCompression = false;
         protected ICompression m_compression;
 
-        private static ICompression LoadCompressor(string compressor, string file, FhOptions options)
+        private static ICompression LoadCompressor(string compressor, string file, Options options)
         {
             var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, file, options.RawOptions);
             if (tmp == null)
@@ -21,13 +21,13 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             return tmp;
         }
 
-        public VolumeReaderBase(string compressor, string file, FhOptions options)
+        public VolumeReaderBase(string compressor, string file, Options options)
             : this(LoadCompressor(compressor, file, options), options)
         {
             m_disposeCompression = true;
         }
 
-        public VolumeReaderBase(ICompression compression, FhOptions options)
+        public VolumeReaderBase(ICompression compression, Options options)
             : base(options)
         {
             m_compression = compression;

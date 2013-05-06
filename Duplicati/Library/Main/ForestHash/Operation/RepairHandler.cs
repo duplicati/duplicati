@@ -10,10 +10,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     internal class RepairHandler : IDisposable
     {
         private string m_backendurl;
-        private FhOptions m_options;
+        private Options m_options;
         private CommunicationStatistics m_stat;
 
-        public RepairHandler(string backend, FhOptions options, CommunicationStatistics stat)
+        public RepairHandler(string backend, Options options, CommunicationStatistics stat)
         {
             m_backendurl = backend;
             m_options = options;

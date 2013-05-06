@@ -27,10 +27,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	internal class CompactHandler : IDisposable
 	{
         protected string m_backendurl;
-        protected FhOptions m_options;
+        protected Options m_options;
         protected CommunicationStatistics m_stat;
         
-		public CompactHandler(string backend, FhOptions options, CommunicationStatistics stat)
+		public CompactHandler(string backend, Options options, CommunicationStatistics stat)
 		{
             m_backendurl = backend;
             m_options = options;

@@ -9,12 +9,12 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 {
     public class BlockVolumeReader : VolumeReaderBase
     {
-        public BlockVolumeReader(ICompression compression, FhOptions options)
+        public BlockVolumeReader(ICompression compression, Options options)
             : base(compression, options)
         {
         }
 
-        public BlockVolumeReader(string compressor, string file, FhOptions options)
+        public BlockVolumeReader(string compressor, string file, Options options)
             : base(compressor, file, options)
         {
         }

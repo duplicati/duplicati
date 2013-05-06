@@ -7,12 +7,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 {
     internal class RestoreControlFilesHandler : IDisposable
     {
-        private FhOptions m_options;
+        private Options m_options;
         private RestoreStatistics m_stat;
         private string m_backendurl;
         private string m_target;
 
-        public RestoreControlFilesHandler(string backendurl, FhOptions options, RestoreStatistics stat, string target)
+        public RestoreControlFilesHandler(string backendurl, Options options, RestoreStatistics stat, string target)
         {
             m_options = options;
             m_stat = stat;

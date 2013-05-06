@@ -20,13 +20,13 @@ namespace Duplicati.Library.Main.ForestHash
         /// <param name="sources">The list of folders to back up</param>
         public static void Backup(string remoteurl, Options options, BackupStatistics stat, string[] sources)
         {
-            using (var h = new Operation.BackupHandler(remoteurl, new FhOptions(options.RawOptions), stat, sources))
+            using (var h = new Operation.BackupHandler(remoteurl, new Options(options.RawOptions), stat, sources))
                 h.Run();
         }
 
         public static void Restore(string remoteurl, Options options, RestoreStatistics stat, string target)
         {
-            using (var h = new Operation.RestoreHandler(remoteurl, new FhOptions(options.RawOptions), stat, target))
+            using (var h = new Operation.RestoreHandler(remoteurl, new Options(options.RawOptions), stat, target))
                 h.Run();
         }
 
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main.ForestHash
             /// </summary>
             private readonly Dictionary<string, string> m_values;
 
-            public Metahash(Dictionary<string, string> values, FhOptions options)
+            public Metahash(Dictionary<string, string> values, Options options)
             {
                 m_values = values;
                 var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.FhBlockHashAlgorithm);
@@ -224,12 +224,12 @@ namespace Duplicati.Library.Main.ForestHash
         /// </summary>
         /// <param name="values">The metadata values to wrap</param>
         /// <returns>A IMetahash instance</returns>
-        public static IMetahash WrapMetadata(Dictionary<string, string> values, FhOptions options)
+        public static IMetahash WrapMetadata(Dictionary<string, string> values, Options options)
         {
             return new Metahash(values, options);
         }
 
-		internal static void VerifyParameters(LocalDatabase db, FhOptions options)
+		internal static void VerifyParameters(LocalDatabase db, Options options)
 		{
 			var newDict = new Dictionary<string, string>();
 			newDict.Add("blocksize", options.Fhblocksize.ToString());
@@ -256,7 +256,7 @@ namespace Duplicati.Library.Main.ForestHash
 
         internal static IEnumerable<Volumes.IParsedVolume> ParseFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-            var opts = new FhOptions(options);
+            var opts = new Options(options);
             using (var db = new LocalDatabase(opts.Fhdbpath, "ParseFileList"))
             using (var b = new FhBackend(target, opts, stat, db))
             {
@@ -274,13 +274,13 @@ namespace Duplicati.Library.Main.ForestHash
 
         internal static string CompactBlocks(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-            using(var h = new Operation.CompactHandler(target, new FhOptions(options), stat))
+            using(var h = new Operation.CompactHandler(target, new Options(options), stat))
             	return h.Run();
         }
 
         internal static string RecreateDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-        	var opts = new FhOptions(options);        		
+        	var opts = new Options(options);        		
             using(var h = new Operation.RecreateDatabaseHandler(target, opts, stat))
             	h.Run(opts.Fhdbpath);
             	
@@ -289,7 +289,7 @@ namespace Duplicati.Library.Main.ForestHash
 
 		public static string DeleteFilesets(string target, string filesets, Dictionary<string, string> options, CommunicationStatistics stat)
 		{
-        	var opts = new FhOptions(options);
+        	var opts = new Options(options);
             using(var h = new Operation.DeleteHandler(target, opts, stat))
             {
             	h.Filesets = filesets;
@@ -299,7 +299,7 @@ namespace Duplicati.Library.Main.ForestHash
 
 		public static string CreateLogDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
 		{
-        	var opts = new FhOptions(options);        		
+        	var opts = new Options(options);        		
             using(var h = new Operation.CreateBugReportHandler(target, opts, stat))
             	h.Run();
             	

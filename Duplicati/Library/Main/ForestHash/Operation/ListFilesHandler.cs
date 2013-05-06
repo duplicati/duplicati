@@ -8,10 +8,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     internal class ListFilesHandler : IDisposable
     {
         private string m_backendurl;
-        private FhOptions m_options;
+        private Options m_options;
         private RestoreStatistics m_stat;
 
-        public ListFilesHandler(string backend, FhOptions options, RestoreStatistics stat)
+        public ListFilesHandler(string backend, Options options, RestoreStatistics stat)
         {
             m_backendurl = backend;
             m_options = options;

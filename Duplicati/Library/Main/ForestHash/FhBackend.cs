@@ -129,7 +129,7 @@ namespace Duplicati.Library.Main.ForestHash
                     return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH).ComputeHash(fs));
             }
 
-            public bool UpdateHashAndSize(FhOptions options)
+            public bool UpdateHashAndSize(Options options)
             {
                 if (Hash == null || Size < 0)
                 {
@@ -248,7 +248,7 @@ namespace Duplicati.Library.Main.ForestHash
         }
 
         private BlockingQueue<FileEntryItem> m_queue;
-        private FhOptions m_options;
+        private Options m_options;
         private volatile Exception m_lastException;
         private Library.Interface.IEncryption m_encryption;
         private Library.Interface.IBackend m_backend;
@@ -259,7 +259,7 @@ namespace Duplicati.Library.Main.ForestHash
                 
         public string BackendUrl { get { return m_backendurl; } }
 
-        public FhBackend(string backendurl, FhOptions options, CommunicationStatistics stats, LocalDatabase database)
+        public FhBackend(string backendurl, Options options, CommunicationStatistics stats, LocalDatabase database)
         {
             m_options = options;
             m_backendurl = backendurl;

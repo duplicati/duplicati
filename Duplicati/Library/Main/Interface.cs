@@ -305,9 +305,7 @@ namespace Duplicati.Library.Main
 
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
             {
-                var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-                if (string.IsNullOrEmpty(fhopts.Fhdbpath))
+                if (string.IsNullOrEmpty(m_options.Fhdbpath))
                     throw new Exception(string.Format(Strings.Interface.MissingDatabasepathError, "fh-dbpath"));
 
                 if (sources == null || sources.Length == 0)
@@ -332,7 +330,7 @@ namespace Duplicati.Library.Main
                             throw new Exception(string.Format(Strings.Interface.SourceDirsAreRelatedError, sources[i], sources[j]));
                 }
 
-                ForestHash.ForestHash.Backup(m_backend, fhopts, bs, sources);
+                ForestHash.ForestHash.Backup(m_backend, m_options, bs, sources);
                 return bs.ToString();
             }
         }
@@ -345,9 +343,7 @@ namespace Duplicati.Library.Main
             var rs = new RestoreStatistics(DuplicatiOperationMode.Restore);
             SetupCommonOptions(rs, ref target);
 
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            ForestHash.ForestHash.Restore(m_backend, fhopts, rs, target[0]);
+            ForestHash.ForestHash.Restore(m_backend, m_options, rs, target[0]);
             return rs.ToString();
         }
 
@@ -356,9 +352,7 @@ namespace Duplicati.Library.Main
             var rs = new RestoreStatistics(DuplicatiOperationMode.RestoreControlfiles);
             SetupCommonOptions(rs);
 
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            using (var handler = new ForestHash.Operation.RestoreControlFilesHandler(m_backend, fhopts, rs, target))
+            using (var handler = new ForestHash.Operation.RestoreControlFilesHandler(m_backend, m_options, rs, target))
                 handler.Run();
 
             return rs.ToString();
@@ -369,9 +363,7 @@ namespace Duplicati.Library.Main
             var rs = new RestoreStatistics(DuplicatiOperationMode.DeleteAllButN);
             SetupCommonOptions(rs);
 
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            using (var handler = new ForestHash.Operation.DeleteHandler(m_backend, fhopts, rs))
+            using (var handler = new ForestHash.Operation.DeleteHandler(m_backend, m_options, rs))
                 handler.Run();
 
             return rs.ToString();
@@ -382,9 +374,7 @@ namespace Duplicati.Library.Main
             var rs = new RestoreStatistics(DuplicatiOperationMode.CleanUp);
             SetupCommonOptions(rs);
 
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            using (var handler = new ForestHash.Operation.RepairHandler(m_backend, fhopts, rs))
+            using (var handler = new ForestHash.Operation.RepairHandler(m_backend, m_options, rs))
                 handler.Run();
 
             return rs.ToString();
@@ -395,9 +385,7 @@ namespace Duplicati.Library.Main
             var rs = new RestoreStatistics(DuplicatiOperationMode.List);
             SetupCommonOptions(rs);
 
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            using (var handler = new ForestHash.Operation.ListFilesHandler(m_backend, fhopts, rs))
+            using (var handler = new ForestHash.Operation.ListFilesHandler(m_backend, m_options, rs))
                 return handler.Run();
         }
 
@@ -464,6 +452,9 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
                 System.Threading.Thread.CurrentThread.Priority = Utility.Utility.ParsePriority(m_options.ThreadPriority);
 
+            if (string.IsNullOrEmpty(m_options.Fhdbpath))
+                m_options.Fhdbpath = ForestHash.DatabaseLocator.GetDatabasePath(m_backend, m_options);
+
             ValidateOptions(stats);
 
             Library.Logging.Log.WriteMessage(string.Format(Strings.Interface.StartingOperationMessage, m_options.MainAction), Logging.LogMessageType.Information);
@@ -475,9 +466,7 @@ namespace Duplicati.Library.Main
             var rs = new RestoreStatistics(DuplicatiOperationMode.FindLastFileVersion);
             SetupCommonOptions(rs);
 
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            using (var handler = new ForestHash.Operation.FindLastFileVersionHandler(m_backend, fhopts, rs))
+            using (var handler = new ForestHash.Operation.FindLastFileVersionHandler(m_backend, m_options, rs))
                 return handler.Run();
         }
 

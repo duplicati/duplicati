@@ -561,4 +561,112 @@
   <data name="BesteffortrestoreLong" xml:space="preserve">
     <value>The restore process will stop if errors are detected to avoid restores with invalid data. Use this option to make Duplicati continue, even if some data is missing</value>
   </data>
+  <data name="FhblockhashlookupsizeLong" xml:space="preserve">
+    <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
+  </data>
+  <data name="FhblockhashlookupsizeShort" xml:space="preserve">
+    <value>Memory used by the block hash</value>
+  </data>
+  <data name="FhblocksizeLong" xml:space="preserve">
+    <value>The blocksize determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created.</value>
+  </data>
+  <data name="FhblocksizeShort" xml:space="preserve">
+    <value>Blocksize used in hashing</value>
+  </data>
+  <data name="FhchangedfilesetLong" xml:space="preserve">
+    <value>This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes.</value>
+  </data>
+  <data name="FhchangedfilesetShort" xml:space="preserve">
+    <value>List of files to examine for changes</value>
+  </data>
+  <data name="FhdbpathLong" xml:space="preserve">
+    <value>Path to the file containing the local cache of the remote file database</value>
+  </data>
+  <data name="FhdbpathShort" xml:space="preserve">
+    <value>Path to the local state database</value>
+  </data>
+  <data name="FhdeletedfilesetLong" xml:space="preserve">
+    <value>This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set.</value>
+  </data>
+  <data name="FhdeletedfilesetShort" xml:space="preserve">
+    <value>List of deleted files</value>
+  </data>
+  <data name="FhfilehashlookupsizeLong" xml:space="preserve">
+    <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
+  </data>
+  <data name="FhfilehashlookupsizeShort" xml:space="preserve">
+    <value>Memory used by the file hash</value>
+  </data>
+  <data name="FhfilepathlookupsizeLong" xml:space="preserve">
+    <value>This option can be used to speed up backup operations by keeping scantimes and other path related data in memory</value>
+  </data>
+  <data name="FhfilepathlookupsizeShort" xml:space="preserve">
+    <value>Memory used to keep paths cached</value>
+  </data>
+  <data name="FhnometadataLong" xml:space="preserve">
+    <value>Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time.</value>
+  </data>
+  <data name="FhnometadataShort" xml:space="preserve">
+    <value>Disable storing file metadata</value>
+  </data>
+  <data name="FhmetadatahashlookupsizeLong" xml:space="preserve">
+    <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
+  </data>
+  <data name="FhmetadatahashlookupsizeShort" xml:space="preserve">
+    <value>Memory used by the metadata hash</value>
+  </data>
+  <data name="FhnobackendverificationLong" xml:space="preserve">
+    <value>If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable.</value>
+  </data>
+  <data name="FhnobackendverificationShort" xml:space="preserve">
+    <value>Do not query backend at startup</value>
+  </data>
+  <data name="FhnoindexfilesLong" xml:space="preserve">
+    <value>If this flag is set, no index files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded.</value>
+  </data>
+  <data name="FhnoindexfilesShort" xml:space="preserve">
+    <value>Do not upload index files</value>
+  </data>
+  <data name="FhmaxwastesizeLong" xml:space="preserve">
+    <value>As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value cannot be less than the volumesize, the default value is two times the volumesize.</value>
+  </data>
+  <data name="FhmaxwastesizeShort" xml:space="preserve">
+    <value>The maximum allowed wasted space</value>
+  </data>  
+  <data name="FhdryrunLong" xml:space="preserve">
+    <value>This option can be used to experiment with different settings and observe the outcome without changing actual files.</value>
+  </data>
+  <data name="FhdryrunShort" xml:space="preserve">
+    <value>Does not perform any modifications</value>
+  </data> 
+  <data name="FhblockhashalgorithmLong" xml:space="preserve">
+    <value>This is a very advanced option! This option can be used to select a block hash algorithm with smaller or larger hash size, for performance or storage space reasons.</value>
+  </data>
+  <data name="FhblockhashalgorithmShort" xml:space="preserve">
+    <value>The hash algorithm used on blocks</value>
+  </data> 
+  <data name="FhfilehashalgorithmLong" xml:space="preserve">
+    <value>This is a very advanced option! This option can be used to select a file hash algorithm with smaller or larger hash size, for performance or storage space reasons.</value>
+  </data>
+  <data name="FhfilehashalgorithmShort" xml:space="preserve">
+    <value>The hash algorithm used on files</value>
+  </data> 
+  <data name="FhnoautocompactLong" xml:space="preserve">
+    <value>If a large number of small files are detected during a backup, or wasted space is found after deleting backups, the remote data will be compacted. Use this option to disable such automatic compacting and only compact when running the compact command.</value>
+  </data>
+  <data name="FhnoautocompactShort" xml:space="preserve">
+    <value>Disable automatic compating</value>
+  </data>
+  <data name="FhvolumesizetoleranceLong" xml:space="preserve">
+    <value>When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten.</value>
+  </data>
+  <data name="FhvolumesizetoleranceShort" xml:space="preserve">
+    <value>Volume size threshold</value>
+  </data>
+  <data name="FhpatchwithlocalblocksLong" xml:space="preserve">
+    <value>Enable this option to look into other files on this machine to find existing blocks. This is a fairly slow operation but can limit the size of downloads.</value>
+  </data>
+  <data name="FhpatchwithlocalblocksShort" xml:space="preserve">
+    <value>Use local file data when restoring</value>
+  </data>
 </root>

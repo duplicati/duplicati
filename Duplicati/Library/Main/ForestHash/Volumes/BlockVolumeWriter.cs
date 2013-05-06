@@ -16,7 +16,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         
         public override RemoteVolumeType FileType { get { return RemoteVolumeType.Blocks; } }
 
-        public BlockVolumeWriter(FhOptions options)
+        public BlockVolumeWriter(Options options)
             : base(options)
         {
         }
