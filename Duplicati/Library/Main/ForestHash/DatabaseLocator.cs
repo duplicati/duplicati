@@ -17,8 +17,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
-using System.Xml.Serialization;
 using System.Collections.Generic;
+using Newtonsoft.Json.Serialization;
 
 namespace Duplicati.Library.Main.ForestHash
 {
@@ -46,15 +46,12 @@ namespace Duplicati.Library.Main.ForestHash
             if (!System.IO.Directory.Exists(folder))
                 System.IO.Directory.CreateDirectory(folder);
                 
-            var file = System.IO.Path.Combine(folder, "dbconfig.xml");
+            var file = System.IO.Path.Combine(folder, "dbconfig.json");
             List<BackendEntry> configs;
             if (!System.IO.File.Exists(file))
                 configs = new List<BackendEntry>();
             else
-            {
-                using(var fs = System.IO.File.OpenRead(file))
-                    configs = (List<BackendEntry>)new System.Xml.Serialization.XmlSerializer(typeof(List<BackendEntry>)).Deserialize(fs);
-            }
+                configs = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8));
             
             var uri = new Utility.Uri(backend);
             string server = uri.Host;
@@ -139,8 +136,9 @@ namespace Duplicati.Library.Main.ForestHash
                     ParameterFile = null
                 });
                 
-                using(var fs = System.IO.File.OpenWrite(file))
-                    new System.Xml.Serialization.XmlSerializer(typeof(List<BackendEntry>)).Serialize(fs, configs);
+                var settings = new Newtonsoft.Json.JsonSerializerSettings();
+                settings.Formatting = Newtonsoft.Json.Formatting.Indented;
+                System.IO.File.WriteAllText(file, Newtonsoft.Json.JsonConvert.SerializeObject(configs, settings), System.Text.Encoding.UTF8);
                 
                 return newpath;
             }
