@@ -110,7 +110,7 @@ namespace Duplicati.Library.Main.ForestHash
             if (matches.Count == 0)
             {
                 var backupname = options.BackupName;
-                if (string.IsNullOrEmpty(backupname))
+                if (string.IsNullOrEmpty(backupname) || backupname == Options.DefaultBackupName)
                     backupname = GenerateRandomName();
                 else
                 {
