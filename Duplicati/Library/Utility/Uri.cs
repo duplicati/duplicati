@@ -161,8 +161,8 @@ namespace Duplicati.Library.Utility
             this.Host = m.Groups["hostname"].Value;
             this.Path = m.Groups["path"].Success ? m.Groups["path"].Value : null;
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
-            this.Username = m.Groups["username"].Success ? m.Groups["username"].Value : null;
-            this.Password = m.Groups["password"].Success ? m.Groups["password"].Value : null;
+            this.Username = m.Groups["username"].Success ? HttpUtility.UrlDecode(m.Groups["username"].Value) : null;
+            this.Password = m.Groups["password"].Success ? HttpUtility.UrlDecode(m.Groups["password"].Value) : null;
             if (m.Groups["port"].Success)
                 this.Port = int.Parse(m.Groups["port"].Value);
             else
@@ -226,10 +226,10 @@ namespace Duplicati.Library.Utility
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
             {
-                s += username;
+                s += HttpUtility.UrlEncode(username);
                 s += ":";
                 if (!string.IsNullOrEmpty(password))
-                    s += password;
+                    s += HttpUtility.UrlEncode(password);
                 s += "@";
             }
             
@@ -249,7 +249,8 @@ namespace Duplicati.Library.Utility
             if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
 
-            return s;             }
+            return s;             
+        }
         
         /// <summary>
         /// Creates a new instance with another scheme
