@@ -47,37 +47,6 @@
   <ItemGroup>
     <Compile Include="Backupmetadata.cs" />
     <Compile Include="CommunicationStatistics.cs" />
-    <Compile Include="ForestHash\Database\ILocalFileEntry.cs" />
-    <Compile Include="ForestHash\Database\IRemoteVolume.cs" />
-    <Compile Include="ForestHash\Database\LocalBackupDatabase.cs" />
-    <Compile Include="ForestHash\Database\LocalBlocklistUpdateDatabase.cs" />
-    <Compile Include="ForestHash\Database\LocalDatabase.cs" />
-    <Compile Include="ForestHash\Database\LocalRestoreDatabase.cs" />
-    <Compile Include="ForestHash\Database\RemoteVolume.cs" />
-    <Compile Include="ForestHash\Database\RemoteVolumeEntry.cs" />
-    <Compile Include="ForestHash\Enums.cs" />
-    <Compile Include="ForestHash\Operation\BackupHandler.cs" />
-    <Compile Include="ForestHash\Database\ExtensionMethods.cs" />
-    <Compile Include="ForestHash\FhBackend.cs" />
-    <Compile Include="ForestHash\HashlistCollector.cs" />
-    <Compile Include="ForestHash\Operation\FindLastFileVersionHandler.cs" />
-    <Compile Include="ForestHash\Operation\ListFilesHandler.cs" />
-    <Compile Include="ForestHash\Operation\RecreateDatabaseHandler.cs" />
-    <Compile Include="ForestHash\Operation\RestoreControlFilesHandler.cs" />
-    <Compile Include="ForestHash\Operation\RestoreHandler.cs" />
-    <Compile Include="ForestHash\Blockprocessor.cs" />
-    <Compile Include="ForestHash\ForestHash.cs" />
-    <Compile Include="ForestHash\Volumes\BlocklistEnumerable.cs" />
-    <Compile Include="ForestHash\Volumes\BlockVolumeReader.cs" />
-    <Compile Include="ForestHash\Volumes\BlockVolumeWriter.cs" />
-    <Compile Include="ForestHash\Volumes\FilesetVolumeReader.cs" />
-    <Compile Include="ForestHash\Volumes\FilesetVolumeWriter.cs" />
-    <Compile Include="ForestHash\Volumes\IFileEntry.cs" />
-    <Compile Include="ForestHash\Volumes\InvalidManifestException.cs" />
-    <Compile Include="ForestHash\Volumes\IParsedVolume.cs" />
-    <Compile Include="ForestHash\Volumes\VolumeBase.cs" />
-    <Compile Include="ForestHash\Volumes\VolumeReaderBase.cs" />
-    <Compile Include="ForestHash\Volumes\VolumeWriterBase.cs" />
     <Compile Include="Interface.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -123,21 +92,50 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>RSyncDir.resx</DependentUpon>
     </Compile>
-    <Compile Include="StateVerification\StateDatabase.cs" />
-    <Compile Include="StateVerification\LogEntryClasses.cs" />
-    <Compile Include="ForestHash\Database\HashDatabaseProtector.cs" />
-    <Compile Include="ForestHash\Database\LocalDeleteDatabase.cs" />
-    <Compile Include="ForestHash\Operation\CompactHandler.cs" />
-    <Compile Include="ForestHash\Operation\DeleteHandler.cs" />
-    <Compile Include="ForestHash\Database\RestoreIterators.cs" />
-    <Compile Include="ForestHash\AsyncDownloader.cs" />
-    <Compile Include="ForestHash\Database\LocalBugReportDatabase.cs" />
-    <Compile Include="ForestHash\Operation\CreateBugReportHandler.cs" />
-    <Compile Include="ForestHash\Volumes\IndexVolumeWriter.cs" />
-    <Compile Include="ForestHash\Volumes\IndexVolumeReader.cs" />
-    <Compile Include="ForestHash\Operation\RepairHandler.cs" />
-    <Compile Include="ForestHash\Database\LocalRepairDatabase.cs" />
-    <Compile Include="ForestHash\DatabaseLocator.cs" />
+    <Compile Include="Database\ILocalFileEntry.cs" />
+    <Compile Include="Database\IRemoteVolume.cs" />
+    <Compile Include="Database\LocalBackupDatabase.cs" />
+    <Compile Include="Database\LocalBlocklistUpdateDatabase.cs" />
+    <Compile Include="Database\LocalDatabase.cs" />
+    <Compile Include="Database\LocalRestoreDatabase.cs" />
+    <Compile Include="Database\RemoteVolume.cs" />
+    <Compile Include="Database\RemoteVolumeEntry.cs" />
+    <Compile Include="Database\ExtensionMethods.cs" />
+    <Compile Include="Database\HashDatabaseProtector.cs" />
+    <Compile Include="Database\LocalDeleteDatabase.cs" />
+    <Compile Include="Database\RestoreIterators.cs" />
+    <Compile Include="Database\LocalBugReportDatabase.cs" />
+    <Compile Include="Database\LocalRepairDatabase.cs" />
+    <Compile Include="Operation\BackupHandler.cs" />
+    <Compile Include="Operation\FindLastFileVersionHandler.cs" />
+    <Compile Include="Operation\ListFilesHandler.cs" />
+    <Compile Include="Operation\RecreateDatabaseHandler.cs" />
+    <Compile Include="Operation\RestoreControlFilesHandler.cs" />
+    <Compile Include="Operation\RestoreHandler.cs" />
+    <Compile Include="Operation\CompactHandler.cs" />
+    <Compile Include="Operation\DeleteHandler.cs" />
+    <Compile Include="Operation\CreateBugReportHandler.cs" />
+    <Compile Include="Operation\RepairHandler.cs" />
+    <Compile Include="Volumes\BlocklistEnumerable.cs" />
+    <Compile Include="Volumes\BlockVolumeReader.cs" />
+    <Compile Include="Volumes\BlockVolumeWriter.cs" />
+    <Compile Include="Volumes\FilesetVolumeReader.cs" />
+    <Compile Include="Volumes\FilesetVolumeWriter.cs" />
+    <Compile Include="Volumes\IFileEntry.cs" />
+    <Compile Include="Volumes\InvalidManifestException.cs" />
+    <Compile Include="Volumes\IParsedVolume.cs" />
+    <Compile Include="Volumes\VolumeBase.cs" />
+    <Compile Include="Volumes\VolumeReaderBase.cs" />
+    <Compile Include="Volumes\VolumeWriterBase.cs" />
+    <Compile Include="Volumes\IndexVolumeWriter.cs" />
+    <Compile Include="Volumes\IndexVolumeReader.cs" />
+    <Compile Include="AsyncDownloader.cs" />
+    <Compile Include="Blockprocessor.cs" />
+    <Compile Include="DatabaseLocator.cs" />
+    <Compile Include="Enums.cs" />
+    <Compile Include="ForestHash.cs" />
+    <Compile Include="HashlistCollector.cs" />
+    <Compile Include="BackendManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">
@@ -211,6 +209,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>RSyncDir.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Database\Database schema\Schema.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -220,9 +219,6 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <EmbeddedResource Include="ForestHash\Database\Database schema\Schema.sql" />
-  </ItemGroup>
   <ItemGroup>
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

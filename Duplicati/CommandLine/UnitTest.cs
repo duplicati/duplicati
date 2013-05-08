@@ -251,7 +251,7 @@ namespace Duplicati.CommandLine
                 IList<DateTime> entries;
                 entries = new List<DateTime>();
                 foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options, null))
-                    if (el.FileType == Library.Main.ForestHash.RemoteVolumeType.Files)
+                    if (el.FileType == Library.Main.RemoteVolumeType.Files)
                         entries.Add(el.Time.ToLocalTime());
 
                 if (entries.Count != folders.Length)
