@@ -84,20 +84,6 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
-        /// Opens a locked file for reading
-        /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
-        /// <returns>An open filestream that can be read</returns>
-        public override System.IO.Stream OpenLockedRead (string file)
-        {
-            if (!SystemIOWindows.IsPathTooLong(file))
-                try { return base.OpenLockedRead(file); }
-                catch (System.IO.PathTooLongException) { }
-
-            return File.Open(SystemIOWindows.PrefixWithUNC(file), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        }
-
-        /// <summary>
         /// Opens a file for reading
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>

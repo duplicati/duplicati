@@ -184,6 +184,8 @@ namespace Duplicati.Library.Main
             sb.Append("RemoteCalls     : " + this.NumberOfRemoteCalls.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("Executable      : " + Utility.Utility.getEntryAssembly().FullName + "\r\n");
             sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
+            sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
+            sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
 
             if (m_numberOfErrors > 0)
             {

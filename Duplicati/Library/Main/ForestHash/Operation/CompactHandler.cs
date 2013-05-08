@@ -39,16 +39,16 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		
 		public virtual string Run()
 		{
-			if (!System.IO.File.Exists(m_options.Fhdbpath))
-				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Fhdbpath));
+			if (!System.IO.File.Exists(m_options.Dbpath))
+				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 			
-			using(var db = new LocalDeleteDatabase(m_options.Fhdbpath, true))
+			using(var db = new LocalDeleteDatabase(m_options.Dbpath, true))
 			using(var tr = db.BeginTransaction())
 			{
 	        	ForestHash.VerifyParameters(db, m_options);
 	        	
 				var r = DoCompact(db, false, tr);
-				if (m_options.Force && !m_options.FhDryrun)
+				if (m_options.Force && !m_options.Dryrun)
 					tr.Commit();
 				else
 					tr.Rollback();
@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		
 		internal string DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
 		{
-			var report = db.GetCompactReport(m_options.VolumeSize, m_options.FhMaxWasteSize, m_options.FhVolsizeTolerance, transaction);
+			var report = db.GetCompactReport(m_options.VolumeSize, m_options.MaxWasteSize, m_options.VolsizeTolerance, transaction);
 			report.ReportCompactData(m_stat);
 			string msg;
 			
@@ -67,14 +67,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			{
 				using(var backend = new FhBackend(m_backendurl, m_options, m_stat, db))
 				{
-					if (!hasVerifiedBackend && !m_options.FhNoBackendverification)
+					if (!hasVerifiedBackend && !m_options.NoBackendverification)
 						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat);
 		
 					BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
 					newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
 	
 					IndexVolumeWriter newvolindex = null;
-					if (!m_options.FhNoIndexfiles)
+					if (!m_options.NoIndexfiles)
 					{
 						newvolindex = new IndexVolumeWriter(m_options);
 						db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					long blocksInVolume = 0;
 					long discardedBlocks = 0;
 					long discardedSize = 0;
-					byte[] buffer = new byte[m_options.Fhblocksize];
+					byte[] buffer = new byte[m_options.Blocksize];
 					var remoteList = db.GetRemoteVolumes();
 					
 					//These are for bookkeeping
@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 												if (newvolindex != null)
 													uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, new System.IO.FileInfo(newvolindex.LocalFilename).Length));
 	
-												if (m_options.Force && !m_options.FhDryrun)
+												if (m_options.Force && !m_options.Dryrun)
 													backend.Put(newvol, newvolindex);
 												else
 													m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
@@ -149,7 +149,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 												newvol = new BlockVolumeWriter(m_options);
 												newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
 				
-												if (!m_options.FhNoIndexfiles)
+												if (!m_options.NoIndexfiles)
 												{
 													newvolindex = new IndexVolumeWriter(m_options);
 													db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
@@ -178,7 +178,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 								uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
 								if (newvolindex != null)
 									uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, new System.IO.FileInfo(newvolindex.LocalFilename).Length));
-								if (m_options.Force && !m_options.FhDryrun)
+								if (m_options.Force && !m_options.Dryrun)
 									backend.Put(newvol, newvolindex);
 								else
 									m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					var deletedSize = deletedVolumes.Aggregate(0L, (a,x) => a + x.Value);
 					var uploadSize = uploadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
 					
-					if (m_options.Force && !m_options.FhDryrun)
+					if (m_options.Force && !m_options.Dryrun)
 					{
 						if (downloadedVolumes.Count == 0)
 							msg = string.Format("Deleted {0} files, which reduced storage by {1}", deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize));
@@ -233,7 +233,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		{
 			foreach(var f in db.GetDeletableVolumes(deleteableVolumes, transaction))
 			{
-				if (m_options.Force && !m_options.FhDryrun)
+				if (m_options.Force && !m_options.Dryrun)
 					backend.Delete(f.Name);
 				else
 					m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Utility.Utility.FormatSizeString(f.Size));

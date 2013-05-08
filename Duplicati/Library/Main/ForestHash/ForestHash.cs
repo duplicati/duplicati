@@ -179,11 +179,11 @@ namespace Duplicati.Library.Main.ForestHash
             public Metahash(Dictionary<string, string> values, Options options)
             {
                 m_values = values;
-                var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.FhBlockHashAlgorithm);
+                var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
 				if (hasher == null)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, options.FhBlockHashAlgorithm));
+					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, options.BlockHashAlgorithm));
 				if (!hasher.CanReuseTransform)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, options.FhBlockHashAlgorithm));
+					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, options.BlockHashAlgorithm));
 					
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
@@ -232,9 +232,9 @@ namespace Duplicati.Library.Main.ForestHash
 		internal static void VerifyParameters(LocalDatabase db, Options options)
 		{
 			var newDict = new Dictionary<string, string>();
-			newDict.Add("blocksize", options.Fhblocksize.ToString());
-			newDict.Add("blockhash", options.FhBlockHashAlgorithm);
-			newDict.Add("filehash", options.FhFileHashAlgorithm);
+			newDict.Add("blocksize", options.Blocksize.ToString());
+			newDict.Add("blockhash", options.BlockHashAlgorithm);
+			newDict.Add("filehash", options.FileHashAlgorithm);
 			
 		
 			var opts = db.GetDbOptions();
@@ -246,7 +246,7 @@ namespace Duplicati.Library.Main.ForestHash
 					throw new Exception(string.Format("Unsupported change of parameter {0} from {1} to {2}", k.Key, opts[k.Key], k.Value));
 		
 			//Extra sanity check
-			if (db.GetBlocksLargerThan(options.Fhblocksize) > 0)
+			if (db.GetBlocksLargerThan(options.Blocksize) > 0)
 				throw new Exception("Unsupported block-size change detected");
 		
 			if (needsUpdate)
@@ -257,7 +257,7 @@ namespace Duplicati.Library.Main.ForestHash
         internal static IEnumerable<Volumes.IParsedVolume> ParseFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
             var opts = new Options(options);
-            using (var db = new LocalDatabase(opts.Fhdbpath, "ParseFileList"))
+            using (var db = new LocalDatabase(opts.Dbpath, "ParseFileList"))
             using (var b = new FhBackend(target, opts, stat, db))
             {
                 var res = 
@@ -282,7 +282,7 @@ namespace Duplicati.Library.Main.ForestHash
         {
         	var opts = new Options(options);        		
             using(var h = new Operation.RecreateDatabaseHandler(target, opts, stat))
-            	h.Run(opts.Fhdbpath);
+            	h.Run(opts.Dbpath);
             	
             return "Recreate Completed";
         }

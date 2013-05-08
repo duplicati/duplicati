@@ -136,16 +136,6 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public virtual System.IO.Stream OpenRead(string file)
         {
-            return System.IO.File.OpenRead(file);
-        }
-
-        /// <summary>
-        /// Opens a locked file for reading
-        /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
-        /// <returns>An open filestream that can be read</returns>
-        public virtual System.IO.Stream OpenLockedRead(string file)
-        {
             return System.IO.File.Open(file, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
         }
 

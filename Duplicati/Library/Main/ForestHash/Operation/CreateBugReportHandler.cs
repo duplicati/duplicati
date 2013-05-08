@@ -38,12 +38,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			if (System.IO.File.Exists(m_targetpath))
 				throw new Exception(string.Format("Output file already exists, not overwriting {0}"));
 				
-			if (!System.IO.File.Exists(m_options.Fhdbpath))
-				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Fhdbpath));
+			if (!System.IO.File.Exists(m_options.Dbpath))
+				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 				
 			m_stat.LogMessage("Scrubbing filenames from database, this may take a while, please wait");
 
-			System.IO.File.Copy(m_options.Fhdbpath, m_targetpath);
+			System.IO.File.Copy(m_options.Dbpath, m_targetpath);
 			using(var db = new LocalBugReportDatabase(m_targetpath))
 				db.Fix();
 				

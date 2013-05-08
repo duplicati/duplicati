@@ -45,25 +45,25 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         	
             m_options = options;
             m_stat = stat;
-            m_database = new LocalBackupDatabase(m_options.Fhdbpath, m_options);
+            m_database = new LocalBackupDatabase(m_options.Dbpath, m_options);
             m_backendurl = backendurl;
 
             m_sources = sources;
-            m_blockbuffer = new byte[m_options.Fhblocksize];
-            m_blocklistbuffer = new byte[m_options.Fhblocksize];
+            m_blockbuffer = new byte[m_options.Blocksize];
+            m_blocklistbuffer = new byte[m_options.Blocksize];
 
-            m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
-            m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhFileHashAlgorithm);
+            m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+            m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 
 			if (m_blockhasher == null)
-				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));
+				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
 			if (m_filehasher == null)
-				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhFileHashAlgorithm));
+				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
 
             if (!m_blockhasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FhBlockHashAlgorithm));
+                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
             if (!m_filehasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FhFileHashAlgorithm));
+                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
         }
 
         private static Snapshots.ISnapshotService GetSnapshot(string[] sourcefolders, Options options, CommunicationStatistics stat)
@@ -104,7 +104,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            using (m_backend = new FhBackend(m_backendurl, m_options, m_stat, m_database))
 	            using (m_filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
 	            {
-		        	if (!m_options.FhNoBackendverification)
+		        	if (!m_options.NoBackendverification)
 		        	{
 		            	try 
 		            	{
@@ -132,15 +132,15 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		            m_blockvolume = new BlockVolumeWriter(m_options);
 		            m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 		            
-		            if (!m_options.FhNoIndexfiles)
+		            if (!m_options.NoIndexfiles)
 		            {
 			            m_indexvolume = new IndexVolumeWriter(m_options);
 			            m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
 		            }
 		                        	
-	                if (m_options.FhChangedFilelist != null && m_options.FhChangedFilelist.Length >= 1)
+	                if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
 	                {
-	                    foreach (var p in m_options.FhChangedFilelist)
+	                    foreach (var p in m_options.ChangedFilelist)
 	                    {
 	                        FileAttributes fa = new FileAttributes();
 	                        try { fa = m_snapshot.GetAttributes(p); }
@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex); }
 	                    }
 	
-	                    m_database.AppendFilesFromPreviousSet(m_transaction, m_options.FhDeletedFilelist);
+	                    m_database.AppendFilesFromPreviousSet(m_transaction, m_options.DeletedFilelist);
 	                }
 	                else
 	                {
@@ -162,7 +162,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                {
 	 					lastVolumeSize = m_blockvolume.SourceSize;
 	 					
-	                	if (m_options.FhDryrun)
+	                	if (m_options.Dryrun)
 	                	{
 	                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
 	                		if (m_indexvolume != null)
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                            m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 	
 	                    m_database.WriteFileset(m_filesetvolume, m_transaction);
-	                	if (m_options.FhDryrun)
+	                	if (m_options.Dryrun)
 	                		m_stat.LogMessage("[Dryrun] Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length));
 	                	else
 	                	{
@@ -224,12 +224,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 									
 		            m_backend.WaitForComplete(m_database, m_transaction);
 
-		            if (lastVolumeSize < m_options.VolumeSize - m_options.FhVolsizeTolerance && !m_options.FhNoAutoCompact && (m_options.Force || m_options.FhDryrun))
+		            if (lastVolumeSize < m_options.VolumeSize - m_options.VolsizeTolerance && !m_options.NoAutoCompact && (m_options.Force || m_options.Dryrun))
 		            	using(var ch = new CompactHandler(m_backend.BackendUrl, m_options, m_stat))
 	            		using(var db = new LocalDeleteDatabase(m_database))
 		            		ch.DoCompact(db, true, m_transaction);
 		            
-					if (m_options.FhDryrun)
+					if (m_options.Dryrun)
 					{
 						m_transaction.Rollback();
 						m_transaction = null;
@@ -244,6 +244,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							backend.WaitForComplete(m_database, null);
 						}
 	                }
+                    
+                    //TODO: Report Quota stuff
+                    /*assigned-quota-space
+                    free-quota-space
+                    total-backup-size
+                    
+                    Call Interface.MetadataReportDelegate
+                    */
 		    	}
 	    	}
 	    	finally
@@ -267,6 +275,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
         		m_backend.FlushDbMessages(m_database, null);
         	}
+            
+            if ((m_options.FileAttributeFilter & attributes) != 0)
+                return false;
         
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
@@ -277,7 +288,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 {
                     Dictionary<string, string> metadata;
 
-                    if (!m_options.FhNoMetadata)
+                    if (!m_options.NoMetadata)
                     {
                         metadata = null; //snapshot.GetMetadata(path);
                         if (metadata == null)
@@ -308,7 +319,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             {
                 ForestHash.IMetahash metahash;
 
-                if (m_options.FhNoMetadata)
+                if (m_options.NoMetadata)
                 {
                     metahash = EMPTY_METADATA;
                 }
@@ -343,7 +354,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             try
             {
                 DateTime lastModified = m_snapshot.GetLastWriteTime(path);
-                if (oldId < 0 || m_options.DisableFiletimeCheck || lastModified > oldScanned)
+                if (oldId < 0 || m_options.DisableFiletimeCheck || lastModified > oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan))
                 {
                     m_stat.OpenedFiles++;
 
@@ -351,7 +362,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     DateTime scantime = DateTime.UtcNow;
 
                     ForestHash.IMetahash metahashandsize;
-                    if (m_options.FhNoMetadata)
+                    if (m_options.NoMetadata)
                     {
                         metahashandsize = EMPTY_METADATA;
                     }
@@ -427,7 +438,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                 m_stat.AddedFiles++;
                                 m_stat.SizeOfAddedFiles += filesize;
 					            
-					            if (m_options.FhDryrun)
+					            if (m_options.Dryrun)
 					            	m_stat.LogMessage("[Dryrun] Would add new file {0}, size {1}", path, Utility.Utility.FormatSizeString(filesize));
                             }
                             else
@@ -435,7 +446,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                 m_stat.ModifiedFiles++;
                                 m_stat.SizeOfModifiedFiles += filesize;
 					            
-					            if (m_options.FhDryrun)
+					            if (m_options.Dryrun)
 					            	m_stat.LogMessage("[Dryrun] Would add changed file {0}, size {1}", path, Utility.Utility.FormatSizeString(filesize));
                             }
 
@@ -476,9 +487,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
                 m_blockvolume.AddBlock(key, data, len, hint);                	
-                if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Fhblocksize)
+                if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
                 {
-                	if (m_options.FhDryrun)
+                	if (m_options.Dryrun)
                 	{
                 		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
                 		m_blockvolume.Dispose();
@@ -514,7 +525,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     m_blockvolume = new BlockVolumeWriter(m_options);
 					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 					
-					if (!m_options.FhNoIndexfiles)
+					if (!m_options.NoIndexfiles)
 					{
 	                    m_indexvolume = new IndexVolumeWriter(m_options);
 						m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);

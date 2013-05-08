@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main.ForestHash
                 	throw new Exception(string.Format("Encryption method not supported: ", m_options.EncryptionModule));
             }
 
-            m_queue = new BlockingQueue<FileEntryItem>(options.AsynchronousUpload ? (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit) : 1);
+            m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
             m_thread.Name = "Backend Async Worker";
             m_thread.IsBackground = true;
@@ -407,7 +407,7 @@ namespace Duplicati.Library.Main.ForestHash
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Uploading file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(item.Size));
 
-            if (m_backend is Library.Interface.IStreamingBackend)
+            if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
@@ -419,6 +419,15 @@ namespace Duplicati.Library.Main.ForestHash
 
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Uploaded file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(item.Size));
+
+            if (m_options.ListVerifyUploads)
+            {
+                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                if (f == null)
+                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", f.Name));
+                else if (f.Size != item.Size && f.Size >= 0)
+                    throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
+            }
 
 			item.DeleteLocalFile(m_stats);
             m_stats.AddBytesUploaded(item.Size);
@@ -434,7 +443,7 @@ namespace Duplicati.Library.Main.ForestHash
             {
                 m_stats.AddNumberOfRemoteCalls(1);
                 tmpfile = new Utility.TempFile();
-                if (m_backend is Library.Interface.IStreamingBackend)
+                if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
                     using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
@@ -593,7 +602,7 @@ namespace Duplicati.Library.Main.ForestHash
             var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, indexfile);
             req.LocalFilename = item.LocalFilename;
 
-            if (m_queue.Enqueue(req) && !m_options.AsynchronousUpload)
+            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
                 req.WaitForComplete();
 
             if (m_lastException != null)
@@ -605,7 +614,7 @@ namespace Duplicati.Library.Main.ForestHash
                 var req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
                 req2.LocalFilename = indexfile.LocalFilename;
 
-                if (m_queue.Enqueue(req2) && !m_options.AsynchronousUpload)
+                if (m_queue.Enqueue(req2) && m_options.SynchronousUpload)
                     req2.WaitForComplete();
 
                 if (m_lastException != null)

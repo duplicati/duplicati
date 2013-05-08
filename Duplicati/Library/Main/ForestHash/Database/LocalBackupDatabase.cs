@@ -142,17 +142,17 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
             
-			if (options.FhBlockHashLookupMemory > 0)
-                m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashLookupMemory);            
-            if (options.FhFileHashLookupMemory > 0)
-                m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhFileHashLookupMemory);
-            if (options.FhMetadataHashMemory > 0)
-                m_metadataLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhMetadataHashMemory);
+			if (options.BlockHashLookupMemory > 0)
+                m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);            
+            if (options.FileHashLookupMemory > 0)
+                m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FileHashLookupMemory);
+            if (options.MetadataHashMemory > 0)
+                m_metadataLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.MetadataHashMemory);
 
-            if (options.FhFilePathMemory > 0)
+            if (options.FilePathMemory > 0)
             {
-                m_fileScantimeLookup = new HashDatabaseProtector<string, KeyValuePair<long, DateTime>>(PATH_STRING_GUESS_SIZE, (ulong)options.FhFilePathMemory / 2);
-                m_filesetLookup = new HashDatabaseProtector<Tuple<string, long, long>, long>(PATH_STRING_GUESS_SIZE, (ulong)options.FhFilePathMemory / 2);
+                m_fileScantimeLookup = new HashDatabaseProtector<string, KeyValuePair<long, DateTime>>(PATH_STRING_GUESS_SIZE, (ulong)options.FilePathMemory / 2);
+                m_filesetLookup = new HashDatabaseProtector<Tuple<string, long, long>, long>(PATH_STRING_GUESS_SIZE, (ulong)options.FilePathMemory / 2);
             }
 
             //Populate the lookup tables

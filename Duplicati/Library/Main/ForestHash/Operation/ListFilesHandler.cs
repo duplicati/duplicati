@@ -24,8 +24,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             if (!m_options.NoLocalDb)
 #endif
             //Use a speedy local query
-            if (System.IO.File.Exists(m_options.Fhdbpath))
-                using (var db = new Database.LocalDatabase(m_options.Fhdbpath, "ListFiles"))
+            if (System.IO.File.Exists(m_options.Dbpath))
+                using (var db = new Database.LocalDatabase(m_options.Dbpath, "ListFiles"))
                 {
                     var filesetId = db.GetFilesetID(m_options.RestoreTime);
                     return 

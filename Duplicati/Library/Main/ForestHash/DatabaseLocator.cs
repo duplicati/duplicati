@@ -39,8 +39,8 @@ namespace Duplicati.Library.Main.ForestHash
         
         public static string GetDatabasePath(string backend, Options options)
         {
-            if (!string.IsNullOrEmpty(options.Fhdbpath))
-                return options.Fhdbpath;
+            if (!string.IsNullOrEmpty(options.Dbpath))
+                return options.Dbpath;
          
             var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
             if (!System.IO.Directory.Exists(folder))

@@ -28,8 +28,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             if (!m_options.NoLocalDb)
 #endif
             //Use a speedy local query
-            if (System.IO.File.Exists(m_options.Fhdbpath))
-                using (var db = new LocalDatabase(m_options.Fhdbpath, "FindLastFileVersion"))
+            if (System.IO.File.Exists(m_options.Dbpath))
+                using (var db = new LocalDatabase(m_options.Dbpath, "FindLastFileVersion"))
                 {
                 	var found = db.GetNewestFileset(filelist, m_options.RestoreTime).ToDictionary(x => x.Key, x => x.Value);
                 	return (from n in filelist select new KeyValuePair<string, DateTime>(n, found.ContainsKey(n) ? found[n] : dtnull)).ToList();

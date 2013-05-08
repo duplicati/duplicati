@@ -320,7 +320,10 @@ namespace Duplicati.Library.Utility
         {
             //Mono bug-fix
             try { HttpUtility.UrlEncode("test@web.de"); }
-            catch {}
+            catch 
+            {
+                //For some reason Mono throws a static initializer error here
+            }
         }
     }
 }

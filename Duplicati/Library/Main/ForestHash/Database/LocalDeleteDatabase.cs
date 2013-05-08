@@ -358,9 +358,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				m_command = con.CreateCommand();
 				m_command.Transaction = transaction;
 				
-				if (options.FhBlockHashLookupMemory > 0)
+				if (options.BlockHashLookupMemory > 0)
 				{
-					m_lookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashLookupMemory);
+					m_lookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);
 					using(var reader = m_command.ExecuteReader(@"SELECT ""Hash"", ""Size"" FROM ""Block"" "))
 					while (reader.Read())
 					{

@@ -145,9 +145,9 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
         public VolumeBase(Options options)
         {
-            m_blocksize = options.Fhblocksize;
-            m_blockhash = options.FhBlockHashAlgorithm;
-            m_filehash = options.FhFileHashAlgorithm;
+            m_blocksize = options.Blocksize;
+            m_blockhash = options.BlockHashAlgorithm;
+            m_filehash = options.FileHashAlgorithm;
         }
     }
 }

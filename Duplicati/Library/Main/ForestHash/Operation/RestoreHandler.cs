@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_backendurl = backendurl;
 
             m_destination = destination;
-            m_blockbuffer = new byte[m_options.Fhblocksize];
+            m_blockbuffer = new byte[m_options.Blocksize];
 
         }
 
@@ -75,9 +75,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 #if DEBUG
             if (!m_options.NoLocalDb)
 #endif
-                if (System.IO.File.Exists(m_options.Fhdbpath))
+                if (System.IO.File.Exists(m_options.Dbpath))
                 {
-					using(var db = new LocalRestoreDatabase(m_options.Fhdbpath, m_options.Fhblocksize))
+					using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
         	            DoRun(db);
                     return;
                 }
@@ -101,11 +101,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 // Simultaneously with downloading blocklists, we patch as much as we can from the blockvolumes
                 // This prevents repeated downloads, except for cases where the blocklists refer blocks
                 // that have been previously handled. A local blockvolume cache can reduce this issue
-                using (var database = new LocalRestoreDatabase(tmpdb, m_options.Fhblocksize))
+                using (var database = new LocalRestoreDatabase(tmpdb, m_options.Blocksize))
                 {
-                    var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
+                    var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                     if (!blockhasher.CanReuseTransform)
-                        throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FhBlockHashAlgorithm));
+                        throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
 
                     bool first = true;
                     RecreateDatabaseHandler.BlockVolumePostProcessor localpatcher =
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
             {
                 var targetpath = restorelist.Path;
-                if (options.FhDryrun)
+                if (options.Dryrun)
                 {
                 	stat.LogMessage("[Dryrun] Would patch file with remote data: {0}", targetpath);
                 }
@@ -200,18 +200,18 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
-            using (var database = new LocalRestoreDatabase(dbparent, m_options.Fhblocksize))
+            using (var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
             using (var backend = new FhBackend(m_backendurl, m_options, m_stat, database))
             {
 	        	ForestHash.VerifyParameters(database, m_options);
 	        	
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
+                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
 				if (blockhasher == null)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));
+					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FhBlockHashAlgorithm));
+                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
 
-				if (!m_options.FhNoBackendverification)
+				if (!m_options.NoBackendverification)
                 	ForestHash.VerifyRemoteList(backend, m_options, database, m_stat);
 
                 //Figure out what files are to be patched, and what blocks are needed
@@ -230,7 +230,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 				ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, m_stat);
 
                 // If other local files already have the blocks we want, we use them instead of downloading
-				if (m_options.FhPatchWithLocalBlocks)
+				if (m_options.PatchWithLocalBlocks)
                 	ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_stat);
 
                 // Fill BLOCKS with remote sources
@@ -242,9 +242,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         PatchWithBlocklist(database, blocks, m_options, m_stat, m_blockbuffer);
 
                 // After all blocks in the files are restored, verify the file hash
-                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhFileHashAlgorithm);
+                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 				if (filehasher == null)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhFileHashAlgorithm));
+					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
 					
                 foreach (var file in database.GetFilesToRestore())
                 {
@@ -309,7 +309,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
 		                                            if (key == block.Hash)
 		                                            {
-						                            	if (options.FhDryrun)
+						                            	if (options.Dryrun)
 						                            		patched = true;
 					                            		else
 					                            		{
@@ -338,7 +338,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex, null);
                     }
                     
-                    if (patched && options.FhDryrun)
+                    if (patched && options.Dryrun)
                     	stat.LogMessage("[Dryrun] Would patch file with local data: {0}", targetpath);
             	}
             	
@@ -359,11 +359,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     var patched = false;
                     try
                     {
-                        using (var file = options.FhDryrun ? null : System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                        using (var file = options.Dryrun ? null : System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                         using (var block = new Blockprocessor(file, blockbuffer))
                             foreach (var targetblock in restorelist.Blocks)
                             {
-                            	if (!options.FhDryrun)
+                            	if (!options.Dryrun)
                                 	file.Position = targetblock.Offset;
                                 	
                                 foreach (var source in targetblock.Blocksources)
@@ -380,7 +380,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                                     var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
                                                     if (key == targetblock.Hash)
                                                     {
-						                            	if (options.FhDryrun)
+						                            	if (options.Dryrun)
 						                            		patched = true;
 					                            		else
 	                                                        file.Write(blockbuffer, 0, size);
@@ -405,7 +405,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex, null);
                     }
                     
-                    if (patched && options.FhDryrun)
+                    if (patched && options.Dryrun)
                     	stat.LogMessage("[Dryrun] Would patch file with local data: {0}", targetpath);
                 }
 
@@ -436,7 +436,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 try
                 {
                     if (!System.IO.Directory.Exists(folder))
-                    	if (options.FhDryrun)
+                    	if (options.Dryrun)
                     		stat.LogMessage("[Dryrun] Would create folder: {0}", folder);
                     	else
                         	System.IO.Directory.CreateDirectory(folder);
@@ -449,7 +449,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                 try
                 {
-                	if (!options.FhDryrun)
+                	if (!options.Dryrun)
 	                    ApplyMetadata(folder, database);
                 }
                 catch (Exception ex)

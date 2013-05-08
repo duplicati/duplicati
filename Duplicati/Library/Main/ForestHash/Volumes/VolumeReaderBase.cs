@@ -31,13 +31,16 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             : base(options)
         {
             m_compression = compression;
-            using (var s = m_compression.OpenRead(MANIFEST_FILENAME))
+            if (!options.DontReadManifests)
             {
-                if (s == null)
-                    throw new InvalidManifestException("No manifest file found in volume");
-
-                using (var fs = new StreamReader(s, ENCODING))
-                    ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize, options.FhBlockHashAlgorithm, options.FhFileHashAlgorithm);
+                using (var s = m_compression.OpenRead(MANIFEST_FILENAME))
+                {
+                    if (s == null)
+                        throw new InvalidManifestException("No manifest file found in volume");
+    
+                    using (var fs = new StreamReader(s, ENCODING))
+                        ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize, options.BlockHashAlgorithm, options.FileHashAlgorithm);
+                }
             }
         }
 

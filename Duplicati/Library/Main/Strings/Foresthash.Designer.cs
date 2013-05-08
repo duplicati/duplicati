@@ -67,7 +67,8 @@ namespace Duplicati.Library.Main.Strings {
             get {
                 return ResourceManager.GetString("InvalidCryptoSystem", resourceCulture);
             }
-        }        
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to The cryptolibrary does not support the hash algorithm {0}.
         /// </summary>

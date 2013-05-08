@@ -123,25 +123,6 @@ namespace Duplicati.Library.Main
     }
 
     /// <summary>
-    /// An enum that describes the level of verification done by the verify command
-    /// </summary>
-    public enum VerificationLevel
-    {
-        /// <summary>
-        /// Just verify the manifest chain
-        /// </summary>
-        Manifest,
-        /// <summary>
-        /// Verify the manifest chain and all signature files
-        /// </summary>
-        Signature,
-        /// <summary>
-        /// Verify everything, including the content files, requires download of all files
-        /// </summary>
-        Full,
-    }
-
-    /// <summary>
     /// A delegate for reporting progress from within the Duplicati module
     /// </summary>
     /// <param name="caller">The instance that is running</param>
@@ -305,7 +286,7 @@ namespace Duplicati.Library.Main
 
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
             {
-                if (string.IsNullOrEmpty(m_options.Fhdbpath))
+                if (string.IsNullOrEmpty(m_options.Dbpath))
                     throw new Exception(string.Format(Strings.Interface.MissingDatabasepathError, "fh-dbpath"));
 
                 if (sources == null || sources.Length == 0)
@@ -452,8 +433,8 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
                 System.Threading.Thread.CurrentThread.Priority = Utility.Utility.ParsePriority(m_options.ThreadPriority);
 
-            if (string.IsNullOrEmpty(m_options.Fhdbpath))
-                m_options.Fhdbpath = ForestHash.DatabaseLocator.GetDatabasePath(m_backend, m_options);
+            if (string.IsNullOrEmpty(m_options.Dbpath))
+                m_options.Dbpath = ForestHash.DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
             ValidateOptions(stats);
 

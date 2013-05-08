@@ -61,56 +61,11 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to As a precaution, the last full backup will never be removed, even if using the &quot;delete-all-but-n-full 0&quot; command. Set this option to allow removing the last backup..
-        /// </summary>
-        internal static string AllowfullremoveLong {
-            get {
-                return ResourceManager.GetString("AllowfullremoveLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Allow removal of the all backups.
-        /// </summary>
-        internal static string AllowfullremoveShort {
-            get {
-                return ResourceManager.GetString("AllowfullremoveShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only).
         /// </summary>
         internal static string AllowsleepShort {
             get {
                 return ResourceManager.GetString("AllowsleepShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing..
-        /// </summary>
-        internal static string AllowsourcefolderchangeLong {
-            get {
-                return ResourceManager.GetString("AllowsourcefolderchangeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Skip verifying the source folders.
-        /// </summary>
-        internal static string AllowsourcefolderchangeShort {
-            get {
-                return ResourceManager.GetString("AllowsourcefolderchangeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Asynchronous upload is now default, you can turn it off by using the flag --{0}.
-        /// </summary>
-        internal static string AsynchronousuploadDeprecated {
-            get {
-                return ResourceManager.GetString("AsynchronousuploadDeprecated", resourceCulture);
             }
         }
         
@@ -151,24 +106,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace..
-        /// </summary>
-        internal static string AsynchronousuploadLong {
-            get {
-                return ResourceManager.GetString("AsynchronousuploadLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Transmit files on a separate thread.
-        /// </summary>
-        internal static string AsynchronousuploadShort {
-            get {
-                return ResourceManager.GetString("AsynchronousuploadShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to If a backup is interrupted there will likely be partial files present on the backend. Using this flag, Duplicati will automatically remove such files when encountered..
         /// </summary>
         internal static string AutocleanupLong {
@@ -183,24 +120,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string AutocleanupShort {
             get {
                 return ResourceManager.GetString("AutocleanupShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state..
-        /// </summary>
-        internal static string BackendlogdatabaseLong {
-            get {
-                return ResourceManager.GetString("BackendlogdatabaseLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Database log of remote operations.
-        /// </summary>
-        internal static string BackendlogdatabaseShort {
-            get {
-                return ResourceManager.GetString("BackendlogdatabaseShort", resourceCulture);
             }
         }
         
@@ -259,6 +178,78 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This is a very advanced option! This option can be used to select a block hash algorithm with smaller or larger hash size, for performance or storage space reasons..
+        /// </summary>
+        internal static string BlockhashalgorithmLong {
+            get {
+                return ResourceManager.GetString("BlockhashalgorithmLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The hash algorithm used on blocks.
+        /// </summary>
+        internal static string BlockhashalgorithmShort {
+            get {
+                return ResourceManager.GetString("BlockhashalgorithmShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
+        /// </summary>
+        internal static string BlockhashlookupsizeLong {
+            get {
+                return ResourceManager.GetString("BlockhashlookupsizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory used by the block hash.
+        /// </summary>
+        internal static string BlockhashlookupsizeShort {
+            get {
+                return ResourceManager.GetString("BlockhashlookupsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The blocksize determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created..
+        /// </summary>
+        internal static string BlocksizeLong {
+            get {
+                return ResourceManager.GetString("BlocksizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Blocksize used in hashing.
+        /// </summary>
+        internal static string BlocksizeShort {
+            get {
+                return ResourceManager.GetString("BlocksizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes..
+        /// </summary>
+        internal static string ChangedfilesetLong {
+            get {
+                return ResourceManager.GetString("ChangedfilesetLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List of files to examine for changes.
+        /// </summary>
+        internal static string ChangedfilesetShort {
+            get {
+                return ResourceManager.GetString("ChangedfilesetShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}..
         /// </summary>
         internal static string CompressionextensionfileLong {
@@ -295,20 +286,20 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when verifying a backup set..
+        ///   Looks up a localized string similar to Path to the file containing the local cache of the remote file database.
         /// </summary>
-        internal static string CreateverificationfileLong {
+        internal static string DbpathLong {
             get {
-                return ResourceManager.GetString("CreateverificationfileLong", resourceCulture);
+                return ResourceManager.GetString("DbpathLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Create verification file on server.
+        ///   Looks up a localized string similar to Path to the local state database.
         /// </summary>
-        internal static string CreateverificationfileShort {
+        internal static string DbpathShort {
             get {
-                return ResourceManager.GetString("CreateverificationfileShort", resourceCulture);
+                return ResourceManager.GetString("DbpathShort", resourceCulture);
             }
         }
         
@@ -345,6 +336,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string DebugretryerrorsShort {
             get {
                 return ResourceManager.GetString("DebugretryerrorsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set..
+        /// </summary>
+        internal static string DeletedfilesetLong {
+            get {
+                return ResourceManager.GetString("DeletedfilesetLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List of deleted files.
+        /// </summary>
+        internal static string DeletedfilesetShort {
+            get {
+                return ResourceManager.GetString("DeletedfilesetShort", resourceCulture);
             }
         }
         
@@ -475,6 +484,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option can be used to experiment with different settings and observe the outcome without changing actual files..
+        /// </summary>
+        internal static string DryrunLong {
+            get {
+                return ResourceManager.GetString("DryrunLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Does not perform any modifications.
+        /// </summary>
+        internal static string DryrunShort {
+            get {
+                return ResourceManager.GetString("DryrunShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Supply one or more module names, separated by commas to load them.
         /// </summary>
         internal static string EnablemoduleLong {
@@ -507,24 +534,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string EncryptionmoduleShort {
             get {
                 return ResourceManager.GetString("EncryptionmoduleShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to By setting this option to true, a folder which has no files that match the filter will be excluded from the backup.
-        /// </summary>
-        internal static string ExcludeemptyfoldersLong {
-            get {
-                return ResourceManager.GetString("ExcludeemptyfoldersLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Controls empty folder actions.
-        /// </summary>
-        internal static string ExcludeemptyfoldersShort {
-            get {
-                return ResourceManager.GetString("ExcludeemptyfoldersShort", resourceCulture);
             }
         }
         
@@ -583,326 +592,56 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This is a very advanced option! This option can be used to select a block hash algorithm with smaller or larger hash size, for performance or storage space reasons..
-        /// </summary>
-        internal static string FhblockhashalgorithmLong {
-            get {
-                return ResourceManager.GetString("FhblockhashalgorithmLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The hash algorithm used on blocks.
-        /// </summary>
-        internal static string FhblockhashalgorithmShort {
-            get {
-                return ResourceManager.GetString("FhblockhashalgorithmShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
-        /// </summary>
-        internal static string FhblockhashlookupsizeLong {
-            get {
-                return ResourceManager.GetString("FhblockhashlookupsizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Memory used by the block hash.
-        /// </summary>
-        internal static string FhblockhashlookupsizeShort {
-            get {
-                return ResourceManager.GetString("FhblockhashlookupsizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The blocksize determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created..
-        /// </summary>
-        internal static string FhblocksizeLong {
-            get {
-                return ResourceManager.GetString("FhblocksizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Blocksize used in hashing.
-        /// </summary>
-        internal static string FhblocksizeShort {
-            get {
-                return ResourceManager.GetString("FhblocksizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes..
-        /// </summary>
-        internal static string FhchangedfilesetLong {
-            get {
-                return ResourceManager.GetString("FhchangedfilesetLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to List of files to examine for changes.
-        /// </summary>
-        internal static string FhchangedfilesetShort {
-            get {
-                return ResourceManager.GetString("FhchangedfilesetShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Path to the file containing the local cache of the remote file database.
-        /// </summary>
-        internal static string FhdbpathLong {
-            get {
-                return ResourceManager.GetString("FhdbpathLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Path to the local state database.
-        /// </summary>
-        internal static string FhdbpathShort {
-            get {
-                return ResourceManager.GetString("FhdbpathShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set..
-        /// </summary>
-        internal static string FhdeletedfilesetLong {
-            get {
-                return ResourceManager.GetString("FhdeletedfilesetLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to List of deleted files.
-        /// </summary>
-        internal static string FhdeletedfilesetShort {
-            get {
-                return ResourceManager.GetString("FhdeletedfilesetShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This option can be used to experiment with different settings and observe the outcome without changing actual files..
-        /// </summary>
-        internal static string FhdryrunLong {
-            get {
-                return ResourceManager.GetString("FhdryrunLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Does not perform any modifications.
-        /// </summary>
-        internal static string FhdryrunShort {
-            get {
-                return ResourceManager.GetString("FhdryrunShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to This is a very advanced option! This option can be used to select a file hash algorithm with smaller or larger hash size, for performance or storage space reasons..
         /// </summary>
-        internal static string FhfilehashalgorithmLong {
+        internal static string FilehashalgorithmLong {
             get {
-                return ResourceManager.GetString("FhfilehashalgorithmLong", resourceCulture);
+                return ResourceManager.GetString("FilehashalgorithmLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The hash algorithm used on files.
         /// </summary>
-        internal static string FhfilehashalgorithmShort {
+        internal static string FilehashalgorithmShort {
             get {
-                return ResourceManager.GetString("FhfilehashalgorithmShort", resourceCulture);
+                return ResourceManager.GetString("FilehashalgorithmShort", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
         /// </summary>
-        internal static string FhfilehashlookupsizeLong {
+        internal static string FilehashlookupsizeLong {
             get {
-                return ResourceManager.GetString("FhfilehashlookupsizeLong", resourceCulture);
+                return ResourceManager.GetString("FilehashlookupsizeLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Memory used by the file hash.
         /// </summary>
-        internal static string FhfilehashlookupsizeShort {
+        internal static string FilehashlookupsizeShort {
             get {
-                return ResourceManager.GetString("FhfilehashlookupsizeShort", resourceCulture);
+                return ResourceManager.GetString("FilehashlookupsizeShort", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to This option can be used to speed up backup operations by keeping scantimes and other path related data in memory.
         /// </summary>
-        internal static string FhfilepathlookupsizeLong {
+        internal static string FilepathlookupsizeLong {
             get {
-                return ResourceManager.GetString("FhfilepathlookupsizeLong", resourceCulture);
+                return ResourceManager.GetString("FilepathlookupsizeLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Memory used to keep paths cached.
         /// </summary>
-        internal static string FhfilepathlookupsizeShort {
+        internal static string FilepathlookupsizeShort {
             get {
-                return ResourceManager.GetString("FhfilepathlookupsizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value cannot be less than the volumesize, the default value is two times the volumesize..
-        /// </summary>
-        internal static string FhmaxwastesizeLong {
-            get {
-                return ResourceManager.GetString("FhmaxwastesizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The maximum allowed wasted space.
-        /// </summary>
-        internal static string FhmaxwastesizeShort {
-            get {
-                return ResourceManager.GetString("FhmaxwastesizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
-        /// </summary>
-        internal static string FhmetadatahashlookupsizeLong {
-            get {
-                return ResourceManager.GetString("FhmetadatahashlookupsizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Memory used by the metadata hash.
-        /// </summary>
-        internal static string FhmetadatahashlookupsizeShort {
-            get {
-                return ResourceManager.GetString("FhmetadatahashlookupsizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If a large number of small files are detected during a backup, or wasted space is found after deleting backups, the remote data will be compacted. Use this option to disable such automatic compacting and only compact when running the compact command..
-        /// </summary>
-        internal static string FhnoautocompactLong {
-            get {
-                return ResourceManager.GetString("FhnoautocompactLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Disable automatic compating.
-        /// </summary>
-        internal static string FhnoautocompactShort {
-            get {
-                return ResourceManager.GetString("FhnoautocompactShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable..
-        /// </summary>
-        internal static string FhnobackendverificationLong {
-            get {
-                return ResourceManager.GetString("FhnobackendverificationLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Do not query backend at startup.
-        /// </summary>
-        internal static string FhnobackendverificationShort {
-            get {
-                return ResourceManager.GetString("FhnobackendverificationShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If this flag is set, no index files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded..
-        /// </summary>
-        internal static string FhnoindexfilesLong {
-            get {
-                return ResourceManager.GetString("FhnoindexfilesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Do not upload index files.
-        /// </summary>
-        internal static string FhnoindexfilesShort {
-            get {
-                return ResourceManager.GetString("FhnoindexfilesShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time..
-        /// </summary>
-        internal static string FhnometadataLong {
-            get {
-                return ResourceManager.GetString("FhnometadataLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Disable storing file metadata.
-        /// </summary>
-        internal static string FhnometadataShort {
-            get {
-                return ResourceManager.GetString("FhnometadataShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable this option to look into other files on this machine to find existing blocks. This is a fairly slow operation but can limit the size of downloads..
-        /// </summary>
-        internal static string FhpatchwithlocalblocksLong {
-            get {
-                return ResourceManager.GetString("FhpatchwithlocalblocksLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use local file data when restoring.
-        /// </summary>
-        internal static string FhpatchwithlocalblocksShort {
-            get {
-                return ResourceManager.GetString("FhpatchwithlocalblocksShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten..
-        /// </summary>
-        internal static string FhvolumesizetoleranceLong {
-            get {
-                return ResourceManager.GetString("FhvolumesizetoleranceLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Volume size threshold.
-        /// </summary>
-        internal static string FhvolumesizetoleranceShort {
-            get {
-                return ResourceManager.GetString("FhvolumesizetoleranceShort", resourceCulture);
+                return ResourceManager.GetString("FilepathlookupsizeShort", resourceCulture);
             }
         }
         
@@ -939,105 +678,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string ForceShort {
             get {
                 return ResourceManager.GetString("ForceShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use this option to limit the length of the backup chain to a certain number. The number supplied here indicates the maximum number of incrementals a chain can contain (not counting the root full backup).
-        /// </summary>
-        internal static string FullifmorethannincrementalsLong {
-            get {
-                return ResourceManager.GetString("FullifmorethannincrementalsLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The max number of incrementals in a chain.
-        /// </summary>
-        internal static string FullifmorethannincrementalsShort {
-            get {
-                return ResourceManager.GetString("FullifmorethannincrementalsShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If the last full backup is older than the duration supplied here, Duplicati will make a full backup, otherwise an incremental.
-        /// </summary>
-        internal static string FullifolderthanLong {
-            get {
-                return ResourceManager.GetString("FullifolderthanLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The max duration between full backups.
-        /// </summary>
-        internal static string FullifolderthanShort {
-            get {
-                return ResourceManager.GetString("FullifolderthanShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to It is not allowed to change the sourcefolder or the number of source folders. If this option is enabled, the backup will become a full backup if the source folders have changed, which will then start a new chain of backups with the new folder set. If --allow-sourcefolder-change is also set, a full backup is only issued if the number of of source folders have changed.
-        /// </summary>
-        internal static string FullifsourcefolderchangedLong {
-            get {
-                return ResourceManager.GetString("FullifsourcefolderchangedLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Run a full backup if the sourcefolder has changed.
-        /// </summary>
-        internal static string FullifsourcefolderchangedShort {
-            get {
-                return ResourceManager.GetString("FullifsourcefolderchangedShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to When this flag is specified, Duplicati will make a full backup of all files, and ignore any incremental data..
-        /// </summary>
-        internal static string FullLong {
-            get {
-                return ResourceManager.GetString("FullLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A flag used to force full backups.
-        /// </summary>
-        internal static string FullShort {
-            get {
-                return ResourceManager.GetString("FullShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use --encryption-module=gpg instead.
-        /// </summary>
-        internal static string GpgencryptionDeprecated {
-            get {
-                return ResourceManager.GetString("GpgencryptionDeprecated", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to By default, Duplicati will use the AES encryption algorithm to encrypt the backup volumes, setting this flag makes Duplicati use the GNU Privacy Guard instead. GnuPG must be installed on the machine for this to work..
-        /// </summary>
-        internal static string GpgencryptionLong {
-            get {
-                return ResourceManager.GetString("GpgencryptionLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use GnuPG for encryption.
-        /// </summary>
-        internal static string GpgencryptionShort {
-            get {
-                return ResourceManager.GetString("GpgencryptionShort", resourceCulture);
             }
         }
         
@@ -1168,6 +808,78 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value cannot be less than the volumesize, the default value is two times the volumesize..
+        /// </summary>
+        internal static string MaxwastesizeLong {
+            get {
+                return ResourceManager.GetString("MaxwastesizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The maximum allowed wasted space.
+        /// </summary>
+        internal static string MaxwastesizeShort {
+            get {
+                return ResourceManager.GetString("MaxwastesizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
+        /// </summary>
+        internal static string MetadatahashlookupsizeLong {
+            get {
+                return ResourceManager.GetString("MetadatahashlookupsizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory used by the metadata hash.
+        /// </summary>
+        internal static string MetadatahashlookupsizeShort {
+            get {
+                return ResourceManager.GetString("MetadatahashlookupsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If a large number of small files are detected during a backup, or wasted space is found after deleting backups, the remote data will be compacted. Use this option to disable such automatic compacting and only compact when running the compact command..
+        /// </summary>
+        internal static string NoautocompactLong {
+            get {
+                return ResourceManager.GetString("NoautocompactLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disable automatic compating.
+        /// </summary>
+        internal static string NoautocompactShort {
+            get {
+                return ResourceManager.GetString("NoautocompactShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable..
+        /// </summary>
+        internal static string NobackendverificationLong {
+            get {
+                return ResourceManager.GetString("NobackendverificationLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not query backend at startup.
+        /// </summary>
+        internal static string NobackendverificationShort {
+            get {
+                return ResourceManager.GetString("NobackendverificationShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. This option can be used to ensure that each operation is performed on a seperate connection.
         /// </summary>
         internal static string NoconnectionreuseLong {
@@ -1204,6 +916,42 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If this flag is set, no index files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded..
+        /// </summary>
+        internal static string NoindexfilesLong {
+            get {
+                return ResourceManager.GetString("NoindexfilesLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not upload index files.
+        /// </summary>
+        internal static string NoindexfilesShort {
+            get {
+                return ResourceManager.GetString("NoindexfilesShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time..
+        /// </summary>
+        internal static string NometadataLong {
+            get {
+                return ResourceManager.GetString("NometadataLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disable storing file metadata.
+        /// </summary>
+        internal static string NometadataShort {
+            get {
+                return ResourceManager.GetString("NometadataShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If an upload or download fails, Duplicati will retry a number of times before failing. Use this to handle unstable network connections better..
         /// </summary>
         internal static string NumberofretriesLong {
@@ -1222,51 +970,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This option will be removed in the future but is included for the odd case where the new format breaks something.
-        /// </summary>
-        internal static string OldfilenamesDeprecated {
-            get {
-                return ResourceManager.GetString("OldfilenamesDeprecated", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to By setting this option the filenames generated by Duplicati will contain a time separator as well as a timezone component, which is not cross platform compatible.
-        /// </summary>
-        internal static string OldfilenamesLong {
-            get {
-                return ResourceManager.GetString("OldfilenamesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Uses the old filename format.
-        /// </summary>
-        internal static string OldfilenamesShort {
-            get {
-                return ResourceManager.GetString("OldfilenamesShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If Duplicati encounters a file that is opened by another program, it will attempt to read whatever contents that are in the file. Since the file may be written during the backup, this can cause the backup to contain a partially written file. Use this option to disable this, omitting locked files from the backup. This option has no effect if a snapshot is active..
-        /// </summary>
-        internal static string OpenfilepolicyLong {
-            get {
-                return ResourceManager.GetString("OpenfilepolicyLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Determines how to handle open files.
-        /// </summary>
-        internal static string OpenfilepolicyShort {
-            get {
-                return ResourceManager.GetString("OpenfilepolicyShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE..
         /// </summary>
         internal static string PassphraseLong {
@@ -1281,6 +984,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string PassphraseShort {
             get {
                 return ResourceManager.GetString("PassphraseShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable this option to look into other files on this machine to find existing blocks. This is a fairly slow operation but can limit the size of downloads..
+        /// </summary>
+        internal static string PatchwithlocalblocksLong {
+            get {
+                return ResourceManager.GetString("PatchwithlocalblocksLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use local file data when restoring.
+        /// </summary>
+        internal static string PatchwithlocalblocksShort {
+            get {
+                return ResourceManager.GetString("PatchwithlocalblocksShort", resourceCulture);
             }
         }
         
@@ -1357,51 +1078,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Duplicati now uses a filename format that is portable across all operating systems, so this option should not be used and will be removed in the future.
-        /// </summary>
-        internal static string ShortfilenamesDeprecated {
-            get {
-                return ResourceManager.GetString("ShortfilenamesDeprecated", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If the filesystem does not support the long filenames that Duplicati uses, this switch will change the time to be a much more compact, but hard to read format. It will also make the default prefix &quot;dpl&quot;..
-        /// </summary>
-        internal static string ShortfilenamesLong {
-            get {
-                return ResourceManager.GetString("ShortfilenamesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use short filenames.
-        /// </summary>
-        internal static string ShortfilenamesShort {
-            get {
-                return ResourceManager.GetString("ShortfilenamesShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If this path is supplied, Duplicati will store all signature files here, so re-downloads can be avoided..
-        /// </summary>
-        internal static string SignaturecachepathLong {
-            get {
-                return ResourceManager.GetString("SignaturecachepathLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A path to temporary storage.
-        /// </summary>
-        internal static string SignaturecachepathShort {
-            get {
-                return ResourceManager.GetString("SignaturecachepathShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Supply a list of files separated with semicolons, that will be added to each backup. The Duplicati GUI program uses this to store the setup database with each backup..
         /// </summary>
         internal static string SignaturecontrolfilesLong {
@@ -1470,24 +1146,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string SnapshotpolicyShort {
             get {
                 return ResourceManager.GetString("SnapshotpolicyShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead.
-        /// </summary>
-        internal static string SortedfilelistLong {
-            get {
-                return ResourceManager.GetString("SortedfilelistLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Sort the list of files.
-        /// </summary>
-        internal static string SortedfilelistShort {
-            get {
-                return ResourceManager.GetString("SortedfilelistShort", resourceCulture);
             }
         }
         
@@ -1564,51 +1222,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Duplicati no longer uses a time separator for the filenames so this option is useless.
-        /// </summary>
-        internal static string TimeseparatorDeprecated {
-            get {
-                return ResourceManager.GetString("TimeseparatorDeprecated", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Per default, Duplicati will use the colon &quot;:&quot; character to separate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character..
-        /// </summary>
-        internal static string TimeseparatorLong {
-            get {
-                return ResourceManager.GetString("TimeseparatorLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Backup volume filename timeseparator.
-        /// </summary>
-        internal static string TimeseparatorShort {
-            get {
-                return ResourceManager.GetString("TimeseparatorShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This option can place an upper limit on the total size of each backup. Note that if this flag is specified the backup may not contain all files, even for a full backup..
-        /// </summary>
-        internal static string TotalsizeLong {
-            get {
-                return ResourceManager.GetString("TotalsizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The number of bytes generated by each backup run.
-        /// </summary>
-        internal static string TotalsizeShort {
-            get {
-                return ResourceManager.GetString("TotalsizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty.
         /// </summary>
         internal static string UploadUnchangedBackupsLong {
@@ -1645,24 +1258,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this option to change the level of verifiation done by the verify command. The setting &quot;manifest&quot; will only verify the manifest chain. The settings &quot;signature&quot; will also download and verify all signature files. The setting &quot;full&quot;, will download all files, including content files, and verify that they are unchanged..
-        /// </summary>
-        internal static string VerificationLevelLong {
-            get {
-                return ResourceManager.GetString("VerificationLevelLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Level of verification.
-        /// </summary>
-        internal static string VerificationLevelShort {
-            get {
-                return ResourceManager.GetString("VerificationLevelShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to This option can change the default volume size. Changing the size can be usefull if the backend has a limit on the size of each individual file.
         /// </summary>
         internal static string VolsizeLong {
@@ -1677,6 +1272,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string VolsizeShort {
             get {
                 return ResourceManager.GetString("VolsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten..
+        /// </summary>
+        internal static string VolumesizetoleranceLong {
+            get {
+                return ResourceManager.GetString("VolumesizetoleranceLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Volume size threshold.
+        /// </summary>
+        internal static string VolumesizetoleranceShort {
+            get {
+                return ResourceManager.GetString("VolumesizetoleranceShort", resourceCulture);
             }
         }
         

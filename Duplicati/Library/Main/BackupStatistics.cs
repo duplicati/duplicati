@@ -43,19 +43,11 @@ namespace Duplicati.Library.Main
         private long m_addedSymlinks;
         private long m_deletedSymlinks;
 
-        private bool m_full = false;
         private bool m_partialBackup = false;
-        private string m_typeReason = null;
 
         public BackupStatistics(DuplicatiOperationMode operationMode)
             : base(operationMode)
         {
-        }
-
-        public bool Full
-        {
-            get { return m_full; }
-            set { m_full = value; }
         }
 
         public long DeletedFiles
@@ -167,20 +159,11 @@ namespace Duplicati.Library.Main
             set { m_partialBackup = true; }
         }
 
-        public void SetTypeReason(string reason)
-        {
-            m_typeReason = reason;
-        }
-
         public override string ToString()
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
             sb.Append(base.ToString());
-            sb.Append("BackupType      : " + (this.Full ? "Full" : "Incremental") + "\r\n");
-
-            if (this.m_typeReason != null)
-                sb.Append("TypeReason      : " + this.m_typeReason + "\r\n");
             sb.Append("DeletedFiles    : " + this.DeletedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("DeletedFolders  : " + this.DeletedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("DeletedSymlinks : " + this.DeletedSymlinks.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
