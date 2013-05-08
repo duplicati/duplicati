@@ -128,7 +128,7 @@ namespace Duplicati.Library.Main.Operation
 							
                             using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options, hashsize))
                             {
-					        	ForestHash.VerifyParameters(restoredb, m_options);
+					        	Utility.VerifyParameters(restoredb, m_options);
 
                                 //If there are blocklists in the index file, update the blocklists
                                 foreach (var b in svr.BlockLists)

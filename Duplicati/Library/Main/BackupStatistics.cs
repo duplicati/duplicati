@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main
 
         private bool m_partialBackup = false;
 
-        public BackupStatistics(DuplicatiOperationMode operationMode)
+        public BackupStatistics(OperationMode operationMode)
             : base(operationMode)
         {
         }

@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
 
-            using (var tmpdb = new Utility.TempFile())
+            using (var tmpdb = new Library.Utility.TempFile())
             {
                 RecreateDatabaseHandler.FilterFilelistDelegate filelistfilter = FilterFilelist(m_options.RestoreTime);
 
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Operation
             using (var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
             using (var backend = new BackendManager(m_backendurl, m_options, m_stat, database))
             {
-	        	ForestHash.VerifyParameters(database, m_options);
+	        	Utility.VerifyParameters(database, m_options);
 	        	
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
 				if (blockhasher == null)
@@ -212,7 +212,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
 
 				if (!m_options.NoBackendverification)
-                	ForestHash.VerifyRemoteList(backend, m_options, database, m_stat);
+                	FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_stat);
 
                 //Figure out what files are to be patched, and what blocks are needed
                 PrepareBlockAndFileList(database, m_options, m_destination, m_stat);

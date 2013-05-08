@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
 			m_stat.LogWarning("No local database, accessing remote store", null);
 
             // Otherwise, grab info from remote location
-            using (var tmpdb = new Utility.TempFile())
+            using (var tmpdb = new Library.Utility.TempFile())
             using (var db = new LocalDatabase(tmpdb, "FindLastFileVersion"))
             using (var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
             {

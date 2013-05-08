@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Volumes
                     Version = VERSION,
                     Encoding = ENCODING,
                     Blocksize = blocksize,
-                    Created = Utility.Utility.SerializeDateTime(DateTime.UtcNow),
+                    Created = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow),
                     BlockHash = blockhash,
                     FileHash = filehash
                 });
@@ -110,7 +110,7 @@ namespace Duplicati.Library.Main.Volumes
 			string volumename;
 
             if (filetype == RemoteVolumeType.Files)
-                volumename = prefix + "-backup" + "-" + Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
+                volumename = prefix + "-backup" + "-" + Library.Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
             else
                 volumename = prefix + "-" + guid + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
 

@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main
         private long m_numberOfBytesUploaded;
         private long m_numberOfRemoteCalls;
         private long m_numberOfBytesDownloaded;
-        private DuplicatiOperationMode m_operationMode;
+        private OperationMode m_operationMode;
 
         private long m_numberOfErrors;
         private StringBuilder m_errorMessages = new StringBuilder();
@@ -47,13 +47,13 @@ namespace Duplicati.Library.Main
         private long m_numberOfRetries;
         private StringBuilder m_retryMessages = new StringBuilder();
         
-        public CommunicationStatistics(DuplicatiOperationMode operationMode)
+        public CommunicationStatistics(OperationMode operationMode)
         {
             m_operationMode = operationMode;
             m_beginTime = m_endTime = DateTime.Now;
         }
 
-        public DuplicatiOperationMode OperationMode { get { return m_operationMode; } }
+        public OperationMode OperationMode { get { return m_operationMode; } }
 
         public bool QuietConsole
         {
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main
             sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("RemoteCalls     : " + this.NumberOfRemoteCalls.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("Executable      : " + Utility.Utility.getEntryAssembly().FullName + "\r\n");
+            sb.Append("Executable      : " + Library.Utility.Utility.getEntryAssembly().FullName + "\r\n");
             sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
             sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
             sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");

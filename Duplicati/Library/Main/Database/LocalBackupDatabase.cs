@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.Database
             m_insertmetadatasetCommand.AddParameter();
 
             //Need a temporary table with path/scantime lookups
-            m_scantimelookupTablename = "ScanTime-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            m_scantimelookupTablename = "ScanTime-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             using (var cmd = m_connection.CreateCommand())
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM ""FilesetEntry"" INNER JOIN ""File"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" GROUP BY ""FilesetEntry"".""FileID"", ""File"".""Path"" ", m_scantimelookupTablename));
 

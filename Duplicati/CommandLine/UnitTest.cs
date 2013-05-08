@@ -195,12 +195,13 @@ namespace Duplicati.CommandLine
                 {
                     Console.WriteLine("Removing old backups");
                     Dictionary<string, string> tmp = new Dictionary<string, string>(options);
-                    tmp["delete-all-but-n-full"] = "0";
+                    tmp["delete-all-but-n"] = "0";
                     tmp["force"] = "";
                     tmp["allow-full-removal"] = "";
 
                     using (new Timer("Cleaning up any existing backups")) 
-                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButN(target, tmp));
+                        using(var i = new Duplicati.Library.Main.Controller(target, tmp))
+                            i.Delete();
                 }
 
                 log.Backupset = "Backup " + folders[0];
@@ -250,9 +251,10 @@ namespace Duplicati.CommandLine
 
                 IList<DateTime> entries;
                 entries = new List<DateTime>();
-                foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options, null))
-                    if (el.FileType == Library.Main.RemoteVolumeType.Files)
-                        entries.Add(el.Time.ToLocalTime());
+                using(var i = new Duplicati.Library.Main.Controller(target, options))
+                    foreach (var el in i.ParseFileList())
+                        if (el.FileType == Library.Main.RemoteVolumeType.Files)
+                            entries.Add(el.Time.ToLocalTime());
 
                 if (entries.Count != folders.Length)
                 {
@@ -292,7 +294,9 @@ namespace Duplicati.CommandLine
                                     List<string> testfiles = new List<string>();
                                     using (new Timer("Extract list of files from" + folders[i]))
                                     {
-                                        IList<string> sourcefiles = Duplicati.Library.Main.Interface.List(target, options);
+                                        IList<string> sourcefiles;
+                                        using(var inst = new Library.Main.Controller(target, options))
+                                            sourcefiles = inst.List();
         
                                         //Remove all folders from list
                                         for (int j = 0; j < sourcefiles.Count; j++)
@@ -472,19 +476,22 @@ namespace Duplicati.CommandLine
         {
             Console.WriteLine("Backing up the " + (Library.Utility.Utility.ParseBoolOption(options, "full") ? "full" : "incremental") + "  copy: " + sourcename);
             using (new Timer((Library.Utility.Utility.ParseBoolOption(options, "full") ? "Full" : "Incremental") + " backup of " + sourcename))
-                Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options), LogMessageType.Information);
+                using(var i = new Duplicati.Library.Main.Controller(target, options))
+                    Log.WriteMessage(i.Backup(source.Split(System.IO.Path.PathSeparator)), LogMessageType.Information);
         }
 
         private static void RunRestore(string source, string target, string[] restorefoldernames, Dictionary<string, string> options)
         {
             using (new Timer("Restore of " + source))
-                Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, restorefoldernames, options), LogMessageType.Information);
+                using(var i = new Duplicati.Library.Main.Controller(target, options))
+                    Log.WriteMessage(i.Restore(restorefoldernames), LogMessageType.Information);
         }
 
         private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> tops)
         {
             using (new Timer("Partial restore of " + source))
-                Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, new string[] { tempfolder }, tops), LogMessageType.Information);
+                using(var i = new Duplicati.Library.Main.Controller(target, tops))
+                    Log.WriteMessage(i.Restore(new string[] { tempfolder }), LogMessageType.Information);
         }
 
         /// <summary>

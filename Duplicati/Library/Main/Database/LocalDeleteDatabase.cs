@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Database
 				cmd.Transaction = transaction;
 				
 				//We create a table with the operationIDs that are about to be deleted
-				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+				var tmptablename = "DeletedOperations-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 				cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""ID"" FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT {1})", tmptablename, keep));
 				
 				result = DropFromIDTable(cmd, tmptablename, stat);
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Database
 					keepFilesetId = GetLastFilesetID(cmd);
 				
 				//We create a table with the operationIDs that are about to be deleted
-				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+				var tmptablename = "DeletedOperations-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 				cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""ID"" FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" > ? OR ""ID"" = ? ORDER BY ""Timestamp"")", tmptablename), limit.ToUniversalTime(), keepFilesetId);
 				
 				result = DropFromIDTable(cmd, tmptablename, stat);
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Database
 				if (!allowRemovingLast)
 					keepFilesetId = GetLastFilesetID(cmd);
 
-				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+				var tmptablename = "DeletedOperations-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 				cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER NOT NULL)", tmptablename));
 				
 				foreach(var d in filesets.Split(new char[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
@@ -220,7 +220,7 @@ namespace Duplicati.Library.Main.Database
 		/// <returns>A list of tuples with name, datasize, wastedbytes.</returns>
 		private IEnumerable<VolumeUsage> GetWastedSpaceReport(System.Data.IDbTransaction transaction)
 		{
-			var tmptablename = "UsageReport-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+			var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 			var active = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"", MIN(""FilesetEntry"".""Scantime"") AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" GROUP BY ""Block"".""VolumeID"" ";
 			var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
 			
@@ -291,15 +291,15 @@ namespace Duplicati.Library.Main.Database
 			public void ReportCompactData(CommunicationStatistics stat)
 			{
 				stat.LogMessage("Found {0} fully deletable volume(s)", m_deletablevolumes);
-				stat.LogMessage("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Utility.Utility.FormatSizeString(m_smallspace));
-				stat.LogMessage("Found {0} volume(s) with a total of {1} wasted space", m_wastevolumes.Count(), Utility.Utility.FormatSizeString(m_wastedspace));
+				stat.LogMessage("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace));
+				stat.LogMessage("Found {0} volume(s) with a total of {1} wasted space", m_wastevolumes.Count(), Library.Utility.Utility.FormatSizeString(m_wastedspace));
 				
 				if (m_deletablevolumes > 0)
 					stat.LogMessage("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes);
 				else if (m_wastedspace > m_maxwastesize && m_wastevolumes.Count() >= 2)
-					stat.LogMessage("Compacting because there are {0} wasted space and the limit is {1}", Utility.Utility.FormatSizeString(m_wastedspace), Utility.Utility.FormatSizeString(m_maxwastesize));
+					stat.LogMessage("Compacting because there are {0} wasted space and the limit is {1}", Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_maxwastesize));
 				else if (m_smallspace > m_volsize)
-					stat.LogMessage("Compacting because there are {0} in small volumes and the volume size is {1}", Utility.Utility.FormatSizeString(m_smallspace), Utility.Utility.FormatSizeString(m_volsize));
+					stat.LogMessage("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize));
 				else
 					stat.LogMessage("Not compacting");
 			}

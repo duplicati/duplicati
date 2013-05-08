@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Volumes
         public VolumeWriterBase(Options options, DateTime timestamp)
             : base(options)
         {
-            m_localfile = new Utility.TempFile();
+            m_localfile = new Library.Utility.TempFile();
 
 			m_volumename = GenerateFilename(this.FileType, options.BackupPrefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public long Filesize { get { return m_compression.Size + m_compression.FlushBufferSize; } }
 
-        public void SetTempFile(Utility.TempFile tmpfile)
+        public void SetTempFile(Library.Utility.TempFile tmpfile)
         {
             if (m_localfile != null)
                 m_localfile.Dispose();

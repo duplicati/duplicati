@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             m_blocklists++;
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
-            using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
+            using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
                 s.Write(data, 0, size);
         }
 

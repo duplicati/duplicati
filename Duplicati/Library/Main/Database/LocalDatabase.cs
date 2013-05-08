@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Database
             if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
 
-            Utility.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            Library.Utility.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
             
             return c;
         }
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.Database
 
 		public IEnumerable<KeyValuePair<string, DateTime>> GetNewestFileset(string[] files, DateTime restoreTime)
 		{
-			var filetable = "FindLastVersion-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+			var filetable = "FindLastVersion-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 			using(var cmd = m_connection.CreateCommand())
 			{
 				try

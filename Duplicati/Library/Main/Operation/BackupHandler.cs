@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation
 
         private Snapshots.ISnapshotService m_snapshot;
 
-        private readonly ForestHash.IMetahash EMPTY_METADATA;
+        private readonly IMetahash EMPTY_METADATA;
 
         private string[] m_sources;
         
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Operation
 
         public BackupHandler(string backendurl, Options options, BackupStatistics stat, string[] sources)
         {
-        	EMPTY_METADATA = ForestHash.WrapMetadata(new Dictionary<string, string>(), options);
+        	EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
         	
             m_options = options;
             m_stat = stat;
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            return Utility.Utility.IsClientLinux ?
+            return Library.Utility.Utility.IsClientLinux ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sourcefolders, options.RawOptions)
                     :
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sourcefolders, options.RawOptions);
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run()
         {
-        	ForestHash.VerifyParameters(m_database, m_options);
+        	Utility.VerifyParameters(m_database, m_options);
             m_database.VerifyConsistency(null);
         	    
 			var lastVolumeSize = -1L;
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Operation
 		        	{
 		            	try 
 		            	{
-		            		ForestHash.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
+		            		FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
 		            	} 
 		            	catch (Exception ex)
 		            	{
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main.Operation
 		            				ch.Run();
 		            			
 		            			m_stat.LogMessage("Backend cleanup finished, retrying verification");
-		            			ForestHash.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
+		            			FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
 		            		}
 		            		else
 		            			throw;
@@ -164,12 +164,12 @@ namespace Duplicati.Library.Main.Operation
 	 					
 	                	if (m_options.Dryrun)
 	                	{
-	                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
+	                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
 	                		if (m_indexvolume != null)
 	                		{
 			            		UpdateIndexVolume();
-	                			m_indexvolume.FinishVolume(Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-	                			m_stat.LogMessage("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
+	                			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
+	                			m_stat.LogMessage("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
 	                		}
 	                	}
 	                	else
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Operation
 	
 	                    m_database.WriteFileset(m_filesetvolume, m_transaction);
 	                	if (m_options.Dryrun)
-	                		m_stat.LogMessage("[Dryrun] Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length));
+	                		m_stat.LogMessage("[Dryrun] Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length));
 	                	else
 	                	{
 	                		m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
@@ -240,7 +240,7 @@ namespace Duplicati.Library.Main.Operation
 	                	m_transaction = null;
 	                	using(var backend = new BackendManager(m_backendurl, m_options, m_stat, m_database))
 	                	{
-							ForestHash.VerifyRemoteList(backend, m_options, m_database, m_stat);
+							FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_stat);
 							backend.WaitForComplete(m_database, null);
 						}
 	                }
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main.Operation
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
                         if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                            metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
                     }
                     else
                     {
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Main.Operation
                     if (!metadata.ContainsKey("CoreSymlinkTarget"))
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
 
-                    var metahash = ForestHash.WrapMetadata(metadata, m_options);
+                    var metahash = Utility.WrapMetadata(metadata, m_options);
                     AddSymlinkToOutput(path, DateTime.UtcNow, metahash);
                     
                     //Do not recurse symlinks
@@ -317,7 +317,7 @@ namespace Duplicati.Library.Main.Operation
 
             if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
             {
-                ForestHash.IMetahash metahash;
+                IMetahash metahash;
 
                 if (m_options.NoMetadata)
                 {
@@ -332,8 +332,8 @@ namespace Duplicati.Library.Main.Operation
                     if (!metadata.ContainsKey("CoreAttributes"))
                         metadata["CoreAttributes"] = attributes.ToString();
                     if (!metadata.ContainsKey("CoreLastWritetime"))
-                        metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
-                    metahash = ForestHash.WrapMetadata(metadata, m_options);
+                        metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                    metahash = Utility.WrapMetadata(metadata, m_options);
                 }
 
                 //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Main.Operation
                     long filesize = 0;
                     DateTime scantime = DateTime.UtcNow;
 
-                    ForestHash.IMetahash metahashandsize;
+                    IMetahash metahashandsize;
                     if (m_options.NoMetadata)
                     {
                         metahashandsize = EMPTY_METADATA;
@@ -375,9 +375,9 @@ namespace Duplicati.Library.Main.Operation
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
                         if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(lastModified);
+                            metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(lastModified);
 
-                        metahashandsize = ForestHash.WrapMetadata(metadata, m_options);
+                        metahashandsize = Utility.WrapMetadata(metadata, m_options);
                     }
 
                     var blocklisthashes = new List<string>();
@@ -439,7 +439,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_stat.SizeOfAddedFiles += filesize;
 					            
 					            if (m_options.Dryrun)
-					            	m_stat.LogMessage("[Dryrun] Would add new file {0}, size {1}", path, Utility.Utility.FormatSizeString(filesize));
+					            	m_stat.LogMessage("[Dryrun] Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
@@ -447,7 +447,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_stat.SizeOfModifiedFiles += filesize;
 					            
 					            if (m_options.Dryrun)
-					            	m_stat.LogMessage("[Dryrun] Would add changed file {0}, size {1}", path, Utility.Utility.FormatSizeString(filesize));
+					            	m_stat.LogMessage("[Dryrun] Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
                             AddFileToOutput(path, filesize, scantime, metahashandsize, hashcollector, filekey, blocklisthashes);
@@ -491,15 +491,15 @@ namespace Duplicati.Library.Main.Operation
                 {
                 	if (m_options.Dryrun)
                 	{
-                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
+                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
                 		m_blockvolume.Dispose();
                 		m_blockvolume = null;
                 		
                 		if (m_indexvolume != null)
                 		{
 		            		UpdateIndexVolume();
-                			m_indexvolume.FinishVolume(Utility.Utility.CalculateHash(m_indexvolume.LocalFilename), new FileInfo(m_indexvolume.LocalFilename).Length);
-                			m_stat.LogMessage("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
+                			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_indexvolume.LocalFilename), new FileInfo(m_indexvolume.LocalFilename).Length);
+                			m_stat.LogMessage("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
                 			m_indexvolume.Dispose();
                 			m_indexvolume = null;
                 		}
@@ -553,7 +553,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private bool AddFolderToOutput(string filename, DateTime scantime, ForestHash.IMetahash meta)
+        private bool AddFolderToOutput(string filename, DateTime scantime, IMetahash meta)
         {
             long metadataid;
             bool r = false;
@@ -575,7 +575,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private bool AddSymlinkToOutput(string filename, DateTime scantime, ForestHash.IMetahash meta)
+        private bool AddSymlinkToOutput(string filename, DateTime scantime, IMetahash meta)
         {
             long metadataid;
             bool r = false;
@@ -597,7 +597,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private void AddFileToOutput(string filename, long size, DateTime scantime, ForestHash.IMetahash metadata, HashlistCollector hashlist, string filehash, IList<string> blocklisthashes)
+        private void AddFileToOutput(string filename, long size, DateTime scantime, IMetahash metadata, HashlistCollector hashlist, string filehash, IList<string> blocklisthashes)
         {
             long metadataid;
             long blocksetid;

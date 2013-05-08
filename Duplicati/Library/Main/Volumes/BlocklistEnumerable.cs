@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Volumes
 
             public bool MoveNext()
             {
-                long s = Utility.Utility.ForceStreamRead(m_stream, m_buffer, m_buffer.Length);
+                long s = Library.Utility.Utility.ForceStreamRead(m_stream, m_buffer, m_buffer.Length);
                 if (s == 0)
                     return false;
 

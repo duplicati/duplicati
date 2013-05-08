@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WritePropertyName("size");
             m_writer.WriteValue(size);
             m_writer.WritePropertyName("time");
-            m_writer.WriteValue(Utility.Utility.SerializeDateTime(scantime));
+            m_writer.WriteValue(Library.Utility.Utility.SerializeDateTime(scantime));
             if (metahash != null)
             {
                 m_writer.WritePropertyName("metahash");
@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Volumes
             filename = filename ?? System.IO.Path.GetFileName(localfile);
             using (var t = m_compression.CreateFile(CONTROL_FILES_FOLDER + filename, hint, DateTime.UtcNow))
             using (var s = System.IO.File.OpenRead(localfile))
-                Utility.Utility.CopyStream(s, t);
+                Library.Utility.Utility.CopyStream(s, t);
         }
 
         public override void Dispose()

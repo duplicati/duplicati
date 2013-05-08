@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main
         private long m_filesDeleted;
         private long m_foldersDeleted;
 
-        public RestoreStatistics(DuplicatiOperationMode operationMode)
+        public RestoreStatistics(OperationMode operationMode)
             : base(operationMode)
         {
         }

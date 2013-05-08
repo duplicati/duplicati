@@ -28,9 +28,9 @@ namespace Duplicati.Library.Main.Operation
         	using(var db = new LocalRepairDatabase(m_options.Dbpath))
 			using(var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
         	{
-	        	ForestHash.VerifyParameters(db, m_options);
+	        	Utility.VerifyParameters(db, m_options);
 
-	            var tp = ForestHash.RemoteListAnalysis(backend, m_options, db);
+	            var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db);
 				var buffer = new byte[m_options.Blocksize];
 				var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
 
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Operation
 	
 								w.Close();
 								if (m_options.Dryrun)
-									m_stat.LogMessage("[Dryrun] would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Utility.Utility.FormatSizeString(n.Size));
+									m_stat.LogMessage("[Dryrun] would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation
 								w.Close();
 								
 								if (m_options.Dryrun)
-									m_stat.LogMessage("[Dryrun] would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Utility.Utility.FormatSizeString(n.Size));
+									m_stat.LogMessage("[Dryrun] would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.Operation
 											using(var f = System.IO.File.OpenRead(file))
 											{
 												f.Position = offset;
-												if (size == Utility.Utility.ForceStreamRead(f, buffer, size))
+												if (size == Library.Utility.Utility.ForceStreamRead(f, buffer, size))
 												{
 													var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
 													if (newhash == hash)
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Operation
 								
 								w.Close();
 								if (m_options.Dryrun)
-									m_stat.LogMessage("[Dryrun] would upload new block file {0}, size {1}, previous size {2}", n.Name, Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Utility.Utility.FormatSizeString(n.Size));
+									m_stat.LogMessage("[Dryrun] would upload new block file {0}, size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);

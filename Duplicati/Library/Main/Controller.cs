@@ -24,133 +24,8 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
 {
-    /// <summary>
-    /// The operations that Duplicati can report
-    /// </summary>
-    public enum DuplicatiOperation
+    public class Controller : IDisposable
     {
-        /// <summary>
-        /// Indicates that the operations is a full or incremental backup
-        /// </summary>
-        Backup,
-        /// <summary>
-        /// Indicates that the operation is a restore type operation
-        /// </summary>
-        Restore,
-        /// <summary>
-        /// Indicates that the operation is a list type operation
-        /// </summary>
-        List,
-        /// <summary>
-        /// Indicates that the operation is a delete type operation
-        /// </summary>
-        Remove
-    }
-
-    /// <summary>
-    /// The actual operation that Duplicati supports
-    /// </summary>
-    public enum DuplicatiOperationMode
-    {
-        /// <summary>
-        /// A backup operation, either full or incremental
-        /// </summary>
-        Backup,
-        /// <summary>
-        /// A full backup
-        /// </summary>
-        BackupFull,
-        /// <summary>
-        /// An incremental backup
-        /// </summary>
-        BackupIncremental,
-        /// <summary>
-        /// A restore operation
-        /// </summary>
-        Restore,
-        /// <summary>
-        /// A restore operation for control files
-        /// </summary>
-        RestoreControlfiles,
-        /// <summary>
-        /// A backup file listing
-        /// </summary>
-        List,
-        /// <summary>
-        /// A list of backup chains found on the backend
-        /// </summary>
-        GetBackupSets,
-        /// <summary>
-        /// A list of the source folders found in a specific backup set
-        /// </summary>
-        ListSourceFolders,
-        /// <summary>
-        /// A list of files found in a specific backup set, only shows content from the single backup set and not the entire chain
-        /// </summary>
-        ListActualSignatureFiles,
-        /// <summary>
-        /// A delete operation performed by looking at the number of existing full backups
-        /// </summary>
-        DeleteAllButNFull,
-        /// <summary>
-        /// A delete operation performed by looking at the number of existing backups
-        /// </summary>
-        DeleteAllButN,
-        /// <summary>
-        /// A delete operation performed by looking at the age of existing backups
-        /// </summary>
-        DeleteOlderThan,
-        /// <summary>
-        /// A cleanup operation that removes orphan files
-        /// </summary>
-        CleanUp,
-        /// <summary>
-        /// A request to create the underlying folder
-        /// </summary>
-        CreateFolder,
-        /// <summary>
-        /// A search for files in signature files
-        /// </summary>
-        FindLastFileVersion,
-        /// <summary>
-        /// Verifies the hashes and backup chain
-        /// </summary>
-        Verify,
-        /// <summary>
-        /// Creates a log of the database suitable for attaching to a bug report
-        /// </summary>
-        CreateLogDb
-    }
-
-    /// <summary>
-    /// A delegate for reporting progress from within the Duplicati module
-    /// </summary>
-    /// <param name="caller">The instance that is running</param>
-    /// <param name="operation">The overall operation type</param>
-    /// <param name="specificoperation">A more specific type of operation</param>
-    /// <param name="progress">The current overall progress of the operation</param>
-    /// <param name="subprogress">The progress of a transfer</param>
-    /// <param name="message">A message describing the current operation</param>
-    /// <param name="submessage">A message describing the current transfer operation</param>
-    public delegate void OperationProgressEvent(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificoperation, int progress, int subprogress, string message, string submessage);
-
-    /// <summary>
-    /// A delegate used to report metadata about the current backup, obtained while running a normal operation
-    /// </summary>
-    /// <param name="metadata">A table with various metadata informations</param>
-    public delegate void MetadataReportDelegate(IDictionary<string, string> metadata);
-
-    public class Interface : IDisposable
-    {
-        /// <summary>
-        /// The amount of progressbar allocated for reading incremental data
-        /// </summary>
-        private const double INCREMENAL_COST = 0.10;
-        /// <summary>
-        /// The amount of progressbar allocated for uploading async volumes
-        /// </summary>
-        private const double ASYNC_RESERVED = 0.10;
-
         /// <summary>
         /// The backend url
         /// </summary>
@@ -166,52 +41,9 @@ namespace Duplicati.Library.Main
         private object m_result;
 
         /// <summary>
-        /// The amount of progressbar allocated for reading incremental data
-        /// </summary>
-        private double m_incrementalFraction = INCREMENAL_COST;
-        /// <summary>
-        /// The amount of progressbar allocated for uploading the remaining volumes in asynchronous mode
-        /// </summary>
-        private double m_asyncReserved = 0.0;
-        /// <summary>
-        /// The current overall progress without taking the reserved amounts into account
-        /// </summary>
-        private double m_progress = 0.0;
-        /// <summary>
-        /// The number of restore patches
-        /// </summary>
-        private int m_restorePatches = 0;
-        /// <summary>
-        /// Cache of the last progress message
-        /// </summary>
-        private string m_lastProgressMessage = "";
-        /// <summary>
         /// A flag indicating if logging has been set, used to dispose the logging
         /// </summary>
         private bool m_hasSetLogging = false;
-
-        /// <summary>
-        /// A flag toggling if the upload progress is reported, 
-        /// used to prevent showing the progress bar when performing
-        /// ansynchronous uploads
-        /// </summary>
-        private bool m_allowUploadProgress = true;
-        /// <summary>
-        /// When allowing the upload progress to be reported,
-        /// there can be a flicker because the upload progresses,
-        /// before the flag is disabled again. This value
-        /// is set to DateTime.Now.AddSeconds(1) before
-        /// entering a potentially blocking operation, which
-        /// allows the progress to be reported if the call blocks,
-        /// but prevents flicker from non-blocking calls.
-        /// </summary>
-        private DateTime m_allowUploadProgressAfter = DateTime.Now;
-
-        public event OperationProgressEvent OperationStarted;
-        public event OperationProgressEvent OperationCompleted;
-        public event OperationProgressEvent OperationProgress;
-        public event OperationProgressEvent OperationError;
-        public event MetadataReportDelegate MetadataReport;
 
         /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
@@ -225,38 +57,6 @@ namespace Duplicati.Library.Main
                     Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
                 }
                 catch { } //TODO: Report this somehow
-        }   
-
-        /// <summary>
-        /// Returns the current overall operation mode based on the actual operation mode
-        /// </summary>
-        /// <returns>The overall operation type</returns>
-        private DuplicatiOperation GetOperationType()
-        {
-            switch (m_options.MainAction)
-            {
-                case DuplicatiOperationMode.Backup:
-                case DuplicatiOperationMode.BackupFull:
-                case DuplicatiOperationMode.BackupIncremental:
-                    return DuplicatiOperation.Backup;
-                case DuplicatiOperationMode.Restore:
-                case DuplicatiOperationMode.RestoreControlfiles:
-                    return DuplicatiOperation.Restore;
-                case DuplicatiOperationMode.List:
-                case DuplicatiOperationMode.GetBackupSets:
-                case DuplicatiOperationMode.ListSourceFolders:
-                case DuplicatiOperationMode.ListActualSignatureFiles:
-                case DuplicatiOperationMode.FindLastFileVersion:
-                case DuplicatiOperationMode.Verify:
-                    return DuplicatiOperation.List;
-                case DuplicatiOperationMode.DeleteAllButNFull:
-                case DuplicatiOperationMode.DeleteOlderThan:
-                case DuplicatiOperationMode.CleanUp:
-                    return DuplicatiOperation.Remove;
-                
-                default:
-                    throw new Exception(string.Format(Strings.Interface.UnexpectedOperationTypeError, m_options.MainAction));
-            }
         }
 
         /// <summary>
@@ -264,30 +64,21 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
         /// <param name="options">All required options</param>
-        public Interface(string backend, Dictionary<string, string> options)
+        public Controller(string backend, Dictionary<string, string> options)
         {
             m_backend = backend;
             m_options = new Options(options);
-            OperationProgress += new OperationProgressEvent(Interface_OperationProgress);
-        }
-
-        /// <summary>
-        /// Event handler for the OperationProgres, used to store the last status message
-        /// </summary>
-        private void Interface_OperationProgress(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificoperation, int progress, int subprogress, string message, string submessage)
-        {
-            m_lastProgressMessage = message;
         }
 
         public string Backup(string[] sources)
         {
-            BackupStatistics bs = new BackupStatistics(DuplicatiOperationMode.Backup);
+            BackupStatistics bs = new BackupStatistics(OperationMode.Backup);
             SetupCommonOptions(bs, ref sources);
 
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
             {
                 if (string.IsNullOrEmpty(m_options.Dbpath))
-                    throw new Exception(string.Format(Strings.Interface.MissingDatabasepathError, "fh-dbpath"));
+                    throw new Exception(string.Format(Strings.Interface.MissingDatabasepathError, "dbpath"));
 
                 if (sources == null || sources.Length == 0)
                     throw new Exception(Strings.Interface.NoSourceFoldersError);
@@ -295,7 +86,7 @@ namespace Duplicati.Library.Main
                 //Make sure they all have the same format and exist
                 for (int i = 0; i < sources.Length; i++)
                 {
-                    sources[i] = Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sources[i]));
+                    sources[i] = Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sources[i]));
 
                     if (!System.IO.Directory.Exists(sources[i]))
                         throw new System.IO.IOException(String.Format(Strings.Interface.SourceFolderIsMissingError, sources[i]));
@@ -305,13 +96,15 @@ namespace Duplicati.Library.Main
                 for (int i = 0; i < sources.Length - 1; i++)
                 {
                     for (int j = i + 1; j < sources.Length; j++)
-                        if (sources[i].Equals(sources[j], Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                        if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                             throw new Exception(string.Format(Strings.Interface.SourceDirIsIncludedMultipleTimesError, sources[i]));
-                        else if (sources[i].StartsWith(sources[j], Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                             throw new Exception(string.Format(Strings.Interface.SourceDirsAreRelatedError, sources[i], sources[j]));
                 }
 
-                ForestHash.Backup(m_backend, m_options, bs, sources);
+                using (var h = new Operation.BackupHandler(m_backend, m_options, bs, sources))
+                    h.Run();
+                    
                 return bs.ToString();
             }
         }
@@ -321,16 +114,17 @@ namespace Duplicati.Library.Main
             if (target == null || target.Length != 1)
                 throw new Exception("Cannot specify more than a single target folder");
 
-            var rs = new RestoreStatistics(DuplicatiOperationMode.Restore);
+            var rs = new RestoreStatistics(OperationMode.Restore);
             SetupCommonOptions(rs, ref target);
 
-            ForestHash.Restore(m_backend, m_options, rs, target[0]);
+            using (var h = new Operation.RestoreHandler(m_backend, m_options, rs, target[0]))
+                h.Run();
             return rs.ToString();
         }
 
         public string RestoreControlFiles(string target)
         {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.RestoreControlfiles);
+            var rs = new RestoreStatistics(OperationMode.RestoreControlfiles);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.RestoreControlFilesHandler(m_backend, m_options, rs, target))
@@ -339,9 +133,9 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public string DeleteAllButN()
+        public string Delete()
         {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.DeleteAllButN);
+            var rs = new RestoreStatistics(OperationMode.Delete);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.DeleteHandler(m_backend, m_options, rs))
@@ -352,7 +146,7 @@ namespace Duplicati.Library.Main
 
         public string Repair()
         {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.CleanUp);
+            var rs = new RestoreStatistics(OperationMode.Repair);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.RepairHandler(m_backend, m_options, rs))
@@ -363,7 +157,7 @@ namespace Duplicati.Library.Main
 
         public List<string> List()
         {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.List);
+            var rs = new RestoreStatistics(OperationMode.List);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.ListFilesHandler(m_backend, m_options, rs))
@@ -382,9 +176,7 @@ namespace Duplicati.Library.Main
             
             switch (m_options.MainAction)
             {
-                case DuplicatiOperationMode.Backup:
-                case DuplicatiOperationMode.BackupFull:
-                case DuplicatiOperationMode.BackupIncremental:
+                case OperationMode.Backup:
                     break;
                 
                 default:
@@ -428,10 +220,10 @@ namespace Duplicati.Library.Main
             }
 
             if (m_options.HasTempDir)
-                Utility.TempFolder.SystemTempPath = m_options.TempDir;
+                Library.Utility.TempFolder.SystemTempPath = m_options.TempDir;
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
-                System.Threading.Thread.CurrentThread.Priority = Utility.Utility.ParsePriority(m_options.ThreadPriority);
+                System.Threading.Thread.CurrentThread.Priority = Library.Utility.Utility.ParsePriority(m_options.ThreadPriority);
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
@@ -444,7 +236,7 @@ namespace Duplicati.Library.Main
 
         public List<KeyValuePair<string, DateTime>> FindLastFileVersion()
         {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.FindLastFileVersion);
+            var rs = new RestoreStatistics(OperationMode.FindLastFileVersion);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.FindLastFileVersionHandler(m_backend, m_options, rs))
@@ -496,7 +288,7 @@ namespace Duplicati.Library.Main
             
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
-            var ext = new Utility.Uri(m_backend).QueryParameters;
+            var ext = new Library.Utility.Uri(m_backend).QueryParameters;
             foreach(var k in ext.AllKeys)
                 ropts[k] = ext[k];
 
@@ -596,7 +388,7 @@ namespace Duplicati.Library.Main
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
             {
-                if (!string.IsNullOrEmpty(value) && Utility.Utility.ParseBool(value, true) != Utility.Utility.ParseBool(value, false))
+                if (!string.IsNullOrEmpty(value) && Library.Utility.Utility.ParseBool(value, true) != Library.Utility.Utility.ParseBool(value, false))
                     return string.Format(Strings.Interface.UnsupportedBooleanValue, optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
@@ -615,7 +407,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Utility.Sizeparser.ParseSize(value);
+                    Library.Utility.Sizeparser.ParseSize(value);
                 }
                 catch
                 {
@@ -626,7 +418,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Utility.Timeparser.ParseTimeSpan(value);
+                    Library.Utility.Timeparser.ParseTimeSpan(value);
                 }
                 catch
                 {
@@ -637,54 +429,6 @@ namespace Duplicati.Library.Main
             return null;
         }
             
-        public static string Backup(string[] source, string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(target, options))
-                return i.Backup(source);
-        }
-
-        public static string Restore(string source, string[] target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(source, options))
-                return i.Restore(target);
-        }
-
-        public static IList<string> List(string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(target, options))
-                return i.List();
-        }
-        
-        public static string DeleteAllButN(string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(target, options))
-                return i.DeleteAllButN();
-        }
-
-        public static string DeleteOlderThan(string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(target, options))
-                return i.DeleteAllButN();
-        }
-
-        public static string Repair(string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(target, options))
-                return i.Repair();
-        }
-
-        public static string RestoreControlFiles(string source, string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(source, options))
-                return i.RestoreControlFiles(target);
-        }
-
-        public static List<KeyValuePair<string, DateTime>> FindLastFileVersion(string target, Dictionary<string, string> options)
-        {
-            using (Interface i = new Interface(target, options))
-                return i.FindLastFileVersion();
-        }
-
         #endregion
 
         #region IDisposable Members
@@ -718,54 +462,51 @@ namespace Duplicati.Library.Main
 
         #endregion
 
-        public static IEnumerable<Volumes.IParsedVolume> ParseFhFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+        public IEnumerable<Volumes.IParsedVolume> ParseFileList()
         {
-            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.List);
-            using(var i = new Interface(target, options))
-            {
-            	i.SetupCommonOptions(stat);
-	            return ForestHash.ParseFileList(target, options, stat);
-			}
+            var stat = new CommunicationStatistics(OperationMode.List);
+            SetupCommonOptions(stat);
+            
+            return FilelistProcessor.ParseFileList(m_backend, m_options.RawOptions, stat);
         }
 
-        public static string CompactBlocks(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+        public void CompactBlocks()
         {
-            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.CleanUp);
-            using(var i = new Interface(target, options))
-            {
-            	i.SetupCommonOptions(stat);
-            	return ForestHash.CompactBlocks(target, options, stat);
-            }
+            var stat = new CommunicationStatistics(OperationMode.Compact);
+            SetupCommonOptions(stat);
+
+            using(var h = new Operation.CompactHandler(m_backend, m_options, stat))
+                h.Run();
         }
         
-        public static string RecreateDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+        public void RecreateDatabase()
         {
-            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.CleanUp);
-            using(var i = new Interface(target, options))
+            var stat = new CommunicationStatistics(OperationMode.Repair);
+            SetupCommonOptions(stat);
+            
+            using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, stat))
+                h.Run(m_options.Dbpath);
+        }
+
+        public string DeleteFilesets(string filesets)
+        {
+            var stat = new CommunicationStatistics(OperationMode.Delete);
+            SetupCommonOptions(stat);
+            
+            using(var h = new Operation.DeleteHandler(m_backend, m_options, stat))
             {
-            	i.SetupCommonOptions(stat);
-	            return ForestHash.RecreateDatabase(target, options, stat);
+                h.Filesets = filesets;
+                return h.Run();
             }
         }
 
-        public static string DeleteFilesets(string target, string filesets, Dictionary<string, string> options, CommunicationStatistics stat)
+        public void CreateLogDatabase()
         {
-            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.DeleteAllButN);
-            using(var i = new Interface(target, options))
-            {
-            	i.SetupCommonOptions(stat);
-	            return ForestHash.DeleteFilesets(target, filesets, options, stat);
-            }
-        }
-
-        public static string CreateLogDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
-        {
-            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.CreateLogDb);
-            using(var i = new Interface(target, options))
-            {
-            	i.SetupCommonOptions(stat);
-	            return ForestHash.CreateLogDatabase(target, options, stat);
-            }
+            var stat = new CommunicationStatistics(OperationMode.CreateLogDb);
+            SetupCommonOptions(stat);
+            
+            using(var h = new Operation.CreateBugReportHandler(m_backend, m_options, stat))
+                h.Run();
         }
     }
 }

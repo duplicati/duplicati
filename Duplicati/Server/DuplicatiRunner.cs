@@ -91,15 +91,12 @@ namespace Duplicati.Server
                 string destination = task.GetConfiguration(options);
 
                 //TODO: Its a bit dirty to set the options after creating the instance
-                using (Duplicati.Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
+                using (Duplicati.Library.Main.Controller i = new Duplicati.Library.Main.Controller(destination, options))
                 {
                     lock (m_lock)
                     {
                         m_stopReason = CloseReason.None;
                     }
-
-                    i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(Duplicati_OperationProgress);
-                    i.MetadataReport += new Library.Main.MetadataReportDelegate(new MetadataReportCapture(task).Duplicati_MetadataReport);
 
                     switch (task.TaskType)
                     {
@@ -400,13 +397,7 @@ namespace Duplicati.Server
 
         }
 
-
-        void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, Duplicati.Library.Main.DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
-        {
-            Duplicati_OperationProgress(caller, EnumConverter.Convert<DuplicatiOperation>(operation), EnumConverter.Convert<DuplicatiOperationMode>(specificmode), progress, subprogress, message, submessage);
-        }
-
-        void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
+        void Duplicati_OperationProgress(Duplicati.Library.Main.Controller caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
         {
             m_lastEvent.Operation = operation;
             m_lastEvent.Mode = specificmode;

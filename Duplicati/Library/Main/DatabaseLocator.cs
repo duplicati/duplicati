@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main
             else
                 configs = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8));
             
-            var uri = new Utility.Uri(backend);
+            var uri = new Library.Utility.Uri(backend);
             string server = uri.Host;
             string path = uri.Path;
             string type = uri.Scheme;
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main
             }
             
             if (password != null)
-                password = Utility.Utility.ByteArrayAsHexString(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(password)));
+                password = Library.Utility.Utility.ByteArrayAsHexString(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(password)));
                 
             //Now find the one that matches :)
             var matches = (from n in configs

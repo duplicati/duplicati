@@ -23,8 +23,8 @@ namespace Duplicati.Library.Main.Database
 
         public void FindMissingBlocklistHashes()
         {
-            m_tempblockvolumetable = "MissingBlocks-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            m_temphashtable = "Hashlist-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            m_tempblockvolumetable = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            m_temphashtable = "Hashlist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Block"".""VolumeID"" AS ""VolumeID"", ""BlocklistHash"".""Hash"" AS ""Hash"", 0 AS ""Restored"" FROM ""Block"", ""BlocklistHash""  WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" ", m_tempblockvolumetable));

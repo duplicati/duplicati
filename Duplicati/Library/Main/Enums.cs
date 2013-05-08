@@ -5,6 +5,23 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
+
+    /// <summary>
+    /// The supported operations
+    /// </summary>
+    public enum OperationMode
+    {
+        Backup,
+        Restore,
+        FindLastFileVersion,
+        List,
+        Delete,
+        RestoreControlfiles,
+        Repair,
+        CreateLogDb,
+        Compact
+    }
+
     /// <summary>
     /// Describes all states a remote volume can have
     /// </summary>

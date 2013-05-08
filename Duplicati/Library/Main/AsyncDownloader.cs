@@ -6,9 +6,9 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
-    public class AsyncDownloader : IEnumerable<KeyValuePair<IRemoteVolume, Utility.TempFile>>
+    public class AsyncDownloader : IEnumerable<KeyValuePair<IRemoteVolume, Library.Utility.TempFile>>
     {
-        private class AsyncDownloaderEnumerator : IEnumerator<KeyValuePair<IRemoteVolume, Utility.TempFile>>
+        private class AsyncDownloaderEnumerator : IEnumerator<KeyValuePair<IRemoteVolume, Library.Utility.TempFile>>
         {
         	private class RemoteVolume : IRemoteVolume
         	{
@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main
             private BackendManager.IDownloadWaitHandle m_handle;
             private BackendManager m_backend;
             private int m_index;
-            private KeyValuePair<IRemoteVolume, Utility.TempFile>? m_current;
+            private KeyValuePair<IRemoteVolume, Library.Utility.TempFile>? m_current;
 
             public AsyncDownloaderEnumerator(IList<IRemoteVolume> volumes, BackendManager backend)
             {
@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main
                 m_index = 0;
             }
 
-            public KeyValuePair<IRemoteVolume, Utility.TempFile> Current
+            public KeyValuePair<IRemoteVolume, Library.Utility.TempFile> Current
             {
                 get { return m_current.Value; }
             }
@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main
                 long size;
                 var file = m_handle.Wait(out hash, out size);
                 
-                m_current = new KeyValuePair<IRemoteVolume, Utility.TempFile>(new RemoteVolume(m_volumes[m_index].Name, hash, size), file);
+                m_current = new KeyValuePair<IRemoteVolume, Library.Utility.TempFile>(new RemoteVolume(m_volumes[m_index].Name, hash, size), file);
                 m_handle = null;
 
                 m_index++;
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main
             m_backend = backend;
         }
 
-        public IEnumerator<KeyValuePair<IRemoteVolume, Utility.TempFile>> GetEnumerator()
+        public IEnumerator<KeyValuePair<IRemoteVolume, Library.Utility.TempFile>> GetEnumerator()
         {
             return new AsyncDownloaderEnumerator(m_volumes, m_backend);
         }

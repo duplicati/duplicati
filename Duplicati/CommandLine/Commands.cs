@@ -37,7 +37,8 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
     
-            Console.WriteLine(string.Join(Environment.NewLine, new List<string>(Duplicati.Library.Main.Interface.List(args[0], options)).ToArray()));
+            using(var i = new Library.Main.Controller(args[0], options))
+                Console.WriteLine(string.Join(Environment.NewLine, i.List().ToArray()));
             
             return 0;
         }
@@ -51,15 +52,16 @@ namespace Duplicati.CommandLine
                 return 200;
             }
     
-            options["delete-all-but-n-full"] = n.ToString();
+            options["delete-all-but-n"] = n.ToString();
     
             args.RemoveAt(0);
     
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
+                
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.Delete();
     
-            Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButN(args[0], options));
-            
             return 0;
         }
 
@@ -81,8 +83,9 @@ namespace Duplicati.CommandLine
 
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
-
-            Console.WriteLine(Duplicati.Library.Main.Interface.DeleteOlderThan(args[0], options));
+                
+            using(var i = new Duplicati.Library.Main.Controller(args[0], options))
+                i.Delete();
             
             return 0;
         }
@@ -92,8 +95,9 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
 
-            Console.WriteLine(Duplicati.Library.Main.Interface.Repair(args[0], options));
-            
+            using(var i = new Duplicati.Library.Main.Controller(args[0], options))
+                i.Repair();
+
             return 0;
         }
 
@@ -101,12 +105,14 @@ namespace Duplicati.CommandLine
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
-
-            List<KeyValuePair<string, DateTime>> results = Duplicati.Library.Main.Interface.FindLastFileVersion(args[0], options);
-            Console.WriteLine(Strings.Program.FindLastVersionHeader.Replace("\\t", "\t"));
-            foreach(KeyValuePair<string, DateTime> k in results)
-                Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
-            
+                
+            using(var i = new Library.Main.Controller(args[0], options))
+            {
+                var res = i.FindLastFileVersion();
+                Console.WriteLine(Strings.Program.FindLastVersionHeader.Replace("\\t", "\t"));
+                foreach(KeyValuePair<string, DateTime> k in res)
+                    Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
+            }            
             return 0;
         }
 
@@ -115,7 +121,8 @@ namespace Duplicati.CommandLine
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);
 
-            Console.WriteLine(Duplicati.Library.Main.Interface.Restore(args[0], args[1].Split(System.IO.Path.PathSeparator), options));
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.Restore(args[1].Split(System.IO.Path.PathSeparator));
             
             return 0;
         }
@@ -125,7 +132,10 @@ namespace Duplicati.CommandLine
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);
 
-            string result = Duplicati.Library.Main.Interface.Backup(args[0].Split(System.IO.Path.PathSeparator), args[1], options);
+            string result;
+            using(var i = new Library.Main.Controller(args[1], options))
+                result = i.Backup(args[0].Split(System.IO.Path.PathSeparator));
+
             Console.WriteLine(result);
 
             Dictionary<string, string> tmp = ParseDuplicatiOutput(result);
@@ -176,7 +186,9 @@ namespace Duplicati.CommandLine
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);
                 
-            Console.WriteLine(Duplicati.Library.Main.Interface.DeleteFilesets(args[0], args[1], options, null));
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.DeleteFilesets(args[1]);
+
             return 0;
         }
         
@@ -185,7 +197,9 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
                 
-            Console.WriteLine(Duplicati.Library.Main.Interface.CompactBlocks(args[0], options, null));
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.CompactBlocks();
+
             return 0;
         }
 
@@ -194,7 +208,9 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
                 
-            Console.WriteLine(Duplicati.Library.Main.Interface.RecreateDatabase(args[0], options, null));
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.RecreateDatabase();
+
             return 0;
         }
 
@@ -203,7 +219,9 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
                 
-            Console.WriteLine(Duplicati.Library.Main.Interface.CreateLogDatabase(args[0], options, null));
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.CreateLogDatabase();
+
             return 0;
         }
     }

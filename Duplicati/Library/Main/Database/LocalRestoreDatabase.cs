@@ -24,9 +24,9 @@ namespace Duplicati.Library.Main.Database
             m_blocksize = blocksize;
         }
 
-        public void PrepareRestoreFilelist(DateTime restoretime, string[] p, Utility.FilenameFilter filenameFilter, CommunicationStatistics stat)
+        public void PrepareRestoreFilelist(DateTime restoretime, string[] p, Library.Utility.FilenameFilter filenameFilter, CommunicationStatistics stat)
         {
-            var guid = Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
             m_tempfiletable = "Fileset-" + guid;
             m_tempblocktable = "Blocks-" + guid;
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Database
 
                 while (filecount != foundfiles && maxpath.Length > 0)
                 {
-                    var mp = Utility.Utility.AppendDirSeparator(maxpath);
+                    var mp = Library.Utility.Utility.AppendDirSeparator(maxpath);
                     cmd.SetParameterValue(0, mp.Length);
                     cmd.SetParameterValue(1, mp);
                     foundfiles = Convert.ToInt64(cmd.ExecuteScalar());
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                return maxpath == "" ? "" : Utility.Utility.AppendDirSeparator(maxpath);
+                return maxpath == "" ? "" : Library.Utility.Utility.AppendDirSeparator(maxpath);
             }
 
         }
@@ -165,8 +165,8 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                destination = Utility.Utility.AppendDirSeparator(destination);
-                largest_prefix = Utility.Utility.AppendDirSeparator(largest_prefix);
+                destination = Library.Utility.Utility.AppendDirSeparator(destination);
+                largest_prefix = Library.Utility.Utility.AppendDirSeparator(largest_prefix);
 
                 cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ? || SUBSTR(""Path"", ?)", m_tempfiletable);
                 cmd.AddParameter(destination);
@@ -330,7 +330,7 @@ namespace Duplicati.Library.Main.Database
                 m_command.Transaction = connection.BeginTransaction();
                 
                 m_blocktablename = blocktablename;
-                m_updateTable = "UpdatedBlocks-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
                 m_command.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)", m_updateTable));
                 m_command.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"") VALUES (?, ?, ?, ?) ", m_updateTable);

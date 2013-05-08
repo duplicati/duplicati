@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run()
         {
-            using (var tmpdb = new Utility.TempFile())
+            using (var tmpdb = new Library.Utility.TempFile())
             using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles"))
             using (var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
             {
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
 	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
 	                            foreach (var cf in tmp.ControlFiles)
 	                                using (var ts = System.IO.File.Create(System.IO.Path.Combine(m_target, cf.Key)))
-	                                    Utility.Utility.CopyStream(cf.Value, ts);
+	                                    Library.Utility.Utility.CopyStream(cf.Value, ts);
 	                        
 	                        lastEx = null;
 	                        break;

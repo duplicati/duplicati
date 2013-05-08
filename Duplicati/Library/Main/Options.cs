@@ -307,7 +307,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
+                return System.IO.Path.GetFileNameWithoutExtension(Library.Utility.Utility.getEntryAssembly().Location);
             }
         }
 
@@ -428,9 +428,9 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets or sets the current main action of the instance
         /// </summary>
-        public DuplicatiOperationMode MainAction 
+        public OperationMode MainAction 
         {
-            get { return (DuplicatiOperationMode)Enum.Parse(typeof(DuplicatiOperationMode), m_options["main-action"]); }
+            get { return (OperationMode)Enum.Parse(typeof(OperationMode), m_options["main-action"]); }
             set { m_options["main-action"] = value.ToString(); }
         }
 
@@ -446,7 +446,7 @@ namespace Duplicati.Library.Main
                     volsize = m_options["volsize"];
 
 #if DEBUG
-                return Math.Max(1024 * 10, Utility.Sizeparser.ParseSize(volsize, "mb"));
+                return Math.Max(1024 * 10, Library.Utility.Sizeparser.ParseSize(volsize, "mb"));
 #else
                 return Math.Max(1024 * 1024, Utility.Sizeparser.ParseSize(volsize, "mb"));
 #endif
@@ -463,7 +463,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("skip-files-larger-than") || string.IsNullOrEmpty(m_options["skip-files-larger-than"]))
                     return long.MaxValue;
                 else
-                    return Utility.Sizeparser.ParseSize(m_options["skip-files-larger-than"], "mb");
+                    return Library.Utility.Sizeparser.ParseSize(m_options["skip-files-larger-than"], "mb");
             }
         }
 
@@ -525,7 +525,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("restore-time") || string.IsNullOrEmpty(m_options["restore-time"]))
                     return DateTime.Now.AddYears(1); //We assume that the check will occur in less than one year :)
                 else
-                    return Utility.Timeparser.ParseTimeInterval(m_options["restore-time"], DateTime.Now);
+                    return Library.Utility.Timeparser.ParseTimeInterval(m_options["restore-time"], DateTime.Now);
             }
         }
 
@@ -604,12 +604,12 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the filter used to include or exclude files
         /// </summary>
-        public Utility.FilenameFilter Filter
+        public Library.Utility.FilenameFilter Filter
         {
             get
             {
                 if (m_options.ContainsKey("filter") && !string.IsNullOrEmpty(m_options["filter"]))
-                    return new Duplicati.Library.Utility.FilenameFilter(Utility.FilenameFilter.DecodeFilter(m_options["filter"]));
+                    return new Duplicati.Library.Utility.FilenameFilter(Library.Utility.FilenameFilter.DecodeFilter(m_options["filter"]));
                 else
                     return new Duplicati.Library.Utility.FilenameFilter(new List<KeyValuePair<bool, string>>());
             }
@@ -652,9 +652,9 @@ namespace Duplicati.Library.Main
                 TimeSpan tolerance =
                     this.DisableTimeTolerance ?
                     TimeSpan.FromSeconds(0) :
-                    TimeSpan.FromSeconds(Math.Min(Utility.Timeparser.ParseTimeSpan(m_options["delete-older-than"]).TotalSeconds / 100, 60.0 * 60.0));
+                    TimeSpan.FromSeconds(Math.Min(Library.Utility.Timeparser.ParseTimeSpan(m_options["delete-older-than"]).TotalSeconds / 100, 60.0 * 60.0));
 
-                return Utility.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true) - tolerance;
+                return Library.Utility.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true) - tolerance;
             }
         }
 
@@ -763,7 +763,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if backups are transmitted on a separate thread
         /// </summary>
-        public bool SynchronousUpload { get { return Utility.Utility.ParseBoolOption(m_options, "synchronous-upload"); } }
+        public bool SynchronousUpload { get { return Library.Utility.Utility.ParseBoolOption(m_options, "synchronous-upload"); } }
 
         /// <summary>
         /// A value indicating if system is allowed to enter sleep power states during backup/restore ops (win32 only)
@@ -785,7 +785,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("retry-delay") || string.IsNullOrEmpty(m_options["retry-delay"]))
                     return new TimeSpan(TimeSpan.TicksPerSecond * 10);
                 else
-                    return Utility.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
             }
         }
 
@@ -800,7 +800,7 @@ namespace Duplicati.Library.Main
                     if (!m_options.ContainsKey("max-upload-pr-second") || string.IsNullOrEmpty(m_options["max-upload-pr-second"]))
                         return 0;
                     else
-                        return Utility.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
+                        return Library.Utility.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
             }
             set
             {
@@ -823,7 +823,7 @@ namespace Duplicati.Library.Main
                     if (!m_options.ContainsKey("max-download-pr-second") || string.IsNullOrEmpty(m_options["max-download-pr-second"]))
                         return 0;
                     else
-                        return Utility.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
+                        return Library.Utility.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
             }
             set
             {
@@ -1067,7 +1067,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("quota-size") || string.IsNullOrEmpty(m_options["quota-size"]))
                     return -1;
                 else
-                    return Utility.Sizeparser.ParseSize(m_options["quota-size"], "mb");
+                    return Library.Utility.Sizeparser.ParseSize(m_options["quota-size"], "mb");
             }
         }
 
@@ -1119,7 +1119,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("blocksize", out tmp))
                     tmp = DEFAULT_FH_BLOCKSIZE;
 
-                long t = Utility.Sizeparser.ParseSize(tmp, "kb");
+                long t = Library.Utility.Sizeparser.ParseSize(tmp, "kb");
                 if (t > int.MaxValue || t < 1024)
                     throw new ArgumentOutOfRangeException("blocksize", string.Format("The blocksize cannot be less than {0}, nor larger than {1}", 1024, int.MaxValue));
                 
@@ -1132,7 +1132,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoMetadata
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "no-metadata"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-metadata"); }
         }
 
         /// <summary>
@@ -1147,7 +1147,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_BLOCK_HASH_LOOKUP_SIZE;
 
-                return Utility.Sizeparser.ParseSize(v, "mb");
+                return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
 
@@ -1163,7 +1163,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_FILE_HASH_LOOKUP_SIZE;
 
-                return Utility.Sizeparser.ParseSize(v, "mb");
+                return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
 
@@ -1179,7 +1179,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_METADATA_HASH_LOOKUP_SIZE;
                 
-                return Utility.Sizeparser.ParseSize(v, "mb");
+                return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
         
@@ -1195,7 +1195,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_FILENAME_LOOKUP_SIZE;
 
-                return Utility.Sizeparser.ParseSize(v, "mb");
+                return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
         
@@ -1212,7 +1212,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(v))
                     return this.VolumeSize * 2;
 
-                return Utility.Sizeparser.ParseSize(v, "mb");
+                return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
 
@@ -1228,7 +1228,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(v))
                     return this.VolumeSize / 100;
 
-                return Utility.Sizeparser.ParseSize(v, "mb");
+                return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
         
@@ -1269,7 +1269,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoIndexfiles
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "no-indexfiles"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-indexfiles"); }
         }
         
         /// <summary>
@@ -1277,7 +1277,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoBackendverification
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "no-backendverification"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-backendverification"); }
         }
         
         /// <summary>
@@ -1285,7 +1285,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoAutoCompact
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "no-auto-compact"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-auto-compact"); }
         }
 
         /// <summary>
@@ -1293,7 +1293,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool Dryrun
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "dry-run"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); }
         }
         
         /// <summary>
@@ -1355,11 +1355,11 @@ namespace Duplicati.Library.Main
 #if DEBUG
         public bool NoLocalBlocks
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); } 
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); } 
         }
         public bool NoLocalDb
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "no-local-db"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-db"); }
         }
 #endif
 
@@ -1373,14 +1373,14 @@ namespace Duplicati.Library.Main
                 if (m_compressionHints == null)
                 {
                     //Don't try again, if the file does not exist
-                    m_compressionHints = new Dictionary<string, CompressionHint>(Utility.Utility.ClientFilenameStringComparer);
+                    m_compressionHints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
                         file = DEFAULT_COMPRESSED_EXTENSION_FILE;
 
                     if (!string.IsNullOrEmpty(file) && System.IO.File.Exists(file))
-                        foreach (var _line in Utility.Utility.ReadFileWithDefaultEncoding(file).Split('\n'))
+                        foreach (var _line in Library.Utility.Utility.ReadFileWithDefaultEncoding(file).Split('\n'))
                         {
                             var line = _line.Trim();
                             var lix = line.IndexOf(' ');
@@ -1422,7 +1422,7 @@ namespace Duplicati.Library.Main
         /// <returns>The interpreted value of the option</returns>
         private bool GetBool(string name)
         {
-            return Utility.Utility.ParseBoolOption(m_options, name);
+            return Library.Utility.Utility.ParseBoolOption(m_options, name);
         }
 
     }

@@ -77,14 +77,14 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private Utility.TempFile m_file;
+        private Library.Utility.TempFile m_file;
         private StreamWriter m_writer;
         private Stream m_stream;
         private long m_count;
 
         public HashlistCollector()
         {
-            m_file = new Utility.TempFile();
+            m_file = new Library.Utility.TempFile();
             m_stream = new MemoryStream();
             m_writer = new StreamWriter(m_stream);
             m_count = 0;
@@ -95,7 +95,7 @@ namespace Duplicati.Library.Main
             m_writer.WriteLine(hash);
             if (m_stream is MemoryStream && m_stream.Length > (1024 * 1024 * 100))
             {
-                m_file = new Utility.TempFile();
+                m_file = new Library.Utility.TempFile();
                 m_writer.Flush();
                 Stream fs = System.IO.File.OpenWrite(m_file);
                 m_stream.CopyTo(fs);

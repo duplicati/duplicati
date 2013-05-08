@@ -905,7 +905,7 @@ namespace Duplicati.Library.Main.Database
                     this.Dispose();
                     using (var c = m_connection.CreateCommand())
                     {
-                        var tablename = "VolumeFiles-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                        var tablename = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                         c.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ( ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL )", tablename);
                         c.ExecuteNonQuery();
                         m_tmptable = tablename;

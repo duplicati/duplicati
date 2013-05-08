@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Volumes
 
         protected static DateTime ReadJsonDateTimeProperty(JsonReader reader, string propertyname)
         {
-            return Utility.Utility.DeserializeDateTime(ReadJsonStringProperty(reader, propertyname));
+            return Library.Utility.Utility.DeserializeDateTime(ReadJsonStringProperty(reader, propertyname));
         }
     }
 }

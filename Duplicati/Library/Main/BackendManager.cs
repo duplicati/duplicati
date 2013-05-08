@@ -405,20 +405,20 @@ namespace Duplicati.Library.Main
             m_stats.AddNumberOfRemoteCalls(1);
             m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Uploading file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(item.Size));
+            	m_stats.LogMessage("Uploading file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(item.Size));
 
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                using (var pgs = new Utility.ProgressReportingStream(ts, item.Size))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
             if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Uploaded file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(item.Size));
+            	m_stats.LogMessage("Uploaded file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(item.Size));
 
             if (m_options.ListVerifyUploads)
             {
@@ -435,19 +435,19 @@ namespace Duplicati.Library.Main
 
         private void DoGet(FileEntryItem item)
         {
-            Utility.TempFile tmpfile = null;
+            Library.Utility.TempFile tmpfile = null;
             if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Downloading file {0} with expected size {1}", item.RemoteFilename, item.Size > 0 ? Utility.Utility.FormatSizeString(item.Size) : "unknown");
+            	m_stats.LogMessage("Downloading file {0} with expected size {1}", item.RemoteFilename, item.Size > 0 ? Library.Utility.Utility.FormatSizeString(item.Size) : "unknown");
 
             try
             {
                 m_stats.AddNumberOfRemoteCalls(1);
-                tmpfile = new Utility.TempFile();
+                tmpfile = new Library.Utility.TempFile();
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
                     using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                    using (var pgs = new Utility.ProgressReportingStream(ts, item.Size))
+                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }
                 else
@@ -456,7 +456,7 @@ namespace Duplicati.Library.Main
                 m_stats.AddBytesDownloaded(new System.IO.FileInfo(tmpfile).Length);
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
 	            if (!m_options.QuietConsole)
-	            	m_stats.LogMessage("Downloaded file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(new System.IO.FileInfo(tmpfile).Length));
+	            	m_stats.LogMessage("Downloaded file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(tmpfile).Length));
 
                 if (!m_options.SkipFileHashChecks)
                 {
@@ -486,7 +486,7 @@ namespace Duplicati.Library.Main
                     {
                         using(var tmpfile2 = tmpfile)
                         { 
-                        	tmpfile = new Utility.TempFile();
+                        	tmpfile = new Library.Utility.TempFile();
                         	m_encryption.Decrypt(tmpfile2, tmpfile);
                         }
                     }

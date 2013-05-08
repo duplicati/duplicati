@@ -39,12 +39,12 @@ namespace Duplicati.Library.Main.Operation
 			using (var db = new Database.LocalDeleteDatabase(m_options.Dbpath, false))
 			using(var tr = db.BeginTransaction())
 			{
-	        	ForestHash.VerifyParameters(db, m_options);
+	        	Utility.VerifyParameters(db, m_options);
 	        	
 				using (var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
 				{
 					if (!m_options.NoBackendverification)
-						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat); 
+						FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_stat); 
 					
 					IEnumerable<string> n = new string[0];
 					if (m_options.HasDeleteOlderThan)
