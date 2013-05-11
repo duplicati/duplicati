@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Database
                 }   
                 
                 using(var cmd = m_connection.CreateCommand())
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args.ToArray());
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args.ToArray());
             }
             
             private class Fileversion : IFileversion

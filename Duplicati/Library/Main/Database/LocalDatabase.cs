@@ -711,7 +711,7 @@ namespace Duplicati.Library.Main.Database
                     sb.Length = sb.Length - " OR ".Length;
                     
                     using(var cmd = m_connection.CreateCommand())
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
                 }
             }
             
