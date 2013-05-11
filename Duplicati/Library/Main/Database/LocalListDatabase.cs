@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Database
                         if (time.Kind == DateTimeKind.Unspecified)
                             throw new Exception("Invalid DateTime given, must be either local or UTC");
                             
-                        query += @" ""Timestamp"" < ?";
+                        query += @" ""Timestamp"" <= ?";
                         args.Add(time.ToUniversalTime());
                     }
                     

@@ -33,27 +33,47 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int List(List<string> args, Dictionary<string, string> options)
+        public static int List (List<string> args, Dictionary<string, string> options)
         {
-            if (args.Count != 1 && args.Count != 2)
-                return PrintWrongNumberOfArguments(args, 1);
-    
-            using(var i = new Library.Main.Controller(args[0], options))
-            {
-                var res = i.List(args.Count == 2 ? args[1] : null);
-                if (args.Count == 1)
-                {
-                    Console.WriteLine("Listing backup filesets:");
-                    foreach(var e in res.Filesets)
-                        Console.WriteLine("{0}\t: {1}", e.Key, e.Value);
+            using (var i = new Library.Main.Controller(args[0], options)) {
+                args.RemoveAt(0);
+                
+                if (args.Count == 1) {
+                    long v;
+                    if (long.TryParse(args[0], out v)) {
+                        if (!options.ContainsKey("version")) {
+                            args.RemoveAt(0);
+                            args.Add("*");
+                            options["version"] = v.ToString();
+                        }
+                    } else if (args[0].IndexOfAny(new char[] {'*', '?'}) < 0 && !args[0].StartsWith("[")) {
+                        try {
+                            var t = Library.Utility.Timeparser.ParseTimeInterval(args[0], DateTime.Now, true);
+                            args.RemoveAt(0);
+                            args.Add("*");
+                            options["time"] = t.ToString();
+                            
+                        } catch {
+                        }
+                    }
                 }
-                else
-                {
-                    if (res.Filesets.Count() == 1)
+                
+                var res = i.List(args);
+                if (args.Count == 0) {
+                    Console.WriteLine("Listing backup filesets:");
+                    foreach (var e in res.Filesets)
+                        Console.WriteLine("{0}\t: {1}", e.Key, e.Value);
+                } else {
+                    if (res.Filesets.Count() == 0) 
                     {
-                        Console.WriteLine("Listing contents {0}:", res.Filesets.First());
+                        Console.WriteLine("No backup times matched");
+                    }
+                    else if (res.Filesets.Count() == 1)
+                    {
+                        var f = res.Filesets.First();
+                        Console.WriteLine("Listing contents {0} ({1}):", f.Value, f.Key);
                         foreach(var e in res.Files)
-                            Console.WriteLine("{0} ({1})", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) ? "" : Library.Utility.Utility.FormatSizeString(e.Sizes.First()));
+                            Console.WriteLine("{0} {1}", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) ? "" : "(" + Library.Utility.Utility.FormatSizeString(e.Sizes.First()) + ")");
                     }
                     else
                     {

@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
             m_stat = stat;
         }
 
-        public IListResults Run(string filter = null)
+        public IListResults Run(IEnumerable<string> filter = null)
         {
             var filefilter = new FilterExpression(filter);
             
@@ -70,7 +70,7 @@ namespace Duplicati.Library.Main.Operation
                 using (var db = new Database.LocalListDatabase(m_options.Dbpath))
                     using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
-                        if (simpleList)
+                        if (simpleList && filefilter.Type != FilterType.Empty)
                             filesets.TakeFirst();
                         
                         return new ListResults(filesets.Times.ToArray(), 
@@ -116,6 +116,7 @@ namespace Duplicati.Library.Main.Operation
                         return new ListResults(numberSeq.Take(1), 
                             (from n in rd.Files
                                   where filefilter.Matches(n.Path)
+                                  orderby n.Path
                                   select new ListResultFile(n.Path, new long[] { n.Size }))
                                   .ToArray()
                             );

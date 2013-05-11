@@ -140,23 +140,16 @@ namespace Duplicati.Library.Main
         /// Creates a new  <see cref="Duplicati.Library.Main.FilterExpression"/> class.
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
-        public FilterExpression(string filter)
+        public FilterExpression(IEnumerable<string> filter)
         {
-            if (string.IsNullOrEmpty(filter))
+            if (filter == null)
             {
                 this.Type = FilterType.Empty;
                 return;
             }
-            
-            var subqueries = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
-            if (subqueries.Length == 0)
-            {
-                this.Type = FilterType.Empty;
-                return;
-            }
-            
+                        
             m_filters = 
-                (from n in subqueries
+                (from n in filter
                 let nx = new FilterEntry(n)
                 where nx.Type != FilterType.Empty
                 select nx).ToList();

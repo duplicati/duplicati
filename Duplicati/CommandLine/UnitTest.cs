@@ -247,7 +247,7 @@ namespace Duplicati.CommandLine
 
                 IList<DateTime> entries;
                 using(var i = new Duplicati.Library.Main.Controller(target, options))
-                    entries = (from n in i.List(null).Filesets select n.Value.ToLocalTime()).ToList();
+                    entries = (from n in i.List().Filesets select n.Value.ToLocalTime()).ToList();
 
                 if (entries.Count != folders.Length)
                 {

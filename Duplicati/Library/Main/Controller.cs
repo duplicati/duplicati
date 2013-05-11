@@ -155,7 +155,12 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public Operation.IListResults List(string filter)
+        public Operation.IListResults List (string filter = null)
+        {
+            return List(filter == null ? null : new string[] { filter });
+        }
+        
+        public Operation.IListResults List(IEnumerable<string> filter)
         {
             var rs = new RestoreStatistics(OperationMode.List);
             SetupCommonOptions(rs);

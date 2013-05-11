@@ -703,12 +703,12 @@ namespace Duplicati.Library.Main.Database
                         }
                         else
                         {
-                            sb.Append(@"""Path"" = ? OR");
+                            sb.Append(@"""Path"" = ? OR ");
                             args.Add(f);
                         }
-                        
-                        sb.Length = sb.Length - " OR".Length;
                     }
+                    
+                    sb.Length = sb.Length - " OR ".Length;
                     
                     using(var cmd = m_connection.CreateCommand())
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
