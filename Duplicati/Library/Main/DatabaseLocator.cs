@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main
             public string Path;
             public string Prefix;
             public string Username;
-            public string Passwordhash;
+            //public string Passwordhash;
             public int Port;
             public string Databasepath; 
             public string ParameterFile;
@@ -87,13 +87,13 @@ namespace Duplicati.Library.Main
             }
             
             if (password != null)
-                password = Library.Utility.Utility.ByteArrayAsHexString(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(password)));
+                password = Library.Utility.Utility.ByteArrayAsHexString(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(password + "!" + uri.Scheme + "!" + uri.HostAndPath)));
                 
             //Now find the one that matches :)
             var matches = (from n in configs
                 where 
                     n.Type == type && 
-                    n.Passwordhash == password && 
+                    //n.Passwordhash == password && 
                     n.Username == username && 
                     n.Port == port && 
                     n.Server == server && 
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main
                     Path = path,
                     Prefix = prefix,
                     Username = username,
-                    Passwordhash = password,
+                    //Passwordhash = password,
                     Port = port,
                     Databasepath = newpath, 
                     ParameterFile = null
