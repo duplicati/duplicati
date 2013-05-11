@@ -131,6 +131,17 @@ namespace Duplicati.Library.Main.Database
            		RemoveRemoteVolume(name, transaction);
         }
         
+        public IEnumerable<KeyValuePair<long, DateTime>> FilesetTimes
+        { 
+            get 
+            {
+                using(var cmd = m_connection.CreateCommand())
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                    while (rd.Read())
+                        yield return new KeyValuePair<long, DateTime>(Convert.ToInt64(rd.GetValue(0)), Convert.ToDateTime(rd.GetValue(1)).ToLocalTime());
+            }
+        }
+
         public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)
 		{
 			m_selectremotevolumeIdCommand.Transaction = transaction;

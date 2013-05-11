@@ -97,52 +97,40 @@ namespace Duplicati.CommandLine
             
             return 0;
         }
-
-        public static int DeleteAllButN(List<string> args, Dictionary<string, string> options)
-        {
-            int n = 0;
-            if (!int.TryParse(args[0], out n) || n < 0)
-            {
-                Console.WriteLine(string.Format(Strings.Program.IntegerParseError, args[0]));
-                return 200;
-            }
-    
-            options["delete-all-but-n"] = n.ToString();
-    
-            args.RemoveAt(0);
-    
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
+        
+        public static int Delete(List<string> args, Dictionary<string, string> options)
+		{
+			var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
+            
+			if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
+			{
+				Console.WriteLine(string.Format(Strings.Program.DeleteCommandNeedsOptions, "delete", string.Join(",", requiredOptions))); 
+				return 200;
+			}
+        
+			using(var i = new Library.Main.Controller(args[0], options))
+			{
+				args.RemoveAt(0);
+				var res = i.Delete();
                 
-            using(var i = new Library.Main.Controller(args[0], options))
-                i.Delete();
-    
-            return 0;
-        }
-
-        public static int DeleteOlderThan(List<string> args, Dictionary<string, string> options)
-        {
-            try
-            {
-                Duplicati.Library.Utility.Timeparser.ParseTimeSpan(args[0]);
+				if (res.DeletedSets.Count() == 0)
+				{
+					Console.WriteLine(Strings.Program.NoFilesetsMatching);
+				}
+				else
+				{
+					if (res.Dryrun)
+						Console.WriteLine(Strings.Program.WouldDeleteBackups);
+					else
+						Console.WriteLine(Strings.Program.DeletedBackups);
+						
+					foreach(var f in res.DeletedSets)
+						Console.WriteLine(f);
+				}
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(string.Format(Strings.Program.TimeParseError, args[0], ex.Message));
-                return 200;
-            }
-
-            options["delete-older-than"] = args[0];
-
-            args.RemoveAt(0);
-
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
-                
-            using(var i = new Duplicati.Library.Main.Controller(args[0], options))
-                i.Delete();
             
             return 0;
+        
         }
 
         public static int Repair(List<string> args, Dictionary<string, string> options)
@@ -220,18 +208,7 @@ namespace Duplicati.CommandLine
             Console.WriteLine(Strings.Program.InvalidCommandError, args.Count == 0 ? "" : args[0]);
             return 200;
         }
-        
-        public static int DeleteFilesets(List<string> args, Dictionary<string, string> options)
-        {
-            if (args.Count != 2)
-                return PrintWrongNumberOfArguments(args, 2);
                 
-            using(var i = new Library.Main.Controller(args[0], options))
-                i.DeleteFilesets(args[1]);
-
-            return 0;
-        }
-        
         public static int Compact(List<string> args, Dictionary<string, string> options)
         {
             if (args.Count != 1)

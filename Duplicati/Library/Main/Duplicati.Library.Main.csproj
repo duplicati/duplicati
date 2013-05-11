@@ -139,6 +139,7 @@
     <Compile Include="Controller.cs" />
     <Compile Include="FilterExpression.cs" />
     <Compile Include="Database\LocalListDatabase.cs" />
+    <Compile Include="ResultInterfaces.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

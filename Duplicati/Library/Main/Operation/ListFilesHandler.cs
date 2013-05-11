@@ -4,19 +4,7 @@ using System.Linq;
 using System.Text;
 
 namespace Duplicati.Library.Main.Operation
-{
-    public interface IListResults
-    {
-        IEnumerable<KeyValuePair<long, DateTime>> Filesets { get; }
-        IEnumerable<IListResultFile> Files { get; }
-    }
-    
-    public interface IListResultFile
-    {
-        string Path { get; }
-        IEnumerable<long> Sizes { get; }
-    }
-    
+{    
     internal class ListFilesHandler : IDisposable
     {        
         private class ListResultFile : IListResultFile

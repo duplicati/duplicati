@@ -456,10 +456,10 @@
   <data name="BlocksizeShort" xml:space="preserve">
     <value>Blocksize used in hashing</value>
   </data>
-  <data name="ChangedfilesetLong" xml:space="preserve">
+  <data name="ChangedfilesLong" xml:space="preserve">
     <value>This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes.</value>
   </data>
-  <data name="ChangedfilesetShort" xml:space="preserve">
+  <data name="ChangedfilesShort" xml:space="preserve">
     <value>List of files to examine for changes</value>
   </data>
   <data name="DbpathLong" xml:space="preserve">
@@ -468,10 +468,10 @@
   <data name="DbpathShort" xml:space="preserve">
     <value>Path to the local state database</value>
   </data>
-  <data name="DeletedfilesetLong" xml:space="preserve">
+  <data name="DeletedfilesLong" xml:space="preserve">
     <value>This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set.</value>
   </data>
-  <data name="DeletedfilesetShort" xml:space="preserve">
+  <data name="DeletedfilesShort" xml:space="preserve">
     <value>List of deleted files</value>
   </data>
   <data name="FilehashlookupsizeLong" xml:space="preserve">
@@ -551,5 +551,23 @@
   </data>
   <data name="PatchwithlocalblocksShort" xml:space="preserve">
     <value>Use local file data when restoring</value>
+  </data>
+  <data name="NolocaldbShort" xml:space="preserve">
+    <value>Disables the local database</value>
+  </data>
+  <data name="NolocaldbLong" xml:space="preserve">
+    <value>When listing contents or when restoring files, the local database can be skipped. This is usually slower, but can be used to verify the actual contents of the remote store</value>
+  </data>
+  <data name="KeepversionsShort" xml:space="preserve">
+    <value>Keep a number of versions</value>
+  </data>
+  <data name="KeepversionsLong" xml:space="preserve">
+    <value>Use this option to set number of versions to keep, supply -1 to keep all versions</value>
+  </data>
+  <data name="KeeptimeShort" xml:space="preserve">
+    <value>Keep all versions within a timespan</value>
+  </data>
+  <data name="KeeptimeLong" xml:space="preserve">
+    <value>Use this option to set the timespan in which backups are kept.</value>
   </data>
 </root>

@@ -136,10 +136,6 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "restore",
-                    "delete-older-than",
-                    "delete-all-but-n-full",
-                    "delete-all-but-n",
                     "filter",
                     "main-action"
                 };
@@ -279,7 +275,8 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "force"
+                    "force",
+                    "dry-run"
                 };
             }
         }
@@ -404,13 +401,13 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("filepath-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilepathlookupsizeShort, Strings.Options.FilepathlookupsizeLong, DEFAULT_FILENAME_LOOKUP_SIZE),
-                    new CommandLineArgument("changed-fileset", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesetShort, Strings.Options.ChangedfilesetLong),
-                    new CommandLineArgument("deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesetShort, string.Format(Strings.Options.DeletedfilesetLong, "fh-changed-fileset")),
+                    new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
+                    new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
                     new CommandLineArgument("max-wastesize", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxwastesizeShort, Strings.Options.MaxwastesizeLong),
                     new CommandLineArgument("no-indexfiles", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoindexfilesShort, Strings.Options.NoindexfilesLong, "false"),
                     new CommandLineArgument("no-backendverification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
-                    new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false"),
+                    new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
                     new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
                     new CommandLineArgument("file-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FilehashalgorithmShort, Strings.Options.FilehashalgorithmLong, DEFAULT_FILE_HASH_ALGORITHM, null, GetSupportedHashes()),
@@ -419,9 +416,12 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("volume-size-tolerance", CommandLineArgument.ArgumentType.Size, Strings.Options.VolumesizetoleranceShort, Strings.Options.VolumesizetoleranceLong),
 
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Size, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong),
+                    new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
+                    
+                    new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong),
+                    new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
 #if DEBUG
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
-                    new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
 #endif
                 });
 
@@ -666,17 +666,18 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the number of old backups to keep
         /// </summary>
-        public int DeleteAllButN
+        public int KeepVersions
         {
             get
             {
-                string key = "delete-all-but-n";
-                if (!m_options.ContainsKey(key) || string.IsNullOrEmpty(m_options[key]))
-                    throw new Exception("No count given for \"Delete All But N\"");
-
-                int x = int.Parse(m_options[key]);
+                string v;
+                m_options.TryGetValue("keep-versions", out v);
+                if (string.IsNullOrEmpty(v))
+                    return int.MaxValue;
+                
+                int x = int.Parse(v);
                 if (x < 0)
-                    throw new Exception("Invalid count for delete-all-but-n, must be greater than zero");
+                    throw new Exception("Invalid count for keep-versions, must be greater than zero");
 
                 return x;
             }
@@ -685,20 +686,58 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the timelimit for removal
         /// </summary>
-        public DateTime DeleteOlderThan
+        public DateTime KeepTime
         {
             get
             {
-                if (!m_options.ContainsKey("delete-older-than"))
-                    throw new Exception("No count given for \"Delete Older Than\"");
+                string v;
+                m_options.TryGetValue("keep-time", out v);
+                
+                if (string.IsNullOrEmpty(v))
+                    return new DateTime(0);
 
                 TimeSpan tolerance =
                     this.DisableTimeTolerance ?
                     TimeSpan.FromSeconds(0) :
-                    TimeSpan.FromSeconds(Math.Min(Library.Utility.Timeparser.ParseTimeSpan(m_options["delete-older-than"]).TotalSeconds / 100, 60.0 * 60.0));
+                    TimeSpan.FromSeconds(Math.Min(Library.Utility.Timeparser.ParseTimeSpan(v).TotalSeconds / 100, 60.0 * 60.0));
 
-                return Library.Utility.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true) - tolerance;
+                return Library.Utility.Timeparser.ParseTimeInterval(v, DateTime.Now, true) - tolerance;
             }
+        }
+                
+        /// <summary>
+        /// Gets the filesets selected for deletion
+        /// </summary>
+        /// <returns>The filesets to delete</returns>
+        /// <param name="backups">The list of backups that can be deleted</param>
+        public DateTime[] GetFilesetsToDelete (DateTime[] backups)
+        {
+            if (backups.Length == 0)
+                return backups;
+                
+            List<DateTime> res = new List<DateTime>();
+                
+            var versions = this.Version;
+            if (versions != null && versions.Length > 0) 
+                foreach (var ix in versions.Distinct())
+                	if (ix >= 0 && ix < backups.Length)
+                    	res.Add(backups[ix]);
+            
+            var keepVersions = this.KeepVersions;
+            if (keepVersions < backups.Length)
+                res.AddRange(backups.Skip(keepVersions));
+                    
+            var keepTime = this.KeepTime;
+            if (keepTime.Ticks > 0)
+                res.AddRange(backups.SkipWhile(x => x >= keepTime));
+            
+            var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
+            
+            var removeCount = filtered.Count();
+            if (removeCount >= backups.Length)
+                filtered = filtered.Skip(removeCount - backups.Length + (AllowFullRemoval ? 0 : 1));
+            
+            return filtered.ToArray();
         }
 
         /// <summary>
@@ -1283,7 +1322,7 @@ namespace Duplicati.Library.Main
             get
             {
                 string v;
-                m_options.TryGetValue("changed-fileset", out v);
+                m_options.TryGetValue("changed-files", out v);
                 if (string.IsNullOrEmpty(v))
                     return null;
 
@@ -1299,7 +1338,7 @@ namespace Duplicati.Library.Main
             get
             {
                 string v;
-                m_options.TryGetValue("deleted-fileset", out v);
+                m_options.TryGetValue("deleted-files", out v);
                 if (string.IsNullOrEmpty(v))
                     return null;
 
@@ -1336,7 +1375,13 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool Dryrun
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); }
+            get 
+            {
+            	if (m_options.ContainsKey("dry-run"))
+            		return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
+            	else
+            		return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
+            }
         }
         
         /// <summary>

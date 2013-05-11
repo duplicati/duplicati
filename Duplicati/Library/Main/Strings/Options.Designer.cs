@@ -252,18 +252,18 @@ namespace Duplicati.Library.Main.Strings {
         /// <summary>
         ///   Looks up a localized string similar to This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes..
         /// </summary>
-        internal static string ChangedfilesetLong {
+        internal static string ChangedfilesLong {
             get {
-                return ResourceManager.GetString("ChangedfilesetLong", resourceCulture);
+                return ResourceManager.GetString("ChangedfilesLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to List of files to examine for changes.
         /// </summary>
-        internal static string ChangedfilesetShort {
+        internal static string ChangedfilesShort {
             get {
-                return ResourceManager.GetString("ChangedfilesetShort", resourceCulture);
+                return ResourceManager.GetString("ChangedfilesShort", resourceCulture);
             }
         }
         
@@ -360,18 +360,18 @@ namespace Duplicati.Library.Main.Strings {
         /// <summary>
         ///   Looks up a localized string similar to This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set..
         /// </summary>
-        internal static string DeletedfilesetLong {
+        internal static string DeletedfilesLong {
             get {
-                return ResourceManager.GetString("DeletedfilesetLong", resourceCulture);
+                return ResourceManager.GetString("DeletedfilesLong", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to List of deleted files.
         /// </summary>
-        internal static string DeletedfilesetShort {
+        internal static string DeletedfilesShort {
             get {
-                return ResourceManager.GetString("DeletedfilesetShort", resourceCulture);
+                return ResourceManager.GetString("DeletedfilesShort", resourceCulture);
             }
         }
         
@@ -736,6 +736,42 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to set the timespan in which backups are kept..
+        /// </summary>
+        internal static string KeeptimeLong {
+            get {
+                return ResourceManager.GetString("KeeptimeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep all versions within a timespan.
+        /// </summary>
+        internal static string KeeptimeShort {
+            get {
+                return ResourceManager.GetString("KeeptimeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to set number of versions to keep, supply -1 to keep all versions.
+        /// </summary>
+        internal static string KeepversionsLong {
+            get {
+                return ResourceManager.GetString("KeepversionsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep a number of versions.
+        /// </summary>
+        internal static string KeepversionsShort {
+            get {
+                return ResourceManager.GetString("KeepversionsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size..
         /// </summary>
         internal static string ListverifyuploadsLong {
@@ -948,6 +984,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string NoindexfilesShort {
             get {
                 return ResourceManager.GetString("NoindexfilesShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When listing contents or when restoring files, the local database can be skipped. This is usually slower, but can be used to verify the actual contents of the remote store.
+        /// </summary>
+        internal static string NolocaldbLong {
+            get {
+                return ResourceManager.GetString("NolocaldbLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disables the local database.
+        /// </summary>
+        internal static string NolocaldbShort {
+            get {
+                return ResourceManager.GetString("NolocaldbShort", resourceCulture);
             }
         }
         

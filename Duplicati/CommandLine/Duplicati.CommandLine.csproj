@@ -27,7 +27,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Commandlineparameters>UNITTEST ~/DSMCBE/r50 ~/DSMCBE/r100 --no-encryption --verbose --fh</Commandlineparameters>
+    <Commandlineparameters>UNITTEST ~/DSMCBE/r50 ~/DSMCBE/r100 ~/DSMCBE/r150 --no-encryption</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -127,6 +127,10 @@
     <ProjectReference Include="..\License\Duplicati.License.csproj">
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
+    </ProjectReference>
+    <ProjectReference Include="BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+      <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
+      <Name>Duplicati.CommandLine.BackendTool</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -133,15 +133,13 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public string Delete()
+        public IDeleteResults Delete()
         {
             var rs = new RestoreStatistics(OperationMode.Delete);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.DeleteHandler(m_backend, m_options, rs))
-                handler.Run();
-
-            return rs.ToString();
+                return handler.Run();
         }
 
         public string Repair()
@@ -155,12 +153,12 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public Operation.IListResults List (string filter = null)
+        public IListResults List (string filter = null)
         {
             return List(filter == null ? null : new string[] { filter });
         }
         
-        public Operation.IListResults List(IEnumerable<string> filter)
+        public IListResults List(IEnumerable<string> filter)
         {
             var rs = new RestoreStatistics(OperationMode.List);
             SetupCommonOptions(rs);
@@ -356,8 +354,6 @@ namespace Duplicati.Library.Main
             //TODO: Based on the action, see if all options are relevant
         }
 
-        #region Static interface
-
         /// <summary>
         /// Checks if the value passed to an option is actually valid.
         /// </summary>
@@ -424,8 +420,6 @@ namespace Duplicati.Library.Main
             return null;
         }
             
-        #endregion
-
         #region IDisposable Members
 
         public void Dispose()
@@ -473,18 +467,6 @@ namespace Duplicati.Library.Main
             
             using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, stat))
                 h.Run(m_options.Dbpath);
-        }
-
-        public string DeleteFilesets(string filesets)
-        {
-            var stat = new CommunicationStatistics(OperationMode.Delete);
-            SetupCommonOptions(stat);
-            
-            using(var h = new Operation.DeleteHandler(m_backend, m_options, stat))
-            {
-                h.Filesets = filesets;
-                return h.Run();
-            }
         }
 
         public void CreateLogDatabase()

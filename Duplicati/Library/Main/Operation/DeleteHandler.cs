@@ -24,14 +24,24 @@ namespace Duplicati.Library.Main.Operation
 {
 	internal class DeleteHandler : CompactHandler
 	{
-		internal string Filesets { get; set; }
-
+		private class DeleteResults : IDeleteResults
+		{
+	        public IEnumerable<DateTime> DeletedSets { get; private set; }
+        	public bool Dryrun { get; private set; }
+			
+			public DeleteResults(IEnumerable<DateTime> deletedSets, bool dryrun)
+			{
+				DeletedSets = deletedSets;
+				Dryrun = dryrun;
+			}
+		}
+	
 		public DeleteHandler(string backend, Options options, CommunicationStatistics stat)
 	        : base(backend, options, stat)
         {
         }
 
-        public override string Run()
+        public new IDeleteResults Run()
 		{		
 			if (!System.IO.File.Exists(m_options.Dbpath))
 				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
@@ -46,16 +56,10 @@ namespace Duplicati.Library.Main.Operation
 					if (!m_options.NoBackendverification)
 						FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_stat); 
 					
-					IEnumerable<string> n = new string[0];
-					if (m_options.HasDeleteOlderThan)
-						n = n.Union(db.DeleteOlderThan(m_options.DeleteOlderThan, m_options.AllowFullRemoval, m_stat, m_options, tr));
-					if (m_options.HasDeleteAllButN)
-						n = n.Union(db.DeleteAllButN(m_options.DeleteAllButN, m_options.AllowFullRemoval, m_stat, m_options, tr));
-					if (!string.IsNullOrEmpty(this.Filesets))
-						n = n.Union(db.DeleteFilesets(this.Filesets, m_options.AllowFullRemoval, m_stat, m_options, tr));
-					
+                    var toDelete = m_options.GetFilesetsToDelete(db.FilesetTimes.Select(x => x.Value).ToArray());
+                                        
 					var count = 0L;
-					foreach(var f in n.Distinct())
+					foreach(var f in db.DropFilesetsFromTable(toDelete, tr))
 					{
 						count++;
 						if (m_options.Force && !m_options.Dryrun)
@@ -93,7 +97,7 @@ namespace Duplicati.Library.Main.Operation
 					else
 						tr.Rollback();
 					
-					return "";
+					return new DeleteResults(toDelete, !(m_options.Force && !m_options.Dryrun));
 				}
 			}
 			

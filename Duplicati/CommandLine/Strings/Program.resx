@@ -117,46 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddedFoldersHeader" xml:space="preserve">
-    <value>Added folders</value>
-  </data>
-  <data name="CollectionStatusHeader" xml:space="preserve">
-    <value>Found {0} backup chains on backend
-
-Type\tTime\t\t\tVolumes\tSize</value>
-  </data>
-  <data name="CollectionStatusLineFull" xml:space="preserve">
-    <value>Full\t{0}\t{1}\t{2}</value>
-  </data>
-  <data name="CollectionStatusLineInc" xml:space="preserve">
-    <value> Inc\t{0}\t{1}\t{2}</value>
-  </data>
-  <data name="ControlFilesHeader" xml:space="preserve">
-    <value>Control files</value>
-  </data>
-  <data name="DeletedFilesHeader" xml:space="preserve">
-    <value>Deleted files</value>
-  </data>
-  <data name="DeletedFoldersHeader" xml:space="preserve">
-    <value>Deleted folders</value>
-  </data>
-  <data name="DuplicatiOptionsHeader" xml:space="preserve">
-    <value>Duplicati options:</value>
+  <data name="DeleteCommandNeedsOptions" xml:space="preserve">
+    <value>The command {0} needs at least one of the following options set: {1}</value>
   </data>
   <data name="FailedToParseParametersFileError" xml:space="preserve">
     <value>Unable to read the parameters file "{0}", reason: {1}</value>
   </data>
-  <data name="FileEntryNotFound" xml:space="preserve">
-    <value>&lt; not found &gt;</value>
-  </data>
   <data name="FiltersCannotBeUsedWithFileError" xml:space="preserve">
     <value>Filters cannot be specified on the commandline if filters are also present in the parameter file</value>
-  </data>
-  <data name="FolderCreatedMessage" xml:space="preserve">
-    <value>The folder {0} was created</value>
-  </data>
-  <data name="GenericModulesHeader" xml:space="preserve">
-    <value>Supported generic modules:</value>
   </data>
   <data name="IntegerParseError" xml:space="preserve">
     <value>Unable to parse "{0}" into a number</value>
@@ -164,120 +132,27 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="InternalOptionUsedError" xml:space="preserve">
     <value>The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline</value>
   </data>
-  <data name="MissingURISchemeError" xml:space="preserve">
-    <value>The source or target parameter must be a URL, try using "{0}{1}"</value>
-  </data>
-  <data name="ModifiedFilesHeader" xml:space="preserve">
-    <value>Modified files</value>
-  </data>
-  <data name="ModuleIsLoadedAutomatically" xml:space="preserve">
-    <value>Module is loaded atomatically, use --disable-module to prevent this</value>
-  </data>
-  <data name="ModuleIsNotLoadedAutomatically" xml:space="preserve">
-    <value>Module is not loaded atomatically, use --enable-module to load it</value>
-  </data>
-  <data name="NewFilesHeader" xml:space="preserve">
-    <value>New files</value>
-  </data>
-  <data name="NewOrModifiedFilesHeader" xml:space="preserve">
-    <value>New/Modified files</value>
-  </data>
   <data name="ParametersFileOptionLong" xml:space="preserve">
     <value>This option can be used to store some or all of the options given to the commandline client. The file must be a plain text file, UTF-8 encoding is preferred. Each line in the file should be of the format --option=value. The special options --source and --target can be used to override the localpath and the remote destination uri, respectively. The options in this file take precedence over the options provided on the commandline. You cannot specify filters in both the file and on the commandline.</value>
   </data>
   <data name="ParametersFileOptionShort" xml:space="preserve">
     <value>Path to a file with parameters</value>
   </data>
-  <data name="ProgramUsageBackend" xml:space="preserve">
-    <value>A &lt;backend&gt; is identified by an url like ftp://host/ or ssh://server/.
- Using this system, Duplicati can detect if you want to backup or restore.
- The cleanup and delete commands do not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.
- The cleanup command should not be used unless a backup was interrupted and has left partial files. Duplicati will inform you if this happens.
- The delete command can be used to remove backup sets when newer backups are present.</value>
+  <data name="TimeParseError" xml:space="preserve">
+    <value>Unable to parse "{0}" into a time offset: {1}</value>
   </data>
-  <data name="ProgramUsageBackup" xml:space="preserve">
-    <value>Backup (make a full or incremental backup):
-  Duplicati.CommandLine [full] [options] &lt;sourcefolder&gt; &lt;backend&gt;</value>
+  <data name="UnhandledException" xml:space="preserve">
+    <value>An error occured: {0}</value>
   </data>
-  <data name="ProgramUsageCleanup" xml:space="preserve">
-    <value>Cleanup (remove partial and unused files):
-  Duplicati.CommandLine cleanup [options] &lt;backend&gt;</value>
+  <data name="UnhandledInnerException" xml:space="preserve">
+    <value>The inner error message is: {0}</value>
   </data>
-  <data name="ProgramUsageCreateFolders" xml:space="preserve">
-    <value>Create folder (usually done automatically):
-  Duplicati.CommandLine create-folder [options] &lt;backend&gt;</value>
+  <data name="WrongNumberOfCommandsError_v2" xml:space="preserve">
+    <value>Found {0} commands but expected {1}, commands: 
+{2}</value>
   </data>
-  <data name="ProgramUsageDeleteOld" xml:space="preserve">
-    <value>Delete old backups:
-  Duplicati.CommandLine delete-all-but-n-full &lt;number of full backups to keep&gt; [options] &lt;backend&gt;
-  Duplicati.CommandLine delete-older-than &lt;max allowed age&gt; [options] &lt;backend&gt;</value>
-  </data>
-  <data name="ProgramUsageFilters" xml:space="preserve">
-    <value>Filters:
- Duplicati uses filters to include and exclude files.
-  Duplicati uses a "first-touch" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplicati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
-    --include=*.txt --exclude=*\Thumbs.db --include=*
-
-  Even though the last filter includes everything, no files named "Thumbs.db" are included because they match the exclude rule before the include rule. Paths are evaluated in full, and as paths that are relative to folder being backed up, but including a leading slash. An example:
-
-{0}
-  If a folder is excluded, files in that folder are always excluded, even if there are filters that include files in that folder. If a folder is included with a wildcard at the end, all files are included, if the folder is included without a wildcard, files may be excluded or included with extra rules.</value>
-  </data>
-  <data name="ProgramUsageHeader" xml:space="preserve">
-    <value>********** Duplicati v. {0} **********
-
-Usage:</value>
-  </data>
-  <data name="ProgramUsageListContentFiles" xml:space="preserve">
-    <value>List content files (files that can be restored):
-  Duplicati.CommandLine list-current-files [options] &lt;backend&gt;</value>
-  </data>
-  <data name="ProgramUsageListFiles" xml:space="preserve">
-    <value>List files:
-  Duplicati.CommandLine list [options] &lt;backend&gt;</value>
-  </data>
-  <data name="ProgramUsageListSets" xml:space="preserve">
-    <value>List backup sets:
-  Duplicati.CommandLine collection-status [options] &lt;backend&gt;</value>
-  </data>
-  <data name="ProgramUsageListSignatureFiles" xml:space="preserve">
-    <value>List signature files (files in a single backup volume set):
-  Duplicati.CommandLine list-actual-signature-files [options] &lt;backend&gt;</value>
-  </data>
-  <data name="ProgramUsageListSourceFolders" xml:space="preserve">
-    <value>List source folders (folders backed up from):
-  Duplicati.CommandLine list-source-folders [options] &lt;backend&gt;</value>
-  </data>
-  <data name="ProgramUsageOptionTypes" xml:space="preserve">
-    <value>Option types:
- The following option types are available:
-  Integer: a numerical value
-  Boolean: a truth value, --force and --force=true are equivalent. --force=false is the opposite
-  Timespan: a time in the special time format (explained below)
-  Size: a size like 5mb or 200kb
-  Enumeration: any of the listed values
-  Path: the path to a folder or file
-  String: any other type</value>
-  </data>
-  <data name="ProgramUsagePurgeCache" xml:space="preserve">
-    <value>Purge signature cache:
-  Duplicati.CommandLine purge-signature-cache [options]</value>
-  </data>
-  <data name="ProgramUsageRestore" xml:space="preserve">
-    <value>Restore (restore all or some files):
-  Duplicati.CommandLine [options] &lt;backend&gt; &lt;destinationfolder&gt;</value>
-  </data>
-  <data name="ProgramUsageTimes" xml:space="preserve">
-    <value>Times:
- Duplicati uses the time system from duplicity, where times may be presented as:
-  1: the string "now", indicating the current time
-  2: the number of seconds after epoch, eg: 123456890
-  3: a string like "2009-03-26T08:30:00+01:00"
-  4: an interval string, using Y, M, W, D, h, m, s for Year, Month, Week, Day, hour, minute or second, eg: "1M4D" for one month and four days, or "5m" for five minutes.</value>
-  </data>
-  <data name="ProgramUsageVerify" xml:space="preserve">
-    <value>Verify backup integrity:
-  Duplicati.CommandLine verify &lt;backend&gt; --verification-level=manifest|signatures|full</value>
+  <data name="InvalidCommandError" xml:space="preserve">
+    <value>Command not supported: {0}</value>
   </data>
   <data name="SupportedBackendsHeader" xml:space="preserve">
     <value>Supported backends:</value>
@@ -291,43 +166,22 @@ Usage:</value>
   <data name="SupportedOptionsHeader" xml:space="preserve">
     <value>Supported options:</value>
   </data>
-  <data name="SymlinksHeader" xml:space="preserve">
-    <value>Symbolic links</value>
+  <data name="ModuleIsLoadedAutomatically" xml:space="preserve">
+    <value>Module is loaded atomatically, use --disable-module to prevent this</value>
   </data>
-  <data name="TimeParseError" xml:space="preserve">
-    <value>Unable to parse "{0}" into a time offset: {1}</value>
+  <data name="ModuleIsNotLoadedAutomatically" xml:space="preserve">
+    <value>Module is not loaded atomatically, use --enable-module to load it</value>
   </data>
-  <data name="UnhandledException" xml:space="preserve">
-    <value>An error occured: {0}</value>
+  <data name="GenericModulesHeader" xml:space="preserve">
+    <value>Supported generic modules:</value>
   </data>
-  <data name="UnhandledInnerException" xml:space="preserve">
-    <value>The inner error message is: {0}</value>
+  <data name="NoFilesetsMatching" xml:space="preserve">
+    <value>No filesets matched the criteria</value>
   </data>
-  <data name="UsageExampleLinux" xml:space="preserve">
-    <value>Duplicati.CommandLine /home/user/ ftp://host/folder --exclude=/file.txt
-
-  In this example the file "/home/user/file.txt" is excluded.</value>
+  <data name="WouldDeleteBackups" xml:space="preserve">
+    <value>The following filesets would be deleted:</value>
   </data>
-  <data name="UsageExampleWindows" xml:space="preserve">
-    <value>Duplicati.CommandLine C:\Documents\Files ftp://host/folder --exclude=\file.txt
-
-  In this example the file "C:\Documents\Files\file.txt" is excluded.</value>
-  </data>
-  <data name="VerificationCompleted" xml:space="preserve">
-    <value>Verification completed, summary:
-Manifest files verified: {0}
-Signature files verified: {1}
-Content files verified: {2}
-Errors: {3}</value>
-  </data>
-  <data name="VerificationErrorHeader" xml:space="preserve">
-    <value>Reported error messages:</value>
-  </data>
-  <data name="WrongNumberOfCommandsError_v2" xml:space="preserve">
-    <value>Found {0} commands but expected {1}, commands: 
-{2}</value>
-  </data>
-  <data name="InvalidCommandError" xml:space="preserve">
-    <value>Command not supported: {0}</value>
+  <data name="DeletedBackups" xml:space="preserve">
+    <value>These filesets were deleted:</value>
   </data>
 </root>
