@@ -417,6 +417,8 @@ namespace Duplicati.Library.Main
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
+			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
+			
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Uploaded file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(item.Size));
 
