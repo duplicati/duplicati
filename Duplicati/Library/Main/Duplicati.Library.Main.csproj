@@ -106,7 +106,6 @@
     <Compile Include="Database\LocalBugReportDatabase.cs" />
     <Compile Include="Database\LocalRepairDatabase.cs" />
     <Compile Include="Operation\BackupHandler.cs" />
-    <Compile Include="Operation\FindLastFileVersionHandler.cs" />
     <Compile Include="Operation\ListFilesHandler.cs" />
     <Compile Include="Operation\RecreateDatabaseHandler.cs" />
     <Compile Include="Operation\RestoreControlFilesHandler.cs" />
@@ -138,6 +137,8 @@
     <Compile Include="Utility.cs" />
     <Compile Include="IMetahash.cs" />
     <Compile Include="Controller.cs" />
+    <Compile Include="FilterExpression.cs" />
+    <Compile Include="Database\LocalListDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Duplicati.CommandLine
@@ -34,11 +35,45 @@ namespace Duplicati.CommandLine
 
         public static int List(List<string> args, Dictionary<string, string> options)
         {
-            if (args.Count != 1)
+            if (args.Count != 1 && args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 1);
     
             using(var i = new Library.Main.Controller(args[0], options))
-                Console.WriteLine(string.Join(Environment.NewLine, i.List().ToArray()));
+            {
+                var res = i.List(args.Count == 2 ? args[1] : null);
+                if (args.Count == 1)
+                {
+                    Console.WriteLine("Listing backup filesets:");
+                    foreach(var e in res.Filesets)
+                        Console.WriteLine("{0}\t: {1}", e.Key, e.Value);
+                }
+                else
+                {
+                    if (res.Filesets.Count() == 1)
+                    {
+                        Console.WriteLine("Listing contents {0}:", res.Filesets.First());
+                        foreach(var e in res.Files)
+                            Console.WriteLine("{0} ({1})", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) ? "" : Library.Utility.Utility.FormatSizeString(e.Sizes.First()));
+                    }
+                    else
+                    {
+                        Console.WriteLine("Listing files and versions:");
+                        foreach(var e in res.Files)
+                        {
+                            Console.WriteLine(e.Path);
+                            bool created = false;
+                            foreach(var nx in res.Filesets.Zip(e.Sizes, (a, b) => new { Index = a.Key, Time = a.Value, Size = b } ))
+                            {
+                                Console.WriteLine("{0}\t: {1} {2}", nx.Index, nx.Time, nx.Size < 0 ? " - " : Library.Utility.Utility.FormatSizeString(nx.Size));
+                                created |= nx.Size >= 0;
+                            }
+                                
+                            Console.WriteLine();
+                        }
+                        
+                    }
+                }
+            }
             
             return 0;
         }
@@ -98,21 +133,6 @@ namespace Duplicati.CommandLine
             using(var i = new Duplicati.Library.Main.Controller(args[0], options))
                 i.Repair();
 
-            return 0;
-        }
-
-        public static int FindLastVersion(List<string> args, Dictionary<string, string> options)
-        {
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
-                
-            using(var i = new Library.Main.Controller(args[0], options))
-            {
-                var res = i.FindLastFileVersion();
-                Console.WriteLine(Strings.Program.FindLastVersionHeader.Replace("\\t", "\t"));
-                foreach(KeyValuePair<string, DateTime> k in res)
-                    Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
-            }            
             return 0;
         }
 

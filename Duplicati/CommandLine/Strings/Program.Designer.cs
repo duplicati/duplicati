@@ -162,24 +162,6 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0}\t{1}.
-        /// </summary>
-        internal static string FindLastVersionEntry {
-            get {
-                return ResourceManager.GetString("FindLastVersionEntry", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Backuptime\t\tFilename.
-        /// </summary>
-        internal static string FindLastVersionHeader {
-            get {
-                return ResourceManager.GetString("FindLastVersionHeader", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The folder {0} was created.
         /// </summary>
         internal static string FolderCreatedMessage {
@@ -216,8 +198,7 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Command not supported: {0} 
-        ///{1}.
+        ///   Looks up a localized string similar to Command not supported: {0}.
         /// </summary>
         internal static string InvalidCommandError {
             get {
@@ -365,16 +346,6 @@ namespace Duplicati.CommandLine.Strings {
         internal static string ProgramUsageFilters {
             get {
                 return ResourceManager.GetString("ProgramUsageFilters", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Find the last version of a file:
-        ///  Duplicati.CommandLine find-last-version [options] --file-to-restore=&lt;files to find&gt; &lt;backend&gt;.
-        /// </summary>
-        internal static string ProgramUsageFindLastVersion {
-            get {
-                return ResourceManager.GetString("ProgramUsageFindLastVersion", resourceCulture);
             }
         }
         

@@ -18,6 +18,7 @@
 // 
 #endregion
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
@@ -294,7 +295,8 @@ namespace Duplicati.Library.Main
                     "skip-file-hash-checks",
                     "dont-read-manifests",
                     "file-to-restore",
-                    "restore-time",
+                    "time",
+                    "version",
                     "best-effort-restore"
                 };
             }
@@ -327,7 +329,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("dont-read-manifests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
                     new CommandLineArgument("best-effort-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BesteffortrestoreShort, Strings.Options.BesteffortrestoreLong),
                     new CommandLineArgument("file-to-restore", CommandLineArgument.ArgumentType.String, Strings.Options.FiletorestoreShort, Strings.Options.FiletorestoreLong),
-                    new CommandLineArgument("restore-time", CommandLineArgument.ArgumentType.String, Strings.Options.RestoretimeShort, Strings.Options.RestoretimeLong, "now"),
+                    new CommandLineArgument("time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.TimeShort, Strings.Options.TimeLong, "now"),
+                    new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
+                    new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
@@ -516,18 +520,57 @@ namespace Duplicati.Library.Main
                     return m_options["file-to-restore"];
             }
         }
+        
+        /// <summary>
         /// Gets the backup that should be restored
         /// </summary>
-        public DateTime RestoreTime
+        public DateTime Time
         {
             get
             {
-                if (!m_options.ContainsKey("restore-time") || string.IsNullOrEmpty(m_options["restore-time"]))
+                if (!m_options.ContainsKey("time") || string.IsNullOrEmpty(m_options["time"]))
                     return DateTime.Now.AddYears(1); //We assume that the check will occur in less than one year :)
                 else
-                    return Library.Utility.Timeparser.ParseTimeInterval(m_options["restore-time"], DateTime.Now);
+                    return Library.Utility.Timeparser.ParseTimeInterval(m_options["time"], DateTime.Now);
             }
         }
+        
+        /// <summary>
+        /// Gets the versions the restore or list operation is limited to
+        /// </summary>
+        public long[] Version
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("version", out v);
+                if (string.IsNullOrEmpty(v))
+                    return null;
+                
+                var versions = v.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries);
+                if (v.Length == 0)
+                    return null;
+                
+                var res = new List<long>();
+                foreach(var n in versions)
+                    if (n.Contains('-'))
+                    {
+                        //TODO: Throw errors if too many entries?
+                        var parts = n.Split(new char[]{'-'}, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt64(x.Trim())).ToArray();
+                        for(var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
+                            res.Add(i);
+                    }
+                    else
+                        res.Add(Convert.ToInt64(n));
+                        
+                return res.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// A value indicating if all versions are listed
+        /// </summary>
+        public bool AllVersions { get { return GetBool("all-versions"); } }
 
         /// <summary>
         /// A value indicating if file time checks are skipped

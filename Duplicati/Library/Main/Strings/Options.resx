@@ -204,11 +204,23 @@
   <data name="PassphraseShort" xml:space="preserve">
     <value>Passphrase used to encrypt backups</value>
   </data>
-  <data name="RestoretimeLong" xml:space="preserve">
-    <value>By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like "-2M" for a backup from two months ago.</value>
+  <data name="TimeLong" xml:space="preserve">
+    <value>By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may use relative times, like "-2M" for a backup from two months ago.</value>
   </data>
-  <data name="RestoretimeShort" xml:space="preserve">
-    <value>The time to restore files</value>
+  <data name="TimeShort" xml:space="preserve">
+    <value>The time to list/restore files</value>
+  </data>
+  <data name="VersionLong" xml:space="preserve">
+    <value>By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may enter multiple values separated with comma, and ranges using -, e.g. "0,2-4,7" .</value>
+  </data>
+  <data name="VersionShort" xml:space="preserve">
+    <value>The version to list/restore files</value>
+  </data>
+  <data name="AllversionsLong" xml:space="preserve">
+    <value>When searching for files, only the most recent backup is searched. Use this option to show all previous versions too.</value>
+  </data>
+  <data name="AllversionsShort" xml:space="preserve">
+    <value>Show all versions</value>
   </data>
   <data name="RetrydelayLong" xml:space="preserve">
     <value>After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions.</value>

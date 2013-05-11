@@ -14,6 +14,7 @@ namespace Duplicati.Library.Main.Operation
         private CommunicationStatistics m_stat;
 
         public delegate IEnumerable<IParsedVolume> FilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
+        public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate IEnumerable<IFileEntry> FilenameFilterDelegate(IEnumerable<IFileEntry> filenamelist);
         public delegate void BlockVolumePostProcessor(string volumename, BlockVolumeReader reader);
 

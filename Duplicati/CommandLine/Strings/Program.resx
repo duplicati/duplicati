@@ -152,12 +152,6 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="FiltersCannotBeUsedWithFileError" xml:space="preserve">
     <value>Filters cannot be specified on the commandline if filters are also present in the parameter file</value>
   </data>
-  <data name="FindLastVersionEntry" xml:space="preserve">
-    <value>{0}\t{1}</value>
-  </data>
-  <data name="FindLastVersionHeader" xml:space="preserve">
-    <value>Backuptime\t\tFilename</value>
-  </data>
   <data name="FolderCreatedMessage" xml:space="preserve">
     <value>The folder {0} was created</value>
   </data>
@@ -228,10 +222,6 @@ Type\tTime\t\t\tVolumes\tSize</value>
 
 {0}
   If a folder is excluded, files in that folder are always excluded, even if there are filters that include files in that folder. If a folder is included with a wildcard at the end, all files are included, if the folder is included without a wildcard, files may be excluded or included with extra rules.</value>
-  </data>
-  <data name="ProgramUsageFindLastVersion" xml:space="preserve">
-    <value>Find the last version of a file:
-  Duplicati.CommandLine find-last-version [options] --file-to-restore=&lt;files to find&gt; &lt;backend&gt;</value>
   </data>
   <data name="ProgramUsageHeader" xml:space="preserve">
     <value>********** Duplicati v. {0} **********
@@ -338,7 +328,6 @@ Errors: {3}</value>
 {2}</value>
   </data>
   <data name="InvalidCommandError" xml:space="preserve">
-    <value>Command not supported: {0} 
-{1}</value>
+    <value>Command not supported: {0}</value>
   </data>
 </root>

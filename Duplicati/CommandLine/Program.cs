@@ -25,8 +25,6 @@ namespace Duplicati.CommandLine
 {
     class Program
     {
-        private static readonly string[] COMMANDS_AS_ARGUMENTS = new string[] { "delete-all-but-n-full", "delete-all-but-n", "delete-older-than", "delete-filesets" };
-
         static int Main(string[] args)
         {
             bool verboseErrors = false;
@@ -74,19 +72,6 @@ namespace Duplicati.CommandLine
                 }
 #endif
 
-                if (cargs.Count > 0)
-                {
-                    //Because options are of the format --name=value, it seems natural to write "delete-all-but-n-full=5",
-                    // so we allow that format as well
-                    foreach (string s in COMMANDS_AS_ARGUMENTS)
-                        if (cargs[0].Trim().ToLower().StartsWith(s + "="))
-                        {
-                            cargs.Insert(1, cargs[0].Substring(s.Length + 1));
-                            cargs[0] = s;
-                        }
-                }
-
-                //AFTER converting options to commands, we check for internal switches
                 foreach (string internaloption in Library.Main.Options.InternalOptions)
                     if (options.ContainsKey(internaloption))
                     {
@@ -133,10 +118,11 @@ namespace Duplicati.CommandLine
 
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["help"] = Commands.Help;                
-                knownCommands["restore"] = Commands.Restore;
                 knownCommands["backup"] = Commands.Backup;
-                knownCommands["repair"] = Commands.Repair;
+                knownCommands["restore"] = Commands.Restore;
                 knownCommands["list"] = Commands.List;
+
+                knownCommands["repair"] = Commands.Repair;
 
                 knownCommands["compact"] = Commands.Compact;
                 knownCommands["recreate-database"] = Commands.RecreateDatabase;
@@ -144,7 +130,6 @@ namespace Duplicati.CommandLine
                 
                 knownCommands["delete-all-but-n"] = Commands.DeleteAllButN;
                 knownCommands["delete-older-than"] = Commands.DeleteOlderThan;
-                knownCommands["find-last-version"] = Commands.FindLastVersion;
 
                 knownCommands["delete-filesets"] = Commands.DeleteFilesets;
                 
@@ -291,7 +276,6 @@ namespace Duplicati.CommandLine
             lines.AddRange(("\n " + Strings.Program.ProgramUsageListContentFiles.Replace("\r", "")).Split('\n'));
             lines.AddRange(("\n " + Strings.Program.ProgramUsageListSourceFolders.Replace("\r", "")).Split('\n'));
             lines.AddRange(("\n " + Strings.Program.ProgramUsageListSignatureFiles.Replace("\r", "")).Split('\n'));
-            lines.AddRange(("\n " + Strings.Program.ProgramUsageFindLastVersion.Replace("\r", "")).Split('\n'));
             lines.AddRange(("\n " + Strings.Program.ProgramUsageVerify.Replace("\r", "")).Split('\n'));
             lines.AddRange(("\n " + Strings.Program.ProgramUsagePurgeCache.Replace("\r", "")).Split('\n'));
             lines.AddRange(("\n " + Strings.Program.ProgramUsageDeleteOld.Replace("\r", "")).Split('\n'));

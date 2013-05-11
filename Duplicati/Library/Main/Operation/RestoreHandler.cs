@@ -70,6 +70,45 @@ namespace Duplicati.Library.Main.Operation
                 };
         }
 
+        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate FilterNumberedFilelist(DateTime time, long[] versions)
+        {
+            if (time.Kind == DateTimeKind.Unspecified)
+                throw new Exception("Unspecified datetime instance, must be either local or UTC");
+
+            // Make sure the resolution is the same (i.e. no milliseconds)
+            time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
+
+            return 
+                _lst =>
+                {
+                    // Unwrap, so we do not query the remote storage twice
+                    var lst = (from n in _lst 
+                                 where n.FileType == RemoteVolumeType.Files && n.Time <= time 
+                                 orderby n.Time descending
+                                 select n).ToArray();
+                                                         
+                    var numbers = new List<KeyValuePair<long, IParsedVolume>>();
+                    long ix = 0;
+                    foreach(var n in lst.OrderByDescending(x => x.Time))
+                        numbers.Add(new KeyValuePair<long, IParsedVolume>(ix++, n));
+
+                    if (time.Ticks > 0 && versions != null && versions.Length > 0)
+                        return from n in numbers
+                            where n.Value.Time < time && versions.Contains(n.Key)
+                            select n;
+                    else if (time.Ticks > 0)
+                        return from n in numbers
+                            where n.Value.Time <= time
+                            select n;
+                    else if (versions != null && versions.Length > 0)
+                        return from n in numbers
+                            where versions.Contains(n.Key)
+                            select n;
+                    else
+                        return numbers;
+                };
+        }
+
         public void Run()
         {
 #if DEBUG
@@ -85,7 +124,7 @@ namespace Duplicati.Library.Main.Operation
 
             using (var tmpdb = new Library.Utility.TempFile())
             {
-                RecreateDatabaseHandler.FilterFilelistDelegate filelistfilter = FilterFilelist(m_options.RestoreTime);
+                RecreateDatabaseHandler.FilterFilelistDelegate filelistfilter = FilterFilelist(m_options.Time);
 
                 RecreateDatabaseHandler.FilenameFilterDelegate filenamefilter = null;
                 if (m_options.HasFilter)
@@ -417,7 +456,7 @@ namespace Duplicati.Library.Main.Operation
         {
             // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
             // Delete all entries from the temp table that are excluded by the filter(s)
-            database.PrepareRestoreFilelist(options.RestoreTime, (options.FileToRestore ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries), options.HasFilter ? options.Filter : null, stat);
+            database.PrepareRestoreFilelist(options.Time, (options.FileToRestore ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries), options.HasFilter ? options.Filter : null, stat);
 
             // Find the largest common prefix
             string largest_prefix = database.GetLargestPrefix();

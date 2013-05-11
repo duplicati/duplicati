@@ -155,13 +155,13 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public List<string> List()
+        public Operation.IListResults List(string filter)
         {
             var rs = new RestoreStatistics(OperationMode.List);
             SetupCommonOptions(rs);
 
             using (var handler = new Operation.ListFilesHandler(m_backend, m_options, rs))
-                return handler.Run();
+                return handler.Run(filter);
         }
 
         private void SetupCommonOptions(CommunicationStatistics stats)
@@ -231,16 +231,6 @@ namespace Duplicati.Library.Main
             ValidateOptions(stats);
 
             Library.Logging.Log.WriteMessage(string.Format(Strings.Interface.StartingOperationMessage, m_options.MainAction), Logging.LogMessageType.Information);
-        }
-
-
-        public List<KeyValuePair<string, DateTime>> FindLastFileVersion()
-        {
-            var rs = new RestoreStatistics(OperationMode.FindLastFileVersion);
-            SetupCommonOptions(rs);
-
-            using (var handler = new Operation.FindLastFileVersionHandler(m_backend, m_options, rs))
-                return handler.Run();
         }
 
         /// <summary>
@@ -461,14 +451,6 @@ namespace Duplicati.Library.Main
         }
 
         #endregion
-
-        public IEnumerable<Volumes.IParsedVolume> ParseFileList()
-        {
-            var stat = new CommunicationStatistics(OperationMode.List);
-            SetupCommonOptions(stat);
-            
-            return FilelistProcessor.ParseFileList(m_backend, m_options.RawOptions, stat);
-        }
 
         public void CompactBlocks()
         {

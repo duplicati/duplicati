@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using Duplicati.Datamodel;
 using Duplicati.Server.Serialization;
 
@@ -176,7 +177,7 @@ namespace Duplicati.Server
                                 break;
                             }
                         case DuplicityTaskType.ListFiles:
-                            (task as ListFilesTask).Files = i.List();
+                            (task as ListFilesTask).Files = (from n in i.List("*").Files select n.Path).ToList();
                             break;
                         case DuplicityTaskType.Restore:
                             options["file-to-restore"] = ((RestoreTask)task).SourceFiles;

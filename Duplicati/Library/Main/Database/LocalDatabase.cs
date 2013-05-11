@@ -650,6 +650,85 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
+        /// <summary>
+        /// Keeps a list of filenames in a temporary table with a single columne Path
+        ///</summary>
+        public class FilteredFilenameTable : IDisposable
+        {
+            public string Tablename { get; private set; }
+            private System.Data.IDbConnection m_connection;
+            
+            public FilteredFilenameTable(System.Data.IDbConnection connection, FilterExpression filter, System.Data.IDbTransaction transaction)
+            {
+                m_connection = connection;
+                Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                if (filter.Type == Duplicati.Library.Main.FilterType.Regexp)
+                {
+                    using(var cmd = m_connection.CreateCommand())
+                    {
+                        cmd.Transaction = transaction;
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
+                        using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+                        {
+                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", Tablename);
+                            cmd.AddParameter();
+                            cmd.Transaction = tr.Parent;
+                            using(var c2 = m_connection.CreateCommand())
+                            using(var rd = c2.ExecuteReader(@"SELECT DISTINCT ""Path"" FROM ""File"" "))
+                                while(rd.Read())
+                                {
+                                    var p = rd.GetValue(0).ToString();
+                                    if (filter.Matches(p))
+                                    {
+                                        cmd.SetParameterValue(0, p);
+                                        cmd.ExecuteNonQuery();
+                                    }
+                                }
+                            
+                            
+                            tr.Commit();
+                        }
+                    }
+                }
+                else
+                {
+                    var sb = new StringBuilder();
+                    var args = new List<object>();
+                    foreach(var f in filter.GetSimpleList())
+                    {
+                        if (f.Contains('*') || f.Contains('?'))
+                        {
+                            sb.Append(@"""Path"" LIKE ? OR ");
+                            args.Add(f.Replace('*', '%').Replace('?', '_'));
+                        }
+                        else
+                        {
+                            sb.Append(@"""Path"" = ? OR");
+                            args.Add(f);
+                        }
+                        
+                        sb.Length = sb.Length - " OR".Length;
+                    }
+                    
+                    using(var cmd = m_connection.CreateCommand())
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
+                }
+            }
+            
+            public void Dispose()
+            {
+                if (Tablename != null)
+                    try 
+                    { 
+                        using(var cmd = m_connection.CreateCommand())
+                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", Tablename));
+                    }
+                    catch {}
+                    finally { Tablename = null; }
+            }                
+        }
+        
+        
         public virtual void Dispose()
         {
         }

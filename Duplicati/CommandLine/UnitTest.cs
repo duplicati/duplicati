@@ -136,8 +136,6 @@ namespace Duplicati.CommandLine
 
             //This would break the test, because the data is not modified the normal way
             options["disable-filetime-check"] = "true";
-            //We do not use the same folder, so we need this option
-            options["allow-sourcefolder-change"] = "true";
             //We want all messages in the log
             options["log-level"] = LogMessageType.Profiling.ToString();
             //We cannot rely on USN numbering, but we can use USN enumeration
@@ -145,8 +143,6 @@ namespace Duplicati.CommandLine
             
             //We use precise times
             options["disable-time-tolerance"] = "true";
-
-            options["verification-level"] = "full";
 
             //We need all sets, even if they are unchanged
             options["upload-unchanged-backups"] = "true";
@@ -183,9 +179,9 @@ namespace Duplicati.CommandLine
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
-                options["fh-dbpath"] = System.IO.Path.Combine(tempdir, "fh-unittest.sqlite");
-                if (System.IO.File.Exists(options["fh-dbpath"]))
-                    System.IO.File.Delete(options["fh-dbpath"]);
+                options["dbpath"] = System.IO.Path.Combine(tempdir, "unittest.sqlite");
+                if (System.IO.File.Exists(options["dbpath"]))
+                    System.IO.File.Delete(options["dbpath"]);
 
                 if (string.IsNullOrEmpty(target))
                 {
@@ -250,11 +246,8 @@ namespace Duplicati.CommandLine
                         }
 
                 IList<DateTime> entries;
-                entries = new List<DateTime>();
                 using(var i = new Duplicati.Library.Main.Controller(target, options))
-                    foreach (var el in i.ParseFileList())
-                        if (el.FileType == Library.Main.RemoteVolumeType.Files)
-                            entries.Add(el.Time.ToLocalTime());
+                    entries = (from n in i.List(null).Filesets select n.Value.ToLocalTime()).ToList();
 
                 if (entries.Count != folders.Length)
                 {
@@ -273,7 +266,7 @@ namespace Duplicati.CommandLine
                             log.Backupset = "Restore " + folders[i];
                             Console.WriteLine("Restoring the copy: " + folders[i]);
     
-                            options["restore-time"] = entries[i].ToString();
+                            options["time"] = entries[entries.Count - i - 1].ToString();
     
                             string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);
                             string[] restorefoldernames;
@@ -294,9 +287,9 @@ namespace Duplicati.CommandLine
                                     List<string> testfiles = new List<string>();
                                     using (new Timer("Extract list of files from" + folders[i]))
                                     {
-                                        IList<string> sourcefiles;
+                                        List<string> sourcefiles;
                                         using(var inst = new Library.Main.Controller(target, options))
-                                            sourcefiles = inst.List();
+                                            sourcefiles = (from n in inst.List("*").Files select n.Path).ToList();
         
                                         //Remove all folders from list
                                         for (int j = 0; j < sourcefiles.Count; j++)
@@ -392,7 +385,7 @@ namespace Duplicati.CommandLine
                 
                 foreach(string s in Utility.EnumerateFiles(tempdir))
                 {
-                	if (options.ContainsKey("fh-dbpath") && s == options["fh-dbpath"])
+                	if (s == options["dbpath"])
                 		continue;
                 	if (s.StartsWith(Utility.AppendDirSeparator(tf)))
                 		continue;

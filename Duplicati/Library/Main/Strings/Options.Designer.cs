@@ -70,6 +70,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to When searching for files, only the most recent backup is searched. Use this option to show all previous versions too..
+        /// </summary>
+        internal static string AllversionsLong {
+            get {
+                return ResourceManager.GetString("AllversionsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show all versions.
+        /// </summary>
+        internal static string AllversionsShort {
+            get {
+                return ResourceManager.GetString("AllversionsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs.
         /// </summary>
         internal static string AsynchronousuploadfolderLong {
@@ -1042,24 +1060,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like &quot;-2M&quot; for a backup from two months ago..
-        /// </summary>
-        internal static string RestoretimeLong {
-            get {
-                return ResourceManager.GetString("RestoretimeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The time to restore files.
-        /// </summary>
-        internal static string RestoretimeShort {
-            get {
-                return ResourceManager.GetString("RestoretimeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions..
         /// </summary>
         internal static string RetrydelayLong {
@@ -1222,6 +1222,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may use relative times, like &quot;-2M&quot; for a backup from two months ago..
+        /// </summary>
+        internal static string TimeLong {
+            get {
+                return ResourceManager.GetString("TimeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The time to list/restore files.
+        /// </summary>
+        internal static string TimeShort {
+            get {
+                return ResourceManager.GetString("TimeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty.
         /// </summary>
         internal static string UploadUnchangedBackupsLong {
@@ -1254,6 +1272,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string UsnpolicyShort {
             get {
                 return ResourceManager.GetString("UsnpolicyShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may enter multiple values separated with comma, and ranges using -, e.g. &quot;0,2-4,7&quot; ..
+        /// </summary>
+        internal static string VersionLong {
+            get {
+                return ResourceManager.GetString("VersionLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The version to list/restore files.
+        /// </summary>
+        internal static string VersionShort {
+            get {
+                return ResourceManager.GetString("VersionShort", resourceCulture);
             }
         }
         
