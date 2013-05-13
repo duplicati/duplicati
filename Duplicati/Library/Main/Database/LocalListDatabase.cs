@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Database
         public interface IFileSets : IDisposable
         {
             IEnumerable<KeyValuePair<long, DateTime>> Times { get; }
-            IEnumerable<IFileversion> SelectFiles(FilterExpression filter);
+            IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
             void TakeFirst ();
         }
         
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
             
-            public IEnumerable<IFileversion> SelectFiles(FilterExpression filter)
+            public IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter)
             {
                 using(var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
                 using(var cmd = m_connection.CreateCommand())                

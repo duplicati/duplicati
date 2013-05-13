@@ -13,9 +13,7 @@ namespace Duplicati.Library.Main.Operation
         private Options m_options;
         private CommunicationStatistics m_stat;
 
-        public delegate IEnumerable<IParsedVolume> FilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
-        public delegate IEnumerable<IFileEntry> FilenameFilterDelegate(IEnumerable<IFileEntry> filenamelist);
         public delegate void BlockVolumePostProcessor(string volumename, BlockVolumeReader reader);
 
         public RecreateDatabaseHandler(string backendurl, Options options, CommunicationStatistics stat)
@@ -32,13 +30,13 @@ namespace Duplicati.Library.Main.Operation
 		/// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
 		/// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
 		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void Run(string path, FilterFilelistDelegate filelistfilter = null, FilenameFilterDelegate filenamefilter = null, BlockVolumePostProcessor blockprocessor = null)
+        public void Run(string path, Library.Utility.IFilter filter= null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
         	if (System.IO.File.Exists(path))
         		throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
 
 			using(var db = new LocalBlocklistUpdateDatabase(path, m_options.Blocksize))
-        		DoRun(db, filelistfilter, filenamefilter, blockprocessor);
+        		DoRun(db, filter, filelistfilter, blockprocessor);
 		}
 		
 		/// <summary>
@@ -48,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
 		/// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
 		/// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
 		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        internal void DoRun(LocalDatabase dbparent, FilterFilelistDelegate filelistfilter = null, FilenameFilterDelegate filenamefilter = null, BlockVolumePostProcessor blockprocessor = null)
+        internal void DoRun(LocalDatabase dbparent, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
         	var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
 			if (hashalg == null)
@@ -71,7 +69,7 @@ namespace Duplicati.Library.Main.Operation
 	                    where
 	                        n != null
 	                            &&
-	                        n.Prefix == m_options.BackupPrefix
+	                        n.Prefix == m_options.Prefix
                         select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
 
 				if (remotefiles.Length == 0)
@@ -106,7 +104,7 @@ namespace Duplicati.Library.Main.Operation
                     select n;
 
                 if (filelistfilter != null)
-                    filelists = filelistfilter(filelists).ToArray();
+                    filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
                 using (var backupdb = new LocalBackupDatabase(restoredb, m_options))
                 {
@@ -154,10 +152,6 @@ namespace Duplicati.Library.Main.Operation
                     //We need this to prepare for the block-lists
                     var dummylist = new string[0];
 
-                    // Default filter is no filter (pass-through)
-                    if (filenamefilter == null)
-                        filenamefilter = lst => lst;
-
                     //Now record all blocksets and files needed
                     using (var tr = backupdb.BeginTransaction())
                     {
@@ -172,7 +166,7 @@ namespace Duplicati.Library.Main.Operation
 		                    // Create timestamped operations based on the file timestamp
                         	backupdb.CreateFileset(volumeIds[entry.Key.Name], parsed.Time, tr);
                             using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
-                                foreach (var fe in filenamefilter(filelistreader.Files))
+                                foreach (var fe in filelistreader.Files.Where(x => filter == null || filter.Matches(x.Path)))
                                 {
                                     if (fe.Type == FilelistEntryType.Folder)
                                     {

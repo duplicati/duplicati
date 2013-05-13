@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             m_localfile = new Library.Utility.TempFile();
 
-			m_volumename = GenerateFilename(this.FileType, options.BackupPrefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+			m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
             AddManifestfile();
         }

@@ -58,8 +58,8 @@ namespace Duplicati.Library.Main
 
             if (missingCount > 0)
             {
-                if (!tp.BackupPrefixes.Contains(options.BackupPrefix) && tp.BackupPrefixes.Length > 0)
-                    throw new Exception(string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.BackupPrefix, string.Join(", ", tp.BackupPrefixes)));
+                if (!tp.BackupPrefixes.Contains(options.Prefix) && tp.BackupPrefixes.Length > 0)
+                    throw new Exception(string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes)));
                 else
                     throw new Exception(string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missingCount));
             }
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main
 
             var remotelist = from n in rawlist let p = Volumes.VolumeBase.ParseFilename(n) where p != null select p;
             foreach (var s in remotelist)
-                if (s.Prefix == options.BackupPrefix)
+                if (s.Prefix == options.Prefix)
                     lookup[s.File.Name] = s;
 
             var missing = new List<RemoteVolumeEntry>();

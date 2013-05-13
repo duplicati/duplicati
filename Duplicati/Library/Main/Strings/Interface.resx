@@ -366,9 +366,6 @@
   <data name="EncryptionModuleNotFoundError" xml:space="preserve">
     <value>The specified encryption module was not found: {0}. Avaliable encryption modules: {1}</value>
   </data>
-  <data name="MissingDatabasepathError" xml:space="preserve">
-    <value>When using the foresthash storage method, the option --{0} must be set</value>
-  </data>
   <data name="InvalidManifestFileCount" xml:space="preserve">
     <value>The manifest file {0} is invalid, as it specifies that there should be {1} signature volumes and {2} content volumes.</value>
   </data>
@@ -383,5 +380,11 @@
   </data>
   <data name="PatchProcessingBestEffortError" xml:space="preserve">
     <value>Failed to apply content file {0}, error message: {1}</value>
+  </data>
+  <data name="HashMismatchError" xml:space="preserve">
+    <value>Hash mismatch on file "{0}", recorded hash: {1}, actual hash {2}</value>
+  </data>
+  <data name="DownloadedFileSizeError" xml:space="preserve">
+    <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>
   </data>
 </root>

@@ -131,8 +131,8 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("passphrase"))
                 options["passphrase"] = "secret password!";
 
-            if (!options.ContainsKey("backup-prefix"))
-                options["backup-prefix"] = "duplicati_unittest";
+            if (!options.ContainsKey("prefix"))
+                options["prefix"] = "duplicati_unittest";
 
             //This would break the test, because the data is not modified the normal way
             options["disable-filetime-check"] = "true";
@@ -470,7 +470,7 @@ namespace Duplicati.CommandLine
             Console.WriteLine("Backing up the " + (Library.Utility.Utility.ParseBoolOption(options, "full") ? "full" : "incremental") + "  copy: " + sourcename);
             using (new Timer((Library.Utility.Utility.ParseBoolOption(options, "full") ? "Full" : "Incremental") + " backup of " + sourcename))
                 using(var i = new Duplicati.Library.Main.Controller(target, options))
-                    Log.WriteMessage(i.Backup(source.Split(System.IO.Path.PathSeparator)), LogMessageType.Information);
+                    Log.WriteMessage(i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString(), LogMessageType.Information);
         }
 
         private static void RunRestore(string source, string target, string[] restorefoldernames, Dictionary<string, string> options)
@@ -514,8 +514,8 @@ namespace Duplicati.CommandLine
             f1 = Utility.AppendDirSeparator(f1);
             f2 = Utility.AppendDirSeparator(f2);
 
-            List<string> folders1 = Utility.EnumerateFolders(f1);
-            List<string> folders2 = Utility.EnumerateFolders(f2);
+            var folders1 = Utility.EnumerateFolders(f1);
+            var folders2 = Utility.EnumerateFolders(f2).ToList();
 
             foreach (string s in folders1)
             {
@@ -537,8 +537,8 @@ namespace Duplicati.CommandLine
                 Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
             }
 
-            List<string> files1 = Utility.EnumerateFiles(f1);
-            List<string> files2 = Utility.EnumerateFiles(f2);
+            var files1 = Utility.EnumerateFiles(f1);
+            var files2 = Utility.EnumerateFiles(f2).ToList();
             foreach (string s in files1)
             {
                 string relpath = s.Substring(f1.Length);

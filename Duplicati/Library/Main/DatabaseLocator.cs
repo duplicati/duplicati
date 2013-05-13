@@ -60,7 +60,7 @@ namespace Duplicati.Library.Main
             int port = uri.Port;
             string username = uri.Username;
             string password = uri.Password;
-            string prefix = options.BackupPrefix;
+            string prefix = options.Prefix;
             
             if (username == null || password == null)
             {

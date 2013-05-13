@@ -160,6 +160,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The file {0} was downloaded and had size {1} but the size was expected to be {2}.
+        /// </summary>
+        internal static string DownloadedFileSizeError {
+            get {
+                return ResourceManager.GetString("DownloadedFileSizeError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The option --{0} exists more than once, please report this to the developers.
         /// </summary>
         internal static string DuplicateOptionNameWarning {
@@ -286,6 +295,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Hash mismatch on file &quot;{0}&quot;, recorded hash: {1}, actual hash {2}.
+        /// </summary>
+        internal static string HashMismatchError {
+            get {
+                return ResourceManager.GetString("HashMismatchError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An incremental backup is made because the latest full backup is from {0} and the full backup threshold is {1}.
         /// </summary>
         internal static string IncrementalBecauseLastFullIsFrom {
@@ -354,15 +372,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string ManifestVersionRequiresRelativeNamesWarning {
             get {
                 return ResourceManager.GetString("ManifestVersionRequiresRelativeNamesWarning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to When using the foresthash storage method, the option --{0} must be set.
-        /// </summary>
-        internal static string MissingDatabasepathError {
-            get {
-                return ResourceManager.GetString("MissingDatabasepathError", resourceCulture);
             }
         }
         

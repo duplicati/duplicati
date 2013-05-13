@@ -37,5 +37,41 @@ namespace Duplicati.Library.Main
         IEnumerable<DateTime> DeletedSets { get; }
         bool Dryrun { get; }
     }
+    
+    public interface IBackendStatstics
+    {
+    	long RemoteCalls { get; }
+    	long BytesUploaded { get; }
+    	long BytesDownloaded { get; }
+    	long FilesUploaded { get; }
+    	long FilesDownloaded { get; }
+    	long FilesDeleted { get; }
+    	long FoldersCreated { get; }
+    	long RetryAttempts { get; }
+    }
+    
+    public interface IBackupResults
+    {
+        long DeletedFiles { get; }
+        long DeletedFolders { get; }
+        long ModifiedFiles { get; }
+        long ExaminedFiles { get; }
+        long OpenedFiles { get; }
+        long AddedFiles { get; }
+        long SizeOfModifiedFiles { get; }
+        long SizeOfAddedFiles { get; }
+        long SizeOfExaminedFiles { get; }
+        long NotProcessedFiles { get; }
+        long AddedFolders { get; }
+        long TooLargeFiles { get; }
+        long FilesWithError { get; }
+        long ModifiedFolders { get; }
+        long ModifiedSymlinks { get; }
+        long AddedSymlinks { get; }
+        long DeletedSymlinks { get; } 
+        DateTime BeginTime { get; }
+        DateTime EndTime { get; }
+        bool PartialBackup { get; }
+    }
 }
 

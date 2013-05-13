@@ -23,7 +23,7 @@ namespace Duplicati.CommandLine
 {
     public static class Commands
     {
-        public static int Help(List<string> args, Dictionary<string, string> options)
+        public static int Help(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count < 1)
                 Duplicati.CommandLine.Help.PrintUsage("help", options);
@@ -33,7 +33,7 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int List (List<string> args, Dictionary<string, string> options)
+        public static int List (List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             using (var i = new Library.Main.Controller(args[0], options)) {
                 args.RemoveAt(0);
@@ -98,7 +98,7 @@ namespace Duplicati.CommandLine
             return 0;
         }
         
-        public static int Delete(List<string> args, Dictionary<string, string> options)
+        public static int Delete(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
 		{
 			var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
             
@@ -133,7 +133,7 @@ namespace Duplicati.CommandLine
         
         }
 
-        public static int Repair(List<string> args, Dictionary<string, string> options)
+        public static int Repair(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
@@ -144,59 +144,53 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int Restore(List<string> args, Dictionary<string, string> options)
+        public static int Restore(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            if (args.Count != 2)
-                return PrintWrongNumberOfArguments(args, 2);
+            if (args.Count < 1)
+                return PrintWrongNumberOfArguments(args, 1);
+                
+            string backend = args[0];
+            args.RemoveAt(0);
 
             using(var i = new Library.Main.Controller(args[0], options))
-                i.Restore(args[1].Split(System.IO.Path.PathSeparator));
+                i.Restore(args.ToArray(), filter);
             
             return 0;
         }
 
-        public static int Backup(List<string> args, Dictionary<string, string> options)
+        public static int Backup(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            if (args.Count != 2)
+            if (args.Count < 2)
                 return PrintWrongNumberOfArguments(args, 2);
+                
+            var backend = args[0];
+            args.RemoveAt(0);
+			var dirs = args.ToArray();
 
-            string result;
-            using(var i = new Library.Main.Controller(args[1], options))
-                result = i.Backup(args[0].Split(System.IO.Path.PathSeparator));
+            Library.Main.IBackupResults result;
+            using(var i = new Library.Main.Controller(backend, options))
+                result = i.Backup(dirs, filter);
 
-            Console.WriteLine(result);
+			Console.WriteLine("Backup completed");
+			foreach(var p in result.GetType().GetProperties())
+				if (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string))
+					Console.WriteLine("{0}: {1}", p.Name, p.GetValue(result, null));
 
-            Dictionary<string, string> tmp = ParseDuplicatiOutput(result);
-            
             //Interrupted = 50
-            if (tmp.ContainsKey("PartialBackup"))
+            if (result.PartialBackup)
                 return 50;
 
             //Completed with warnings = 2
-            if (tmp.ContainsKey("NumberOfWarnings"))
+            /*if (result.Warnings > 0)
                 return 2;
 
             //Success, but no upload = 1
-            if (tmp.ContainsKey("BytesUploaded"))
-            {
-                long s;
-                if (long.TryParse(tmp["BytesUploaded"], out s) && s == 0)
-                    return 1;
-            }
-            
+            if (result.BytesUploaded == 0)
+                return 1;
+            */
             return 0;
         }
-        
-        private static Dictionary<string, string> ParseDuplicatiOutput(string output)
-        {
-            System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex("(?<key>[^\\:]+)\\:(?<value>[^\\n]*)", System.Text.RegularExpressions.RegexOptions.Singleline);
-            Dictionary<string, string> res = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-            foreach (System.Text.RegularExpressions.Match m in re.Matches(output))
-                res[m.Groups["key"].Value.Trim()] = m.Groups["value"].Value.Trim();
-
-            return res;
-        }
-        
+                
         private static int PrintWrongNumberOfArguments(List<string> args, int expected)
         {
             Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
@@ -209,7 +203,7 @@ namespace Duplicati.CommandLine
             return 200;
         }
                 
-        public static int Compact(List<string> args, Dictionary<string, string> options)
+        public static int Compact(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
@@ -220,7 +214,7 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int RecreateDatabase(List<string> args, Dictionary<string, string> options)
+        public static int RecreateDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
@@ -231,7 +225,7 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int CreateBugreportDatabase(List<string> args, Dictionary<string, string> options)
+        public static int CreateBugreportDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);

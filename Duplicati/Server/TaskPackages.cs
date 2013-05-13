@@ -169,8 +169,8 @@ namespace Duplicati.Server
 
         protected virtual void SetupTask(Dictionary<string, string> options)
         {
-            if (this.Task.Filters.Count > 0)
-                options["filter"] = this.Task.EncodedFilter;
+            /*if (this.Task.Filters.Count > 0)
+                options["filter"] = this.Task.EncodedFilter;*/
 
             if (!string.IsNullOrEmpty(this.Task.EncryptionModule))
                 options["encryption-module"] = this.Task.EncryptionModule;

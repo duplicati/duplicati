@@ -20,20 +20,57 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace Duplicati.CommandLine
 {
     class Program
     {
+    	private class FilterCollector
+		{
+			private List<KeyValuePair<bool, Library.Utility.IFilter>> m_filters = new List<KeyValuePair<bool, Library.Utility.IFilter>>();
+			private Library.Utility.CompositeFilterExpression Filter { get { return new Library.Utility.CompositeFilterExpression(m_filters, true); } }
+			
+			private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
+			{
+                return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
+                	if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
+                	{
+                		m_filters.Add(new KeyValuePair<bool, Library.Utility.IFilter>(true, new Library.Utility.FilterExpression(new string[] { value })));
+                		return false;
+                	}
+                	else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
+                	{
+                		m_filters.Add(new KeyValuePair<bool, Library.Utility.IFilter>(false, new Library.Utility.FilterExpression(new string[] { value })));
+                		return false;
+                	}
+                	
+                	if (callbackHandler != null)
+                		return callbackHandler(key, value);
+                	
+                	return true;
+                });
+			}
+			
+			public static Tuple<Dictionary<string, string>, Library.Utility.CompositeFilterExpression> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
+			{
+				var fc = new FilterCollector();
+				var opts = fc.DoExtractOptions(args, callbackHandler);
+				return new Tuple<Dictionary<string, string>, Library.Utility.CompositeFilterExpression>(opts, fc.Filter);
+			}
+		}
+    
         static int Main(string[] args)
         {
             bool verboseErrors = false;
             try
             {
-                List<string> cargs = new List<string>(args);
-                string filter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(cargs, true));
-                Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(cargs);
+            	List<string> cargs = new List<string>(args);
 
+				var tmpparsed = FilterCollector.ExtractOptions(cargs);
+				var options = tmpparsed.Item1;
+				var filter = tmpparsed.Item2;
+				
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
@@ -97,10 +134,6 @@ namespace Duplicati.CommandLine
                         return 100;
                 }
 
-                //After checking for internal options, we set the filter option
-                if (!string.IsNullOrEmpty(filter))
-                    options["filter"] = filter;
-
                 string command = cargs[0];
                 cargs.RemoveAt(0);
 
@@ -116,7 +149,7 @@ namespace Duplicati.CommandLine
                     if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
                         options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
-                var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, int>>(StringComparer.InvariantCultureIgnoreCase);
+                var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["help"] = Commands.Help;                
                 knownCommands["list"] = Commands.List;
                 knownCommands["delete"] = Commands.Delete;
@@ -132,7 +165,7 @@ namespace Duplicati.CommandLine
                 
                 if (knownCommands.ContainsKey(command))
                 {
-                    return knownCommands[command](cargs, options);
+                    return knownCommands[command](cargs, options, filter);
                 }
                 else
                 {
@@ -175,74 +208,59 @@ namespace Duplicati.CommandLine
             get
             {
                 return new List<Library.Interface.ICommandLineArgument>(new Library.Interface.ICommandLineArgument[] {
-                    new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong, "", new string[] {"parameter-file"})
+                    new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong, "", new string[] {"parameter-file", "parameterfile"}),
+                    new Library.Interface.CommandLineArgument("include", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.IncludeShort, Strings.Program.IncludeLong),
+                    new Library.Interface.CommandLineArgument("exclude", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
                 });
             }
         }
 
-        private static bool ReadOptionsFromFile(string filename, ref string filter, IList<string> cargs, Dictionary<string, string> options)
+        private static bool ReadOptionsFromFile(string filename, ref Library.Utility.CompositeFilterExpression filter, List<string> cargs, Dictionary<string, string> options)
         {
             try
             {
                 List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(filename).Replace("\r", "").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
+                var newsource = new List<string>();
+                string newtarget = null;
 
-                string newfilter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(fargs, true));
+				var tmpparsed = FilterCollector.ExtractOptions(fargs, (key, value) => {
+					if (key.Equals("source", StringComparison.InvariantCultureIgnoreCase))
+					{
+						newsource.Add(value);
+						return false;
+					}
+					else if (key.Equals("target", StringComparison.InvariantCultureIgnoreCase))
+					{
+						newtarget = value;
+						return false;
+					}
+					
+					return true;
+				});
+				
+                var opt = tmpparsed.Item1;
+                var newfilter = tmpparsed.Item2;
 
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
-                if (!string.IsNullOrEmpty(filter) && !string.IsNullOrEmpty(newfilter))
+                if (!filter.Empty && !newfilter.Empty)
                     throw new Exception(Strings.Program.FiltersCannotBeUsedWithFileError);
 
-                filter = newfilter;
+				if (!newfilter.Empty)
+                	filter = newfilter;
 
-                Dictionary<string, string> opt = Library.Utility.CommandLineParser.ExtractOptions(fargs);
-                string newsource = null, newtarget = null;
                 foreach (KeyValuePair<String, String> keyvalue in opt)
-                {
-                    switch (keyvalue.Key.ToLower())
-                    {
-                        // This replaces any previous value, file parameters take precedence;
-                        case "source":
-                            newsource = keyvalue.Value;
-                            break;
-                        case "target":
-                            newtarget = keyvalue.Value;
-                            break;
-                        default:
-                            options[keyvalue.Key] = keyvalue.Value;
-                            break;
-                    }
-                }
-
-                // When the action is to backup, allow the source and/or the target 
-                // to be specified in the parameters file as --source= and --target=. 
-                // Note: this block is faily complex due to the way parameters are handled by the rest of the
-                // procedure. It could likely be much simpler and versatile (allow --source and --target on 
-                // restore or other actions) with some refactoring of the parameters decision tree
-                if (!string.IsNullOrEmpty(newsource) || !string.IsNullOrEmpty(newtarget))
-                {
-                    bool isrestore = cargs.Count > 0 && cargs[0] == "restore";
-
-                    if (cargs.Count == 1 || cargs.Count == 0)
-                    {
-                        // if either is empty loading will fail later, so we don't really care.
-                        if (!String.IsNullOrEmpty(newsource)) cargs.Add(newsource);
-                        if (!String.IsNullOrEmpty(newtarget)) cargs.Add(newtarget);
-                    }
-                    else
-                    {
-                        if (isrestore)
-                        {
-                            if (!String.IsNullOrEmpty(newtarget)) cargs[1] = newtarget;
-                            if (!String.IsNullOrEmpty(newsource)) cargs.Insert(1, newsource);
-                        }
-                        else
-                        {
-                            if (!String.IsNullOrEmpty(newtarget)) cargs[1] = newsource;
-                            if (!String.IsNullOrEmpty(newsource)) cargs.Add(newtarget);
-                        }
-                    }
-                }
+                    options[keyvalue.Key] = keyvalue.Value;
+                    
+                if (!string.IsNullOrEmpty(newtarget))
+               	{
+               		if (cargs.Count == 0)
+               			cargs.Add(newtarget);
+               		else
+               			cargs[0] = newtarget;
+               	}
+               	
+               	cargs.AddRange(newsource);
 
                 return true;
             }

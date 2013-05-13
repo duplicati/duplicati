@@ -24,12 +24,12 @@ namespace Duplicati.Library.Main.Database
             m_blocksize = blocksize;
         }
 
-        public void PrepareRestoreFilelist(DateTime restoretime, string[] p, Library.Utility.FilenameFilter filenameFilter, CommunicationStatistics stat)
-        {
-            var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        public void PrepareRestoreFilelist(DateTime restoretime, Library.Utility.IFilter filter, CommunicationStatistics stat)
+		{
+			var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-            m_tempfiletable = "Fileset-" + guid;
-            m_tempblocktable = "Blocks-" + guid;
+			m_tempfiletable = "Fileset-" + guid;
+			m_tempblocktable = "Blocks-" + guid;
 
             using (var cmd = m_connection.CreateCommand())
             {
@@ -41,17 +41,19 @@ namespace Duplicati.Library.Main.Database
                 cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL)", m_tempblocktable);
                 cmd.ExecuteNonQuery();
 
-                if (filenameFilter == null && (p == null || p.Length == 0))
+                if (filter == null || filter.Empty)
                 {
                     // Simple case, restore everything
                     cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
                     cmd.AddParameter(filesetId);
                     cmd.ExecuteNonQuery();
                 }
-                else if (p != null && p.Length > 0)
+                else if (filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
+	                // If we get a list of filenames, the lookup table is faster
                     using(var tr = m_connection.BeginTransaction())
                     {
+                    	var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
                         var m_filenamestable = "Filenames-" + guid;
                         cmd.Transaction = tr;
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
@@ -92,7 +94,8 @@ namespace Duplicati.Library.Main.Database
                 }
                 else
                 {
-                    // Restore but filter elements based on regexp
+                    // Restore but filter elements based on the filter expression
+                    // If this is too slow, we could add a special handler for wildcard searches too
                     cmd.CommandText = string.Format(@"SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?");
                     cmd.AddParameter(filesetId);
 
@@ -108,7 +111,7 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 rd.GetValues(values);
-                                if (values[0] != null && filenameFilter.ShouldInclude("", values[0].ToString()))
+                                if (values[0] != null && filter.Matches(values[0].ToString()))
                                 {
                                     cmd2.SetParameterValue(0, values[0]);
                                     cmd2.SetParameterValue(1, values[0]);

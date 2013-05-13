@@ -466,7 +466,7 @@ namespace Duplicati.Library.Main
                     if (item.Size >= 0)
                     {
                         if (nl != item.Size)
-                            throw new Exception(string.Format(Strings.BackendWrapper.DownloadedFileSizeError, item.RemoteFilename, nl, item.Size));
+                            throw new Exception(string.Format(Strings.Interface.DownloadedFileSizeError, item.RemoteFilename, nl, item.Size));
                     }
                     else
                     	item.Size = nl;
@@ -475,7 +475,7 @@ namespace Duplicati.Library.Main
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (nh != item.Hash)
-                            throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, tmpfile, item.Hash, nh));
+                            throw new HashMismathcException(string.Format(Strings.Interface.HashMismatchError, tmpfile, item.Hash, nh));
                     }
                     else
                     	item.Hash = nh;

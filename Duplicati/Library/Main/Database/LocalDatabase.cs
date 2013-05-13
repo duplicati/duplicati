@@ -669,11 +669,15 @@ namespace Duplicati.Library.Main.Database
             public string Tablename { get; private set; }
             private System.Data.IDbConnection m_connection;
             
-            public FilteredFilenameTable(System.Data.IDbConnection connection, FilterExpression filter, System.Data.IDbTransaction transaction)
+            public FilteredFilenameTable(System.Data.IDbConnection connection, Library.Utility.IFilter filter, System.Data.IDbTransaction transaction)
             {
                 m_connection = connection;
                 Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                if (filter.Type == Duplicati.Library.Main.FilterType.Regexp)
+                var type = Library.Utility.FilterType.Regexp;
+                if (filter is Library.Utility.FilterExpression)
+                	type = ((Library.Utility.FilterExpression)filter).Type;
+                
+                if (type == Library.Utility.FilterType.Regexp)
                 {
                     using(var cmd = m_connection.CreateCommand())
                     {
@@ -705,7 +709,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     var sb = new StringBuilder();
                     var args = new List<object>();
-                    foreach(var f in filter.GetSimpleList())
+                    foreach(var f in ((Library.Utility.FilterExpression)filter).GetSimpleList())
                     {
                         if (f.Contains('*') || f.Contains('?'))
                         {

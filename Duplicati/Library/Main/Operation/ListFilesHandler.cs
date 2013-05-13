@@ -44,26 +44,33 @@ namespace Duplicati.Library.Main.Operation
             m_stat = stat;
         }
 
-        public IListResults Run(IEnumerable<string> filter = null)
-        {
-            var filefilter = new FilterExpression(filter);
+        public IListResults Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
+		{
+			var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
             
-            var simpleList = !(filefilter.Type == FilterType.Simple || m_options.AllVersions);
+			var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
+			
+			Library.Utility.IFilter filter = parsedfilter;
+			if (compositefilter != null && !compositefilter.Empty)
+				filter = new Library.Utility.CompositeFilterExpression(
+					((Library.Utility.CompositeFilterExpression)compositefilter).Filters
+					.Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
+						new KeyValuePair<bool, Duplicati.Library.Utility.IFilter>(true, parsedfilter) 
+					}),
+					false
+				);
         
-#if DEBUG
-            if (!m_options.NoLocalDb)
-#endif
             //Use a speedy local query
-            if (System.IO.File.Exists(m_options.Dbpath))
+            if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
                 using (var db = new Database.LocalListDatabase(m_options.Dbpath))
                     using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
-                        if (simpleList && filefilter.Type != FilterType.Empty)
+                        if (simpleList && parsedfilter.Type != Library.Utility.FilterType.Empty)
                             filesets.TakeFirst();
                         
                         return new ListResults(filesets.Times.ToArray(), 
-                            filefilter.Type == FilterType.Empty ? null :
-                                (from n in filesets.SelectFiles(filefilter)
+                            parsedfilter.Type == Library.Utility.FilterType.Empty ? null :
+                                (from n in filesets.SelectFiles(filter)
                                     select (IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
                                 .ToArray()
                             );
@@ -90,7 +97,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 var numberSeq = (from n in filteredList select new KeyValuePair<long, DateTime>(n.Key, n.Value.Time.ToLocalTime())).ToArray();
                 
-                if (filefilter.Type == FilterType.Empty)
+                if (parsedfilter.Type == Library.Utility.FilterType.Empty)
                      return new ListResults (numberSeq, null);
                 
                 var firstEntry = filteredList[0].Value;
@@ -103,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         return new ListResults(numberSeq.Take(1), 
                             (from n in rd.Files
-                                  where filefilter.Matches(n.Path)
+                                  where filter.Matches(n.Path)
                                   orderby n.Path
                                   select new ListResultFile(n.Path, new long[] { n.Size }))
                                   .ToArray()
@@ -113,7 +120,7 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         res = rd.Files
-                              .Where(x => filefilter.Matches(x.Path))
+                              .Where(x => filter.Matches(x.Path))
                               .ToDictionary(
                                     x => x.Path, 
                                     y => 
@@ -131,7 +138,7 @@ namespace Duplicati.Library.Main.Operation
                     using(var tmpfile = backend.Get(flentry.Value.File.Name, -1, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
-                        foreach(var p in from n in rd.Files where filefilter.Matches(n.Path) select n)
+                        foreach(var p in from n in rd.Files where filter.Matches(n.Path) select n)
                         {
                             List<long> lst;
                             if (!res.TryGetValue(p.Path, out lst))

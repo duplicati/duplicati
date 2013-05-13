@@ -156,15 +156,15 @@ namespace Duplicati.Server
                                     List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
                                     string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(task.Task, new ApplicationSettings(task.Task.DataParent), filters);
 
-                                    if (options.ContainsKey("filter"))
+                                    /*if (options.ContainsKey("filter"))
                                         filters.AddRange(Library.Utility.FilenameFilter.DecodeFilter(options["filter"]));
 
-                                    options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
+                                    options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);*/
 
                                     //At this point we register the backup as being in progress
                                     ((FullOrIncrementalTask)task).WriteBackupInProgress(Strings.DuplicatiRunner.ShutdownWhileBackupInprogress);
 
-                                    results = i.Backup(sourceFolders);
+                                    results = i.Backup(sourceFolders).ToString();
                                 }
                                 finally
                                 {

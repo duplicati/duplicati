@@ -136,7 +136,6 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "filter",
                     "main-action"
                 };
             }
@@ -163,10 +162,7 @@ namespace Duplicati.Library.Main
                     "disable-autocreate-folder",
                     "disable-filetime-check",
                     "disable-time-tolerance",
-                    "include",
-                    "exclude",
-                    "include-regexp",
-                    "exclude-regexp",
+                    "allow-missing-source-folders",
                     "skip-files-larger-than",
                     "upload-unchanged-backups",
                     "list-verify-uploads",
@@ -291,7 +287,7 @@ namespace Duplicati.Library.Main
                 return new string[] {
                     "skip-file-hash-checks",
                     "dont-read-manifests",
-                    "file-to-restore",
+                    "restore-path",
                     "time",
                     "version",
                     "best-effort-restore"
@@ -325,11 +321,12 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong),
                     new CommandLineArgument("dont-read-manifests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
                     new CommandLineArgument("best-effort-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BesteffortrestoreShort, Strings.Options.BesteffortrestoreLong),
-                    new CommandLineArgument("file-to-restore", CommandLineArgument.ArgumentType.String, Strings.Options.FiletorestoreShort, Strings.Options.FiletorestoreLong),
+                    new CommandLineArgument("restore-path", CommandLineArgument.ArgumentType.String, Strings.Options.RestorepathShort, Strings.Options.RestorepathLong),
                     new CommandLineArgument("time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.TimeShort, Strings.Options.TimeLong, "now"),
                     new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
                     new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
+                    new CommandLineArgument("allow-missing-source-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourcefoldersShort, Strings.Options.AllowmissingsourcefoldersLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
                     //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
@@ -339,12 +336,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong, System.IO.Path.GetTempPath()),
                     new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"highest", "high", "abovenormal", "normal", "belownormal", "low", "lowest", "idle" }),
 
-                    new CommandLineArgument("backup-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.BackupprefixShort, Strings.Options.BackupprefixLong, "duplicati"),
-
-                    new CommandLineArgument("include", CommandLineArgument.ArgumentType.String, Strings.Options.IncludeShort, Strings.Options.IncludeLong),
-                    new CommandLineArgument("exclude", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludeShort, Strings.Options.ExcludeLong),
-                    new CommandLineArgument("include-regexp", CommandLineArgument.ArgumentType.String, Strings.Options.IncluderegexpShort, Strings.Options.IncluderegexpLong),
-                    new CommandLineArgument("exclude-regexp", CommandLineArgument.ArgumentType.String, Strings.Options.ExcluderegexpShort, Strings.Options.ExcluderegexpLong),
+                    new CommandLineArgument("prefix", CommandLineArgument.ArgumentType.String, Strings.Options.PrefixShort, Strings.Options.PrefixLong, "duplicati"),
 
                     new CommandLineArgument("passphrase", CommandLineArgument.ArgumentType.Password, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
                     new CommandLineArgument("no-encryption", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoencryptionShort, Strings.Options.NoencryptionLong, "false"),
@@ -506,22 +498,6 @@ namespace Duplicati.Library.Main
         public bool BestEffortRestore { get { return GetBool("best-effort-restore"); } }
 
         /// <summary>
-
-        /// <summary>
-        /// Gets a list of files to restore
-        /// </summary>
-        public string FileToRestore
-        {
-            get
-            {
-                if (!m_options.ContainsKey("file-to-restore") || string.IsNullOrEmpty(m_options["file-to-restore"]))
-                    return null;
-                else
-                    return m_options["file-to-restore"];
-            }
-        }
-        
-        /// <summary>
         /// Gets the backup that should be restored
         /// </summary>
         public DateTime Time
@@ -633,35 +609,18 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the backup prefix
         /// </summary>
-        public string BackupPrefix
+        public string Prefix
         {
             get
             {
-                if (!m_options.ContainsKey("backup-prefix") || string.IsNullOrEmpty(m_options["backup-prefix"]))
-                    return "duplicati";
-                else
-                    return m_options["backup-prefix"];
+            	string v;
+            	m_options.TryGetValue("backup", out v);
+            	if (!string.IsNullOrEmpty(v))
+            		return v;
+            		
+        		return "duplicati";
             }
         }
-
-        /// <summary>
-        /// Gets the filter used to include or exclude files
-        /// </summary>
-        public Library.Utility.FilenameFilter Filter
-        {
-            get
-            {
-                if (m_options.ContainsKey("filter") && !string.IsNullOrEmpty(m_options["filter"]))
-                    return new Duplicati.Library.Utility.FilenameFilter(Library.Utility.FilenameFilter.DecodeFilter(m_options["filter"]));
-                else
-                    return new Duplicati.Library.Utility.FilenameFilter(new List<KeyValuePair<bool, string>>());
-            }
-        }
-
-        /// <summary>
-        /// Returns a value indicating if a filter is specified
-        /// </summary>
-        public bool HasFilter { get { return m_options.ContainsKey("filter"); } }
 
         /// <summary>
         /// Gets the number of old backups to keep
@@ -1345,6 +1304,19 @@ namespace Duplicati.Library.Main
                 return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
             }
         }
+
+        /// <summary>
+        /// Alternate restore path
+        /// </summary>
+        public string Restorepath
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("restore-path", out v);
+                return v;
+            }
+        }
         
         /// <summary>
         /// Gets a flag indicating if index files should be omitted
@@ -1368,6 +1340,14 @@ namespace Duplicati.Library.Main
         public bool NoAutoCompact
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-auto-compact"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if compacting should not be done automatically
+        /// </summary>
+        public bool AllowMissingSourceFolders
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-missing-source-folders"); }
         }
 
         /// <summary>

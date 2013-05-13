@@ -47,12 +47,12 @@ namespace Duplicati.Library.Main.Operation
 						{
 							throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database? (use --force to skip this check)", tp.ExtraVolumes.Count()));
 						}
-						else if (!tp.BackupPrefixes.Contains(m_options.BackupPrefix) && tp.ParsedVolumes.Count() > 0)
+						else if (!tp.BackupPrefixes.Contains(m_options.Prefix) && tp.ParsedVolumes.Count() > 0)
 						{
 							if (tp.BackupPrefixes.Length == 1)
-								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix? (use --force to skip this check)", m_options.BackupPrefix, tp.BackupPrefixes[0]));
+								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix? (use --force to skip this check)", m_options.Prefix, tp.BackupPrefixes[0]));
 							else
-								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix? (use --force to skip this check)", m_options.BackupPrefix, string.Join(", ",  tp.BackupPrefixes)));
+								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix? (use --force to skip this check)", m_options.Prefix, string.Join(", ",  tp.BackupPrefixes)));
 						}
 					}
 				

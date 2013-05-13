@@ -145,7 +145,7 @@ namespace Duplicati.Library.Snapshots
                             if (local_filter.Length != 0)
                                 local_filter.Append("|");
                             local_filter.Append("(");
-                            local_filter.Append(Utility.FilenameFilter.ConvertGlobbingToRegExp(r.Key + "*"));
+                            local_filter.Append(Utility.Utility.ConvertGlobbingToRegExp(r.Key + "*"));
                             local_filter.Append(")");
 
                             if (Utility.Utility.IsFSCaseSensitive)

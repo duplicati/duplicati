@@ -136,9 +136,6 @@ namespace Duplicati.Datamodel
             }
             set
             {
-                if (value == this.EncodedFilter)
-                    return;
-
                 //Delete previous ones
                 this.SortedFilters = new TaskFilter[0];
 
@@ -159,21 +156,6 @@ namespace Duplicati.Datamodel
                 }
 
                 this.SortedFilters = filters.ToArray();
-            }
-        }
-
-        public string EncodedFilter
-        {
-            get
-            {
-                if (this.Filters.Count <= 0)
-                    return "";
-
-                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
-                foreach (TaskFilter f in this.SortedFilters)
-                    filters.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
-
-                return Library.Utility.FilenameFilter.EncodeAsFilter(filters);
             }
         }
 

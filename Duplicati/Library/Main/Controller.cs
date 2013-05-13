@@ -70,16 +70,13 @@ namespace Duplicati.Library.Main
             m_options = new Options(options);
         }
 
-        public string Backup(string[] sources)
+        public IBackupResults Backup(string[] sources, IFilter filter = null)
         {
-            BackupStatistics bs = new BackupStatistics(OperationMode.Backup);
-            SetupCommonOptions(bs, ref sources);
+            CommunicationStatistics stat = new CommunicationStatistics(OperationMode.Backup);
+            SetupCommonOptions(stat, ref sources);
 
-            using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
+            using (new Logging.Timer("Backup from " + string.Join(System.IO.Path.PathSeparator.ToString(), sources) + " to " + m_backend))
             {
-                if (string.IsNullOrEmpty(m_options.Dbpath))
-                    throw new Exception(string.Format(Strings.Interface.MissingDatabasepathError, "dbpath"));
-
                 if (sources == null || sources.Length == 0)
                     throw new Exception(Strings.Interface.NoSourceFoldersError);
 
@@ -88,11 +85,15 @@ namespace Duplicati.Library.Main
                 {
                     sources[i] = Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sources[i]));
 
-                    if (!System.IO.Directory.Exists(sources[i]))
+                    if (!System.IO.Directory.Exists(sources[i]) && !m_options.AllowMissingSourceFolders)
                         throw new System.IO.IOException(String.Format(Strings.Interface.SourceFolderIsMissingError, sources[i]));
                 }
 
                 //Sanity check for duplicate folders and multiple inclusions of the same folder
+                
+                //We could automatically fix this by excluding multiple copies of the same folder
+                // and remove the longest path of matching subfolders,
+                // but really the user should clean up the input
                 for (int i = 0; i < sources.Length - 1; i++)
                 {
                     for (int j = i + 1; j < sources.Length; j++)
@@ -102,23 +103,18 @@ namespace Duplicati.Library.Main
                             throw new Exception(string.Format(Strings.Interface.SourceDirsAreRelatedError, sources[i], sources[j]));
                 }
 
-                using (var h = new Operation.BackupHandler(m_backend, m_options, bs, sources))
-                    h.Run();
-                    
-                return bs.ToString();
+                using (var h = new Operation.BackupHandler(m_backend, m_options, stat))
+                    return h.Run(sources, filter);                    
             }
         }
 
-        public string Restore(string[] target)
+        public string Restore(string[] paths, Library.Utility.IFilter filter = null)
         {
-            if (target == null || target.Length != 1)
-                throw new Exception("Cannot specify more than a single target folder");
-
             var rs = new RestoreStatistics(OperationMode.Restore);
-            SetupCommonOptions(rs, ref target);
+            SetupCommonOptions(rs);
 
-            using (var h = new Operation.RestoreHandler(m_backend, m_options, rs, target[0]))
-                h.Run();
+            using (var h = new Operation.RestoreHandler(m_backend, m_options, rs))
+                h.Run(paths, filter);
             return rs.ToString();
         }
 

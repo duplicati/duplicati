@@ -184,4 +184,16 @@
   <data name="DeletedBackups" xml:space="preserve">
     <value>These filesets were deleted:</value>
   </data>
+  <data name="IncludeLong" xml:space="preserve">
+    <value>Include files that match this filter. The special character * means any number of character, and the special character ? means any single character, use *.txt to include all files with a txt extension. Regular expressions are also supported and can be supplied by using hard braces, i.e. [.*\.txt].</value>
+  </data>
+  <data name="IncludeShort" xml:space="preserve">
+    <value>Include files</value>
+  </data>
+  <data name="ExcludeLong" xml:space="preserve">
+    <value>Exclude files that match this filter. The special character * means any number of character, and the special character ? means any single character, use *.txt to include all files with a txt extension. Regular expressions are also supported and can be supplied by using hard braces, i.e. [.*\.txt].</value>
+  </data>
+  <data name="ExcludeShort" xml:space="preserve">
+    <value>Exclude files</value>
+  </data>
 </root>

@@ -19,7 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Duplicati.Library.Main
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// Describes the different complexities of file lists
@@ -43,8 +43,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         Regexp
     }
-        
-    public class FilterExpression
+
+    /// <summary>
+    /// Represents a filter that can comprise multiple filter strings
+    /// </summary>    
+    public class FilterExpression : IFilter
     {   
         private struct FilterEntry
         {
@@ -68,17 +71,11 @@ namespace Duplicati.Library.Main
                     this.Filter = filter.Substring(1, filter.Length - 2);
                     this.Regexp = new System.Text.RegularExpressions.Regex(this.Filter, REGEXP_OPTIONS);
                 }
-                else if (filter.Contains("*") || filter.Contains("?"))
-                {
-                    this.Type = FilterType.Wildcard;
-                    this.Filter = filter;
-                    this.Regexp = new System.Text.RegularExpressions.Regex(Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
-                }
                 else
                 {
-                    this.Type = FilterType.Simple;
+                    this.Type = (filter.Contains("*") || filter.Contains("?")) ? FilterType.Wildcard : FilterType.Simple;
                     this.Filter = filter;
-                    this.Regexp = new System.Text.RegularExpressions.Regex(Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
+                    this.Regexp = new System.Text.RegularExpressions.Regex(Library.Utility.Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
                 }
             }
             
@@ -111,6 +108,12 @@ namespace Duplicati.Library.Main
         /// Gets the type of the filter
         /// </summary>
         public readonly FilterType Type;
+        
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.FilterExpression"/> is empty.
+        /// </summary>
+        /// <value><c>true</c> if empty; otherwise, <c>false</c>.</value>
+        public bool Empty { get { return this.Type == FilterType.Empty; } }
         
         /// <summary>
         /// Gets the simple list, if the type is simple, named or wildcard

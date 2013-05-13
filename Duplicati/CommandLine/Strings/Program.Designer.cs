@@ -79,6 +79,24 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Exclude files that match this filter. The special character * means any number of character, and the special character ? means any single character, use *.txt to include all files with a txt extension. Regular expressions are also supported and can be supplied by using hard braces, i.e. [.*\.txt]..
+        /// </summary>
+        internal static string ExcludeLong {
+            get {
+                return ResourceManager.GetString("ExcludeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exclude files.
+        /// </summary>
+        internal static string ExcludeShort {
+            get {
+                return ResourceManager.GetString("ExcludeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to read the parameters file &quot;{0}&quot;, reason: {1}.
         /// </summary>
         internal static string FailedToParseParametersFileError {
@@ -102,6 +120,24 @@ namespace Duplicati.CommandLine.Strings {
         internal static string GenericModulesHeader {
             get {
                 return ResourceManager.GetString("GenericModulesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Include files that match this filter. The special character * means any number of character, and the special character ? means any single character, use *.txt to include all files with a txt extension. Regular expressions are also supported and can be supplied by using hard braces, i.e. [.*\.txt]..
+        /// </summary>
+        internal static string IncludeLong {
+            get {
+                return ResourceManager.GetString("IncludeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Include files.
+        /// </summary>
+        internal static string IncludeShort {
+            get {
+                return ResourceManager.GetString("IncludeShort", resourceCulture);
             }
         }
         

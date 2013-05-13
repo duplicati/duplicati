@@ -13,15 +13,13 @@ namespace Duplicati.Library.Main.Operation
         private RestoreStatistics m_stat;
         private Options m_options;
         private byte[] m_blockbuffer;
-        private string m_destination;
 
-        public RestoreHandler(string backendurl, Options options, RestoreStatistics stat, string destination)
+        public RestoreHandler(string backendurl, Options options, RestoreStatistics stat)
         {
             m_options = options;
             m_stat = stat;
             m_backendurl = backendurl;
 
-            m_destination = destination;
             m_blockbuffer = new byte[m_options.Blocksize];
 
         }
@@ -38,36 +36,6 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(string.Format("Unable to parse filename to valid entry: {0}", filename));
 
             return tmp.CompressionModule;
-        }
-
-        public static RecreateDatabaseHandler.FilterFilelistDelegate FilterFilelist(DateTime restoretime)
-        {
-            if (restoretime.Kind == DateTimeKind.Unspecified)
-                throw new Exception("Unspecified datetime instance, must be either local or UTC");
-
-            restoretime = restoretime.ToUniversalTime();
-
-            return 
-                _lst =>
-                {
-                    // Unwrap, so we do not query the remote storage twice
-                    var lst = _lst;
-                    if (!(lst is IList<IParsedVolume>) && !(lst is IParsedVolume[]))
-                        lst = lst.ToArray();
-
-                    //We filter the filelist so we only prepare restoring the files we actually need
-                    var entry = (from n in lst 
-                                 where n.FileType == RemoteVolumeType.Files && n.Time <= restoretime 
-                                 orderby n.Time descending
-                                 select n).FirstOrDefault();
-                    if (entry == null)
-                        entry = lst.FirstOrDefault();
-
-                    if (entry == null)
-                        throw new Exception("No remote filelist found");
-
-                    return new IParsedVolume[] { entry };
-                };
         }
 
         public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate FilterNumberedFilelist(DateTime time, long[] versions)
@@ -109,33 +77,47 @@ namespace Duplicati.Library.Main.Operation
                 };
         }
 
-        public void Run()
+        public void Run(string[] paths, Library.Utility.IFilter filter = null)
         {
-#if DEBUG
-            if (!m_options.NoLocalDb)
-#endif
-                if (System.IO.File.Exists(m_options.Dbpath))
-                {
-					using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
-        	            DoRun(db);
-                    return;
-                }
+			var pathfilter = new Library.Utility.FilterExpression(paths);
+
+			// If we have both target paths and a filter, combine into a single filter
+			if ((paths != null || paths.Length > 0) && (filter != null && !filter.Empty))
+			{
+				filter = new Library.Utility.CompositeFilterExpression(
+					((Library.Utility.CompositeFilterExpression)filter).Filters
+					.Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
+						new KeyValuePair<bool, Duplicati.Library.Utility.IFilter> (
+							true, 
+							new Library.Utility.FilterExpression(
+								from n in paths 
+								select (n.Contains("*") || n.Contains("%")) ? 
+									n :
+									// The meaning of "just a path" is actually "this folder and everything beneath"
+									n + (System.IO.Path.DirectorySeparatorChar.ToString() + "*") 
+							)
+						)
+					}),
+					false
+				);
+			}
+			// Only paths
+			else if (filter == null || filter.Empty)
+			{
+				filter = pathfilter; 
+			}
+			
+            if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
+            {
+				using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
+    	            DoRun(db, filter);
+                return;
+            }
 
 
             using (var tmpdb = new Library.Utility.TempFile())
             {
-                RecreateDatabaseHandler.FilterFilelistDelegate filelistfilter = FilterFilelist(m_options.Time);
-
-                RecreateDatabaseHandler.FilenameFilterDelegate filenamefilter = null;
-                if (m_options.HasFilter)
-                    filenamefilter = lst =>
-                    {
-                        return
-                            from x in lst
-                            where m_options.Filter.ShouldInclude("", x.Path)
-                            select x;
-                    };
-
+                RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
 
                 // Simultaneously with downloading blocklists, we patch as much as we can from the blockvolumes
                 // This prevents repeated downloads, except for cases where the blocklists refer blocks
@@ -153,7 +135,7 @@ namespace Duplicati.Library.Main.Operation
                             if (first)
                             {
                                 //Figure out what files are to be patched, and what blocks are needed
-                                PrepareBlockAndFileList(database, m_options, m_destination, m_stat);
+                                PrepareBlockAndFileList(database, m_options, filter, m_stat);
 
                                 // Don't run this again
                                 first = false;
@@ -183,9 +165,9 @@ namespace Duplicati.Library.Main.Operation
                     // and this will reduce the need for multiple downloads of the same volume
                     // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
                     using (var rdb = new RecreateDatabaseHandler(m_backendurl, m_options, m_stat))
-                        rdb.DoRun(database, filelistfilter, filenamefilter, /*localpatcher*/ null);
+                        rdb.DoRun(database, filter, filelistfilter, /*localpatcher*/ null);
 
-	                DoRun(database);
+	                DoRun(database, filter);
                 }
 
                 return;
@@ -235,7 +217,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void DoRun(LocalDatabase dbparent)
+        private void DoRun(LocalDatabase dbparent, Library.Utility.IFilter filter)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
@@ -254,7 +236,7 @@ namespace Duplicati.Library.Main.Operation
                 	FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_stat);
 
                 //Figure out what files are to be patched, and what blocks are needed
-                PrepareBlockAndFileList(database, m_options, m_destination, m_stat);
+                PrepareBlockAndFileList(database, m_options, filter, m_stat);
 
                 //Make the entire output setup
                 CreateDirectoryStructure(database, m_options, m_stat);
@@ -452,17 +434,24 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private static void PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, string destination, CommunicationStatistics stat)
-        {
-            // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
-            // Delete all entries from the temp table that are excluded by the filter(s)
-            database.PrepareRestoreFilelist(options.Time, (options.FileToRestore ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries), options.HasFilter ? options.Filter : null, stat);
+        private static void PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, Library.Utility.IFilter filter, CommunicationStatistics stat)
+		{
+			// Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
+			// Delete all entries from the temp table that are excluded by the filter(s)
+			database.PrepareRestoreFilelist(options.Time, filter, stat);
 
-            // Find the largest common prefix
-            string largest_prefix = database.GetLargestPrefix();
+			if (string.IsNullOrEmpty(options.Restorepath))
+			{
+				// Find the largest common prefix
+				string largest_prefix = database.GetLargestPrefix();
 
-            // Set the target paths, special care with C:\ and /
-            database.SetTargetPaths(largest_prefix, destination);
+				// Set the target paths, special care with C:\ and /
+				database.SetTargetPaths(largest_prefix, options.Restorepath);
+			}
+			else
+			{
+				database.SetTargetPaths("", "");
+			}
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
             database.FindMissingBlocks();
