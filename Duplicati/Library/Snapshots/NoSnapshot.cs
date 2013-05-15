@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -95,28 +98,12 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerates all files and folders in the snapshot
         /// </summary>
-        /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
         {
-            foreach (string s in m_sourcefolders)
-                if (s.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
-                {
-                    Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
-                    return;
-                }
-
-            throw new InvalidOperationException(string.Format(Strings.Shared.InvalidEnumPathError, startpath));
-        }
-
-        /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
-        {
-            foreach (string s in m_sourcefolders)
-                Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
+        	return m_sourcefolders.SelectMany(
+        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+        	);
         }
 
         /// <summary>

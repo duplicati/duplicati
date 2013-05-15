@@ -191,7 +191,7 @@ namespace Duplicati.CommandLine
                 {
                     Console.WriteLine("Removing old backups");
                     Dictionary<string, string> tmp = new Dictionary<string, string>(options);
-                    tmp["delete-all-but-n"] = "0";
+                    tmp["keep-versions"] = "0";
                     tmp["force"] = "";
                     tmp["allow-full-removal"] = "";
 
@@ -213,9 +213,7 @@ namespace Duplicati.CommandLine
                         CopyDirectoryRecursive(folders[0], fhsourcefolder);
                     }
 
-                    options["full"] = "";                        
                     RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
-                    options.Remove("full");
     
                     for (int i = 1; i < folders.Length; i++)
                     {
@@ -268,17 +266,7 @@ namespace Duplicati.CommandLine
     
                             options["time"] = entries[entries.Count - i - 1].ToString();
     
-                            string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);
-                            string[] restorefoldernames;
-                            if (actualfolders.Length == 1)
-                                restorefoldernames = new string[] { ttf };
-                            else
-                            {
-                                restorefoldernames = new string[actualfolders.Length];
-                                for (int j = 0; j < actualfolders.Length; j++)
-                                    restorefoldernames[j] = System.IO.Path.Combine(ttf, System.IO.Path.GetFileName(actualfolders[j]));
-                            }
-    
+                            string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);    
                             if (!skippartialrestore)
                             {
                                 Console.WriteLine("Partial restore of: " + folders[i]);
@@ -337,7 +325,6 @@ namespace Duplicati.CommandLine
                                     if (partialFolders.ContainsKey(System.IO.Path.DirectorySeparatorChar.ToString()))
                                         partialFolders.Remove(System.IO.Path.DirectorySeparatorChar.ToString());
         
-                                    Dictionary<string, string> tops = new Dictionary<string,string>(options);
                                     List<string> filterlist;
         
                                     var tfe = Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
@@ -351,12 +338,9 @@ namespace Duplicati.CommandLine
                                                   .ToList();
     
                                     testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
-                                    
-        
-                                    tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
-        
+                
                                     //Call function to simplify profiling
-                                    RunPartialRestore(folders[i], target, ptf, tops);
+                                    RunPartialRestore(folders[i], target, ptf, options, filterlist.ToArray());
         
                                     if (!skipverify)
                                     {
@@ -370,13 +354,13 @@ namespace Duplicati.CommandLine
                             if (!skipfullrestore)
                             {
                                 //Call function to simplify profiling
-                                RunRestore(folders[i], target, restorefoldernames, options);
+                                RunRestore(folders[i], target, ttf, options);
         
                                 if (!skipverify)
                                 {
                                     //Call function to simplify profiling
                                     Console.WriteLine("Verifying the copy: " + folders[i]);
-                                    VerifyFullRestore(folders[i], actualfolders, restorefoldernames);
+                                    VerifyFullRestore(folders[i], actualfolders, new string[] { ttf });
                                 }
                             }
                         }
@@ -467,24 +451,28 @@ namespace Duplicati.CommandLine
 
         private static void RunBackup(string source, string target, Dictionary<string, string> options, string sourcename)
         {
-            Console.WriteLine("Backing up the " + (Library.Utility.Utility.ParseBoolOption(options, "full") ? "full" : "incremental") + "  copy: " + sourcename);
-            using (new Timer((Library.Utility.Utility.ParseBoolOption(options, "full") ? "Full" : "Incremental") + " backup of " + sourcename))
+            Console.WriteLine("Backing up the copy: " + sourcename);
+            using (new Timer("Backup of " + sourcename))
                 using(var i = new Duplicati.Library.Main.Controller(target, options))
                     Log.WriteMessage(i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString(), LogMessageType.Information);
         }
 
-        private static void RunRestore(string source, string target, string[] restorefoldernames, Dictionary<string, string> options)
+        private static void RunRestore(string source, string target, string tempfolder, Dictionary<string, string> options)
         {
+        	var tops = new Dictionary<string, string>(options);
+        	tops["restore-path"] = tempfolder;
             using (new Timer("Restore of " + source))
-                using(var i = new Duplicati.Library.Main.Controller(target, options))
-                    Log.WriteMessage(i.Restore(restorefoldernames), LogMessageType.Information);
+                using(var i = new Duplicati.Library.Main.Controller(target, tops))
+                    Log.WriteMessage(i.Restore(null ), LogMessageType.Information);
         }
 
-        private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> tops)
+        private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> options, string[] files)
         {
+        	var tops = new Dictionary<string, string>(options);
+        	tops["restore-path"] = tempfolder;
             using (new Timer("Partial restore of " + source))
                 using(var i = new Duplicati.Library.Main.Controller(target, tops))
-                    Log.WriteMessage(i.Restore(new string[] { tempfolder }), LogMessageType.Information);
+                    Log.WriteMessage(i.Restore(files), LogMessageType.Information);
         }
 
         /// <summary>

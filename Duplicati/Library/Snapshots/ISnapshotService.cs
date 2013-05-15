@@ -32,14 +32,7 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates all files and folders in the snapshot
         /// </summary>
         /// <param name="callback">The callback to invoke with each found path</param>
-        void EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback);
-
-        /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="startpath">The path from which to retrieve files and folders</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback);
+        IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback);
 
         /// <summary>
         /// Gets the last write time of a given file

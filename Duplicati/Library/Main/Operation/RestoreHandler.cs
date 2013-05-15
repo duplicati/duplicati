@@ -78,31 +78,32 @@ namespace Duplicati.Library.Main.Operation
         }
 
         public void Run(string[] paths, Library.Utility.IFilter filter = null)
-        {
+		{
 			var pathfilter = new Library.Utility.FilterExpression(paths);
+			filter = filter ?? new Library.Utility.FilterExpression(null);
 
 			// If we have both target paths and a filter, combine into a single filter
-			if ((paths != null || paths.Length > 0) && (filter != null && !filter.Empty))
+			if (!pathfilter.Empty && !filter.Empty)
 			{
 				filter = new Library.Utility.CompositeFilterExpression(
 					((Library.Utility.CompositeFilterExpression)filter).Filters
 					.Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
 						new KeyValuePair<bool, Duplicati.Library.Utility.IFilter> (
 							true, 
-							new Library.Utility.FilterExpression(
-								from n in paths 
-								select (n.Contains("*") || n.Contains("%")) ? 
-									n :
-									// The meaning of "just a path" is actually "this folder and everything beneath"
-									n + (System.IO.Path.DirectorySeparatorChar.ToString() + "*") 
-							)
+							pathfilter
 						)
 					}),
 					false
 				);
 			}
+			// Both empty
+			else if (filter.Empty && pathfilter.Empty)
+			{
+				// Match all files
+				filter = new Library.Utility.CompositeFilterExpression(null, true);
+			}
 			// Only paths
-			else if (filter == null || filter.Empty)
+			else if (filter.Empty)
 			{
 				filter = pathfilter; 
 			}
@@ -440,7 +441,7 @@ namespace Duplicati.Library.Main.Operation
 			// Delete all entries from the temp table that are excluded by the filter(s)
 			database.PrepareRestoreFilelist(options.Time, filter, stat);
 
-			if (string.IsNullOrEmpty(options.Restorepath))
+			if (!string.IsNullOrEmpty(options.Restorepath))
 			{
 				// Find the largest common prefix
 				string largest_prefix = database.GetLargestPrefix();

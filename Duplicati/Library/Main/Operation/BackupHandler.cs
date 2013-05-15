@@ -132,7 +132,14 @@ namespace Duplicati.Library.Main.Operation
         {
         	Utility.VerifyParameters(m_database, m_options);
             m_database.VerifyConsistency(null);
-        	m_filter = filter;
+            // If there is no filter, we set an empty filter to simplify the code
+            // If there is a filter, we make sure that fall-through includes the entry
+        	m_filter = 
+        		filter == null ? 
+        		(Library.Utility.IFilter)new Library.Utility.CompositeFilterExpression(null, true)
+        		:
+        		(Library.Utility.IFilter)new Library.Utility.CompositeFilterExpression(((Library.Utility.CompositeFilterExpression)filter).Filters, true)
+        		;
         	
 			var lastVolumeSize = -1L;
 			m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
@@ -176,25 +183,42 @@ namespace Duplicati.Library.Main.Operation
 			            m_indexvolume = new IndexVolumeWriter(m_options);
 			            m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
 		            }
+		            
+		            Library.Utility.Utility.EnumerationFilterDelegate filterdelegate = (rootpath, path, attributes) =>
+		            {
+			            if ((m_options.FileAttributeFilter & attributes) != 0)
+			                return false;
+			                
+			            if (!m_filter.Matches(path))
+			            	return false;
+			            	
+			            return true;
+		            };
 		                        	
-	                if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
-	                {
-	                    foreach (var p in m_options.ChangedFilelist)
-	                    {
-	                        FileAttributes fa = new FileAttributes();
-	                        try { fa = m_snapshot.GetAttributes(p); }
-	                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex); }
-	
-	                        try { this.HandleFilesystemEntry(null, p, fa); }
-	                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex); }
-	                    }
-	
-	                    m_database.AppendFilesFromPreviousSet(m_transaction, m_options.DeletedFilelist);
-	                }
-	                else
-	                {
-	                    using (m_snapshot = GetSnapshot(sources, m_options, m_stat))
-	                        m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
+                    using (m_snapshot = GetSnapshot(sources, m_options, m_stat))
+                    {
+		                if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
+		                {
+		                    foreach (var p in m_options.ChangedFilelist)
+		                    {
+		                        FileAttributes fa = new FileAttributes();
+		                        try { fa = m_snapshot.GetAttributes(p); }
+		                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex); }
+		
+		                    	if (filterdelegate(null, p, fa))
+		                    	{
+			                        try { this.HandleFilesystemEntry(p, fa); }
+			                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex); }
+		                        }
+		                    }
+		
+		                    m_database.AppendFilesFromPreviousSet(m_transaction, m_options.DeletedFilelist);
+		                }
+		                else
+		                {
+	                        foreach(var path in m_snapshot.EnumerateFilesAndFolders(filterdelegate))
+	                        	this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
+		                }
 	                }
 									
  	                if (m_blockvolume.SourceSize > 0)
@@ -309,20 +333,14 @@ namespace Duplicati.Library.Main.Operation
 	    	} 
         }
 
-        private bool HandleFilesystemEntry(string rootpath, string path, System.IO.FileAttributes attributes)
+        private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
         	if (m_backendLogFlushTimer < DateTime.Now)
         	{
 				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
         		m_backend.FlushDbMessages(m_database, null);
         	}
-            
-            if ((m_options.FileAttributeFilter & attributes) != 0)
-                return false;
-                
-            if (m_filter != null && !m_filter.Matches(path))
-            	return false;
-        
+                    
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)

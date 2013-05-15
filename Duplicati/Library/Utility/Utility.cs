@@ -61,7 +61,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The current element</param>
         /// <param name="attributes">The attributes of the element</param>
         /// <returns>A value indicating if the folder should be recursed, ignored for other types</returns>
-        public delegate bool EnumerationCallbackDelegate(string rootpath, string path, System.IO.FileAttributes attributes);
+        public delegate bool EnumerationFilterDelegate(string rootpath, string path, System.IO.FileAttributes attributes);
 
         /// <summary>
         /// Copies the content of one stream into another
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => filter.Matches(path));
+            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => filter == null || filter.Matches(path));
         }
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace Duplicati.Library.Utility
         /// <param name="filter">An optional filter to apply to the filenames</param>
         /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
-			public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationCallbackDelegate callback)
+			public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
 			{
 				return EnumerateFileSystemEntries(rootpath, callback, new FileSystemInteraction(System.IO.Directory.GetDirectories), new FileSystemInteraction(System.IO.Directory.GetFiles));
 			}
@@ -230,7 +230,7 @@ namespace Duplicati.Library.Utility
         /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <returns>A list of the full filenames</returns>
-			public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationCallbackDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
+			public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
 			{
 				return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
 			}
@@ -244,7 +244,7 @@ namespace Duplicati.Library.Utility
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
         /// <returns>A list of the full filenames</returns>
-			public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationCallbackDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
+			public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
 			{
 				if (System.IO.Directory.Exists(rootpath))
 				{

@@ -150,9 +150,8 @@ namespace Duplicati.CommandLine
                 return PrintWrongNumberOfArguments(args, 1);
                 
             string backend = args[0];
-            args.RemoveAt(0);
 
-            using(var i = new Library.Main.Controller(args[0], options))
+            using(var i = new Library.Main.Controller(backend, options))
                 i.Restore(args.ToArray(), filter);
             
             return 0;
@@ -191,6 +190,17 @@ namespace Duplicati.CommandLine
             return 0;
         }
                 
+        public static int Compact(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(args, 1);
+                
+            using(var i = new Library.Main.Controller(args[0], options))
+                i.CompactBlocks();
+
+            return 0;
+        }
+                
         private static int PrintWrongNumberOfArguments(List<string> args, int expected)
         {
             Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
@@ -203,17 +213,6 @@ namespace Duplicati.CommandLine
             return 200;
         }
                 
-        public static int Compact(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
-        {
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
-                
-            using(var i = new Library.Main.Controller(args[0], options))
-                i.CompactBlocks();
-
-            return 0;
-        }
-
         public static int RecreateDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 1)

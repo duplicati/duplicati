@@ -27,7 +27,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Commandlineparameters>UNITTEST ~/DSMCBE/r50 ~/DSMCBE/r100 ~/DSMCBE/r150 --no-encryption</Commandlineparameters>
+    <Commandlineparameters>UNITTEST ~/testdata/DSMCBE/r50 ~/testdata/DSMCBE/r100 ~/testdata/DSMCBE/r150 --no-encryption --debug-output</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -186,47 +189,9 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of filenames to files found in the shadow volumes</returns>
         public List<string> AllFiles()
         {
-            collector c = new collector();
-            EnumerateFilesAndFolders(null, c.callback);
-            return c.files;
+            return EnumerateFilesAndFolders(null).ToList();
         }
 
-        /// <summary>
-        /// Internal class for collecting filenames
-        /// </summary>
-        private class collector
-        {
-            /// <summary>
-            /// The list of files
-            /// </summary>
-            public List<string> files = new List<string>();
-            /// <summary>
-            /// The list of folders
-            /// </summary>
-            public List<string> folders = new List<string>();
-            /// <summary>
-            /// The list of error paths
-            /// </summary>
-            public List<string> errors = new List<string>();
-
-            /// <summary>
-            /// The callback function invoked when collecting data
-            /// </summary>
-            /// <param name="rootpath">The source folder</param>
-            /// <param name="path">The full entry path</param>
-            /// <param name="status">The entry type</param>
-            public bool callback(string rootpath, string path, FileAttributes attributes)
-            {
-                if ((attributes & Utility.Utility.ATTRIBUTE_ERROR) != 0)
-                    errors.Add(path);
-                else if ((attributes & FileAttributes.Directory) != 0)
-                    folders.Add(path);
-                else
-                    files.Add(path);
-
-                return true;
-            }
-        }
 #endif
 
         #region Private functions
@@ -331,32 +296,15 @@ namespace Duplicati.Library.Snapshots
         #region ISnapshotService Members
 
         /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="startpath">The path from which to retrieve files and folders</param>
-        /// <param name="filter">The filter to apply when evaluating files and folders</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
-        {
-            foreach (string s in m_sourcepaths)
-                if (s.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
-                {
-                    Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
-                    return;
-                }
-
-            throw new InvalidOperationException(string.Format(Strings.Shared.InvalidEnumPathError, startpath));
-        }
-
-        /// <summary>
         /// Enumerates all files and folders in the shadow copy
         /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Utility.Utility.EnumerationCallbackDelegate callback)
+        public IEnumerable<string> EnumerateFilesAndFolders(Utility.Utility.EnumerationFilterDelegate callback)
         {
-            foreach (string s in m_sourcepaths)
-                Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
+        	return m_sourcepaths.SelectMany(
+        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+        	);
         }
 
         /// <summary>
