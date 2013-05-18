@@ -387,4 +387,7 @@
   <data name="DownloadedFileSizeError" xml:space="preserve">
     <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>
   </data>
+  <data name="InvalidPathError" xml:space="preserve">
+    <value>Invalid path: "{0}" ({1})</value>
+  </data>  
 </root>

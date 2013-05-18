@@ -349,6 +349,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid path: &quot;{0}&quot; ({1}).
+        /// </summary>
+        internal static string InvalidPathError {
+            get {
+                return ResourceManager.GetString("InvalidPathError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Disabling manifests is only possible on restores, and it should only be used as a last resort..
         /// </summary>
         internal static string ManifestsMustBeRead {

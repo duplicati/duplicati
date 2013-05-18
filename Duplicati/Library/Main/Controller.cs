@@ -83,7 +83,17 @@ namespace Duplicati.Library.Main
                 //Make sure they all have the same format and exist
                 for (int i = 0; i < sources.Length; i++)
                 {
-                    sources[i] = Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sources[i]));
+                	string fp;
+                	try
+                	{
+                		fp = System.IO.Path.GetFullPath(sources[i]);
+                	}
+                	catch (Exception ex)
+                	{
+                		throw new ArgumentException(string.Format(Strings.Interface.InvalidPathError, sources[i], ex.Message), ex);
+                	}
+                	
+                    sources[i] = Library.Utility.Utility.AppendDirSeparator(fp);
 
                     if (!System.IO.Directory.Exists(sources[i]) && !m_options.AllowMissingSourceFolders)
                         throw new System.IO.IOException(String.Format(Strings.Interface.SourceFolderIsMissingError, sources[i]));
