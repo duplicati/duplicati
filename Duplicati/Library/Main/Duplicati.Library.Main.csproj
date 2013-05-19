@@ -55,11 +55,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Foresthash.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\Interface.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Controller.resx</DependentUpon>
-    </Compile>
     <Compile Include="Strings\Options.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -155,6 +150,11 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Options.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <Compile Include="Strings\Controller.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Controller.resx</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Strings\RSyncDir.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -164,7 +164,7 @@
     <EmbeddedResource Include="Strings\Controller.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Interface.Designer.cs</LastGenOutput>
+      <LastGenOutput>Controller.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
