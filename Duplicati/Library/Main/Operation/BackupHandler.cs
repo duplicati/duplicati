@@ -32,6 +32,7 @@ namespace Duplicati.Library.Main.Operation
 			public long DeletedSymlinks { get; internal set; }
 			public DateTime EndTime { get; internal set; }
 			public DateTime BeginTime { get; internal set; }
+			public TimeSpan Duration { get { return EndTime - BeginTime; } }
 			public bool PartialBackup { get; internal set; }
 			
 			public BackupResults() { this.BeginTime = DateTime.Now; }

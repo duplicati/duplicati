@@ -22,11 +22,16 @@ namespace Duplicati.Library.Main.Operation
         {
             private IEnumerable<KeyValuePair<long, DateTime>> m_filesets;
             private IEnumerable<IListResultFile> m_files;
+			public DateTime EndTime { get; internal set; }
+			public DateTime BeginTime { get; internal set; }
+			public TimeSpan Duration { get { return EndTime - BeginTime; } }
             
-            public ListResults(IEnumerable<KeyValuePair<long, DateTime>> filesets, IEnumerable<IListResultFile> files)
+            public ListResults(DateTime beginTime, IEnumerable<KeyValuePair<long, DateTime>> filesets, IEnumerable<IListResultFile> files)
             {
                 m_filesets = filesets;
                 m_files = files;
+                this.BeginTime = BeginTime;
+                this.EndTime = DateTime.Now;
             }
             
             public IEnumerable<KeyValuePair<long, DateTime>> Filesets { get { return m_filesets; } }
@@ -46,6 +51,7 @@ namespace Duplicati.Library.Main.Operation
 
         public IListResults Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
 		{
+			var beginTime = DateTime.Now;
 			var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
             
 			var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
@@ -68,7 +74,7 @@ namespace Duplicati.Library.Main.Operation
                         if (simpleList && parsedfilter.Type != Library.Utility.FilterType.Empty)
                             filesets.TakeFirst();
                         
-                        return new ListResults(filesets.Times.ToArray(), 
+                        return new ListResults(beginTime, filesets.Times.ToArray(), 
                             parsedfilter.Type == Library.Utility.FilterType.Empty ? null :
                                 (from n in filesets.SelectFiles(filter)
                                     select (IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
@@ -98,7 +104,7 @@ namespace Duplicati.Library.Main.Operation
                 var numberSeq = (from n in filteredList select new KeyValuePair<long, DateTime>(n.Key, n.Value.Time.ToLocalTime())).ToArray();
                 
                 if (parsedfilter.Type == Library.Utility.FilterType.Empty)
-                     return new ListResults (numberSeq, null);
+                     return new ListResults (beginTime, numberSeq, null);
                 
                 var firstEntry = filteredList[0].Value;
                 filteredList.RemoveAt(0);
@@ -108,7 +114,7 @@ namespace Duplicati.Library.Main.Operation
                 using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
                     if (simpleList)
                     {
-                        return new ListResults(numberSeq.Take(1), 
+                        return new ListResults(beginTime, numberSeq.Take(1), 
                             (from n in rd.Files
                                   where filter.Matches(n.Path)
                                   orderby n.Path
@@ -159,6 +165,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 
                 return new ListResults(
+                	beginTime,
                     numberSeq,
                     from n in res
                     orderby n.Key

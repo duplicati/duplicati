@@ -20,7 +20,15 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main
 {
-    public interface IListResults
+
+	public interface IBasicResults
+	{
+        DateTime BeginTime { get; }
+        DateTime EndTime { get; }
+        TimeSpan Duration { get; }
+	}
+
+    public interface IListResults : IBasicResults
     {
         IEnumerable<KeyValuePair<long, DateTime>> Filesets { get; }
         IEnumerable<IListResultFile> Files { get; }
@@ -32,13 +40,13 @@ namespace Duplicati.Library.Main
         IEnumerable<long> Sizes { get; }
     }
     
-    public interface IDeleteResults
+    public interface IDeleteResults : IBasicResults
     {
         IEnumerable<DateTime> DeletedSets { get; }
         bool Dryrun { get; }
     }
     
-    public interface IBackendStatstics
+    public interface IBackendStatstics : IBasicResults
     {
     	long RemoteCalls { get; }
     	long BytesUploaded { get; }
@@ -50,7 +58,7 @@ namespace Duplicati.Library.Main
     	long RetryAttempts { get; }
     }
     
-    public interface IBackupResults
+    public interface IBackupResults : IBasicResults
     {
         long DeletedFiles { get; }
         long DeletedFolders { get; }
@@ -69,8 +77,6 @@ namespace Duplicati.Library.Main
         long ModifiedSymlinks { get; }
         long AddedSymlinks { get; }
         long DeletedSymlinks { get; } 
-        DateTime BeginTime { get; }
-        DateTime EndTime { get; }
         bool PartialBackup { get; }
     }
 }

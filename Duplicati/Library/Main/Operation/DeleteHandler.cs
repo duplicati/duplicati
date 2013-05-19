@@ -28,11 +28,16 @@ namespace Duplicati.Library.Main.Operation
 		{
 	        public IEnumerable<DateTime> DeletedSets { get; private set; }
         	public bool Dryrun { get; private set; }
+			public DateTime EndTime { get; internal set; }
+			public DateTime BeginTime { get; internal set; }
+			public TimeSpan Duration { get { return EndTime - BeginTime; } }
 			
-			public DeleteResults(IEnumerable<DateTime> deletedSets, bool dryrun)
+			public DeleteResults(DateTime beginTime, IEnumerable<DateTime> deletedSets, bool dryrun)
 			{
 				DeletedSets = deletedSets;
 				Dryrun = dryrun;
+				this.BeginTime = beginTime;
+				this.EndTime = DateTime.Now;
 			}
 		}
 	
@@ -43,6 +48,8 @@ namespace Duplicati.Library.Main.Operation
 
         public new IDeleteResults Run()
 		{		
+			var beginTime = DateTime.Now;
+			
 			if (!System.IO.File.Exists(m_options.Dbpath))
 				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
@@ -97,7 +104,7 @@ namespace Duplicati.Library.Main.Operation
 					else
 						tr.Rollback();
 					
-					return new DeleteResults(toDelete, !(m_options.Force && !m_options.Dryrun));
+					return new DeleteResults(beginTime, toDelete, !(m_options.Force && !m_options.Dryrun));
 				}
 			}
 			
