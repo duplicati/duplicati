@@ -267,10 +267,18 @@ namespace Duplicati.Library.Main.Operation
                 // Fill BLOCKS with remote sources
                 var volumes = database.GetMissingVolumes();
 
-                foreach (var blockvolume in new AsyncDownloader(volumes, backend))
-                	using (var tmpfile = blockvolume.Value)
-                    using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Key.Name), tmpfile, m_options))
-                        PatchWithBlocklist(database, blocks, m_options, m_stat, m_blockbuffer);
+				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
+					try
+					{
+						using(var tmpfile = blockvolume.TempFile)
+						using(var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
+							PatchWithBlocklist(database, blocks, m_options, m_stat, m_blockbuffer);
+					}
+					catch (Exception ex)
+					{
+                        m_stat.LogError(string.Format("Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message), ex);
+                        database.LogMessage("Error", string.Format("Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message), ex, null);
+					}
 					
                 // After all blocks in the files are restored, verify the file hash
                 foreach (var file in database.GetFilesToRestore())

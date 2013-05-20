@@ -289,8 +289,7 @@ namespace Duplicati.Library.Main
                     "dont-read-manifests",
                     "restore-path",
                     "time",
-                    "version",
-                    "best-effort-restore"
+                    "version"
                 };
             }
         }
@@ -320,7 +319,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("signature-control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
                     new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong),
                     new CommandLineArgument("dont-read-manifests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
-                    new CommandLineArgument("best-effort-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BesteffortrestoreShort, Strings.Options.BesteffortrestoreLong),
                     new CommandLineArgument("restore-path", CommandLineArgument.ArgumentType.String, Strings.Options.RestorepathShort, Strings.Options.RestorepathLong),
                     new CommandLineArgument("time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.TimeShort, Strings.Options.TimeLong, "now"),
                     new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
@@ -493,11 +491,6 @@ namespace Duplicati.Library.Main
         /// A value indicating if the manifest files are not read
         /// </summary>
         public bool DontReadManifests { get { return GetBool("dont-read-manifests"); } }
-
-        /// <summary>
-        /// A value indicating if the restore continues, even if errors occur
-        /// </summary>
-        public bool BestEffortRestore { get { return GetBool("best-effort-restore"); } }
 
         /// <summary>
         /// Gets the backup that should be restored

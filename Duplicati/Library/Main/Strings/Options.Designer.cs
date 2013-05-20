@@ -178,24 +178,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The restore process will stop if errors are detected to avoid restores with invalid data. Use this option to make Duplicati continue, even if some data is missing.
-        /// </summary>
-        internal static string BesteffortrestoreLong {
-            get {
-                return ResourceManager.GetString("BesteffortrestoreLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Restore with errors.
-        /// </summary>
-        internal static string BesteffortrestoreShort {
-            get {
-                return ResourceManager.GetString("BesteffortrestoreShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to This is a very advanced option! This option can be used to select a block hash algorithm with smaller or larger hash size, for performance or storage space reasons..
         /// </summary>
         internal static string BlockhashalgorithmLong {

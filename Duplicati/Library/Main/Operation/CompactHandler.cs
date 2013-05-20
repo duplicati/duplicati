@@ -112,10 +112,10 @@ namespace Duplicati.Library.Main.Operation
 						using(var q = db.CreateBlockQueryHelper(m_options, transaction))
 						{
 							foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
-							using (var tmpfile = entry.Value)
+							using (var tmpfile = entry.TempFile)
 							{
-								downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Key.Name, entry.Key.Size));
-								var inst = VolumeBase.ParseFilename(entry.Key.Name);
+								downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
+								var inst = VolumeBase.ParseFilename(entry.Name);
 								using(var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
 								{
 									foreach(var e in f.Blocks)
@@ -170,7 +170,7 @@ namespace Duplicati.Library.Main.Operation
 									}
 								}
 	
-								deleteableVolumes.Add(entry.Key);
+								deleteableVolumes.Add(entry);
 							}
 							
 							if (blocksInVolume > 0)

@@ -6,21 +6,50 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
-    public class AsyncDownloader : IEnumerable<KeyValuePair<IRemoteVolume, Library.Utility.TempFile>>
+	public interface IAsyncDownloadedFile : IRemoteVolume
+	{
+		Library.Utility.TempFile TempFile { get; }
+	}
+
+    public class AsyncDownloader : IEnumerable<IAsyncDownloadedFile>
     {
-        private class AsyncDownloaderEnumerator : IEnumerator<KeyValuePair<IRemoteVolume, Library.Utility.TempFile>>
+        private class AsyncDownloaderEnumerator : IEnumerator<IAsyncDownloadedFile>
         {
-        	private class RemoteVolume : IRemoteVolume
+        	private class AsyncDownloadedFile : IAsyncDownloadedFile
         	{
-        		public string Name { get; set; }
-        		public string Hash { get; set; }
-        		public long Size { get; set; }
+        		private Exception m_exception;
+        		private Library.Utility.TempFile m_file;
         		
-        		public RemoteVolume(string name, string hash, long size)
+        		public string Name { get; private set; }
+        		public string Hash { get; private set; }
+        		public long Size { get; private set; }
+        		
+        		public void DisposeTempFile()
+				{
+					if (m_file != null)
+						try { m_file.Dispose(); }
+						finally { m_file = null; }
+				}
+				
+
+        		public Library.Utility.TempFile TempFile
+        		{
+        			get
+        			{
+        				if (m_exception != null)
+        					throw m_exception;
+
+        				return m_file;
+        			}
+        		}
+        		
+        		public AsyncDownloadedFile(string name, string hash, long size, Library.Utility.TempFile tempfile, Exception exception)
         		{
         			this.Name = name;
         			this.Hash = hash;
         			this.Size = size;
+        			m_exception = exception;
+        			m_file = tempfile;
         		}
         	}
         
@@ -28,7 +57,7 @@ namespace Duplicati.Library.Main
             private BackendManager.IDownloadWaitHandle m_handle;
             private BackendManager m_backend;
             private int m_index;
-            private KeyValuePair<IRemoteVolume, Library.Utility.TempFile>? m_current;
+            private AsyncDownloadedFile m_current;
 
             public AsyncDownloaderEnumerator(IList<IRemoteVolume> volumes, BackendManager backend)
             {
@@ -37,16 +66,16 @@ namespace Duplicati.Library.Main
                 m_index = 0;
             }
 
-            public KeyValuePair<IRemoteVolume, Library.Utility.TempFile> Current
+            public IAsyncDownloadedFile Current
             {
-                get { return m_current.Value; }
+                get { return m_current; }
             }
 
             public void Dispose()
             {
                 if (m_current != null)
                 {
-                    m_current.Value.Value.Dispose();
+                    m_current.DisposeTempFile();
                     m_current = null;
                 }
             }
@@ -57,24 +86,34 @@ namespace Duplicati.Library.Main
             }
 
             public bool MoveNext()
-            {
-                if (m_current != null)
-                {
-                    m_current.Value.Value.Dispose();
-                    m_current = null;
-                }
+			{
+				if (m_current != null)
+				{
+					m_current.DisposeTempFile();
+					m_current = null;
+				}
 
-                if (m_index >= m_volumes.Count)
-                    return false;
+				if (m_index >= m_volumes.Count)
+					return false;
 
-                if (m_handle == null)
-                	m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash);
+				if (m_handle == null)
+					m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash);
                 
-                string hash;
-                long size;
-                var file = m_handle.Wait(out hash, out size);
-                
-                m_current = new KeyValuePair<IRemoteVolume, Library.Utility.TempFile>(new RemoteVolume(m_volumes[m_index].Name, hash, size), file);
+				string hash = null;
+				long size = -1;
+				Library.Utility.TempFile file = null;
+				Exception exception = null;
+				try
+				{
+					file = m_handle.Wait(out hash, out size);
+	                
+				}
+				catch (Exception ex)
+				{
+					exception = ex;
+				}
+				
+                m_current = new AsyncDownloadedFile(m_volumes[m_index].Name, hash, size, file, exception);
                 m_handle = null;
 
                 m_index++;
@@ -99,7 +138,7 @@ namespace Duplicati.Library.Main
             m_backend = backend;
         }
 
-        public IEnumerator<KeyValuePair<IRemoteVolume, Library.Utility.TempFile>> GetEnumerator()
+        public IEnumerator<IAsyncDownloadedFile> GetEnumerator()
         {
             return new AsyncDownloaderEnumerator(m_volumes, m_backend);
         }

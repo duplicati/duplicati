@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Operation
 		/// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
 		/// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
 		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void Run(string path, Library.Utility.IFilter filter= null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+        public void Run(string path, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
         	if (System.IO.File.Exists(path))
         		throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
@@ -120,12 +120,12 @@ namespace Duplicati.Library.Main.Operation
 							select new RemoteVolume(n.File) as IRemoteVolume;
 												
                         foreach (var sf in new AsyncDownloader(indexfiles.ToList(), backend))
-                        using (var tmpfile = sf.Value)
+                        using (var tmpfile = sf.TempFile)
                         {
-                            if (sf.Key.Hash != null && sf.Key.Size > 0)
-                                backupdb.UpdateRemoteVolume(sf.Key.Name, RemoteVolumeState.Verified, sf.Key.Size, sf.Key.Hash, tr);
+                            if (sf.Hash != null && sf.Size > 0)
+                                backupdb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Verified, sf.Size, sf.Hash, tr);
 							
-                            using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options, hashsize))
+                            using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options, hashsize))
                             {
 					        	Utility.VerifyParameters(restoredb, m_options);
 
@@ -141,7 +141,7 @@ namespace Duplicati.Library.Main.Operation
                                         backupdb.AddBlock(b.Key, b.Value, volumeID, tr);
 
                                     backupdb.UpdateRemoteVolume(a.Filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
-                                    backupdb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Key.Name), volumeID, tr);
+                                    backupdb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Name), volumeID, tr);
                                 }
                             }
                         }
@@ -157,14 +157,14 @@ namespace Duplicati.Library.Main.Operation
                     {
                     	var filelistWork = (from n in filelists select new RemoteVolume(n.File) as IRemoteVolume).ToList();
                     	foreach (var entry in new AsyncDownloader(filelistWork, backend))
-                    	using (var tmpfile = entry.Value)
+                    	using (var tmpfile = entry.TempFile)
                         {
-                            if (entry.Key.Hash != null && entry.Key.Size > 0)
-                                backupdb.UpdateRemoteVolume(entry.Key.Name, RemoteVolumeState.Verified, entry.Key.Size, entry.Key.Hash, tr);
+                            if (entry.Hash != null && entry.Size > 0)
+                                backupdb.UpdateRemoteVolume(entry.Name, RemoteVolumeState.Verified, entry.Size, entry.Hash, tr);
 
-                        	var parsed = VolumeBase.ParseFilename(entry.Key.Name);
+                        	var parsed = VolumeBase.ParseFilename(entry.Name);
 		                    // Create timestamped operations based on the file timestamp
-                        	backupdb.CreateFileset(volumeIds[entry.Key.Name], parsed.Time, tr);
+                        	backupdb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
                             using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
                                 foreach (var fe in filelistreader.Files.Where(x => filter == null || filter.Matches(x.Path)))
                                 {
@@ -200,11 +200,11 @@ namespace Duplicati.Library.Main.Operation
                 restoredb.FindMissingBlocklistHashes();
 
                 foreach (var sf in new AsyncDownloader(restoredb.GetMissingBlockListVolumes(), backend))
-                	using (var tmpfile = sf.Value)
-                    using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options))
+                	using (var tmpfile = sf.TempFile)
+                    using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
                     using (var tr = restoredb.BeginTransaction())
                     {
-                    	var volumeid = restoredb.GetRemoteVolumeID(sf.Key.Name);
+                    	var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
                         foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
                             restoredb.UpdateBlocklist(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), hashsize, tr);
 
@@ -212,7 +212,7 @@ namespace Duplicati.Library.Main.Operation
 
                         //At this point we can patch files with data from the block volume
                         if (blockprocessor != null)
-                            blockprocessor(sf.Key.Name, rd);
+                            blockprocessor(sf.Name, rd);
                     }
 
 				backend.WaitForComplete(restoredb, null);
