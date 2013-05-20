@@ -150,6 +150,7 @@ namespace Duplicati.CommandLine
                 return PrintWrongNumberOfArguments(args, 1);
                 
             string backend = args[0];
+            args.RemoveAt(0);
 
             using(var i = new Library.Main.Controller(backend, options))
                 i.Restore(args.ToArray(), filter);
