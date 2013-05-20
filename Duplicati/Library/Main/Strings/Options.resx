@@ -555,4 +555,10 @@
   <data name="DownloadedFileSizeError" xml:space="preserve">
     <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>
   </data>
+  <data name="OverwriteShort" xml:space="preserve">
+    <value>Overwrite files when restoring</value>
+  </data>
+  <data name="OverwriteLong" xml:space="preserve">
+    <value>Use this option to overwrite target files when restoring, if this option is not set the files will be restored with a timestamp and a number appended.</value>
+  </data>
 </root>

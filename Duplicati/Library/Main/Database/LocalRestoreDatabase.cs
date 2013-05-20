@@ -11,6 +11,9 @@ namespace Duplicati.Library.Main.Database
         protected string m_tempfiletable;
         protected string m_tempblocktable;
         protected long m_blocksize;
+        protected DateTime m_restoreTime;
+
+		public DateTime RestoreTime { get { return m_restoreTime; } } 
 
         public LocalRestoreDatabase(string path, long blocksize)
             : this(new LocalDatabase(path, "Restore"), blocksize)
@@ -24,7 +27,7 @@ namespace Duplicati.Library.Main.Database
             m_blocksize = blocksize;
         }
 
-        public void PrepareRestoreFilelist(DateTime restoretime, Library.Utility.IFilter filter, CommunicationStatistics stat)
+        public void PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, CommunicationStatistics stat)
 		{
 			var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -33,7 +36,8 @@ namespace Duplicati.Library.Main.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                long filesetId = GetFilesetID(restoretime);
+                long filesetId = GetFilesetID(restoretime, versions);
+                m_restoreTime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
 
                 cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable);
                 cmd.ExecuteNonQuery();
@@ -188,6 +192,13 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+		public void UpdateTargetPath(long ID, string newname)
+		{
+            using (var cmd = m_connection.CreateCommand())
+            	cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? WHERE ""FileID"" = ?", m_tempfiletable), newname, ID);
+			
+		}
+
         public interface IExistingFileBlock
         {
             string Hash { get; }
@@ -231,6 +242,7 @@ namespace Duplicati.Library.Main.Database
         {
             string Path { get; }
             string Hash { get; }
+            long ID { get; }
         }
 
         public interface IPatchBlock
@@ -334,55 +346,68 @@ namespace Duplicati.Library.Main.Database
             void SetBlockRestored(long targetfileid, long index, string hash, long blocksize);
             void Commit();
             System.Data.IDbTransaction Transaction { get; }
+			void SetFileRestored(long id);
         }
 
         private class BlockMarker : IBlockMarker
         {
-            private System.Data.IDbCommand m_command;
+            private System.Data.IDbCommand m_insertblockCommand;
+            private System.Data.IDbCommand m_insertfileCommand;
             private string m_updateTable;
             private string m_blocktablename;
             
-            public System.Data.IDbTransaction Transaction { get { return m_command.Transaction; } }
+            public System.Data.IDbTransaction Transaction { get { return m_insertblockCommand.Transaction; } }
 
             public BlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename)
             {
-                m_command = connection.CreateCommand();
-                m_command.Transaction = connection.BeginTransaction();
+                m_insertblockCommand = connection.CreateCommand();
+                m_insertblockCommand.Transaction = connection.BeginTransaction();
+                
+                m_insertfileCommand = connection.CreateCommand();
+                m_insertfileCommand.Transaction = m_insertblockCommand.Transaction;
                 
                 m_blocktablename = blocktablename;
                 m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
-                m_command.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)", m_updateTable));
-                m_command.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"") VALUES (?, ?, ?, ?) ", m_updateTable);
-                m_command.AddParameters(4);
+                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)", m_updateTable));
+                m_insertblockCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"") VALUES (?, ?, ?, ?) ", m_updateTable);
+                m_insertblockCommand.AddParameters(4);
+                
+                m_insertfileCommand.CommandText = string.Format(@"INSERT INTO ""{1}"" (""FileID"", ""Index"", ""Hash"", ""Size"") SELECT ""FileID"", ""Index"", ""Hash"", ""Size"" FROM ""{0}"" WHERE ""{0}"".""FileID"" = ? ", m_blocktablename, m_updateTable);
+                m_insertfileCommand.AddParameters(1);
             }
 
             public void SetBlockRestored(long targetfileid, long index, string hash, long size)
             {
-                m_command.SetParameterValue(0, targetfileid);
-                m_command.SetParameterValue(1, index);
-                m_command.SetParameterValue(2, hash);
-                m_command.SetParameterValue(3, size);
-                var r = m_command.ExecuteNonQuery();
+                m_insertblockCommand.SetParameterValue(0, targetfileid);
+                m_insertblockCommand.SetParameterValue(1, index);
+                m_insertblockCommand.SetParameterValue(2, hash);
+                m_insertblockCommand.SetParameterValue(3, size);
+                var r = m_insertblockCommand.ExecuteNonQuery();
                 if (r != 1)
                     throw new Exception("Unexpected insert result");
             }
+            
+            public void SetFileRestored(long id)
+			{
+				m_insertfileCommand.SetParameterValue(0, id);
+			}
 
             public void Commit()
             {
-            	m_command.Parameters.Clear();
-            	var rc = m_command.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable));
-            	var nc = Convert.ToInt64(m_command.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable)));
+            	m_insertblockCommand.Parameters.Clear();
+            	var rc = m_insertblockCommand.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable));
+            	var nc = Convert.ToInt64(m_insertblockCommand.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable)));
             
-        		m_command.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
+        		m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
         		m_updateTable = null;
         		
         		if (rc != nc)
         			throw new Exception(string.Format("Inconsistency while marking blocks as updated. Updated blocks: {0}, Registered blocks: {1}", rc, nc));
 
-                var tr = m_command.Transaction;
-                m_command.Dispose();
-                m_command = null;
+                var tr = m_insertblockCommand.Transaction;
+                m_insertblockCommand.Dispose();
+                m_insertblockCommand = null;
                 tr.Commit();
                 tr.Dispose();
             }
@@ -393,17 +418,17 @@ namespace Duplicati.Library.Main.Database
 	            {
 	            	try 
 	            	{
-	            		m_command.Parameters.Clear();
-	            		m_command.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
+	            		m_insertblockCommand.Parameters.Clear();
+	            		m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
 	            	}
 	            	catch { }
 	            	finally { m_updateTable = null; }
 	            }
             
-                if (m_command != null)
+                if (m_insertblockCommand != null)
                 {
-                    var t = m_command;
-                    m_command = null;
+                    var t = m_insertblockCommand;
+                    m_insertblockCommand = null;
                     t.Dispose();
                 }
             }

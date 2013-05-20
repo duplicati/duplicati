@@ -142,6 +142,49 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+		public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null )
+		{
+			var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
+			string query = "";
+			var args = new List<object>();
+            if (time.Ticks > 0 || (versions != null && versions.Length > 0))
+            {
+                query = " WHERE ";
+                if (time.Ticks > 0)
+                {
+                    if (time.Kind == DateTimeKind.Unspecified)
+                        throw new Exception("Invalid DateTime given, must be either local or UTC");
+                        
+                    query += @" ""Timestamp"" <= ?";
+                    args.Add(time.ToUniversalTime());
+                }
+                
+                if (versions != null && versions.Length > 0)
+                {
+                    var qs ="";
+                    
+                    foreach(var v in versions)
+                        if (v >= 0 && v < filesets.Length)
+                        {
+                            args.Add(filesets[v].Key);
+                            qs += "?,";
+                        }
+                        
+                    if (qs.Length > 0)
+                    {
+                        qs = qs.Substring(0, qs.Length - 1);
+                        
+                        if (args.Count != 0)
+                            query += " AND ";
+                                            
+                        query += @" ""ID"" IN (" + qs + ")";
+                    }
+                }
+            }
+            
+            return new Tuple<string, object[]>(query, args.ToArray());
+        }
+
         public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)
 		{
 			m_selectremotevolumeIdCommand.Transaction = transaction;
@@ -273,16 +316,18 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
-        public long GetFilesetID(DateTime restoretime)
-        {
-            if (restoretime.Kind == DateTimeKind.Unspecified)
-                throw new Exception("Invalid DateTime given, must be either local or UTC");
+        public long GetFilesetID(DateTime restoretime, long[] versions)
+		{
+			if (restoretime.Kind == DateTimeKind.Unspecified)
+				throw new Exception("Invalid DateTime given, must be either local or UTC");
 
-            using (var cmd = m_connection.CreateCommand())
-            {
-                cmd.CommandText = @"SELECT ""ID"" FROM ""Fileset"" WHERE (strftime(""%s"",?) - strftime(""%s"", ""Timestamp"")) >= 0 ORDER BY ""Timestamp"" DESC";
-                cmd.AddParameter(restoretime.ToUniversalTime());
-                object r = cmd.ExecuteScalar();
+			var tmp = GetFilelistWhereClause(restoretime, versions);
+			string query = tmp.Item1;
+			var args = tmp.Item2;
+
+			using(var cmd = m_connection.CreateCommand())
+			{            
+                object r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" " + query  + @" ORDER BY ""Timestamp"" DESC", args);
                 if (r == null)
                 {
                     cmd.Parameters.Clear();

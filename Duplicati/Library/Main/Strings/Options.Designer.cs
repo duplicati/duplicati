@@ -961,6 +961,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to overwrite target files when restoring, if this option is not set the files will be restored with a timestamp and a number appended..
+        /// </summary>
+        internal static string OverwriteLong {
+            get {
+                return ResourceManager.GetString("OverwriteLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Overwrite files when restoring.
+        /// </summary>
+        internal static string OverwriteShort {
+            get {
+                return ResourceManager.GetString("OverwriteShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE..
         /// </summary>
         internal static string PassphraseLong {

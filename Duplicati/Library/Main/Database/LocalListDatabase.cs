@@ -53,45 +53,12 @@ namespace Duplicati.Library.Main.Database
                 m_connection = owner.m_connection;
                 m_filesets = owner.FilesetTimes.ToArray();
                 m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                string query = "";
-                var args = new List<object>();
-                if (time.Ticks > 0 || (versions != null && versions.Length > 0))
-                {
-                    query = " WHERE ";
-                    if (time.Ticks > 0)
-                    {
-                        if (time.Kind == DateTimeKind.Unspecified)
-                            throw new Exception("Invalid DateTime given, must be either local or UTC");
-                            
-                        query += @" ""Timestamp"" <= ?";
-                        args.Add(time.ToUniversalTime());
-                    }
-                    
-                    if (versions != null && versions.Length > 0)
-                    {
-                        var qs ="";
-                        
-                        foreach(var v in versions)
-                            if (v >= 0 && v < m_filesets.Length)
-                            {
-                                args.Add(m_filesets[v].Key);
-                                qs += "?,";
-                            }
-                            
-                        if (qs.Length > 0)
-                        {
-                            qs = qs.Substring(0, qs.Length - 1);
-                            
-                            if (args.Count != 0)
-                                query += " AND ";
-                                                
-                            query += @" ""ID"" IN (" + qs + ")";
-                        }
-                    }
-                }   
+				var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
+				string query = tmp.Item1;
+				var args = tmp.Item2;
                 
                 using(var cmd = m_connection.CreateCommand())
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args.ToArray());
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
             }
             
             private class Fileversion : IFileversion

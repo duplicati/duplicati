@@ -228,10 +228,16 @@ namespace Duplicati.Library.Main.Operation
 	        	Utility.VerifyParameters(database, m_options);
 	        	
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 				if (blockhasher == null)
 					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
                     throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
+
+				if (filehasher == null)
+					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
+                if (!filehasher.CanReuseTransform)
+                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
 
 				if (!m_options.NoBackendverification)
                 	FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_stat);
@@ -241,6 +247,9 @@ namespace Duplicati.Library.Main.Operation
 
                 //Make the entire output setup
                 CreateDirectoryStructure(database, m_options, m_stat);
+                
+                if (!m_options.Overwrite)
+                	UpdateTargetPathsToPreventOverwrite(database, filehasher, m_options, m_stat);
 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
                 ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_stat);
@@ -262,12 +271,8 @@ namespace Duplicati.Library.Main.Operation
                 	using (var tmpfile = blockvolume.Value)
                     using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Key.Name), tmpfile, m_options))
                         PatchWithBlocklist(database, blocks, m_options, m_stat, m_blockbuffer);
-
-                // After all blocks in the files are restored, verify the file hash
-                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
-				if (filehasher == null)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
 					
+                // After all blocks in the files are restored, verify the file hash
                 foreach (var file in database.GetFilesToRestore())
                 {
                     try
@@ -296,6 +301,56 @@ namespace Duplicati.Library.Main.Operation
         {
             //TODO: Implement writing metadata
         }
+        
+        private static void UpdateTargetPathsToPreventOverwrite(LocalRestoreDatabase database, System.Security.Cryptography.HashAlgorithm filehasher, Options options, CommunicationStatistics stat)
+		{
+			using(var blockmarker = database.CreateBlockMarker())
+			{
+				foreach(var file in database.GetFilesToRestore())
+				{
+					bool rename = true;
+					try
+					{
+						if (System.IO.File.Exists(file.Path))
+						{
+							string key;
+							using(var fs = System.IO.File.OpenRead(file.Path))
+								key = Convert.ToBase64String(filehasher.ComputeHash(fs));
+		
+							if (key == file.Hash)
+							{
+								blockmarker.SetFileRestored(file.ID);
+								rename = false;
+							}
+						}
+						else
+						{
+							rename = false;
+						}
+					}
+					catch (Exception ex)
+					{
+						stat.LogWarning(string.Format("Failed to read file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
+						database.LogMessage("Warning", string.Format("Failed to read file: \"{0}\", message: {1}", file.Path, ex.Message), ex, null);
+					}
+	                
+					if (rename)
+					{
+						//Select a new filename
+						var ext = System.IO.Path.GetExtension(file.Path);
+						var newname = System.IO.Path.GetFileNameWithoutExtension(file.Path) + "." + Library.Utility.Utility.SerializeDateTime(database.RestoreTime);
+						var tr = newname + "." + ext;
+						var c = 0;
+						while (System.IO.File.Exists(tr) && c < 1000)
+							tr = newname + " (" + c.ToString() + ")" + "." + ext;
+						
+						database.UpdateTargetPath(file.ID, newname);	
+					}
+				}
+				
+				blockmarker.Commit();
+			}
+		}
 
         private static void ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
         {
@@ -439,7 +494,7 @@ namespace Duplicati.Library.Main.Operation
 		{
 			// Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
 			// Delete all entries from the temp table that are excluded by the filter(s)
-			database.PrepareRestoreFilelist(options.Time, filter, stat);
+			database.PrepareRestoreFilelist(options.Time, options.Version, filter, stat);
 
 			if (!string.IsNullOrEmpty(options.Restorepath))
 			{

@@ -386,6 +386,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("quiet-console", CommandLineArgument.ArgumentType.Boolean, Strings.Options.QuietconsoleShort, Strings.Options.QuietconsoleLong, "false"),
 
+                    new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
+
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_FH_BLOCKSIZE),
                     new CommandLineArgument("no-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NometadataShort, Strings.Options.NometadataLong, "false"),
@@ -1097,6 +1099,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if console output is redirected to the log file
         /// </summary>
         public bool QuietConsole { get { return GetBool("quiet-console"); } }
+
+        /// <summary>
+        /// A value indicating restored files overwrite existing ones
+        /// </summary>
+        public bool Overwrite { get { return GetBool("overwrite"); } }
 
         /// <summary>
         /// Gets the total size in bytes that the backend supports, returns -1 if there is no upper limit
