@@ -219,53 +219,53 @@ namespace Duplicati.Library.Main.Operation
         }
 
         private void DoRun(LocalDatabase dbparent, Library.Utility.IFilter filter)
-        {
-            //In this case, we check that the remote storage fits with the database.
-            //We can then query the database and find the blocks that we need to do the restore
-            using (var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_stat, database))
-            {
-	        	Utility.VerifyParameters(database, m_options);
+		{
+			//In this case, we check that the remote storage fits with the database.
+			//We can then query the database and find the blocks that we need to do the restore
+			using(var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
+			using(var backend = new BackendManager(m_backendurl, m_options, m_stat, database))
+			{
+				Utility.VerifyParameters(database, m_options);
 	        	
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+				var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+				var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 				if (blockhasher == null)
 					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
-                if (!blockhasher.CanReuseTransform)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
+				if (!blockhasher.CanReuseTransform)
+					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
 
 				if (filehasher == null)
 					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
-                if (!filehasher.CanReuseTransform)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
+				if (!filehasher.CanReuseTransform)
+					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
 
 				if (!m_options.NoBackendverification)
-                	FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_stat);
+					FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_stat);
 
-                //Figure out what files are to be patched, and what blocks are needed
-                PrepareBlockAndFileList(database, m_options, filter, m_stat);
+				//Figure out what files are to be patched, and what blocks are needed
+				PrepareBlockAndFileList(database, m_options, filter, m_stat);
 
-                //Make the entire output setup
-                CreateDirectoryStructure(database, m_options, m_stat);
+				//Make the entire output setup
+				CreateDirectoryStructure(database, m_options, m_stat);
                 
-                if (!m_options.Overwrite)
-                	UpdateTargetPathsToPreventOverwrite(database, filehasher, m_options, m_stat);
+				if (!m_options.Overwrite)
+					UpdateTargetPathsToPreventOverwrite(database, filehasher, m_options, m_stat);
 
-                //If we are patching an existing target folder, do not touch stuff that is already updated
-                ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_stat);
+				//If we are patching an existing target folder, do not touch stuff that is already updated
+				ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_stat);
 
 #if DEBUG
-                if (!m_options.NoLocalBlocks)
+				if (!m_options.NoLocalBlocks)
 #endif
 				//Look for existing blocks in the original source files only
-				ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, m_stat);
+					ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, m_stat);
 
-                // If other local files already have the blocks we want, we use them instead of downloading
+				// If other local files already have the blocks we want, we use them instead of downloading
 				if (m_options.PatchWithLocalBlocks)
-                	ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_stat);
+					ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_stat);
 
-                // Fill BLOCKS with remote sources
-                var volumes = database.GetMissingVolumes();
+				// Fill BLOCKS with remote sources
+				var volumes = database.GetMissingVolumes();
 
 				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
 					try
