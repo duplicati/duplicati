@@ -399,8 +399,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
                     new CommandLineArgument("max-wastesize", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxwastesizeShort, Strings.Options.MaxwastesizeLong),
-                    new CommandLineArgument("no-indexfiles", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoindexfilesShort, Strings.Options.NoindexfilesLong, "false"),
-                    new CommandLineArgument("no-backendverification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
+                    new CommandLineArgument("no-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoindexfilesShort, Strings.Options.NoindexfilesLong, "false"),
+                    new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
                     new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
@@ -1330,7 +1330,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoIndexfiles
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-indexfiles"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-index-files"); }
         }
         
         /// <summary>
@@ -1338,7 +1338,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoBackendverification
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-backendverification"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-backend-verification"); }
         }
         
         /// <summary>
