@@ -157,9 +157,17 @@ namespace Duplicati.Library.Utility
                 throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), url);
             }
                 
-            this.Scheme = m.Groups["scheme"].Value;
-            this.Host = m.Groups["hostname"].Value;
-            this.Path = m.Groups["path"].Success ? m.Groups["path"].Value : null;
+			this.Scheme = m.Groups["scheme"].Value;
+			if (!m.Groups["hostname"].Success && m.Groups["path"].Success)
+			{
+				this.Host = m.Groups["path"].Value;
+				this.Path = "";
+			}
+			else
+			{
+				this.Host = m.Groups["hostname"].Value;
+				this.Path = m.Groups["path"].Success ? m.Groups["path"].Value : "";
+			}
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
             this.Username = m.Groups["username"].Success ? HttpUtility.UrlDecode(m.Groups["username"].Value) : null;
             this.Password = m.Groups["password"].Success ? HttpUtility.UrlDecode(m.Groups["password"].Value) : null;
