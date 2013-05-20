@@ -38,6 +38,7 @@ namespace Duplicati.Library.Main.Database
             {
                 long filesetId = GetFilesetID(restoretime, versions);
                 m_restoreTime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
+                cmd.Parameters.Clear();
 
                 cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable);
                 cmd.ExecuteNonQuery();
