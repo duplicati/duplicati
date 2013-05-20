@@ -64,6 +64,8 @@ namespace Duplicati.Library.Main
             public string Hash;
             public long Size;
             public IndexVolumeWriter Indexfile;
+            public Exception Exception;
+            public bool ExceptionKillsHandler;
 
             private System.Threading.ManualResetEvent DoneEvent;
 
@@ -72,6 +74,7 @@ namespace Duplicati.Library.Main
                 Operation = operation;
                 RemoteFilename = remotefilename;
                 Indexfile = indexfile;
+                ExceptionKillsHandler = operation != OperationType.Get;
 
                 DoneEvent = new System.Threading.ManualResetEvent(false);
             }
@@ -96,6 +99,9 @@ namespace Duplicati.Library.Main
             TempFile IDownloadWaitHandle.Wait()
             {
                 this.WaitForComplete();
+                if (Exception != null)
+                	throw Exception;
+                	
                 return (TempFile)this.Result;
             }
 
@@ -103,6 +109,9 @@ namespace Duplicati.Library.Main
             {
                 this.WaitForComplete();
                 
+                if (Exception != null)
+                	throw Exception;
+                	
                 hash = this.Hash;
                 size = this.Size;
                 
@@ -371,14 +380,20 @@ namespace Duplicati.Library.Main
 
                     if (lastException != null)
                     {
-                        m_lastException = lastException;
+                    	item.Exception = lastException;
                         if (item.Operation == OperationType.Put)
                         	item.DeleteLocalFile(m_stats);
+                        	
+                        if (item.ExceptionKillsHandler)
+                        {
+                        	m_lastException = lastException;
 
-						//TODO: If there are temp files in the queue, we must delete them
-                        m_queue.SetCompleted();
+							//TODO: If there are temp files in the queue, we must delete them
+	                        m_queue.SetCompleted();
+                       	}
+                        
                     }
-
+                    
                     item.SignalComplete();
                 }
             }
@@ -542,7 +557,7 @@ namespace Duplicati.Library.Main
             	m_stats.LogMessage("Listed remote folder, found {0} entries", count);
         }
 
-        private void DoDelete (FileEntryItem item)
+        private void DoDelete(FileEntryItem item)
         {
             m_stats.AddNumberOfRemoteCalls(1);
             if (!m_options.QuietConsole)
@@ -569,7 +584,7 @@ namespace Duplicati.Library.Main
             	m_stats.LogMessage("Deleted file {0}", item.RemoteFilename);
         }
         
-        private void DoCreateFolder (FileEntryItem item)
+        private void DoCreateFolder(FileEntryItem item)
         {
             m_stats.AddNumberOfRemoteCalls(1);
             if (!m_options.QuietConsole)
@@ -595,46 +610,58 @@ namespace Duplicati.Library.Main
         }
 
         public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
-        {
-            if (m_lastException != null)
-                throw m_lastException;
+		{
+			if (m_lastException != null)
+				throw m_lastException;
             
-            item.Close();
-            m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-            var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, indexfile);
-            req.LocalFilename = item.LocalFilename;
+			item.Close();
+			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+			var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, indexfile);
+			req.LocalFilename = item.LocalFilename;
+			
+			if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+			{
+				req.WaitForComplete();
+				if (req.Exception != null)
+					throw req.Exception;
+			}
+			
+			if (m_lastException != null)
+				throw m_lastException;
 
-            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
-                req.WaitForComplete();
+			if (indexfile != null)
+			{
+				m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+				var req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
+				req2.LocalFilename = indexfile.LocalFilename;
 
-            if (m_lastException != null)
-                throw m_lastException;
-
-            if (indexfile != null)
-            {
-                m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                var req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
-                req2.LocalFilename = indexfile.LocalFilename;
-
-                if (m_queue.Enqueue(req2) && m_options.SynchronousUpload)
-                    req2.WaitForComplete();
-
-                if (m_lastException != null)
-                    throw m_lastException;
+				if (m_queue.Enqueue(req2) && m_options.SynchronousUpload)
+				{
+					req2.WaitForComplete();
+					if (req2.Exception != null)
+						throw req2.Exception;
+				}
+				
+				if (m_lastException != null)
+					throw m_lastException;
             }
         }
 
         public Library.Utility.TempFile Get(string remotename, long size, string hash)
-        {
-            if (m_lastException != null)
-                throw m_lastException;
+		{
+			if (m_lastException != null)
+				throw m_lastException;
 
-            var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
-            if (m_queue.Enqueue(req))
-                req.WaitForComplete();
+			var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
+			if (m_queue.Enqueue(req))
+			{
+				req.WaitForComplete();
+				if (req.Exception != null)
+					throw req.Exception;
+			}
 
-            if (m_lastException != null)
-                throw m_lastException;
+			if (m_lastException != null)
+				throw m_lastException;
 
             return (Library.Utility.TempFile)req.Result;
         }
@@ -648,23 +675,27 @@ namespace Duplicati.Library.Main
             if (m_queue.Enqueue(req))
                 return req;
 
-            if (m_lastException != null)
-                throw m_lastException;
+			if (m_lastException != null)
+				throw m_lastException;
             else
                 throw new InvalidOperationException("GetAsync called after backend is shut down");
         }
 
         public IList<Library.Interface.IFileEntry> List()
-        {
-            if (m_lastException != null)
-                throw m_lastException;
+		{
+			if (m_lastException != null)
+				throw m_lastException;
 
-            var req = new FileEntryItem(OperationType.List, null);
-            if (m_queue.Enqueue(req))
-                req.WaitForComplete();
+			var req = new FileEntryItem(OperationType.List, null);
+			if (m_queue.Enqueue(req))
+			{
+				req.WaitForComplete();
+				if (req.Exception != null)
+					throw req.Exception;
+			}
 
-            if (m_lastException != null)
-                throw m_lastException;
+			if (m_lastException != null)
+				throw m_lastException;
 
             return (IList<Library.Interface.IFileEntry>)req.Result;
         }
@@ -686,25 +717,39 @@ namespace Duplicati.Library.Main
         }
 
         public void CreateFolder(string remotename)
-        {
-            var item = new FileEntryItem(OperationType.CreateFolder, remotename);
-            if (m_queue.Enqueue(item))
-                item.WaitForComplete();
-            
-            if (m_lastException != null)
-                throw m_lastException;
+		{
+			if (m_lastException != null)
+				throw m_lastException;
+
+			var req = new FileEntryItem(OperationType.CreateFolder, remotename);
+			if (m_queue.Enqueue(req))
+			{
+				req.WaitForComplete();
+				if (req.Exception != null)
+					throw req.Exception;
+			}
+
+			if (m_lastException != null)
+				throw m_lastException;
         }
 
         public void Delete(string remotename, bool synchronous = false)
-        {
-            m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, -1, null);
-            var item = new FileEntryItem(OperationType.Delete, remotename);
-            if (m_queue.Enqueue(item) && synchronous)
-                item.WaitForComplete();
+		{
+			if (m_lastException != null)
+				throw m_lastException;
+				
+			m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, -1, null);
+			var req = new FileEntryItem(OperationType.Delete, remotename);
+			if (m_queue.Enqueue(req) && synchronous)
+			{
+				req.WaitForComplete();
+				if (req.Exception != null)
+					throw req.Exception;
+			}
 
-            if (m_lastException != null)
-                throw m_lastException;
-        }
+			if (m_lastException != null)
+				throw m_lastException;
+		}
         
         public bool FlushDbMessages(LocalDatabase database, System.Data.IDbTransaction transaction)
         {
