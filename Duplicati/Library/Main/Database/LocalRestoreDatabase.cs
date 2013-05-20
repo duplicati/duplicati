@@ -114,8 +114,8 @@ namespace Duplicati.Library.Main.Database
                                 if (values[0] != null && filter.Matches(values[0].ToString()))
                                 {
                                     cmd2.SetParameterValue(0, values[0]);
-                                    cmd2.SetParameterValue(1, values[0]);
-                                    cmd2.SetParameterValue(2, values[0]);
+                                    cmd2.SetParameterValue(1, values[1]);
+                                    cmd2.SetParameterValue(2, values[2]);
                                     cmd2.ExecuteNonQuery();
                                 }
                             }
