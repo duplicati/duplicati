@@ -170,16 +170,41 @@ namespace Duplicati.Library.Main.Database
         }
 
         public void SetTargetPaths(string largest_prefix, string destination)
-        {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                destination = Library.Utility.Utility.AppendDirSeparator(destination);
-                largest_prefix = Library.Utility.Utility.AppendDirSeparator(largest_prefix);
-
-                cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ? || SUBSTR(""Path"", ?)", m_tempfiletable);
-                cmd.AddParameter(destination);
-                cmd.AddParameter(largest_prefix.Length + 1);
-                cmd.ExecuteNonQuery();
+		{
+			using(var cmd = m_connection.CreateCommand())
+			{
+				if (string.IsNullOrEmpty(destination))
+				{
+					//The string fixing here is meant to provide some non-random
+					// defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
+					//This is mostly meaningless, and the user really should use --restore-path
+				
+					if (Library.Utility.Utility.IsClientLinux)
+	                	// For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
+						cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN ""/"" || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
+					else
+	                	// For Linux -> Win, we use the temporary folder's drive as the root path
+						cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)));
+	                
+				}
+				else
+				{						
+					if (string.IsNullOrEmpty(largest_prefix))
+					{
+						//Special case, restoring to new folder, but files are from different drives
+						// So we use the format <restore path> / <drive letter> / <source path>
+						// To avoid generating paths with a colon
+						cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ? || CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable), destination);
+					}
+					else
+					{
+						largest_prefix = Library.Utility.Utility.AppendDirSeparator(largest_prefix);
+						cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ? || SUBSTR(""Path"", ?)", m_tempfiletable);
+						cmd.AddParameter(destination);
+						cmd.AddParameter(largest_prefix.Length + 1);
+						cmd.ExecuteNonQuery();
+					}
+               	}
             }
         }
 
