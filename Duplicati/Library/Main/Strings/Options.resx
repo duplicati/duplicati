@@ -480,11 +480,11 @@
   <data name="NoindexfilesShort" xml:space="preserve">
     <value>Do not upload index files</value>
   </data>
-  <data name="MaxwastesizeLong" xml:space="preserve">
-    <value>As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value cannot be less than the volumesize, the default value is two times the volumesize.</value>
+  <data name="ThresholdLong" xml:space="preserve">
+    <value>As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value is a percentage used on each volume and the total storage.</value>
   </data>
-  <data name="MaxwastesizeShort" xml:space="preserve">
-    <value>The maximum allowed wasted space</value>
+  <data name="ThresholdShort" xml:space="preserve">
+    <value>The maximum wasted space in percent</value>
   </data>  
   <data name="DryrunLong" xml:space="preserve">
     <value>This option can be used to experiment with different settings and observe the outcome without changing actual files.</value>
@@ -510,11 +510,17 @@
   <data name="NoautocompactShort" xml:space="preserve">
     <value>Disable automatic compating</value>
   </data>
-  <data name="VolumesizetoleranceLong" xml:space="preserve">
+  <data name="SmallfilesizeLong" xml:space="preserve">
     <value>When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten.</value>
   </data>
-  <data name="VolumesizetoleranceShort" xml:space="preserve">
+  <data name="SmallfilesizeShort" xml:space="preserve">
     <value>Volume size threshold</value>
+  </data>
+  <data name="SmallfilemaxcountLong" xml:space="preserve">
+    <value>To avoid filling the remote storage with small files, this value can force grouping small files. The small volumes will always be combined when they can fill an entire volume.</value>
+  </data>
+  <data name="SmallfilemaxcountShort" xml:space="preserve">
+    <value>Maximum number of small volumes</value>
   </data>
   <data name="PatchwithlocalblocksLong" xml:space="preserve">
     <value>Enable this option to look into other files on this machine to find existing blocks. This is a fairly slow operation but can limit the size of downloads.</value>

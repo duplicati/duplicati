@@ -457,7 +457,7 @@ namespace Duplicati.Library.Main
 
         #endregion
 
-        public void CompactBlocks()
+        public void Compact()
         {
             var stat = new CommunicationStatistics(OperationMode.Compact);
             SetupCommonOptions(stat);

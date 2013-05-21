@@ -763,24 +763,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value cannot be less than the volumesize, the default value is two times the volumesize..
-        /// </summary>
-        internal static string MaxwastesizeLong {
-            get {
-                return ResourceManager.GetString("MaxwastesizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The maximum allowed wasted space.
-        /// </summary>
-        internal static string MaxwastesizeShort {
-            get {
-                return ResourceManager.GetString("MaxwastesizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
         /// </summary>
         internal static string MetadatahashlookupsizeLong {
@@ -1141,6 +1123,42 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to To avoid filling the remote storage with small files, this value can force grouping small files. The small volumes will always be combined when they can fill an entire volume..
+        /// </summary>
+        internal static string SmallfilemaxcountLong {
+            get {
+                return ResourceManager.GetString("SmallfilemaxcountLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum number of small volumes.
+        /// </summary>
+        internal static string SmallfilemaxcountShort {
+            get {
+                return ResourceManager.GetString("SmallfilemaxcountShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten..
+        /// </summary>
+        internal static string SmallfilesizeLong {
+            get {
+                return ResourceManager.GetString("SmallfilesizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Volume size threshold.
+        /// </summary>
+        internal static string SmallfilesizeShort {
+            get {
+                return ResourceManager.GetString("SmallfilesizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This settings controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to &quot;off&quot;, Duplicati will not attempt to create a disk snapshot. Setting this to &quot;auto&quot; makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported. A setting of &quot;on&quot; will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to &quot;required&quot; will make Duplicati abort the backup if the snapshot creation fails. On windows this uses the Volume Shadow Copy Services (VSS) and requires administrative privileges. On linux this uses Logical Volume Management (LVM) and requires root privileges..
         /// </summary>
         internal static string SnapshotpolicyLong {
@@ -1231,6 +1249,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value is a percentage used on each volume and the total storage..
+        /// </summary>
+        internal static string ThresholdLong {
+            get {
+                return ResourceManager.GetString("ThresholdLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The maximum wasted space in percent.
+        /// </summary>
+        internal static string ThresholdShort {
+            get {
+                return ResourceManager.GetString("ThresholdShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may use relative times, like &quot;-2M&quot; for a backup from two months ago..
         /// </summary>
         internal static string TimeLong {
@@ -1317,24 +1353,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string VolsizeShort {
             get {
                 return ResourceManager.GetString("VolsizeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten..
-        /// </summary>
-        internal static string VolumesizetoleranceLong {
-            get {
-                return ResourceManager.GetString("VolumesizetoleranceLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Volume size threshold.
-        /// </summary>
-        internal static string VolumesizetoleranceShort {
-            get {
-                return ResourceManager.GetString("VolumesizetoleranceShort", resourceCulture);
             }
         }
         

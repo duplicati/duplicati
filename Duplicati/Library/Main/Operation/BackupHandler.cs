@@ -288,7 +288,7 @@ namespace Duplicati.Library.Main.Operation
 									
 		            m_backend.WaitForComplete(m_database, m_transaction);
 
-		            if (lastVolumeSize < m_options.VolumeSize - m_options.VolsizeTolerance && !m_options.NoAutoCompact && (m_options.Force || m_options.Dryrun))
+		            if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact && (m_options.Force || m_options.Dryrun))
 		            	using(var ch = new CompactHandler(m_backend.BackendUrl, m_options, m_stat))
 	            		using(var db = new LocalDeleteDatabase(m_database))
 		            		ch.DoCompact(db, true, m_transaction);

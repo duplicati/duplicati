@@ -42,7 +42,17 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default block size for Foresthash
         /// </summary>
-        private const string DEFAULT_FH_BLOCKSIZE = "100kb";
+        private const string DEFAULT_BLOCKSIZE = "100kb";
+        
+        /// <summary>
+        /// The default threshold value
+        /// </summary>
+        private const long DEFAULT_THRESHOLD = 25;
+        
+        /// <summary>
+        /// The default value for maximum number of small files
+        /// </summary>
+        private const long DEFAULT_SMALL_FILE_MAX_COUNT = 20;
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -387,7 +397,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
-                    new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_FH_BLOCKSIZE),
+                    new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
                     new CommandLineArgument("no-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NometadataShort, Strings.Options.NometadataLong, "false"),
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
@@ -396,7 +406,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
-                    new CommandLineArgument("max-wastesize", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxwastesizeShort, Strings.Options.MaxwastesizeLong),
+                    new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Size, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("no-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoindexfilesShort, Strings.Options.NoindexfilesLong, "false"),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
@@ -405,7 +415,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("file-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FilehashalgorithmShort, Strings.Options.FilehashalgorithmLong, DEFAULT_FILE_HASH_ALGORITHM, null, GetSupportedHashes()),
 
                     new CommandLineArgument("no-auto-compact", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoautocompactShort, Strings.Options.NoautocompactLong, "false"),
-                    new CommandLineArgument("volume-size-tolerance", CommandLineArgument.ArgumentType.Size, Strings.Options.VolumesizetoleranceShort, Strings.Options.VolumesizetoleranceLong),
+                    new CommandLineArgument("small-file-size", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilesizeShort, Strings.Options.SmallfilesizeLong),
+                    new CommandLineArgument("small-file-size-max-count", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilemaxcountShort, Strings.Options.SmallfilemaxcountLong, DEFAULT_SMALL_FILE_MAX_COUNT.ToString()),
 
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Size, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
@@ -1158,7 +1169,7 @@ namespace Duplicati.Library.Main
             {
                 string tmp;
                 if (!m_options.TryGetValue("blocksize", out tmp))
-                    tmp = DEFAULT_FH_BLOCKSIZE;
+                    tmp = DEFAULT_BLOCKSIZE;
 
                 long t = Library.Utility.Sizeparser.ParseSize(tmp, "kb");
                 if (t > int.MaxValue || t < 1024)
@@ -1242,34 +1253,50 @@ namespace Duplicati.Library.Main
         
         
         /// <summary>
-        /// Gets the maximum wasted remote size
+        /// Gets the compact threshold
         /// </summary>
-        public long MaxWasteSize
+        public long Threshold
         {
             get
             {
                 string v;
-                m_options.TryGetValue("max-wastesize", out v);
+                m_options.TryGetValue("threshold", out v);
                 if (string.IsNullOrEmpty(v))
-                    return this.VolumeSize * 2;
+                    return DEFAULT_THRESHOLD;
 
-                return Library.Utility.Sizeparser.ParseSize(v, "mb");
+                return Convert.ToInt64(v);
             }
         }
 
         /// <summary>
-        /// Gets the volume size tolerance
+        /// Gets the size of small volumes
         /// </summary>
-        public long VolsizeTolerance
+        public long SmallFileSize
         {
             get
             {
                 string v;
-                m_options.TryGetValue("volume-size-tolerance", out v);
+                m_options.TryGetValue("small-file-size", out v);
                 if (string.IsNullOrEmpty(v))
                     return this.VolumeSize / 100;
 
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
+            }
+        }
+        
+        /// <summary>
+        /// Gets the maximum number of small volumes
+        /// </summary>
+        public long SmallFileMaxCount
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("small-file-max-count", out v);
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_SMALL_FILE_MAX_COUNT;
+
+                return Convert.ToInt64(v);
             }
         }
         

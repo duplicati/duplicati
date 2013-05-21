@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Operation
 		
 		internal string DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
 		{
-			var report = db.GetCompactReport(m_options.VolumeSize, m_options.MaxWasteSize, m_options.VolsizeTolerance, transaction);
+			var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
 			report.ReportCompactData(m_stat);
 			string msg;
 			

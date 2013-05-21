@@ -114,14 +114,16 @@ namespace Duplicati.Library.Main.Database
 		private struct VolumeUsage
 		{
 			public string Name;
-			public long VolumeSize;
+			public long DataSize;
 			public long WastedSize;
+			public long CompressedSize;
 			
-			public VolumeUsage(string name, long volumesize, long wastedsize)
+			public VolumeUsage(string name, long datasize, long wastedsize, long compressedsize)
 			{
 				this.Name = name;
-				this.VolumeSize = volumesize;
+				this.DataSize = datasize;
 				this.WastedSize = wastedsize;
+				this.CompressedSize = compressedsize;
 			}
 		}
 
@@ -148,9 +150,9 @@ namespace Duplicati.Library.Main.Database
 				{
 					cmd.ExecuteNonQuery(createtable);
 					var res = new List<VolumeUsage>();
-					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
+					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
 						while (rd.Read())
-							res.Add(new VolumeUsage(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)) + Convert.ToInt64(rd.GetValue(2)), Convert.ToInt64(rd.GetValue(2))));
+							res.Add(new VolumeUsage(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)) + Convert.ToInt64(rd.GetValue(2)), Convert.ToInt64(rd.GetValue(2)), Convert.ToInt64(rd.GetValue(3))));
 							
 					return res;
 				}
@@ -181,36 +183,40 @@ namespace Duplicati.Library.Main.Database
 			private long m_deletablevolumes;
 			private long m_wastedspace;
 			private long m_smallspace;
+			private long m_fullsize;
 			
-			private long m_maxwastesize;
+			private long m_wastethreshold;
 			private long m_volsize;
 			
-			public CompactReport(long volsize, long maxwastesize, long volsizetolerance, IEnumerable<VolumeUsage> report)
+			public CompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IEnumerable<VolumeUsage> report)
 			{
 				m_report = report;
 				
-				m_cleandelete = from n in m_report where n.VolumeSize <= n.WastedSize select n;
-				m_wastevolumes = from n in m_report where n.WastedSize > volsizetolerance && !m_cleandelete.Contains(n) select n;
-				m_smallvolumes = from n in m_report where n.VolumeSize - volsizetolerance < volsize && !m_cleandelete.Contains(n) select n;
+				m_cleandelete = (from n in m_report where n.DataSize <= n.WastedSize select n).ToArray();
+				m_wastevolumes = from n in m_report where ((((n.WastedSize / (float)n.DataSize) * 100) >= wastethreshold) || (((n.WastedSize / (float)volsize) * 100) >= wastethreshold)) && !m_cleandelete.Contains(n) select n;
+				m_smallvolumes = from n in m_report where n.CompressedSize <= smallfilesize && !m_cleandelete.Contains(n) select n;
 
-				m_maxwastesize = maxwastesize;
+				m_wastethreshold = wastethreshold;
 				m_volsize = volsize;
 
 				m_deletablevolumes = m_cleandelete.Count();
-				m_wastedspace = m_wastevolumes.Aggregate(0L, (a,x) => a + x.WastedSize);
-				m_smallspace = m_smallvolumes.Aggregate(0L, (a,x) => a + x.VolumeSize);
+				m_fullsize = report.Select(x => x.DataSize).Sum();
+				
+				m_wastedspace = m_wastevolumes.Select(x => x.WastedSize).Sum();
+				m_smallspace = m_smallvolumes.Select(x => x.CompressedSize).Sum();
 			}
 			
 			public void ReportCompactData(CommunicationStatistics stat)
 			{
+				var wastepercentage = ((m_wastedspace / (float)m_wastethreshold) * 100);
 				stat.LogMessage("Found {0} fully deletable volume(s)", m_deletablevolumes);
 				stat.LogMessage("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace));
-				stat.LogMessage("Found {0} volume(s) with a total of {1} wasted space", m_wastevolumes.Count(), Library.Utility.Utility.FormatSizeString(m_wastedspace));
+				stat.LogMessage("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize));
 				
 				if (m_deletablevolumes > 0)
 					stat.LogMessage("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes);
-				else if (m_wastedspace > m_maxwastesize && m_wastevolumes.Count() >= 2)
-					stat.LogMessage("Compacting because there are {0} wasted space and the limit is {1}", Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_maxwastesize));
+				else if (wastepercentage >= m_wastethreshold && m_wastevolumes.Count() >= 2)
+					stat.LogMessage("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold);
 				else if (m_smallspace > m_volsize)
 					stat.LogMessage("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize));
 				else
@@ -229,7 +235,7 @@ namespace Duplicati.Library.Main.Database
 			{
 				get 
 				{
-					return m_wastedspace > m_maxwastesize || m_smallspace > m_volsize;
+					return ((m_wastedspace / (float)m_wastethreshold) * 100) >= m_wastethreshold || m_smallspace > m_volsize;
 				}
 			}
 
@@ -250,9 +256,9 @@ namespace Duplicati.Library.Main.Database
 			}
 		}
 		
-		public ICompactReport GetCompactReport(long volsize, long maxwastesize, long volsizetolerance, System.Data.IDbTransaction transaction)
+		public ICompactReport GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, System.Data.IDbTransaction transaction)
 		{
-			return new CompactReport(volsize, maxwastesize, volsizetolerance, GetWastedSpaceReport(transaction).ToList());
+			return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, GetWastedSpaceReport(transaction).ToList());
 		}
 		
 				

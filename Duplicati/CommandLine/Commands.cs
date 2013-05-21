@@ -197,7 +197,7 @@ namespace Duplicati.CommandLine
                 return PrintWrongNumberOfArguments(args, 1);
                 
             using(var i = new Library.Main.Controller(args[0], options))
-                i.CompactBlocks();
+                i.Compact();
 
             return 0;
         }
