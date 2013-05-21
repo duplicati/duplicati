@@ -255,7 +255,9 @@ namespace Duplicati.Library.Main.Operation
 				ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_stat);
 
 #if DEBUG
-				if (!m_options.NoLocalBlocks)
+				if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
+#else
+				if (!string.IsNullOrEmpty(m_options.Restorepath))
 #endif
 				//Look for existing blocks in the original source files only
 					ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, m_stat);
@@ -376,7 +378,15 @@ namespace Duplicati.Library.Main.Operation
                 	{
         				if (System.IO.File.Exists(sourcepath))
         				{
-	                		using(var targetstream = System.IO.File.Open(targetpath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+	    					var folderpath = System.IO.Path.GetDirectoryName(targetpath);
+	    					if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+	    					{
+	                            stat.LogWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+	                            database.LogMessage("Warning", string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null, null);
+	    						System.IO.Directory.CreateDirectory(folderpath);
+	    					}
+        				
+	                		using(var targetstream = options.Dryrun ? null : System.IO.File.Open(targetpath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
 	                		{
 	                			try
 	                			{
@@ -395,7 +405,9 @@ namespace Duplicati.Library.Main.Operation
 		                                            if (key == block.Hash)
 		                                            {
 						                            	if (options.Dryrun)
+						                            	{
 						                            		patched = true;
+						                            	}
 					                            		else
 					                            		{
 					                            			targetstream.Position = block.Offset;
@@ -444,6 +456,14 @@ namespace Duplicati.Library.Main.Operation
                     var patched = false;
                     try
                     {
+    					var folderpath = System.IO.Path.GetDirectoryName(targetpath);
+    					if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+    					{
+                            stat.LogWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+                            database.LogMessage("Warning", string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null, null);
+    						System.IO.Directory.CreateDirectory(folderpath);
+    					}
+                    
                         using (var file = options.Dryrun ? null : System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                         using (var block = new Blockprocessor(file, blockbuffer))
                             foreach (var targetblock in restorelist.Blocks)
@@ -522,7 +542,15 @@ namespace Duplicati.Library.Main.Operation
         }
 
         private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, CommunicationStatistics stat)
-        {
+		{
+			// This part is not protected by try/catch as we need the target folder to exist
+			if (!string.IsNullOrEmpty(options.Restorepath))
+                if (!System.IO.Directory.Exists(options.Restorepath))
+                	if (options.Dryrun)
+                		stat.LogMessage("[Dryrun] Would create folder: {0}", options.Restorepath);
+                	else
+                    	System.IO.Directory.CreateDirectory(options.Restorepath);
+        
             foreach (var folder in database.GetTargetFolders())
             {
                 try
