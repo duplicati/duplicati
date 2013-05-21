@@ -448,7 +448,10 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<string> GetTargetFolders()
         {
-            return new FolderListEnumerable(m_connection, m_tempfiletable);
+            using (var cmd = m_connection.CreateCommand())
+            using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""TargetPath"" FROM ""{0}"" WHERE ""BlocksetID"" == ?", m_tempfiletable), FOLDER_BLOCKSET_ID))
+            	while(rd.Read())
+            		yield return rd.GetValue(0).ToString();
         }
 
 		public interface IFastSource

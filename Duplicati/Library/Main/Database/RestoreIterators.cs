@@ -954,76 +954,7 @@ namespace Duplicati.Library.Main.Database
                 return this.GetEnumerator();
             }
         }
-
-        private class FolderListEnumerable : IEnumerable<string>
-        {
-            private class FolderListEnumerator : IEnumerator<string>
-            {
-                private System.Data.IDbConnection m_connection;
-                private System.Data.IDbCommand m_command;
-                private System.Data.IDataReader m_reader;
-                private string m_tablename;
-
-                public FolderListEnumerator(System.Data.IDbConnection connection, string tablename)
-                {
-                    m_connection = connection;
-                    m_tablename = tablename;
-                    this.Reset();
-                }
-
-
-                public string Current { get; private set; }
-
-                public void Dispose()
-                {
-                    if (m_reader != null)
-                        try { m_reader.Dispose(); }
-                        finally { m_reader = null; }
-
-                    if (m_command != null)
-                        try { m_command.Dispose(); }
-                        finally { m_command = null; }
-                }
-
-                object System.Collections.IEnumerator.Current { get { return this.Current; } }
-
-                public bool MoveNext()
-                {
-                    if (!m_reader.Read())
-                        return false;
-
-                    var c = m_reader.GetValue(0);
-                    if (c == null || c == DBNull.Value)
-                        Current = null;
-                    else
-                        Current = c.ToString();
-
-                    return true;
-                }
-
-                public void Reset()
-                {
-                    this.Dispose();
-                    Current = null;
-                    m_command = m_connection.CreateCommand();
-                    m_command.CommandText = string.Format(@"SELECT ""TargetPath"" FROM ""{0}"" WHERE ""BlocksetID"" == ?", m_tablename);
-                    m_command.AddParameter(FOLDER_BLOCKSET_ID);
-                    m_reader = m_command.ExecuteReader();
-                }
-            }
-
-            private System.Data.IDbConnection m_connection;
-            private string m_tablename;
-            public FolderListEnumerable(System.Data.IDbConnection connection, string tablename)
-            {
-                m_connection = connection;
-                m_tablename = tablename;
-            }
-            
-            public IEnumerator<string> GetEnumerator() { return new FolderListEnumerator(m_connection, m_tablename); }
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
-        }
-    }
+	}
 
     public partial class LocalBlocklistUpdateDatabase
     {
