@@ -263,8 +263,8 @@ namespace Duplicati.Library.Main.Operation
 		            	m_results.AddedFolders + m_results.ModifiedFolders + m_results.DeletedFolders +
 		            	m_results.AddedSymlinks + m_results.ModifiedSymlinks + m_results.DeletedSymlinks) > 0)
 		            {
-	                    if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
-	                        foreach (var p in m_options.SignatureControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+	                    if (!string.IsNullOrEmpty(m_options.ControlFiles))
+	                        foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
 	                            m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 	
 	                    m_database.WriteFileset(m_filesetvolume, m_transaction);
