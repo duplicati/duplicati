@@ -105,6 +105,7 @@
     <Compile Include="IFilter.cs" />
     <Compile Include="FilterExpression.cs" />
     <Compile Include="CompositeFilterExpression.cs" />
+    <Compile Include="FileBackedList.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
