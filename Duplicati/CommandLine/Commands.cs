@@ -172,9 +172,7 @@ namespace Duplicati.CommandLine
                 result = i.Backup(dirs, filter);
 
 			Console.WriteLine("Backup completed");
-			foreach(var p in result.GetType().GetProperties())
-				if (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string))
-					Console.WriteLine("{0}: {1}", p.Name, p.GetValue(result, null));
+			Library.Utility.Utility.PrintSerializeObject(result, Console.Out);
 
             //Interrupted = 50
             if (result.PartialBackup)

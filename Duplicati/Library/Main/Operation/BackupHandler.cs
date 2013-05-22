@@ -39,12 +39,7 @@ namespace Duplicati.Library.Main.Operation
 			
 			public override string ToString()
 			{
-				var sb = new StringBuilder();
-				foreach(var p in this.GetType().GetProperties())
-					if (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string))
-						sb.AppendFormat("{0}: {1}{2}", p.Name, p.GetValue(this, null), Environment.NewLine);
-						
-				return sb.ToString();
+				return Library.Utility.Utility.PrintSerializeObject(this).ToString();
 			}
     	}
     
