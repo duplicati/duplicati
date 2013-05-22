@@ -204,11 +204,11 @@
   <data name="RetrydelayShort" xml:space="preserve">
     <value>Time to wait between retries</value>
   </data>
-  <data name="SignaturecontrolfilesLong" xml:space="preserve">
-    <value>Supply a list of files separated with semicolons, that will be added to each backup. The Duplicati GUI program uses this to store the setup database with each backup.</value>
+  <data name="ControlfilesLong" xml:space="preserve">
+    <value>Use this option to attach extra files to the newly uploaded filelists.</value>
   </data>
-  <data name="SignaturecontrolfilesShort" xml:space="preserve">
-    <value>A list of control files to embed in the backups</value>
+  <data name="ControlfilesShort" xml:space="preserve">
+    <value>Set control files</value>
   </data>
   <data name="SkipfilehashchecksLong" xml:space="preserve">
     <value>If the hash for the volume does not match, Duplicati will refuse to use the backup. Supply this flag to allow Duplicati to proceed anyway.</value>

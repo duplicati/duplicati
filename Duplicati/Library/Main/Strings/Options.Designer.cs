@@ -286,6 +286,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to attach extra files to the newly uploaded filelists..
+        /// </summary>
+        internal static string ControlfilesLong {
+            get {
+                return ResourceManager.GetString("ControlfilesLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set control files.
+        /// </summary>
+        internal static string ControlfilesShort {
+            get {
+                return ResourceManager.GetString("ControlfilesShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Path to the file containing the local cache of the remote file database.
         /// </summary>
         internal static string DbpathLong {
@@ -1065,24 +1083,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string RetrydelayShort {
             get {
                 return ResourceManager.GetString("RetrydelayShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supply a list of files separated with semicolons, that will be added to each backup. The Duplicati GUI program uses this to store the setup database with each backup..
-        /// </summary>
-        internal static string SignaturecontrolfilesLong {
-            get {
-                return ResourceManager.GetString("SignaturecontrolfilesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A list of control files to embed in the backups.
-        /// </summary>
-        internal static string SignaturecontrolfilesShort {
-            get {
-                return ResourceManager.GetString("SignaturecontrolfilesShort", resourceCulture);
             }
         }
         
