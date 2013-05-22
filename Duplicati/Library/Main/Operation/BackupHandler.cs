@@ -438,11 +438,11 @@ namespace Duplicati.Library.Main.Operation
                         metahashandsize = Utility.WrapMetadata(metadata, m_options);
                     }
 
-                    var blocklisthashes = new List<string>();
                     var hint = m_options.GetCompressionHintFromFilename(path);
                     var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);
 
-                    using (var hashcollector = new HashlistCollector())
+                    using (var blocklisthashes = new Library.Utility.FileBackedStringList())
+                    using (var hashcollector = new Library.Utility.FileBackedStringList())
                     {
                         using (var fs = new Blockprocessor(m_snapshot.OpenRead(path), m_blockbuffer))
                         {
@@ -655,7 +655,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private void AddFileToOutput(string filename, long size, DateTime scantime, IMetahash metadata, HashlistCollector hashlist, string filehash, IList<string> blocklisthashes)
+        private void AddFileToOutput(string filename, long size, DateTime scantime, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes)
         {
             long metadataid;
             long blocksetid;
@@ -664,7 +664,7 @@ namespace Duplicati.Library.Main.Operation
             AddBlockToOutput(metadata.Hash, metadata.Blob, (int)metadata.Size, CompressionHint.Default);
             m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
-            m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist.Hashes, blocklisthashes, out blocksetid, m_transaction);
+            m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist, blocklisthashes, out blocksetid, m_transaction);
 
             //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
             m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);

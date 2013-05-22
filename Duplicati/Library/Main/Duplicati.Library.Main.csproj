@@ -105,7 +105,6 @@
     <Compile Include="Blockprocessor.cs" />
     <Compile Include="DatabaseLocator.cs" />
     <Compile Include="Enums.cs" />
-    <Compile Include="HashlistCollector.cs" />
     <Compile Include="BackendManager.cs" />
     <Compile Include="Operation\FilelistProcessor.cs" />
     <Compile Include="Utility.cs" />
