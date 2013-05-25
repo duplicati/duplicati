@@ -160,15 +160,21 @@
   -->
   <ItemGroup>
     <Folder Include="SQLite\" />
+    <Folder Include="SQLite\pinvoke\" />
+    <Folder Include="SQLite\win32\" />
+    <Folder Include="SQLite\win64\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
+    <Content Include="..\..\..\thirdparty\SQLite\win64\System.Data.SQLite.dll">
+      <Link>SQLite\win64\System.Data.SQLite.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQLite\win32\System.Data.SQLite.dll">
+    <Content Include="..\..\..\thirdparty\SQLite\win32\System.Data.SQLite.dll">
+      <Link>SQLite\win32\System.Data.SQLite.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQLite\win64\System.Data.SQLite.dll">
+    <Content Include="..\..\..\thirdparty\SQLite\pinvoke\System.Data.SQLite.dll">
+      <Link>SQLite\pinvoke\System.Data.SQLite.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
