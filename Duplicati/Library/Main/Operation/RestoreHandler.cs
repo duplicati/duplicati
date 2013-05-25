@@ -175,19 +175,26 @@ namespace Duplicati.Library.Main.Operation
             }
         }
         
-        private static void PatchWithBlocklist (LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults stat, byte[] blockbuffer)
+        private static void PatchWithBlocklist (LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer)
         {
             foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
             {
                 var targetpath = restorelist.Path;
                 if (options.Dryrun)
                 {
-                	stat.AddDryrunMessage(string.Format("[Would patch file with remote data: {0}", targetpath));
+                	result.AddDryrunMessage(string.Format("[Would patch file with remote data: {0}", targetpath));
                 }
                 else
                 {
 	                try 
-	                {
+	                {   
+                        var folderpath = System.IO.Path.GetDirectoryName(targetpath);
+                        if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+                        {
+                            result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+                            System.IO.Directory.CreateDirectory(folderpath);
+                        }
+                        
 	                	// TODO: Much faster if we iterate the volume and checks what blocks are used,
 	                	// because the compressors usually like sequential reading
 	                    using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
@@ -201,7 +208,7 @@ namespace Duplicati.Library.Main.Operation
 	                } 
 	                catch (Exception ex)
 	                {
-	                    stat.AddWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
+	                    result.AddWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
 	                }
 	                
 	                try
@@ -210,7 +217,7 @@ namespace Duplicati.Library.Main.Operation
 	                }
 	                catch (Exception ex)
 	                {
-	                    stat.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+	                    result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
 	                }
                 }
             }
