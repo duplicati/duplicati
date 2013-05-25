@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Operation
 				
 				if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0)
 				{
-					if (!m_options.Force)
+					if (m_options.Dryrun)
 					{
 						if (tp.MissingVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
 						{
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Main.Operation
 					foreach(var n in tp.ExtraVolumes)
 						try
 						{
-							if (m_options.Force && !m_options.Dryrun)
+							if (!m_options.Dryrun)
 							{
 								db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Deleting, -1, null, null);								
 								backend.Delete(n.File.Name);

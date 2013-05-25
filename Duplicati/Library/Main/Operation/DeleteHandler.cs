@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.Operation
                     foreach(var f in db.DropFilesetsFromTable(toDelete, tr))
                     {
                         count++;
-                        if (m_options.Force && !m_options.Dryrun)
+                        if (!m_options.Dryrun)
                             backend.Delete(f);
                         else
                             m_result.AddMessage(string.Format("[Dryrun] - Would delete remote fileset: {0}", f));
@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
 					
                     backend.WaitForComplete(db, tr);
 					
-                    if (m_options.Force && !m_options.Dryrun)
+                    if (!m_options.Dryrun)
                     {
                         if (count == 0)
                             m_result.AddMessage("No remote filesets were deleted");
@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.Operation
                         else
                             m_result.AddMessage(string.Format("{0} remote fileset(s) would be deleted", count));
 
-                        if (count > 0 && !m_options.Force)
+                        if (count > 0 && m_options.Dryrun)
                             m_result.AddMessage("Specify --force to actually delete files");
                     }
 					
@@ -91,12 +91,12 @@ namespace Duplicati.Library.Main.Operation
                         new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, tr);
                     }
 					
-					if (m_options.Force && !m_options.Dryrun)
+					if (!m_options.Dryrun)
 						tr.Commit();
 					else
 						tr.Rollback();
                         
-                    m_result.SetResults(toDelete,!(m_options.Force && !m_options.Dryrun));
+                    m_result.SetResults(toDelete, m_options.Dryrun);
 				}
 			}
         }

@@ -437,7 +437,28 @@ namespace Duplicati.Library.Main
         
         public override OperationMode MainOperation { get { return OperationMode.Delete; } }
 
-        public ICompactResults CompactResults { get; internal set; }
+        public DeleteResults() : base() { }
+        public DeleteResults(BasicResults p) : base(p) { }
+        
+        private ICompactResults m_compactResults;
+
+        public ICompactResults CompactResults
+        { 
+            get
+            {
+                if (m_parent != null && m_parent is BackupResults)
+                    return ((BackupResults)m_parent).CompactResults;
+
+                return m_compactResults;
+            }
+            internal set
+            {
+                if (m_parent != null && m_parent is BackupResults)
+                    ((BackupResults)m_parent).CompactResults = value;
+                    
+                m_compactResults = value;
+            }
+        }
     } 
     
     internal class RecreateDatabaseResults : BasicResults, Library.Interface.IRecreateDatabaseResults

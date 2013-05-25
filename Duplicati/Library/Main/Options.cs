@@ -286,7 +286,6 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "force",
                     "dry-run"
                 };
             }
@@ -345,7 +344,6 @@ namespace Duplicati.Library.Main
                     //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
                     new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
-                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
                     new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong, System.IO.Path.GetTempPath()),
                     new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"highest", "high", "abovenormal", "normal", "belownormal", "low", "lowest", "idle" }),
 
@@ -573,11 +571,6 @@ namespace Duplicati.Library.Main
         /// A value indicating if time tolerance is disabled
         /// </summary>
         public bool DisableTimeTolerance { get { return GetBool("disable-time-tolerance"); } }
-
-        /// <summary>
-        /// A value indicating if file deletes are forced
-        /// </summary>
-        public bool Force { get { return GetBool("force"); } }
 
         /// <summary>
         /// Gets a value indicating whether a temporary folder has been specified

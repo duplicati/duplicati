@@ -263,8 +263,16 @@ namespace Duplicati.Library.Main.Operation
                         }
     									
                         m_backend.WaitForComplete(m_database, m_transaction);
-    
-                        if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact && (m_options.Force || m_options.Dryrun))
+                        
+                        
+                        if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
+                        {
+                            m_result.DeleteResults = new DeleteResults(m_result);
+                            using(var db = new LocalDeleteDatabase(m_database))
+                                new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).Run();
+                            
+                        }
+                        else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
                         {
                             m_result.CompactResults = new CompactResults(m_result);
                             using(var db = new LocalDeleteDatabase(m_database))

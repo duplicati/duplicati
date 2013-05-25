@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation
 	        	Utility.VerifyParameters(db, m_options);
 	        	
 				DoCompact(db, false, tr);
-				if (m_options.Force && !m_options.Dryrun)
+				if (!m_options.Dryrun)
 					tr.Commit();
 				else
 					tr.Rollback();
@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main.Operation
 												if (newvolindex != null)
 													uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, new System.IO.FileInfo(newvolindex.LocalFilename).Length));
 	
-												if (m_options.Force && !m_options.Dryrun)
+												if (!m_options.Dryrun)
 													backend.Put(newvol, newvolindex);
 												else
 													m_result.AddMessage(string.Format("[Dryrun] - Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length)));
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
 								uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
 								if (newvolindex != null)
 									uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, new System.IO.FileInfo(newvolindex.LocalFilename).Length));
-								if (m_options.Force && !m_options.Dryrun)
+								if (!m_options.Dryrun)
 									backend.Put(newvol, newvolindex);
 								else
 									m_result.AddMessage(string.Format("[Dryrun] - Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length)));
@@ -206,7 +206,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.DeletedFileSize = deletedSize;
                     m_result.DownloadedFileSize = downloadSize;
                     m_result.UploadedFileSize = uploadSize;
-                    m_result.Dryrun = !(m_options.Force && !m_options.Dryrun);
+                    m_result.Dryrun = m_options.Dryrun;
                     
 					if (m_result.Dryrun)
 					{
@@ -237,7 +237,7 @@ namespace Duplicati.Library.Main.Operation
 		{
 			foreach(var f in db.GetDeletableVolumes(deleteableVolumes, transaction))
 			{
-				if (m_options.Force && !m_options.Dryrun)
+				if (!m_options.Dryrun)
 					backend.Delete(f.Name);
 				else
 					m_result.AddMessage(string.Format("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));

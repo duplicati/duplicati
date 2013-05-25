@@ -637,24 +637,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When deleting old files, Duplicati will only write out what files are supposed to be deleted. Specify the &quot;force&quot; option to actually remove them..
-        /// </summary>
-        internal static string ForceLong {
-            get {
-                return ResourceManager.GetString("ForceLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Force the removal of files.
-        /// </summary>
-        internal static string ForceShort {
-            get {
-                return ResourceManager.GetString("ForceShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Use this option to set the timespan in which backups are kept..
         /// </summary>
         internal static string KeeptimeLong {

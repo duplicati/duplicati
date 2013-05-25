@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -140,12 +140,6 @@
   </data>
   <data name="RestorepathShort" xml:space="preserve">
     <value>Restore to another folder</value>
-  </data>
-  <data name="ForceLong" xml:space="preserve">
-    <value>When deleting old files, Duplicati will only write out what files are supposed to be deleted. Specify the "force" option to actually remove them.</value>
-  </data>
-  <data name="ForceShort" xml:space="preserve">
-    <value>Force the removal of files</value>
   </data>
   <data name="AllowsleepShort" xml:space="preserve">
     <value>Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only)</value>
