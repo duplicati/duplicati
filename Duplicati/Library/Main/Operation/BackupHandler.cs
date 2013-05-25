@@ -204,12 +204,12 @@ namespace Duplicati.Library.Main.Operation
     	 					
                             if (m_options.Dryrun)
                             {
-                                m_result.AddMessage(string.Format("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
+                                m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
                                 if (m_indexvolume != null)
                                 {
                                     UpdateIndexVolume();
                                     m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-                                    m_result.AddMessage(string.Format("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
+                                    m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
                                 }
                             }
                             else
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main.Operation
     	
                             m_database.WriteFileset(m_filesetvolume, m_transaction);
                             if (m_options.Dryrun)
-                                m_result.AddMessage(string.Format("[Dryrun] Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length)));
+                                m_result.AddDryrunMessage(string.Format("Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length)));
                             else
                             {
                                 m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             m_result.DeleteResults = new DeleteResults(m_result);
                             using(var db = new LocalDeleteDatabase(m_database))
-                                new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).Run();
+                                new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true);
                             
                         }
                         else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
@@ -481,7 +481,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.SizeOfAddedFiles += filesize;
 					            
 					            if (m_options.Dryrun)
-					            	m_result.AddMessage(string.Format("[Dryrun] Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
+					            	m_result.AddDryrunMessage(string.Format("Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
                             }
                             else
                             {
@@ -489,7 +489,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.SizeOfModifiedFiles += filesize;
 					            
 					            if (m_options.Dryrun)
-					            	m_result.AddMessage(string.Format("[Dryrun] Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
+					            	m_result.AddDryrunMessage(string.Format("Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
                             }
 
                             AddFileToOutput(path, filesize, scantime, metahashandsize, hashcollector, filekey, blocklisthashes);
@@ -533,7 +533,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                 	if (m_options.Dryrun)
                 	{
-                		m_result.AddMessage(string.Format("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
+                		m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
                 		m_blockvolume.Dispose();
                 		m_blockvolume = null;
                 		
@@ -541,7 +541,7 @@ namespace Duplicati.Library.Main.Operation
                 		{
 		            		UpdateIndexVolume();
                 			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_indexvolume.LocalFilename), new FileInfo(m_indexvolume.LocalFilename).Length);
-                			m_result.AddMessage(string.Format("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
+                			m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
                 			m_indexvolume.Dispose();
                 			m_indexvolume = null;
                 		}

@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
 								backend.Delete(n.File.Name);
 							}
 							else
-								m_result.AddMessage(string.Format("[Dryrun] would delete file {0}", n.File.Name));
+								m_result.AddDryrunMessage(string.Format("would delete file {0}", n.File.Name));
 						}
 						catch (Exception ex)
 						{
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Operation
 	
 								w.Close();
 								if (m_options.Dryrun)
-									m_result.AddMessage(string.Format("[Dryrun] would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+									m_result.AddDryrunMessage(string.Format("would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation
 								w.Close();
 								
 								if (m_options.Dryrun)
-									m_result.AddMessage(string.Format("[Dryrun] would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+									m_result.AddDryrunMessage(string.Format("would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Operation
 								
 								w.Close();
 								if (m_options.Dryrun)
-									m_result.AddMessage(string.Format("[Dryrun] would upload new block file {0}, size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+									m_result.AddDryrunMessage(string.Format("would upload new block file {0}, size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);

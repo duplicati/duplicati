@@ -229,6 +229,14 @@ namespace Duplicati.Library.Main
                 m_db.LogMessage("Message", message, ex, null);
             }
         }
+
+        public void AddDryrunMessage(string message)
+        {
+            if (m_parent != null)
+                m_parent.AddDryrunMessage(message);
+            else
+                Console.WriteLine(string.Format("[Dryrun]: {0}", message));
+        }
                
         public void AddMessage(string message)
         { 

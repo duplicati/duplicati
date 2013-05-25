@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main.Operation
                 var targetpath = restorelist.Path;
                 if (options.Dryrun)
                 {
-                	stat.AddMessage(string.Format("[Dryrun] Would patch file with remote data: {0}", targetpath));
+                	stat.AddDryrunMessage(string.Format("[Would patch file with remote data: {0}", targetpath));
                 }
                 else
                 {
@@ -442,7 +442,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                     
                     if (patched && options.Dryrun)
-                    	result.AddMessage(string.Format("[Dryrun] Would patch file with local data: {0}", targetpath));
+                    	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
             	}
             	
             	blockmarker.Commit();
@@ -514,7 +514,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                     
                     if (patched && options.Dryrun)
-                    	result.AddMessage(string.Format("[Dryrun] Would patch file with local data: {0}", targetpath));
+                    	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
                 }
 
                 blockmarker.Commit();
@@ -553,7 +553,7 @@ namespace Duplicati.Library.Main.Operation
 			if (!string.IsNullOrEmpty(options.Restorepath))
                 if (!System.IO.Directory.Exists(options.Restorepath))
                 	if (options.Dryrun)
-                		result.AddMessage(string.Format("[Dryrun] Would create folder: {0}", options.Restorepath));
+                		result.AddDryrunMessage(string.Format("Would create folder: {0}", options.Restorepath));
                 	else
                     	System.IO.Directory.CreateDirectory(options.Restorepath);
         
@@ -566,7 +566,7 @@ namespace Duplicati.Library.Main.Operation
                     	result.FoldersRestored++;
                     	
                     	if (options.Dryrun)
-                    		result.AddMessage(string.Format("[Dryrun] Would create folder: {0}", folder));
+                    		result.AddDryrunMessage(string.Format("Would create folder: {0}", folder));
                     	else
                         	System.IO.Directory.CreateDirectory(folder);
                     }

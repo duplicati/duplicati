@@ -60,7 +60,6 @@ namespace Duplicati.Library.Main.Operation
 		{
 			var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
 			report.ReportCompactData(m_result);
-			string msg;
 			
 			if (report.ShouldReclaim || report.ShouldCompact)
 			{
@@ -142,7 +141,7 @@ namespace Duplicati.Library.Main.Operation
 												if (!m_options.Dryrun)
 													backend.Put(newvol, newvolindex);
 												else
-													m_result.AddMessage(string.Format("[Dryrun] - Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length)));
+													m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length)));
 												
 												
 												newvol = new BlockVolumeWriter(m_options);
@@ -180,7 +179,7 @@ namespace Duplicati.Library.Main.Operation
 								if (!m_options.Dryrun)
 									backend.Put(newvol, newvolindex);
 								else
-									m_result.AddMessage(string.Format("[Dryrun] - Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length)));
+									m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length)));
 							}
 							else
 							{
@@ -211,18 +210,17 @@ namespace Duplicati.Library.Main.Operation
 					if (m_result.Dryrun)
 					{
 						if (m_result.DownloadedFileCount == 0)
-							msg = string.Format("Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
+							m_result.AddMessage(string.Format("Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
 						else
-							msg = string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(downloadSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
+							m_result.AddMessage(string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(downloadSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
 					}
 					else
 					{
 						if (downloadedVolumes.Count == 0)
-							msg = string.Format("Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
+							m_result.AddDryrunMessage(string.Format("Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
 						else
-							msg = string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
+							m_result.AddDryrunMessage(string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
 					}
-					m_result.AddMessage(msg);
 							
 					backend.WaitForComplete(db, transaction);
 				}
@@ -240,7 +238,7 @@ namespace Duplicati.Library.Main.Operation
 				if (!m_options.Dryrun)
 					backend.Delete(f.Name);
 				else
-					m_result.AddMessage(string.Format("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
+					m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
 
 				yield return new KeyValuePair<string, long>(f.Name, f.Size);
 			}				

@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation
         }
 
         public void Run()
-        {		
+        {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
@@ -46,58 +46,63 @@ namespace Duplicati.Library.Main.Operation
                 m_result.SetDatabase(db);
                 
                 Utility.VerifyParameters(db, m_options);
-	        	
-                using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
-                {
-                    if (!m_options.NoBackendverification)
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
-					
-                    var toDelete = m_options.GetFilesetsToDelete(db.FilesetTimes.Select(x => x.Value).ToArray());
-                                        
-                    var count = 0L;
-                    foreach(var f in db.DropFilesetsFromTable(toDelete, tr))
-                    {
-                        count++;
-                        if (!m_options.Dryrun)
-                            backend.Delete(f);
-                        else
-                            m_result.AddMessage(string.Format("[Dryrun] - Would delete remote fileset: {0}", f));
-                    }
-					
-                    backend.WaitForComplete(db, tr);
-					
-                    if (!m_options.Dryrun)
-                    {
-                        if (count == 0)
-                            m_result.AddMessage("No remote filesets were deleted");
-                        else
-                            m_result.AddMessage(string.Format("Deleted {0} remote fileset(s)", count));
-                    }
-                    else
-                    {
-					
-                        if (count == 0)
-                            m_result.AddMessage("No remote filesets would be deleted");
-                        else
-                            m_result.AddMessage(string.Format("{0} remote fileset(s) would be deleted", count));
+                
+                DoRun(db, tr, false);
+                
+                if (!m_options.Dryrun)
+                    tr.Commit();
+                else
+                    tr.Rollback();
+            }
+        }
 
-                        if (count > 0 && m_options.Dryrun)
-                            m_result.AddMessage("Specify --force to actually delete files");
-                    }
+        public void DoRun(Database.LocalDeleteDatabase db, System.Data.IDbTransaction transaction, bool hasVerifiedBacked)
+        {		
+            using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+            {
+                if (!hasVerifiedBacked && !m_options.NoBackendverification)
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
+				
+                var toDelete = m_options.GetFilesetsToDelete(db.FilesetTimes.Select(x => x.Value).ToArray());
+                                    
+                var count = 0L;
+                foreach(var f in db.DropFilesetsFromTable(toDelete, transaction))
+                {
+                    count++;
+                    if (!m_options.Dryrun)
+                        backend.Delete(f);
+                    else
+                        m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f));
+                }
+				
+                backend.WaitForComplete(db, transaction);
+				
+                if (!m_options.Dryrun)
+                {
+                    if (count == 0)
+                        m_result.AddMessage("No remote filesets were deleted");
+                    else
+                        m_result.AddMessage(string.Format("Deleted {0} remote fileset(s)", count));
+                }
+                else
+                {
+				
+                    if (count == 0)
+                        m_result.AddDryrunMessage("No remote filesets would be deleted");
+                    else
+                        m_result.AddDryrunMessage(string.Format("{0} remote fileset(s) would be deleted", count));
+
+                    if (count > 0 && m_options.Dryrun)
+                        m_result.AddDryrunMessage("Remove --dry-run to actually delete files");
+                }
+				
+                if (!m_options.NoAutoCompact)
+                {
+                    m_result.CompactResults = new CompactResults(m_result);
+                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, transaction);
+                }
 					
-                    if (!m_options.NoAutoCompact)
-                    {
-                        m_result.CompactResults = new CompactResults(m_result);
-                        new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, tr);
-                    }
-					
-					if (!m_options.Dryrun)
-						tr.Commit();
-					else
-						tr.Rollback();
-                        
-                    m_result.SetResults(toDelete, m_options.Dryrun);
-				}
+                m_result.SetResults(toDelete, m_options.Dryrun);
 			}
         }
 	}
