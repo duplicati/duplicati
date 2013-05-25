@@ -1282,7 +1282,7 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("small-file-size", out v);
                 if (string.IsNullOrEmpty(v))
-                    return this.VolumeSize / 100;
+                    return this.VolumeSize / 5;
 
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }

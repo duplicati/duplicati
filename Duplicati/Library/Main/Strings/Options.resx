@@ -505,7 +505,7 @@
     <value>Disable automatic compating</value>
   </data>
   <data name="SmallfilesizeLong" xml:space="preserve">
-    <value>When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten.</value>
+    <value>When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 20 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten.</value>
   </data>
   <data name="SmallfilesizeShort" xml:space="preserve">
     <value>Volume size threshold</value>

@@ -1123,7 +1123,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 1 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten..
+        ///   Looks up a localized string similar to When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 20 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten..
         /// </summary>
         internal static string SmallfilesizeLong {
             get {
