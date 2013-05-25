@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             m_result.DeleteResults = new DeleteResults(m_result);
                             using(var db = new LocalDeleteDatabase(m_database))
-                                new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true);
+                                new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
                             
                         }
                         else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)

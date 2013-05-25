@@ -47,7 +47,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 Utility.VerifyParameters(db, m_options);
                 
-                DoRun(db, tr, false);
+                DoRun(db, tr, false, false);
                 
                 if (!m_options.Dryrun)
                     tr.Commit();
@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, System.Data.IDbTransaction transaction, bool hasVerifiedBacked)
+        public void DoRun(Database.LocalDeleteDatabase db, System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact)
         {		
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
@@ -96,7 +96,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.AddDryrunMessage("Remove --dry-run to actually delete files");
                 }
 				
-                if (!m_options.NoAutoCompact)
+                if (forceCompact || (toDelete != null && toDelete.Length > 0 && !m_options.NoAutoCompact))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
                     new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, transaction);

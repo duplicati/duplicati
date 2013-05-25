@@ -58,6 +58,16 @@ namespace Duplicati.Library.Main
         /// Default size of volumes
         /// </summary>
         private const string DEFAULT_VOLUME_SIZE = "100mb";
+        
+        /// <summary>
+        /// Default value for keep-time
+        /// </summary>
+        private const string DEFAULT_KEEP_TIME = "1M";
+
+        /// <summary>
+        /// Default value for keep-versions
+        /// </summary>
+        private const int DEFAULT_KEEP_VERSIONS = 0;
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -424,8 +434,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Size, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
                     
-                    new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong),
-                    new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
+                    new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
+                    new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong, DEFAULT_KEEP_TIME),
 #if DEBUG
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
 #endif
@@ -636,13 +646,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("keep-versions", out v);
                 if (string.IsNullOrEmpty(v))
-                    return int.MaxValue;
+                    return DEFAULT_KEEP_VERSIONS;
                 
-                int x = int.Parse(v);
-                if (x < 0)
-                    throw new Exception("Invalid count for keep-versions, must be greater than zero");
-
-                return x;
+                return Math.Max(0, int.Parse(v));
             }
         }
 
@@ -657,7 +663,7 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("keep-time", out v);
                 
                 if (string.IsNullOrEmpty(v))
-                    return new DateTime(0);
+                    v = DEFAULT_KEEP_TIME;
 
                 TimeSpan tolerance =
                     this.DisableTimeTolerance ?
@@ -687,7 +693,7 @@ namespace Duplicati.Library.Main
                     	res.Add(backups[ix]);
             
             var keepVersions = this.KeepVersions;
-            if (keepVersions < backups.Length)
+            if (keepVersions > 0 && keepVersions < backups.Length)
                 res.AddRange(backups.Skip(keepVersions));
                     
             var keepTime = this.KeepTime;
