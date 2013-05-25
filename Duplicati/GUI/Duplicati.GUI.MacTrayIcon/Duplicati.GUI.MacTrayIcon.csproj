@@ -60,17 +60,19 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="SQLite\" />
+    <Folder Include="SQLite\pinvoke\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="MainMenu.xib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\thirdparty\SQLite\pinvoke\System.Data.SQLite.dll">
+      <Link>SQLite\pinvoke\System.Data.SQLite.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

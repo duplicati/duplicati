@@ -72,15 +72,15 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="appindicator-sharp">
-      <HintPath>BuildSupport\appindicator-sharp.dll</HintPath>
+      <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="gdk-sharp">
-      <HintPath>BuildSupport\gdk-sharp.dll</HintPath>
+      <HintPath>..\..\..\thirdparty\appindicator-sharp\gdk-sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="gtk-sharp">
-      <HintPath>BuildSupport\gtk-sharp.dll</HintPath>
+      <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="MonoMac">
