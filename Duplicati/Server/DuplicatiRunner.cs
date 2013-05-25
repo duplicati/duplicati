@@ -188,7 +188,7 @@ namespace Duplicati.Server
                             {
                                 if (ProgressEvent != null)
                                     ProgressEvent(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
-                                results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator));
+                                results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator)).ToString();
                             }
                             finally
                             {

@@ -46,10 +46,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Backupmetadata.cs" />
-    <Compile Include="CommunicationStatistics.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RestoreStatistics.cs" />
     <Compile Include="Strings\Foresthash.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -111,7 +109,7 @@
     <Compile Include="IMetahash.cs" />
     <Compile Include="Controller.cs" />
     <Compile Include="Database\LocalListDatabase.cs" />
-    <Compile Include="ResultInterfaces.cs" />
+    <Compile Include="ResultClasses.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

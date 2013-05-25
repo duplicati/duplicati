@@ -20,43 +20,38 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
-	public class CreateBugReportHandler : IDisposable
+	internal class CreateBugReportHandler
 	{
         private string m_targetpath;
         private Options m_options;
-        private CommunicationStatistics m_stat;
+        private CreateLogDatabaseResults m_result;
 
-		public CreateBugReportHandler(string targetpath, Options options, CommunicationStatistics stat)
+		public CreateBugReportHandler(string targetpath, Options options, CreateLogDatabaseResults result)
 		{
             m_targetpath = targetpath;
             m_options = options;
-            m_stat = stat;
+            m_result = result;
 		}
 		
 		public void Run()
-		{
-			if (System.IO.File.Exists(m_targetpath))
-				throw new Exception(string.Format("Output file already exists, not overwriting {0}"));
+        {
+            if (System.IO.File.Exists(m_targetpath))
+                throw new Exception(string.Format("Output file already exists, not overwriting {0}"));
 				
-			if (!System.IO.File.Exists(m_options.Dbpath))
-				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+            if (!System.IO.File.Exists(m_options.Dbpath))
+                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 				
-			m_stat.LogMessage("Scrubbing filenames from database, this may take a while, please wait");
+            m_result.AddMessage("Scrubbing filenames from database, this may take a while, please wait");
 
-			System.IO.File.Copy(m_options.Dbpath, m_targetpath);
-			using(var db = new LocalBugReportDatabase(m_targetpath))
-				db.Fix();
+            System.IO.File.Copy(m_options.Dbpath, m_targetpath);
+            using(var db = new LocalBugReportDatabase(m_targetpath))
+            {
+                m_result.SetDatabase(db);
+                db.Fix();
+            }
 				
-			m_stat.LogMessage("Completed! Please examine the log table of the database to see that no filenames are accidentially left over. If you are conserned about privay, do not attach the database to an issue!!!");
+			m_result.AddMessage("Completed! Please examine the log table of the database to see that no filenames are accidentially left over. If you are conserned about privay, do not attach the database to an issue!!!");
 		}
-
-		#region IDisposable implementation
-
-		public void Dispose()
-		{
-		}
-
-		#endregion
 	}
 }
 

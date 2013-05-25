@@ -6,7 +6,7 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Database
 {
-    public partial class LocalRestoreDatabase : LocalDatabase
+    internal partial class LocalRestoreDatabase : LocalDatabase
     {
         protected string m_tempfiletable;
         protected string m_tempblocktable;
@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Database
             m_blocksize = blocksize;
         }
 
-        public void PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, CommunicationStatistics stat)
+        public void PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
 		{
 			var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main.Database
                                     sb.AppendLine(rd.GetValue(0).ToString());
 
                             DateTime actualrestoretime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
-                            stat.LogWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
+                            log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
                             cmd.Parameters.Clear();
                         }
                         

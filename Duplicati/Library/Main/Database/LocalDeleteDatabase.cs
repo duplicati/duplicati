@@ -170,7 +170,7 @@ namespace Duplicati.Library.Main.Database
 			IEnumerable<string> CompactableVolumes { get; }
 			bool ShouldReclaim { get; }
 			bool ShouldCompact { get; }
-			void ReportCompactData(CommunicationStatistics stat); 
+			void ReportCompactData(ILogWriter log); 
 		}
 		
 		private class CompactReport : ICompactReport
@@ -206,21 +206,21 @@ namespace Duplicati.Library.Main.Database
 				m_smallspace = m_smallvolumes.Select(x => x.CompressedSize).Sum();
 			}
 			
-			public void ReportCompactData(CommunicationStatistics stat)
+			public void ReportCompactData(ILogWriter log)
 			{
 				var wastepercentage = ((m_wastedspace / (float)m_wastethreshold) * 100);
-				stat.LogMessage("Found {0} fully deletable volume(s)", m_deletablevolumes);
-				stat.LogMessage("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace));
-				stat.LogMessage("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize));
+				log.AddMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
+				log.AddMessage(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
+				log.AddMessage(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
 				
 				if (m_deletablevolumes > 0)
-					stat.LogMessage("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes);
+					log.AddMessage(string.Format("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes));
 				else if (wastepercentage >= m_wastethreshold && m_wastevolumes.Count() >= 2)
-					stat.LogMessage("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold);
+					log.AddMessage(string.Format("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold));
 				else if (m_smallspace > m_volsize)
-					stat.LogMessage("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize));
+					log.AddMessage(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
 				else
-					stat.LogMessage("Not compacting");
+					log.AddMessage("Not compacting");
 			}
 			
 			public bool ShouldReclaim

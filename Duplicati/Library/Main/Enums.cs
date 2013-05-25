@@ -6,6 +6,24 @@ using System.Text;
 namespace Duplicati.Library.Main
 {
 
+    public enum BackendActionType
+    {
+        List,
+        Get,
+        Put,
+        Delete,
+        CreateFolder
+    }
+    
+    public enum BackendEventType
+    {
+        Started,
+        Progress,
+        Completed,
+        Retrying,
+        Failed
+    }
+
     /// <summary>
     /// The supported operations
     /// </summary>

@@ -5,90 +5,66 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Operation
 {    
-    internal class ListFilesHandler : IDisposable
+    internal class ListFilesHandler
     {        
-        private class ListResultFile : IListResultFile
-        {
-            public string Path { get; private set; }
-            public IEnumerable<long> Sizes { get; private set; }
-            public ListResultFile(string path, IEnumerable<long> sizes)
-            {
-                this.Path = path;
-                this.Sizes = sizes;
-            }
-        }
-        
-        private class ListResults : IListResults
-        {
-            private IEnumerable<KeyValuePair<long, DateTime>> m_filesets;
-            private IEnumerable<IListResultFile> m_files;
-			public DateTime EndTime { get; internal set; }
-			public DateTime BeginTime { get; internal set; }
-			public TimeSpan Duration { get { return EndTime - BeginTime; } }
-            
-            public ListResults(DateTime beginTime, IEnumerable<KeyValuePair<long, DateTime>> filesets, IEnumerable<IListResultFile> files)
-            {
-                m_filesets = filesets;
-                m_files = files;
-                this.BeginTime = BeginTime;
-                this.EndTime = DateTime.Now;
-            }
-            
-            public IEnumerable<KeyValuePair<long, DateTime>> Filesets { get { return m_filesets; } }
-            public IEnumerable<IListResultFile> Files { get { return m_files; } }
-        }
-    
         private string m_backendurl;
         private Options m_options;
-        private RestoreStatistics m_stat;
+        private ListResults m_result;
 
-        public ListFilesHandler(string backend, Options options, RestoreStatistics stat)
+        public ListFilesHandler(string backend, Options options, ListResults result)
         {
             m_backendurl = backend;
             m_options = options;
-            m_stat = stat;
+            m_result = result;
         }
 
-        public IListResults Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
-		{
-			var beginTime = DateTime.Now;
-			var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
+        public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
+        {
+            var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
             
-			var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
+            var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
 			
-			Library.Utility.IFilter filter = parsedfilter;
-			if (compositefilter != null && !compositefilter.Empty)
-				filter = new Library.Utility.CompositeFilterExpression(
-					((Library.Utility.CompositeFilterExpression)compositefilter).Filters
+            Library.Utility.IFilter filter = parsedfilter;
+            if (compositefilter != null && !compositefilter.Empty)
+                filter = new Library.Utility.CompositeFilterExpression(
+                    ((Library.Utility.CompositeFilterExpression)compositefilter).Filters
 					.Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
 						new KeyValuePair<bool, Duplicati.Library.Utility.IFilter>(true, parsedfilter) 
 					}),
-					false
-				);
+                    false
+                );
         
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                using (var db = new Database.LocalListDatabase(m_options.Dbpath))
-                    using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
+                using(var db = new Database.LocalListDatabase(m_options.Dbpath))
+                {
+                    m_result.SetDatabase(db);
+                    using(var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
                         if (simpleList && parsedfilter.Type != Library.Utility.FilterType.Empty)
                             filesets.TakeFirst();
-                        
-                        return new ListResults(beginTime, filesets.Times.ToArray(), 
+                            
+                        m_result.SetResult(
+                            filesets.Times.ToArray(),
                             parsedfilter.Type == Library.Utility.FilterType.Empty ? null :
-                                (from n in filesets.SelectFiles(filter)
-                                    select (IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
-                                .ToArray()
-                            );
+                                    (from n in filesets.SelectFiles(filter)
+                                        select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
+                                    .ToArray()
+                        );
+
+                        return;
                     }
+                }
                               
-			m_stat.LogWarning("No local database, accessing remote store", null);
+			m_result.AddMessage("No local database, accessing remote store");
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())
             using (var db = new Database.LocalDatabase(tmpdb, "List"))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
+                m_result.SetDatabase(db);
+                
                 var rawlist = backend.List();
                 var parsedlist = (from n in rawlist
                             let p = Volumes.VolumeBase.ParseFilename(n)
@@ -104,7 +80,10 @@ namespace Duplicati.Library.Main.Operation
                 var numberSeq = (from n in filteredList select new KeyValuePair<long, DateTime>(n.Key, n.Value.Time.ToLocalTime())).ToArray();
                 
                 if (parsedfilter.Type == Library.Utility.FilterType.Empty)
-                     return new ListResults (beginTime, numberSeq, null);
+                {
+                    m_result.SetResult(numberSeq, null);
+                    return;
+                }
                 
                 var firstEntry = filteredList[0].Value;
                 filteredList.RemoveAt(0);
@@ -114,14 +93,16 @@ namespace Duplicati.Library.Main.Operation
                 using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
                     if (simpleList)
                     {
-                        return new ListResults(beginTime, numberSeq.Take(1), 
+                        m_result.SetResult(
+                            numberSeq.Take(1),
                             (from n in rd.Files
                                   where filter.Matches(n.Path)
                                   orderby n.Path
                                   select new ListResultFile(n.Path, new long[] { n.Size }))
                                   .ToArray()
-                            );
+                        );
                             
+                        return;
                     }
                     else
                     {
@@ -164,19 +145,14 @@ namespace Duplicati.Library.Main.Operation
                         flindex++;
                     }
                 
-                return new ListResults(
-                	beginTime,
+                m_result.SetResult(
                     numberSeq,
                     from n in res
                     orderby n.Key
-                    select (IListResultFile)(new ListResultFile(n.Key, n.Value))
-                );                                            
+                    select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Key, n.Value))
+               );
             }
-
         }
 
-        public void Dispose()
-        {
-        }
     }
 }

@@ -6,7 +6,7 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Database
 {
-    public partial class LocalRestoreDatabase
+    internal partial class LocalRestoreDatabase
     {
         private class ExistingFileEnumerable : IEnumerable<IExistingFile>
         {
@@ -956,7 +956,7 @@ namespace Duplicati.Library.Main.Database
         }
 	}
 
-    public partial class LocalBlocklistUpdateDatabase
+    internal partial class LocalBlocklistUpdateDatabase
     {
         private class BlocklistsEnumerable : IEnumerable<string>
         {

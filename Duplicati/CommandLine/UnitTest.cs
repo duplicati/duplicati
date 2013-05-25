@@ -463,7 +463,7 @@ namespace Duplicati.CommandLine
         	tops["restore-path"] = tempfolder;
             using (new Timer("Restore of " + source))
                 using(var i = new Duplicati.Library.Main.Controller(target, tops))
-                    Log.WriteMessage(i.Restore(null ), LogMessageType.Information);
+                    Log.WriteMessage(i.Restore(null).ToString(), LogMessageType.Information);
         }
 
         private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> options, string[] files)
@@ -472,7 +472,7 @@ namespace Duplicati.CommandLine
         	tops["restore-path"] = tempfolder;
             using (new Timer("Partial restore of " + source))
                 using(var i = new Duplicati.Library.Main.Controller(target, tops))
-                    Log.WriteMessage(i.Restore(files), LogMessageType.Information);
+                    Log.WriteMessage(i.Restore(files).ToString(), LogMessageType.Information);
         }
 
         /// <summary>

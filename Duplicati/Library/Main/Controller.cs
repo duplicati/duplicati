@@ -70,118 +70,182 @@ namespace Duplicati.Library.Main
             m_options = new Options(options);
         }
 
-        public IBackupResults Backup(string[] sources, IFilter filter = null)
-        {
-            CommunicationStatistics stat = new CommunicationStatistics(OperationMode.Backup);
-            SetupCommonOptions(stat, ref sources);
+        public Duplicati.Library.Interface.IBackupResults Backup(string[] sources, IFilter filter = null)
+		{
+            return RunAction(new BackupResults(), ref sources, (result) => {
+            
+				if (sources == null || sources.Length == 0)
+					throw new Exception(Strings.Controller.NoSourceFoldersError);
 
-            using (new Logging.Timer("Backup from " + string.Join(System.IO.Path.PathSeparator.ToString(), sources) + " to " + m_backend))
-            {
-                if (sources == null || sources.Length == 0)
-                    throw new Exception(Strings.Controller.NoSourceFoldersError);
-
-                //Make sure they all have the same format and exist
-                for (int i = 0; i < sources.Length; i++)
-                {
-                	string fp;
-                	try
-                	{
-                		fp = System.IO.Path.GetFullPath(sources[i]);
-                	}
-                	catch (Exception ex)
-                	{
-                		throw new ArgumentException(string.Format(Strings.Controller.InvalidPathError, sources[i], ex.Message), ex);
-                	}
+				//Make sure they all have the same format and exist
+				for(int i = 0; i < sources.Length; i++)
+				{
+					string fp;
+					try
+					{
+						fp = System.IO.Path.GetFullPath(sources[i]);
+					}
+					catch (Exception ex)
+					{
+						throw new ArgumentException(string.Format(Strings.Controller.InvalidPathError, sources[i], ex.Message), ex);
+					}
                 	
-                    sources[i] = Library.Utility.Utility.AppendDirSeparator(fp);
+					sources[i] = Library.Utility.Utility.AppendDirSeparator(fp);
 
-                    if (!System.IO.Directory.Exists(sources[i]) && !m_options.AllowMissingSourceFolders)
-                        throw new System.IO.IOException(String.Format(Strings.Controller.SourceFolderIsMissingError, sources[i]));
-                }
+					if (!System.IO.Directory.Exists(sources[i]) && !m_options.AllowMissingSourceFolders)
+						throw new System.IO.IOException(String.Format(Strings.Controller.SourceFolderIsMissingError, sources[i]));
+				}
 
-                //Sanity check for duplicate folders and multiple inclusions of the same folder
+				//Sanity check for duplicate folders and multiple inclusions of the same folder
                 
-                //We could automatically fix this by excluding multiple copies of the same folder
-                // and remove the longest path of matching subfolders,
-                // but really the user should clean up the input
-                for (int i = 0; i < sources.Length - 1; i++)
-                {
-                    for (int j = i + 1; j < sources.Length; j++)
-                        if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-                            throw new Exception(string.Format(Strings.Controller.SourceDirIsIncludedMultipleTimesError, sources[i]));
-                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-                            throw new Exception(string.Format(Strings.Controller.SourceDirsAreRelatedError, sources[i], sources[j]));
-                }
+				//We could automatically fix this by excluding multiple copies of the same folder
+				// and remove the longest path of matching subfolders,
+				// but really the user should clean up the input
+				for(int i = 0; i < sources.Length - 1; i++)
+				{
+					for(int j = i + 1; j < sources.Length; j++)
+						if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+							throw new Exception(string.Format(Strings.Controller.SourceDirIsIncludedMultipleTimesError, sources[i]));
+						else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+							throw new Exception(string.Format(Strings.Controller.SourceDirsAreRelatedError, sources[i], sources[j]));
+				}
 
-                using (var h = new Operation.BackupHandler(m_backend, m_options, stat))
-                    return h.Run(sources, filter);                    
-            }
+                using(var h = new Operation.BackupHandler(m_backend, m_options, result))
+                    h.Run(sources, filter);
+            });
         }
 
-        public string Restore(string[] paths, Library.Utility.IFilter filter = null)
+        public Library.Interface.IRestoreResults Restore(string[] paths, Library.Utility.IFilter filter = null)
+		{
+            return RunAction(new RestoreResults(), ref paths, (result) => {
+    			new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
+            });
+        }
+
+        public Duplicati.Library.Interface.IRestoreControlFilesResults RestoreControlFiles(string target)
         {
-            var rs = new RestoreStatistics(OperationMode.Restore);
-            SetupCommonOptions(rs);
-
-            using (var h = new Operation.RestoreHandler(m_backend, m_options, rs))
-                h.Run(paths, filter);
-            return rs.ToString();
+            var t = new string[] { target };
+            
+            return RunAction(new RestoreControlFilesResults(), ref t, (result) => {
+                new Operation.RestoreControlFilesHandler(m_backend, m_options, t[0], result).Run();
+            });
         }
 
-        public string RestoreControlFiles(string target)
+        public Duplicati.Library.Interface.IDeleteResults Delete()
+		{
+            return RunAction(new DeleteResults(), (result) => {
+    			new Operation.DeleteHandler(m_backend, m_options, result).Run();
+            });
+        }
+
+        public Duplicati.Library.Interface.IRepairResults Repair()
         {
-            var rs = new RestoreStatistics(OperationMode.RestoreControlfiles);
-            SetupCommonOptions(rs);
-
-            using (var handler = new Operation.RestoreControlFilesHandler(m_backend, m_options, rs, target))
-                handler.Run();
-
-            return rs.ToString();
+            return RunAction(new RepairResults(), (result) => {
+                new Operation.RepairHandler(m_backend, m_options, result).Run();
+            });
         }
 
-        public IDeleteResults Delete()
-        {
-            var rs = new RestoreStatistics(OperationMode.Delete);
-            SetupCommonOptions(rs);
-
-            using (var handler = new Operation.DeleteHandler(m_backend, m_options, rs))
-                return handler.Run();
-        }
-
-        public string Repair()
-        {
-            var rs = new RestoreStatistics(OperationMode.Repair);
-            SetupCommonOptions(rs);
-
-            using (var handler = new Operation.RepairHandler(m_backend, m_options, rs))
-                handler.Run();
-
-            return rs.ToString();
-        }
-
-        public IListResults List (string filter = null)
+        public Duplicati.Library.Interface.IListResults List (string filter = null)
         {
             return List(filter == null ? null : new string[] { filter });
         }
         
-        public IListResults List(IEnumerable<string> filter)
+        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filter)
+		{
+            return RunAction(new ListResults(), (result) => {
+    			new Operation.ListFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+        
+        public Duplicati.Library.Interface.ICompactResults Compact()
         {
-            var rs = new RestoreStatistics(OperationMode.List);
-            SetupCommonOptions(rs);
-
-            using (var handler = new Operation.ListFilesHandler(m_backend, m_options, rs))
-                return handler.Run(filter);
+            return RunAction(new CompactResults(), (result) => {
+                new Operation.CompactHandler(m_backend, m_options, result).Run();
+            });
+        }
+        
+        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath)
+        {
+            var t = new string[] { string.IsNullOrEmpty(targetpath) ? m_options.Dbpath : targetpath };
+            
+            return RunAction(new RecreateDatabaseResults(), ref t, (result) => {
+                using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
+                    h.Run(t[0]);
+            });
         }
 
-        private void SetupCommonOptions(CommunicationStatistics stats)
+        public Duplicati.Library.Interface.ICreateLogDatabaseResults CreateLogDatabase(string targetpath)
         {
-            string[] tmp = null;
-            SetupCommonOptions(stats, ref tmp);
+            var t = new string[] { targetpath };
+            
+            return RunAction(new CreateLogDatabaseResults(), ref t, (result) => {
+                new Operation.CreateBugReportHandler(t[0], m_options, result).Run();
+            });
         }
-
-        private void SetupCommonOptions(CommunicationStatistics stats, ref string[] paths)
+        
+        private T RunAction<T>(T result, Action<T> method)
+            where T : ISetCommonOptions
         {
-            m_options.MainAction = stats.OperationMode;
+            var tmp = new string[0];
+            return RunAction<T>(result, ref tmp, method);
+        }
+                
+        private T RunAction<T>(T result, ref string[] paths, Action<T> method)
+            where T : ISetCommonOptions
+		{
+			try
+			{
+                using(new Logging.Timer(string.Format("Running {0} took", result.MainOperation)))
+                {
+                    SetupCommonOptions(result, ref paths);
+    				OperationRunning(true);
+    				
+                    method(result);
+                    
+                    result.EndTime = DateTime.Now;
+                    result.SetDatabase(null);
+    
+    				OnOperationComplete(result);
+    				return result;
+                }
+			}
+			catch(Exception ex)
+			{
+				OnOperationComplete(ex);
+				throw;
+			}
+		}
+		
+		private void OnOperationComplete(object result)
+		{
+            if (m_options != null && m_options.LoadedModules != null)
+            {
+                foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+                    if (mx.Key && mx.Value is Duplicati.Library.Interface.IGenericCallbackModule)
+                        try { ((Duplicati.Library.Interface.IGenericCallbackModule)mx.Value).OnFinish(result); }
+                        catch (Exception ex) { Logging.Log.WriteMessage(string.Format("OnFinish callback {0} failed: {1}", mx.Key, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex); }
+
+                foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+                    if (mx.Key && mx.Value is IDisposable)
+                        try { ((IDisposable)mx.Value).Dispose(); }
+                        catch (Exception ex) { Logging.Log.WriteMessage(string.Format("Dispose for {0} failed: {1}", mx.Key, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex); }
+
+                m_options.LoadedModules.Clear();
+                OperationRunning(false);
+            }
+
+            if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
+            {
+                Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
+                Logging.Log.CurrentLog = null;
+                sl.Dispose();
+                m_hasSetLogging = false;
+            }		
+		}
+
+        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths)
+        {
+            m_options.MainAction = result.MainOperation;
             
             switch (m_options.MainAction)
             {
@@ -206,7 +270,7 @@ namespace Duplicati.Library.Main
                 {
                     mx.Value.Configure(m_options.RawOptions);
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
-                        ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(stats.OperationMode.ToString(), ref m_backend, ref paths);
+                        ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
             OperationRunning(true);
@@ -221,11 +285,11 @@ namespace Duplicati.Library.Main
                 Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
             }
 
-            if (stats != null)
+            if (result != null)
             {
-                stats.VerboseErrors = m_options.DebugOutput;
-                stats.VerboseRetryErrors = m_options.VerboseRetryErrors;
-                stats.QuietConsole = m_options.QuietConsole;
+                result.VerboseErrors = m_options.DebugOutput;
+                result.VerboseRetryErrors = m_options.VerboseRetryErrors;
+                result.QuietConsole = m_options.QuietConsole;
             }
 
             if (m_options.HasTempDir)
@@ -237,7 +301,7 @@ namespace Duplicati.Library.Main
             if (string.IsNullOrEmpty(m_options.Dbpath))
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
-            ValidateOptions(stats);
+            ValidateOptions(result);
 
             Library.Logging.Log.WriteMessage(string.Format(Strings.Controller.StartingOperationMessage, m_options.MainAction), Logging.LogMessageType.Information);
         }
@@ -249,10 +313,10 @@ namespace Duplicati.Library.Main
         /// <param name="options">The commandline options given</param>
         /// <param name="backend">The backend url</param>
         /// <param name="stats">The statistics into which warnings are written</param>
-        private void ValidateOptions(CommunicationStatistics stats)
+        private void ValidateOptions(ILogWriter log)
         {
             //No point in going through with this if we can't report
-            if (stats == null)
+            if (log == null)
                 return;
 
             //Keep a list of all supplied options
@@ -303,7 +367,7 @@ namespace Duplicati.Library.Main
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
                         if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
-                            stats.LogWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, a.Name), null);
+                            log.AddWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, a.Name), null);
 
                         supportedOptions[a.Name] = a;
 
@@ -311,7 +375,7 @@ namespace Duplicati.Library.Main
                             foreach (string s in a.Aliases)
                             {
                                 if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
-                                    stats.LogWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, s), null);
+                                    log.AddWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, s), null);
 
                                 supportedOptions[s] = a;
                             }
@@ -330,7 +394,7 @@ namespace Duplicati.Library.Main
                                     if (a.Name != s)
                                         optname += " (" + s + ")";
 
-                                    stats.LogWarning(string.Format(Strings.Controller.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage), null);
+                                    log.AddWarning(string.Format(Strings.Controller.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage), null);
                                 }
 
                         }
@@ -341,9 +405,9 @@ namespace Duplicati.Library.Main
             foreach (string s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
                     if (disabledModuleOptions.ContainsKey(s))
-                        stats.LogWarning(string.Format(Strings.Controller.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]), null);
+                        log.AddWarning(string.Format(Strings.Controller.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]), null);
                     else
-                        stats.LogWarning(string.Format(Strings.Controller.UnsupportedOptionWarning, s), null);
+                        log.AddWarning(string.Format(Strings.Controller.UnsupportedOptionWarning, s), null);
 
             //Look at the value supplied for each argument and see if is valid according to its type
             foreach (string s in ropts.Keys)
@@ -353,7 +417,7 @@ namespace Duplicati.Library.Main
                 {
                     string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
                     if (validationMessage != null)
-                        stats.LogWarning(validationMessage, null);
+                        log.AddWarning(validationMessage, null);
                 }
             }
 
@@ -430,58 +494,8 @@ namespace Duplicati.Library.Main
 
         public void Dispose()
         {
-            if (m_options != null && m_options.LoadedModules != null)
-            {
-                foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is Duplicati.Library.Interface.IGenericCallbackModule)
-                        try { ((Duplicati.Library.Interface.IGenericCallbackModule)mx.Value).OnFinish(m_result); }
-                        catch (Exception ex) { Logging.Log.WriteMessage(string.Format("OnFinish callback {0} failed: {1}", mx.Key, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex); }
-
-                foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is IDisposable)
-                        try { ((IDisposable)mx.Value).Dispose(); }
-                        catch (Exception ex) { Logging.Log.WriteMessage(string.Format("Dispose for {0} failed: {1}", mx.Key, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex); }
-
-                m_options.LoadedModules.Clear();
-                OperationRunning(false);
-            }
-
-            if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
-            {
-                Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
-                Logging.Log.CurrentLog = null;
-                sl.Dispose();
-                m_hasSetLogging = false;
-            }
         }
 
         #endregion
-
-        public void Compact()
-        {
-            var stat = new CommunicationStatistics(OperationMode.Compact);
-            SetupCommonOptions(stat);
-
-            using(var h = new Operation.CompactHandler(m_backend, m_options, stat))
-                h.Run();
-        }
-        
-        public void RecreateDatabase()
-        {
-            var stat = new CommunicationStatistics(OperationMode.Repair);
-            SetupCommonOptions(stat);
-            
-            using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, stat))
-                h.Run(m_options.Dbpath);
-        }
-
-        public void CreateLogDatabase()
-        {
-            var stat = new CommunicationStatistics(OperationMode.CreateLogDb);
-            SetupCommonOptions(stat);
-            
-            using(var h = new Operation.CreateBugReportHandler(m_backend, m_options, stat))
-                h.Run();
-        }
     }
 }

@@ -7,22 +7,22 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation
 {
-    public class RecreateDatabaseHandler : IDisposable
+    internal class RecreateDatabaseHandler : IDisposable
     {
         private string m_backendurl;
         private Options m_options;
-        private CommunicationStatistics m_stat;
+        private RecreateDatabaseResults m_result;
 
         public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
-        public delegate void BlockVolumePostProcessor(string volumename, BlockVolumeReader reader);
+		public delegate void BlockVolumePostProcessor(string volumename,BlockVolumeReader reader);
 
-        public RecreateDatabaseHandler(string backendurl, Options options, CommunicationStatistics stat)
-        {
-            m_options = options;
-            m_backendurl = backendurl;
-            m_stat = stat;
-        }
-
+		public RecreateDatabaseHandler(string backendurl, Options options, RecreateDatabaseResults result)
+		{
+			m_options = options;
+			m_backendurl = backendurl;
+            m_result = result;
+		}
+        
 		/// <summary>
 		/// Run the recreate procedure
 		/// </summary>
@@ -30,13 +30,16 @@ namespace Duplicati.Library.Main.Operation
 		/// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
 		/// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
 		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void Run(string path, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
-        {
-        	if (System.IO.File.Exists(path))
-        		throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
+		public void Run(string path, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+		{
+			if (System.IO.File.Exists(path))
+				throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
 
 			using(var db = new LocalBlocklistUpdateDatabase(path, m_options.Blocksize))
-        		DoRun(db, filter, filelistfilter, blockprocessor);
+			{
+                m_result.SetDatabase(db);
+				DoRun(db, filter, filelistfilter, blockprocessor);
+			}
 		}
 		
 		/// <summary>
@@ -55,7 +58,7 @@ namespace Duplicati.Library.Main.Operation
 
             //We build a local database in steps.
             using (var restoredb = new LocalBlocklistUpdateDatabase(dbparent, m_options.Blocksize))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_stat, restoredb))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
             	var volumeIds = new Dictionary<string, long>();
 
@@ -227,7 +230,6 @@ namespace Duplicati.Library.Main.Operation
 
         public void Dispose()
         {
-            m_stat.EndTime = DateTime.Now;
         }
     }
 }

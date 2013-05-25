@@ -53,6 +53,11 @@ namespace Duplicati.Library.Main
         /// The default value for maximum number of small files
         /// </summary>
         private const long DEFAULT_SMALL_FILE_MAX_COUNT = 20;
+        
+        /// <summary>
+        /// Default size of volumes
+        /// </summary>
+        private const string DEFAULT_VOLUME_SIZE = "100mb";
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -323,7 +328,7 @@ namespace Duplicati.Library.Main
             get
             {
                 var lst = new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("volsize", CommandLineArgument.ArgumentType.Size, Strings.Options.VolsizeShort, Strings.Options.VolsizeLong, "10mb"),
+                    new CommandLineArgument("volsize", CommandLineArgument.ArgumentType.Size, Strings.Options.VolsizeShort, Strings.Options.VolsizeLong, DEFAULT_VOLUME_SIZE),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
 
                     new CommandLineArgument("control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ControlfilesShort, Strings.Options.ControlfilesLong),
@@ -448,9 +453,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                string volsize = "10mb";
-                if (m_options.ContainsKey("volsize"))
-                    volsize = m_options["volsize"];
+                string volsize;
+                m_options.TryGetValue("volsize", out volsize);
+                if (string.IsNullOrEmpty(volsize))
+                    volsize = DEFAULT_VOLUME_SIZE;
 
 #if DEBUG
                 return Math.Max(1024 * 10, Library.Utility.Sizeparser.ParseSize(volsize, "mb"));

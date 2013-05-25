@@ -7,17 +7,17 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation
 {
-    internal class RepairHandler : IDisposable
+    internal class RepairHandler
     {
         private string m_backendurl;
         private Options m_options;
-        private CommunicationStatistics m_stat;
+        private RepairResults m_result;
 
-        public RepairHandler(string backend, Options options, CommunicationStatistics stat)
+        public RepairHandler(string backend, Options options, RepairResults result)
         {
             m_backendurl = backend;
             m_options = options;
-            m_stat = stat;
+            m_result = result;
         }
 
         public void Run()
@@ -26,11 +26,12 @@ namespace Duplicati.Library.Main.Operation
 				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
         	using(var db = new LocalRepairDatabase(m_options.Dbpath))
-			using(var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
+			using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
         	{
+                m_result.SetDatabase(db);
 	        	Utility.VerifyParameters(db, m_options);
 
-	            var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db);
+	            var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
 				var buffer = new byte[m_options.Blocksize];
 				var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
 
@@ -65,12 +66,11 @@ namespace Duplicati.Library.Main.Operation
 								backend.Delete(n.File.Name);
 							}
 							else
-								m_stat.LogMessage("[Dryrun] would delete file {0}", n.File.Name);
+								m_result.AddMessage(string.Format("[Dryrun] would delete file {0}", n.File.Name));
 						}
 						catch (Exception ex)
 						{
-							m_stat.LogError(string.Format("Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message), ex);
-							db.LogMessage("error", string.Format("Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message), ex, null);
+							m_result.AddError(string.Format("Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message), ex);
 						}
 							
 					foreach(var n in tp.MissingVolumes)
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Operation
 	
 								w.Close();
 								if (m_options.Dryrun)
-									m_stat.LogMessage("[Dryrun] would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+									m_result.AddMessage(string.Format("[Dryrun] would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation
 								w.Close();
 								
 								if (m_options.Dryrun)
-									m_stat.LogMessage("[Dryrun] would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+									m_result.AddMessage(string.Format("[Dryrun] would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Main.Operation
 										}
 										catch (Exception ex)
 										{
-											m_stat.LogError(string.Format("Failed to access file: {0}", file), ex);
+											m_result.AddError(string.Format("Failed to access file: {0}", file), ex);
 										}
 									}
 									
@@ -187,18 +187,18 @@ namespace Duplicati.Library.Main.Operation
 											}
 											catch (Exception ex)
 											{
-												m_stat.LogError(string.Format("Failed to access remote file: {0}", vol.Name), ex);
+												m_result.AddError(string.Format("Failed to access remote file: {0}", vol.Name), ex);
 											}											
 										}
 									}
 									
 									if (!recovered)
 									{
-										m_stat.LogMessage("Repair cannot acquire block with hash {0} and size {1}, which is required by the following filesets: ", hash, size);
+										m_result.AddMessage(string.Format("Repair cannot acquire block with hash {0} and size {1}, which is required by the following filesets: ", hash, size));
 										foreach(var f in db.GetFilesetsUsingBlock(hash, size))
-											m_stat.LogMessage(f.Name);
+											m_result.AddMessage(f.Name);
 	
-										m_stat.LogMessage("This may be fixed by deleting the filesets and running cleanup again");
+										m_result.AddMessage("This may be fixed by deleting the filesets and running cleanup again");
 										
 										throw new Exception(string.Format("Block {0} is required for recreating the file \"{1}\". Repair not possible!!!", hash, n.Name));
 									}
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Operation
 								
 								w.Close();
 								if (m_options.Dryrun)
-									m_stat.LogMessage("[Dryrun] would upload new block file {0}, size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+									m_result.AddMessage(string.Format("[Dryrun] would upload new block file {0}, size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -220,8 +220,7 @@ namespace Duplicati.Library.Main.Operation
 						}
 						catch (Exception ex)
 						{
-							m_stat.LogError(string.Format("Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message), ex);
-							db.LogMessage("error", string.Format("Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message), ex, null);
+							m_result.AddError(string.Format("Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message), ex);
 						}
 					}
 				}
@@ -229,16 +228,5 @@ namespace Duplicati.Library.Main.Operation
 				backend.WaitForComplete(db, null);
 			}
         }
-
-        public void Dispose()
-        {
-        }
-
-		string GetBlockVolumeName(string name)
-		{
-			var e = VolumeBase.ParseFilename(name);
-			
-			return VolumeBase.GenerateFilename(RemoteVolumeType.Blocks, e.Prefix, e.Guid, e.Time, e.CompressionModule, e.EncryptionModule);
-		}
     }
 }

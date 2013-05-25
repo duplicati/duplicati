@@ -673,7 +673,7 @@ namespace Duplicati.Library.Main.Database
             return lastFilesetId;
         }
 
-        internal void UpdateChangeStatistics(Operation.BackupHandler.BackupResults results, CommunicationStatistics stat)
+        internal void UpdateChangeStatistics(BackupResults results)
         {
             using (var cmd = m_connection.CreateCommand()) 
             {
@@ -695,22 +695,22 @@ namespace Duplicati.Library.Main.Database
             }
 
             if (m_blockHashLookup != null && m_fileHashLookup != null && (m_blockHashLookup.FalsePositives > 200 || m_fileHashLookup.FalsePositives > 20))
-                stat.LogWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.FalsePositives, m_fileHashLookup.FalsePositives), null);
+                results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.FalsePositives, m_fileHashLookup.FalsePositives), null);
 
             if (m_blockHashLookup != null && m_blockHashLookup.FalsePositives > 200 && m_blockHashLookup.PrefixUsageRatio > 0.5)
-                stat.LogWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.PrefixUsageRatio * 100), null);
+                results.AddWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.PrefixUsageRatio * 100), null);
 
             if (m_fileHashLookup != null && m_fileHashLookup.FalsePositives > 20 && m_fileHashLookup.PrefixUsageRatio > 0.5)
-                stat.LogWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.PrefixUsageRatio * 100), null);
+                results.AddWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.PrefixUsageRatio * 100), null);
 
             if (m_metadataLookup != null && m_metadataLookup.FalsePositives > 200 && m_metadataLookup.PrefixUsageRatio > 0.5)
-                stat.LogWarning(string.Format("Metadata hash lookup table is too small, usage is: {0}%", m_metadataLookup.PrefixUsageRatio * 100), null);
+                results.AddWarning(string.Format("Metadata hash lookup table is too small, usage is: {0}%", m_metadataLookup.PrefixUsageRatio * 100), null);
 
             if (m_fileScantimeLookup != null && m_fileScantimeLookup.FalsePositives > 20 && m_fileScantimeLookup.PrefixUsageRatio > 0.5)
-                stat.LogWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_fileScantimeLookup.PrefixUsageRatio * 100), null);
+                results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_fileScantimeLookup.PrefixUsageRatio * 100), null);
 
             if (m_filesetLookup != null && m_filesetLookup.FalsePositives > 20 && m_filesetLookup.PrefixUsageRatio > 0.5)
-                stat.LogWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_filesetLookup.PrefixUsageRatio * 100), null);
+                results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_filesetLookup.PrefixUsageRatio * 100), null);
             
             // Good for profiling, but takes some time to calculate these stats
             if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)

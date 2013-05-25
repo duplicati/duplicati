@@ -75,6 +75,7 @@ namespace Duplicati.Library.Main
                 RemoteFilename = remotefilename;
                 Indexfile = indexfile;
                 ExceptionKillsHandler = operation != OperationType.Get;
+                Size = -1;
 
                 DoneEvent = new System.Threading.ManualResetEvent(false);
             }
@@ -118,7 +119,7 @@ namespace Duplicati.Library.Main
                 return (TempFile)this.Result;
             }
 
-            public void Encrypt(Library.Interface.IEncryption encryption, CommunicationStatistics stat)
+            public void Encrypt(Library.Interface.IEncryption encryption, IBackendWriter stat)
             {
                 if (encryption != null && !this.Encrypted)
                 {
@@ -150,7 +151,7 @@ namespace Duplicati.Library.Main
                 return false;
             }
             
-            public void DeleteLocalFile(CommunicationStatistics stat)
+            public void DeleteLocalFile(IBackendWriter stat)
             {
             	try 
             	{ 
@@ -158,9 +159,32 @@ namespace Duplicati.Library.Main
             	}
             	catch (Exception ex) 
             	{ 
-            		stat.LogError(string.Format("Failed to delete local file \"{0}\": {1}", this.LocalFilename, ex.Message), ex); 
+            		stat.AddError(string.Format("Failed to delete local file \"{0}\": {1}", this.LocalFilename, ex.Message), ex); 
             	}
             }
+            
+            public BackendActionType BackendActionType
+            { 
+                get
+                {
+                    switch (this.Operation)
+                    {
+                        case OperationType.Get:
+                            return BackendActionType.Get;
+                        case OperationType.Put:
+                            return BackendActionType.Put;
+                        case OperationType.Delete:
+                            return BackendActionType.Delete;
+                        case OperationType.List:
+                            return BackendActionType.List;
+                        case OperationType.CreateFolder:
+                            return BackendActionType.CreateFolder;
+                        default:
+                            throw new Exception(string.Format("Unexpected operation type: {0}", this.Operation));
+                    }
+                }
+            }
+            
         }
         
         private class DatabaseCollector
@@ -169,15 +193,9 @@ namespace Duplicati.Library.Main
 	        private LocalDatabase m_database;
 	        private System.Threading.Thread m_callerThread;
 	        private List<IDbEntry> m_dbqueue;
-	        private CommunicationStatistics m_stats;
+	        private IBackendWriter m_stats;
 	        
 	        private interface IDbEntry { }
-	        private class DbLogMessage : IDbEntry
-	        {
-	        	public string Type;
-	        	public string Message;
-	        	public Exception Exception;
-	        }
 	        
 	        private class DbOperation : IDbEntry
 	        {
@@ -194,7 +212,7 @@ namespace Duplicati.Library.Main
 	        	public string Hash;
 	        }
 	        
-	        public DatabaseCollector(LocalDatabase database, CommunicationStatistics stats)
+	        public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
 	        {
 	        	m_database = database;
 	        	m_stats = stats;
@@ -203,11 +221,6 @@ namespace Duplicati.Library.Main
 	        		m_callerThread = System.Threading.Thread.CurrentThread;
 	        }
 
-	        public void LogDbMessage(string type, string msg, Exception ex)
-	        {
-	        	lock(m_dbqueuelock)
-	    			m_dbqueue.Add(new DbLogMessage() { Type = type, Message = msg, Exception = ex });
-	        }
 	
 	        public void LogDbOperation(string action, string file, string result)
 	        {
@@ -243,14 +256,12 @@ namespace Duplicati.Library.Main
 	        	
 	        	//As we replace the list, we can now freely access the elements without locking
 	        	foreach(var e in entries)
-	        		if (e is DbLogMessage)
-	        			db.LogMessage(((DbLogMessage)e).Type, ((DbLogMessage)e).Message, ((DbLogMessage)e).Exception, transaction);
-	        		else if (e is DbOperation)
+	        		if (e is DbOperation)
 	        			db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
 	        		else if (e is DbUpdate)
 	        			db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
 	        		else if (e != null)
-	        			m_stats.LogError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
+	        			m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
 	        			
 	        	return true;
 	        }
@@ -262,18 +273,18 @@ namespace Duplicati.Library.Main
         private Library.Interface.IEncryption m_encryption;
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
-        private CommunicationStatistics m_stats;
+        private IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
 		private DatabaseCollector m_db;
                 
         public string BackendUrl { get { return m_backendurl; } }
 
-        public BackendManager(string backendurl, Options options, CommunicationStatistics stats, LocalDatabase database)
+        public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database)
         {
             m_options = options;
             m_backendurl = backendurl;
-            m_stats = stats;
-            m_db = new DatabaseCollector(database, stats);
+            m_statwriter = statwriter;
+            m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
             if (m_backend == null)
@@ -292,7 +303,7 @@ namespace Duplicati.Library.Main
             m_thread.IsBackground = true;
             m_thread.Start();
         }
-
+        
         private void ThreadRun()
         {
             while (!m_queue.Completed)
@@ -345,8 +356,8 @@ namespace Duplicati.Library.Main
                         {
                             retries++;
                             lastException = ex;
-                            m_stats.LogRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
-                            m_db.LogDbMessage("warning", string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
+                            m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
+                            m_statwriter.SendEvent(item.BackendActionType, retries < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
 							bool recovered = false;
                             if (ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
@@ -359,14 +370,14 @@ namespace Duplicati.Library.Main
 	                            }
 	                            catch(Exception dex) 
 	                            { 
-	                            	m_db.LogDbMessage("warning", string.Format("Failed to create folder: {0}", ex.Message), dex); 
+	                            	m_statwriter.AddWarning(string.Format("Failed to create folder: {0}", ex.Message), dex); 
 	                            }
                             }
                             
                             if (!recovered)
                             {
 	                            try { m_backend.Dispose(); }
-	                            catch(Exception dex) { m_db.LogDbMessage("warning", string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
+	                            catch(Exception dex) { m_statwriter.AddWarning(string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
 	
 	                            m_backend = null;
 	                            
@@ -382,7 +393,7 @@ namespace Duplicati.Library.Main
                     {
                     	item.Exception = lastException;
                         if (item.Operation == OperationType.Put)
-                        	item.DeleteLocalFile(m_stats);
+                        	item.DeleteLocalFile(m_statwriter);
                         	
                         if (item.ExceptionKillsHandler)
                         {
@@ -406,7 +417,7 @@ namespace Duplicati.Library.Main
 
         private void DoPut(FileEntryItem item)
         {
-            item.Encrypt(m_encryption, m_stats);
+            item.Encrypt(m_encryption, m_statwriter);
             if (item.UpdateHashAndSize(m_options))
             	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
@@ -417,10 +428,8 @@ namespace Duplicati.Library.Main
                 item.Indexfile = null;
             }            
 
-            m_stats.AddNumberOfRemoteCalls(1);
             m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Uploading file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(item.Size));
+            m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
@@ -434,8 +443,7 @@ namespace Duplicati.Library.Main
 
 			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
 			
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Uploaded file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(item.Size));
+            m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
             if (m_options.ListVerifyUploads)
             {
@@ -446,19 +454,16 @@ namespace Duplicati.Library.Main
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }
 
-			item.DeleteLocalFile(m_stats);
-            m_stats.AddBytesUploaded(item.Size);
+			item.DeleteLocalFile(m_statwriter);
         }
 
         private void DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Downloading file {0} with expected size {1}", item.RemoteFilename, item.Size > 0 ? Library.Utility.Utility.FormatSizeString(item.Size) : "unknown");
+            m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             try
             {
-                m_stats.AddNumberOfRemoteCalls(1);
                 tmpfile = new Library.Utility.TempFile();
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
@@ -470,10 +475,8 @@ namespace Duplicati.Library.Main
                 else
                     m_backend.Get(item.RemoteFilename, tmpfile);
                 
-                m_stats.AddBytesDownloaded(new System.IO.FileInfo(tmpfile).Length);
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
-	            if (!m_options.QuietConsole)
-	            	m_stats.LogMessage("Downloaded file {0} with size {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(tmpfile).Length));
+                m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
                 if (!m_options.SkipFileHashChecks)
                 {
@@ -531,9 +534,7 @@ namespace Duplicati.Library.Main
 
         private void DoList(FileEntryItem item)
         {
-            m_stats.AddNumberOfRemoteCalls(1);
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Listing remote folder");
+            m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Started, null, -1);
 
             var r = m_backend.List();
 
@@ -553,15 +554,12 @@ namespace Duplicati.Library.Main
             m_db.LogDbOperation("list", "", sb.ToString());
             item.Result = r;
 
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Listed remote folder, found {0} entries", count);
+            m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
         }
 
         private void DoDelete(FileEntryItem item)
         {
-            m_stats.AddNumberOfRemoteCalls(1);
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Deleting file {0}", item.RemoteFilename);
+            m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
             try
@@ -579,16 +577,12 @@ namespace Duplicati.Library.Main
             }
             
             m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
-
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Deleted file {0}", item.RemoteFilename);
+            m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
         }
         
         private void DoCreateFolder(FileEntryItem item)
         {
-            m_stats.AddNumberOfRemoteCalls(1);
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Creating target folder");
+            m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
 
             string result = null;
             try
@@ -605,8 +599,7 @@ namespace Duplicati.Library.Main
                 m_db.LogDbOperation("createfolder", item.RemoteFilename, result);
             }
             
-            if (!m_options.QuietConsole)
-            	m_stats.LogMessage("Created target folder");
+            m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1);
         }
 
         public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
@@ -786,7 +779,7 @@ namespace Duplicati.Library.Main
             }
             
         	try { m_db.FlushDbMessages(true); }
-        	catch (Exception ex) { m_stats.LogError(string.Format("Backend Shutdown error: {0}", ex.Message), ex); }
+        	catch (Exception ex) { m_statwriter.AddError(string.Format("Backend Shutdown error: {0}", ex.Message), ex); }
         }
     }
 }

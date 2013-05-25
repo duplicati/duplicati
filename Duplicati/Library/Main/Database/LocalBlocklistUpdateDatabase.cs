@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
-    public partial class LocalBlocklistUpdateDatabase : LocalRestoreDatabase
+    internal partial class LocalBlocklistUpdateDatabase : LocalRestoreDatabase
     {
         protected string m_tempblockvolumetable;
         protected string m_temphashtable;

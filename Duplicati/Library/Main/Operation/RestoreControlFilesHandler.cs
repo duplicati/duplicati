@@ -5,27 +5,28 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Operation
 {
-    internal class RestoreControlFilesHandler : IDisposable
+    internal class RestoreControlFilesHandler
     {
         private Options m_options;
-        private RestoreStatistics m_stat;
         private string m_backendurl;
         private string m_target;
+        private RestoreControlFilesResults m_result;
 
-        public RestoreControlFilesHandler(string backendurl, Options options, RestoreStatistics stat, string target)
+        public RestoreControlFilesHandler(string backendurl, Options options, string target, RestoreControlFilesResults result)
         {
             m_options = options;
-            m_stat = stat;
             m_target = target;
             m_backendurl = backendurl;
+            m_result = result;
         }
 
         public void Run()
         {
             using (var tmpdb = new Library.Utility.TempFile())
             using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles"))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_stat, db))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
+                m_result.SetDatabase(db);
             	try
             	{
 	                var files = from file in backend.List()
@@ -68,10 +69,6 @@ namespace Duplicati.Library.Main.Operation
 	        		backend.WaitForComplete(db, null);
 	        	}
             }
-        }
-
-        public void Dispose()
-        {
         }
     }
 }

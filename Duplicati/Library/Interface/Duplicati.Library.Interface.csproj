@@ -70,8 +70,8 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="IBackendInteraction.cs" />
     <Compile Include="IGenericCallbackModule.cs" />
+    <Compile Include="ResultInterfaces.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\CommandLineArgument.resx">

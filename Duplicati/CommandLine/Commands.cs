@@ -167,7 +167,7 @@ namespace Duplicati.CommandLine
             args.RemoveAt(0);
 			var dirs = args.ToArray();
 
-            Library.Main.IBackupResults result;
+            Library.Interface.IBackupResults result;
             using(var i = new Library.Main.Controller(backend, options))
                 result = i.Backup(dirs, filter);
 
@@ -179,13 +179,13 @@ namespace Duplicati.CommandLine
                 return 50;
 
             //Completed with warnings = 2
-            /*if (result.Warnings > 0)
+            if (result.Warnings.Count() > 0 || result.Errors.Count() > 0)
                 return 2;
 
             //Success, but no upload = 1
-            if (result.BytesUploaded == 0)
+            if (result.BackendStatistics.BytesUploaded == 0)
                 return 1;
-            */
+            
             return 0;
         }
                 
@@ -214,22 +214,22 @@ namespace Duplicati.CommandLine
                 
         public static int RecreateDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
+            if (args.Count != 1 && args.Count != 2)
+                return PrintWrongNumberOfArguments(args, 2);
                 
             using(var i = new Library.Main.Controller(args[0], options))
-                i.RecreateDatabase();
+                i.RecreateDatabase(args.Count == 1 ? null : args[1]);
 
             return 0;
         }
 
         public static int CreateBugreportDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            if (args.Count != 1)
-                return PrintWrongNumberOfArguments(args, 1);
+            if (args.Count != 2)
+                return PrintWrongNumberOfArguments(args, 2);
                 
             using(var i = new Library.Main.Controller(args[0], options))
-                i.CreateLogDatabase();
+                i.CreateLogDatabase(args[1]);
 
             return 0;
         }

@@ -7,7 +7,7 @@ using System.IO;
 namespace Duplicati.Library.Main.Database
 {
     public class LocalDatabase : IDisposable
-    {
+    {    	
         protected readonly System.Data.IDbConnection m_connection;
         protected readonly long m_operationid = -1;
 
@@ -21,12 +21,16 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
 
+        private BasicResults m_result;
+
         public const long FOLDER_BLOCKSET_ID = -100;
         public const long SYMLINK_BLOCKSET_ID = -200;
 
         public DateTime OperationTimestamp { get; private set; }
 
         internal System.Data.IDbConnection Connection { get { return m_connection; } }
+        
+        public bool IsDisposed { get; private set; }
 
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
@@ -114,6 +118,11 @@ namespace Duplicati.Library.Main.Database
 			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
             m_createremotevolumeCommand.AddParameters(4);		
 		}
+
+        internal void SetResult(BasicResults result)
+        {
+            m_result = result;
+        }
 		
 		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
         {
@@ -791,6 +800,15 @@ namespace Duplicati.Library.Main.Database
         
         public virtual void Dispose()
         {
+            if (IsDisposed)
+                return;
+            IsDisposed = true;
+            
+            if (m_connection != null && m_result != null)
+            {
+                m_result.FlushLog();
+                LogMessage("Result", Library.Utility.Utility.PrintSerializeObject(m_result, (StringBuilder)null, x => !typeof(System.Collections.IEnumerable).IsAssignableFrom(x.PropertyType)).ToString(), null, null);
+            }
         }
     }
 }

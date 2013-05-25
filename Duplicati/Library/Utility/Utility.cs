@@ -895,43 +895,40 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The serialized object</returns>
         /// <param name="item">The object to serialize</param>
-		public static void PrintSerializeObject(object item, System.IO.TextWriter writer)
-		{
-			var rs = item.ToString();
-			// If ToString() gives the name, the default ToString() is called, which is of no use
-			if (rs == item.GetType().FullName)
-			{
-				foreach(var p in item.GetType().GetProperties())
-					if (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string))
-					{
-						Console.WriteLine("{0}: {1}", p.Name, p.GetValue(item, null));
-					}
-					else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
-					{
-						var enumerable = (System.Collections.IEnumerable)p.GetValue(item, null);
-						if (enumerable != null)
-						{
-							var enumerator = enumerable.GetEnumerator();
-							if (enumerator != null)
-							{
-								writer.Write("{0}: [", p.Name);
-								if (enumerator.MoveNext())
-								{
-									writer.Write(enumerator.Current);
-									while (enumerator.MoveNext())
-									{
-										writer.Write(", ");
-										writer.Write(enumerator.Current);
-									}
-								}
-								writer.WriteLine("]");
-							}
-						}
-					}
-			}
-			else
-				writer.WriteLine(rs);
-				
+		public static void PrintSerializeObject(object item, System.IO.TextWriter writer, Func<System.Reflection.PropertyInfo, bool> filter = null)
+        {
+            foreach(var p in item.GetType().GetProperties())
+            {
+                if (filter != null && !filter(p))
+                    continue;
+                    
+                if (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string))
+                {
+                    writer.WriteLine("{0}: {1}", p.Name, p.GetValue(item, null));
+                }
+                else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
+                {
+                    var enumerable = (System.Collections.IEnumerable)p.GetValue(item, null);
+                    if (enumerable != null)
+                    {
+                        var enumerator = enumerable.GetEnumerator();
+                        if (enumerator != null)
+                        {
+                            writer.Write("{0}: [", p.Name);
+                            if (enumerator.MoveNext())
+                            {
+                                writer.Write(enumerator.Current);
+                                while (enumerator.MoveNext())
+                                {
+                                    writer.Write(", ");
+                                    writer.Write(enumerator.Current);
+                                }
+                            }
+                            writer.WriteLine("]");
+                        }
+                    }
+                }
+            }
 			writer.Flush();
 		}
         /// <summary>
@@ -939,7 +936,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The serialized object</returns>
         /// <param name="item">The object to serialize</param>
-		public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null)
+		public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null, Func<System.Reflection.PropertyInfo, bool> filter = null)
 		{
 			sb = sb ?? new StringBuilder();
 			using(var sw = new System.IO.StringWriter(sb))
