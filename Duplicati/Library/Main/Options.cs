@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "volsize",
+                    "dblock-size",
                     "disable-autocreate-folder",
                     "disable-filetime-check",
                     "disable-time-tolerance",
@@ -337,7 +337,7 @@ namespace Duplicati.Library.Main
             get
             {
                 var lst = new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("volsize", CommandLineArgument.ArgumentType.Size, Strings.Options.VolsizeShort, Strings.Options.VolsizeLong, DEFAULT_VOLUME_SIZE),
+                    new CommandLineArgument("dblock-size", CommandLineArgument.ArgumentType.Size, Strings.Options.DblocksizeShort, Strings.Options.DblocksizeLong, DEFAULT_VOLUME_SIZE),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
 
                     new CommandLineArgument("control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ControlfilesShort, Strings.Options.ControlfilesLong),
@@ -462,7 +462,7 @@ namespace Duplicati.Library.Main
             get
             {
                 string volsize;
-                m_options.TryGetValue("volsize", out volsize);
+                m_options.TryGetValue("dblock-size", out volsize);
                 if (string.IsNullOrEmpty(volsize))
                     volsize = DEFAULT_VOLUME_SIZE;
 

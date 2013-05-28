@@ -228,10 +228,10 @@
   <data name="ThreadpriorityShort" xml:space="preserve">
     <value>Thread priority</value>
   </data>
-  <data name="VolsizeLong" xml:space="preserve">
-    <value>This option can change the default volume size. Changing the size can be usefull if the backend has a limit on the size of each individual file</value>
+  <data name="DblocksizeLong" xml:space="preserve">
+    <value>This option can change the maximum size of dblock files. Changing the size can be useful if the backend has a limit on the size of each individual file</value>
   </data>
-  <data name="VolsizeShort" xml:space="preserve">
+  <data name="DblocksizeShort" xml:space="preserve">
     <value>Limit the size of the volumes</value>
   </data>
   <data name="DisableStreamingLong" xml:space="preserve">

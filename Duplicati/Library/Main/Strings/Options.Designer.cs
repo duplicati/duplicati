@@ -304,6 +304,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option can change the maximum size of dblock files. Changing the size can be useful if the backend has a limit on the size of each individual file.
+        /// </summary>
+        internal static string DblocksizeLong {
+            get {
+                return ResourceManager.GetString("DblocksizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Limit the size of the volumes.
+        /// </summary>
+        internal static string DblocksizeShort {
+            get {
+                return ResourceManager.GetString("DblocksizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Path to the file containing the local cache of the remote file database.
         /// </summary>
         internal static string DbpathLong {
@@ -1317,24 +1335,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string VersionShort {
             get {
                 return ResourceManager.GetString("VersionShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This option can change the default volume size. Changing the size can be usefull if the backend has a limit on the size of each individual file.
-        /// </summary>
-        internal static string VolsizeLong {
-            get {
-                return ResourceManager.GetString("VolsizeLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Limit the size of the volumes.
-        /// </summary>
-        internal static string VolsizeShort {
-            get {
-                return ResourceManager.GetString("VolsizeShort", resourceCulture);
             }
         }
         
