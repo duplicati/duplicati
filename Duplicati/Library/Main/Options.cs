@@ -371,8 +371,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
-                    new CommandLineArgument("max-upload-pr-second", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxuploadprsecondShort, Strings.Options.MaxuploadprsecondLong),
-                    new CommandLineArgument("max-download-pr-second", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxdownloadprsecondShort, Strings.Options.MaxdownloadprsecondLong),
+                    new CommandLineArgument("upload-throttle", CommandLineArgument.ArgumentType.Size, Strings.Options.UploadthrottleShort, Strings.Options.UploadthrottleLong, "0"),
+                    new CommandLineArgument("download-throttle", CommandLineArgument.ArgumentType.Size, Strings.Options.DownloadthrottleShort, Strings.Options.DownloadthrottleLong, "0"),
                     new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
                     
                     new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
@@ -848,18 +848,22 @@ namespace Duplicati.Library.Main
             get
             {
                 lock(m_lock)
-                    if (!m_options.ContainsKey("max-upload-pr-second") || string.IsNullOrEmpty(m_options["max-upload-pr-second"]))
+                {
+                    string v;
+                    m_options.TryGetValue("upload-throttle", out v);
+                    if (string.IsNullOrEmpty(v))
                         return 0;
                     else
-                        return Library.Utility.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
+                        return Library.Utility.Sizeparser.ParseSize(v, "kb");
+                }
             }
             set
             {
                 lock (m_lock)
                     if (value <= 0)
-                        m_options["max-upload-pr-second"] = "";
+                        m_options["upload-throttle"] = "";
                     else
-                        m_options["max-upload-pr-second"] = value.ToString() + "b";
+                        m_options["upload-throttle"] = value.ToString() + "b";
             }
         }
 
@@ -871,18 +875,22 @@ namespace Duplicati.Library.Main
             get
             {
                 lock (m_lock)
-                    if (!m_options.ContainsKey("max-download-pr-second") || string.IsNullOrEmpty(m_options["max-download-pr-second"]))
+                {
+                    string v;
+                    m_options.TryGetValue("download-throttle", out v);
+                    if (string.IsNullOrEmpty(v))
                         return 0;
                     else
-                        return Library.Utility.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
+                        return Library.Utility.Sizeparser.ParseSize(v, "kb");
+                }
             }
             set
             {
                 lock (m_lock)
                     if (value <= 0)
-                        m_options["max-download-pr-second"] = "";
+                        m_options["download-throttle"] = "";
                     else
-                        m_options["max-download-pr-second"] = value.ToString() + "b";
+                        m_options["download-throttle"] = value.ToString() + "b";
             }
         }
 
