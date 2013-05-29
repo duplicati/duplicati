@@ -120,26 +120,45 @@ namespace Duplicati.Library.Main
         public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (type == BackendEventType.Started)
+            {
+                if (action == BackendActionType.Put)
+                    base.AddMessage(string.Format("Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size)));
+                else if (action == BackendActionType.Get)
+                    base.AddMessage(string.Format("Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
+                else if (action == BackendActionType.List)
+                    base.AddMessage("Listing remote folder ...");
+                else if (action == BackendActionType.CreateFolder)
+                    base.AddMessage("Creating remote folder ...");
+                else if (action == BackendActionType.Delete)
+                    base.AddMessage(string.Format("Deleting file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
+                
                 System.Threading.Interlocked.Increment(ref m_remoteCalls);
+            }
             else if (type == BackendEventType.Retrying)
+            {
                 System.Threading.Interlocked.Increment(ref m_retryAttemptCount);
+            }
             else if (type == BackendEventType.Completed)
             {
                 switch (action)
                 {
                     case BackendActionType.CreateFolder:
                         System.Threading.Interlocked.Increment(ref m_foldersCreated);
+                        base.AddMessage("Created remote folder");
                         break;
                     case BackendActionType.Delete:
                         System.Threading.Interlocked.Increment(ref m_filesDeleted);
+                        base.AddMessage(string.Format("Deleted file ({0})", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
                         break;
                     case BackendActionType.Get:
                         System.Threading.Interlocked.Increment(ref m_filesDownloaded);
                         System.Threading.Interlocked.Add(ref m_bytesDownloaded, size);
+                        base.AddMessage(string.Format("Downloaded file ({0})", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
                         break;
                     case BackendActionType.Put:
                         System.Threading.Interlocked.Increment(ref m_filesUploaded);
                         System.Threading.Interlocked.Add(ref m_bytesUploaded, size);
+                        base.AddMessage(string.Format("Uploaded file ({0}) ...", Library.Utility.Utility.FormatSizeString(size)));
                         break;
                 }
             }
