@@ -555,4 +555,10 @@
   <data name="OverwriteLong" xml:space="preserve">
     <value>Use this option to overwrite target files when restoring, if this option is not set the files will be restored with a timestamp and a number appended.</value>
   </data>
+  <data name="VerboseShort" xml:space="preserve">
+    <value>Output more progress information</value>
+  </data>
+  <data name="VerboseLong" xml:space="preserve">
+    <value>Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed.</value>
+  </data>  
 </root>

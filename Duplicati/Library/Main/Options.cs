@@ -406,6 +406,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, string.Format(Strings.Options.CompressionextensionfileLong, DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
                     new CommandLineArgument("quiet-console", CommandLineArgument.ArgumentType.Boolean, Strings.Options.QuietconsoleShort, Strings.Options.QuietconsoleLong, "false"),
+                    new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false"),
 
                     new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
 
@@ -1112,10 +1113,15 @@ namespace Duplicati.Library.Main
         public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
 
         /// <summary>
-        /// A value indicating if console output is redirected to the log file
+        /// A value indicating if console output is prohibited
         /// </summary>
         public bool QuietConsole { get { return GetBool("quiet-console"); } }
 
+        /// <summary>
+        /// A value indicating if the output should be verbose
+        /// </summary>
+        public bool Verbose { get { return GetBool("quiet-console"); } }
+        
         /// <summary>
         /// A value indicating restored files overwrite existing ones
         /// </summary>

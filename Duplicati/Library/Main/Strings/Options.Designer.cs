@@ -1321,6 +1321,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed..
+        /// </summary>
+        internal static string VerboseLong {
+            get {
+                return ResourceManager.GetString("VerboseLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Output more progress information.
+        /// </summary>
+        internal static string VerboseShort {
+            get {
+                return ResourceManager.GetString("VerboseShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may enter multiple values separated with comma, and ranges using -, e.g. &quot;0,2-4,7&quot; ..
         /// </summary>
         internal static string VersionLong {
