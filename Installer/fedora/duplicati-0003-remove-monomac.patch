@@ -1,0 +1,125 @@
+diff --git a/Duplicati.sln b/Duplicati.sln
+index 1eadd29..7f9257a 100644
+--- a/Duplicati.sln
++++ b/Duplicati.sln
+@@ -55,8 +55,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "D
+ EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
+ EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.MacTrayIcon", "Duplicati\GUI\Duplicati.GUI.MacTrayIcon\Duplicati.GUI.MacTrayIcon.csproj", "{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}"
+-EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
+ EndProject
+ Global
+diff --git a/Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj b/Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
+index fadad83..8b407cd 100644
+--- a/Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
++++ b/Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
+@@ -135,7 +135,6 @@
+     <Compile Include="WindowsImplementation\CallbackShim.cs" />
+     <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
+     <Compile Include="AppIndicatorRunner.cs" />
+-    <Compile Include="CocoaRunner.cs" />
+     <None Include="SVGIcons\dark\duplicati-logo.svg">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </None>
+diff --git a/Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs b/Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
+index ba75aba..daf976c 100644
+--- a/Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
++++ b/Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
+@@ -14,7 +14,6 @@ namespace Duplicati.GUI.TrayIcon
+         private const string TOOLKIT_WINDOWS_FORMS = "winforms";
+         private const string TOOLKIT_GTK = "gtk";
+         private const string TOOLKIT_GTK_APP_INDICATOR = "gtk-appindicator";
+-        private const string TOOLKIT_COCOA = "cocoa";
+ 
+         private const string HOSTURL_OPTION = "hosturl";
+         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
+@@ -24,18 +23,6 @@ namespace Duplicati.GUI.TrayIcon
+         
+         private static string GetDefaultToolKit()
+         {
+-            if (Duplicati.Library.Utility.Utility.IsClientOSX && SupportsCocoaStatusIcon)
+-            {
+-                //Determine if we are running in an app bundle, otherwise we cannot run Cocoa
+-                //The Duplicat.GUI.TrayIcon project, does not create the app bundle,
+-                // so this ensures that we can run the normal project when debugging on mac,
+-                // and it will just fall-back to Gtk. If we need to debug something Cocoa specific,
+-                // we can load the Duplicati.GUI.MacTrayIcon project and use that as start project
+-                string basefolder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+-                string plist = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(basefolder), "Info.plist");
+-                if (System.IO.File.Exists(plist))
+-                    return TOOLKIT_COCOA;
+-            }
+             
+             if (Duplicati.Library.Utility.Utility.IsClientLinux)
+             {
+@@ -71,8 +58,6 @@ namespace Duplicati.GUI.TrayIcon
+                     toolkit = TOOLKIT_GTK;
+                 else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
+-                else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+-                    toolkit = TOOLKIT_COCOA;
+                 else
+                     toolkit = DEFAULT_TOOLKIT;
+             }
+@@ -116,8 +101,6 @@ namespace Duplicati.GUI.TrayIcon
+                 return GetGtkInstance();
+             else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
+                 return GetAppIndicatorInstance();
+-            else if (toolkit == TOOLKIT_COCOA)
+-                return GetCocoaRunnerInstance();
+             else 
+                 throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
+         }
+@@ -127,7 +110,6 @@ namespace Duplicati.GUI.TrayIcon
+         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
+         private static TrayIconBase GetWinformsInstance() { return new Windows.WinFormsRunner(); }
+         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
+-        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); }
+         
+         //The functions below simply load the requested type,
+         // and if the type is not present, calling the function will result in an exception.
+@@ -150,11 +132,6 @@ namespace Duplicati.GUI.TrayIcon
+             return typeof(AppIndicator.ApplicationIndicator) != null;
+         }
+         
+-        private static bool TryGetMonoMac()
+-        {
+-            return typeof(MonoMac.AppKit.NSStatusItem) != null;
+-        }
+-  
+         //The functions below here, simply wrap the call to the above functions,
+         // converting the exception to a simple boolean value, so the calling
+         // code can be kept free of error handling
+@@ -180,17 +157,6 @@ namespace Duplicati.GUI.TrayIcon
+             }
+         }
+ 
+-        private static bool SupportsCocoaStatusIcon
+-        {
+-            get 
+-            {
+-                try { return TryGetMonoMac(); }
+-                catch {}
+-                
+-                return false;
+-            }
+-        }
+-        
+         private static bool SupportsWinForms
+         {
+             get 
+@@ -208,7 +174,7 @@ namespace Duplicati.GUI.TrayIcon
+             {
+                 return new Duplicati.Library.Interface.ICommandLineArgument[]
+                 {
+-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, new string[] {TOOLKIT_WINDOWS_FORMS, TOOLKIT_GTK, TOOLKIT_GTK_APP_INDICATOR, TOOLKIT_COCOA}),
++                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, new string[] {TOOLKIT_WINDOWS_FORMS, TOOLKIT_GTK, TOOLKIT_GTK_APP_INDICATOR}),
+                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
+                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
+                 };
+diff --git a/thirdparty/MonoMac/MonoMac.dll b/thirdparty/MonoMac/MonoMac.dll
+deleted file mode 100755
+index 9bc3d89..0000000
+Binary files a/thirdparty/MonoMac/MonoMac.dll and /dev/null differ
