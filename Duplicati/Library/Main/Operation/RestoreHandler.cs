@@ -116,6 +116,7 @@ namespace Duplicati.Library.Main.Operation
                 return;
             }
             
+            m_result.AddMessage("No local database, building a temporary database");
 
             using (var tmpdb = new Library.Utility.TempFile())
             {
@@ -180,9 +181,11 @@ namespace Duplicati.Library.Main.Operation
             foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
             {
                 var targetpath = restorelist.Path;
+                result.AddVerboseMessage("Patching file with remote data: {0}", targetpath);
+                
                 if (options.Dryrun)
                 {
-                	result.AddDryrunMessage(string.Format("[Would patch file with remote data: {0}", targetpath));
+                	result.AddDryrunMessage(string.Format("Would patch file with remote data: {0}", targetpath));
                 }
                 else
                 {
@@ -249,33 +252,33 @@ namespace Duplicati.Library.Main.Operation
 
 				//Figure out what files are to be patched, and what blocks are needed
 				using(new Logging.Timer("PrepareBlockList"))
-				PrepareBlockAndFileList(database, m_options, filter, result);
+				    PrepareBlockAndFileList(database, m_options, filter, result);
 
 				//Make the entire output setup
 				using(new Logging.Timer("CreateDirectory"))
-				CreateDirectoryStructure(database, m_options, result);
+				    CreateDirectoryStructure(database, m_options, result);
                 
 				using(new Logging.Timer("UpdateTargetPaths"))
-				if (!m_options.Overwrite)
-					UpdateTargetPathsToPreventOverwrite(database, filehasher, m_options, result);
+    				if (!m_options.Overwrite)
+    					UpdateTargetPathsToPreventOverwrite(database, filehasher, m_options, result);
 
+                //If we are patching an existing target folder, do not touch stuff that is already updated
 				using(new Logging.Timer("ScanForexistingTargetBlocks"))
-				//If we are patching an existing target folder, do not touch stuff that is already updated
-				ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, result);
+				    ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, result);
 
+                //Look for existing blocks in the original source files only
 				using(new Logging.Timer("ScanForExistingSourceBlocksFast"))
 #if DEBUG
-				if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
+				    if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
 #else
-				if (!string.IsNullOrEmpty(m_options.Restorepath))
+				    if (!string.IsNullOrEmpty(m_options.Restorepath))
 #endif
-				//Look for existing blocks in the original source files only
-					ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
+					    ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
 
 				// If other local files already have the blocks we want, we use them instead of downloading
-				using(new Logging.Timer("PatchWithLocalBlocks"))
 				if (m_options.PatchWithLocalBlocks)
-					ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
+                    using(new Logging.Timer("PatchWithLocalBlocks"))
+    					ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
 
 				// Fill BLOCKS with remote sources
 				var volumes = database.GetMissingVolumes();
@@ -293,28 +296,31 @@ namespace Duplicati.Library.Main.Operation
 					}
 					
                 // After all blocks in the files are restored, verify the file hash
-                foreach (var file in database.GetFilesToRestore())
-                {
-                    try
+                using(new Logging.Timer("RestoreVerification"))
+                    foreach (var file in database.GetFilesToRestore())
                     {
-                        string key;
-                        long size;
-                        using (var fs = System.IO.File.OpenRead(file.Path))
+                        try
                         {
-                            size = fs.Length;
-                            key = Convert.ToBase64String(filehasher.ComputeHash(fs));
+                            result.AddVerboseMessage("Testing restored file integrity: {0}", file.Path);
+                            
+                            string key;
+                            long size;
+                            using (var fs = System.IO.File.OpenRead(file.Path))
+                            {
+                                size = fs.Length;
+                                key = Convert.ToBase64String(filehasher.ComputeHash(fs));
+                            }
+    
+                            if (key != file.Hash)
+                                throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
+                            result.FilesRestored++;
+                            result.SizeOfRestoredFiles += size;
+                        } 
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
                         }
-
-                        if (key != file.Hash)
-                            throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
-                        result.FilesRestored++;
-                        result.SizeOfRestoredFiles += size;
-                    } 
-                    catch (Exception ex)
-                    {
-                        result.AddWarning(string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
                     }
-                }
 
                 // Drop the temp tables
                 database.DropRestoreTable();
@@ -334,7 +340,7 @@ namespace Duplicati.Library.Main.Operation
 			using(var blockmarker = database.CreateBlockMarker())
 			{
 				foreach(var file in database.GetFilesToRestore())
-				{
+				{                
 					bool rename = true;
 					try
 					{
@@ -346,12 +352,14 @@ namespace Duplicati.Library.Main.Operation
 		
 							if (key == file.Hash)
 							{
+                                result.AddVerboseMessage("Target file exists and is correct version: {0}", file.Path);
 								blockmarker.SetFileRestored(file.ID);
 								rename = false;
 							}
 						}
 						else
 						{
+                            result.AddVerboseMessage("Target file does not exist: {0}", file.Path);
 							rename = false;
 						}
 					}
@@ -370,7 +378,8 @@ namespace Duplicati.Library.Main.Operation
 						while (System.IO.File.Exists(tr) && c < 1000)
 							tr = newname + " (" + c.ToString() + ")" + "." + ext;
 						
-						database.UpdateTargetPath(file.ID, newname);	
+                        result.AddVerboseMessage("Target file exists and will be restored to: {0}", tr);
+						database.UpdateTargetPath(file.ID, tr);	
 					}
 				}
 				
@@ -419,11 +428,8 @@ namespace Duplicati.Library.Main.Operation
 		                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
 		                                            if (key == block.Hash)
 		                                            {
-						                            	if (options.Dryrun)
-						                            	{
-						                            		patched = true;
-						                            	}
-					                            		else
+                                                        patched = true;
+						                            	if (!options.Dryrun)
 					                            		{
 					                            			targetstream.Position = block.Offset;
 		                                                    targetstream.Write(blockbuffer, 0, size);
@@ -442,11 +448,20 @@ namespace Duplicati.Library.Main.Operation
 	                			}
 	                		}	
 	                	}
+                        else
+                        {
+                            result.AddVerboseMessage("Local source file not found: {0}", sourcepath);
+                        }
 	 				}
                     catch (Exception ex)
                     {
                         result.AddWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
                     }
+                    
+                    if (patched)
+                        result.AddVerboseMessage("Target file is patched with some local data: {0}", targetpath);
+                    else
+                        result.AddVerboseMessage("Target file is not patched any local data: {0}", targetpath);
                     
                     if (patched && options.Dryrun)
                     	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
@@ -497,9 +512,8 @@ namespace Duplicati.Library.Main.Operation
                                                     var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
                                                     if (key == targetblock.Hash)
                                                     {
-						                            	if (options.Dryrun)
-						                            		patched = true;
-					                            		else
+                                                        patched = true;
+						                            	if (!options.Dryrun)
 	                                                        file.Write(blockbuffer, 0, size);
 	                                                        
                                                         blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size);
@@ -520,6 +534,11 @@ namespace Duplicati.Library.Main.Operation
                         result.AddWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
                     }
                     
+                    if (patched)
+                        result.AddVerboseMessage("Target file is patched with some local data: {0}", targetpath);
+                    else
+                        result.AddVerboseMessage("Target file is not patched any local data: {0}", targetpath);
+                        
                     if (patched && options.Dryrun)
                     	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
                 }
@@ -533,25 +552,26 @@ namespace Duplicati.Library.Main.Operation
 			// Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
 			// Delete all entries from the temp table that are excluded by the filter(s)
 			using(new Logging.Timer("PrepareRestoreFileList"))
-			database.PrepareRestoreFilelist(options.Time, options.Version, filter, result);
+			    database.PrepareRestoreFilelist(options.Time, options.Version, filter, result);
 
 			using(new Logging.Timer("SetTargetPaths"))
-			if (!string.IsNullOrEmpty(options.Restorepath))
-			{
-				// Find the largest common prefix
-				string largest_prefix = database.GetLargestPrefix();
-
-				// Set the target paths, special care with C:\ and /
-				database.SetTargetPaths(largest_prefix, options.Restorepath);
-			}
-			else
-			{
-				database.SetTargetPaths("", "");
-			}
+    			if (!string.IsNullOrEmpty(options.Restorepath))
+    			{
+    				// Find the largest common prefix
+    				string largest_prefix = database.GetLargestPrefix();
+                    result.AddVerboseMessage("Setting common restore path to {0}", largest_prefix);
+    
+    				// Set the target paths, special care with C:\ and /
+    				database.SetTargetPaths(largest_prefix, options.Restorepath);
+    			}
+    			else
+    			{
+    				database.SetTargetPaths("", "");
+    			}
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
 			using(new Logging.Timer("FindMissingBlocks"))
-            database.FindMissingBlocks();
+                database.FindMissingBlocks(result);
         }
 
         private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, RestoreResults result)
@@ -559,10 +579,15 @@ namespace Duplicati.Library.Main.Operation
 			// This part is not protected by try/catch as we need the target folder to exist
 			if (!string.IsNullOrEmpty(options.Restorepath))
                 if (!System.IO.Directory.Exists(options.Restorepath))
+                {
+                    if (options.Verbose)
+                        result.AddVerboseMessage("Creating folder: {0}", options.Restorepath);
+                        
                 	if (options.Dryrun)
                 		result.AddDryrunMessage(string.Format("Would create folder: {0}", options.Restorepath));
                 	else
                     	System.IO.Directory.CreateDirectory(options.Restorepath);
+                }
         
             foreach (var folder in database.GetTargetFolders())
             {
@@ -572,6 +597,9 @@ namespace Duplicati.Library.Main.Operation
                     {
                     	result.FoldersRestored++;
                     	
+                        if (options.Verbose)
+                            result.AddVerboseMessage("Creating folder: {0}", folder);
+                            
                     	if (options.Dryrun)
                     		result.AddDryrunMessage(string.Format("Would create folder: {0}", folder));
                     	else

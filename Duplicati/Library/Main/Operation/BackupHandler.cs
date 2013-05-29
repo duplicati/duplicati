@@ -152,10 +152,16 @@ namespace Duplicati.Library.Main.Operation
                         Library.Utility.Utility.EnumerationFilterDelegate filterdelegate = (rootpath, path, attributes) =>
                         {
                             if ((m_options.FileAttributeFilter & attributes) != 0)
+                            {
+                                m_result.AddVerboseMessage("Excluding path due to attribute filter {0}", path);
                                 return false;
+                            }
     			                
                             if (!m_filter.Matches(path))
+                            {
+                                m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
                                 return false;
+                            }
     			            	
                             return true;
                         };
@@ -164,8 +170,10 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
                             {
+                                m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
+                            
                                 foreach(var p in m_options.ChangedFilelist)
-                                {
+                                {                                    
                                     FileAttributes fa = new FileAttributes();
                                     try
                                     {
@@ -177,7 +185,7 @@ namespace Duplicati.Library.Main.Operation
                                     }
     		
                                     if (filterdelegate(null, p, fa))
-                                    {
+                                    {                                        
                                         try
                                         {
                                             this.HandleFilesystemEntry(p, fa);
@@ -186,6 +194,10 @@ namespace Duplicati.Library.Main.Operation
                                         {
                                             m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
                                         }
+                                    }
+                                    else
+                                    {
+                                        m_result.AddVerboseMessage("Filter rules excluded file {0}", p);
                                     }
                                 }
     		
@@ -315,16 +327,19 @@ namespace Duplicati.Library.Main.Operation
 
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
-        	if (m_backendLogFlushTimer < DateTime.Now)
-        	{
-				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
-        		m_backend.FlushDbMessages(m_database, null);
-        	}
-                    
+            if (m_backendLogFlushTimer < DateTime.Now)
+            {
+                m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
+                m_backend.FlushDbMessages(m_database, null);
+            }
+                                        
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                {
+                    m_result.AddVerboseMessage("Ignoring symlink {0}", path);
                     return false;
+                }
 
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                 {
@@ -352,6 +367,7 @@ namespace Duplicati.Library.Main.Operation
                     var metahash = Utility.WrapMetadata(metadata, m_options);
                     AddSymlinkToOutput(path, DateTime.UtcNow, metahash);
                     
+                    m_result.AddVerboseMessage("Stored symlink {0}", path);
                     //Do not recurse symlinks
                     return false;
                 }
@@ -379,6 +395,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
+                m_result.AddVerboseMessage("Adding directory {0}", path);
                 AddFolderToOutput(path, DateTime.UtcNow, metahash);
                 return true;
             }
@@ -389,15 +406,13 @@ namespace Duplicati.Library.Main.Operation
 
             bool changed = false;
 
-            //Skip symlinks if required
-            if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint && m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
-                return false;
-
             try
             {
                 DateTime lastModified = m_snapshot.GetLastWriteTime(path);
                 if (oldId < 0 || m_options.DisableFiletimeCheck || lastModified > oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan))
                 {
+                    m_result.AddVerboseMessage("Checking file for changes {0}", path);
+                
                     m_result.OpenedFiles++;
 
                     long filesize = 0;
@@ -475,6 +490,10 @@ namespace Duplicati.Library.Main.Operation
                         var filekey = Convert.ToBase64String(m_filehasher.Hash);
                         if (oldHash != filekey)
                         {
+                            if (oldHash == null)
+                                m_result.AddVerboseMessage("New file {0}", path);
+                            else
+                                m_result.AddVerboseMessage("File has changed {0}", path);
                             if (oldId < 0)
                             {
                                 m_result.AddedFiles++;
@@ -495,7 +514,18 @@ namespace Duplicati.Library.Main.Operation
                             AddFileToOutput(path, filesize, scantime, metahashandsize, hashcollector, filekey, blocklisthashes);
                             changed = true;
                         }
+                        else
+                        {
+                            m_result.AddVerboseMessage("File has not changed {0}", path);
+                        }
                     }
+                }
+                else
+                {
+                    if (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan)                
+                        m_result.AddVerboseMessage("Skipped checking file, because timestamp was not updated {0}", path);
+                    else
+                        m_result.AddVerboseMessage("Skipped checking file, because the size exceeds limit {0}", path);
                 }
 
                 if (!changed)

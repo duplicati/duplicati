@@ -126,6 +126,9 @@ namespace Duplicati.Library.Main.Database
                             }
                     }
                 }
+                
+                if (log.VerboseOutput)
+                    log.AddVerboseMessage("Restore list contains {0} files ", cmd.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_tempfiletable)));
             }
         }
 
@@ -208,13 +211,18 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void FindMissingBlocks()
+        public void FindMissingBlocks(ILogWriter log)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand())
             {
                 cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"") SELECT DISTINCT ""{1}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0 FROM ""{1}"", ""BlocksetEntry"", ""Block"" WHERE ""{1}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ", m_tempblocktable, m_tempfiletable);
                 var p = cmd.ExecuteNonQuery();
-                System.Diagnostics.Trace.WriteLine(string.Format("Blocks to restore: {0}", p));
+                
+                if (log.VerboseOutput)
+                {
+                    var size = Convert.ToInt64(cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_tempblocktable)));
+                    log.AddVerboseMessage("Restore list contains {0} blocks with a total size of {1}", p, Library.Utility.Utility.FormatSizeString(size));
+                }
             }
         }
 

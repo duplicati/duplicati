@@ -906,11 +906,6 @@ namespace Duplicati.Library.Main
         public bool DebugOutput { get { return GetBool("debug-output"); } }
 
         /// <summary>
-        /// A value indicating if retry debug output is enabled
-        /// </summary>
-        public bool VerboseRetryErrors { get { return GetBool("debug-retry-errors"); } }
-
-        /// <summary>
         /// A value indicating if unchanged backups are uploaded
         /// </summary>
         public bool UploadUnchangedBackups { get { return GetBool("upload-unchanged-backups"); } }
@@ -1120,7 +1115,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if the output should be verbose
         /// </summary>
-        public bool Verbose { get { return GetBool("quiet-console"); } }
+        public bool Verbose { get { return GetBool("verbose"); } }
         
         /// <summary>
         /// A value indicating restored files overwrite existing ones

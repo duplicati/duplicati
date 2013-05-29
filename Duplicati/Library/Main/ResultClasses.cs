@@ -24,6 +24,8 @@ namespace Duplicati.Library.Main
 {
     public interface ILogWriter
     {
+        bool VerboseOutput { get; }
+        void AddVerboseMessage(string message, params object[] args);
         void AddMessage(string message);
         void AddWarning(string message, Exception ex);
         void AddError(string message, Exception ex);
@@ -57,8 +59,8 @@ namespace Duplicati.Library.Main
     internal interface ISetCommonOptions : ILogWriter
     {
         bool VerboseErrors { set; }
-        bool VerboseRetryErrors { set; }
         bool QuietConsole { set; }
+        bool VerboseOutput { get; set; }
         
         DateTime EndTime { set; }
         DateTime BeginTime { set; }
@@ -146,6 +148,9 @@ namespace Duplicati.Library.Main
                         System.Threading.Interlocked.Increment(ref m_foldersCreated);
                         base.AddMessage("Created remote folder");
                         break;
+                    case BackendActionType.List:
+                        base.AddMessage(string.Format("Listed remote folder ({0} files)", size));
+                        break;
                     case BackendActionType.Delete:
                         System.Threading.Interlocked.Increment(ref m_filesDeleted);
                         base.AddMessage(string.Format("Deleted file ({0})", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
@@ -158,7 +163,7 @@ namespace Duplicati.Library.Main
                     case BackendActionType.Put:
                         System.Threading.Interlocked.Increment(ref m_filesUploaded);
                         System.Threading.Interlocked.Add(ref m_bytesUploaded, size);
-                        base.AddMessage(string.Format("Uploaded file ({0}) ...", Library.Utility.Utility.FormatSizeString(size)));
+                        base.AddMessage(string.Format("Uploaded file ({0})", Library.Utility.Utility.FormatSizeString(size)));
                         break;
                 }
             }
@@ -188,7 +193,7 @@ namespace Duplicati.Library.Main
         protected Queue<DbMessage> m_dbqueue;
         
         public bool VerboseErrors { get; set; }
-        public bool VerboseRetryErrors { get; set; }
+        public bool VerboseOutput { get; set; }
         public bool QuietConsole { get; set; }
         
         public DateTime EndTime { get; set; }
@@ -257,6 +262,14 @@ namespace Duplicati.Library.Main
                 Console.WriteLine(string.Format("[Dryrun]: {0}", message));
         }
                
+        public void AddVerboseMessage(string message, params object[] args)
+        {
+            if (m_parent != null)
+                m_parent.AddVerboseMessage(message, args);
+            else if (VerboseOutput)
+                Console.WriteLine(message, args);
+        }
+        
         public void AddMessage(string message)
         { 
             if (m_parent != null)
@@ -349,6 +362,7 @@ namespace Duplicati.Library.Main
             m_retryAttempts = new Library.Utility.FileBackedStringList();
             m_dbqueue = new Queue<DbMessage>();
             m_backendStatistics = new BackendWriter(this);
+            m_callerThread = System.Threading.Thread.CurrentThread;
         }
 
         public BasicResults(BasicResults p)

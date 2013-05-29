@@ -285,12 +285,9 @@ namespace Duplicati.Library.Main
                 Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
             }
 
-            if (result != null)
-            {
-                result.VerboseErrors = m_options.DebugOutput;
-                result.VerboseRetryErrors = m_options.VerboseRetryErrors;
-                result.QuietConsole = m_options.QuietConsole;
-            }
+            result.VerboseErrors = m_options.DebugOutput;
+            result.QuietConsole = m_options.QuietConsole;
+            result.VerboseOutput = m_options.Verbose;
 
             if (m_options.HasTempDir)
                 Library.Utility.TempFolder.SystemTempPath = m_options.TempDir;
