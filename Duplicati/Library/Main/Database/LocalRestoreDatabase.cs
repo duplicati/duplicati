@@ -28,13 +28,13 @@ namespace Duplicati.Library.Main.Database
         }
 
         public void PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
-		{
-			var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        {
+            var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-			m_tempfiletable = "Fileset-" + guid;
-			m_tempblocktable = "Blocks-" + guid;
+            m_tempfiletable = "Fileset-" + guid;
+            m_tempblocktable = "Blocks-" + guid;
 
-            using (var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand())
             {
                 long filesetId = GetFilesetID(restoretime, versions);
                 m_restoreTime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
@@ -55,17 +55,17 @@ namespace Duplicati.Library.Main.Database
                 }
                 else if (filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
-	                // If we get a list of filenames, the lookup table is faster
+                    // If we get a list of filenames, the lookup table is faster
                     using(var tr = m_connection.BeginTransaction())
                     {
-                    	var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
+                        var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
                         var m_filenamestable = "Filenames-" + guid;
                         cmd.Transaction = tr;
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
                         cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
                         cmd.AddParameter();
                         
-                        foreach (var s in p)
+                        foreach(var s in p)
                         {
                             cmd.SetParameterValue(0, s);
                             cmd.ExecuteNonQuery();
@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Database
                             sb.AppendLine();
                             
                             using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
-                                while(rd.Read())
+                                while (rd.Read())
                                     sb.AppendLine(rd.GetValue(0).ToString());
 
                             DateTime actualrestoretime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
@@ -105,14 +105,14 @@ namespace Duplicati.Library.Main.Database
                     cmd.AddParameter(filesetId);
 
                     object[] values = new object[3];
-                    using (var cmd2 = m_connection.CreateCommand())
+                    using(var cmd2 = m_connection.CreateCommand())
                     {
                         cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?)", m_tempfiletable);
                         cmd2.AddParameter();
                         cmd2.AddParameter();
                         cmd2.AddParameter();
 
-                        using (var rd = cmd.ExecuteReader())
+                        using(var rd = cmd.ExecuteReader())
                             while (rd.Read())
                             {
                                 rd.GetValues(values);
