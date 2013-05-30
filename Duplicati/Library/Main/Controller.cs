@@ -144,16 +144,28 @@ namespace Duplicati.Library.Main
                 new Operation.RepairHandler(m_backend, m_options, result).Run();
             });
         }
-
-        public Duplicati.Library.Interface.IListResults List (string filter = null)
+        
+        public Duplicati.Library.Interface.IListResults List(Library.Utility.IFilter filter = null)
         {
-            return List(filter == null ? null : new string[] { filter });
+            return List((IEnumerable<string>)null, filter);
+        }
+
+        public Duplicati.Library.Interface.IListResults List (string filterstring, Library.Utility.IFilter filter = null)
+        {
+            return List(filterstring == null ? null : new string[] { filterstring }, null);
         }
         
-        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filter)
+        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
 		{
             return RunAction(new ListResults(), (result) => {
-    			new Operation.ListFilesHandler(m_backend, m_options, result).Run(filter);
+    			new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
+            });
+        }
+        
+        public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
+        {
+            return RunAction(new ListResults(), (result) => {
+                new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
         

@@ -34,10 +34,18 @@ namespace Duplicati.Library.Main.Database
             string Path { get; }
             IEnumerable<long> Sizes { get; }
         }
+        
+        public interface IFileset
+        {
+            long Version { get; }
+            DateTime Time { get; }
+            long FileCount { get; }
+            long FileSizes { get; }
+        }
                 
         public interface IFileSets : IDisposable
         {
-            IEnumerable<KeyValuePair<long, DateTime>> Times { get; }
+            IEnumerable<IFileset> Sets { get; }
             IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
             void TakeFirst ();
         }
@@ -59,6 +67,22 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var cmd = m_connection.CreateCommand())
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
+            }
+            
+            private class Fileset : IFileset
+            {
+                public long Version { get; private set; }
+                public DateTime Time { get; private set; }
+                public long FileCount { get; private set; }
+                public long FileSizes { get; private set; }
+                
+                public Fileset(long version, DateTime time, long filecount, long filesizes)
+                {
+                    this.Version = version;
+                    this.Time = time;
+                    this.FileCount = filecount;
+                    this.FileSizes = filesizes;
+                }
             }
             
             private class Fileversion : IFileversion
@@ -120,7 +144,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )", m_tablename));
             }
             
-            public IEnumerable<KeyValuePair<long, DateTime>> Times 
+            public IEnumerable<IFileset> Sets 
             { 
                 get
                 {
@@ -128,14 +152,23 @@ namespace Duplicati.Library.Main.Database
                     for(var i = 0; i < m_filesets.Length; i++)
                         dict[m_filesets[i].Key] = i;
                     
+                    var summation = @"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" GROUP BY ""A"".""FilesetID"" ";
+                    
                     using(var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""FilesetID"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC ", m_tablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""A"".""FilesetID"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{0}"" A LEFT OUTER JOIN ( " + summation + @" ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ", m_tablename)))
                         while(rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
                             var e = dict[id];
                             
-                            yield return new KeyValuePair<long, DateTime>(e, m_filesets[e].Value);
+                            var filecount = -1L;
+                            var filesizes = -1L;
+                            if (rd.GetValue(1) != null && rd.GetValue(1) != DBNull.Value) 
+                                filecount = Convert.ToInt64(rd.GetValue(1));
+                            if (rd.GetValue(2) != null && rd.GetValue(2) != DBNull.Value) 
+                                filesizes = Convert.ToInt64(rd.GetValue(2));
+                            
+                            yield return new Fileset(e, m_filesets[e].Value, filecount, filesizes);
                         }
                     
                 }

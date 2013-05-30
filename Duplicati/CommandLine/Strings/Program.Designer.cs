@@ -61,6 +61,24 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use control files.
+        /// </summary>
+        internal static string ControlFilesOptionLong {
+            get {
+                return ResourceManager.GetString("ControlFilesOptionLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If this option is used with a backup operation, it is interpreted as a list of files to add to the filesets. When used with list or restore, it will list or restore the control files instead of the normal files..
+        /// </summary>
+        internal static string ControlFilesOptionShort {
+            get {
+                return ResourceManager.GetString("ControlFilesOptionShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The command {0} needs at least one of the following options set: {1}.
         /// </summary>
         internal static string DeleteCommandNeedsOptions {

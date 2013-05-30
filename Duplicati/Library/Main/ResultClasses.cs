@@ -447,19 +447,34 @@ namespace Duplicati.Library.Main
             this.Sizes = sizes;
         }
     }
+
+    internal class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
+    {
+        public long Version { get; private set; }
+        public DateTime Time { get; private set; }
+        public long FileCount { get; private set; }
+        public long FileSizes { get; private set; }
+        public ListResultFileset(long version, DateTime time, long fileCount, long fileSizes)
+        {
+            this.Version = version;
+            this.Time = time;
+            this.FileCount = fileCount;
+            this.FileSizes = fileSizes;
+        }
+    }
     
     internal class ListResults : BasicResults, Duplicati.Library.Interface.IListResults
     {
-        private IEnumerable<KeyValuePair<long, DateTime>> m_filesets;
+        private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;
         private IEnumerable<Duplicati.Library.Interface.IListResultFile> m_files;
         
-        public void SetResult(IEnumerable<KeyValuePair<long, DateTime>> filesets, IEnumerable<Duplicati.Library.Interface.IListResultFile> files)
+        public void SetResult(IEnumerable<Duplicati.Library.Interface.IListResultFileset> filesets, IEnumerable<Duplicati.Library.Interface.IListResultFile> files)
         {
             m_filesets = filesets;
             m_files = files;
         }
         
-        public IEnumerable<KeyValuePair<long, DateTime>> Filesets { get { return m_filesets; } }
+        public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
         public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
         
         public override OperationMode MainOperation { get { return OperationMode.List; } }

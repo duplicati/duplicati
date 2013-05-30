@@ -196,4 +196,10 @@
   <data name="ExcludeShort" xml:space="preserve">
     <value>Exclude files</value>
   </data>
+  <data name="ControlFilesOptionShort" xml:space="preserve">
+    <value>If this option is used with a backup operation, it is interpreted as a list of files to add to the filesets. When used with list or restore, it will list or restore the control files instead of the normal files.</value>
+  </data>
+  <data name="ControlFilesOptionLong" xml:space="preserve">
+    <value>Use control files</value>
+  </data>  
 </root>

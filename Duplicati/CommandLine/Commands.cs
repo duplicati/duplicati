@@ -33,45 +33,66 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int List (List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        public static int List(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            using (var i = new Library.Main.Controller(args[0], options)) {
+            using(var i = new Library.Main.Controller(args[0], options))
+            {
                 args.RemoveAt(0);
-                
-                if (args.Count == 1) {
+                                
+                if (args.Count == 1)
+                {
                     long v;
-                    if (long.TryParse(args[0], out v)) {
-                        if (!options.ContainsKey("version")) {
+                    if (long.TryParse(args[0], out v))
+                    {
+                        if (!options.ContainsKey("version"))
+                        {
                             args.RemoveAt(0);
                             args.Add("*");
                             options["version"] = v.ToString();
                         }
-                    } else if (args[0].IndexOfAny(new char[] {'*', '?'}) < 0 && !args[0].StartsWith("[")) {
-                        try {
+                    }
+                    else if (args[0].IndexOfAny(new char[] {'*', '?'}) < 0 && !args[0].StartsWith("["))
+                    {
+                        try
+                        {
                             var t = Library.Utility.Timeparser.ParseTimeInterval(args[0], DateTime.Now, true);
                             args.RemoveAt(0);
                             args.Add("*");
                             options["time"] = t.ToString();
                             
-                        } catch {
+                        }
+                        catch
+                        {
                         }
                     }
                 }
                 
-                var res = i.List(args);
-                if (args.Count == 0) {
-                    Console.WriteLine("Listing backup filesets:");
-                    foreach (var e in res.Filesets)
-                        Console.WriteLine("{0}\t: {1}", e.Key, e.Value);
-                } else {
+                bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
+                options.Remove("control-files");
+                
+                var res = controlFiles ? i.ListControlFiles(args, filter) : i.List(args, filter);
+                if (res.Files == null || res.Files.Count() == 0)
+                {
+                    Console.WriteLine("Listing filesets:");
+                    
+                    foreach(var e in res.Filesets)
+                    {
+                        if (e.FileCount >= 0)
+                            Console.WriteLine("{0}\t: {1} ({2} files, {3})", e.Version, e.Time, e.FileCount, Library.Utility.Utility.FormatSizeString(e.FileSizes));
+                        else
+                            Console.WriteLine("{0}\t: {1}", e.Version, e.Time);
+                    }
+                } 
+                else 
+                {
                     if (res.Filesets.Count() == 0) 
                     {
-                        Console.WriteLine("No backup times matched");
+                        Console.WriteLine("No times matched a fileset");
                     }
                     else if (res.Filesets.Count() == 1)
                     {
                         var f = res.Filesets.First();
-                        Console.WriteLine("Listing contents {0} ({1}):", f.Value, f.Key);
+                        Console.WriteLine("Listing contents {0} ({1}):", f.Version, f.Time);
                         foreach(var e in res.Files)
                             Console.WriteLine("{0} {1}", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) ? "" : "(" + Library.Utility.Utility.FormatSizeString(e.Sizes.First()) + ")");
                     }
@@ -81,12 +102,8 @@ namespace Duplicati.CommandLine
                         foreach(var e in res.Files)
                         {
                             Console.WriteLine(e.Path);
-                            bool created = false;
-                            foreach(var nx in res.Filesets.Zip(e.Sizes, (a, b) => new { Index = a.Key, Time = a.Value, Size = b } ))
-                            {
+                            foreach(var nx in res.Filesets.Zip(e.Sizes, (a, b) => new { Index = a.Version, Time = a.Time, Size = b } ))
                                 Console.WriteLine("{0}\t: {1} {2}", nx.Index, nx.Time, nx.Size < 0 ? " - " : Library.Utility.Utility.FormatSizeString(nx.Size));
-                                created |= nx.Size >= 0;
-                            }
                                 
                             Console.WriteLine();
                         }

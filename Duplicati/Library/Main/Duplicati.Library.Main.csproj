@@ -110,6 +110,7 @@
     <Compile Include="Controller.cs" />
     <Compile Include="Database\LocalListDatabase.cs" />
     <Compile Include="ResultClasses.cs" />
+    <Compile Include="Operation\ListControlFilesHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

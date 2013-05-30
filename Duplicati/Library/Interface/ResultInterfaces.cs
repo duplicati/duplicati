@@ -56,18 +56,26 @@ namespace Duplicati.Library.Interface
         long AssignedQuotaSpace { get; }
 	}
 
-    public interface IListResults : IBasicResults
-    {
-        IEnumerable<KeyValuePair<long, DateTime>> Filesets { get; }
-        IEnumerable<IListResultFile> Files { get; }
-    }
-    
     public interface IListResultFile
     {
         string Path { get; }
         IEnumerable<long> Sizes { get; }
     }
-    
+
+    public interface IListResultFileset
+    {
+        long Version { get; }
+        DateTime Time { get; }
+        long FileCount { get; }
+        long FileSizes { get; }
+    }
+
+    public interface IListResults : IBasicResults
+    {
+        IEnumerable<IListResultFileset> Filesets { get; }
+        IEnumerable<IListResultFile> Files { get; }
+    }
+        
     public interface IDeleteResults : IBasicResults
     {
         IEnumerable<DateTime> DeletedSets { get; }

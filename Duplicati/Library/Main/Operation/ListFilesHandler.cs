@@ -24,15 +24,7 @@ namespace Duplicati.Library.Main.Operation
             
             var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
 			
-            Library.Utility.IFilter filter = parsedfilter;
-            if (compositefilter != null && !compositefilter.Empty)
-                filter = new Library.Utility.CompositeFilterExpression(
-                    ((Library.Utility.CompositeFilterExpression)compositefilter).Filters
-					.Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
-						new KeyValuePair<bool, Duplicati.Library.Utility.IFilter>(true, parsedfilter) 
-					}),
-                    false
-                );
+            var filter = CombineFilters(parsedfilter, compositefilter);
         
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
@@ -45,7 +37,7 @@ namespace Duplicati.Library.Main.Operation
                             filesets.TakeFirst();
                             
                         m_result.SetResult(
-                            filesets.Times.ToArray(),
+                            filesets.Sets.Select(x => new ListResultFileset(x.Version, x.Time, x.FileCount, x.FileSizes)).ToArray(),
                             parsedfilter.Type == Library.Utility.FilterType.Empty ? null :
                                     (from n in filesets.SelectFiles(filter)
                                         select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
@@ -65,20 +57,11 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.SetDatabase(db);
                 
-                var rawlist = backend.List();
-                var parsedlist = (from n in rawlist
-                            let p = Volumes.VolumeBase.ParseFilename(n)
-                            where p != null && p.FileType == RemoteVolumeType.Files
-                            orderby p.Time descending
-                            select p).ToArray();
-                var filelistFilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
-                var filteredList = filelistFilter(parsedlist).ToList();
-                
+                var filteredList = ParseAndFilterFilesets(backend.List(), m_options);
                 if (filteredList.Count == 0)
                     throw new Exception("No filesets found on remote target");
-                
-                var numberSeq = (from n in filteredList select new KeyValuePair<long, DateTime>(n.Key, n.Value.Time.ToLocalTime())).ToArray();
-                
+
+                var numberSeq =  CreateResultSequence(filteredList);
                 if (parsedfilter.Type == Library.Utility.FilterType.Empty)
                 {
                     m_result.SetResult(numberSeq, null);
@@ -154,5 +137,40 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        public static List<KeyValuePair<long, Volumes.IParsedVolume>> ParseAndFilterFilesets(IEnumerable<Duplicati.Library.Interface.IFileEntry> rawlist, Options options)
+        {
+            var parsedlist = (from n in rawlist
+                        let p = Volumes.VolumeBase.ParseFilename(n)
+                        where p != null && p.FileType == RemoteVolumeType.Files
+                        orderby p.Time descending
+                        select p).ToArray();
+            var filelistFilter = RestoreHandler.FilterNumberedFilelist(options.Time, options.Version);
+            return filelistFilter(parsedlist).ToList();                
+        }
+        
+        public static IEnumerable<Library.Interface.IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, Volumes.IParsedVolume>> filteredList)
+        {
+            return (from n in filteredList select (Library.Interface.IListResultFileset)(new ListResultFileset(n.Key, n.Value.Time.ToLocalTime(), -1, -1))).ToArray();
+        }
+        
+        public static Library.Utility.IFilter CombineFilters(IEnumerable<string> filterstrings, Library.Utility.IFilter compositefilter)
+        {
+            return CombineFilters(new Library.Utility.FilterExpression(filterstrings), compositefilter);
+        }
+        
+        public static Library.Utility.IFilter CombineFilters(Library.Utility.IFilter parsedfilter, Library.Utility.IFilter compositefilter)
+        {
+            Library.Utility.IFilter filter = parsedfilter;
+            if (compositefilter != null && !compositefilter.Empty)
+                filter = new Library.Utility.CompositeFilterExpression(
+                    ((Library.Utility.CompositeFilterExpression)compositefilter).Filters
+                    .Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
+                        new KeyValuePair<bool, Duplicati.Library.Utility.IFilter>(true, parsedfilter) 
+                    }),
+                    false
+                );
+                
+            return filter;
+        }
     }
 }
