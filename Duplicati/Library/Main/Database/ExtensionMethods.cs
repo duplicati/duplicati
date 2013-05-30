@@ -42,7 +42,11 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            return self.ExecuteNonQuery();
+            if (Logging.Log.LogLevel != Duplicati.Library.Logging.LogMessageType.Profiling)
+                return self.ExecuteNonQuery();
+                
+            using(new Logging.Timer("ExecuteNonQuery: " + self.CommandText))
+                return self.ExecuteNonQuery();
         }
 
         public static object ExecuteScalar(this System.Data.IDbCommand self, string cmd, params object[] values)
@@ -57,7 +61,11 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            return self.ExecuteScalar();
+            if (Logging.Log.LogLevel != Duplicati.Library.Logging.LogMessageType.Profiling)
+                return self.ExecuteScalar();
+                
+            using(new Logging.Timer("ExecuteScalar: " + self.CommandText))
+                return self.ExecuteScalar();
         }
 
         public static System.Data.IDataReader ExecuteReader(this System.Data.IDbCommand self, string cmd, params object[] values)
@@ -72,7 +80,11 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            return self.ExecuteReader();
+            if (Logging.Log.LogLevel != Duplicati.Library.Logging.LogMessageType.Profiling)
+                return self.ExecuteReader();
+                
+            using(new Logging.Timer("ExecuteReader: " + self.CommandText))
+                return self.ExecuteReader();
         }
 
         public static void DumpSQL(this System.Data.IDbConnection self, string sql, params object[] parameters)
