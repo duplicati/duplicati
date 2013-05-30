@@ -560,10 +560,10 @@ namespace Duplicati.Library.Main.Operation
     			{
     				// Find the largest common prefix
     				string largest_prefix = database.GetLargestPrefix();
-                    result.AddVerboseMessage("Setting common restore path to {0}", largest_prefix);
+                    result.AddVerboseMessage("Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
     
     				// Set the target paths, special care with C:\ and /
-    				database.SetTargetPaths(largest_prefix, options.Restorepath);
+    				database.SetTargetPaths(largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
     			}
     			else
     			{
