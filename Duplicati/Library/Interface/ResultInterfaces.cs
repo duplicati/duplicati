@@ -146,6 +146,7 @@ namespace Duplicati.Library.Interface
     
     public interface IRestoreControlFilesResults : IBasicResults
     {
+        IEnumerable<string> Files { get; }
     }
     
     public interface IRepairResults : IBasicResults

@@ -168,9 +168,24 @@ namespace Duplicati.CommandLine
                 
             string backend = args[0];
             args.RemoveAt(0);
+            
+            bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
+            options.Remove("control-files");
 
             using(var i = new Library.Main.Controller(backend, options))
-                i.Restore(args.ToArray(), filter);
+                if (controlFiles)
+                {
+                    var res = i.RestoreControlFiles(args.ToArray(), filter);
+                    Console.WriteLine("Restore control files completed:");
+                    foreach(var s in res.Files)
+                        Console.WriteLine(s);
+                }
+                else
+                {
+                    var res = i.Restore(args.ToArray(), filter);
+                    Console.WriteLine("Restore completed");
+                    Library.Utility.Utility.PrintSerializeObject(res, Console.Out);
+                }
             
             return 0;
         }

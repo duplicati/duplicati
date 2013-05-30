@@ -198,7 +198,8 @@ namespace Duplicati.Server
                             break;
 
                         case DuplicityTaskType.RestoreSetup:
-                            i.RestoreControlFiles(task.LocalPath);
+                            options["restore-path"] = task.LocalPath;
+                            i.RestoreControlFiles();
                             break;
                         default:
                             return;

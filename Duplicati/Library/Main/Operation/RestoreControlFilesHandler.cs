@@ -9,37 +9,42 @@ namespace Duplicati.Library.Main.Operation
     {
         private Options m_options;
         private string m_backendurl;
-        private string m_target;
         private RestoreControlFilesResults m_result;
 
-        public RestoreControlFilesHandler(string backendurl, Options options, string target, RestoreControlFilesResults result)
+        public RestoreControlFilesHandler(string backendurl, Options options, RestoreControlFilesResults result)
         {
             m_options = options;
-            m_target = target;
             m_backendurl = backendurl;
             m_result = result;
         }
 
-        public void Run()
+        public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
         {
+            if (string.IsNullOrEmpty(m_options.Restorepath))
+                throw new Exception("Cannot restore control files without --restore-path");
+            if (!System.IO.Directory.Exists(m_options.Restorepath))
+                System.IO.Directory.CreateDirectory(m_options.Restorepath);
+        
             using (var tmpdb = new Library.Utility.TempFile())
             using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles"))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);
+                
+                var filter = ListFilesHandler.CombineFilters(filterstrings, compositefilter);
+                
             	try
             	{
-	                var files = from file in backend.List()
-	                            let p = Volumes.VolumeBase.ParseFilename(file)
-	                            where p != null && p.FileType == RemoteVolumeType.Files
-	                            orderby p.Time
-	                            select file;
-	
+                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backend.List(), m_options);
+                    if (filteredList.Count == 0)
+                        throw new Exception("No filesets found on remote target");
+    
 	                Exception lastEx = new Exception("No suitable files found on remote target");
 	
-	                foreach(var file in files)
+	                foreach(var fileversion in filteredList)
 	                    try
 	                    {
+                            var file = fileversion.Value.File;
 	                        long size;
 	                        string hash;
 	                        RemoteVolumeType type;
@@ -47,12 +52,20 @@ namespace Duplicati.Library.Main.Operation
 	                        if (!db.GetRemoteVolume(file.Name, out hash, out size, out type, out state))
 	                            size = file.Size;
 	
+                            var res = new List<string>();
 							using (var tmpfile = backend.Get(file.Name, size, hash))
 	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
 	                            foreach (var cf in tmp.ControlFiles)
-	                                using (var ts = System.IO.File.Create(System.IO.Path.Combine(m_target, cf.Key)))
-	                                    Library.Utility.Utility.CopyStream(cf.Value, ts);
+                                    if (filter.Matches(cf.Key))
+                                    {
+                                        var targetpath = System.IO.Path.Combine(m_options.Restorepath, cf.Key);
+    	                                using (var ts = System.IO.File.Create(targetpath))
+    	                                    Library.Utility.Utility.CopyStream(cf.Value, ts);
+                                        res.Add(targetpath);
+                                    }
 	                        
+                            m_result.SetResult(res);
+                            
 	                        lastEx = null;
 	                        break;
 	                    }

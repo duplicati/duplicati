@@ -122,12 +122,10 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IRestoreControlFilesResults RestoreControlFiles(string target)
+        public Duplicati.Library.Interface.IRestoreControlFilesResults RestoreControlFiles(IEnumerable<string> files = null, Library.Utility.IFilter filter = null)
         {
-            var t = new string[] { target };
-            
-            return RunAction(new RestoreControlFilesResults(), ref t, (result) => {
-                new Operation.RestoreControlFilesHandler(m_backend, m_options, t[0], result).Run();
+            return RunAction(new RestoreControlFilesResults(), (result) => {
+                new Operation.RestoreControlFilesHandler(m_backend, m_options, result).Run(files, filter);
             });
         }
 

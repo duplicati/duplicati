@@ -532,7 +532,10 @@ namespace Duplicati.Library.Main
     
     internal class RestoreControlFilesResults : BasicResults, Library.Interface.IRestoreControlFilesResults
     {
+        public IEnumerable<string> Files { get; private set; }
+        
         public override OperationMode MainOperation { get { return OperationMode.RestoreControlfiles; } }
+        public void SetResult(IEnumerable<string> files) { this.Files = files; }
     }   
 
     internal class RepairResults : BasicResults, Library.Interface.IRepairResults
