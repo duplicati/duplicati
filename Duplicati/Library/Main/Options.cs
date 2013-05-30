@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Default size of volumes
         /// </summary>
-        private const string DEFAULT_VOLUME_SIZE = "100mb";
+        private const string DEFAULT_VOLUME_SIZE = "50mb";
         
         /// <summary>
         /// Default value for keep-time
