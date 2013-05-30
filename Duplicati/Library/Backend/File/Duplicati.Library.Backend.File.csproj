@@ -64,7 +64,7 @@
     <Compile Include="FileUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="FileUI.designer.cs">
+    <Compile Include="FileUI.Designer.cs">
       <DependentUpon>FileUI.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

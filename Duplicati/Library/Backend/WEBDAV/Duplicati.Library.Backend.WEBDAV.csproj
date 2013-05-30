@@ -76,7 +76,7 @@
     <Compile Include="WebDAVUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="WebDAVUI.designer.cs">
+    <Compile Include="WebDAVUI.Designer.cs">
       <DependentUpon>WebDAVUI.cs</DependentUpon>
     </Compile>
   </ItemGroup>
