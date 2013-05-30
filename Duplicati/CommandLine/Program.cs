@@ -63,6 +63,7 @@ namespace Duplicati.CommandLine
         static int Main(string[] args)
         {
             bool verboseErrors = false;
+            bool verbose = false;
             try
             {
             	List<string> cargs = new List<string>(args);
@@ -72,6 +73,7 @@ namespace Duplicati.CommandLine
 				var filter = tmpparsed.Item2;
 				
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
+                verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
@@ -162,6 +164,20 @@ namespace Duplicati.CommandLine
                 knownCommands["recreate-database"] = Commands.RecreateDatabase;
                 knownCommands["create-bugreport-database"] = Commands.CreateBugreportDatabase;
 
+                if (verbose)
+                {
+                    Console.WriteLine("Input command: {0}", command);
+                    
+                    Console.WriteLine("Input arguments: ");
+                    foreach(var a in cargs)
+                        Console.WriteLine("\t{0}", a);
+                    Console.WriteLine();                        
+                        
+                    Console.WriteLine("Input options: ");
+                    foreach(var n in options)
+                        Console.WriteLine("{0}: {1}", n.Key, n.Value);
+                    Console.WriteLine();                        
+                }
                 
                 if (knownCommands.ContainsKey(command))
                 {
