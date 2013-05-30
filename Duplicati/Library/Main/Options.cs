@@ -371,8 +371,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
-                    new CommandLineArgument("upload-throttle", CommandLineArgument.ArgumentType.Size, Strings.Options.UploadthrottleShort, Strings.Options.UploadthrottleLong, "0"),
-                    new CommandLineArgument("download-throttle", CommandLineArgument.ArgumentType.Size, Strings.Options.DownloadthrottleShort, Strings.Options.DownloadthrottleLong, "0"),
+                    new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0"),
+                    new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0"),
                     new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
                     
                     new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
@@ -851,7 +851,7 @@ namespace Duplicati.Library.Main
                 lock(m_lock)
                 {
                     string v;
-                    m_options.TryGetValue("upload-throttle", out v);
+                    m_options.TryGetValue("throttle-upload", out v);
                     if (string.IsNullOrEmpty(v))
                         return 0;
                     else
@@ -862,9 +862,9 @@ namespace Duplicati.Library.Main
             {
                 lock (m_lock)
                     if (value <= 0)
-                        m_options["upload-throttle"] = "";
+                        m_options["throttle-upload"] = "";
                     else
-                        m_options["upload-throttle"] = value.ToString() + "b";
+                        m_options["throttle-upload"] = value.ToString() + "b";
             }
         }
 
@@ -878,7 +878,7 @@ namespace Duplicati.Library.Main
                 lock (m_lock)
                 {
                     string v;
-                    m_options.TryGetValue("download-throttle", out v);
+                    m_options.TryGetValue("throttle-download", out v);
                     if (string.IsNullOrEmpty(v))
                         return 0;
                     else
@@ -889,9 +889,9 @@ namespace Duplicati.Library.Main
             {
                 lock (m_lock)
                     if (value <= 0)
-                        m_options["download-throttle"] = "";
+                        m_options["throttle-download"] = "";
                     else
-                        m_options["download-throttle"] = value.ToString() + "b";
+                        m_options["throttle-download"] = value.ToString() + "b";
             }
         }
 

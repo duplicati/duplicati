@@ -529,24 +529,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive..
-        /// </summary>
-        internal static string DownloadthrottleLong {
-            get {
-                return ResourceManager.GetString("DownloadthrottleLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Max number of bytes to download pr. second.
-        /// </summary>
-        internal static string DownloadthrottleShort {
-            get {
-                return ResourceManager.GetString("DownloadthrottleShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to This option can be used to experiment with different settings and observe the outcome without changing actual files..
         /// </summary>
         internal static string DryrunLong {
@@ -1249,6 +1231,42 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive..
+        /// </summary>
+        internal static string ThrottledownloadLong {
+            get {
+                return ResourceManager.GetString("ThrottledownloadLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max number of bytes to download pr. second.
+        /// </summary>
+        internal static string ThrottledownloadShort {
+            get {
+                return ResourceManager.GetString("ThrottledownloadShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive..
+        /// </summary>
+        internal static string ThrottleuploadLong {
+            get {
+                return ResourceManager.GetString("ThrottleuploadLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max number of bytes to upload pr. second.
+        /// </summary>
+        internal static string ThrottleuploadShort {
+            get {
+                return ResourceManager.GetString("ThrottleuploadShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may use relative times, like &quot;-2M&quot; for a backup from two months ago..
         /// </summary>
         internal static string TimeLong {
@@ -1263,24 +1281,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string TimeShort {
             get {
                 return ResourceManager.GetString("TimeShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive..
-        /// </summary>
-        internal static string UploadthrottleLong {
-            get {
-                return ResourceManager.GetString("UploadthrottleLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Max number of bytes to upload pr. second.
-        /// </summary>
-        internal static string UploadthrottleShort {
-            get {
-                return ResourceManager.GetString("UploadthrottleShort", resourceCulture);
             }
         }
         
