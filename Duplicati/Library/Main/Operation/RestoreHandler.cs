@@ -168,8 +168,9 @@ namespace Duplicati.Library.Main.Operation
                     // and this will reduce the need for multiple downloads of the same volume
                     // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-                    new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                        .DoRun(database, filter, filelistfilter, /*localpatcher*/ null);
+                    using(new Logging.Timer("Recreate temporary database for restore"))
+                        new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                            .DoRun(database, filter, filelistfilter, /*localpatcher*/ null);
 
 	                DoRun(database, filter, m_result);
                 }
