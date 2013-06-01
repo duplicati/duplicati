@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(3);
+                                        var v = m_reader.GetValue(4);
                                         if (v == null || v == DBNull.Value)
                                             return null;
                                         return v.ToString();
@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(4);
+                                        var v = m_reader.GetValue(5);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(5);
+                                        var v = m_reader.GetValue(6);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -154,11 +154,23 @@ namespace Duplicati.Library.Main.Database
                         }
                     }
                     
-                    public long TargetFileID
+                    public string TargetHash
                     {
                         get
                         {
                             var v = m_reader.GetValue(1);
+                            if (v == null || v == DBNull.Value)
+                                return null;
+
+                            return v.ToString();
+                        }
+                    }
+                    
+                    public long TargetFileID
+                    {
+                        get
+                        {
+                            var v = m_reader.GetValue(2);
                             if (v == null || v == DBNull.Value)
                                 return -1;
 
@@ -171,7 +183,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         get
                         {
-                            var v = m_reader.GetValue(2);
+                            var v = m_reader.GetValue(3);
                             if (v == null || v == DBNull.Value)
                                 return -1;
 
@@ -241,7 +253,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     m_file = null;
                     m_command = m_connection.CreateCommand();
-                    m_command.CommandText = string.Format(@"SELECT ""{0}"".""TargetPath"", ""{0}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{0}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{0}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{0}"".""TargetPath"", ""BlocksetEntry"".""Index""", m_tablename);
+                    m_command.CommandText = string.Format(@"SELECT ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""{0}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{0}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{0}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{0}"".""TargetPath"", ""BlocksetEntry"".""Index""", m_tablename);
                     m_reader = m_command.ExecuteReader();
                     m_file = new ExistingFile(m_reader);
                     m_current = null;

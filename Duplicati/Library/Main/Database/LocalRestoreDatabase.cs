@@ -243,6 +243,7 @@ namespace Duplicati.Library.Main.Database
         public interface IExistingFile
         {
             string TargetPath { get; }
+            string TargetHash { get; }
             long TargetFileID { get; }
             long Length { get; }
             IEnumerable<IExistingFileBlock> Blocks { get; }
@@ -380,7 +381,6 @@ namespace Duplicati.Library.Main.Database
             void SetBlockRestored(long targetfileid, long index, string hash, long blocksize);
             void Commit();
             System.Data.IDbTransaction Transaction { get; }
-			void SetFileRestored(long id);
         }
 
         private class BlockMarker : IBlockMarker
@@ -422,11 +422,6 @@ namespace Duplicati.Library.Main.Database
                     throw new Exception("Unexpected insert result");
             }
             
-            public void SetFileRestored(long id)
-			{
-				m_insertfileCommand.SetParameterValue(0, id);
-			}
-
             public void Commit()
             {
             	m_insertblockCommand.Parameters.Clear();

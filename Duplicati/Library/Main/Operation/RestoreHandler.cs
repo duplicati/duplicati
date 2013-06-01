@@ -128,9 +128,17 @@ namespace Duplicati.Library.Main.Operation
                 using (var database = new LocalRestoreDatabase(tmpdb, m_options.Blocksize))
                 {
                     var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                    var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                    if (blockhasher == null)
+                        throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
                     if (!blockhasher.CanReuseTransform)
                         throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
-
+    
+                    if (filehasher == null)
+                        throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
+                    if (!filehasher.CanReuseTransform)
+                        throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
+    
                     bool first = true;
                     RecreateDatabaseHandler.BlockVolumePostProcessor localpatcher =
                         (key, rd) =>
@@ -152,7 +160,7 @@ namespace Duplicati.Library.Main.Operation
                             CreateDirectoryStructure(database, m_options, m_result);
 
                             //If we are patching an existing target folder, do not touch stuff that is already updated
-                            ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_result);
+                            ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result);
 
 #if DEBUG
                             if (!m_options.NoLocalBlocks)
@@ -259,13 +267,9 @@ namespace Duplicati.Library.Main.Operation
 				using(new Logging.Timer("CreateDirectory"))
 				    CreateDirectoryStructure(database, m_options, result);
                 
-				using(new Logging.Timer("UpdateTargetPaths"))
-    				if (!m_options.Overwrite)
-    					UpdateTargetPathsToPreventOverwrite(database, filehasher, m_options, result);
-
                 //If we are patching an existing target folder, do not touch stuff that is already updated
 				using(new Logging.Timer("ScanForexistingTargetBlocks"))
-				    ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, result);
+				    ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, result);
 
                 //Look for existing blocks in the original source files only
 				using(new Logging.Timer("ScanForExistingSourceBlocksFast"))
@@ -335,58 +339,6 @@ namespace Duplicati.Library.Main.Operation
         {
             //TODO: Implement writing metadata
         }
-        
-        private static void UpdateTargetPathsToPreventOverwrite(LocalRestoreDatabase database, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
-		{
-			using(var blockmarker = database.CreateBlockMarker())
-			{
-				foreach(var file in database.GetFilesToRestore())
-				{                
-					bool rename = true;
-					try
-					{
-						if (System.IO.File.Exists(file.Path))
-						{
-							string key;
-							using(var fs = System.IO.File.OpenRead(file.Path))
-								key = Convert.ToBase64String(filehasher.ComputeHash(fs));
-		
-							if (key == file.Hash)
-							{
-                                result.AddVerboseMessage("Target file exists and is correct version: {0}", file.Path);
-								blockmarker.SetFileRestored(file.ID);
-								rename = false;
-							}
-						}
-						else
-						{
-                            result.AddVerboseMessage("Target file does not exist: {0}", file.Path);
-							rename = false;
-						}
-					}
-					catch (Exception ex)
-					{
-						result.AddWarning(string.Format("Failed to read file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
-					}
-	                
-					if (rename)
-					{
-						//Select a new filename
-						var ext = System.IO.Path.GetExtension(file.Path);
-						var newname = System.IO.Path.GetFileNameWithoutExtension(file.Path) + "." + Library.Utility.Utility.SerializeDateTime(database.RestoreTime);
-						var tr = newname + "." + ext;
-						var c = 0;
-						while (System.IO.File.Exists(tr) && c < 1000)
-							tr = newname + " (" + c.ToString() + ")" + "." + ext;
-						
-                        result.AddVerboseMessage("Target file exists and will be restored to: {0}", tr);
-						database.UpdateTargetPath(file.ID, tr);	
-					}
-				}
-				
-				blockmarker.Commit();
-			}
-		}
 
         private static void ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
         {
@@ -624,19 +576,24 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private static void ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
+        private static void ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
         {
             // Scan existing files for existing BLOCKS
             using (var blockmarker = database.CreateBlockMarker())
             {
                 foreach (var restorelist in database.GetExistingFilesWithBlocks())
                 {
+                    var rename = !options.Overwrite;
                     var targetpath = restorelist.TargetPath;
                     var targetfileid = restorelist.TargetFileID;
+                    var targetfilehash = restorelist.TargetHash;
                     if (System.IO.File.Exists(targetpath))
                     {
                         try
                         {
+                            if (rename)
+                                filehasher.Initialize();
+
                             using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                             using (var block = new Blockprocessor(file, blockbuffer))
                                 foreach (var targetblock in restorelist.Blocks)
@@ -647,19 +604,65 @@ namespace Duplicati.Library.Main.Operation
     
                                     if (size == targetblock.Size)
                                     {
-                                        var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                        var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
                                         if (key == targetblock.Hash)
                                         {
                                             blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size);
                                         }
                                     }
+                                    
+                                    if (rename)
+                                        filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0);
                                 }
+                                
+                            if (rename)
+                            {
+                                filehasher.TransformFinalBlock(blockbuffer, 0, 0);
+                                var filekey = Convert.ToBase64String(filehasher.Hash);
+                                if (filekey == targetfilehash)
+                                {
+                                    result.AddVerboseMessage("Target file exists and is correct version: {0}", targetpath);
+                                    rename = false;
+                                }
+                            }
                         }
                         catch (Exception ex)
                         {
                             result.AddWarning(string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
-                        }
+                        }                        
                     }
+                    else
+                    {
+                        result.AddVerboseMessage("Target file does not exist: {0}", targetpath);
+                        rename = false;
+                    }
+                    
+                    if (rename)
+                    {
+                        //Select a new filename
+                        var ext = System.IO.Path.GetExtension(targetpath);
+                        if (ext != null && !ext.StartsWith("."))
+                            ext = "." + ext;
+                        
+                        // First we try with a simple date append, assuming that there are not many conflicts there
+                        var newname = System.IO.Path.GetFileNameWithoutExtension(targetpath) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-mm-dd") + ext;
+                        
+                        // If that file exists, go to full timestamp
+                        if (System.IO.File.Exists(newname))
+                        {    
+                            newname = System.IO.Path.GetFileNameWithoutExtension(targetpath) + "." + database.RestoreTime.ToLocalTime().ToString("yyyymmddThhMMss");
+                            var tr = newname + ext;
+                            var c = 0;
+                            while (System.IO.File.Exists(tr) && c < 1000)
+                                tr = newname + " (" + c.ToString() + ")" + ext;
+                            
+                            newname = tr;
+                        }
+                        
+                        result.AddVerboseMessage("Target file exists and will be restored to: {0}", newname);
+                        database.UpdateTargetPath(targetfileid, newname); 
+                    }                        
+                    
                 }
 
                 blockmarker.Commit();
