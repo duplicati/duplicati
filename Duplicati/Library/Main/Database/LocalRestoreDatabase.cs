@@ -229,8 +229,7 @@ namespace Duplicati.Library.Main.Database
 		public void UpdateTargetPath(long ID, string newname)
 		{
             using (var cmd = m_connection.CreateCommand())
-            	cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? WHERE ""FileID"" = ?", m_tempfiletable), newname, ID);
-			
+            	cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? WHERE ""ID"" = ?", m_tempfiletable), newname, ID);
 		}
 
         public interface IExistingFileBlock

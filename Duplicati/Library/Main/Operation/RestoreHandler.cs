@@ -640,17 +640,19 @@ namespace Duplicati.Library.Main.Operation
                     if (rename)
                     {
                         //Select a new filename
-                        var ext = System.IO.Path.GetExtension(targetpath);
-                        if (ext != null && !ext.StartsWith("."))
+                        var ext = System.IO.Path.GetExtension(targetpath) ?? "";
+                        if (!string.IsNullOrEmpty(ext) && !ext.StartsWith("."))
                             ext = "." + ext;
                         
                         // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = System.IO.Path.GetFileNameWithoutExtension(targetpath) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-mm-dd") + ext;
+                        var newname = System.IO.Path.ChangeExtension(targetpath, null) + ".";
+                        newname += database.RestoreTime.ToLocalTime().ToString("yyyy-mm-dd");
+                        newname += ext;
                         
                         // If that file exists, go to full timestamp
                         if (System.IO.File.Exists(newname))
                         {    
-                            newname = System.IO.Path.GetFileNameWithoutExtension(targetpath) + "." + database.RestoreTime.ToLocalTime().ToString("yyyymmddThhMMss");
+                            newname = System.IO.Path.ChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyymmddThhMMss");
                             var tr = newname + ext;
                             var c = 0;
                             while (System.IO.File.Exists(tr) && c < 1000)
