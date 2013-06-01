@@ -15,9 +15,15 @@ namespace Duplicati.Library.Main.Database
         private const uint HASH_GUESS_SIZE = 128;
         
         /// <summary>
-        ///An approximate size of a path string in memory.
+        /// An approximate size of a path string in bytes.
+        /// As all .Net strings are unicode, the average path length,
+        /// must be half this size. Windows uses MAX_PATH=256, so 
+        /// we guess that the average size is around 128 chars.
+        /// On linux/OSX this may be wrong, but will only result
+        /// in slightly more memory being used that what the user 
+        /// specifies.
         /// </summary>
-        private const uint PATH_STRING_GUESS_SIZE = 1024;
+        private const uint PATH_STRING_GUESS_SIZE = 256;
 
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
