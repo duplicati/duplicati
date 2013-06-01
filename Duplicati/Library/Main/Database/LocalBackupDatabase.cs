@@ -518,7 +518,10 @@ namespace Duplicati.Library.Main.Database
 
                     default:
                         m_findfilesetCommand.Transaction = transaction;
-                        fileidobj = m_findfilesetCommand.ExecuteScalar(null, blocksetID, metadataID, filename);
+                        m_findfilesetCommand.SetParameterValue(0, blocksetID);
+                        m_findfilesetCommand.SetParameterValue(1, metadataID);
+                        m_findfilesetCommand.SetParameterValue(2, filename);
+                        fileidobj = m_findfilesetCommand.ExecuteScalar();
                         if (fileidobj == null || fileidobj == DBNull.Value)
                             m_filesetLookup.FalsePositives++;
                         else
@@ -529,7 +532,10 @@ namespace Duplicati.Library.Main.Database
             else
             {
                 m_findfilesetCommand.Transaction = transaction;
-                fileidobj = m_findfilesetCommand.ExecuteScalar(null, blocksetID, metadataID, filename);
+                m_findfilesetCommand.SetParameterValue(0, blocksetID);
+                m_findfilesetCommand.SetParameterValue(1, metadataID);
+                m_findfilesetCommand.SetParameterValue(2, filename);
+                fileidobj = m_findfilesetCommand.ExecuteScalar();
             }
             
             if (fileidobj == null || fileidobj == DBNull.Value)
@@ -593,7 +599,8 @@ namespace Duplicati.Library.Main.Database
                 }
             }
             
-            using(var rd = m_selectfileSimpleCommand.ExecuteReader(null, path))
+            m_selectfileSimpleCommand.SetParameterValue(0, path);
+            using(var rd = m_selectfileSimpleCommand.ExecuteReader())
                 if (rd.Read())
                 {
                     if (m_fileScantimeLookup != null)
