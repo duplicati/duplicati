@@ -78,7 +78,7 @@
     <Compile Include="SSHUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="SSHUI.designer.cs">
+    <Compile Include="SSHUI.Designer.cs">
       <DependentUpon>SSHUI.cs</DependentUpon>
     </Compile>
     <Compile Include="OutputStreamWrapper.cs" />

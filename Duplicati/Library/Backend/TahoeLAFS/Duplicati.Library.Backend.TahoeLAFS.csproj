@@ -113,7 +113,7 @@
     <Compile Include="TahoeUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="TahoeUI.designer.cs">
+    <Compile Include="TahoeUI.Designer.cs">
       <DependentUpon>TahoeUI.cs</DependentUpon>
     </Compile>
   </ItemGroup>

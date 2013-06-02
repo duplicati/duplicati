@@ -64,7 +64,7 @@
     <Compile Include="FTPUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="FTPUI.designer.cs">
+    <Compile Include="FTPUI.Designer.cs">
       <DependentUpon>FTPUI.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

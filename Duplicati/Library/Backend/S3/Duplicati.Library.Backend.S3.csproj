@@ -77,7 +77,7 @@
     <Compile Include="S3UI.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="S3UI.designer.cs">
+    <Compile Include="S3UI.Designer.cs">
       <DependentUpon>S3UI.cs</DependentUpon>
     </Compile>
     <Compile Include="S3Wrapper.cs" />
