@@ -255,7 +255,7 @@ namespace Duplicati.GUI.HelperControls
                 if ((x as TreeNode) == null || (y as TreeNode) == null)
                     return 0;
                     
-                if ((x as TreeNode).Tag == null || (y as TreeNode).Tag == nul)
+                if ((x as TreeNode).Tag == null || (y as TreeNode).Tag == null)
                     return 0;
                     
                 if ((bool)((TreeNode)x).Tag == (bool)((TreeNode)y).Tag)
