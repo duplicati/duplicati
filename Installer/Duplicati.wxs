@@ -124,6 +124,9 @@
       <Feature Id="zh_HK_LanguageFeature" Title="Chinese translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Chinese (zh-HK)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
         <ComponentGroupRef Id="DUPLICATI_LANG_zh_HK" />
       </Feature>
+      <Feature Id="cs_CZ_LanguageFeature" Title="Czech translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Czech (cs-CZ)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
+        <ComponentGroupRef Id="DUPLICATI_LANG_cs_CZ" />
+      </Feature>
     </Feature>
 
     <!-- Launch duplicati setup -->
