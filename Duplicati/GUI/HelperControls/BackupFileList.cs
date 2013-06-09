@@ -252,9 +252,12 @@ namespace Duplicati.GUI.HelperControls
 
             public int Compare(object x, object y)
             {
-                if (!(x is TreeNode) || !(y is TreeNode))
+                if ((x as TreeNode) == null || (y as TreeNode) == null)
                     return 0;
-
+                    
+                if ((x as TreeNode).Tag == null || (y as TreeNode).Tag == nul)
+                    return 0;
+                    
                 if ((bool)((TreeNode)x).Tag == (bool)((TreeNode)y).Tag)
                     return string.Compare(((TreeNode)x).Text, ((TreeNode)y).Text);
                 else
