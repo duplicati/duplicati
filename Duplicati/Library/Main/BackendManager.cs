@@ -327,27 +327,28 @@ namespace Duplicati.Library.Main
                             if (m_backend == null)
                                 m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
 
-                            switch (item.Operation)
-                            {
-                                case OperationType.Put:
-                                    DoPut(item);
-                                    break;
-                                case OperationType.Get:
-                                    DoGet(item);
-                                    break;
-                                case OperationType.List:
-                                    DoList(item);
-                                    break;
-                                case OperationType.Delete:
-                                    DoDelete(item);
-                                    break;
-                                case OperationType.CreateFolder:
-                                    DoCreateFolder(item);
-                                    break;
-                                case OperationType.Terminate:
-                                    m_queue.SetCompleted();
-                                    break;
-                            }
+                            using(new Logging.Timer(string.Format("RemoteOperation{0}", item.Operation)))
+                                switch (item.Operation)
+                                {
+                                    case OperationType.Put:
+                                        DoPut(item);
+                                        break;
+                                    case OperationType.Get:
+                                        DoGet(item);
+                                        break;
+                                    case OperationType.List:
+                                        DoList(item);
+                                        break;
+                                    case OperationType.Delete:
+                                        DoDelete(item);
+                                        break;
+                                    case OperationType.CreateFolder:
+                                        DoCreateFolder(item);
+                                        break;
+                                    case OperationType.Terminate:
+                                        m_queue.SetCompleted();
+                                        break;
+                                }
 
                             lastException = null;
                             retries = m_options.NumberOfRetries;
