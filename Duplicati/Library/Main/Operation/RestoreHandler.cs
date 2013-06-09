@@ -299,6 +299,9 @@ namespace Duplicati.Library.Main.Operation
 					{
                         result.AddError(string.Format("Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message), ex);
 					}
+                    
+                // Reset the filehasher if it was used to verify existing files
+                filehasher.Initialize();
 					
                 // After all blocks in the files are restored, verify the file hash
                 using(new Logging.Timer("RestoreVerification"))
