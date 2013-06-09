@@ -38,19 +38,22 @@ namespace Duplicati.Library.Main.Operation
 		}
 		
 		public virtual void Run()
-		{
-			if (!System.IO.File.Exists(m_options.Dbpath))
-				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+        {
+            if (!System.IO.File.Exists(m_options.Dbpath))
+                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 			
-			using(var db = new LocalDeleteDatabase(m_options.Dbpath, true))
-			using(var tr = db.BeginTransaction())
-			{
+            using(var db = new LocalDeleteDatabase(m_options.Dbpath, true))
+            using(var tr = db.BeginTransaction())
+            {
                 m_result.SetDatabase(db);
-	        	Utility.VerifyParameters(db, m_options);
+                Utility.VerifyParameters(db, m_options);
 	        	
-				DoCompact(db, false, tr);
-				if (!m_options.Dryrun)
-					tr.Commit();
+                DoCompact(db, false, tr);
+                if (!m_options.Dryrun)
+                {
+                    using(new Logging.Timer("CommitCompact"))
+                        tr.Commit();
+                }
 				else
 					tr.Rollback();
 			}

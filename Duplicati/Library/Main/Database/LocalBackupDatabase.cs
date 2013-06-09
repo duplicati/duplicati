@@ -358,7 +358,9 @@ namespace Duplicati.Library.Main.Database
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 m_insertblocksetCommand.Transaction = tr.Parent;
-                blocksetid = Convert.ToInt64(m_insertblocksetCommand.ExecuteScalar(null, size, filehash));
+                m_insertblocksetCommand.SetParameterValue(0, size);
+                m_insertblocksetCommand.SetParameterValue(1, filehash);
+                blocksetid = Convert.ToInt64(m_insertblocksetCommand.ExecuteScalar());
                 if (m_fileHashLookup != null)
                     m_fileHashLookup.Add(hashdata, filehash, blocksetid);
 
@@ -394,7 +396,8 @@ namespace Duplicati.Library.Main.Database
                     remainsize -= blocksize;
                 }
 
-                tr.Commit();
+                using(new Logging.Timer("CommitAddBlockset"))
+                    tr.Commit();
             }
 
             return true;
@@ -470,8 +473,10 @@ namespace Duplicati.Library.Main.Database
                 using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                 {
                     m_insertmetadatasetCommand.Transaction = tr.Parent;
-                    metadataid = Convert.ToInt64(m_insertmetadatasetCommand.ExecuteScalar(null, blocksetid));
-                    tr.Commit();
+                    m_insertmetadatasetCommand.SetParameterValue(0, blocksetid);
+                    metadataid = Convert.ToInt64(m_insertmetadatasetCommand.ExecuteScalar());
+                    using(new Logging.Timer("CommitAddMetadataset"))
+                        tr.Commit();
                     if (m_metadataLookup != null)
                         m_metadataLookup.Add(hashdata, hash, metadataid);
                 }
@@ -547,7 +552,8 @@ namespace Duplicati.Library.Main.Database
                     m_insertfileCommand.SetParameterValue(1, blocksetID);
                     m_insertfileCommand.SetParameterValue(2, metadataID);
                     fileidobj = Convert.ToInt64(m_insertfileCommand.ExecuteScalar());
-                    tr.Commit();                    
+                    using(new Logging.Timer("CommitAddFile"))
+                        tr.Commit();                    
 
                     // We do not need to update this, because we will not ask for the same file twice
                     if (m_filesetLookup != null)                    
@@ -784,7 +790,8 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                tr.Commit();
+                using(new Logging.Timer("CommitAppendFilesFromPrevious"))
+                    tr.Commit();
             }
         }
 
@@ -801,7 +808,8 @@ namespace Duplicati.Library.Main.Database
             {
             	cmd.Transaction = tr.Parent;            	
 				m_filesetId = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, timestamp, volumeid));
-				tr.Commit();
+                using(new Logging.Timer("CommitCreateFileset"))
+    				tr.Commit();
 				return m_filesetId;
 			}
 		}

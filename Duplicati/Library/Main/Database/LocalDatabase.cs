@@ -306,7 +306,8 @@ namespace Duplicati.Library.Main.Database
                 m_removeremotevolumeCommand.Transaction = tr.Parent;
                 m_removeremotevolumeCommand.ExecuteNonQuery();
 
-                tr.Commit();
+                using(new Logging.Timer("CommitRemoveRemoteVolume"))
+                    tr.Commit();
             }
         }
 
@@ -320,7 +321,8 @@ namespace Duplicati.Library.Main.Database
                 m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
                 m_createremotevolumeCommand.Transaction = tr.Parent;
                 var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
-                tr.Commit();
+                using(new Logging.Timer("CommitRegisterVolume"))
+                    tr.Commit();
                 return r;
             }
         }
@@ -482,7 +484,8 @@ namespace Duplicati.Library.Main.Database
 				foreach(var kp in options)
 					cmd.ExecuteNonQuery(@"INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES (?, ?) ", kp.Key, kp.Value);
 				
-				tr.Commit();
+                using(new Logging.Timer("CommitSetDbOptions"))
+    				tr.Commit();
 			}
 		}
 
@@ -755,7 +758,8 @@ namespace Duplicati.Library.Main.Database
                                 }
                             
                             
-                            tr.Commit();
+                            using(new Logging.Timer("CreateFilenameTable"))
+                                tr.Commit();
                         }
                     }
                 }

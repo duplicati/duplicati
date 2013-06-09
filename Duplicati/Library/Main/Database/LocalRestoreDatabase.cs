@@ -94,7 +94,8 @@ namespace Duplicati.Library.Main.Database
                         
                         cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_filenamestable));
                         
-                        tr.Commit();
+                        using(new Logging.Timer("CommitPrepareFileset"))
+                            tr.Commit();
                     }
                 }
                 else
@@ -436,7 +437,8 @@ namespace Duplicati.Library.Main.Database
                 var tr = m_insertblockCommand.Transaction;
                 m_insertblockCommand.Dispose();
                 m_insertblockCommand = null;
-                tr.Commit();
+                using(new Logging.Timer("CommitBlockMarker"))
+                    tr.Commit();
                 tr.Dispose();
             }
 

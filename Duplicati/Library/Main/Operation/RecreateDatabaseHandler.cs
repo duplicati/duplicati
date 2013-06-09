@@ -149,7 +149,8 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        tr.Commit();
+                        using(new Logging.Timer("CommitRecreatedDb"))
+                            tr.Commit();
                     }
 
                     //We need this to prepare for the block-lists
@@ -192,7 +193,8 @@ namespace Duplicati.Library.Main.Operation
                                 }
                         }
                         
-                        tr.Commit();
+                        using(new Logging.Timer("CommitUpdateFilesetFromRemote"))
+                            tr.Commit();
                     }
                 }
 
@@ -211,7 +213,8 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
                             restoredb.UpdateBlocklist(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), hashsize, tr);
 
-                        tr.Commit();
+                        using(new Logging.Timer("CommitRestoredBlocklist"))
+                            tr.Commit();
 
                         //At this point we can patch files with data from the block volume
                         if (blockprocessor != null)

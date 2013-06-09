@@ -50,7 +50,10 @@ namespace Duplicati.Library.Main.Operation
                 DoRun(db, tr, false, false);
                 
                 if (!m_options.Dryrun)
-                    tr.Commit();
+                {
+                    using(new Logging.Timer("CommitDelete"))
+                        tr.Commit();
+                }
                 else
                     tr.Rollback();
             }

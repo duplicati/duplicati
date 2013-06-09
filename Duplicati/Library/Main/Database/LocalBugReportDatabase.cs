@@ -49,7 +49,8 @@ namespace Duplicati.Library.Main.Database
 				cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");				
 				cmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""Path"" = ""ID"" ");
 				
-				tr.Commit();
+                using(new Logging.Timer("CommitUpdateBugReport"))
+    				tr.Commit();
 				
 				cmd.Transaction = null;
 				cmd.ExecuteNonQuery("VACUUM");
