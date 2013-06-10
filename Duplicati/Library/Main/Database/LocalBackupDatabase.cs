@@ -396,8 +396,7 @@ namespace Duplicati.Library.Main.Database
                     remainsize -= blocksize;
                 }
 
-                using(new Logging.Timer("CommitAddBlockset"))
-                    tr.Commit();
+                tr.Commit();
             }
 
             return true;
@@ -475,8 +474,7 @@ namespace Duplicati.Library.Main.Database
                     m_insertmetadatasetCommand.Transaction = tr.Parent;
                     m_insertmetadatasetCommand.SetParameterValue(0, blocksetid);
                     metadataid = Convert.ToInt64(m_insertmetadatasetCommand.ExecuteScalar());
-                    using(new Logging.Timer("CommitAddMetadataset"))
-                        tr.Commit();
+                    tr.Commit();
                     if (m_metadataLookup != null)
                         m_metadataLookup.Add(hashdata, hash, metadataid);
                 }
@@ -552,8 +550,7 @@ namespace Duplicati.Library.Main.Database
                     m_insertfileCommand.SetParameterValue(1, blocksetID);
                     m_insertfileCommand.SetParameterValue(2, metadataID);
                     fileidobj = Convert.ToInt64(m_insertfileCommand.ExecuteScalar());
-                    using(new Logging.Timer("CommitAddFile"))
-                        tr.Commit();                    
+                    tr.Commit();                    
 
                     // We do not need to update this, because we will not ask for the same file twice
                     if (m_filesetLookup != null)                    
@@ -790,8 +787,7 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                using(new Logging.Timer("CommitAppendFilesFromPrevious"))
-                    tr.Commit();
+                tr.Commit();
             }
         }
 
@@ -808,8 +804,7 @@ namespace Duplicati.Library.Main.Database
             {
             	cmd.Transaction = tr.Parent;            	
 				m_filesetId = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, timestamp, volumeid));
-                using(new Logging.Timer("CommitCreateFileset"))
-    				tr.Commit();
+				tr.Commit();
 				return m_filesetId;
 			}
 		}
