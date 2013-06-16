@@ -412,7 +412,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
-                    new CommandLineArgument("no-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NometadataShort, Strings.Options.NometadataLong, "false"),
+                    new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "false"),
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
@@ -1195,9 +1195,9 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets a flag indicating if metadata for files and folders should be ignored
         /// </summary>
-        public bool NoMetadata
+        public bool StoreMetadata
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-metadata"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "store-metadata"); }
         }
 
         /// <summary>

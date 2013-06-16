@@ -871,24 +871,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time..
-        /// </summary>
-        internal static string NometadataLong {
-            get {
-                return ResourceManager.GetString("NometadataLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Disable storing file metadata.
-        /// </summary>
-        internal static string NometadataShort {
-            get {
-                return ResourceManager.GetString("NometadataShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to If an upload or download fails, Duplicati will retry a number of times before failing. Use this to handle unstable network connections better..
         /// </summary>
         internal static string NumberofretriesLong {
@@ -1137,6 +1119,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string SnapshotpolicyShort {
             get {
                 return ResourceManager.GetString("SnapshotpolicyShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time..
+        /// </summary>
+        internal static string StoremetadataLong {
+            get {
+                return ResourceManager.GetString("StoremetadataLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enables storing file metadata.
+        /// </summary>
+        internal static string StoremetadataShort {
+            get {
+                return ResourceManager.GetString("StoremetadataShort", resourceCulture);
             }
         }
         

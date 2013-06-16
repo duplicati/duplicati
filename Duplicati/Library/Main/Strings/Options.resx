@@ -450,11 +450,11 @@
   <data name="FilepathlookupsizeShort" xml:space="preserve">
     <value>Memory used to keep paths cached</value>
   </data>
-  <data name="NometadataLong" xml:space="preserve">
-    <value>Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time.</value>
+  <data name="StoremetadataLong" xml:space="preserve">
+    <value>Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time.</value>
   </data>
-  <data name="NometadataShort" xml:space="preserve">
-    <value>Disable storing file metadata</value>
+  <data name="StoremetadataShort" xml:space="preserve">
+    <value>Enables storing file metadata</value>
   </data>
   <data name="MetadatahashlookupsizeLong" xml:space="preserve">
     <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>

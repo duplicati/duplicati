@@ -362,7 +362,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     Dictionary<string, string> metadata;
 
-                    if (!m_options.NoMetadata)
+                    if (m_options.StoreMetadata)
                     {
                         metadata = null; //snapshot.GetMetadata(path);
                         if (metadata == null)
@@ -394,11 +394,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 IMetahash metahash;
 
-                if (m_options.NoMetadata)
-                {
-                    metahash = EMPTY_METADATA;
-                }
-                else
+                if (m_options.StoreMetadata)
                 {
                     Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
                     if (metadata == null)
@@ -409,6 +405,10 @@ namespace Duplicati.Library.Main.Operation
                     if (!metadata.ContainsKey("CoreLastWritetime"))
                         metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
                     metahash = Utility.WrapMetadata(metadata, m_options);
+                }
+                else
+                {
+                    metahash = EMPTY_METADATA;
                 }
 
                 //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
@@ -436,11 +436,7 @@ namespace Duplicati.Library.Main.Operation
                     DateTime scantime = DateTime.UtcNow;
 
                     IMetahash metahashandsize;
-                    if (m_options.NoMetadata)
-                    {
-                        metahashandsize = EMPTY_METADATA;
-                    }
-                    else
+                    if (m_options.StoreMetadata)
                     {
                         Dictionary<string, string> metadata = null; //snapshot.GetMetadata(file);
                         if (metadata == null)
@@ -452,6 +448,10 @@ namespace Duplicati.Library.Main.Operation
                             metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(lastModified);
 
                         metahashandsize = Utility.WrapMetadata(metadata, m_options);
+                    }
+                    else
+                    {
+                        metahashandsize = EMPTY_METADATA;
                     }
 
                     var hint = m_options.GetCompressionHintFromFilename(path);
