@@ -255,7 +255,7 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
-        public static int CreateBugreportDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        public static int CreateBugReport(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);

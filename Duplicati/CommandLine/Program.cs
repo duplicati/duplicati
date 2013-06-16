@@ -162,7 +162,7 @@ namespace Duplicati.CommandLine
 
                 knownCommands["compact"] = Commands.Compact;
                 knownCommands["recreate-database"] = Commands.RecreateDatabase;
-                knownCommands["create-bugreport-database"] = Commands.CreateBugreportDatabase;
+                knownCommands["create-bug-report"] = Commands.CreateBugReport;
 
                 if (verbose)
                 {

@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
                 db.Fix();
             }
 				
-			m_result.AddMessage("Completed! Please examine the log table of the database to see that no filenames are accidentially left over. If you are conserned about privay, do not attach the database to an issue!!!");
+			m_result.AddMessage("Completed! Please examine the log table of the database to see that no filenames are accidentially left over. If you are conserned about privacy, do not attach the database to an issue!!!");
 		}
 	}
 }
