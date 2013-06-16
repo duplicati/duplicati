@@ -151,6 +151,7 @@ namespace Duplicati.Library.Interface
     
     public interface IRepairResults : IBasicResults
     {
+        IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }
 }
 

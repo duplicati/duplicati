@@ -544,6 +544,7 @@ namespace Duplicati.Library.Main
         
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
+        public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
     }   
     
     internal class CompactResults : BasicResults, Library.Interface.ICompactResults

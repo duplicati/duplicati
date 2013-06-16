@@ -19,8 +19,54 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_result = result;
         }
-
+        
         public void Run()
+        {
+            if (!System.IO.File.Exists(m_options.Dbpath))
+            {
+                RunRepairLocal();
+                return;
+            }
+
+            long remotes = -1;
+            try
+            {        
+                using(var db = new LocalRepairDatabase(m_options.Dbpath))
+                    remotes = db.GetRemoteVolumes().Count;
+            }
+            catch (Exception ex)
+            {
+                m_result.AddWarning(string.Format("Failed to read local db {0}, error: {1}", m_options.Dbpath, ex.Message), ex);
+            }
+            
+            if (remotes <= 0)
+            {
+                var baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup");
+                var i = 0;
+                while(System.IO.File.Exists(baseName) && i++ < 1000)
+                    baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup" + i.ToString());
+                
+                m_result.AddMessage(string.Format("Renaming existing db from {0} to {1}", m_options.Dbpath, baseName));
+                System.IO.File.Move(m_options.Dbpath, baseName);
+                
+                RunRepairLocal();                
+            }
+            else
+            {
+                RunRepairRemote();
+            }
+
+        }
+        
+        public void RunRepairLocal()
+        {
+            m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
+            using(new Logging.Timer("Recreate database for repair"))
+                new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                    .Run(m_options.Dbpath);            
+        }
+
+        public void RunRepairRemote()
         {
 			if (!System.IO.File.Exists(m_options.Dbpath))
 				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
@@ -46,14 +92,14 @@ namespace Duplicati.Library.Main.Operation
 					{
 						if (tp.MissingVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
 						{
-							throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database? (use --force to skip this check)", tp.ExtraVolumes.Count()));
+							throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
 						}
 						else if (!tp.BackupPrefixes.Contains(m_options.Prefix) && tp.ParsedVolumes.Count() > 0)
 						{
 							if (tp.BackupPrefixes.Length == 1)
-								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix? (use --force to skip this check)", m_options.Prefix, tp.BackupPrefixes[0]));
+								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
 							else
-								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix? (use --force to skip this check)", m_options.Prefix, string.Join(", ",  tp.BackupPrefixes)));
+								throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ",  tp.BackupPrefixes)));
 						}
 					}
 				
