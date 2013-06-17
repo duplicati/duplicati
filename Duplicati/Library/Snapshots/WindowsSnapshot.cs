@@ -83,7 +83,7 @@ namespace Duplicati.Library.Snapshots
             {
                 //Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
                 string alphadir = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "alphavss");
-                string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyName().Name + ".dll");
+                string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
                 IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
 
                 List<Guid> excludedWriters = new List<Guid>();
@@ -114,8 +114,7 @@ namespace Duplicati.Library.Snapshots
                 try
                 {
                     //Gather information on all Vss writers
-                    using (IVssAsync async = m_backup.GatherWriterMetadata())
-                        async.Wait();
+                    m_backup.GatherWriterMetadata();
                     m_backup.FreeWriterMetadata();
                 }
                 catch
@@ -144,12 +143,10 @@ namespace Duplicati.Library.Snapshots
                 m_backup.SetBackupState(false, true, VssBackupType.Full, false);
 
                 //Make all writers aware that we are going to do the backup
-                using (IVssAsync async = m_backup.PrepareForBackup())
-                    async.Wait();
+                m_backup.PrepareForBackup();
 
                 //Create the shadow volumes
-                using (IVssAsync async = m_backup.DoSnapshotSet())
-                    async.Wait();
+                m_backup.DoSnapshotSet();
 
                 //Make a little lookup table for faster translation
                 m_volumeMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
@@ -394,8 +391,7 @@ namespace Duplicati.Library.Snapshots
             try 
             {
                 if (m_backup != null)
-                    using (IVssAsync async = m_backup.BackupComplete())
-                        async.Wait();
+                    m_backup.BackupComplete();
             }
             catch { }
 

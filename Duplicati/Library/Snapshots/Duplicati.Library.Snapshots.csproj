@@ -101,30 +101,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2003.x64.dll">
-      <Link>alphavss\AlphaVSS.Win2003.x64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2003.x86.dll">
-      <Link>alphavss\AlphaVSS.Win2003.x86.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2008.x64.dll">
-      <Link>alphavss\AlphaVSS.Win2008.x64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2008.x86.dll">
-      <Link>alphavss\AlphaVSS.Win2008.x86.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.WinXP.x64.dll">
-      <Link>alphavss\AlphaVSS.WinXP.x64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.WinXP.x86.dll">
-      <Link>alphavss\AlphaVSS.WinXP.x86.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="lvm-scripts\create-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -132,6 +108,26 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.51.x86.dll">
+      <Link>alphavss\AlphaVSS.51.x86.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.52.x64.dll">
+      <Link>alphavss\AlphaVSS.52.x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.52.x86.dll">
+      <Link>alphavss\AlphaVSS.52.x86.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.60.x64.dll">
+      <Link>alphavss\AlphaVSS.60.x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.60.x86.dll">
+      <Link>alphavss\AlphaVSS.60.x86.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -161,4 +157,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="alphavss\" />
+  </ItemGroup>
 </Project>
