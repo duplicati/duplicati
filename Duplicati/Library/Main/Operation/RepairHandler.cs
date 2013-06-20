@@ -28,28 +28,35 @@ namespace Duplicati.Library.Main.Operation
                 return;
             }
 
-            long remotes = -1;
+            long knownRemotes = -1;
             try
             {        
                 using(var db = new LocalRepairDatabase(m_options.Dbpath))
-                    remotes = db.GetRemoteVolumes().Count;
+                    knownRemotes = db.GetRemoteVolumes().Count;
             }
             catch (Exception ex)
             {
                 m_result.AddWarning(string.Format("Failed to read local db {0}, error: {1}", m_options.Dbpath, ex.Message), ex);
             }
             
-            if (remotes <= 0)
-            {
-                var baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup");
-                var i = 0;
-                while(System.IO.File.Exists(baseName) && i++ < 1000)
-                    baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup" + i.ToString());
+            if (knownRemotes <= 0)
+            {                
+                if (m_options.Dryrun)
+                {
+                    m_result.AddDryrunMessage("Performing dryrun restore");
+                }
+                else
+                {
+                    var baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup");
+                    var i = 0;
+                    while (System.IO.File.Exists(baseName) && i++ < 1000)
+                        baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
+                        
+                    m_result.AddMessage(string.Format("Renaming existing db from {0} to {1}", m_options.Dbpath, baseName));
+                    System.IO.File.Move(m_options.Dbpath, baseName);
+                }
                 
-                m_result.AddMessage(string.Format("Renaming existing db from {0} to {1}", m_options.Dbpath, baseName));
-                System.IO.File.Move(m_options.Dbpath, baseName);
-                
-                RunRepairLocal();                
+                RunRepairLocal();
             }
             else
             {
@@ -62,8 +69,9 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using(new Logging.Timer("Recreate database for repair"))
-                new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                    .Run(m_options.Dbpath);            
+                using(var f = m_options.Dryrun ? new Library.Utility.TempFile() : null)
+                    new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                        .Run(m_options.Dryrun ? (string)f : m_options.Dbpath);            
         }
 
         public void RunRepairRemote()
@@ -103,6 +111,7 @@ namespace Duplicati.Library.Main.Operation
 						}
 					}
 				
+                    // TODO: It is actually possible to use the extra files if we parse them
 					foreach(var n in tp.ExtraVolumes)
 						try
 						{
