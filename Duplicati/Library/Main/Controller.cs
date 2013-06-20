@@ -192,6 +192,15 @@ namespace Duplicati.Library.Main
                 new Operation.CreateBugReportHandler(t[0], m_options, result).Run();
             });
         }
+
+        public Duplicati.Library.Interface.IListChangesResults ListChanges(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
+        {
+            var t = new string[] { baseVersion, targetVersion };
+            
+            return RunAction(new ListChangesResults(), ref t, (result) => {
+                new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter);
+            });
+        }
         
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions

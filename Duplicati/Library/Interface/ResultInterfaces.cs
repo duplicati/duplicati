@@ -153,5 +153,72 @@ namespace Duplicati.Library.Interface
     {
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }
+    
+    
+    /// <summary>
+    /// The possible change types for an entry
+    /// </summary>
+    public enum ListChangesChangeType
+    {
+        /// <summary>
+        /// The element was added
+        /// </summary>
+        Added,
+        /// <summary>
+        /// The element was deleted
+        /// </summary>
+        Deleted,
+        /// <summary>
+        /// The element was modified
+        /// </summary>
+        Modified
+    }  
+    
+    /// <summary>
+    /// The possible entry types
+    /// </summary>
+    public enum ListChangesElementType
+    {
+        /// <summary>
+        /// The entry is a folder
+        /// </summary>
+        Folder,
+        /// <summary>
+        /// The entry is a symlink
+        /// </summary>
+        Symlink,
+        /// <summary>
+        /// The entry is a file
+        /// </summary>
+        File
+    }
+          
+    public interface IListChangesResults : IBasicResults
+    {
+        DateTime BaseVersionTimestamp { get; }
+        DateTime CompareVersionTimestamp { get; }
+        long BaseVersionIndex { get; }
+        long CompareVersionIndex { get; }
+    
+        IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> ChangeDetails { get; } 
+        
+        long AddedFolders { get; }
+        long AddedSymlinks { get; }
+        long AddedFiles { get; }
+
+        long DeletedFolders { get; }
+        long DeletedSymlinks { get; }
+        long DeletedFiles { get; }
+
+        long ModifiedFolders { get; }
+        long ModifiedSymlinks { get; }
+        long ModifiedFiles { get; }
+        
+        long PreviousSize { get; }
+        long CurrentSize { get; }
+
+        long AddedSize { get; }
+        long DeletedSize { get; }
+    }
 }
 

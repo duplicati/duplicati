@@ -33,6 +33,7 @@ namespace Duplicati.Library.Main
         Restore,
         FindLastFileVersion,
         List,
+        ListChanges,
         Delete,
         RestoreControlfiles,
         Repair,
@@ -125,5 +126,5 @@ namespace Duplicati.Library.Main
         /// The entry is a symbolic link
         /// </summary>
         Symlink
-    }
+    }   
 }

@@ -111,6 +111,8 @@
     <Compile Include="Database\LocalListDatabase.cs" />
     <Compile Include="ResultClasses.cs" />
     <Compile Include="Operation\ListControlFilesHandler.cs" />
+    <Compile Include="Operation\ListChangesHandler.cs" />
+    <Compile Include="Database\LocalListChangesDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

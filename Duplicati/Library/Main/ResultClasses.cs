@@ -563,5 +563,70 @@ namespace Duplicati.Library.Main
         public CompactResults(BasicResults p) : base(p) { }
     }   
 
+    internal class ListChangesResults : BasicResults, Library.Interface.IListChangesResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.ListChanges; } }
+        
+        public DateTime BaseVersionTimestamp { get; internal set; }
+        public DateTime CompareVersionTimestamp { get; internal set; }
+        public long BaseVersionIndex { get; internal set; }
+        public long CompareVersionIndex { get; internal set; }
+        
+        public IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> ChangeDetails { get; internal set; } 
+        
+        public long AddedFolders { get; internal set; }
+        public long AddedSymlinks { get; internal set; }
+        public long AddedFiles { get; internal set; }
+
+        public long DeletedFolders { get; internal set; }
+        public long DeletedSymlinks { get; internal set; }
+        public long DeletedFiles { get; internal set; }
+
+        public long ModifiedFolders { get; internal set; }
+        public long ModifiedSymlinks { get; internal set; }
+        public long ModifiedFiles { get; internal set; }
+        
+        public long PreviousSize { get; internal set; }
+        public long CurrentSize { get; internal set; }
+
+        public long AddedSize { get; internal set; }
+        public long DeletedSize { get; internal set; }
+        
+        public void SetResult(
+            DateTime baseVersionTime, long baseVersionIndex, DateTime compareVersionTime, long compareVersionIndex,
+            long addedFolders, long addedSymlinks, long addedFiles,
+            long deletedFolders, long deletedSymlinks, long deletedFiles,
+            long modifiedFolders, long modifiedSymlinks, long modifiedFiles,
+            long addedSize, long deletedSize, long previousSize, long currentSize,
+            IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> changeDetails
+        )
+        {
+            this.BaseVersionTimestamp = baseVersionTime;
+            this.BaseVersionIndex = baseVersionIndex;
+            this.CompareVersionTimestamp = compareVersionTime;
+            this.CompareVersionIndex = compareVersionIndex;
+        
+            this.AddedFolders = addedFolders;        
+            this.AddedSymlinks = addedSymlinks;
+            this.AddedFiles = addedFiles;
+            
+            this.DeletedFolders = deletedFolders;
+            this.DeletedSymlinks = deletedSymlinks;
+            this.DeletedFiles = deletedFiles;
+            
+            this.ModifiedFolders = modifiedFolders;
+            this.ModifiedSymlinks = modifiedSymlinks;
+            this.ModifiedFiles = modifiedFiles;
+            
+            this.AddedSize = addedSize;
+            this.DeletedSize = deletedSize;
+            
+            this.PreviousSize = previousSize;
+            this.CurrentSize = currentSize;
+            
+            this.ChangeDetails = changeDetails;
+        }
+    }
+
 }
 

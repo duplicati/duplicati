@@ -265,6 +265,92 @@ namespace Duplicati.CommandLine
 
             return 0;
         }
+        
+        public static int ListChanges(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count < 1)
+                return PrintWrongNumberOfArguments(args, 1);
+            
+            Library.Interface.IListChangesResults result;
+            using(var i = new Library.Main.Controller(args[0], options))
+                if (args.Count == 2)
+                    result = i.ListChanges(null, args[1], null, filter);
+                else            
+                    result = i.ListChanges(args.Count > 1 ? args[1] : null, args.Count > 2 ? args[2] : null, null, filter);
+            
+            Console.WriteLine("Listing changes from");
+            Console.WriteLine("{0}: {1}", result.BaseVersionIndex, result.BaseVersionTimestamp);
+            Console.WriteLine(" to");
+            Console.WriteLine("{0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
+            Console.WriteLine();
+            
+            if (result.ChangeDetails != null)
+            {
+                var added = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Added);
+                var deleted = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Deleted);
+                var modified = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Modified);
+            
+                var count = added.Count();
+                if (count > 0)
+                {
+                    Console.WriteLine("{0} added entries:", count);
+                    foreach(var n in added)
+                        Console.WriteLine(" + {0}", n.Item3);
+                    Console.WriteLine();
+                }
+                count = modified.Count();
+                if (count > 0)
+                {
+                    Console.WriteLine("{0} modified entries:", count);
+                    foreach(var n in modified)
+                        Console.WriteLine(" ~ {0}", n.Item3);
+                    Console.WriteLine();
+                }
+                count = deleted.Count();
+                if (count > 0)
+                {
+                    Console.WriteLine("{0} deleted entries:", count);
+                    foreach(var n in deleted)
+                        Console.WriteLine(" - {0}", n.Item3);
+                    Console.WriteLine();
+                }
+            }
+            else
+            {
+                if (result.AddedFolders > 0)
+                    Console.WriteLine("{0} added folders", result.AddedFolders);
+                if (result.AddedSymlinks > 0)
+                    Console.WriteLine("{0} added symlinks", result.AddedSymlinks);
+                if (result.AddedFiles > 0)
+                    Console.WriteLine("{0} added files", result.AddedFiles);
+                if (result.DeletedFolders > 0)
+                    Console.WriteLine("{0} deleted folders", result.DeletedFolders);
+                if (result.DeletedSymlinks > 0)
+                    Console.WriteLine("{0} deleted symlinks", result.DeletedSymlinks);
+                if (result.DeletedFiles > 0)
+                    Console.WriteLine("{0} deleted files", result.DeletedFiles);
+                if (result.ModifiedFolders > 0)
+                    Console.WriteLine("{0} modified folders", result.ModifiedFolders);
+                if (result.ModifiedSymlinks > 0)
+                    Console.WriteLine("{0} modified symlinks", result.ModifiedSymlinks);
+                if (result.ModifiedFiles > 0)
+                    Console.WriteLine("{0} modified files", result.ModifiedFiles);
+
+                if (result.AddedFolders + result.AddedSymlinks + result.AddedFolders +
+                    result.ModifiedFolders + result.ModifiedSymlinks + result.ModifiedFiles +
+                    result.DeletedFolders + result.DeletedSymlinks + result.DeletedFiles == 0)
+                        Console.WriteLine("No changes found");
+
+                Console.WriteLine();
+            }
+            
+            Console.WriteLine("Previous size: {0}", Library.Utility.Utility.FormatSizeString(result.PreviousSize));
+            Console.WriteLine(" Size of added files   {0}", Library.Utility.Utility.FormatSizeString(result.AddedSize));
+            Console.WriteLine(" Size of removed files {0}", Library.Utility.Utility.FormatSizeString(result.DeletedSize));
+            Console.WriteLine("Current size: {0}", Library.Utility.Utility.FormatSizeString(result.CurrentSize));
+            
+            return 0;
+        }
     }
 }
 

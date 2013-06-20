@@ -158,6 +158,7 @@ namespace Duplicati.Library.Main.Database
 			var args = new List<object>();
             if (time.Ticks > 0 || (versions != null && versions.Length > 0))
             {
+                var hasTime = false;
                 query = " WHERE ";
                 if (time.Ticks > 0)
                 {
@@ -166,6 +167,7 @@ namespace Duplicati.Library.Main.Database
                         
                     query += @" ""Timestamp"" <= ?";
                     args.Add(time.ToUniversalTime());
+                    hasTime = true;
                 }
                 
                 if (versions != null && versions.Length > 0)
@@ -183,7 +185,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         qs = qs.Substring(0, qs.Length - 1);
                         
-                        if (args.Count != 0)
+                        if (hasTime)
                             query += " AND ";
                                             
                         query += @" ""ID"" IN (" + qs + ")";
