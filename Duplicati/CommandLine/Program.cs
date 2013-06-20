@@ -161,7 +161,6 @@ namespace Duplicati.CommandLine
                 knownCommands["repair"] = Commands.Repair;
 
                 knownCommands["compact"] = Commands.Compact;
-                knownCommands["recreate-database"] = Commands.RecreateDatabase;
                 knownCommands["create-bug-report"] = Commands.CreateBugReport;
                 knownCommands["list-changes"] = Commands.ListChanges;
 

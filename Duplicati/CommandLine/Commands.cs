@@ -243,17 +243,6 @@ namespace Duplicati.CommandLine
             Console.WriteLine(Strings.Program.InvalidCommandError, args.Count == 0 ? "" : args[0]);
             return 200;
         }
-                
-        public static int RecreateDatabase(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
-        {
-            if (args.Count != 1 && args.Count != 2)
-                return PrintWrongNumberOfArguments(args, 2);
-                
-            using(var i = new Library.Main.Controller(args[0], options))
-                i.RecreateDatabase(args.Count == 1 ? null : args[1]);
-
-            return 0;
-        }
 
         public static int CreateBugReport(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
