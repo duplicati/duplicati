@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 rd.GetValues(values);
-                                if (values[0] != null && filter.Matches(values[0].ToString()))
+                                if (values[0] != null && values[0] != DBNull.Value && filter.Matches(values[0].ToString()))
                                 {
                                     cmd2.SetParameterValue(0, values[0]);
                                     cmd2.SetParameterValue(1, values[1]);
