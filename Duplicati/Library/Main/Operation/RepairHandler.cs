@@ -135,12 +135,15 @@ namespace Duplicati.Library.Main.Operation
 							
                     foreach(var n in tp.MissingVolumes)
                     {
+                        IDisposable newEntry = null;
+                        
                         try
-                        {
+                        {                            
                             if (n.Type == RemoteVolumeType.Files)
                             {
                                 var filesetId = db.GetFilesetIdFromRemotename(n.Name);
                                 var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
+                                newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 								
                                 db.WriteFileset(w, null, filesetId);
@@ -157,6 +160,7 @@ namespace Duplicati.Library.Main.Operation
                             else if (n.Type == RemoteVolumeType.Index)
                             {
                                 var w = new IndexVolumeWriter(m_options);
+                                newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 								
                                 foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
@@ -181,109 +185,104 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
-                            {							
-                                //TODO: Need to rewrite this to actually work,
-                                // and use a patch-table so we know exactly what blocks
-                                // are missing.
-								
-                                //TODO: Once the above is done, figure out how to
-                                // deal with incomplete block recreates
-							
+                            {
                                 var w = new BlockVolumeWriter(m_options);
+                                newEntry = w;
                                 w.SetRemoteFilename(n.Name);
-                                var volumeid = db.GetRemoteVolumeID(n.Name);
-	
-                                foreach(var block in db.GetSourceFilesWithBlocks(volumeid, m_options.Blocksize))
+                                
+                                using(var mbl = db.CreateBlockList(n.Name))
                                 {
-                                    var hash = block.Hash;
-                                    var size = (int)block.Size;
-                                    var recovered = false;
-									
-                                    foreach(var source in block.Sources)
+                                    //First we grab all known blocks from local files
+                                    foreach(var block in mbl.GetSourceFilesWithBlocks(m_options.Blocksize))
                                     {
-                                        var file = source.File;
-                                        var offset = source.Offset;
-										
-                                        try
+                                        var hash = block.Hash;
+                                        var size = (int)block.Size;
+                                        var recovered = false;
+                                        
+                                        foreach(var source in block.Sources)
                                         {
-                                            if (System.IO.File.Exists(file))
-                                                using(var f = System.IO.File.OpenRead(file))
-                                                {
-                                                    f.Position = offset;
-                                                    if (size == Library.Utility.Utility.ForceStreamRead(f, buffer, size))
-                                                    {
-                                                        var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
-                                                        if (newhash == hash)
-                                                        {
-                                                            w.AddBlock(hash, buffer, size, Duplicati.Library.Interface.CompressionHint.Default);
-                                                            recovered = true;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            m_result.AddError(string.Format("Failed to access file: {0}", file), ex);
-                                        }
-                                    }
-									
-                                    if (!recovered)
-                                    {
-                                        //TODO: Ineffecient to download the remote files repeatedly
-                                        foreach(var vol in db.GetBlockFromRemote(hash, size))
-                                        {
-                                            // Do not attempt to download the missing file
-                                            if (vol.Name == n.Name)
-                                                continue;
-                                                
+                                            var file = source.File;
+                                            var offset = source.Offset;
+                                            
                                             try
                                             {
-                                                var p = VolumeBase.ParseFilename(vol.Name);
-                                                using(var tmpfile = backend.Get(vol.Name, vol.Size, vol.Hash))
-                                                using(var f = new BlockVolumeReader(p.CompressionModule, tmpfile, m_options))
-                                                    if (f.ReadBlock(hash, buffer) == size && Convert.ToBase64String(blockhasher.ComputeHash(buffer)) == hash)
+                                                if (System.IO.File.Exists(file))
+                                                    using(var f = System.IO.File.OpenRead(file))
                                                     {
-                                                        w.AddBlock(hash, buffer, size, Duplicati.Library.Interface.CompressionHint.Default);
-                                                        recovered = true;
-                                                        break;
+                                                        f.Position = offset;
+                                                        if (size == Library.Utility.Utility.ForceStreamRead(f, buffer, size))
+                                                        {
+                                                            var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
+                                                            if (newhash == hash)
+                                                            {
+                                                                if (mbl.SetBlockRestored(hash, size))
+                                                                    w.AddBlock(hash, buffer, size, Duplicati.Library.Interface.CompressionHint.Default);
+                                                                break;
+                                                            }
+                                                        }
                                                     }
                                             }
                                             catch (Exception ex)
                                             {
-                                                m_result.AddError(string.Format("Failed to access remote file: {0}", vol.Name), ex);
-                                            }											
+                                                m_result.AddError(string.Format("Failed to access file: {0}", file), ex);
+                                            }
                                         }
                                     }
-									
-                                    if (!recovered)
+                                    
+                                    //Then we grab all remote volumes that have the missing blocks
+                                    foreach(var vol in new AsyncDownloader(mbl.GetMissingBlockSources().ToList(), backend))
                                     {
-                                        m_result.AddMessage(string.Format("Repair cannot acquire block with hash {0} and size {1}, which is required by the following filesets: ", hash, size));
-                                        foreach(var f in db.GetFilesetsUsingBlock(hash, size))
+                                        try
+                                        {
+                                            using(var tmpfile = vol.TempFile)
+                                            using(var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(vol.Name), tmpfile, m_options))
+                                                foreach(var b in f.Blocks)
+                                                    if (mbl.SetBlockRestored(b.Key, b.Value))
+                                                        if (f.ReadBlock(b.Key, buffer) == b.Value)
+                                                            w.AddBlock(b.Key, buffer, (int)b.Value, Duplicati.Library.Interface.CompressionHint.Default);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            m_result.AddError(string.Format("Failed to access remote file: {0}", vol.Name), ex);
+                                        }
+                                    }
+                                    
+                                    // If we managed to recover all blocks, NICE!
+                                    var missingBlocks = mbl.GetMissingBlocks().Count();
+                                    if (missingBlocks > 0)
+                                    {                                    
+                                        //TODO: How do we handle this situation?
+                                        m_result.AddMessage(string.Format("Repair cannot acquire {0} required blocks for volume {1}, which are required by the following filesets: ", missingBlocks, n.Name));
+                                        foreach(var f in mbl.GetFilesetsUsingMissingBlocks())
                                             m_result.AddMessage(f.Name);
-	
-                                        m_result.AddMessage("This may be fixed by deleting the filesets and running cleanup again");
-										
-                                        throw new Exception(string.Format("Block {0} is required for recreating the file \"{1}\". Repair not possible!!!", hash, n.Name));
+                                        
+                                        if (!m_options.Dryrun)
+                                        {
+                                            m_result.AddMessage("This may be fixed by deleting the filesets and running reapir again");
+                                            
+                                            throw new Exception(string.Format("Repair not possible, missing {0} blocks!!!", missingBlocks));
+                                        }
                                     }
                                     else
                                     {
-                                        //TODO: Upload
+                                        if (m_options.Dryrun)
+                                            m_result.AddDryrunMessage(string.Format("would re-upload block file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+                                        else
+                                        {
+                                            db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                            backend.Put(w);
+                                        }
                                     }
-                                }
-								
-                                w.Close();
-                                if (m_options.Dryrun)
-                                    m_result.AddDryrunMessage(string.Format("would upload new block file {0}, size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
-                                else
-                                {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(w);
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
+                            if (newEntry != null)
+                                try { newEntry.Dispose(); }
+                                catch { }
+                                finally { newEntry = null; }
+                                
                             m_result.AddError(string.Format("Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message), ex);
                         }
                     }
