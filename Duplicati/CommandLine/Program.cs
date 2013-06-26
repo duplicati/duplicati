@@ -163,6 +163,7 @@ namespace Duplicati.CommandLine
                 knownCommands["compact"] = Commands.Compact;
                 knownCommands["create-bug-report"] = Commands.CreateBugReport;
                 knownCommands["list-changes"] = Commands.ListChanges;
+                knownCommands["test"] = Commands.Test;
 
                 if (verbose)
                 {

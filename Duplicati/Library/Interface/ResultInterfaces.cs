@@ -220,5 +220,29 @@ namespace Duplicati.Library.Interface
         long AddedSize { get; }
         long DeletedSize { get; }
     }
+    
+    /// <summary>
+    /// The status of a change in a test entry 
+    /// </summary>
+    public enum TestEntryStatus
+    {
+        /// <summary>
+        /// The element is missing
+        /// </summary>
+        Missing,
+        /// <summary>
+        /// The element was not expected
+        /// </summary>
+        Extra,
+        /// <summary>
+        /// The element was not the same as expected
+        /// </summary>
+        Modified
+    }
+
+    public interface ITestResults : IBasicResults
+    {
+        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get; }
+    }
 }
 

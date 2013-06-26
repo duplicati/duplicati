@@ -196,6 +196,13 @@ namespace Duplicati.Library.Main
                 new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter);
             });
         }
+
+        public Duplicati.Library.Interface.ITestResults Test(long samples = 1)
+        {            
+            return RunAction(new TestResults(), (result) => {
+                new Operation.TestHandler(m_backend, m_options, result).Run(samples);
+            });
+        }
         
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions

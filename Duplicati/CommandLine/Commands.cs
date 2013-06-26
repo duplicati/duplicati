@@ -231,6 +231,56 @@ namespace Duplicati.CommandLine
 
             return 0;
         }
+
+        public static int Test(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1 && args.Count != 2)
+                return PrintWrongNumberOfArguments(args, 1);
+            
+            Library.Interface.ITestResults result;
+            using(var i = new Library.Main.Controller(args[0], options))
+                result = i.Test(args.Count > 1 ? Convert.ToInt64(args[1]) : 1);
+            
+            var totalFiles = result.Changes.Count();
+            if (totalFiles == 0)
+            {
+                Console.WriteLine("No files examined, is the remote destination is empty?");
+            }
+            else
+            {
+                var filtered = from n in result.Changes where n.Value.Count() != 0 select n;
+                if (filtered.Count() == 0)
+                    Console.WriteLine("Examined {0} files and found no errors", totalFiles);
+                else
+                {
+                    if (Library.Utility.Utility.ParseBoolOption(options, "verbose"))
+                    {
+                        foreach(var n in result.Changes)
+                        {
+                            var changecount = n.Value.Count();
+                            if (changecount == 0)
+                                Console.WriteLine("{0}: No errors", n.Key);
+                            else
+                            {
+                                Console.WriteLine("{0}: {1} errors", n.Key, changecount);
+                                foreach(var c in n.Value)
+                                    Console.WriteLine("{0}: {1}", c.Key, c.Value);
+                                Console.WriteLine();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Examined {0} files and found errors in the following files:", totalFiles);
+                        foreach(var n in filtered)
+                            Console.WriteLine(n.Key);
+                        Console.WriteLine();
+                    }
+                }
+
+            }
+            return 0;
+        }
                 
         private static int PrintWrongNumberOfArguments(List<string> args, int expected)
         {

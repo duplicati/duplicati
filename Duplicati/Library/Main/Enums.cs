@@ -38,7 +38,8 @@ namespace Duplicati.Library.Main
         RestoreControlfiles,
         Repair,
         CreateLogDb,
-        Compact
+        Compact,
+        Test
     }
 
     /// <summary>

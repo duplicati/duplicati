@@ -627,6 +627,18 @@ namespace Duplicati.Library.Main
             this.ChangeDetails = changeDetails;
         }
     }
+    
+    internal class TestResults : BasicResults, ITestResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.Test; } }
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get { return m_changes; } }
+        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_changes = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        
+        public void AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
+        {
+            m_changes.Add(new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes));
+        }
+    }
 
 }
 
