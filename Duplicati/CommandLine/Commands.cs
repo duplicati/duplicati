@@ -238,9 +238,9 @@ namespace Duplicati.CommandLine
             return 200;
         }
 
-        public static int PrintInvalidCommand(List<string> args)
+        public static int PrintInvalidCommand(string command, List<string> args)
         {
-            Console.WriteLine(Strings.Program.InvalidCommandError, args.Count == 0 ? "" : args[0]);
+            Console.WriteLine(Strings.Program.InvalidCommandError, command);
             return 200;
         }
 
