@@ -221,10 +221,11 @@ namespace Duplicati.Library.Main.Volumes
                     {
                         get
                         {
-                            if (m_blocks != null)
-                                throw new NotSupportedException("Cannot read Blocks twice");
-
-                            return m_blocks = new BlockEnumerable(m_compression, m_filename);
+                            var n = new BlockEnumerable(m_compression, m_filename);
+                            if (m_blocks == null)
+                                m_blocks = n;
+                                
+                            return n;
                         }
                     }
                 }
