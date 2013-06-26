@@ -60,7 +60,7 @@ namespace Duplicati.Library.Main
     {
         bool VerboseErrors { set; }
         bool QuietConsole { set; }
-        bool VerboseOutput { get; set; }
+        bool VerboseOutput { set; }
         
         DateTime EndTime { set; }
         DateTime BeginTime { set; }
