@@ -30,8 +30,6 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public static class Timeparser
     {
-        private static readonly List<string> MONTH_NAMES = new List<string>(new string[] { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" });
-    
         public static TimeSpan ParseTimeSpan(string datestring)
         {
             DateTime dt = new DateTime(0, DateTimeKind.Local);

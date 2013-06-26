@@ -36,11 +36,6 @@ namespace Duplicati.Library.Main
         private Options m_options;
 
         /// <summary>
-        /// The restult of an operation, used to report via IGenericCallbackModule
-        /// </summary>
-        private object m_result;
-
-        /// <summary>
         /// A flag indicating if logging has been set, used to dispose the logging
         /// </summary>
         private bool m_hasSetLogging = false;

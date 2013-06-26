@@ -403,7 +403,6 @@ namespace Duplicati.CommandLine
 
             public Matcher()
             {
-                Library.Main.Options opts = new Library.Main.Options(new Dictionary<string, string>());
                 List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
                 foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
                 foundArgs.Add(Program.SupportedCommands);

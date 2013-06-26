@@ -197,7 +197,6 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         var hash = block.Hash;
                                         var size = (int)block.Size;
-                                        var recovered = false;
                                         
                                         foreach(var source in block.Sources)
                                         {

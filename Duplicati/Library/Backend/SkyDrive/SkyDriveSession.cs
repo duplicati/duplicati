@@ -478,7 +478,7 @@ namespace Duplicati.Library.Backend
                 using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                 {
                     string token_header = resp.Headers[AUTHENTIFICATION_RESULT_HEADER];
-                    string redir = resp.Headers[REDIR_LOCATION_HEADER];
+                    //string redir = resp.Headers[REDIR_LOCATION_HEADER];
 
                     string status = LOGIN_STATUS_MATCH.Match(token_header).Groups["status"].Value;
                     string token = LOGIN_TOKEN_MATCH.Match(token_header).Groups["token"].Value;

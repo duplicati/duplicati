@@ -57,8 +57,6 @@ namespace Duplicati.Server
         private CloseReason m_stopReason = CloseReason.None;
         private bool m_isAborted = false;
 
-        private RunnerState m_currentRunnerState = RunnerState.Suspended;
-
         public DuplicatiRunner()
         {
             ProgressEvent += new ProgressEventDelegate(DuplicatiRunner_ProgressEvent);
@@ -66,7 +64,6 @@ namespace Duplicati.Server
 
         void DuplicatiRunner_ProgressEvent(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress)
         {
-            m_currentRunnerState = state;
         }
 
         public void ExecuteTask(IDuplicityTask task)

@@ -34,7 +34,6 @@ namespace Duplicati.Library.Backend
         private Dictionary<string, TaggedFileEntry> m_files = null;
         private Google.GData.Client.RequestSettings m_settings = null;
         private Google.GData.Client.ClientLoginAuthenticator m_cla;
-        private Google.GData.Client.Service m_service;
 
         public GoogleDocs() { }
 
@@ -76,7 +75,6 @@ namespace Duplicati.Library.Backend
 
             m_settings = new Google.GData.Client.RequestSettings(USER_AGENT, username, password);
             m_settings.AutoPaging = true;
-            m_service = new Google.GData.Client.Service();
         }
 
         private Google.Documents.DocumentsRequest CreateRequest()

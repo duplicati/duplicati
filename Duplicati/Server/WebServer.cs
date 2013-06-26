@@ -730,7 +730,7 @@ namespace Duplicati.Server
                     }
 
                     Serializer.Deserialize<Datamodel.Schedule>(new StringReader(schedule_string), schedule);
-                    var task = Serializer.Deserialize<Datamodel.Task>(new StringReader(task_string), schedule.Task);
+                    Serializer.Deserialize<Datamodel.Task>(new StringReader(task_string), schedule.Task);
 
                     //TODO: Validate, duplicate names etc.
 

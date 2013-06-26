@@ -14,7 +14,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private Uri m_controlUri;
         private string m_baseUri;
-        private System.Net.NetworkCredential m_credentials;
+        //private System.Net.NetworkCredential m_credentials;
         private static readonly System.Text.Encoding ENCODING = System.Text.Encoding.GetEncoding("utf-8");
         public delegate void StatusUpdate(IServerStatus status);
         public event StatusUpdate StatusUpdated;

@@ -13,7 +13,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Net.NetworkInformation;
-using System.Linq;
 
 namespace Duplicati.Library.Modules.Builtin
 {

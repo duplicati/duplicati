@@ -42,10 +42,6 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private IVssBackupComponents m_backup;
         /// <summary>
-        /// The id of the ongoing snapshot
-        /// </summary>
-        private Guid m_snapshotId;
-        /// <summary>
         /// The list of paths that will be shadow copied
         /// </summary>
         private string[] m_sourcepaths;
@@ -104,7 +100,7 @@ namespace Duplicati.Library.Snapshots
                 if (excludedWriters.Count > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
-                m_snapshotId = m_backup.StartSnapshotSet();
+                m_backup.StartSnapshotSet();
 
                 m_sourcepaths = new string[sourcepaths.Length];
 
