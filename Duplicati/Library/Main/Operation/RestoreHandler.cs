@@ -51,18 +51,15 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // Unwrap, so we do not query the remote storage twice
                     var lst = (from n in _lst 
-                                 where n.FileType == RemoteVolumeType.Files && n.Time <= time 
+                                 where n.FileType == RemoteVolumeType.Files 
                                  orderby n.Time descending
                                  select n).ToArray();
                                                          
-                    var numbers = new List<KeyValuePair<long, IParsedVolume>>();
-                    long ix = 0;
-                    foreach(var n in lst.OrderByDescending(x => x.Time))
-                        numbers.Add(new KeyValuePair<long, IParsedVolume>(ix++, n));
+                    var numbers = lst.Zip(Enumerable.Range(0, lst.Length), (a, b) => new KeyValuePair<long, IParsedVolume>(b, a)).ToList();
 
                     if (time.Ticks > 0 && versions != null && versions.Length > 0)
                         return from n in numbers
-                            where n.Value.Time < time && versions.Contains(n.Key)
+                            where n.Value.Time <= time && versions.Contains(n.Key)
                             select n;
                     else if (time.Ticks > 0)
                         return from n in numbers

@@ -525,7 +525,7 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("time") || string.IsNullOrEmpty(m_options["time"]))
-                    return DateTime.Now.AddYears(1); //We assume that the check will occur in less than one year :)
+                    return new DateTime(0, DateTimeKind.Utc);
                 else
                     return Library.Utility.Timeparser.ParseTimeInterval(m_options["time"], DateTime.Now);
             }
