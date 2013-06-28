@@ -136,10 +136,17 @@ namespace Duplicati.Library.Main.Database
 		private IEnumerable<VolumeUsage> GetWastedSpaceReport(System.Data.IDbTransaction transaction)
 		{
 			var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-			var active = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"", MIN(""FilesetEntry"".""Scantime"") AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" GROUP BY ""Block"".""VolumeID"" ";
+            
+            var usedBlocks = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Block"".""ID"" NOT IN (SELECT ""Block"".""ID"" FROM ""Block"",""DeletedBlock"" WHERE ""Block"".""Hash"" = ""DeletedBlock"".""Hash"" AND ""Block"".""Size"" = ""DeletedBlock"".""Size"") GROUP BY ""Block"".""VolumeID"" ";
+            var scantimeFile = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""FilesetEntry"".""Scantime"" AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ";
+            var scantimeMetadata = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""FilesetEntry"".""Scantime"" AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ";
+            var scantime = @"SELECT ""VolumeID"" AS ""VolumeID"", MIN(""SortScantime"") AS ""SortScantime"" FROM (" + scantimeFile + @" UNION " + scantimeMetadata + @") GROUP BY ""VolumeID"" ";
+            var active = @"SELECT ""A"".""ActiveSize"" AS ""ActiveSize"",  0 AS ""InactiveSize"", ""A"".""VolumeID"" AS ""VolumeID"", CASE WHEN ""B"".""SortScantime"" IS NULL THEN 0 ELSE ""B"".""SortScantime"" END AS ""SortScantime"" FROM (" + usedBlocks + @") A LEFT OUTER JOIN (" + scantime + @") B ON ""B"".""VolumeID"" = ""A"".""VolumeID"" ";
+            
 			var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
+            var empty = @"SELECT 0 AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Remotevolume"".""ID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""Remotevolume"" WHERE ""Remotevolume"".""Type"" = ? AND ""Remotevolume"".""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block"") ";
 			
-			var combined = active + " UNION " + inactive;
+			var combined = active + " UNION " + inactive + " UNION " + empty;
 			var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""SortScantime"") AS ""SortScantime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
 			var createtable = @"CREATE TEMPORARY TABLE """ + tmptablename + @""" AS " + collected;
 						
@@ -148,7 +155,7 @@ namespace Duplicati.Library.Main.Database
 				cmd.Transaction = transaction;
 				try
 				{
-					cmd.ExecuteNonQuery(createtable);
+					cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString());
 					var res = new List<VolumeUsage>();
 					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
 						while (rd.Read())
