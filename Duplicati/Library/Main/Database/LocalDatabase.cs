@@ -296,6 +296,9 @@ namespace Duplicati.Library.Main.Database
 				// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
 				
+                // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""VolumeID"" = ?", volumeid);
+                
 				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
 
 				deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN " + subQuery, volumeid);
