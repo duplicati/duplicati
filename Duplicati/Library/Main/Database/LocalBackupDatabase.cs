@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main.Database
             m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
 
-            m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"" INNER JOIN ""File"" ON ""Blockset"".""ID"" = ""File"".""BlocksetID"" WHERE ""File"".""ID"" = ?  ";
+            m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
