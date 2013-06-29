@@ -65,12 +65,12 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
         }
 
-        private static Snapshots.ISnapshotService GetSnapshot(string[] sourcefolders, Options options, ILogWriter log)
+        private static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
-                    return Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(sourcefolders, options.RawOptions);
+                    return Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(sources, options.RawOptions);
             }
             catch (Exception ex)
             {
@@ -83,9 +83,9 @@ namespace Duplicati.Library.Main.Operation
             }
 
             return Library.Utility.Utility.IsClientLinux ?
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sourcefolders, options.RawOptions)
+                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sources, options.RawOptions)
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sourcefolders, options.RawOptions);
+                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
         }
 
 

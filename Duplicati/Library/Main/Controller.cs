@@ -65,48 +65,59 @@ namespace Duplicati.Library.Main
             m_options = new Options(options);
         }
 
-        public Duplicati.Library.Interface.IBackupResults Backup(string[] sources, IFilter filter = null)
+        public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
 		{
-            return RunAction(new BackupResults(), ref sources, (result) => {
+            return RunAction(new BackupResults(), ref inputsources, (result) => {
             
-				if (sources == null || sources.Length == 0)
+				if (inputsources == null || inputsources.Length == 0)
 					throw new Exception(Strings.Controller.NoSourceFoldersError);
 
+                var sources = new List<string>(inputsources);
+
 				//Make sure they all have the same format and exist
-				for(int i = 0; i < sources.Length; i++)
+				for(int i = 0; i < sources.Count; i++)
 				{
-					string fp;
 					try
 					{
-						fp = System.IO.Path.GetFullPath(sources[i]);
+						sources[i] = System.IO.Path.GetFullPath(sources[i]);
 					}
 					catch (Exception ex)
 					{
 						throw new ArgumentException(string.Format(Strings.Controller.InvalidPathError, sources[i], ex.Message), ex);
 					}
                 	
-					sources[i] = Library.Utility.Utility.AppendDirSeparator(fp);
-
-					if (!System.IO.Directory.Exists(sources[i]) && !m_options.AllowMissingSourceFolders)
-						throw new System.IO.IOException(String.Format(Strings.Controller.SourceFolderIsMissingError, sources[i]));
+                    var fi = new System.IO.FileInfo(sources[i]);
+                    var di = new System.IO.DirectoryInfo(sources[i]);
+                    if (!(fi.Exists || di.Exists) && !m_options.AllowMissingSource)
+                        throw new System.IO.IOException(String.Format(Strings.Controller.SourceIsMissingError, sources[i]));
+                    
+                    if (!fi.Exists)
+    					sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
 				}
 
 				//Sanity check for duplicate folders and multiple inclusions of the same folder
-                
-				//We could automatically fix this by excluding multiple copies of the same folder
-				// and remove the longest path of matching subfolders,
-				// but really the user should clean up the input
-				for(int i = 0; i < sources.Length - 1; i++)
+				for(int i = 0; i < sources.Count - 1; i++)
 				{
-					for(int j = i + 1; j < sources.Length; j++)
+					for(int j = i + 1; j < sources.Count; j++)
 						if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-							throw new Exception(string.Format(Strings.Controller.SourceDirIsIncludedMultipleTimesError, sources[i]));
+                        {
+                            result.AddVerboseMessage("Removing duplicate source: {0}", sources[j]);
+							sources.RemoveAt(j);
+                            j--;
+                        }
 						else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-							throw new Exception(string.Format(Strings.Controller.SourceDirsAreRelatedError, sources[i], sources[j]));
+                        {
+                            result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
+                            filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                            
+                            sources.RemoveAt(i);
+                            i--;
+                            break;
+                        }
 				}
 
                 using(var h = new Operation.BackupHandler(m_backend, m_options, result))
-                    h.Run(sources, filter);
+                    h.Run(sources.ToArray(), filter);
             });
         }
 

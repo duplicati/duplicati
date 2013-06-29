@@ -29,13 +29,13 @@ namespace Duplicati.Library.Snapshots
     {
         private SystemIOWindows m_sysIO = new SystemIOWindows();
 
-        public NoSnapshotWindows(string[] sourcefolders)
-            : base(sourcefolders)
+        public NoSnapshotWindows(string[] sources)
+            : base(sources)
         {
         }
 
-        public NoSnapshotWindows(string[] sourcefolders, Dictionary<string, string> options)
-            : base(sourcefolders, options)
+        public NoSnapshotWindows(string[] sources, Dictionary<string, string> options)
+            : base(sources, options)
         {
         }
 

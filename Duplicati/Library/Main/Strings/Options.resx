@@ -540,11 +540,11 @@
   <data name="KeeptimeLong" xml:space="preserve">
     <value>Use this option to set the timespan in which backups are kept.</value>
   </data>
-  <data name="AllowmissingsourcefoldersShort" xml:space="preserve">
-    <value>Keep all versions within a timespan</value>
+  <data name="AllowmissingsourceShort" xml:space="preserve">
+    <value>Ignore missing source elements</value>
   </data>
-  <data name="AllowmissingsourcefoldersLong" xml:space="preserve">
-    <value>Use this option to set the timespan in which backups are kept.</value>
+  <data name="AllowmissingsourceLong" xml:space="preserve">
+    <value>Use this option to continue even if some source entries are missing.</value>
   </data>
   <data name="DownloadedFileSizeError" xml:space="preserve">
     <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>

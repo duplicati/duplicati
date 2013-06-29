@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main
                     "disable-autocreate-folder",
                     "disable-filetime-check",
                     "disable-time-tolerance",
-                    "allow-missing-source-folders",
+                    "allow-missing-source",
                     "skip-files-larger-than",
                     "upload-unchanged-backups",
                     "list-verify-uploads",
@@ -348,7 +348,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
                     new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
-                    new CommandLineArgument("allow-missing-source-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourcefoldersShort, Strings.Options.AllowmissingsourcefoldersLong, "false"),
+                    new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
                     //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
@@ -1385,9 +1385,9 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets a flag indicating if compacting should not be done automatically
         /// </summary>
-        public bool AllowMissingSourceFolders
+        public bool AllowMissingSource
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-missing-source-folders"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-missing-source"); }
         }
 
         /// <summary>

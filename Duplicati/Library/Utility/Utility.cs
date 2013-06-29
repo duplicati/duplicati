@@ -215,7 +215,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="path">The path to return data from</param>
         /// <returns>Attributes for the file or folder</returns>
-		public delegate System.IO.FileAttributes ExtractFileAttributes(string path);
+        public delegate System.IO.FileAttributes ExtractFileAttributes(string path);
         /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
@@ -224,10 +224,10 @@ namespace Duplicati.Library.Utility
         /// <param name="filter">An optional filter to apply to the filenames</param>
         /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
-		public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
-		{
-			return EnumerateFileSystemEntries(rootpath, callback, new FileSystemInteraction(System.IO.Directory.GetDirectories), new FileSystemInteraction(System.IO.Directory.GetFiles));
-		}
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
+        {
+            return EnumerateFileSystemEntries(rootpath, callback, new FileSystemInteraction(System.IO.Directory.GetDirectories), new FileSystemInteraction(System.IO.Directory.GetFiles));
+        }
         /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
@@ -237,10 +237,10 @@ namespace Duplicati.Library.Utility
         /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <returns>A list of the full filenames</returns>
-		public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
-		{
-			return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
-		}
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
+        {
+            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
+        }
         /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
@@ -251,77 +251,96 @@ namespace Duplicati.Library.Utility
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
         /// <returns>A list of the full filenames</returns>
-		public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
-		{
-			if (System.IO.Directory.Exists(rootpath))
-			{
-				Queue<string> lst = new Queue<string>();
-				lst.Enqueue(rootpath);
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
+        {
+            if (System.IO.Directory.Exists(rootpath))
+            {
+                Queue<string> lst = new Queue<string>();
+                lst.Enqueue(rootpath);
 
-				while (lst.Count > 0)
-				{
-					string f = AppendDirSeparator(lst.Dequeue());
-					string fv = null;
-					try
-					{
-						System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(f);
-						if (!callback(rootpath, f, attr))
-							continue;
+                while (lst.Count > 0)
+                {
+                    string f = AppendDirSeparator(lst.Dequeue());
+                    string fv = null;
+                    try
+                    {
+                        System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(f);
+                        if (!callback(rootpath, f, attr))
+                            continue;
 
-						fv = f;
-						
-						foreach(string s in folderList(f))
-							lst.Enqueue(s);
-					}
-					catch (System.Threading.ThreadAbortException)
-					{
-						throw;
-					}
-					catch (Exception)
-					{
-						callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
-					}
+                        fv = f;
 					
-					if (fv != null)
-						yield return fv;
+                        foreach(string s in folderList(f))
+                            lst.Enqueue(s);
+                    }
+                    catch (System.Threading.ThreadAbortException)
+                    {
+                        throw;
+                    }
+                    catch (Exception)
+                    {
+                        callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                    }
+				
+                    if (fv != null)
+                        yield return fv;
+				
+                    string[] files = null;
+                    if (fileList != null)
+                        try
+                        {
+                            files = fileList(f);
+                        }
+                        catch (System.Threading.ThreadAbortException)
+                        {
+                            throw;
+                        }
+                        catch (Exception)
+                        {
+                            callback(rootpath, f, ATTRIBUTE_ERROR);
+                        }
 					
-					string[] files = null;
-					if (fileList != null)
-						try
-						{
-							files = fileList(f);
-						}
-						catch (System.Threading.ThreadAbortException)
-						{
-							throw;
-						}
-						catch (Exception)
-						{
-							callback(rootpath, f, ATTRIBUTE_ERROR);
-						}
-						
-					if (files != null)
-						foreach(var s in files)
-						{
-							try
-							{
-								System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Normal : attributeReader(s);
-								if (!callback(rootpath, s, attr))
-									continue;
-							}
-							catch (System.Threading.ThreadAbortException)
-							{
-								throw;
-							}
-							catch (Exception)
-							{
-								callback(rootpath, s, ATTRIBUTE_ERROR);
-								continue;
-							}
-							yield return s;
-						}
-				}
-			}
+                    if (files != null)
+                        foreach(var s in files)
+                        {
+                            try
+                            {
+                                System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Normal : attributeReader(s);
+                                if (!callback(rootpath, s, attr))
+                                    continue;
+                            }
+                            catch (System.Threading.ThreadAbortException)
+                            {
+                                throw;
+                            }
+                            catch (Exception)
+                            {
+                                callback(rootpath, s, ATTRIBUTE_ERROR);
+                                continue;
+                            }
+                            yield return s;
+                        }
+                }
+            }
+            else if (System.IO.File.Exists(rootpath))
+            {
+                try
+                {
+                    System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Normal : attributeReader(rootpath);
+                    if (!callback(rootpath, rootpath, attr))
+                        yield break;
+                }
+                catch (System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    callback(rootpath, rootpath, ATTRIBUTE_ERROR);
+                    yield break;
+                }
+                yield return rootpath;
+            }
 		}
         /// <summary>
         /// Calculates the size of files in a given folder

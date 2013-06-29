@@ -68,7 +68,7 @@ namespace Duplicati.Library.Snapshots
             public SnapShot(string path)
             {
                 m_name = string.Format("duplicati-{0}", Guid.NewGuid().ToString());
-                m_realDir = Utility.Utility.AppendDirSeparator(path);
+                m_realDir = System.IO.Directory.Exists(path) ? Utility.Utility.AppendDirSeparator(path) : path;
                 GetVolumeName(m_realDir);
             }
 
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots for</param>
         /// <param name="options">A set of commandline options</param>
-        public LinuxSnapshot(string[] folders, Dictionary<string, string> options)
+        public LinuxSnapshot(string[] sources, Dictionary<string, string> options)
         {
             try
             {
@@ -269,7 +269,7 @@ namespace Duplicati.Library.Snapshots
 
                 //Make sure we do not create more snapshots than we have to
                 Dictionary<string, SnapShot> snaps = new Dictionary<string, SnapShot>();
-                foreach (string s in folders)
+                foreach (string s in sources)
                 {
                     SnapShot sn = new SnapShot(s);
                     if (!snaps.ContainsKey(sn.DeviceName))

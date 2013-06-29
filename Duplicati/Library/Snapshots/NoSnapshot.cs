@@ -35,7 +35,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The list of all folders in the snapshot
         /// </summary>
-        protected string[] m_sourcefolders;
+        protected string[] m_sources;
 
         /// <summary>
         /// A frequently used char-as-string
@@ -46,8 +46,8 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
-        public NoSnapshot(string[] folders)
-            : this(folders, new Dictionary<string, string>())
+        public NoSnapshot(string[] sources)
+            : this(sources, new Dictionary<string, string>())
         {
         }
 
@@ -56,11 +56,11 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="folders">The folders that are about to be backed up</param>
         /// <param name="options">A set of system options</param>
-        public NoSnapshot(string[] folders, Dictionary<string, string> options)
+        public NoSnapshot(string[] sources, Dictionary<string, string> options)
         {
-            m_sourcefolders = new string[folders.Length];
-            for (int i = 0; i < m_sourcefolders.Length; i++)
-                m_sourcefolders[i] = Utility.Utility.AppendDirSeparator(folders[i]);
+            m_sources = new string[sources.Length];
+            for (int i = 0; i < m_sources.Length; i++)
+                    m_sources[i] = System.IO.Directory.Exists(sources[i]) ? Utility.Utility.AppendDirSeparator(sources[i]) : sources[i];
         }
 
         #region Private Methods
@@ -101,7 +101,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="callback">The callback to invoke with each found path</param>
         public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
         {
-        	return m_sourcefolders.SelectMany(
+        	return m_sources.SelectMany(
         		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
         	);
         }

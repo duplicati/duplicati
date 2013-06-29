@@ -105,7 +105,7 @@ namespace Duplicati.Library.Snapshots
                 m_sourcepaths = new string[sourcepaths.Length];
 
                 for(int i = 0; i < m_sourcepaths.Length; i++)
-                    m_sourcepaths[i] = Utility.Utility.AppendDirSeparator(sourcepaths[i]);
+                        m_sourcepaths[i] = System.IO.Directory.Exists(sourcepaths[i]) ? Utility.Utility.AppendDirSeparator(sourcepaths[i]) : sourcepaths[i];
 
                 try
                 {

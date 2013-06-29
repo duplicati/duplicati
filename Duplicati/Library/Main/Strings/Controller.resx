@@ -195,17 +195,8 @@
   <data name="SkippedUnlistedSignatureFileWarning" xml:space="preserve">
     <value>The signature file {0} was skipped because the signature file was not found in the manifest</value>
   </data>
-  <data name="SourceDirIsIncludedMultipleTimesError" xml:space="preserve">
-    <value>The folder {0} is included multiple times</value>
-  </data>
-  <data name="SourceDirsAreRelatedError" xml:space="preserve">
-    <value>The folder {1} is a subfolder of {0}. It is not allowed to specify the same folder multiple times.</value>
-  </data>
-  <data name="SourceFolderIsMissingError" xml:space="preserve">
+  <data name="SourceIsMissingError" xml:space="preserve">
     <value>The source folder {0} does not exist, aborting backup</value>
-  </data>
-  <data name="SourceFoldersHasChangedError" xml:space="preserve">
-    <value>The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup.</value>
   </data>
   <data name="StatusBuildingFilelist" xml:space="preserve">
     <value>Building filelist ...</value>

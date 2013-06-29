@@ -61,20 +61,20 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this option to set the timespan in which backups are kept..
+        ///   Looks up a localized string similar to Use this option to continue even if some source entries are missing..
         /// </summary>
-        internal static string AllowmissingsourcefoldersLong {
+        internal static string AllowmissingsourceLong {
             get {
-                return ResourceManager.GetString("AllowmissingsourcefoldersLong", resourceCulture);
+                return ResourceManager.GetString("AllowmissingsourceLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Keep all versions within a timespan.
+        ///   Looks up a localized string similar to Ignore missing source elements.
         /// </summary>
-        internal static string AllowmissingsourcefoldersShort {
+        internal static string AllowmissingsourceShort {
             get {
-                return ResourceManager.GetString("AllowmissingsourcefoldersShort", resourceCulture);
+                return ResourceManager.GetString("AllowmissingsourceShort", resourceCulture);
             }
         }
         

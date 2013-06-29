@@ -556,38 +556,11 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The folder {0} is included multiple times.
-        /// </summary>
-        internal static string SourceDirIsIncludedMultipleTimesError {
-            get {
-                return ResourceManager.GetString("SourceDirIsIncludedMultipleTimesError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The folder {1} is a subfolder of {0}. It is not allowed to specify the same folder multiple times..
-        /// </summary>
-        internal static string SourceDirsAreRelatedError {
-            get {
-                return ResourceManager.GetString("SourceDirsAreRelatedError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The source folder {0} does not exist, aborting backup.
         /// </summary>
-        internal static string SourceFolderIsMissingError {
+        internal static string SourceIsMissingError {
             get {
-                return ResourceManager.GetString("SourceFolderIsMissingError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup..
-        /// </summary>
-        internal static string SourceFoldersHasChangedError {
-            get {
-                return ResourceManager.GetString("SourceFoldersHasChangedError", resourceCulture);
+                return ResourceManager.GetString("SourceIsMissingError", resourceCulture);
             }
         }
         
