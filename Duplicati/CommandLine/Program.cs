@@ -28,20 +28,31 @@ namespace Duplicati.CommandLine
     {
     	private class FilterCollector
 		{
-			private List<KeyValuePair<bool, Library.Utility.IFilter>> m_filters = new List<KeyValuePair<bool, Library.Utility.IFilter>>();
-			private Library.Utility.CompositeFilterExpression Filter { get { return new Library.Utility.CompositeFilterExpression(m_filters, true); } }
+			private List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
+			private Library.Utility.IFilter Filter 
+            { 
+                get 
+                { 
+                    if (m_filters.Count == 0)
+                        return new Library.Utility.FilterExpression();
+                    else if (m_filters.Count == 1)
+                        return m_filters[0];
+                    else 
+                        return m_filters.Aggregate((a,b) => Library.Utility.JoinedFilterExpression.Join(a, b)); 
+                }
+            }
 			
 			private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
 			{
                 return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
                 	if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
                 	{
-                		m_filters.Add(new KeyValuePair<bool, Library.Utility.IFilter>(true, new Library.Utility.FilterExpression(new string[] { value })));
+                		m_filters.Add(new Library.Utility.FilterExpression(value, true));
                 		return false;
                 	}
                 	else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
                 	{
-                		m_filters.Add(new KeyValuePair<bool, Library.Utility.IFilter>(false, new Library.Utility.FilterExpression(new string[] { value })));
+                        m_filters.Add(new Library.Utility.FilterExpression(value, false));
                 		return false;
                 	}
                 	
@@ -52,11 +63,11 @@ namespace Duplicati.CommandLine
                 });
 			}
 			
-			public static Tuple<Dictionary<string, string>, Library.Utility.CompositeFilterExpression> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
+			public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
 			{
 				var fc = new FilterCollector();
 				var opts = fc.DoExtractOptions(args, callbackHandler);
-				return new Tuple<Dictionary<string, string>, Library.Utility.CompositeFilterExpression>(opts, fc.Filter);
+				return new Tuple<Dictionary<string, string>, Library.Utility.IFilter>(opts, fc.Filter);
 			}
 		}
     
@@ -233,7 +244,7 @@ namespace Duplicati.CommandLine
             }
         }
 
-        private static bool ReadOptionsFromFile(string filename, ref Library.Utility.CompositeFilterExpression filter, List<string> cargs, Dictionary<string, string> options)
+        private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)
         {
             try
             {

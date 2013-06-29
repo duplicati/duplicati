@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.SetDatabase(db);
                 
-                var filter = ListFilesHandler.CombineFilters(filterstrings, compositefilter);
+                var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
                 
                 try
                 {
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation
                             using (var tmpfile = backend.Get(file.Name, size, hash))
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
-                                    if (filter.Matches(cf.Key))
+                                    if (Library.Utility.FilterExpression.Matches(filter, cf.Key, true))
                                         files.Add(new ListResultFile(cf.Key, null));
                             
                             m_result.SetResult(new Library.Interface.IListResultFileset[] { new ListResultFileset(fileversion.Key, fileversion.Value.Time, -1, -1) }, files);

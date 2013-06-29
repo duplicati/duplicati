@@ -755,7 +755,7 @@ namespace Duplicati.Library.Main.Database
                                 while(rd.Read())
                                 {
                                     var p = rd.GetValue(0).ToString();
-                                    if (filter.Matches(p))
+                                    if(Library.Utility.FilterExpression.Matches(filter, p, true))
                                     {
                                         cmd.SetParameterValue(0, p);
                                         cmd.ExecuteNonQuery();

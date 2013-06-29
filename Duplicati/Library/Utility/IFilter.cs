@@ -33,7 +33,8 @@ namespace Duplicati.Library.Utility
 		/// Performs a test to see if the entry matches the filter
 		/// </summary>
 		/// <param name="entry">The entry to match</param>
-		bool Matches(string entry);
+        /// <param name="result">The match result</param>
+		bool Matches(string entry, out bool result);
 	}
 }
 

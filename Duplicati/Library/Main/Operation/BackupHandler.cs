@@ -100,11 +100,7 @@ namespace Duplicati.Library.Main.Operation
                 m_database.VerifyConsistency(null);
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that fall-through includes the entry
-                m_filter = 
-            		filter == null ? 
-            		(Library.Utility.IFilter)new Library.Utility.CompositeFilterExpression(null, true)
-            		:
-            		(Library.Utility.IFilter)new Library.Utility.CompositeFilterExpression(((Library.Utility.CompositeFilterExpression)filter).Filters, true);
+                m_filter = filter ?? new Library.Utility.FilterExpression();
             	
                 var lastVolumeSize = -1L;
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
@@ -159,8 +155,8 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.AddVerboseMessage("Excluding path due to attribute filter {0}", path);
                                 return false;
                             }
-    			                
-                            if (!m_filter.Matches(path))
+                            
+                            if (!Library.Utility.FilterExpression.Matches(m_filter, path, true))
                             {
                                 m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
                                 return false;

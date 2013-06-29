@@ -76,34 +76,8 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run(string[] paths, Library.Utility.IFilter filter = null)
 		{
-			var pathfilter = new Library.Utility.FilterExpression(paths);
-			filter = filter ?? new Library.Utility.FilterExpression(null);
-
-			// If we have both target paths and a filter, combine into a single filter
-			if (!pathfilter.Empty && !filter.Empty)
-			{
-				filter = new Library.Utility.CompositeFilterExpression(
-					((Library.Utility.CompositeFilterExpression)filter).Filters
-					.Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
-						new KeyValuePair<bool, Duplicati.Library.Utility.IFilter> (
-							true, 
-							pathfilter
-						)
-					}),
-					false
-				);
-			}
-			// Both empty
-			else if (filter.Empty && pathfilter.Empty)
-			{
-				// Match all files
-				filter = new Library.Utility.CompositeFilterExpression(null, true);
-			}
-			// Only paths
-			else if (filter.Empty)
-			{
-				filter = pathfilter; 
-			}
+            // If we have both target paths and a filter, combine into a single filter
+			filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
 			
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
             {

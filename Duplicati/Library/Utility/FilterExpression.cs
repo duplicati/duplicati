@@ -85,7 +85,7 @@ namespace Duplicati.Library.Utility
             /// <param name="path">The path to match</param>
             public bool Matches(string path)
             {
-                switch(this.Type)
+                switch (this.Type)
                 {
                     case FilterType.Simple:
                         return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparision);
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Utility
                         var m = this.Regexp.Match(path);
                         return m.Success && m.Length == path.Length;
                     default:
-                        return false;
+                        return false;                            
                 }
             }
         }
@@ -108,6 +108,11 @@ namespace Duplicati.Library.Utility
         /// Gets the type of the filter
         /// </summary>
         public readonly FilterType Type;
+
+        /// <summary>
+        /// Gets the result returned if an entry matches
+        /// </summary>        
+        public readonly bool Result;
         
         /// <summary>
         /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.FilterExpression"/> is empty.
@@ -131,26 +136,53 @@ namespace Duplicati.Library.Utility
         /// Gets a value indicating if the filter matches the path
         /// </summary>
         /// <param name="path">The path to match</param>
-        public bool Matches(string path)
+        public bool Matches(string path, out bool result)
         {
+            result = false;
             if (this.Type == FilterType.Empty)
                 return false;
-                
-            return m_filters.Where(x => x.Matches(path)).Any();
+            
+            if (m_filters.Where(x => x.Matches(path)).Any())
+            {
+                result = this.Result;
+                return true;
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Duplicati.Library.Utility.FilterExpression"/> instance, representing an empty filter.
+        /// </summary>
+        /// <param name="filter">The filter string that represents the filter</param>
+        public FilterExpression()
+            : this((IEnumerable<string>)null, true)
+        {
         }
     
         /// <summary>
-        /// Creates a new  <see cref="Duplicati.Library.Main.FilterExpression"/> class.
+        /// Creates a new <see cref="Duplicati.Library.Utility.FilterExpression"/> instance.
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
-        public FilterExpression(IEnumerable<string> filter)
+        public FilterExpression(string filter, bool result = true)
+            : this(new string[] { filter }, result)
         {
+        }
+    
+        /// <summary>
+        /// Creates a new <see cref="Duplicati.Library.Main.FilterExpression"/> instance.
+        /// </summary>
+        /// <param name="filter">The filter string that represents the filter</param>
+        public FilterExpression(IEnumerable<string> filter, bool result = true)
+        {
+            this.Result = result;
+            
             if (filter == null)
             {
                 this.Type = FilterType.Empty;
                 return;
             }
-                        
+            
             m_filters = 
                 (from n in filter
                 let nx = new FilterEntry(n)
@@ -161,6 +193,34 @@ namespace Duplicati.Library.Utility
                 this.Type = FilterType.Empty;
             else
                 this.Type = (FilterType)m_filters.Max((a) => a.Type);
+        }
+        
+        /// <summary>
+        /// Utility function to match a filter with a default fall-through value
+        /// </summary>
+        /// <param name="filter">The filter to evaluate</param>
+        /// <param name="path">The path to evaluate</param>
+        /// <param name="default">The default return value if no filter matches</param>
+        public static bool Matches(IFilter filter, string path, bool @default)
+        {
+            if (filter == null || filter.Empty)
+                return @default;
+        
+            bool result;
+            if (!filter.Matches(path, out result))
+                result = @default;
+                
+            return result;
+        }
+        
+        /// <summary>
+        /// Combine the specified filter expressions.
+        /// </summary>
+        /// <param name="first">First.</param>
+        /// <param name="second">Second.</param>
+        public static FilterExpression Combine(FilterExpression first, FilterExpression second)
+        {
+            return new FilterExpression(first.m_filters.Union(second.m_filters).Select(x => x.Type == FilterType.Regexp ? ("[" + x.Filter + "]") : x.Filter), first.Result);
         }
     }
 }

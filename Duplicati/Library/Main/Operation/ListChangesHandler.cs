@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run(string baseVersion, string compareVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
         {
-            var filter = ListFilesHandler.CombineFilters(new Library.Utility.FilterExpression(filterstrings), compositefilter);
+            var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
             
             var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
             baseVersion = string.IsNullOrEmpty(baseVersion) ? "0" : baseVersion;
@@ -130,13 +130,13 @@ namespace Duplicati.Library.Main.Operation
                     using(var tmpfile = backend.Get(baseFile.File.Name, baseFile.File.Size, null))
                     using(var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach(var f in rd.Files)
-                            if (filter == null || filter.Empty || filter.Matches(f.Path))
+                            if (Library.Utility.FilterExpression.Matches(filter, f.Path, true))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
                                 
                     using(var tmpfile = backend.Get(compareFile.File.Name, compareFile.File.Size, null))
                     using(var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach(var f in rd.Files)
-                            if (filter == null || filter.Empty || filter.Matches(f.Path))
+                            if (Library.Utility.FilterExpression.Matches(filter, f.Path, true))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true);
                 }
                 

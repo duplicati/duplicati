@@ -170,7 +170,7 @@ namespace Duplicati.Library.Main.Operation
 		                    // Create timestamped operations based on the file timestamp
                         	backupdb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
                             using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
-                                foreach (var fe in filelistreader.Files.Where(x => filter == null || filter.Matches(x.Path)))
+                                foreach (var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path, true)))
                                 {
                                     if (fe.Type == FilelistEntryType.Folder)
                                     {

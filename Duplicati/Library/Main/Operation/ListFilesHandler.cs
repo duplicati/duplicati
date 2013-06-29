@@ -21,10 +21,8 @@ namespace Duplicati.Library.Main.Operation
         public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
         {
             var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
-            
             var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
-			
-            var filter = CombineFilters(parsedfilter, compositefilter);
+            var filter = Library.Utility.JoinedFilterExpression.Join(parsedfilter, compositefilter);
         
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
@@ -79,7 +77,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.SetResult(
                             numberSeq.Take(1),
                             (from n in rd.Files
-                                  where filter.Matches(n.Path)
+                                  where Library.Utility.FilterExpression.Matches(filter, n.Path, true)
                                   orderby n.Path
                                   select new ListResultFile(n.Path, new long[] { n.Size }))
                                   .ToArray()
@@ -90,7 +88,7 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         res = rd.Files
-                              .Where(x => filter.Matches(x.Path))
+                              .Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path, true))
                               .ToDictionary(
                                     x => x.Path, 
                                     y => 
@@ -108,7 +106,7 @@ namespace Duplicati.Library.Main.Operation
                     using(var tmpfile = backend.Get(flentry.Value.File.Name, -1, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
-                        foreach(var p in from n in rd.Files where filter.Matches(n.Path) select n)
+                        foreach(var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path, true) select n)
                         {
                             List<long> lst;
                             if (!res.TryGetValue(p.Path, out lst))
@@ -151,26 +149,6 @@ namespace Duplicati.Library.Main.Operation
         public static IEnumerable<Library.Interface.IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, Volumes.IParsedVolume>> filteredList)
         {
             return (from n in filteredList select (Library.Interface.IListResultFileset)(new ListResultFileset(n.Key, n.Value.Time.ToLocalTime(), -1, -1))).ToArray();
-        }
-        
-        public static Library.Utility.IFilter CombineFilters(IEnumerable<string> filterstrings, Library.Utility.IFilter compositefilter)
-        {
-            return CombineFilters(new Library.Utility.FilterExpression(filterstrings), compositefilter);
-        }
-        
-        public static Library.Utility.IFilter CombineFilters(Library.Utility.IFilter parsedfilter, Library.Utility.IFilter compositefilter)
-        {
-            Library.Utility.IFilter filter = parsedfilter;
-            if (compositefilter != null && !compositefilter.Empty)
-                filter = new Library.Utility.CompositeFilterExpression(
-                    ((Library.Utility.CompositeFilterExpression)compositefilter).Filters
-                    .Union(new KeyValuePair<bool, Library.Utility.IFilter>[] { 
-                        new KeyValuePair<bool, Duplicati.Library.Utility.IFilter>(true, parsedfilter) 
-                    }),
-                    false
-                );
-                
-            return filter;
-        }
+        }        
     }
 }
