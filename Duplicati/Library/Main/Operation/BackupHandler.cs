@@ -473,7 +473,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                     blocklisthashes.Add(blkey);
-                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset, hint);
+                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible);
                                     blocklistoffset = 0;
                                 }
 
