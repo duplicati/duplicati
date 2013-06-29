@@ -601,6 +601,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If this flag is set, blocklist data is appended to the index files. This increases the amount of remote storage required, but enables complete database restoration with only dindex and dlist files. This also speeds up restore operations where the local database is missing..
+        /// </summary>
+        internal static string FatindexfilesLong {
+            get {
+                return ResourceManager.GetString("FatindexfilesLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use fat index files.
+        /// </summary>
+        internal static string FatindexfilesShort {
+            get {
+                return ResourceManager.GetString("FatindexfilesShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This is a very advanced option! This option can be used to select a file hash algorithm with smaller or larger hash size, for performance or storage space reasons..
         /// </summary>
         internal static string FilehashalgorithmLong {

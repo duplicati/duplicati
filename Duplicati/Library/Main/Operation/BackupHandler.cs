@@ -473,7 +473,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                     blocklisthashes.Add(blkey);
-                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible);
+                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible, true);
                                     blocklistoffset = 0;
                                 }
 
@@ -481,7 +481,7 @@ namespace Duplicati.Library.Main.Operation
                                 blocklistoffset += blockkey.Length;
 
                                 var key = Convert.ToBase64String(blockkey);
-                                AddBlockToOutput(key, m_blockbuffer, size, hint);
+                                AddBlockToOutput(key, m_blockbuffer, size, hint, false);
                                 hashcollector.Add(key);
                                 filesize += size;
 
@@ -493,7 +493,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 var blkeyfinal = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                 blocklisthashes.Add(blkeyfinal);
-                                AddBlockToOutput(blkeyfinal, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible);
+                                AddBlockToOutput(blkeyfinal, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible, true);
                             }
                         }
 
@@ -567,11 +567,17 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="key">The block hash</param>
         /// <param name="data">The data matching the hash</param>
-        private bool AddBlockToOutput(string key, byte[] data, int len, CompressionHint hint)
+        /// <param name="len">The size of the data</param>
+        /// <param name="hint">Hint for compression module</param>
+        /// <param name="isBlocklistData">Indicates if the block is list data</param>
+        private bool AddBlockToOutput(string key, byte[] data, int len, CompressionHint hint, bool isBlocklistData)
         {
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
-                m_blockvolume.AddBlock(key, data, len, hint);                	
+                m_blockvolume.AddBlock(key, data, len, hint);
+                if (!m_options.NoIndexfiles && isBlocklistData && m_options.FatIndexfiles)
+                    m_indexvolume.WriteBlocklist(key, data, len);
+                    
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
                 {
                 	if (m_options.Dryrun)
@@ -645,7 +651,7 @@ namespace Duplicati.Library.Main.Operation
             bool r = false;
 
             //TODO: If meta.Size > blocksize...
-            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default);
+            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
             m_database.AddDirectoryEntry(filename, metadataid, scantime, m_transaction);
@@ -667,7 +673,7 @@ namespace Duplicati.Library.Main.Operation
             bool r = false;
 
             //TODO: If meta.Size > blocksize...
-            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default);
+            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
             m_database.AddSymlinkEntry(filename, metadataid, scantime, m_transaction);
@@ -689,7 +695,7 @@ namespace Duplicati.Library.Main.Operation
             long blocksetid;
             
             //TODO: If metadata.Size > blocksize...
-            AddBlockToOutput(metadata.Hash, metadata.Blob, (int)metadata.Size, CompressionHint.Default);
+            AddBlockToOutput(metadata.Hash, metadata.Blob, (int)metadata.Size, CompressionHint.Default, false);
             m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
             m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist, blocklisthashes, out blocksetid, m_transaction);

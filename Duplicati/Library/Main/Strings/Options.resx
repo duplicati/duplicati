@@ -474,6 +474,12 @@
   <data name="NoindexfilesShort" xml:space="preserve">
     <value>Do not upload index files</value>
   </data>
+  <data name="FatindexfilesLong" xml:space="preserve">
+    <value>If this flag is set, blocklist data is appended to the index files. This increases the amount of remote storage required, but enables complete database restoration with only dindex and dlist files. This also speeds up restore operations where the local database is missing.</value>
+  </data>
+  <data name="FatindexfilesShort" xml:space="preserve">
+    <value>Use fat index files</value>
+  </data>
   <data name="ThresholdLong" xml:space="preserve">
     <value>As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value is a percentage used on each volume and the total storage.</value>
   </data>

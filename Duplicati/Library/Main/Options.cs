@@ -422,6 +422,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Size, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("no-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoindexfilesShort, Strings.Options.NoindexfilesLong, "false"),
+                    new CommandLineArgument("fat-index-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FatindexfilesShort, Strings.Options.FatindexfilesLong, "false"),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
@@ -1364,6 +1365,14 @@ namespace Duplicati.Library.Main
         public bool NoIndexfiles
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-index-files"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if index files should be omitted
+        /// </summary>
+        public bool FatIndexfiles
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "fat-index-files"); }
         }
         
         /// <summary>
