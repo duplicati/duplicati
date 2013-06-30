@@ -71,6 +71,21 @@ namespace Duplicati.CommandLine
                 options.Remove("control-files");
                 
                 var res = controlFiles ? i.ListControlFiles(args, filter) : i.List(args, filter);
+                
+                //If there are no files matching, and we are looking for one or more files, 
+                // try again with all-versions set
+                if (
+                    !controlFiles && res.Filesets.Count() != 0 && 
+                    (res.Files == null || res.Files.Count() == 0) && 
+                    new Library.Utility.FilterExpression(args).Type == Duplicati.Library.Utility.FilterType.Simple &&
+                    !Library.Utility.Utility.ParseBoolOption(options, "all-versions")
+                    )
+                {
+                    Console.WriteLine("No files matching, looking in all versions");
+                    options["all-versions"] = "true";
+                    res = i.List(args, filter);
+                }
+                
                 if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0))
                 {
                     Console.WriteLine("Listing filesets:");
