@@ -71,7 +71,7 @@ namespace Duplicati.CommandLine
                 options.Remove("control-files");
                 
                 var res = controlFiles ? i.ListControlFiles(args, filter) : i.List(args, filter);
-                if (res.Files == null || res.Files.Count() == 0)
+                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0))
                 {
                     Console.WriteLine("Listing filesets:");
                     
