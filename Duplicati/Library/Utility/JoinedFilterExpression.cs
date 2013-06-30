@@ -21,21 +21,21 @@ namespace Duplicati.Library.Utility
 {
     public class JoinedFilterExpression : IFilter
     {
-        private IFilter m_first;
-        private IFilter m_second;
+        public readonly IFilter First;
+        public readonly IFilter Second;
         
         public JoinedFilterExpression(IFilter first, IFilter second)
         {
-            m_first = first ?? new FilterExpression();
-            m_second = second ?? new FilterExpression();
+            this.First = first ?? new FilterExpression();
+            this.Second = second ?? new FilterExpression();
         }
 
         public bool Matches(string entry, out bool result)
         {
-            return m_first.Matches(entry, out result) || m_second.Matches(entry, out result);
+            return First.Matches(entry, out result) || Second.Matches(entry, out result);
         }
 
-        public bool Empty { get { return m_first.Empty && m_second.Empty; } }
+        public bool Empty { get { return First.Empty && Second.Empty; } }
         
         public static IFilter Join(IFilter first, IFilter second)
         {

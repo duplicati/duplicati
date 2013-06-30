@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
                                 return false;
                             }
                             
-                            if (!Library.Utility.FilterExpression.Matches(m_filter, path, true))
+                            if (!Library.Utility.FilterExpression.Matches(m_filter, path))
                             {
                                 m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
                                 return false;

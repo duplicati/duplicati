@@ -200,17 +200,35 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="filter">The filter to evaluate</param>
         /// <param name="path">The path to evaluate</param>
-        /// <param name="default">The default return value if no filter matches</param>
-        public static bool Matches(IFilter filter, string path, bool @default)
+        public static bool Matches(IFilter filter, string path)
         {
             if (filter == null || filter.Empty)
-                return @default;
+                return true;
         
             bool result;
-            if (!filter.Matches(path, out result))
-                result = @default;
+            if (filter.Matches(path, out result))
+                return result;
+
+            // If we only exclude files, choose to include by default
+            var q = new Queue<IFilter>();
+            q.Enqueue(filter);
                 
-            return result;
+            while (q.Count > 0)
+            {
+                var p = q.Dequeue();
+                if (p == null || p.Empty)
+                    continue;
+                else if (p is FilterExpression && ((FilterExpression)filter).Result)
+                    return false; // We have an include filter, so we exclude by default
+                else if (p is JoinedFilterExpression)
+                {
+                    q.Enqueue(((JoinedFilterExpression)p).First);
+                    q.Enqueue(((JoinedFilterExpression)p).Second);
+                }
+            }
+                    
+            // Only excludes, we return true
+            return true;
         }
         
         /// <summary>

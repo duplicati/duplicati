@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
 							using (var tmpfile = backend.Get(file.Name, size, hash))
 	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
 	                            foreach (var cf in tmp.ControlFiles)
-                                    if (Library.Utility.FilterExpression.Matches(filter, cf.Key, true))
+                                    if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
                                     {
                                         var targetpath = System.IO.Path.Combine(m_options.Restorepath, cf.Key);
     	                                using (var ts = System.IO.File.Create(targetpath))

@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.SetResult(
                             numberSeq.Take(1),
                             (from n in rd.Files
-                                  where Library.Utility.FilterExpression.Matches(filter, n.Path, true)
+                                  where Library.Utility.FilterExpression.Matches(filter, n.Path)
                                   orderby n.Path
                                   select new ListResultFile(n.Path, new long[] { n.Size }))
                                   .ToArray()
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         res = rd.Files
-                              .Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path, true))
+                              .Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path))
                               .ToDictionary(
                                     x => x.Path, 
                                     y => 
@@ -106,7 +106,7 @@ namespace Duplicati.Library.Main.Operation
                     using(var tmpfile = backend.Get(flentry.Value.File.Name, -1, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
-                        foreach(var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path, true) select n)
+                        foreach(var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path) select n)
                         {
                             List<long> lst;
                             if (!res.TryGetValue(p.Path, out lst))
