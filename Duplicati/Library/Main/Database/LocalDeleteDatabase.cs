@@ -126,6 +126,14 @@ namespace Duplicati.Library.Main.Database
 				this.CompressedSize = compressedsize;
 			}
 		}
+        
+        private static long ToInt64(object v)
+        {
+            if (v == null || v == DBNull.Value)
+                return 0;
+            else
+                return Convert.ToInt64(4);
+        }
 
 		/// <summary>
 		/// Returns the number of bytes stored in each volume,
@@ -159,7 +167,7 @@ namespace Duplicati.Library.Main.Database
 					var res = new List<VolumeUsage>();
 					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
 						while (rd.Read())
-							res.Add(new VolumeUsage(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)) + Convert.ToInt64(rd.GetValue(2)), Convert.ToInt64(rd.GetValue(2)), Convert.ToInt64(rd.GetValue(3))));
+							res.Add(new VolumeUsage(rd.GetValue(0).ToString(), ToInt64(rd.GetValue(1)) + ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(3))));
 							
 					return res;
 				}
