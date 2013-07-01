@@ -459,6 +459,7 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong, DEFAULT_KEEP_TIME),
+                    new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
 #if DEBUG
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
 #endif
@@ -1429,6 +1430,14 @@ namespace Duplicati.Library.Main
         public bool AllowMissingSource
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-missing-source"); }
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if a verification file should be uploaded after changing the remote store
+        /// </summary>
+        public bool UploadVerificationFile
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "upload-verification-file"); } 
         }
 
         /// <summary>

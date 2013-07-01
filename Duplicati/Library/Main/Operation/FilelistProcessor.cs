@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation
 
 			if (extraCount > 0)
 			{
-				var s = string.Format("Found {0} remote files that are not recorded in local storage, please run cleanup", extraCount);
+				var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
 				log.AddError(s, null);
 				throw new Exception(s);
 			}
@@ -62,11 +62,11 @@ namespace Duplicati.Library.Main.Operation
                 if (!tp.BackupPrefixes.Contains(options.Prefix) && tp.BackupPrefixes.Length > 0)
                 	s = string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes));
                 else
-                	s = string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missingCount);
+                	s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
                 
                 log.AddError(s, null);
                 throw new Exception(s);
-            }
+            }            
         }
 
         public struct RemoteAnalysisResult
@@ -76,6 +76,47 @@ namespace Duplicati.Library.Main.Operation
             public IEnumerable<RemoteVolumeEntry> MissingVolumes;
             
             public string[] BackupPrefixes { get { return ParsedVolumes.Select(x => x.Prefix).Distinct().ToArray(); } }
+        }
+
+        /// <summary>
+        /// Creates a temporary verification file.
+        /// </summary>
+        /// <returns>The verification file.</returns>
+        /// <param name="db">The database instance</param>
+        /// <param name="stream">The stream to write to</param>
+        public static void CreateVerificationFile(LocalDatabase db, System.IO.StreamWriter stream)
+        {
+            var s = new Newtonsoft.Json.JsonSerializer();
+            s.Serialize(stream, db.GetRemoteVolumes().Cast<IRemoteVolume>().ToArray());
+        }
+        
+        /// <summary>
+        /// Uploads the verification file.
+        /// </summary>
+        /// <param name="backendurl">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="result">The result writer</param>
+        /// <param name="db">The attached database</param>
+        /// <param name="transaction">An optional transaction object</param>
+        public static void UploadVerificationFile(string backendurl, Options options, IBackendWriter result, LocalDatabase db, System.Data.IDbTransaction transaction)
+        {
+            using(var backend = new BackendManager(backendurl, options, result, db))
+            using(var tempfile = new Library.Utility.TempFile())
+            {
+                var remotename = options.Prefix + "-verification.json";
+                using(var stream = new System.IO.StreamWriter(tempfile, false, System.Text.Encoding.UTF8))
+                    FilelistProcessor.CreateVerificationFile(db, stream);
+                    
+                if (options.Dryrun)
+                {
+                    result.AddDryrunMessage(string.Format("Would upload verification file: {0}, size: {1}", remotename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(tempfile).Length)));
+                }
+                else
+                {
+                    backend.PutUnencrypted(remotename, tempfile);
+                    backend.WaitForComplete(db, transaction);
+                }
+            }
         }
 
         /// <summary>

@@ -48,7 +48,11 @@ namespace Duplicati.Library.Main.Operation
                 m_result.SetDatabase(db);
                 Utility.VerifyParameters(db, m_options);
 	        	
-                DoCompact(db, false, tr);
+                var changed = DoCompact(db, false, tr);
+                
+                if (changed && m_options.UploadVerificationFile)
+                    FilelistProcessor.UploadVerificationFile(m_backendurl, m_options, m_result.BackendWriter, db, null);
+                
                 if (!m_options.Dryrun)
                 {
                     using(new Logging.Timer("CommitCompact"))
@@ -59,7 +63,7 @@ namespace Duplicati.Library.Main.Operation
 			}
 		}
 		
-		internal void DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
+		internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
 		{
 			var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
 			report.ReportCompactData(m_result);
@@ -227,10 +231,13 @@ namespace Duplicati.Library.Main.Operation
 							
 					backend.WaitForComplete(db, transaction);
 				}
+                
+                return (m_result.DeletedFileCount + m_result.UploadedFileCount) > 0;
 			}
 			else
 			{
 				m_result.AddMessage("Compacting not required");
+                return false;
 			}
 		}
 		

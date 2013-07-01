@@ -1303,6 +1303,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files..
+        /// </summary>
+        internal static string UploadverificationfileLong {
+            get {
+                return ResourceManager.GetString("UploadverificationfileLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determine if verification files are uploaded.
+        /// </summary>
+        internal static string UploadverificationfileShort {
+            get {
+                return ResourceManager.GetString("UploadverificationfileShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to &quot;off&quot;, Duplicati will not attempt to use USN. Setting this to &quot;auto&quot; makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of &quot;on&quot; will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to &quot;required&quot; will make Duplicati abort the backup if the USN usage fails. This feature is only supported on Windows and requires administrative privileges..
         /// </summary>
         internal static string UsnpolicyLong {

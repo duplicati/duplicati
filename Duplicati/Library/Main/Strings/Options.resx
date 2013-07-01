@@ -561,4 +561,10 @@
   <data name="VerboseLong" xml:space="preserve">
     <value>Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed.</value>
   </data>  
+  <data name="UploadverificationfileShort" xml:space="preserve">
+    <value>Determine if verification files are uploaded</value>
+  </data>
+  <data name="UploadverificationfileLong" xml:space="preserve">
+    <value>Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files.</value>
+  </data>  
 </root>

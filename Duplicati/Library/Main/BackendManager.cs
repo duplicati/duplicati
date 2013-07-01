@@ -602,6 +602,25 @@ namespace Duplicati.Library.Main
             
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1);
         }
+        
+        public void PutUnencrypted(string remotename, string localpath)
+        {
+            if (m_lastException != null)
+                throw m_lastException;
+                
+            var req = new FileEntryItem(OperationType.Put, remotename, null);
+            req.Encrypted = true; //Prevent encryption
+            
+            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+            {
+                req.WaitForComplete();
+                if (req.Exception != null)
+                    throw req.Exception;
+            }
+            
+            if (m_lastException != null)
+                throw m_lastException;
+        }
 
         public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
 		{

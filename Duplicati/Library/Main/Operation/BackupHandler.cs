@@ -251,11 +251,14 @@ namespace Duplicati.Library.Main.Operation
                         using(new Logging.Timer("VerifyConsistency"))
                             m_database.VerifyConsistency(m_transaction);
     
-                        //Changes in the filelist triggers a filelist upload
-                        if (m_options.UploadUnchangedBackups || 
-                            (m_result.AddedFiles + m_result.ModifiedFiles + m_result.DeletedFiles +
+    
+                        var changeCount = 
+                            m_result.AddedFiles + m_result.ModifiedFiles + m_result.DeletedFiles +
                             m_result.AddedFolders + m_result.ModifiedFolders + m_result.DeletedFolders +
-                            m_result.AddedSymlinks + m_result.ModifiedSymlinks + m_result.DeletedSymlinks) > 0)
+                            m_result.AddedSymlinks + m_result.ModifiedSymlinks + m_result.DeletedSymlinks;
+                            
+                        //Changes in the filelist triggers a filelist upload
+                        if (m_options.UploadUnchangedBackups || changeCount > 0)
                         {
                             using(new Logging.Timer("Uploading a new fileset"))
                             {
@@ -286,8 +289,7 @@ namespace Duplicati.Library.Main.Operation
     									
                         using(new Logging.Timer("Async backend wait"))
                             m_backend.WaitForComplete(m_database, m_transaction);
-                        
-                        
+                            
                         if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
                         {
                             m_result.DeleteResults = new DeleteResults(m_result);
@@ -302,6 +304,9 @@ namespace Duplicati.Library.Main.Operation
                                 new CompactHandler(m_backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, m_transaction);
                         }
     		            
+                        if (m_options.UploadVerificationFile)
+                            FilelistProcessor.UploadVerificationFile(m_backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
+                        
                         if (m_options.Dryrun)
                         {
                             m_transaction.Rollback();

@@ -29,6 +29,7 @@ namespace Duplicati.Library.Main
         void AddMessage(string message);
         void AddWarning(string message, Exception ex);
         void AddError(string message, Exception ex);
+        void AddDryrunMessage(string message);
     }
     
     public interface IBackendWriter : ILogWriter
