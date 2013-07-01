@@ -677,12 +677,17 @@ namespace Duplicati.Library.Main.Database
 
             base.Dispose();
         }
-        
+
         private long GetPreviousFilesetID(System.Data.IDbCommand cmd)
+        {
+            return GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId);
+        }
+        
+        private long GetPreviousFilesetID(System.Data.IDbCommand cmd, DateTime timestamp, long filesetid)
         {
             long lastFilesetId = -1;
 
-            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp, m_filesetId);
+            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", timestamp.ToUniversalTime(), filesetid);
             if (lastIdObj != null && lastIdObj != DBNull.Value)
                 lastFilesetId = Convert.ToInt64(lastIdObj);
                 
@@ -763,21 +768,25 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-
         public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted)
+        {
+            AppendFilesFromPreviousSet(transaction, deleted, m_filesetId, OperationTimestamp);
+        }
+
+        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted, long filesetid, DateTime timestamp)
         {
             using(var cmd = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                long lastFilesetId = GetPreviousFilesetID(cmd);
+                long lastFilesetId = GetPreviousFilesetID(cmd, timestamp, filesetid);
 
                 cmd.Transaction = tr.Parent;
-                cmd.ExecuteNonQuery(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Scantime"") SELECT ? AS ""FilesetID"", ""FileID"", ""Scantime"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?) ", m_filesetId, lastFilesetId, m_filesetId);
+                cmd.ExecuteNonQuery(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Scantime"") SELECT ? AS ""FilesetID"", ""FileID"", ""Scantime"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?) ", filesetid, lastFilesetId, filesetid);
 
                 if (deleted != null)
                 {
                     cmd.CommandText = @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ?) ";
-                    cmd.AddParameter(m_filesetId);
+                    cmd.AddParameter(filesetid);
                     cmd.AddParameter();
 
                     foreach (string s in deleted)
