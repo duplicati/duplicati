@@ -135,6 +135,47 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                         }
+                        
+                        var incompleteFilesets = m_database.GetIncompleteFilesets(m_transaction).ToArray();
+                        if (incompleteFilesets.Length != 0)
+                        {
+                            m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
+                            foreach(var fs in incompleteFilesets)
+                            {
+                                FilesetVolumeWriter fsw = null;
+                                try
+                                {
+                                    fsw = new FilesetVolumeWriter(m_options, fs.Value);
+                                    fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+                                    m_database.LinkFilesetToVolume(fs.Key, fsw.VolumeID, m_transaction);
+                                    m_database.AppendFilesFromPreviousSet(m_transaction, null, fs.Key, fs.Value);
+                                    
+                                    m_database.WriteFileset(fsw, m_transaction, fs.Key);
+                                    
+                                    if (m_options.Dryrun)
+                                    {
+                                        m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
+                                    }
+                                    else
+                                    {
+                                        m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+                                        
+                                        using(new Logging.Timer("CommitUpdateFilelistVolume"))
+                                            m_transaction.Commit();
+                                        m_transaction = m_database.BeginTransaction();
+                                        
+                                        m_backend.Put(fsw);
+                                        fsw = null;
+                                    }
+                                }
+                                finally
+                                {
+                                    if (fsw != null)
+                                        try { fsw.Dispose(); }
+                                        catch { fsw = null; }
+                                }                          
+                            }
+                        }
     		            
                         var filesetvolumeid = m_database.RegisterRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                         m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(m_filesetvolume.RemoteFilename).Time, m_transaction);

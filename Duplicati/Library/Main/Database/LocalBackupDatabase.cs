@@ -826,5 +826,31 @@ namespace Duplicati.Library.Main.Database
 			m_insertIndexBlockLink.ExecuteNonQuery();
 		}
 		
+        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(System.Data.IDbTransaction transaction)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"")"))
+                    while(rd.Read())
+                    {
+                        yield return new KeyValuePair<long, DateTime>(
+                            Convert.ToInt64(rd.GetValue(0)),
+                            Convert.ToDateTime(rd.GetValue(1)).ToLocalTime()
+                        );
+                    }
+            }
+        }
+        
+        public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
+                if (c != 1)
+                    throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
+            }            
+        }
     }
 }
