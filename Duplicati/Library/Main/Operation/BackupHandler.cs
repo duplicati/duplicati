@@ -221,14 +221,21 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
                                     if (m_indexvolume != null)
                                     {
+                                        m_blockvolume.Close();
                                         UpdateIndexVolume();
                                         m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
                                         m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
                                     }
+                                    
+                                    m_blockvolume.Dispose();
+                                    m_blockvolume = null;
+                                    m_indexvolume.Dispose();
+                                    m_indexvolume = null;
                                 }
                                 else
                                 {
                                     m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+                                    m_blockvolume.Close();
                                     UpdateIndexVolume();
         	                		
                                     using(new Logging.Timer("CommitUpdateRemoteVolume"))
@@ -236,6 +243,9 @@ namespace Duplicati.Library.Main.Operation
                                     m_transaction = m_database.BeginTransaction();
         	                		
                                     m_backend.Put(m_blockvolume, m_indexvolume);
+                                    
+                                    m_blockvolume = null;
+                                    m_indexvolume = null;
                                 }
                             }
                             else
@@ -587,24 +597,29 @@ namespace Duplicati.Library.Main.Operation
                 {
                 	if (m_options.Dryrun)
                 	{
+                        m_blockvolume.Close();
                 		m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
-                		m_blockvolume.Dispose();
-                		m_blockvolume = null;
                 		
                 		if (m_indexvolume != null)
                 		{
 		            		UpdateIndexVolume();
-                			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_indexvolume.LocalFilename), new FileInfo(m_indexvolume.LocalFilename).Length);
+                			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
                 			m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
                 			m_indexvolume.Dispose();
                 			m_indexvolume = null;
                 		}
+                        
+                        m_blockvolume.Dispose();
+                        m_blockvolume = null;
+                        m_indexvolume.Dispose();
+                        m_indexvolume = null;
                 	}
                 	else
                 	{
 	                	//When uploading a new volume, we register the volumes and then flush the transaction
 	                	// this ensures that the local database and remote storage are as closely related as possible
                 		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+                        m_blockvolume.Close();
 	            		UpdateIndexVolume();
 	                	
 	                	m_backend.FlushDbMessages(m_database, m_transaction);
