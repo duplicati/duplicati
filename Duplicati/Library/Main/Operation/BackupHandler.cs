@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                         m_blockvolume = new BlockVolumeWriter(m_options);
                         m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
     		            
-                        if (!m_options.NoIndexfiles)
+                        if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                         {
                             m_indexvolume = new IndexVolumeWriter(m_options);
                             m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
@@ -575,7 +575,7 @@ namespace Duplicati.Library.Main.Operation
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
                 m_blockvolume.AddBlock(key, data, len, hint);
-                if (!m_options.NoIndexfiles && isBlocklistData && m_options.FatIndexfiles)
+                if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                     m_indexvolume.WriteBlocklist(key, data, len);
                     
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
@@ -617,7 +617,7 @@ namespace Duplicati.Library.Main.Operation
                     m_blockvolume = new BlockVolumeWriter(m_options);
 					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 					
-					if (!m_options.NoIndexfiles)
+					if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
 					{
 	                    m_indexvolume = new IndexVolumeWriter(m_options);
 						m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);

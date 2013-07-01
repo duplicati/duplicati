@@ -601,24 +601,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If this flag is set, blocklist data is appended to the index files. This increases the amount of remote storage required, but enables complete database restoration with only dindex and dlist files. This also speeds up restore operations where the local database is missing..
-        /// </summary>
-        internal static string FatindexfilesLong {
-            get {
-                return ResourceManager.GetString("FatindexfilesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use fat index files.
-        /// </summary>
-        internal static string FatindexfilesShort {
-            get {
-                return ResourceManager.GetString("FatindexfilesShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to This is a very advanced option! This option can be used to select a file hash algorithm with smaller or larger hash size, for performance or storage space reasons..
         /// </summary>
         internal static string FilehashalgorithmLong {
@@ -669,6 +651,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string FilepathlookupsizeShort {
             get {
                 return ResourceManager.GetString("FilepathlookupsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used..
+        /// </summary>
+        internal static string IndexfilepolicyLong {
+            get {
+                return ResourceManager.GetString("IndexfilepolicyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines usage of index files.
+        /// </summary>
+        internal static string IndexfilepolicyShort {
+            get {
+                return ResourceManager.GetString("IndexfilepolicyShort", resourceCulture);
             }
         }
         
@@ -849,24 +849,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string NoencryptionShort {
             get {
                 return ResourceManager.GetString("NoencryptionShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If this flag is set, no index files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded..
-        /// </summary>
-        internal static string NoindexfilesLong {
-            get {
-                return ResourceManager.GetString("NoindexfilesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Do not upload index files.
-        /// </summary>
-        internal static string NoindexfilesShort {
-            get {
-                return ResourceManager.GetString("NoindexfilesShort", resourceCulture);
             }
         }
         
