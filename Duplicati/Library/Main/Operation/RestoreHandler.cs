@@ -257,7 +257,7 @@ namespace Duplicati.Library.Main.Operation
     					ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
 
 				// Fill BLOCKS with remote sources
-				var volumes = database.GetMissingVolumes();
+				var volumes = database.GetMissingVolumes().ToList();
 
 				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
 					try

@@ -229,25 +229,21 @@ namespace Duplicati.Library.Main.Database
             return false;
         }
 
-        public IList<RemoteVolumeEntry> GetRemoteVolumes()
+        public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes()
         {
-            var res = new List<RemoteVolumeEntry>();
             using (var rd = m_selectremotevolumesCommand.ExecuteReader())
             {
                 while (rd.Read())
                 {
-                    res.Add(new RemoteVolumeEntry(
+                    yield return new RemoteVolumeEntry(
                         rd.GetValue(0).ToString(),
                         (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
                         (rd.GetValue(2) == null || rd.GetValue(2) == DBNull.Value) ? -1 : Convert.ToInt64(rd.GetValue(2)),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString())
-                        )
                     );
                 }
             }
-
-            return res;
         }
 
         /// <summary>
@@ -804,7 +800,6 @@ namespace Duplicati.Library.Main.Database
                     finally { Tablename = null; }
             }                
         }
-        
         
         public virtual void Dispose()
         {

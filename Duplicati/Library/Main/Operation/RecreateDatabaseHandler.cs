@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Operation
                 // and then restore the blocks we know
                 restoredb.FindMissingBlocklistHashes();
 
-                foreach (var sf in new AsyncDownloader(restoredb.GetMissingBlockListVolumes(), backend))
+                foreach (var sf in new AsyncDownloader(restoredb.GetMissingBlockListVolumes().ToList(), backend))
                 	using (var tmpfile = sf.TempFile)
                     using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
                     using (var tr = restoredb.BeginTransaction())

@@ -69,11 +69,10 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IList<IRemoteVolume> GetMissingBlockListVolumes()
+        public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes()
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                List<IRemoteVolume> result = new List<IRemoteVolume>();
                 cmd.CommandText = string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""{0}"")", m_tempblockvolumetable);
                 using (var rd = cmd.ExecuteReader())
                 {
@@ -81,15 +80,13 @@ namespace Duplicati.Library.Main.Database
                     while (rd.Read())
                     {
                         rd.GetValues(r);
-                        result.Add(new RemoteVolume(
+                        yield return new RemoteVolume(
                             r[0] == null ? null : r[0].ToString(),
                             r[1] == null ? null : r[1].ToString(),
                             r[2] == null ? -1 : Convert.ToInt64(r[2])
-                        ));
+                        );
                     }
                 }
-
-                return result;
             }
         }
 

@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main.Operation
             try
             {        
                 using(var db = new LocalRepairDatabase(m_options.Dbpath))
-                    knownRemotes = db.GetRemoteVolumes().Count;
+                    knownRemotes = db.GetRemoteVolumes().Count();
             }
             catch (Exception ex)
             {

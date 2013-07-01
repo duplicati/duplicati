@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
 					long discardedBlocks = 0;
 					long discardedSize = 0;
 					byte[] buffer = new byte[m_options.Blocksize];
-					var remoteList = db.GetRemoteVolumes();
+					var remoteList = db.GetRemoteVolumes().ToArray();
 					
 					//These are for bookkeeping
 					var uploadedVolumes = new List<KeyValuePair<string, long>>();
