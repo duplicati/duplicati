@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.AddDryrunMessage("Remove --dry-run to actually delete files");
                 }
 				
-                if (forceCompact || (toDelete != null && toDelete.Length > 0 && !m_options.NoAutoCompact))
+                if (!m_options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
                     new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, transaction);
