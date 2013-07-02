@@ -164,12 +164,9 @@ namespace Duplicati.Library.Main.Database
 				try
 				{
 					cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString());
-					var res = new List<VolumeUsage>();
 					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
 						while (rd.Read())
-							res.Add(new VolumeUsage(rd.GetValue(0).ToString(), ToInt64(rd.GetValue(1)) + ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(3))));
-							
-					return res;
+							yield return new VolumeUsage(rd.GetValue(0).ToString(), ToInt64(rd.GetValue(1)) + ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(3)));
 				}
 				finally 
 				{
