@@ -318,6 +318,8 @@ namespace Duplicati.Library.Main.Operation
                                         m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
         	
                                 m_database.WriteFileset(m_filesetvolume, m_transaction);
+                                m_filesetvolume.Close();
+                                
                                 if (m_options.Dryrun)
                                     m_result.AddDryrunMessage(string.Format("Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length)));
                                 else
