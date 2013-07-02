@@ -132,7 +132,7 @@ namespace Duplicati.Library.Main.Database
             if (v == null || v == DBNull.Value)
                 return 0;
             else
-                return Convert.ToInt64(4);
+                return Convert.ToInt64(v);
         }
 
 		/// <summary>
