@@ -60,11 +60,6 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_VOLUME_SIZE = "50mb";
         
         /// <summary>
-        /// Default value for keep-time
-        /// </summary>
-        private const string DEFAULT_KEEP_TIME = "1M";
-
-        /// <summary>
         /// Default value for keep-versions
         /// </summary>
         private const int DEFAULT_KEEP_VERSIONS = 0;
@@ -458,7 +453,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
                     
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
-                    new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong, DEFAULT_KEEP_TIME),
+                    new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
 #if DEBUG
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
@@ -687,7 +682,7 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("keep-time", out v);
                 
                 if (string.IsNullOrEmpty(v))
-                    v = DEFAULT_KEEP_TIME;
+                    return new DateTime(0);
 
                 TimeSpan tolerance =
                     this.DisableTimeTolerance ?
