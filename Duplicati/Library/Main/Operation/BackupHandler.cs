@@ -475,11 +475,12 @@ namespace Duplicati.Library.Main.Operation
             m_result.ExaminedFiles++;
 
             bool changed = false;
+            DateTime lastModified = new DateTime(0, DateTimeKind.Utc);
 
             try
             {
-                DateTime lastModified = m_snapshot.GetLastWriteTime(path);
-                if (oldId < 0 || m_options.DisableFiletimeCheck || lastModified > oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan))
+                lastModified = m_snapshot.GetLastWriteTime(path).ToUniversalTime();
+                if (oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                 

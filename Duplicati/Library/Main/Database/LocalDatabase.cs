@@ -124,6 +124,18 @@ namespace Duplicati.Library.Main.Database
             m_result = result;
         }
 		
+        /// <summary>
+        /// Normalizes a DateTime instance floor'ed to seconds and in UTC
+        /// </summary>
+        /// <returns>The normalised date time</returns>
+        /// <param name="input">The input time</param>
+        public static DateTime NormalizeDateTime(DateTime input)
+        {
+            var ticks = input.ToUniversalTime().Ticks;
+            ticks -= ticks % TimeSpan.TicksPerSecond;
+            return new DateTime(ticks, DateTimeKind.Utc);
+        }
+        
 		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
@@ -166,7 +178,7 @@ namespace Duplicati.Library.Main.Database
                         throw new Exception("Invalid DateTime given, must be either local or UTC");
                         
                     // Make sure the resolution is the same (i.e. no milliseconds)
-                    time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
+                    time = NormalizeDateTime(time);
             
                     query += @" ""Timestamp"" <= ?";
                     args.Add(time);

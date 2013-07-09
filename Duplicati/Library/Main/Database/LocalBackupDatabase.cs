@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Database
                         while (rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
-                            var scantime = Convert.ToDateTime(rd.GetValue(1));
+                            var scantime = new DateTime(Convert.ToDateTime(rd.GetValue(1)).Ticks, DateTimeKind.Utc);
                             var path = rd.GetValue(2).ToString();
                             m_fileScantimeLookup.Add((ulong)path.GetHashCode(), path, new KeyValuePair<long, DateTime>(id, scantime));
                         }
@@ -557,11 +557,11 @@ namespace Duplicati.Library.Main.Database
                         m_filesetLookup.Add(hashdata, new Tuple<string, long, long>(filename, blocksetID, metadataID), Convert.ToInt64(fileidobj));
                 }
             }
-
+            
             m_insertfileOperationCommand.Transaction = transaction;
             m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
             m_insertfileOperationCommand.SetParameterValue(1, fileidobj);
-            m_insertfileOperationCommand.SetParameterValue(2, scantime);
+            m_insertfileOperationCommand.SetParameterValue(2, NormalizeDateTime(scantime));
             m_insertfileOperationCommand.ExecuteNonQuery();
 
         }
@@ -571,7 +571,7 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand.Transaction = transaction;
             m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
             m_insertfileOperationCommand.SetParameterValue(1, fileid);
-            m_insertfileOperationCommand.SetParameterValue(2, scantime);
+            m_insertfileOperationCommand.SetParameterValue(2, NormalizeDateTime(scantime));
             m_insertfileOperationCommand.ExecuteNonQuery();
         }
 
@@ -608,8 +608,8 @@ namespace Duplicati.Library.Main.Database
                 {
                     if (m_fileScantimeLookup != null)
                         m_fileScantimeLookup.FalseNegatives++;                    
-
-                    oldScanned =  Convert.ToDateTime(rd.GetValue(1));
+                    
+                    oldScanned = new DateTime(Convert.ToDateTime(rd.GetValue(1)).Ticks, DateTimeKind.Utc);
                     var id = Convert.ToInt64(rd.GetValue(0));
                     
                     // We do not add here, because we will never query the same path twice,
@@ -687,7 +687,7 @@ namespace Duplicati.Library.Main.Database
         {
             long lastFilesetId = -1;
 
-            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", timestamp.ToUniversalTime(), filesetid);
+            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", NormalizeDateTime(timestamp), filesetid);
             if (lastIdObj != null && lastIdObj != DBNull.Value)
                 lastFilesetId = Convert.ToInt64(lastIdObj);
                 
@@ -812,7 +812,7 @@ namespace Duplicati.Library.Main.Database
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
             	cmd.Transaction = tr.Parent;            	
-				m_filesetId = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, timestamp, volumeid));
+				m_filesetId = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, NormalizeDateTime(timestamp), volumeid));
 				tr.Commit();
 				return m_filesetId;
 			}

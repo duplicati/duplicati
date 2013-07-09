@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Database
 
             using(var cmd = m_connection.CreateCommand())
             {
-                long filesetId = GetFilesetID(restoretime, versions);
+                long filesetId = GetFilesetID(NormalizeDateTime(restoretime), versions);
                 m_restoreTime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
                 cmd.Parameters.Clear();
 
