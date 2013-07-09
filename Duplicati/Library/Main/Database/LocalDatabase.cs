@@ -508,38 +508,6 @@ namespace Duplicati.Library.Main.Database
             	return Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", fhblocksize));
 		}
 
-		public IEnumerable<KeyValuePair<string, DateTime>> GetNewestFileset(string[] files, DateTime restoreTime)
-		{
-			var filetable = "FindLastVersion-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-			using(var cmd = m_connection.CreateCommand())
-			{
-				try
-				{
-					cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", filetable));
-					foreach(var s in files)
-						cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", filetable), s);
-	
-					string first = null;
-					using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""Path"", ""RemoteVolume"".""Name"", ""Operation"".""Timestamp"" FROM ""{0}"", ""RemoteVolume"", ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""File"".""Path"" = ""{0}"".""Path"" AND ""RemoteVolume"".""Type"" = ? ORDER BY ""Operation"".""Timestamp"" DESC ", filetable), RemoteVolumeType.Files))
-						while(rd.Read())
-						{
-							var cur = rd.GetValue(0).ToString();
-							if (!cur.Equals(first))
-							{
-								first = cur;
-								yield return new KeyValuePair<string, DateTime>(cur, Volumes.VolumeBase.ParseFilename(rd.GetValue(1).ToString()).Time);
-							}
-						}
-				
-				}
-				finally
-				{
-					try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", filetable)); }
-					catch { }
-				}
-			}
-		}
-
         public void VerifyConsistency(System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand())
