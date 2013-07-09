@@ -425,7 +425,7 @@ namespace Duplicati.Library.Main.Operation
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
                         if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                            metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTime(path).ToUniversalTime().Ticks.ToString();
                     }
                     else
                     {
@@ -457,7 +457,7 @@ namespace Duplicati.Library.Main.Operation
                     if (!metadata.ContainsKey("CoreAttributes"))
                         metadata["CoreAttributes"] = attributes.ToString();
                     if (!metadata.ContainsKey("CoreLastWritetime"))
-                        metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                        metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTime(path).ToUniversalTime().Ticks.ToString();
                     metahash = Utility.WrapMetadata(metadata, m_options);
                 }
                 else
@@ -499,7 +499,7 @@ namespace Duplicati.Library.Main.Operation
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
                         if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = Library.Utility.Utility.SerializeDateTime(lastModified);
+                            metadata["CoreLastWritetime"] = lastModified.Ticks.ToString();
 
                         metahashandsize = Utility.WrapMetadata(metadata, m_options);
                     }
