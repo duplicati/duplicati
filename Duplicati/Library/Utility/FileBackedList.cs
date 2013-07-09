@@ -38,6 +38,7 @@ namespace Duplicati.Library.Utility
             private readonly byte[] m_sizebuffer;
             private long m_expectedCount;
             private FileBackedList<T> m_parent;
+            private T m_current;
 
             public StreamEnumerator(Stream stream, Func<Stream, long, T> deserialize, FileBackedList<T> parent)
             {
@@ -53,13 +54,9 @@ namespace Duplicati.Library.Utility
 			{
 				get
 				{
-					if (m_position < 0 || m_position >= m_stream.Length)
-						return default(T);
 					if (m_expectedCount != m_parent.Count)
 						throw new Exception("Collection modified");
-					m_stream.Position = m_position;
-					m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length);					
-					return m_deserialize(m_stream, BitConverter.ToInt64(m_sizebuffer, 0)); 
+                    return m_current;
 				}
             }
 
@@ -74,30 +71,28 @@ namespace Duplicati.Library.Utility
             }
 
             public bool MoveNext()
-			{
-				if (m_position >= m_stream.Length)
-					return false;
+            {
+                if (m_position >= m_stream.Length)
+                {
+                    m_current = default(T);
+                    return false;
+                }
 					
 				if (m_expectedCount != m_parent.Count)
 					throw new Exception("Collection modified");
 					
-				if (m_position < 0)
-				{
-					m_position = 0;
-					return m_expectedCount > 0;
-				}
-				else
-				{
-					m_stream.Position = m_position;
-					m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length);
-					m_position += m_sizebuffer.Length + BitConverter.ToInt64(m_sizebuffer, 0);
-					return m_position < m_stream.Length;
-				}				
+				m_stream.Position = m_position;
+				m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length);
+                var len = BitConverter.ToInt64(m_sizebuffer, 0);
+                m_current = m_deserialize(m_stream, len);
+				m_position += m_sizebuffer.Length + len;
+				return true;
             }
 
             public void Reset()
             {
-                m_position = -1;
+                m_position = 0;
+                m_current = default(T);
             }
         }
 
@@ -127,15 +122,16 @@ namespace Duplicati.Library.Utility
 
         public void Add(T value)
         {
-        	long size = m_getSize(value);
+            long size = m_getSize(value);
             if (m_stream is MemoryStream && (m_stream.Length + size) > this.SwitchToFileLimit)
             {
                 m_file = new Library.Utility.TempFile();
-                Stream fs = System.IO.File.OpenWrite(m_file);
-                m_stream.CopyTo(fs);
-                m_stream.Dispose();
-
-                m_stream = fs;
+                using(var oldstream = m_stream)
+                {
+                    m_stream = System.IO.File.Open(m_file, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+                    oldstream.Position = 0;
+                    oldstream.CopyTo(m_stream);
+                }
             }
             
         	m_stream.Write(BitConverter.GetBytes(size), 0, 8);
@@ -189,16 +185,20 @@ namespace Duplicati.Library.Utility
 	/// </summary>
 	public class FileBackedStringList : FileBackedList<string>
 	{
+        private byte[] m_buf;
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Duplicati.Library.Utility.FileBackedStringList"/> class.
 		/// </summary>
 		/// <param name="encoding">The text encoding to use, defaults to UTF8</param>
 		public FileBackedStringList(System.Text.Encoding encoding = null)
 			: base(
-			(value) => (encoding ?? System.Text.Encoding.UTF8).GetByteCount(value),
+			(value) => {
+                m_buf = (encoding ?? System.Text.Encoding.UTF8).GetBytes(value);
+                return m_buf.Length;
+            },
 			(value, stream) => {
-				var data = (encoding ?? System.Text.Encoding.UTF8).GetBytes(value);
-				stream.Write(data, 0, data.Length);
+				stream.Write(m_buf, 0, m_buf.Length);
+                m_buf = null;
 			}, 
 			(stream, length) => {
 				var buf = new byte[length];
