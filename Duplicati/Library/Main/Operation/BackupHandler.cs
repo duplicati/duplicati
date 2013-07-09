@@ -465,7 +465,6 @@ namespace Duplicati.Library.Main.Operation
                     metahash = EMPTY_METADATA;
                 }
 
-                //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
                 m_result.AddVerboseMessage("Adding directory {0}", path);
                 AddFolderToOutput(path, DateTime.UtcNow, metahash);
                 return true;
