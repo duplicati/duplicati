@@ -124,10 +124,11 @@ namespace Duplicati.Library.Utility
         	return new TempFile(System.IO.Path.Combine(TempFolder.SystemTempPath, prefix + GenerateUniqueName()));
         }
 
-        #region IDisposable Members
-
-        public void Dispose()
+        protected void Dispose(bool disposing)
         {
+            if (disposing)
+                GC.SuppressFinalize(this);
+                
             try
             {
                 if (!m_protect && m_path != null && System.IO.File.Exists(m_path))
@@ -138,8 +139,20 @@ namespace Duplicati.Library.Utility
             {
             }
         }
+        
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         #endregion
+        
+        ~TempFile()
+        {
+            Dispose(false);
+        }
 
         /// <summary>
         /// Swaps two instances of temporary files, equivalent to renaming the files but requires no IO
