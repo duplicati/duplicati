@@ -447,7 +447,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("no-auto-compact", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoautocompactShort, Strings.Options.NoautocompactLong, "false"),
                     new CommandLineArgument("small-file-size", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilesizeShort, Strings.Options.SmallfilesizeLong),
-                    new CommandLineArgument("small-file-size-max-count", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilemaxcountShort, Strings.Options.SmallfilemaxcountLong, DEFAULT_SMALL_FILE_MAX_COUNT.ToString()),
+                    new CommandLineArgument("small-file-max-count", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilemaxcountShort, Strings.Options.SmallfilemaxcountLong, DEFAULT_SMALL_FILE_MAX_COUNT.ToString()),
 
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Size, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
