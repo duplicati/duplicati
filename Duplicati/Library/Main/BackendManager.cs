@@ -66,6 +66,7 @@ namespace Duplicati.Library.Main
             public IndexVolumeWriter Indexfile;
             public Exception Exception;
             public bool ExceptionKillsHandler;
+            public bool NotTrackedInDb;
 
             private System.Threading.ManualResetEvent DoneEvent;
 
@@ -419,7 +420,7 @@ namespace Duplicati.Library.Main
         private void DoPut(FileEntryItem item)
         {
             item.Encrypt(m_encryption, m_statwriter);
-            if (item.UpdateHashAndSize(m_options))
+            if (item.UpdateHashAndSize(m_options) && !item.NotTrackedInDb)
             	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
             if (item.Indexfile != null)
@@ -442,7 +443,8 @@ namespace Duplicati.Library.Main
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
-			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
+            if (!item.NotTrackedInDb)
+			    m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
 			
             m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
@@ -609,7 +611,9 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
                 
             var req = new FileEntryItem(OperationType.Put, remotename, null);
+            req.LocalFilename = localpath;
             req.Encrypted = true; //Prevent encryption
+            req.NotTrackedInDb = true; //Prevent Db updates
             
             if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
             {
