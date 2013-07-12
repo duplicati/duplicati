@@ -439,8 +439,8 @@ namespace Duplicati.Library.Main.Database
         private HashPrefixLookup m_certainMissing;
         private HashLookupWithData<TKey, TValue> m_certainFound;
 
-        public long FalsePositives { get; set; }
-        public long FalseNegatives { get; set; }
+        public long PositiveMisses { get; set; }
+        public long NegativeMisses { get; set; }
 
         public HashDatabaseProtector(uint elementsize, ulong memory = DEFAULT_MEMORY)
         {
@@ -501,8 +501,8 @@ namespace Duplicati.Library.Main.Database
         private HashPrefixLookup m_certainMissing;
         private HashLookup<TKey> m_certainFound;
 
-        public long FalsePositives { get; set; }
-        public long FalseNegatives { get; set; }
+        public long PositiveMisses { get; set; }
+        public long NegativeMisses { get; set; }
         
         public HashDatabaseProtector(uint elementsize, ulong memory = DEFAULT_MEMORY)
         {

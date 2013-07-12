@@ -245,9 +245,9 @@ namespace Duplicati.Library.Main.Database
                         m_findblockCommand.Transaction = transaction;
                         r = m_findblockCommand.ExecuteScalar(null, key, size);
                         if (r == null || r == DBNull.Value) {
-                            m_blockHashLookup.FalsePositives++;
+                            m_blockHashLookup.PositiveMisses++;
                         } else {
-                            m_blockHashLookup.FalseNegatives++;
+                            m_blockHashLookup.NegativeMisses++;
                             if (m_missingBlockHashes == 0) {
                                 //Update the lookup table, MRU style
                                 m_blockHashLookup.Add(hashdata, key);
@@ -331,10 +331,10 @@ namespace Duplicati.Library.Main.Database
                         m_findblocksetCommand.Transaction = transaction;
                         r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
                         if (r == null || r == DBNull.Value)
-                            m_fileHashLookup.FalsePositives++;
+                            m_fileHashLookup.PositiveMisses++;
                         else
                         {
-                            m_fileHashLookup.FalseNegatives++;
+                            m_fileHashLookup.NegativeMisses++;
                             blocksetid = Convert.ToInt64(r);
                             
                             //Update, MRU style
@@ -438,7 +438,7 @@ namespace Duplicati.Library.Main.Database
                                 r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
                                 if (r != null && r != DBNull.Value)
                                 {
-                                    m_metadataLookup.FalseNegatives++;
+                                    m_metadataLookup.NegativeMisses++;
                                     //Update the lookup table, MRU style
                                     metadataid = Convert.ToInt64(r);
                                     m_metadataLookup.Add(hashdata, hash, metadataid);
@@ -447,9 +447,9 @@ namespace Duplicati.Library.Main.Database
                             }
                             
                             if (r == null || r == DBNull.Value)
-                                m_metadataLookup.FalsePositives++;
+                                m_metadataLookup.PositiveMisses++;
                             else
-                                m_metadataLookup.FalseNegatives++;
+                                m_metadataLookup.NegativeMisses++;
                                 
                             break;
                     }
@@ -526,9 +526,9 @@ namespace Duplicati.Library.Main.Database
                         m_findfilesetCommand.SetParameterValue(2, filename);
                         fileidobj = m_findfilesetCommand.ExecuteScalar();
                         if (fileidobj == null || fileidobj == DBNull.Value)
-                            m_filesetLookup.FalsePositives++;
+                            m_filesetLookup.PositiveMisses++;
                         else
-                            m_filesetLookup.FalseNegatives++;
+                            m_filesetLookup.NegativeMisses++;
                         break;
                 }
             }
@@ -607,7 +607,7 @@ namespace Duplicati.Library.Main.Database
                 if (rd.Read())
                 {
                     if (m_fileScantimeLookup != null)
-                        m_fileScantimeLookup.FalseNegatives++;                    
+                        m_fileScantimeLookup.NegativeMisses++;                    
                     
                     oldScanned = new DateTime(Convert.ToDateTime(rd.GetValue(1)).Ticks, DateTimeKind.Utc);
                     var id = Convert.ToInt64(rd.GetValue(0));
@@ -622,7 +622,7 @@ namespace Duplicati.Library.Main.Database
                 else
                 {
                     if (m_fileScantimeLookup != null)
-                        m_fileScantimeLookup.FalsePositives++;
+                        m_fileScantimeLookup.PositiveMisses++;
 
                     oldScanned = DateTime.UtcNow;
                     return -1;
@@ -715,22 +715,22 @@ namespace Duplicati.Library.Main.Database
                 results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryFiles + @") A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_filesetId));
             }
 
-            if (m_blockHashLookup != null && m_fileHashLookup != null && (m_blockHashLookup.FalsePositives > 200 || m_fileHashLookup.FalsePositives > 20))
-                results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.FalsePositives, m_fileHashLookup.FalsePositives), null);
+            if (m_blockHashLookup != null && m_fileHashLookup != null && (m_blockHashLookup.PositiveMisses > 200 || m_fileHashLookup.PositiveMisses > 20))
+                results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.PositiveMisses, m_fileHashLookup.PositiveMisses), null);
 
-            if (m_blockHashLookup != null && m_blockHashLookup.FalsePositives > 200 && m_blockHashLookup.PrefixUsageRatio > 0.5)
+            if (m_blockHashLookup != null && m_blockHashLookup.PositiveMisses > 200 && m_blockHashLookup.PrefixUsageRatio > 0.5)
                 results.AddWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.PrefixUsageRatio * 100), null);
 
-            if (m_fileHashLookup != null && m_fileHashLookup.FalsePositives > 20 && m_fileHashLookup.PrefixUsageRatio > 0.5)
+            if (m_fileHashLookup != null && m_fileHashLookup.PositiveMisses > 20 && m_fileHashLookup.PrefixUsageRatio > 0.5)
                 results.AddWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.PrefixUsageRatio * 100), null);
 
-            if (m_metadataLookup != null && m_metadataLookup.FalsePositives > 200 && m_metadataLookup.PrefixUsageRatio > 0.5)
+            if (m_metadataLookup != null && m_metadataLookup.PositiveMisses > 200 && m_metadataLookup.PrefixUsageRatio > 0.5)
                 results.AddWarning(string.Format("Metadata hash lookup table is too small, usage is: {0}%", m_metadataLookup.PrefixUsageRatio * 100), null);
 
-            if (m_fileScantimeLookup != null && m_fileScantimeLookup.FalsePositives > 20 && m_fileScantimeLookup.PrefixUsageRatio > 0.5)
+            if (m_fileScantimeLookup != null && m_fileScantimeLookup.PositiveMisses > 20 && m_fileScantimeLookup.PrefixUsageRatio > 0.5)
                 results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_fileScantimeLookup.PrefixUsageRatio * 100), null);
 
-            if (m_filesetLookup != null && m_filesetLookup.FalsePositives > 20 && m_filesetLookup.PrefixUsageRatio > 0.5)
+            if (m_filesetLookup != null && m_filesetLookup.PositiveMisses > 20 && m_filesetLookup.PrefixUsageRatio > 0.5)
                 results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_filesetLookup.PrefixUsageRatio * 100), null);
             
             // Good for profiling, but takes some time to calculate these stats
@@ -738,32 +738,32 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_blockHashLookup != null)
                 {
-                    Logging.Log.WriteMessage(string.Format("Prefix BlockHash Lookup entries {0}, usage: {1}, falsePositives: {2}", m_blockHashLookup.PrefixBits, m_blockHashLookup.PrefixUsageRatio, m_blockHashLookup.FalsePositives), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full BlockHash Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_blockHashLookup.FullEntries, m_blockHashLookup.FullUsageRatio, m_blockHashLookup.FalseNegatives), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Prefix BlockHash Lookup entries {0}, usage: {1}, positive misses: {2}", m_blockHashLookup.PrefixBits, m_blockHashLookup.PrefixUsageRatio, m_blockHashLookup.PositiveMisses), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Full BlockHash Lookup entries {0}, usage: {1}, negative misses: {2}", m_blockHashLookup.FullEntries, m_blockHashLookup.FullUsageRatio, m_blockHashLookup.NegativeMisses), Logging.LogMessageType.Profiling);
                 }
 
                 if (m_fileHashLookup != null)
                 {
-                    Logging.Log.WriteMessage(string.Format("Prefix FileHash Lookup entries {0}, usage: {1}, falsePositives: {2}", m_fileHashLookup.PrefixBits, m_fileHashLookup.PrefixUsageRatio, m_fileHashLookup.FalsePositives), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full FileHash Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_fileHashLookup.FullEntries, m_fileHashLookup.FullUsageRatio, m_fileHashLookup.FalseNegatives), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Prefix FileHash Lookup entries {0}, usage: {1}, positive misses: {2}", m_fileHashLookup.PrefixBits, m_fileHashLookup.PrefixUsageRatio, m_fileHashLookup.PositiveMisses), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Full FileHash Lookup entries {0}, usage: {1}, negative misses: {2}", m_fileHashLookup.FullEntries, m_fileHashLookup.FullUsageRatio, m_fileHashLookup.NegativeMisses), Logging.LogMessageType.Profiling);
                 }
 
                 if (m_metadataLookup != null)
                 {
-                    Logging.Log.WriteMessage(string.Format("Prefix Metadata Lookup entries {0}, usage: {1}, falsePositives: {2}", m_metadataLookup.FullEntries, m_metadataLookup.FullUsageRatio, m_metadataLookup.FalsePositives), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full Metadata Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_metadataLookup.FullEntries, m_metadataLookup.FullUsageRatio, m_metadataLookup.FalseNegatives), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Prefix Metadata Lookup entries {0}, usage: {1}, positive misses: {2}", m_metadataLookup.PrefixBits, m_metadataLookup.PrefixUsageRatio, m_metadataLookup.PositiveMisses), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Full Metadata Lookup entries {0}, usage: {1}, negative misses: {2}", m_metadataLookup.FullEntries, m_metadataLookup.FullUsageRatio, m_metadataLookup.NegativeMisses), Logging.LogMessageType.Profiling);
                 }
 
                 if (m_fileScantimeLookup != null)
                 {
-                    Logging.Log.WriteMessage(string.Format("Prefix Scantime Lookup entries {0}, usage: {1}, falsePositives: {2}", m_fileScantimeLookup.FullEntries, m_fileScantimeLookup.FullUsageRatio, m_fileScantimeLookup.FalsePositives), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full Scantime Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_fileScantimeLookup.FullEntries, m_fileScantimeLookup.FullUsageRatio, m_fileScantimeLookup.FalseNegatives), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Prefix Scantime Lookup entries {0}, usage: {1}, positive misses: {2}", m_fileScantimeLookup.PrefixBits, m_fileScantimeLookup.PrefixUsageRatio, m_fileScantimeLookup.PositiveMisses), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Full Scantime Lookup entries {0}, usage: {1}, negative misses: {2}", m_fileScantimeLookup.FullEntries, m_fileScantimeLookup.FullUsageRatio, m_fileScantimeLookup.NegativeMisses), Logging.LogMessageType.Profiling);
                 }
 
                 if (m_filesetLookup != null)
                 {
-                    Logging.Log.WriteMessage(string.Format("Prefix Fileset Lookup entries {0}, usage: {1}, falsePositives: {2}", m_filesetLookup.FullEntries, m_filesetLookup.FullUsageRatio, m_filesetLookup.FalsePositives), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full Fileset Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_filesetLookup.FullEntries, m_filesetLookup.FullUsageRatio, m_filesetLookup.FalseNegatives), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Prefix Fileset Lookup entries {0}, usage: {1}, positive misses: {2}", m_filesetLookup.PrefixBits, m_filesetLookup.PrefixUsageRatio, m_filesetLookup.PositiveMisses), Logging.LogMessageType.Profiling);
+                    Logging.Log.WriteMessage(string.Format("Full Fileset Lookup entries {0}, usage: {1}, negative misses: {2}", m_filesetLookup.FullEntries, m_filesetLookup.FullUsageRatio, m_filesetLookup.NegativeMisses), Logging.LogMessageType.Profiling);
                 }
             }
         }
