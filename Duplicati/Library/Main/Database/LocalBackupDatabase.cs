@@ -24,6 +24,15 @@ namespace Duplicati.Library.Main.Database
         /// specifies.
         /// </summary>
         private const uint PATH_STRING_GUESS_SIZE = 256;
+        
+        /// <summary>
+        /// The usage threshold for a lookup table that triggers a warning
+        /// </summary>
+        private const double FULL_HASH_USAGE_THRESHOLD = 0.05;
+        /// <summary>
+        /// The number of hash misses that triggers a warning
+        /// </summary>
+        private const long HASH_MISS_THRESHOLD = 200;
 
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
@@ -719,23 +728,23 @@ namespace Duplicati.Library.Main.Database
                 results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryFiles + @") A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_filesetId));
             }
 
-            if (m_blockHashLookup != null && m_fileHashLookup != null && (m_blockHashLookup.PositiveMisses > 200 || m_fileHashLookup.PositiveMisses > 20))
+            if (m_blockHashLookup != null && m_fileHashLookup != null && ((m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD || (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD))
                 results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.PositiveMisses, m_fileHashLookup.PositiveMisses), null);
 
-            if (m_blockHashLookup != null && m_blockHashLookup.PositiveMisses > 200 && m_blockHashLookup.PrefixUsageRatio > 0.5)
-                results.AddWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.PrefixUsageRatio * 100), null);
+            if (m_blockHashLookup != null && (m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_blockHashLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
+                results.AddWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.FullUsageRatio * 100), null);
 
-            if (m_fileHashLookup != null && m_fileHashLookup.PositiveMisses > 20 && m_fileHashLookup.PrefixUsageRatio > 0.5)
-                results.AddWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.PrefixUsageRatio * 100), null);
+            if (m_fileHashLookup != null && (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_fileHashLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
+                results.AddWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.FullUsageRatio * 100), null);
 
-            if (m_metadataLookup != null && m_metadataLookup.PositiveMisses > 200 && m_metadataLookup.PrefixUsageRatio > 0.5)
-                results.AddWarning(string.Format("Metadata hash lookup table is too small, usage is: {0}%", m_metadataLookup.PrefixUsageRatio * 100), null);
+            if (m_metadataLookup != null && (m_metadataLookup.PositiveMisses + m_metadataLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_metadataLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
+                results.AddWarning(string.Format("Metadata hash lookup table is too small, usage is: {0}%", m_metadataLookup.FullUsageRatio * 100), null);
 
-            if (m_fileScantimeLookup != null && m_fileScantimeLookup.PositiveMisses > 20 && m_fileScantimeLookup.PrefixUsageRatio > 0.5)
-                results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_fileScantimeLookup.PrefixUsageRatio * 100), null);
+            if (m_fileScantimeLookup != null && (m_fileScantimeLookup.PositiveMisses + m_fileScantimeLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_fileScantimeLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
+                results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_fileScantimeLookup.FullUsageRatio * 100), null);
 
-            if (m_filesetLookup != null && m_filesetLookup.PositiveMisses > 20 && m_filesetLookup.PrefixUsageRatio > 0.5)
-                results.AddWarning(string.Format("File scantime lookup table is too small, usage is: {0}%", m_filesetLookup.PrefixUsageRatio * 100), null);
+            if (m_filesetLookup != null && (m_filesetLookup.PositiveMisses + m_filesetLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_filesetLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
+                results.AddWarning(string.Format("File id lookup table is too small, usage is: {0}%", m_filesetLookup.FullUsageRatio * 100), null);
             
             // Good for profiling, but takes some time to calculate these stats
             if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
