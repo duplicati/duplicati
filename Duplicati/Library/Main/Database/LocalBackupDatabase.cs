@@ -243,7 +243,9 @@ namespace Duplicati.Library.Main.Database
                         
                     default:
                         m_findblockCommand.Transaction = transaction;
-                        r = m_findblockCommand.ExecuteScalar(null, key, size);
+                        m_findblockCommand.SetParameterValue(0, key);
+                        m_findblockCommand.SetParameterValue(1, size);
+                        r = m_findblockCommand.ExecuteScalar();
                         if (r == null || r == DBNull.Value) {
                             m_blockHashLookup.PositiveMisses++;
                         } else {
@@ -260,7 +262,9 @@ namespace Duplicati.Library.Main.Database
             else
             {
                 m_findblockCommand.Transaction = transaction;
-                r = m_findblockCommand.ExecuteScalar(null, key, size);
+                m_findblockCommand.SetParameterValue(0, key);
+                m_findblockCommand.SetParameterValue(1, size);
+                r = m_findblockCommand.ExecuteScalar();
             }
 
             if (r == null || r == DBNull.Value)
