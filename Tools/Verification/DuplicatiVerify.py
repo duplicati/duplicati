@@ -13,6 +13,7 @@ import os
 import string
 import json
 import base64
+import codecs
 from hashlib import sha256
 
 """ Utility function to return byte chunks from a binary file """
@@ -36,7 +37,7 @@ def verifyHashes(filename):
         return -1
     
     folder = os.path.dirname(filename)
-    with open(filename) as f:
+    with codecs.open(filename, "r", "utf-8-sig") as f:
         doc = json.load(f)
     
     for file in doc:
