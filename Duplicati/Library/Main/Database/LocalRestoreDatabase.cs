@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             {
                 long filesetId = GetFilesetID(NormalizeDateTime(restoretime), versions);
-                m_restoreTime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
+                m_restoreTime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT CAST(strftime('%s', ""Timestamp"") AS INTEGER) AS ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
                 cmd.Parameters.Clear();
 
                 cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable);
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Database
                                 while (rd.Read())
                                     sb.AppendLine(rd.GetValue(0).ToString());
 
-                            DateTime actualrestoretime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId));
+                            var actualrestoretime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT CAST(strftime('%s', ""Timestamp"") AS INTEGER) AS ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
                             log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
                             cmd.Parameters.Clear();
                         }

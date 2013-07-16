@@ -136,6 +136,19 @@ namespace Duplicati.Library.Main.Database
             return new DateTime(ticks, DateTimeKind.Utc);
         }
         
+        /// <summary>
+        /// The EPOCH time (unix time)
+        /// </summary>
+        private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>
+        /// Creates a DateTime instance by adding the specified number of seconds to the EPOCH value
+        /// </summary>        
+        public static DateTime ParseFromEpochSeconds(long seconds)
+        {
+            return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
+        }
+        
 		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
@@ -157,9 +170,9 @@ namespace Duplicati.Library.Main.Database
             get 
             {
                 using(var cmd = m_connection.CreateCommand())
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", CAST(strftime('%s', ""Timestamp"") AS INTEGER) AS ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
-                        yield return new KeyValuePair<long, DateTime>(Convert.ToInt64(rd.GetValue(0)), Convert.ToDateTime(rd.GetValue(1)).ToLocalTime());
+                        yield return new KeyValuePair<long, DateTime>(Convert.ToInt64(rd.GetValue(0)), ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1))).ToLocalTime());
             }
         }
 
@@ -673,7 +686,7 @@ namespace Duplicati.Library.Main.Database
                         filesetvolume.AddSymlink(path, metahash, metalength);
                 }
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                cmd.CommandText = @"SELECT ""F"".""Path"", CAST(strftime('%s', ""F"".""Scantime"") AS INTEGER) AS ""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
                 cmd.Parameters.Clear();
                 cmd.AddParameter(filesetId);
 
@@ -686,7 +699,7 @@ namespace Duplicati.Library.Main.Database
                         var path = rd.GetValue(0).ToString();
                         var filehash = rd.GetValue(3).ToString();
                         var size = Convert.ToInt64(rd.GetValue(2));
-                        var scantime = Convert.ToDateTime(rd.GetValue(1));
+                        var scantime = ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1)));
                         var metahash = rd.GetValue(4).ToString();
                         var metasize = Convert.ToInt64(rd.GetValue(5));
                         var blrd = new BlocklistHashEnumerable(rd);

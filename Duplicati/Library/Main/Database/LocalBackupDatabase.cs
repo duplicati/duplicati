@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM ""FilesetEntry"" INNER JOIN ""File"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" GROUP BY ""FilesetEntry"".""FileID"", ""File"".""Path"" ", m_scantimelookupTablename));
 
-            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
+            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", CAST(strftime('%s', ""Scantime"") AS INTEGER) AS ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
@@ -203,11 +203,11 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_fileScantimeLookup != null)
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"" FROM ""{0}"" ", m_scantimelookupTablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", CAST(strftime('%s', ""Scantime"") AS INTEGER) AS ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" ", m_scantimelookupTablename)))
                         while (rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
-                            var scantime = new DateTime(Convert.ToDateTime(rd.GetValue(1)).Ticks, DateTimeKind.Utc);
+                            var scantime = ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1)));
                             var path = rd.GetValue(2).ToString();
                             m_fileScantimeLookup.Add((ulong)path.GetHashCode(), path, new KeyValuePair<long, DateTime>(id, scantime));
                         }
@@ -622,7 +622,7 @@ namespace Duplicati.Library.Main.Database
                     if (m_fileScantimeLookup != null)
                         m_fileScantimeLookup.NegativeMisses++;                    
                     
-                    oldScanned = new DateTime(Convert.ToDateTime(rd.GetValue(1)).Ticks, DateTimeKind.Utc);
+                    oldScanned = ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1)));
                     var id = Convert.ToInt64(rd.GetValue(0));
                     
                     // We do not add here, because we will never query the same path twice,
@@ -844,12 +844,12 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = transaction;
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"")"))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", CAST(strftime('%s', ""Timestamp"") AS INTEGER) AS ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"")"))
                     while(rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(
                             Convert.ToInt64(rd.GetValue(0)),
-                            Convert.ToDateTime(rd.GetValue(1)).ToLocalTime()
+                            ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1))).ToLocalTime()
                         );
                     }
             }
