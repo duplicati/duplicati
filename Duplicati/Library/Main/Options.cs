@@ -438,7 +438,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Size, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
-                    new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Lookup.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
+                    new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Lookup.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
