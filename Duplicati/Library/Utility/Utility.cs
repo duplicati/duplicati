@@ -47,7 +47,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The EPOCH offset (unix style)
         /// </summary>
-        public static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
+        public static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         /// The attribute value used to indicate error
