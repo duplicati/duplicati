@@ -702,10 +702,14 @@ namespace Duplicati.Library.Main.Database
                         var scantime = ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1)));
                         var metahash = rd.GetValue(4).ToString();
                         var metasize = Convert.ToInt64(rd.GetValue(5));
-                        var blrd = new BlocklistHashEnumerable(rd);
+                        var p = rd.GetValue(6);
+                        var blrd = (p == null || p == DBNull.Value) ? null : new BlocklistHashEnumerable(rd);
 
                         filesetvolume.AddFile(path, filehash, size, scantime, metahash, metasize, blrd);
-                        more = blrd.MoreData;
+                        if (blrd == null)
+                            more = rd.Read();
+                        else
+                            more = blrd.MoreData;
 
                     } while (more);
                 }

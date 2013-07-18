@@ -313,7 +313,7 @@ namespace Duplicati.Library.Main.Volumes
                     {
                         //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
                         // to prevent clashes with filename paths where forward slash has special meaning
-                        get { return m_filename.Substring(INDEX_BLOCKLIST_FOLDER.Length).Replace('-', '+').Replace('_', '-'); }
+                        get { return Library.Utility.Utility.Base64UrlToBase64Plain(m_filename.Substring(INDEX_BLOCKLIST_FOLDER.Length)); }
                     }
 
                     public long Length
