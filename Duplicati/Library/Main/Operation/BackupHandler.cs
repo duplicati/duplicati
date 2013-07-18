@@ -633,7 +633,7 @@ namespace Duplicati.Library.Main.Operation
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
                 m_blockvolume.AddBlock(key, data, len, hint);
-                if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full && isBlocklistData)
                     m_indexvolume.WriteBlocklist(key, data, len);
                     
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
