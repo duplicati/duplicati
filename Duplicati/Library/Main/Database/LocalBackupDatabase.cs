@@ -110,7 +110,7 @@ namespace Duplicati.Library.Main.Database
             m_findmetadatasetCommand.CommandText = @"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""C"".""Hash"" = ? AND ""C"".""Size"" = ? LIMIT 1";
             m_findmetadatasetCommand.AddParameters(2);
 
-            m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""File"" WHERE ""BlocksetID"" = ? AND ""MetadatasetID"" = ? AND ""Path"" = ?";
+            m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""File"" WHERE ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""Path"" = ?";
             m_findfilesetCommand.AddParameters(3);
 
             m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?)";
