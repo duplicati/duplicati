@@ -20,6 +20,7 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
+        private readonly System.Data.IDbCommand m_insertIndexBlockLink;
 
         private BasicResults m_result;
 
@@ -95,6 +96,7 @@ namespace Duplicati.Library.Main.Database
             m_removeremotevolumeCommand = connection.CreateCommand();
 			m_selectremotevolumeIdCommand = connection.CreateCommand();
 			m_createremotevolumeCommand = connection.CreateCommand();
+            m_insertIndexBlockLink = connection.CreateCommand();
 
             m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
             m_insertlogCommand.AddParameters(5);
@@ -116,7 +118,10 @@ namespace Duplicati.Library.Main.Database
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
 			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
-            m_createremotevolumeCommand.AddParameters(4);		
+            m_createremotevolumeCommand.AddParameters(4);
+
+            m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
+            m_insertIndexBlockLink.AddParameters(2);
 		}
 
         internal void SetResult(BasicResults result)
@@ -796,6 +801,32 @@ namespace Duplicati.Library.Main.Database
                     catch {}
                     finally { Tablename = null; }
             }                
+        }
+        
+        /// <summary>
+        /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
+        /// </summary>
+        /// <param name="volumeid">The ID of the fileset volume to update</param>
+        /// <param name="timestamp">The timestamp of the operation to create</param>
+        /// <param name="transaction">An optional external transaction</param>
+        public virtual long CreateFileset(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand())
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+                cmd.Transaction = tr.Parent;                
+                var id = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, NormalizeDateTime(timestamp), volumeid));
+                tr.Commit();
+                return id;
+            }
+        }
+        
+        public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
+        {
+            m_insertIndexBlockLink.Transaction = transaction;
+            m_insertIndexBlockLink.SetParameterValue(0, indexVolumeID);
+            m_insertIndexBlockLink.SetParameterValue(1, blockVolumeID);
+            m_insertIndexBlockLink.ExecuteNonQuery();
         }
         
         public virtual void Dispose()

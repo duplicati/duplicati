@@ -12,7 +12,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
         /// </summary>
-        private const uint HASH_GUESS_SIZE = 128;
+        internal const uint HASH_GUESS_SIZE = 128;
         
         /// <summary>
         /// An approximate size of a path string in bytes.
@@ -23,7 +23,7 @@ namespace Duplicati.Library.Main.Database
         /// in slightly more memory being used that what the user 
         /// specifies.
         /// </summary>
-        private const uint PATH_STRING_GUESS_SIZE = 256;
+        internal const uint PATH_STRING_GUESS_SIZE = 256;
         
         /// <summary>
         /// The usage threshold for a lookup table that triggers a warning
@@ -58,7 +58,6 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_updateblockCommand;
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-        private readonly System.Data.IDbCommand m_insertIndexBlockLink;
 		
 		private HashDatabaseProtector<string> m_blockHashLookup;
         private HashDatabaseProtector<string, long> m_fileHashLookup;
@@ -96,7 +95,6 @@ namespace Duplicati.Library.Main.Database
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_findmetadatasetProbeCommand = m_connection.CreateCommand();
-            m_insertIndexBlockLink = m_connection.CreateCommand();
 				
 			m_findblockCommand.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -153,10 +151,7 @@ namespace Duplicati.Library.Main.Database
 
             m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
             m_updateblockCommand.AddParameters(3);
-            
-            m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
-            m_insertIndexBlockLink.AddParameters(2);
-            
+                        
 			if (options.BlockHashLookupMemory > 0)
                 m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);            
             if (options.FileHashLookupMemory > 0)
@@ -812,33 +807,18 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
-
-		/// <summary>
-		/// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
-		/// </summary>
-		/// <param name="volumeid">The ID of the fileset volume to update</param>
-		/// <param name="timestamp">The timestamp of the operation to create</param>
-		/// <param name="transaction">An optional external transaction</param>
-		public long CreateFileset(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
-		{
-            using (var cmd = m_connection.CreateCommand())
-            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            {
-            	cmd.Transaction = tr.Parent;            	
-				m_filesetId = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, NormalizeDateTime(timestamp), volumeid));
-				tr.Commit();
-				return m_filesetId;
-			}
-		}
-						
-		public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
-		{
-			m_insertIndexBlockLink.Transaction = transaction;
-			m_insertIndexBlockLink.SetParameterValue(0, indexVolumeID);
-			m_insertIndexBlockLink.SetParameterValue(1, blockVolumeID);
-			m_insertIndexBlockLink.ExecuteNonQuery();
-		}
-		
+    
+        /// <summary>
+        /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
+        /// </summary>
+        /// <param name="volumeid">The ID of the fileset volume to update</param>
+        /// <param name="timestamp">The timestamp of the operation to create</param>
+        /// <param name="transaction">An optional external transaction</param>
+        public override long CreateFileset(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
+        {
+            return m_filesetId = base.CreateFileset(volumeid, timestamp, transaction);
+        }
+								
         public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand())

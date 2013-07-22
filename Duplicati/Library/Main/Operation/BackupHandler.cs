@@ -633,6 +633,11 @@ namespace Duplicati.Library.Main.Operation
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
                 m_blockvolume.AddBlock(key, data, len, hint);
+                
+                //TODO: In theory a normal data block and blocklist block could be equal.
+                // this would cause the index file to not contain all data,
+                // if the data file is added before the blocklist data
+                // ... highly theoretical ...
                 if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full && isBlocklistData)
                     m_indexvolume.WriteBlocklist(key, data, len);
                     

@@ -138,6 +138,15 @@ CREATE TABLE "DeletedBlock" (
 	"VolumeID" INTEGER NOT NULL
 );
 
+/*
+If extra copies of blocks are detected, 
+they are recorded here
+*/
+CREATE TABLE "DuplicateBlock" (
+    "BlockID" INTEGER NOT NULL,
+    "VolumeID" INTEGER NOT NULL
+);
+
 
 /*
 A metadata set, essentially a placeholder
