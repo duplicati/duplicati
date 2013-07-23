@@ -184,11 +184,24 @@ namespace Duplicati.Library.Backend
             return ls;
         }
 
+#if DEBUG_RETRY
+        private static Random random = new Random();
         public void Put(string remotename, System.IO.Stream stream)
         {
-            using (System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using(System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            {
+                if (random.NextDouble() > 0.6666)
+                    throw new Exception("Random upload failure");
+                Utility.Utility.CopyStream(stream, writestream);
+            }
+        }
+#else
+        public void Put(string remotename, System.IO.Stream stream)
+        {
+            using(System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 Utility.Utility.CopyStream(stream, writestream);
         }
+#endif
 
         public void Get(string remotename, System.IO.Stream stream)
         {
