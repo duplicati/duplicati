@@ -21,7 +21,8 @@ namespace Duplicati.Library.Main
         Progress,
         Completed,
         Retrying,
-        Failed
+        Failed,
+        Rename
     }
 
     /// <summary>

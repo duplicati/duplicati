@@ -14,6 +14,7 @@ namespace Duplicati.Library.Main.Volumes
         protected string m_volumename;
         public string LocalFilename { get { return m_localfile; } }
         public string RemoteFilename { get { return m_volumename; } }
+        public Library.Utility.TempFile TempFile { get { return m_localfile; } }
 
         public abstract RemoteVolumeType FileType { get; }
 
@@ -29,7 +30,7 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
         
-        private static string GenerateGuid(Options options)
+        public static string GenerateGuid(Options options)
         {
         	var s = Guid.NewGuid().ToString("N");
         	

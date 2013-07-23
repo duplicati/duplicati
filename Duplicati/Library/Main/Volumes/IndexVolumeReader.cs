@@ -14,6 +14,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             string Hash { get; }
             long Length { get; }
+            Stream Data { get; }
             IEnumerable<string> Blocklist { get; }
         }
 
@@ -319,6 +320,11 @@ namespace Duplicati.Library.Main.Volumes
                     public long Length
                     {
                         get { return m_size; }
+                    }
+                    
+                    public Stream Data
+                    {
+                        get { return m_compression.OpenRead(m_filename); }
                     }
 
                     public IEnumerable<string> Blocklist

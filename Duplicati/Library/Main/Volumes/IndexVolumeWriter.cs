@@ -75,6 +75,29 @@ namespace Duplicati.Library.Main.Volumes
                 s.Write(data, 0, size);
         }
 
+        public void WriteBlocklist(string hash, Stream source)
+        {
+            m_blocklists++;
+            //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
+            using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
+                Library.Utility.Utility.CopyStream(source, s);
+        }
+
+        public void CopyFrom(IndexVolumeReader rd, Func<string, string> filename_mapping)
+        {
+            foreach(var n in rd.Volumes)
+            {
+                this.StartVolume(filename_mapping(n.Filename));
+                foreach(var x in n.Blocks)
+                    this.AddBlock(x.Key, x.Value);
+                this.FinishVolume(n.Hash, n.Length);
+            }
+            
+            foreach(var b in rd.BlockLists)
+                using(var s = b.Data)
+                    this.WriteBlocklist(b.Hash, s);
+        }
+
         public override void Dispose()
         {
             if (m_writer != null || m_streamwriter != null)

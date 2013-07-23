@@ -56,21 +56,68 @@ namespace Duplicati.Library.Main
 
         private class FileEntryItem : IDownloadWaitHandle
         {
+            /// <summary>
+            /// The current operation this entry represents
+            /// </summary>
             public OperationType Operation;
+            /// <summary>
+            /// The name of the remote file
+            /// </summary>
             public string RemoteFilename;
-            public string LocalFilename;
+            /// <summary>
+            /// The name of the local file
+            /// </summary>
+            public string LocalFilename { get { return LocalTempfile; } }
+            /// <summary>
+            /// A reference to a temporary file that is disposed upon
+            /// failure or completion of the item
+            /// </summary>
+            public TempFile LocalTempfile;
+            /// <summary>
+            /// True if the item has been encrypted
+            /// </summary>
             public bool Encrypted;
+            /// <summary>
+            /// The result object
+            /// </summary>
             public object Result;
+            /// <summary>
+            /// The expected hash value of the file
+            /// </summary>
             public string Hash;
+            /// <summary>
+            /// The expected size of the file
+            /// </summary>
             public long Size;
-            public IndexVolumeWriter Indexfile;
+            /// <summary>
+            /// Reference to the index file entry that is updated if this entry changes
+            /// </summary>
+            public Tuple<IndexVolumeWriter, FileEntryItem> Indexfile;
+            /// <summary>
+            /// A flag indicating if the final hash and size of the block volume has been written to the index file
+            /// </summary>
+            public bool IndexfileUpdated;
+            /// <summary>
+            /// An exception that this item has caused
+            /// </summary>
             public Exception Exception;
+            /// <summary>
+            /// True if an exception ultimately kills the handler,
+            /// false if the item is returned with an exception
+            /// </summary>
             public bool ExceptionKillsHandler;
+            /// <summary>
+            /// A flag indicating if the file is a extra metadata file
+            /// that has no entry in the database
+            /// </summary>
             public bool NotTrackedInDb;
 
+            /// <summary>
+            /// The event that is signaled once the operation is complete or has failed
+            /// </summary>
             private System.Threading.ManualResetEvent DoneEvent;
 
-            public FileEntryItem(OperationType operation, string remotefilename, IndexVolumeWriter indexfile = null)
+            public FileEntryItem(OperationType operation, string remotefilename, Tuple<IndexVolumeWriter, FileEntryItem> indexfile = null)
             {
                 Operation = operation;
                 RemoteFilename = remotefilename;
@@ -81,11 +128,17 @@ namespace Duplicati.Library.Main
                 DoneEvent = new System.Threading.ManualResetEvent(false);
             }
 
-            public FileEntryItem(OperationType operation, string remotefilename, long size, string hash, IndexVolumeWriter indexfile = null)
+            public FileEntryItem(OperationType operation, string remotefilename, long size, string hash, Tuple<IndexVolumeWriter, FileEntryItem> indexfile = null)
                 : this(operation, remotefilename, indexfile)
             {
                 Size = size;
                 Hash = hash;
+            }
+
+            public void SetLocalfilename(string name)
+            {
+                this.LocalTempfile = Library.Utility.TempFile.WrapExistingFile(name);
+                this.LocalTempfile.Protected = true;
             }
 
             public void SignalComplete()
@@ -124,10 +177,10 @@ namespace Duplicati.Library.Main
             {
                 if (encryption != null && !this.Encrypted)
                 {
-                    var sourcefile = this.LocalFilename + "." + encryption.FilenameExtension;
-                    encryption.Encrypt(this.LocalFilename, sourcefile);
+                    var tempfile = new Library.Utility.TempFile();
+                    encryption.Encrypt(this.LocalFilename, tempfile);
                     this.DeleteLocalFile(stat);
-                    this.LocalFilename = sourcefile;
+                    this.LocalTempfile = tempfile;
                     this.Hash = null;
                     this.Size = 0;
                     this.Encrypted = true;
@@ -154,14 +207,10 @@ namespace Duplicati.Library.Main
             
             public void DeleteLocalFile(IBackendWriter stat)
             {
-            	try 
-            	{ 
-            		System.IO.File.Delete(this.LocalFilename); 
-            	}
-            	catch (Exception ex) 
-            	{ 
-            		stat.AddError(string.Format("Failed to delete local file \"{0}\": {1}", this.LocalFilename, ex.Message), ex); 
-            	}
+                if (this.LocalTempfile != null)
+                    try { this.LocalTempfile.Dispose(); }
+                    catch (Exception ex) { stat.AddWarning(string.Format("Failed to dispose temporary file: {0}", this.LocalTempfile), ex); }
+                    finally { this.LocalTempfile = null; }
             }
             
             public BackendActionType BackendActionType
@@ -213,6 +262,12 @@ namespace Duplicati.Library.Main
 	        	public string Hash;
 	        }
 	        
+            private class DbRename : IDbEntry
+            {
+                public string Oldname;
+                public string Newname;
+            }
+            
 	        public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
 	        {
 	        	m_database = database;
@@ -235,6 +290,12 @@ namespace Duplicati.Library.Main
 		    		m_dbqueue.Add(new DbUpdate() { Remotename = remotename, State = state, Size = size, Hash = hash });
 	        }
 
+            public void LogDbRename(string oldname, string newname)
+            {
+                lock(m_dbqueuelock)
+                    m_dbqueue.Add(new DbRename() { Oldname = oldname, Newname = newname });
+            }
+            
 	        public bool FlushDbMessages(bool checkThread = false)
 	        {
 	        	if (m_database != null && (checkThread == false || m_callerThread == System.Threading.Thread.CurrentThread))
@@ -261,6 +322,8 @@ namespace Duplicati.Library.Main
 	        			db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
 	        		else if (e is DbUpdate)
 	        			db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
+                    else if (e is DbRename)
+                        db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
 	        		else if (e != null)
 	        			m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
 	        			
@@ -376,18 +439,22 @@ namespace Duplicati.Library.Main
 	                            }
                             }
                             
+                            // To work around the Apache WEBDAV issue, we rename the file here
+                            if (item.Operation == OperationType.Put && retries < m_options.NumberOfRetries && !item.NotTrackedInDb)
+                                RenameFileAfterError(item);
+                            
                             if (!recovered)
                             {
-	                            try { m_backend.Dispose(); }
-	                            catch(Exception dex) { m_statwriter.AddWarning(string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
-	
-	                            m_backend = null;
-	                            
-	                            if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
-	                                System.Threading.Thread.Sleep(m_options.RetryDelay);
-	                        }
-                            
+                                try { m_backend.Dispose(); }
+                                catch(Exception dex) { m_statwriter.AddWarning(string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
+    
+                                m_backend = null;
+                                
+                                if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
+                                    System.Threading.Thread.Sleep(m_options.RetryDelay);
+                            }
                         }
+                        
 
                     } while (retries < m_options.NumberOfRetries);
 
@@ -396,7 +463,7 @@ namespace Duplicati.Library.Main
                     	item.Exception = lastException;
                         if (item.Operation == OperationType.Put)
                         	item.DeleteLocalFile(m_statwriter);
-                        	
+                                                        
                         if (item.ExceptionKillsHandler)
                         {
                         	m_lastException = lastException;
@@ -417,17 +484,67 @@ namespace Duplicati.Library.Main
                 i.SignalComplete();
         }
 
+        private void RenameFileAfterError(FileEntryItem item)
+        {
+            var p = VolumeBase.ParseFilename(item.RemoteFilename);
+            var guid = VolumeWriterBase.GenerateGuid(m_options);
+            var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
+            var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
+            var oldname = item.RemoteFilename;
+            
+            m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, oldname, item.Size);
+            m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, newname, item.Size);
+            m_statwriter.AddMessage(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname));
+            m_db.LogDbRename(oldname, newname);
+            item.RemoteFilename = newname;
+            
+            // If there is an index file attached to the block file, 
+            // it references the block filename, so we create a new index file
+            // which is a copy of the current, but with the new name
+            if (item.Indexfile != null)
+            {
+                if (!item.IndexfileUpdated)
+                {
+                    item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
+                    item.Indexfile.Item1.Close();
+                    item.IndexfileUpdated = true;
+                }
+            
+                IndexVolumeWriter wr = null;
+                try
+                {
+                    var hashsize = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                    wr = new IndexVolumeWriter(m_options);
+                    using(var rd = new IndexVolumeReader(p.CompressionModule, item.LocalFilename, m_options, hashsize))
+                        wr.CopyFrom(rd, x => x == oldname ? newname : x);
+                    item.Indexfile.Item1.Dispose();
+                    item.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(wr, item.Indexfile.Item2);
+                    item.Indexfile.Item2.LocalTempfile = wr.TempFile;
+                    wr.Close();
+                }
+                catch
+                {
+                    if (wr != null)
+                        try { wr.Dispose(); }
+                        catch { }
+                        finally { wr = null; }
+                        
+                    throw;
+                }
+            }
+        }
+
         private void DoPut(FileEntryItem item)
         {
             item.Encrypt(m_encryption, m_statwriter);
             if (item.UpdateHashAndSize(m_options) && !item.NotTrackedInDb)
             	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
-            if (item.Indexfile != null)
+            if (item.Indexfile != null && !item.IndexfileUpdated)
             {
-                item.Indexfile.FinishVolume(item.Hash, item.Size);
-                item.Indexfile.Close();
-                item.Indexfile = null;
+                item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
+                item.Indexfile.Item1.Close();
+                item.IndexfileUpdated = true;
             }            
 
             m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
@@ -611,7 +728,7 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
                 
             var req = new FileEntryItem(OperationType.Put, remotename, null);
-            req.LocalFilename = localpath;
+            req.SetLocalfilename(localpath);
             req.Encrypted = true; //Prevent encryption
             req.NotTrackedInDb = true; //Prevent Db updates
             
@@ -633,35 +750,38 @@ namespace Duplicati.Library.Main
             
 			item.Close();
 			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-			var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, indexfile);
-			req.LocalFilename = item.LocalFilename;
-			
-			if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
-			{
-				req.WaitForComplete();
-				if (req.Exception != null)
-					throw req.Exception;
-			}
-			
+			var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, null);
+			req.LocalTempfile = item.TempFile;
+						
 			if (m_lastException != null)
 				throw m_lastException;
 
+            FileEntryItem req2 = null;
+            
 			if (indexfile != null)
 			{
 				m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-				var req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
-				req2.LocalFilename = indexfile.LocalFilename;
-
-				if (m_queue.Enqueue(req2) && m_options.SynchronousUpload)
-				{
-					req2.WaitForComplete();
-					if (req2.Exception != null)
-						throw req2.Exception;
-				}
-				
-				if (m_lastException != null)
-					throw m_lastException;
+				req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
+				req2.LocalTempfile = indexfile.TempFile;
+                req.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, req2);
             }
+            
+            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+            {
+                req.WaitForComplete();
+                if (req.Exception != null)
+                    throw req.Exception;
+            }
+            
+            if (req2 != null && m_queue.Enqueue(req2) && m_options.SynchronousUpload)
+            {
+                req2.WaitForComplete();
+                if (req2.Exception != null)
+                    throw req2.Exception;
+            }
+            
+            if (m_lastException != null)
+                throw m_lastException;
         }
 
         public Library.Utility.TempFile Get(string remotename, long size, string hash)

@@ -803,6 +803,29 @@ namespace Duplicati.Library.Main.Database
             }                
         }
         
+        public void RenameRemoteFile(string oldname, string newname, System.Data.IDbTransaction transaction)
+        {
+            using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = tr.Parent;
+                
+                //Rename the old entry, to preserve ID links
+                var c = cmd.ExecuteNonQuery(@"UPDATE ""Remotevolume"" SET ""Name"" = ? WHERE ""Name"" = ?", newname, oldname);
+                if (c != 1)
+                    throw new Exception(string.Format("Unexpected result from renaming \"{0}\" to \"{1}\", expected {2} got {3}", oldname, newname, 1, c));
+                
+                // Grab the type of entry
+                var type = (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), cmd.ExecuteScalar(@"SELECT ""Type"" FROM ""Remotevolume"" WHERE ""Name"" = ?", newname).ToString(), true);
+                
+                //Create a fake new entry with the old name and mark as deleting
+                // as this ensures we will remove it, if it shows up in some later listing
+                RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting, tr.Parent);
+                
+                tr.Commit();
+            }
+        }
+        
         /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>

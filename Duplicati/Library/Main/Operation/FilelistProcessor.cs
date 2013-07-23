@@ -167,6 +167,12 @@ namespace Duplicati.Library.Main.Operation
                     log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
                     database.RemoveRemoteVolume(i.Name, null);
                 }
+                else if (i.State == RemoteVolumeState.Deleting && lookup.ContainsKey(i.Name))
+                {
+                    log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
+                    backend.Delete(i.Name, true);
+                    lookup.Remove(i.Name);
+                }
                 else
                 {
                     Volumes.IParsedVolume r;
