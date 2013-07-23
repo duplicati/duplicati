@@ -278,7 +278,7 @@ namespace Duplicati.Library.Main.Database
             m_insertFilesetEntryCommand.Transaction = transaction;
             m_insertFilesetEntryCommand.SetParameterValue(0, filesetid);
             m_insertFilesetEntryCommand.SetParameterValue(1, fileid);
-            m_insertFilesetEntryCommand.SetParameterValue(2, time);
+            m_insertFilesetEntryCommand.SetParameterValue(2,  NormalizeDateTimeToEpochSeconds(time));
             m_insertFilesetEntryCommand.ExecuteNonQuery();
         }
         

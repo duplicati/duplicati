@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM ""FilesetEntry"" INNER JOIN ""File"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" GROUP BY ""FilesetEntry"".""FileID"", ""File"".""Path"" ", m_scantimelookupTablename));
 
-            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", CAST(strftime('%s', ""Scantime"") AS INTEGER) AS ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
+            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_fileScantimeLookup != null)
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", CAST(strftime('%s', ""Scantime"") AS INTEGER) AS ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" ", m_scantimelookupTablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" ", m_scantimelookupTablename)))
                         while (rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
@@ -569,7 +569,7 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand.Transaction = transaction;
             m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
             m_insertfileOperationCommand.SetParameterValue(1, fileidobj);
-            m_insertfileOperationCommand.SetParameterValue(2, NormalizeDateTime(scantime));
+            m_insertfileOperationCommand.SetParameterValue(2, NormalizeDateTimeToEpochSeconds(scantime));
             m_insertfileOperationCommand.ExecuteNonQuery();
 
         }
@@ -579,7 +579,7 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand.Transaction = transaction;
             m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
             m_insertfileOperationCommand.SetParameterValue(1, fileid);
-            m_insertfileOperationCommand.SetParameterValue(2, NormalizeDateTime(scantime));
+            m_insertfileOperationCommand.SetParameterValue(2, NormalizeDateTimeToEpochSeconds(scantime));
             m_insertfileOperationCommand.ExecuteNonQuery();
         }
 
@@ -695,7 +695,7 @@ namespace Duplicati.Library.Main.Database
         {
             long lastFilesetId = -1;
 
-            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", NormalizeDateTime(timestamp), filesetid);
+            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", NormalizeDateTimeToEpochSeconds(timestamp), filesetid);
             if (lastIdObj != null && lastIdObj != DBNull.Value)
                 lastFilesetId = Convert.ToInt64(lastIdObj);
                 
@@ -824,7 +824,7 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = transaction;
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", CAST(strftime('%s', ""Timestamp"") AS INTEGER) AS ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"")"))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"")"))
                     while(rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(

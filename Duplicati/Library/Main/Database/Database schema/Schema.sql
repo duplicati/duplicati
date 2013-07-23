@@ -45,7 +45,7 @@ CREATE TABLE "Fileset" (
 	"ID" INTEGER PRIMARY KEY,
 	"OperationID" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL,
-	"Timestamp" DATETIME NOT NULL
+	"Timestamp" INTEGER NOT NULL
 );
 
 /*
@@ -53,12 +53,12 @@ The OperationFileset contains an
 entry for each file scanned for
 a single operation. The scantime
 is the time the file was last 
-scanned
+scanned in UNIX EPOCH format
 */
 CREATE TABLE "FilesetEntry" (
 	"FilesetID" INTEGER NOT NULL,
 	"FileID" INTEGER NOT NULL,
-	"Scantime" DATETIME NOT NULL
+	"Scantime" INTEGER NOT NULL
 );
 
 /*

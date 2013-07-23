@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Database
                 m_connection.Open();
 
             using (var cmd = m_connection.CreateCommand())
-                m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, OperationTimestamp));
+                m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, NormalizeDateTime(OperationTimestamp)));
 		}
 		
 		private LocalDatabase(System.Data.IDbConnection connection)
@@ -141,11 +141,11 @@ namespace Duplicati.Library.Main.Database
             return new DateTime(ticks, DateTimeKind.Utc);
         }
         
-        /// <summary>
-        /// The EPOCH time (unix time)
-        /// </summary>
-        private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
+        public static long NormalizeDateTimeToEpochSeconds(DateTime input)
+        {
+            return (long)Math.Floor((NormalizeDateTime(input) - Library.Utility.Utility.EPOCH).TotalSeconds);
+        }
+        
         /// <summary>
         /// Creates a DateTime instance by adding the specified number of seconds to the EPOCH value
         /// </summary>        
@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Database
             get 
             {
                 using(var cmd = m_connection.CreateCommand())
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", CAST(strftime('%s', ""Timestamp"") AS INTEGER) AS ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
                         yield return new KeyValuePair<long, DateTime>(Convert.ToInt64(rd.GetValue(0)), ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1))).ToLocalTime());
             }
@@ -691,7 +691,7 @@ namespace Duplicati.Library.Main.Database
                         filesetvolume.AddSymlink(path, metahash, metalength);
                 }
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", CAST(strftime('%s', ""F"".""Scantime"") AS INTEGER) AS ""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
                 cmd.Parameters.Clear();
                 cmd.AddParameter(filesetId);
 
@@ -838,7 +838,7 @@ namespace Duplicati.Library.Main.Database
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 cmd.Transaction = tr.Parent;                
-                var id = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, NormalizeDateTime(timestamp), volumeid));
+                var id = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, NormalizeDateTimeToEpochSeconds(timestamp), volumeid));
                 tr.Commit();
                 return id;
             }

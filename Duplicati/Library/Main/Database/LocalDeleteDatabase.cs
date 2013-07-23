@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Database
 						q += ",?";
 						
 				//First we remove unwanted entries
-				cmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @")) ", toDelete.Select(x => NormalizeDateTime(x)).Cast<object>().ToArray());
+				cmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @")) ", toDelete.Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
 				var deleted = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FilesetID"" FROM ""FilesetEntry"") ");
 	
 				if (deleted != toDelete.Length)
