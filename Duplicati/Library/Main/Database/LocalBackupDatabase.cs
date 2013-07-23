@@ -724,7 +724,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             if (m_blockHashLookup != null && m_fileHashLookup != null && ((m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD || (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD))
-                results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.PositiveMisses, m_fileHashLookup.PositiveMisses), null);
+                results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses, m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses), null);
 
             if (m_blockHashLookup != null && (m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_blockHashLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
                 results.AddWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.FullUsageRatio * 100), null);
