@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main.Database
                 var selectNewBlocks = string.Format(
                     @"SELECT ""FullHash"" AS ""Hash"", ""Length"" AS ""Size"", -1 AS ""VolumeID"" " +
                     @" FROM (SELECT ""A"".""FullHash"", ""A"".""Length"", CASE WHEN ""B"".""Hash"" IS NULL THEN '' ELSE ""B"".""Hash"" END AS ""Hash"", CASE WHEN ""B"".""Size"" is NULL THEN -1 ELSE ""B"".""Size"" END AS ""Size"" FROM ({0}) A" + 
-                    @" LEFT OUTER JOIN ""Block"" B ON (""B"".""Hash"" || ':' || ""B"".""Size"") = (""A"".""FullHash"" || ':' || ""A"".""Length"") )" + 
+                    @" LEFT OUTER JOIN ""Block"" B ON ""B"".""Hash"" =  ""A"".""FullHash"" AND ""B"".""Size"" = ""A"".""Length"" )" + 
                     @" WHERE ""FullHash"" != ""Hash"" AND ""Length"" != ""Size"" ",
                     selectAllBlocks    
                 );
