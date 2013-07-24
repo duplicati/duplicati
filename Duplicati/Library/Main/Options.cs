@@ -1394,14 +1394,6 @@ namespace Duplicati.Library.Main
                 return res;
             }
         }
-
-        /// <summary>
-        /// Gets a flag indicating if index files should be omitted
-        /// </summary>
-        public bool FatIndexfiles
-        {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "fat-index-files"); }
-        }
         
         /// <summary>
         /// Gets a flag indicating if the check for files on the remote storage should be omitted
