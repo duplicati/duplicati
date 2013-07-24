@@ -93,6 +93,7 @@ namespace Duplicati.Library.Main.Operation
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
                 var buffer = new byte[m_options.Blocksize];
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
                     throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
@@ -172,6 +173,10 @@ namespace Duplicati.Library.Main.Operation
                                         w.AddBlock(b.Hash, b.Size);
 										
                                     w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+                                    
+                                    if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                                        foreach(var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                                            w.WriteBlocklist(b.Item1, b.Item2, b.Item3);
                                 }
 								
                                 w.Close();
