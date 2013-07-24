@@ -7,7 +7,7 @@ used to map log messages to an operation
 CREATE TABLE "Operation" (
 	"ID" INTEGER PRIMARY KEY,
 	"Description" TEXT NOT NULL,
-	"Timestamp" DATETIME NOT NULL
+	"Timestamp" INTEGER NOT NULL
 );
 
 /*
@@ -165,7 +165,7 @@ an error report or when debugging
 CREATE TABLE "RemoteOperation" (
 	"ID" INTEGER PRIMARY KEY,
 	"OperationID" INTEGER NOT NULL,
-	"Timestamp" DATETIME NOT NULL,
+	"Timestamp" INTEGER NOT NULL,
 	"Operation" TEXT NOT NULL,
 	"Path" TEXT NOT NULL,
 	"Data" BLOB NULL
@@ -179,7 +179,7 @@ debugging
 CREATE TABLE "LogData" (
 	"ID" INTEGER PRIMARY KEY,
 	"OperationID" INTEGER NOT NULL,
-	"Timestamp" DATETIME NOT NULL,
+	"Timestamp" INTEGER NOT NULL,
 	"Type" TEXT NOT NULL,
 	"Message" TEXT NOT NULL,
 	"Exception" TEXT NULL

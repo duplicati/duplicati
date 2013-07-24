@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Database
                 m_connection.Open();
 
             using (var cmd = m_connection.CreateCommand())
-                m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, NormalizeDateTime(OperationTimestamp)));
+                m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, NormalizeDateTimeToEpochSeconds(OperationTimestamp)));
 		}
 		
 		private LocalDatabase(System.Data.IDbConnection connection)
@@ -286,7 +286,7 @@ namespace Duplicati.Library.Main.Database
         {
         	m_insertremotelogCommand.Transaction = transaction;
             m_insertremotelogCommand.SetParameterValue(0, m_operationid);
-            m_insertremotelogCommand.SetParameterValue(1, DateTime.UtcNow);
+            m_insertremotelogCommand.SetParameterValue(1, NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             m_insertremotelogCommand.SetParameterValue(2, operation);
             m_insertremotelogCommand.SetParameterValue(3, path);
             m_insertremotelogCommand.SetParameterValue(4, data);
@@ -303,7 +303,7 @@ namespace Duplicati.Library.Main.Database
         {
         	m_insertlogCommand.Transaction = transaction;
             m_insertlogCommand.SetParameterValue(0, m_operationid);
-            m_insertlogCommand.SetParameterValue(1, DateTime.UtcNow);
+            m_insertlogCommand.SetParameterValue(1, NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             m_insertlogCommand.SetParameterValue(2, type);
             m_insertlogCommand.SetParameterValue(3, message);
             m_insertlogCommand.SetParameterValue(4, exception == null ? null : exception.ToString());
