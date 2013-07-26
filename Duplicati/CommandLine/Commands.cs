@@ -252,9 +252,18 @@ namespace Duplicati.CommandLine
             if (args.Count != 1 && args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 1);
             
+            var tests = 1L;
+            if (args.Count == 2)
+            {
+                if (new string[] { "all", "everything" }.Contains(args[1], StringComparer.InvariantCultureIgnoreCase))
+                    tests = long.MaxValue;
+                else
+                    tests = Convert.ToInt64(args[1]);
+            }
+            
             Library.Interface.ITestResults result;
             using(var i = new Library.Main.Controller(args[0], options))
-                result = i.Test(args.Count > 1 ? Convert.ToInt64(args[1]) : 1);
+                result = i.Test(tests);
             
             var totalFiles = result.Changes.Count();
             if (totalFiles == 0)
