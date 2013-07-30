@@ -21,7 +21,8 @@ CREATE TABLE "Remotevolume" (
 	"Type" TEXT NOT NULL,
 	"Size" INTEGER NULL,
 	"Hash" TEXT NULL,
-	"State" TEXT NOT NULL
+	"State" TEXT NOT NULL,
+	"VerificationCount" INTEGER NOT NULL
 );
 
 /*

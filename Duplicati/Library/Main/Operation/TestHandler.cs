@@ -146,6 +146,8 @@ namespace Duplicati.Library.Main.Operation
                                 
                             }
                         }
+                        
+                        db.UpdateVerificationCount(vol.Name);
                     }
                     catch (Exception ex)
                     {

@@ -117,8 +117,8 @@ namespace Duplicati.Library.Main.Database
 
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
-			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
-            m_createremotevolumeCommand.AddParameters(4);
+			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"") VALUES (?, ?, ?, ?, ?); SELECT last_insert_rowid();";
+            m_createremotevolumeCommand.AddParameters(5);
 
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
@@ -352,6 +352,7 @@ namespace Duplicati.Library.Main.Database
                 m_createremotevolumeCommand.SetParameterValue(1, name);
                 m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
                 m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
+                m_createremotevolumeCommand.SetParameterValue(4, 0);
                 m_createremotevolumeCommand.Transaction = tr.Parent;
                 var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
                 tr.Commit();

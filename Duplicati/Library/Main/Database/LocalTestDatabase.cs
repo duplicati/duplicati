@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Database
@@ -27,12 +28,19 @@ namespace Duplicati.Library.Main.Database
         {        
         }
         
+        public void UpdateVerificationCount(string name)
+        {
+            using(var cmd = m_connection.CreateCommand())
+                cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""VerificationCount"" = MAX(1, CASE WHEN ""VerificationCount"" <= 0 THEN (SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"") ELSE ""VerificationCount"" + 1 END) WHERE ""Name"" = ?", name);
+        }
+        
         private class RemoteVolume : IRemoteVolume
         {
             public long ID { get; private set; }
             public string Name { get; private set; }
             public long Size { get; private set; }
             public string Hash { get; private set; }
+            public long VerificationCount { get; private set; }
             
             public RemoteVolume(System.Data.IDataReader rd)
             {
@@ -40,21 +48,76 @@ namespace Duplicati.Library.Main.Database
                 this.Name = rd.GetValue(1).ToString();
                 this.Size = Convert.ToInt64(rd.GetValue(2));
                 this.Hash = rd.GetValue(3).ToString();
+                this.VerificationCount = Convert.ToInt64(rd.GetValue(4));
             }
+        }
+        
+        private IEnumerable<RemoteVolume> FilterByVerificationCount(IEnumerable<RemoteVolume> volumes, long samples, long maxverification)
+        {
+            var rnd = new Random();
+
+            // First round is the new items            
+            var res = (from n in volumes where n.VerificationCount == 0 select n).ToList();
+            while (res.Count > samples)
+                res.RemoveAt(rnd.Next(0, res.Count));
+            
+            // Quick exit if we are done
+            if (res.Count == samples)
+                return res;
+
+            // Next is the volumes that are not
+            // verified as much, with preference for low verification count
+            var starved = (from n in volumes where n.VerificationCount != 0 && n.VerificationCount < maxverification orderby n.VerificationCount select n);
+            if (starved.Any())
+            {
+                var max = starved.Select(x => x.VerificationCount).Max();
+                var min = starved.Select(x => x.VerificationCount).Min();
+            
+                for(var i = min; i <= max; i++)
+                {
+                    var p = starved.Where(x => x.VerificationCount == i).ToList();
+                    while (res.Count < samples && p.Count > 0)
+                    {
+                        var n = rnd.Next(0, p.Count);
+                        res.Add(p[n]);
+                        p.RemoveAt(n);
+                    }
+                }
+            
+                // Quick exit if we are done
+                if (res.Count == samples)
+                    return res;
+            }
+            
+            if (maxverification > 0)
+            {
+                // Last is the items that are verified mostly
+                var remainder = (from n in volumes where n.VerificationCount >= maxverification select n).ToList();
+                while (res.Count < samples && remainder.Count > 0)
+                {
+                    var n = rnd.Next(0, remainder.Count);
+                    res.Add(remainder[n]);
+                    remainder.RemoveAt(n);
+                }
+            }
+             
+            return res;
         }
         
         public IEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
         {
             var tp = GetFilelistWhereClause(options.Time, options.Version);
-            var rnd = new Random();
             
             samples = Math.Max(1, samples);
             using(var cmd = m_connection.CreateCommand())
             {
+                //Grab the max value
+                var max = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"""));
+            
                 //First we select some filesets
                 var files = new List<RemoteVolume>();
                 var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"" FROM ""Remotevolume"") A, ""Fileset"" " +  whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" " , tp.Item2))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"") A, ""Fileset"" " +  whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" " , tp.Item2))
                     while (rd.Read())
                         files.Add(new RemoteVolume(rd));
                         
@@ -62,11 +125,7 @@ namespace Duplicati.Library.Main.Database
                     yield break;
 
                 if (string.IsNullOrEmpty(tp.Item1))
-                {
-                    //No explicit fileset(s) selected, choose some samples
-                    while (files.Count > samples)
-                        files.RemoveAt(rnd.Next(files.Count));
-                }
+                    files = FilterByVerificationCount(files, samples, max).ToList();
                 
                 foreach(var f in files)
                     yield return f;
@@ -74,26 +133,20 @@ namespace Duplicati.Library.Main.Database
                 //Then we select some index files
                 files.Clear();
                 
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"" FROM ""Remotevolume"" WHERE ""Type"" = ? ", RemoteVolumeType.Index.ToString()))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = ? ", RemoteVolumeType.Index.ToString()))
                     while (rd.Read())
                         files.Add(new RemoteVolume(rd));
-                        
-                while (files.Count > samples)
-                    files.RemoveAt(rnd.Next(files.Count));
-                    
-                foreach(var f in files)
+                                            
+                foreach(var f in FilterByVerificationCount(files, samples, max))
                     yield return f;
                 //And finally some block files
                 files.Clear();
                 
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"" FROM ""Remotevolume"" WHERE ""Type"" = ? ", RemoteVolumeType.Blocks.ToString()))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = ? ", RemoteVolumeType.Blocks.ToString()))
                     while (rd.Read())
                         files.Add(new RemoteVolume(rd));
                         
-                while (files.Count > samples)
-                    files.RemoveAt(rnd.Next(files.Count));
-                    
-                foreach(var f in files)
+                foreach(var f in FilterByVerificationCount(files, samples, max))
                     yield return f;
             }
         }
