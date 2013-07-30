@@ -193,7 +193,9 @@ namespace Duplicati.Library.Main.Database
                 ((value >> 56) & 0x00000000000000ffuL);
         }
 
-        //Faster internal hex decoder, assumes valid hex string of at least 16 chars and no extended chars
+        /// <summary>
+        /// Faster internal hex decoder, assumes valid hex string of at least 16 chars and no extended chars
+        /// </summary>
         public static ulong DecodeHexHash(string hash)
         {
             return
@@ -215,7 +217,9 @@ namespace Duplicati.Library.Main.Database
                 (ulong)HEXTB[hash[15]] << 0;
         }
 
-        //Faster internal base64 decoder, assumes valid hex string of at least 11 chars and no extended chars
+        /// <summary>
+        /// Faster internal base64 decoder, assumes valid base64 string of at least 11 chars and no extended chars
+        /// </summary>
         public static ulong DecodeBase64Hash(string hash)
         {
             return
@@ -433,8 +437,8 @@ namespace Duplicati.Library.Main.Database
     /// for returning an undetermined answer
     /// </summary>
     public class HashDatabaseProtector<TKey, TValue> : IDisposable
-    {
-    
+    {    
+        private const long MEMORY_BIT_FRACTION = 8; // 1/8th of the memory used for bitmap
         private const long DEFAULT_MEMORY = 64 * 1024 * 1024; //64mb
         private HashPrefixLookup m_certainMissing;
         private HashLookupWithData<TKey, TValue> m_certainFound;
@@ -444,8 +448,10 @@ namespace Duplicati.Library.Main.Database
 
         public HashDatabaseProtector(uint elementsize, ulong memory = DEFAULT_MEMORY)
         {
-            m_certainMissing = new HashPrefixLookup(memory / 2);
-            m_certainFound = new HashLookupWithData<TKey, TValue>(elementsize, memory / 2);
+            var bitlookup = memory / MEMORY_BIT_FRACTION;
+            var elementlookup = memory - bitlookup;
+            m_certainMissing = new HashPrefixLookup(bitlookup);
+            m_certainFound = new HashLookupWithData<TKey, TValue>(elementsize, elementlookup);
         }
         
         public void Add(ulong hash, TKey key, TValue value)
@@ -496,7 +502,7 @@ namespace Duplicati.Library.Main.Database
     /// </summary>
     public class HashDatabaseProtector<TKey> : IDisposable
     {
-        
+        private const long MEMORY_BIT_FRACTION = 8; // 1/8th of the memory used for bitmap
         private const long DEFAULT_MEMORY = 64 * 1024 * 1024; //64mb
         private HashPrefixLookup m_certainMissing;
         private HashLookup<TKey> m_certainFound;
@@ -506,8 +512,10 @@ namespace Duplicati.Library.Main.Database
         
         public HashDatabaseProtector(uint elementsize, ulong memory = DEFAULT_MEMORY)
         {
-            m_certainMissing = new HashPrefixLookup(memory / 2);
-            m_certainFound = new HashLookup<TKey>(elementsize, memory / 2);
+            var bitlookup = memory / MEMORY_BIT_FRACTION;
+            var elementlookup = memory - bitlookup;
+            m_certainMissing = new HashPrefixLookup(bitlookup);
+            m_certainFound = new HashLookup<TKey>(elementsize, elementlookup);
         }
         
         public void Add(ulong hash, TKey key)
