@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-		public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null )
+		public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null)
 		{
 			var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
 			string query = "";
@@ -189,7 +189,6 @@ namespace Duplicati.Library.Main.Database
             if (time.Ticks > 0 || (versions != null && versions.Length > 0))
             {
                 var hasTime = false;
-                query = " WHERE ";
                 if (time.Ticks > 0)
                 {
                     if (time.Kind == DateTimeKind.Unspecified)
@@ -213,6 +212,9 @@ namespace Duplicati.Library.Main.Database
                             args.Add(filesets[v].Key);
                             qs += "?,";
                         }
+                        else
+                            m_result.AddWarning(string.Format("Skipping invalid version: {0}", v), null);
+                            
                         
                     if (qs.Length > 0)
                     {
@@ -224,6 +226,10 @@ namespace Duplicati.Library.Main.Database
                         query += @" ""ID"" IN (" + qs + ")";
                     }
                 }
+                
+                if (!string.IsNullOrEmpty(query))
+                    query = " WHERE " + query;
+
             }
             
             return new Tuple<string, object[]>(query, args.ToArray());
@@ -379,6 +385,8 @@ namespace Duplicati.Library.Main.Database
                     r = cmd.ExecuteScalar();
                     if (r == null)
                         throw new Exception("No backup at the specified date");
+                    else
+                        m_result.AddWarning(string.Format("Restore time or version did not match any existing backups, selecting newest backup"), null);
                 }
 
                 return Convert.ToInt64(r);
