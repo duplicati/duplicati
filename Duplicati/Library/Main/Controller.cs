@@ -243,6 +243,7 @@ namespace Duplicati.Library.Main
 			}
 			catch(Exception ex)
 			{
+                Logging.Log.WriteMessage("Terminated with error: " + ex.Message, Duplicati.Library.Logging.LogMessageType.Error, ex);
 				OnOperationComplete(ex);
 				throw;
 			}
