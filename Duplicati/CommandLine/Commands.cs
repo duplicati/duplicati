@@ -51,7 +51,7 @@ namespace Duplicati.CommandLine
                             options["version"] = v.ToString();
                         }
                     }
-                    else if (args[0].IndexOfAny(new char[] {'*', '?'}) < 0 && !args[0].StartsWith("["))
+                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("["))
                     {
                         try
                         {
@@ -59,7 +59,6 @@ namespace Duplicati.CommandLine
                             args.RemoveAt(0);
                             args.Add("*");
                             options["time"] = t.ToString();
-                            
                         }
                         catch
                         {
@@ -74,19 +73,21 @@ namespace Duplicati.CommandLine
                 
                 //If there are no files matching, and we are looking for one or more files, 
                 // try again with all-versions set
-                if (
+                var isRequestForFiles = 
                     !controlFiles && res.Filesets.Count() != 0 && 
                     (res.Files == null || res.Files.Count() == 0) && 
-                    new Library.Utility.FilterExpression(args).Type == Duplicati.Library.Utility.FilterType.Simple &&
-                    !Library.Utility.Utility.ParseBoolOption(options, "all-versions")
-                    )
+                    new Library.Utility.FilterExpression(args).Type != Duplicati.Library.Utility.FilterType.Empty;
+                
+                if (isRequestForFiles && !Library.Utility.Utility.ParseBoolOption(options, "all-versions"))
                 {
                     Console.WriteLine("No files matching, looking in all versions");
                     options["all-versions"] = "true";
+                    options.Remove("time");
+                    options.Remove("version");
                     res = i.List(args, filter);
                 }
                 
-                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0))
+                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && new Library.Utility.FilterExpression(args).Type == Duplicati.Library.Utility.FilterType.Empty)
                 {
                     Console.WriteLine("Listing filesets:");
                     
@@ -97,12 +98,16 @@ namespace Duplicati.CommandLine
                         else
                             Console.WriteLine("{0}\t: {1}", e.Version, e.Time);
                     }
-                } 
-                else 
+                }
+                else
                 {
-                    if (res.Filesets.Count() == 0) 
+                    if (res.Filesets.Count() == 0)
                     {
-                        Console.WriteLine("No times matched a fileset");
+                        Console.WriteLine("No time or version matched a fileset");
+                    }
+                    else if (res.Files == null || res.Files.Count() == 0)
+                    {
+                        Console.WriteLine("Found {0} filesets, but no files matched", res.Filesets.Count());
                     }
                     else if (res.Filesets.Count() == 1)
                     {
