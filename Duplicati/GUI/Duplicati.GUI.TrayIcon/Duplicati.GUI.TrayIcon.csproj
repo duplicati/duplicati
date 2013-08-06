@@ -58,10 +58,6 @@
       <HintPath>BuildSupport\atk-sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="glib-sharp">
-      <HintPath>BuildSupport\glib-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
