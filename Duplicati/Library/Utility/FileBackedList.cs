@@ -28,7 +28,7 @@ namespace Duplicati.Library.Utility
 	/// Typical usage of this list is for storing log messages,
 	/// that occasionally grows and produces out-of-memory errors
 	/// </summary>
-	public class FileBackedList<T> : IEnumerable<T>, IDisposable
+	public abstract class FileBackedList<T> : IEnumerable<T>, IDisposable
 	{
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
@@ -100,30 +100,22 @@ namespace Duplicati.Library.Utility
         private Library.Utility.TempFile m_file;
         private Stream m_stream;
         private long m_count;
-        
-        private Func<T, long> m_getSize;
-        private Action<T, System.IO.Stream> m_serialize;
-        private Func<System.IO.Stream, long, T> m_deserialize;
-        
+                
 		public bool IsFileBacked { get { return !(m_stream is MemoryStream); } }
 		public long SwitchToFileLimit { get; set; }
 		
-		public FileBackedList(Func<T, long> getSize, Action<T, Stream> serialize, Func<Stream, long, T> deserialize)
+		public FileBackedList()
 		{
             m_file = null;
             m_stream = new MemoryStream();
             m_count = 0;
-            
-            m_getSize = getSize;
-            m_serialize = serialize;
-            m_deserialize = deserialize;
-            
+                        
             this.SwitchToFileLimit = 10 * 1024 * 1024;
 		}
 
         public void Add(T value)
         {
-            long size = m_getSize(value);
+            long size = GetSize(value);
             if (m_stream is MemoryStream && (m_stream.Length + size) > this.SwitchToFileLimit)
             {
                 m_file = new Library.Utility.TempFile();
@@ -136,7 +128,7 @@ namespace Duplicati.Library.Utility
             }
             
         	m_stream.Write(BitConverter.GetBytes(size), 0, 8);
-        	m_serialize(value, m_stream);
+        	Serialize(value, m_stream);
 
             m_count++;
         }
@@ -156,13 +148,17 @@ namespace Duplicati.Library.Utility
                 m_file.Dispose();
                 m_file = null;
             }
-        }		
-
+        }
+        
+        protected abstract long GetSize(T value);
+        protected abstract void Serialize(T value, Stream stream);
+        protected abstract T Deserialize(Stream stream, long length);
+        
         #region IEnumerable implementation
 
 		public IEnumerator<T> GetEnumerator()
 		{
-            return new StreamEnumerator(m_stream, m_deserialize, this);
+            return new StreamEnumerator(m_stream, this.Deserialize, this);
 		}
 
 		#endregion
@@ -187,27 +183,37 @@ namespace Duplicati.Library.Utility
 	public class FileBackedStringList : FileBackedList<string>
 	{
         private byte[] m_buf;
+        public System.Text.Encoding m_encoding;
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Duplicati.Library.Utility.FileBackedStringList"/> class.
 		/// </summary>
 		/// <param name="encoding">The text encoding to use, defaults to UTF8</param>
 		public FileBackedStringList(System.Text.Encoding encoding = null)
-			: base(
-			(value) => {
-                m_buf = (encoding ?? System.Text.Encoding.UTF8).GetBytes(value);
-                return m_buf.Length;
-            },
-			(value, stream) => {
-				stream.Write(m_buf, 0, m_buf.Length);
-                m_buf = null;
-			}, 
-			(stream, length) => {
-				var buf = new byte[length];
-				Utility.ForceStreamRead(stream, buf, buf.Length);
-				return (encoding ?? System.Text.Encoding.UTF8).GetString(buf, 0, buf.Length);
-			})
 		{
-		} 
+            m_encoding = encoding ?? System.Text.Encoding.UTF8;
+		}
+                            
+        protected override long GetSize(string value)
+        {
+            m_buf = m_encoding.GetBytes(value);            
+            return m_buf.Length;
+        }
+        
+        protected override void Serialize(string value, Stream stream)
+        {
+            stream.Write(m_buf, 0, m_buf.Length);
+            m_buf = null;
+        }
+        
+        protected override string Deserialize(Stream stream, long length)
+        {
+            if (m_buf == null || m_buf.Length < length)
+                m_buf = new byte[length];
+            Utility.ForceStreamRead(stream, m_buf, (int)length);
+            return (m_encoding ?? System.Text.Encoding.UTF8).GetString(m_buf, 0, (int)length);
+        }            
+            
 	}
 }
 
