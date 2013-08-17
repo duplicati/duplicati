@@ -42,6 +42,10 @@
     <Reference Include="SharpCompress">
       <HintPath>..\..\..\thirdparty\SharpCompress\SharpCompress.dll</HintPath>
     </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="managed-lzma">
+      <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileArchiveDirectory.cs" />
@@ -52,6 +56,10 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>FileArchiveZip.resx</DependentUpon>
+    </Compile>
+    <Compile Include="SevenZipCompression.cs" />
+    <Compile Include="Strings\SevenZipCompression.Designer.cs">
+      <DependentUpon>SevenZipCompression.resx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -77,6 +85,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FileArchiveZip.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SevenZipCompression.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SevenZipCompression.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
