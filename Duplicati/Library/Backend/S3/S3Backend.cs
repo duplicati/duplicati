@@ -38,6 +38,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("Amazon S3", "s3.amazonaws.com"),
             new KeyValuePair<string, string>("Hosteurope", "cs.hosteurope.de"),
             new KeyValuePair<string, string>("Dunkel", "dcs.dunkel.de"),
+            new KeyValuePair<string, string>("DreamHost", "objects.dreamhost.com"),
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
