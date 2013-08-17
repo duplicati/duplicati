@@ -103,15 +103,40 @@ namespace Duplicati.Library.Main
             newDict.Add("blocksize", options.Blocksize.ToString());
             newDict.Add("blockhash", options.BlockHashAlgorithm);
             newDict.Add("filehash", options.FileHashAlgorithm);
+            var opts = db.GetDbOptions();
+            
+            if (options.NoEncryption)
+            {
+                newDict.Add("passphrase", "no-encryption");
+            }
+            else
+            {
+                string salt;
+                opts.TryGetValue("passphrase-salt", out salt);
+                if (string.IsNullOrEmpty(salt))
+                {
+                    // Not Crypto-class PRNG salts
+                    var buf = new byte[32];
+                    new Random().NextBytes(buf);
+                    //Add version so we can detect and change the algorithm
+                    salt = "v1:" + Library.Utility.Utility.ByteArrayAsHexString(buf);
+                }
+
+                newDict["passphrase-salt"] = salt;
+            
+                // We avoid storing the passphrase directly, 
+                // instead we salt and rehash repeatedly
+                newDict.Add("passphrase", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200)));
+            }
             
         
-            var opts = db.GetDbOptions();
             var needsUpdate = false;
             foreach(var k in newDict)
                 if (!opts.ContainsKey(k.Key))
                     needsUpdate = true;
                 else if (opts[k.Key] != k.Value)
                     throw new Exception(string.Format("Unsupported change of parameter {0} from {1} to {2}", k.Key, opts[k.Key], k.Value));
+                    
         
             //Extra sanity check
             if (db.GetBlocksLargerThan(options.Blocksize) > 0)

@@ -1006,5 +1006,52 @@ namespace Duplicati.Library.Utility
                 PrintSerializeObject(item, sw);
             return sb;
         }
+
+        /// <summary>
+        /// Repeatedly hash a value with a salt.
+        /// This effectively masks the original value,
+        /// and destroys lookup methods, like rainbow tables
+        /// </summary>
+        /// <param name="data">The data to hash</param>
+        /// <param name="salt">The salt to apply</param>
+        /// <param name="repeats">The number of times to repeat the hashing</param>
+        /// <returns>The salted hash</returns>
+        public static byte[] RepeatedHashWithSalt(string data, string salt, int repeats = 1200)
+        {
+            return RepeatedHashWithSalt(
+                System.Text.Encoding.UTF8.GetBytes(data),
+                System.Text.Encoding.UTF8.GetBytes(salt),
+                repeats);
+        }
+    
+        /// <summary>
+        /// Repeatedly hash a value with a salt.
+        /// This effectively masks the original value,
+        /// and destroys lookup methods, like rainbow tables
+        /// </summary>
+        /// <param name="data">The data to hash</param>
+        /// <param name="salt">The salt to apply</param>
+        /// <returns>The salted hash</returns>
+        public static byte[] RepeatedHashWithSalt(byte[] data, byte[] salt, int repeats = 1200)
+        {
+            // We avoid storing the passphrase directly, 
+            // instead we salt and rehash repeatedly
+            using(var h = System.Security.Cryptography.SHA256.Create())
+            {
+                h.TransformBlock(salt, 0, salt.Length, salt, 0);
+                h.TransformFinalBlock(data, 0, data.Length);
+                var buf = h.Hash;
+            
+                for(var i = 0; i < repeats; i++)
+                {
+                    h.Clear();
+                    h.TransformBlock(salt, 0, salt.Length, salt, 0);
+                    h.TransformFinalBlock(buf, 0, buf.Length);
+                    buf = h.Hash;
+                }
+                
+                return buf;
+            }
+        }
     }
 }
