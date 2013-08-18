@@ -35,7 +35,7 @@ namespace Duplicati.CommandLine
 
         public static int List(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            using(var i = new Library.Main.Controller(args[0], options))
+            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
             {
                 args.RemoveAt(0);
                                 
@@ -150,7 +150,7 @@ namespace Duplicati.CommandLine
 				return 200;
 			}
         
-			using(var i = new Library.Main.Controller(args[0], options))
+			using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
 			{
 				args.RemoveAt(0);
 				var res = i.Delete();
@@ -180,7 +180,7 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
 
-            using(var i = new Duplicati.Library.Main.Controller(args[0], options))
+            using(var i = new Duplicati.Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 i.Repair();
 
             return 0;
@@ -197,7 +197,7 @@ namespace Duplicati.CommandLine
             bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
             options.Remove("control-files");
 
-            using(var i = new Library.Main.Controller(backend, options))
+            using(var i = new Library.Main.Controller(backend, options, new ConsoleOutput(options)))
                 if (controlFiles)
                 {
                     var res = i.RestoreControlFiles(args.ToArray(), filter);
@@ -223,9 +223,12 @@ namespace Duplicati.CommandLine
             var backend = args[0];
             args.RemoveAt(0);
 			var dirs = args.ToArray();
+            var output = new ConsoleOutput(options);
+            
+            output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
 
             Library.Interface.IBackupResults result;
-            using(var i = new Library.Main.Controller(backend, options))
+            using(var i = new Library.Main.Controller(backend, options, output))
                 result = i.Backup(dirs, filter);
 
 			Console.WriteLine("Backup completed");
@@ -251,7 +254,7 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(args, 1);
                 
-            using(var i = new Library.Main.Controller(args[0], options))
+            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 i.Compact();
 
             return 0;
@@ -272,7 +275,7 @@ namespace Duplicati.CommandLine
             }
             
             Library.Interface.ITestResults result;
-            using(var i = new Library.Main.Controller(args[0], options))
+            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 result = i.Test(tests);
             
             var totalFiles = result.Changes.Count();
@@ -333,7 +336,7 @@ namespace Duplicati.CommandLine
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);
                 
-            using(var i = new Library.Main.Controller(args[0], options))
+            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 i.CreateLogDatabase(args[1]);
 
             return 0;
@@ -345,7 +348,7 @@ namespace Duplicati.CommandLine
                 return PrintWrongNumberOfArguments(args, 1);
             
             Library.Interface.IListChangesResults result;
-            using(var i = new Library.Main.Controller(args[0], options))
+            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 if (args.Count == 2)
                     result = i.ListChanges(null, args[1], null, filter);
                 else            

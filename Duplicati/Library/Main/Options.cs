@@ -422,7 +422,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, string.Format(Strings.Options.CompressionextensionfileLong, DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
-                    new CommandLineArgument("quiet-console", CommandLineArgument.ArgumentType.Boolean, Strings.Options.QuietconsoleShort, Strings.Options.QuietconsoleLong, "false"),
                     new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false"),
 
                     new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
@@ -1124,11 +1123,6 @@ namespace Duplicati.Library.Main
         /// A value indicating if connections cannot be re-used
         /// </summary>
         public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
-
-        /// <summary>
-        /// A value indicating if console output is prohibited
-        /// </summary>
-        public bool QuietConsole { get { return GetBool("quiet-console"); } }
 
         /// <summary>
         /// A value indicating if the output should be verbose

@@ -34,6 +34,10 @@ namespace Duplicati.Library.Main
         /// The parsed type-safe version of the commandline options
         /// </summary>
         private Options m_options;
+        /// <summary>
+        /// The destination for all output messages during execution
+        /// </summary>
+        private IMessageSink m_messageSink;
 
         /// <summary>
         /// A flag indicating if logging has been set, used to dispose the logging
@@ -59,10 +63,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
         /// <param name="options">All required options</param>
-        public Controller(string backend, Dictionary<string, string> options)
+        public Controller(string backend, Dictionary<string, string> options, IMessageSink messageSink)
         {
             m_backend = backend;
             m_options = new Options(options);
+            m_messageSink = messageSink;
         }
 
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
@@ -279,6 +284,7 @@ namespace Duplicati.Library.Main
         private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths)
         {
             m_options.MainAction = result.MainOperation;
+            result.MessageSink = m_messageSink;
             
             switch (m_options.MainAction)
             {
@@ -319,7 +325,6 @@ namespace Duplicati.Library.Main
             }
 
             result.VerboseErrors = m_options.DebugOutput;
-            result.QuietConsole = m_options.QuietConsole;
             result.VerboseOutput = m_options.Verbose;
 
             if (m_options.HasTempDir)

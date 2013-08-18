@@ -54,6 +54,7 @@
     </Compile>
     <Compile Include="UnitTest.cs" />
     <Compile Include="Commands.cs" />
+    <Compile Include="ConsoleOutput.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

@@ -202,4 +202,10 @@
   <data name="ControlFilesOptionLong" xml:space="preserve">
     <value>Use control files</value>
   </data>  
+  <data name="QuietConsoleOptionLong" xml:space="preserve">
+    <value>If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log.</value>
+  </data>
+  <data name="QuietConsoleOptionShort" xml:space="preserve">
+    <value>Disable console output</value>
+  </data>
 </root>

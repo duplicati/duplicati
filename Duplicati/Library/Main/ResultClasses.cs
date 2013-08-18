@@ -22,14 +22,30 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
+    public interface IMessageSink
+    {
+        void BackendEvent(BackendActionType action, BackendEventType type, string path, long size);
+        void BackendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second);
+        void ProgressEvent(string message, int progress);
+        void VerboseEvent(string message, object[] args);
+        void MessageEvent(string message);
+        void RetryEvent(string message, Exception ex);
+        void WarningEvent(string message, Exception ex);
+        void ErrorEvent(string message, Exception ex);
+        void DryrunEvent(string message);
+    }
+
     public interface ILogWriter
     {
         bool VerboseOutput { get; }
+        void AddProgressEvent(string message, int progress);
         void AddVerboseMessage(string message, params object[] args);
         void AddMessage(string message);
         void AddWarning(string message, Exception ex);
         void AddError(string message, Exception ex);
         void AddDryrunMessage(string message);
+        void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size);        
+        void AddBackendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second);
     }
     
     public interface IBackendWriter : ILogWriter
@@ -54,14 +70,15 @@ namespace Duplicati.Library.Main
         /// <param name="path">Path to the resource</param>
         /// <param name="size">Size of the file or progress</param>
         void SendEvent(BackendActionType action, BackendEventType type, string path, long size);
+        
+        void SendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second);
     }
         
     
     internal interface ISetCommonOptions : ILogWriter
     {
-        bool VerboseErrors { set; }
-        bool QuietConsole { set; }
         bool VerboseOutput { set; }
+        bool VerboseErrors { set; }
         
         DateTime EndTime { set; }
         DateTime BeginTime { set; }
@@ -69,6 +86,8 @@ namespace Duplicati.Library.Main
         void SetDatabase(LocalDatabase db);
         
         OperationMode MainOperation { get; }
+        IMessageSink MessageSink { set; }
+        
     }
     
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
@@ -120,21 +139,15 @@ namespace Duplicati.Library.Main
         
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
         
+        public void SendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second)
+        {
+            base.AddBackendProgressEvent(action, path, progress, bytes_pr_second);
+        }
+        
         public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (type == BackendEventType.Started)
             {
-                if (action == BackendActionType.Put)
-                    base.AddMessage(string.Format("Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size)));
-                else if (action == BackendActionType.Get)
-                    base.AddMessage(string.Format("Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
-                else if (action == BackendActionType.List)
-                    base.AddMessage("Listing remote folder ...");
-                else if (action == BackendActionType.CreateFolder)
-                    base.AddMessage("Creating remote folder ...");
-                else if (action == BackendActionType.Delete)
-                    base.AddMessage(string.Format("Deleting file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
-                
                 System.Threading.Interlocked.Increment(ref m_remoteCalls);
             }
             else if (type == BackendEventType.Retrying)
@@ -147,27 +160,24 @@ namespace Duplicati.Library.Main
                 {
                     case BackendActionType.CreateFolder:
                         System.Threading.Interlocked.Increment(ref m_foldersCreated);
-                        base.AddMessage("Created remote folder");
                         break;
                     case BackendActionType.List:
-                        base.AddMessage(string.Format("Listed remote folder ({0} files)", size));
                         break;
                     case BackendActionType.Delete:
                         System.Threading.Interlocked.Increment(ref m_filesDeleted);
-                        base.AddMessage(string.Format("Deleted file ({0})", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
                         break;
                     case BackendActionType.Get:
                         System.Threading.Interlocked.Increment(ref m_filesDownloaded);
                         System.Threading.Interlocked.Add(ref m_bytesDownloaded, size);
-                        base.AddMessage(string.Format("Downloaded file ({0})", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size)));
                         break;
                     case BackendActionType.Put:
                         System.Threading.Interlocked.Increment(ref m_filesUploaded);
                         System.Threading.Interlocked.Add(ref m_bytesUploaded, size);
-                        base.AddMessage(string.Format("Uploaded file ({0})", Library.Utility.Utility.FormatSizeString(size)));
                         break;
                 }
             }
+            
+            base.AddBackendEvent(action, type, path, size);
         }
     }
     
@@ -193,9 +203,8 @@ namespace Duplicati.Library.Main
         protected readonly object m_lock = new object();
         protected Queue<DbMessage> m_dbqueue;
         
-        public bool VerboseErrors { get; set; }
         public bool VerboseOutput { get; set; }
-        public bool QuietConsole { get; set; }
+        public bool VerboseErrors { get; set; }
         
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
@@ -207,6 +216,8 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_warnings;
         protected Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
+        
+        public IMessageSink MessageSink { get; set; }
         
         public void SetDatabase(LocalDatabase db)
         {
@@ -254,21 +265,45 @@ namespace Duplicati.Library.Main
                 m_db.LogMessage("Message", message, ex, null);
             }
         }
+        
+        public void AddBackendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second)
+        {
+            if (m_parent != null)
+                m_parent.AddBackendProgressEvent(action, path, progress, bytes_pr_second);
+            else if (MessageSink != null)
+                MessageSink.BackendProgressEvent(action, path, progress, bytes_pr_second);
+        }
+
+        public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+        {
+            if (m_parent != null)
+                m_parent.AddBackendEvent(action, type, path, size);
+            else if (MessageSink != null)
+                MessageSink.BackendEvent(action, type, path, size);
+        }
+
+        public void AddProgressEvent(string message, int progress)
+        {
+            if (m_parent != null)
+                m_parent.AddProgressEvent(message, progress);
+            else if (MessageSink != null)
+                MessageSink.ProgressEvent(message, progress);
+        }
 
         public void AddDryrunMessage(string message)
         {
             if (m_parent != null)
                 m_parent.AddDryrunMessage(message);
-            else
-                Console.WriteLine(string.Format("[Dryrun]: {0}", message));
+            else if (MessageSink != null)
+                MessageSink.DryrunEvent(message);
         }
                
         public void AddVerboseMessage(string message, params object[] args)
         {
             if (m_parent != null)
                 m_parent.AddVerboseMessage(message, args);
-            else if (VerboseOutput)
-                Console.WriteLine(message, args);
+            else if (MessageSink != null)
+                MessageSink.VerboseEvent(message, args);
         }
         
         public void AddMessage(string message)
@@ -281,8 +316,8 @@ namespace Duplicati.Library.Main
                 {
                     m_messages.Add(message);
             
-                    if (!QuietConsole)
-                        Console.WriteLine(message);
+                    if (MessageSink != null)
+                        MessageSink.MessageEvent(message);
                 
                     Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
             
@@ -301,8 +336,8 @@ namespace Duplicati.Library.Main
                 var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
                 m_warnings.Add(s);
 
-                if (!QuietConsole)
-                    Console.WriteLine(s);
+                if (MessageSink != null)
+                    MessageSink.WarningEvent(message, ex);
                 
                 Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
 
@@ -320,8 +355,8 @@ namespace Duplicati.Library.Main
                 var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
                 m_retryAttempts.Add(s);
 
-                if (!QuietConsole)
-                    Console.WriteLine(s);
+                if (MessageSink != null)
+                    MessageSink.RetryEvent(message, ex);
                 
                 Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
 
@@ -339,8 +374,8 @@ namespace Duplicati.Library.Main
                 var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
                 m_errors.Add(s);
             
-                if (!QuietConsole)
-                    Console.WriteLine(s);
+                if (MessageSink != null)
+                    MessageSink.ErrorEvent(message, ex);
 
                 Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
 
