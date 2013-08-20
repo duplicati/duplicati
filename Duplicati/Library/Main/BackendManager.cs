@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
-    public class BackendManager : IDisposable
+    internal class BackendManager : IDisposable
     {
     	public const string VOLUME_HASH = "SHA256";
     
@@ -533,6 +533,11 @@ namespace Duplicati.Library.Main
                 }
             }
         }
+        
+        private void HandleProgress(long pg)
+        {
+            m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
+        }
 
         private void DoPut(FileEntryItem item)
         {
@@ -554,7 +559,7 @@ namespace Duplicati.Library.Main
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
@@ -589,7 +594,7 @@ namespace Duplicati.Library.Main
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
                     using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size))
+                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }
                 else

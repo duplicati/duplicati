@@ -22,7 +22,7 @@ using System.Linq;
 
 namespace Duplicati.Library.Main.Operation
 {
-    public static class FilelistProcessor
+    internal static class FilelistProcessor
     {
         /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.

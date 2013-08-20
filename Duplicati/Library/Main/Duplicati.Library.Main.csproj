@@ -115,6 +115,7 @@
     <Compile Include="Database\LocalTestDatabase.cs" />
     <Compile Include="Operation\TestHandler.cs" />
     <Compile Include="Database\LocalRecreateDatabase.cs" />
+    <Compile Include="ProgressClasses.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

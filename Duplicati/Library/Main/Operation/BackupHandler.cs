@@ -88,6 +88,53 @@ namespace Duplicati.Library.Main.Operation
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
         }
 
+        private bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
+        {
+            if ((m_options.FileAttributeFilter & attributes) != 0)
+            {
+                m_result.AddVerboseMessage("Excluding path due to attribute filter {0}", path);
+                return false;
+            }
+                        
+            if (!Library.Utility.FilterExpression.Matches(m_filter, path))
+            {
+                m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
+                return false;
+            }
+                            
+            return true;
+        }
+
+
+        private void CountFilesThread()
+        {
+            var updater = m_result.OperationProgressUpdater;
+            var count = 0L;
+            var size = 0L;
+            var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
+            
+            foreach(var path in m_snapshot.EnumerateFilesAndFolders(AttributeFilter))
+            {
+                var fa = FileAttributes.Normal;
+                try { fa = m_snapshot.GetAttributes(path); }
+                catch { }
+                
+                if (followSymlinks && ((fa & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
+                    continue;
+                else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)                
+                    continue;
+                    
+                count++;
+                
+                try { size += m_snapshot.GetFileSize(path); }
+                catch { }
+                
+                m_result.OperationProgressUpdater.UpdatefileCount(count, size, false);                    
+            }
+            
+            m_result.OperationProgressUpdater.UpdatefileCount(count, size, true);
+            
+        }
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
@@ -188,33 +235,17 @@ namespace Duplicati.Library.Main.Operation
                             m_indexvolume = new IndexVolumeWriter(m_options);
                             m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
                         }
-    		            
-                        Library.Utility.Utility.EnumerationFilterDelegate filterdelegate = (rootpath, path, attributes) =>
-                        {
-                            if ((m_options.FileAttributeFilter & attributes) != 0)
-                            {
-                                m_result.AddVerboseMessage("Excluding path due to attribute filter {0}", path);
-                                return false;
-                            }
-                            
-                            if (!Library.Utility.FilterExpression.Matches(m_filter, path))
-                            {
-                                m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
-                                return false;
-                            }
-    			            	
-                            return true;
-                        };
-    		                        	
+    		                		                        	
                         using(new Logging.Timer("BackupMainOperation"))
                         using(m_snapshot = GetSnapshot(sources, m_options, m_result))
                         {
                             if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
                             {
                                 m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
-                            
+                                m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
+                                
                                 foreach(var p in m_options.ChangedFilelist)
-                                {                                    
+                                {
                                     FileAttributes fa = new FileAttributes();
                                     try
                                     {
@@ -225,7 +256,7 @@ namespace Duplicati.Library.Main.Operation
                                         m_result.AddWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex);
                                     }
     		
-                                    if (filterdelegate(null, p, fa))
+                                    if (AttributeFilter(null, p, fa))
                                     {                                        
                                         try
                                         {
@@ -236,18 +267,33 @@ namespace Duplicati.Library.Main.Operation
                                             m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
                                         }
                                     }
-                                    else
-                                    {
-                                        m_result.AddVerboseMessage("Filter rules excluded file {0}", p);
-                                    }
                                 }
     		
                                 m_database.AppendFilesFromPreviousSet(m_transaction, m_options.DeletedFilelist);
                             }
                             else
                             {
-                                foreach(var path in m_snapshot.EnumerateFilesAndFolders(filterdelegate))
-                                    this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
+                                System.Threading.Thread t = null;
+                                try
+                                {
+                                    t = new System.Threading.Thread(CountFilesThread);
+                                    t.Name = "Read ahead file counter";
+                                    t.IsBackground = true;
+                                    t.Start();
+                                    
+                                    foreach(var path in m_snapshot.EnumerateFilesAndFolders(AttributeFilter))
+                                        this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
+                                } 
+                                finally 
+                                {
+                                    if (t != null && t.IsAlive)
+                                    {
+                                        t.Abort();
+                                        t.Join(500);
+                                        if (t.IsAlive)
+                                            m_result.AddWarning("Failed to terminate filecounter thread", null);
+                                    }
+                                }
                             }
                         }
     									
@@ -398,6 +444,8 @@ namespace Duplicati.Library.Main.Operation
 
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
+            m_result.OperationProgressUpdater.StartFile(path, -1);            
+            
             if (m_backendLogFlushTimer < DateTime.Now)
             {
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
@@ -470,9 +518,10 @@ namespace Duplicati.Library.Main.Operation
                 return true;
             }
 
+            m_result.OperationProgressUpdater.UpdatefilesProcessed(++m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
+            
             DateTime oldScanned;
             var oldId = m_database.GetFileEntry(path, out oldScanned);
-            m_result.ExaminedFiles++;
 
             bool changed = false;
             DateTime lastModified = new DateTime(0, DateTimeKind.Utc);
@@ -485,10 +534,10 @@ namespace Duplicati.Library.Main.Operation
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                 
                     m_result.OpenedFiles++;
-
+                    
                     long filesize = 0;
                     DateTime scantime = DateTime.UtcNow;
-
+                    
                     IMetahash metahashandsize;
                     if (m_options.StoreMetadata)
                     {
@@ -516,11 +565,14 @@ namespace Duplicati.Library.Main.Operation
                     {
                         using (var fs = new Blockprocessor(m_snapshot.OpenRead(path), m_blockbuffer))
                         {
+                            try { m_result.OperationProgressUpdater.StartFile(path, fs.Length); }
+                            catch (Exception ex) { m_result.AddWarning(string.Format("Failed to read file length for file {0}", path), ex); }
+                            
                             int size;
                             int blocklistoffset = 0;
 
                             m_filehasher.Initialize();
-
+                            
                             do
                             {
                                 size = fs.Readblock();
@@ -543,6 +595,7 @@ namespace Duplicati.Library.Main.Operation
                                 hashcollector.Add(key);
                                 filesize += size;
 
+                                m_result.OperationProgressUpdater.UpdateFileProgress(filesize);
 
                             } while (size == m_blockbuffer.Length);
 
@@ -555,7 +608,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        m_result.SizeOfExaminedFiles += filesize;
+                        m_result.SizeOfOpenedFiles += filesize;
                         m_filehasher.TransformFinalBlock(m_blockbuffer, 0, 0);
 
                         var filekey = Convert.ToBase64String(m_filehasher.Hash);
@@ -590,6 +643,11 @@ namespace Duplicati.Library.Main.Operation
                             m_result.AddVerboseMessage("File has not changed {0}", path);
                         }
                     }
+                    
+                    m_result.SizeOfExaminedFiles += filesize;
+                    if (filesize != 0)
+                        m_result.OperationProgressUpdater.UpdatefilesProcessed(m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
+                    
                 }
                 else
                 {
@@ -606,15 +664,8 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 m_result.AddWarning(string.Format("Failed to process path: {0}", path), ex);
+                m_result.AddWarning(string.Format("Extra debug info: {0}, {1}, {2}", oldId, oldScanned, lastModified), ex);
                 m_result.FilesWithError++;
-            }
-
-            if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-            {
-                if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Follow)
-                    return true;
-                else
-                    return false;
             }
 
             return true;

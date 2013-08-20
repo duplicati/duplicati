@@ -38,6 +38,8 @@ namespace Duplicati.Library.Main
 
             return bytesread;
         }
+        
+        public long Length { get { return m_stream.Length; } }
 
         public void Dispose()
         {

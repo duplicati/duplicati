@@ -6,12 +6,12 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
-	public interface IAsyncDownloadedFile : IRemoteVolume
+	internal interface IAsyncDownloadedFile : IRemoteVolume
 	{
 		Library.Utility.TempFile TempFile { get; }
 	}
 
-    public class AsyncDownloader : IEnumerable<IAsyncDownloadedFile>
+    internal class AsyncDownloader : IEnumerable<IAsyncDownloadedFile>
     {
         private class AsyncDownloaderEnumerator : IEnumerator<IAsyncDownloadedFile>
         {

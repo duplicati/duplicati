@@ -22,33 +22,17 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
-    public interface IMessageSink
-    {
-        void BackendEvent(BackendActionType action, BackendEventType type, string path, long size);
-        void BackendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second);
-        void ProgressEvent(string message, int progress);
-        void VerboseEvent(string message, object[] args);
-        void MessageEvent(string message);
-        void RetryEvent(string message, Exception ex);
-        void WarningEvent(string message, Exception ex);
-        void ErrorEvent(string message, Exception ex);
-        void DryrunEvent(string message);
-    }
-
     public interface ILogWriter
     {
         bool VerboseOutput { get; }
-        void AddProgressEvent(string message, int progress);
         void AddVerboseMessage(string message, params object[] args);
         void AddMessage(string message);
         void AddWarning(string message, Exception ex);
         void AddError(string message, Exception ex);
         void AddDryrunMessage(string message);
-        void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size);        
-        void AddBackendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second);
     }
     
-    public interface IBackendWriter : ILogWriter
+    internal interface IBackendWriter : ILogWriter
     {
         void AddRetryAttempt(string message, Exception ex);
         
@@ -71,9 +55,12 @@ namespace Duplicati.Library.Main
         /// <param name="size">Size of the file or progress</param>
         void SendEvent(BackendActionType action, BackendEventType type, string path, long size);
         
-        void SendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second);
+        /// <summary>
+        /// Gets the backend progress updater.
+        /// </summary>
+        /// <value>The backend progress updater.</value>
+        IBackendProgressUpdater BackendProgressUpdater { get; }
     }
-        
     
     internal interface ISetCommonOptions : ILogWriter
     {
@@ -87,7 +74,6 @@ namespace Duplicati.Library.Main
         
         OperationMode MainOperation { get; }
         IMessageSink MessageSink { set; }
-        
     }
     
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
@@ -138,12 +124,7 @@ namespace Duplicati.Library.Main
         public long AssignedQuotaSpace { get; set; }
         
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
-        
-        public void SendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second)
-        {
-            base.AddBackendProgressEvent(action, path, progress, bytes_pr_second);
-        }
-        
+                
         public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (type == BackendEventType.Started)
@@ -179,6 +160,8 @@ namespace Duplicati.Library.Main
             
             base.AddBackendEvent(action, type, path, size);
         }
+        
+        IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.m_backendProgressUpdater; } }   
     }
     
     internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions
@@ -217,7 +200,44 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
         
-        public IMessageSink MessageSink { get; set; }
+        protected IMessageSink m_messageSink;
+        public IMessageSink MessageSink
+        {
+            get { return m_messageSink; }
+            set 
+            {
+                m_messageSink = value;
+                if (value != null)
+                {
+                    m_messageSink.OperationProgress = this.OperationProgressUpdater;
+                    m_messageSink.BackendProgress = this.BackendProgressUpdater;
+                }
+            }
+        }
+        
+        protected internal IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
+        internal IOperationProgressUpdaterAndReporter OperationProgressUpdater
+        {
+            get
+            {
+                if (m_parent != null)
+                    return m_parent.OperationProgressUpdater;
+                else
+                    return m_operationProgressUpdater;
+            }
+        }
+        
+        protected internal IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
+        internal IBackendProgressUpdaterAndReporter BackendProgressUpdater
+        {
+            get
+            {
+                if (m_parent != null)
+                    return m_parent.BackendProgressUpdater;
+                else
+                    return m_backendProgressUpdater;
+            }
+        }
         
         public void SetDatabase(LocalDatabase db)
         {
@@ -266,28 +286,21 @@ namespace Duplicati.Library.Main
             }
         }
         
-        public void AddBackendProgressEvent(BackendActionType action, string path, int progress, long bytes_pr_second)
-        {
-            if (m_parent != null)
-                m_parent.AddBackendProgressEvent(action, path, progress, bytes_pr_second);
-            else if (MessageSink != null)
-                MessageSink.BackendProgressEvent(action, path, progress, bytes_pr_second);
-        }
-
         public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (m_parent != null)
+            {
                 m_parent.AddBackendEvent(action, type, path, size);
-            else if (MessageSink != null)
-                MessageSink.BackendEvent(action, type, path, size);
-        }
+            }
+            else
+            {
+                if (type == BackendEventType.Started)
+                    this.BackendProgressUpdater.StartAction(action, path, size);
 
-        public void AddProgressEvent(string message, int progress)
-        {
-            if (m_parent != null)
-                m_parent.AddProgressEvent(message, progress);
-            else if (MessageSink != null)
-                MessageSink.ProgressEvent(message, progress);
+                if (MessageSink != null)
+                    MessageSink.BackendEvent(action, type, path, size);
+            }
+                
         }
 
         public void AddDryrunMessage(string message)
@@ -399,6 +412,8 @@ namespace Duplicati.Library.Main
             m_dbqueue = new Queue<DbMessage>();
             m_backendStatistics = new BackendWriter(this);
             m_callerThread = System.Threading.Thread.CurrentThread;
+            m_backendProgressUpdater = new BackendProgressUpdater();
+            m_operationProgressUpdater = new OperationProgressUpdater();
         }
 
         public BasicResults(BasicResults p)
@@ -439,6 +454,7 @@ namespace Duplicati.Library.Main
         public long SizeOfModifiedFiles { get; internal set; }
         public long SizeOfAddedFiles { get; internal set; }
         public long SizeOfExaminedFiles { get; internal set; }
+        public long SizeOfOpenedFiles { get; internal set; }
         public long NotProcessedFiles { get; internal set; }
         public long AddedFolders { get; internal set; }
         public long TooLargeFiles { get; internal set; }

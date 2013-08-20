@@ -94,6 +94,7 @@ namespace Duplicati.Library.Interface
         long SizeOfModifiedFiles { get; }
         long SizeOfAddedFiles { get; }
         long SizeOfExaminedFiles { get; }
+        long SizeOfOpenedFiles { get; }
         long NotProcessedFiles { get; }
         long AddedFolders { get; }
         long TooLargeFiles { get; }

@@ -35,6 +35,9 @@ namespace Duplicati.CommandLine
         }
     
         #region IMessageSink implementation
+        public IBackendProgress BackendProgress { get; set; }
+        public IOperationProgress OperationProgress { get; set; }
+        
         public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (type == BackendEventType.Started)
