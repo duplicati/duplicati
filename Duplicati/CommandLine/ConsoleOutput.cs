@@ -46,15 +46,15 @@ namespace Duplicati.CommandLine
                 if (type == BackendEventType.Started)
                 {
                     if (action == BackendActionType.Put)
-                        Console.WriteLine("Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
+                        Console.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
                     else if (action == BackendActionType.Get)
-                        Console.WriteLine("Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                        Console.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
                     else if (action == BackendActionType.List)
-                        Console.WriteLine("Listing remote folder ...");
+                        Console.WriteLine("  Listing remote folder ...");
                     else if (action == BackendActionType.CreateFolder)
-                        Console.WriteLine("Creating remote folder ...");
+                        Console.WriteLine("  Creating remote folder ...");
                     else if (action == BackendActionType.Delete)
-                        Console.WriteLine("Deleting file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                        Console.WriteLine("  Deleting file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
                 }
         }
                         

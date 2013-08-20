@@ -222,14 +222,64 @@ namespace Duplicati.CommandLine
                 
             var backend = args[0];
             args.RemoveAt(0);
-			var dirs = args.ToArray();
+            var dirs = args.ToArray();
             var output = new ConsoleOutput(options);
             
             output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
 
+            bool finished = false;
+            System.Threading.ThreadStart periodicOutput = () => {
+                var hasSeenBackup = false;
+                
+                while (!finished)
+                {
+                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
+                    if (!finished)
+                    {
+                        string phase;
+                        float progress;
+                        long filesprocessed;
+                        long filesizeprocessed;
+                        long filecount;
+                        long filesize;
+                        bool counting;
+                        output.OperationProgress.UpdateOverall(out phase, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
+                        
+                        if (phase == "backup" || hasSeenBackup)
+                        {
+                            hasSeenBackup = true;
+                            if (phase != "backup")
+                            {
+                                output.MessageEvent(string.Format("{0} files needs to be examined", 0));
+                                return;
+                            }
+                            else if (Math.Max(0, filecount - filesprocessed) > 0)
+                                output.MessageEvent(string.Format("{0} files needs to be examined ({1}){2}", Math.Max(0, filecount - filesprocessed), Library.Utility.Utility.FormatSizeString(Math.Max(0, filesize - filesizeprocessed)), counting ? " (still counting)" : ""));
+                        }
+                    }
+                }
+            };
+
             Library.Interface.IBackupResults result;
             using(var i = new Library.Main.Controller(backend, options, output))
-                result = i.Backup(dirs, filter);
+            {
+                System.Threading.Thread reporter = new System.Threading.Thread(periodicOutput);
+                try
+                {
+                    reporter.IsBackground = true;
+                    reporter.Start();
+                    result = i.Backup(dirs, filter);
+                }
+                finally
+                {
+                    finished = true;
+                    if (reporter != null && reporter.IsAlive)
+                    {
+                        reporter.Abort();
+                        reporter.Join(500);
+                    }
+                }
+            }
 
 			Console.WriteLine("Backup completed");
 			Library.Utility.Utility.PrintSerializeObject(result, Console.Out);
