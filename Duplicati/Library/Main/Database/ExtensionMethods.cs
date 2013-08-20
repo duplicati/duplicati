@@ -87,11 +87,12 @@ namespace Duplicati.Library.Main.Database
                 return self.ExecuteReader();
         }
 
-        public static void DumpSQL(this System.Data.IDbConnection self, string sql, params object[] parameters)
+        public static void DumpSQL(this System.Data.IDbConnection self, System.Data.IDbTransaction trans, string sql, params object[] parameters)
         {
             using (var c = self.CreateCommand())
             {
                 c.CommandText = sql;
+                c.Transaction = trans;
                 if (parameters != null)
                     foreach (var p in parameters)
                         c.AddParameter(p);
