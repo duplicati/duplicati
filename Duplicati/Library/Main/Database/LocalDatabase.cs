@@ -193,12 +193,10 @@ namespace Duplicati.Library.Main.Database
                 {
                     if (time.Kind == DateTimeKind.Unspecified)
                         throw new Exception("Invalid DateTime given, must be either local or UTC");
-                        
-                    // Make sure the resolution is the same (i.e. no milliseconds)
-                    time = NormalizeDateTime(time);
             
                     query += @" ""Timestamp"" <= ?";
-                    args.Add(time);
+                    // Make sure the resolution is the same (i.e. no milliseconds)
+                    args.Add(NormalizeDateTimeToEpochSeconds(time));
                     hasTime = true;
                 }
                 
