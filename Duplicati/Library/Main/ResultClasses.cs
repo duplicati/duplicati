@@ -161,7 +161,7 @@ namespace Duplicati.Library.Main
             base.AddBackendEvent(action, type, path, size);
         }
         
-        IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.m_backendProgressUpdater; } }   
+        IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }   
     }
     
     internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions

@@ -281,7 +281,7 @@ namespace Duplicati.Library.Main
             {
                 m_filecount = filecount;
                 m_filesize = filesize;
-                m_countingFiles = done;
+                m_countingFiles = !done;
             }
         }
         

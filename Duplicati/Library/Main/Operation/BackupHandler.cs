@@ -160,6 +160,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!m_options.NoBackendverification)
                         {
+                            m_result.OperationProgressUpdater.UpdatePhase("pre-backup-verify");
                             using(new Logging.Timer("PreBackupVerify"))
                             {
                                 try
@@ -186,6 +187,7 @@ namespace Duplicati.Library.Main.Operation
                         var incompleteFilesets = m_database.GetIncompleteFilesets(m_transaction).ToArray();
                         if (incompleteFilesets.Length != 0)
                         {
+                            m_result.OperationProgressUpdater.UpdatePhase("pre-backup-previous-backup-recovery");
                             m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
                             foreach(var fs in incompleteFilesets)
                             {
@@ -224,6 +226,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
     		            
+                        m_result.OperationProgressUpdater.UpdatePhase("backup");
                         var filesetvolumeid = m_database.RegisterRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                         m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(m_filesetvolume.RemoteFilename).Time, m_transaction);
     	
@@ -295,8 +298,11 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             }
+                            
+                            m_result.OperationProgressUpdater.UpdatefileCount(m_result.ExaminedFiles, m_result.SizeOfExaminedFiles, true);
                         }
     									
+                        m_result.OperationProgressUpdater.UpdatePhase("backup-finalize");
                         using(new Logging.Timer("FinalizeRemoteVolumes"))
                         {
                             if (m_blockvolume.SourceSize > 0)
@@ -386,11 +392,13 @@ namespace Duplicati.Library.Main.Operation
                             m_database.RemoveRemoteVolume(m_filesetvolume.RemoteFilename, m_transaction);
                         }
     									
+                        m_result.OperationProgressUpdater.UpdatePhase("backup-wait-for-upload");
                         using(new Logging.Timer("Async backend wait"))
                             m_backend.WaitForComplete(m_database, m_transaction);
                             
                         if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
                         {
+                            m_result.OperationProgressUpdater.UpdatePhase("backup-delete");
                             m_result.DeleteResults = new DeleteResults(m_result);
                             using(var db = new LocalDeleteDatabase(m_database))
                                 new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
@@ -398,13 +406,17 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
                         {
+                            m_result.OperationProgressUpdater.UpdatePhase("backup-compact");
                             m_result.CompactResults = new CompactResults(m_result);
                             using(var db = new LocalDeleteDatabase(m_database))
                                 new CompactHandler(m_backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, m_transaction);
                         }
     		            
                         if (m_options.UploadVerificationFile)
+                        {
+                            m_result.OperationProgressUpdater.UpdatePhase("backup-upload-verification");
                             FilelistProcessor.UploadVerificationFile(m_backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
+                        }
                         
                         if (m_options.Dryrun)
                         {
@@ -416,6 +428,8 @@ namespace Duplicati.Library.Main.Operation
                             using(new Logging.Timer("CommitFinalizingBackup"))
                                 m_transaction.Commit();
                             m_transaction = null;
+                            
+                            m_result.OperationProgressUpdater.UpdatePhase("post-backup-verify");
                             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                             {
                                 using(new Logging.Timer("AfterBackupVerify"))
@@ -529,7 +543,8 @@ namespace Duplicati.Library.Main.Operation
             try
             {
                 lastModified = m_snapshot.GetLastWriteTime(path).ToUniversalTime();
-                if (oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan))
+                long filestatsize = m_snapshot.GetFileSize(path);
+                if (oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || filestatsize < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                 
@@ -643,11 +658,6 @@ namespace Duplicati.Library.Main.Operation
                             m_result.AddVerboseMessage("File has not changed {0}", path);
                         }
                     }
-                    
-                    m_result.SizeOfExaminedFiles += filesize;
-                    if (filesize != 0)
-                        m_result.OperationProgressUpdater.UpdatefilesProcessed(m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
-                    
                 }
                 else
                 {
@@ -660,6 +670,9 @@ namespace Duplicati.Library.Main.Operation
                 if (!changed)
                     AddUnmodifiedFile(oldId, oldScanned);
 
+                m_result.SizeOfExaminedFiles += filestatsize;
+                if (filestatsize != 0)
+                    m_result.OperationProgressUpdater.UpdatefilesProcessed(m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
             }
             catch (Exception ex)
             {
