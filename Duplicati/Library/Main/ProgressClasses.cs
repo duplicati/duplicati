@@ -178,6 +178,8 @@ namespace Duplicati.Library.Main
         
     }
     
+    public delegate void PhaseChangedDelegate(OperationPhase phase, OperationPhase previousPhase);
+    
     /// <summary>
     /// Operation progress update object.
     /// The engine updates these statistics very often,
@@ -197,7 +199,7 @@ namespace Duplicati.Library.Main
         /// <param name="filecount">Filecount.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="countingfiles">True if the filecount and filesize is incomplete, false otherwise</param>
-        void UpdateOverall(out string phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles);
+        void UpdateOverall(out OperationPhase phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles);
         
         /// <summary>
         /// Update the filename, filesize, and fileoffset.
@@ -206,6 +208,11 @@ namespace Duplicati.Library.Main
         /// <param name="filesize">Filesize.</param>
         /// <param name="fileoffset">Fileoffset.</param>
         void UpdateFile(out string filename, out long filesize, out long fileoffset);
+        
+        /// <summary>
+        /// Occurs when the phase has changed
+        /// </summary>
+        event PhaseChangedDelegate PhaseChanged;
     }
     
     /// <summary>
@@ -213,7 +220,7 @@ namespace Duplicati.Library.Main
     /// </summary>
     internal interface IOperationProgressUpdater
     {
-        void UpdatePhase(string phase);
+        void UpdatePhase(OperationPhase phase);
         void UpdateProgress(float progress);
         void StartFile(string filename, long size);
         void UpdateFileProgress(long offset);
@@ -229,7 +236,7 @@ namespace Duplicati.Library.Main
     {
         private readonly object m_lock = new object();
         
-        private string m_phase;
+        private OperationPhase m_phase;
         private float m_progress;
         private string m_curfilename;
         private long m_curfilesize;
@@ -242,15 +249,22 @@ namespace Duplicati.Library.Main
         
         private bool m_countingFiles;
         
-        public void UpdatePhase(string phase)
+        public event PhaseChangedDelegate PhaseChanged;
+        
+        public void UpdatePhase(OperationPhase phase)
         {
+            OperationPhase prev_phase;
             lock(m_lock)
             {
+                prev_phase = m_phase;
                 m_phase = phase;
                 m_curfilename = null;
                 m_curfilesize = 0;
                 m_curfileoffset = 0;
-            }            
+            }
+            
+            if (prev_phase != phase && PhaseChanged != null)
+                PhaseChanged(phase, prev_phase);
         }
         
         public void UpdateProgress(float progress)
@@ -304,7 +318,7 @@ namespace Duplicati.Library.Main
         /// <param name="filecount">Filecount.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="countingfiles">True if the filecount and filesize is incomplete, false otherwise</param>
-        public void UpdateOverall(out string phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles)
+        public void UpdateOverall(out OperationPhase phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles)
         {
             lock(m_lock)
             {

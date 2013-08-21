@@ -37,8 +37,32 @@ namespace Duplicati.CommandLine
         }
     
         #region IMessageSink implementation
+        
         public IBackendProgress BackendProgress { get; set; }
-        public IOperationProgress OperationProgress { get; set; }
+        
+        private IOperationProgress m_operationProgress;
+        public IOperationProgress OperationProgress
+        {
+            get { return m_operationProgress; }
+            set 
+            { 
+                if (m_operationProgress != null)
+                    m_operationProgress.PhaseChanged -= InvokePhaseChanged;
+                    
+                m_operationProgress = value; 
+                
+                if (value != null)
+                    m_operationProgress.PhaseChanged += InvokePhaseChanged;
+            }
+        }
+        
+        private void InvokePhaseChanged(OperationPhase p1, OperationPhase p2)
+        {
+            if (PhaseChanged != null)
+                PhaseChanged(p1, p2);
+        }
+        
+        public event PhaseChangedDelegate PhaseChanged;
         
         public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {

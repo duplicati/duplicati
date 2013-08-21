@@ -225,38 +225,55 @@ namespace Duplicati.CommandLine
             var dirs = args.ToArray();
             var output = new ConsoleOutput(options);
             
-            output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
-
+            var readyEvent = new System.Threading.ManualResetEvent(false);
             bool finished = false;
+            
+            output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
+            
+            output.PhaseChanged += 
+                (Duplicati.Library.Main.OperationPhase phase, Duplicati.Library.Main.OperationPhase previousPhase) => 
+            {
+                if (phase == Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles)
+                    readyEvent.Set();
+                else if (phase == Duplicati.Library.Main.OperationPhase.Backup_WaitForUpload)
+                    finished = true;
+                else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify)
+                    output.MessageEvent("Checking remote backup ...");
+                else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Compact)
+                    output.MessageEvent("Compacting remote backup ...");
+            };
+
             System.Threading.ThreadStart periodicOutput = () => {
-                var hasSeenBackup = false;
                 
-                while (!finished)
+                readyEvent.WaitOne();
+                if (finished)
+                    return;
+                    
+                var last_count = -1L;
+                
+                while (true)
                 {
-                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
-                    if (!finished)
-                    {
-                        string phase;
-                        float progress;
-                        long filesprocessed;
-                        long filesizeprocessed;
-                        long filecount;
-                        long filesize;
-                        bool counting;
-                        output.OperationProgress.UpdateOverall(out phase, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
+                    Duplicati.Library.Main.OperationPhase phase;
+                    float progress;
+                    long filesprocessed;
+                    long filesizeprocessed;
+                    long filecount;
+                    long filesize;
+                    bool counting;
+                    output.OperationProgress.UpdateOverall(out phase, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
+                    
+                    var files = Math.Max(0, filecount - filesprocessed);
+                    
+                    if (files != 0 || (last_count >= 0 && files != last_count) || finished)
+                        output.MessageEvent(string.Format("{0} files needs to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(Math.Max(0, filesize - filesizeprocessed)), counting ? " (still counting)" : ""));
+                    
+                    if (!counting)
+                        last_count = files;
                         
-                        if (phase == "backup" || hasSeenBackup)
-                        {
-                            hasSeenBackup = true;
-                            if (phase != "backup")
-                            {
-                                output.MessageEvent(string.Format("{0} files needs to be examined", 0));
-                                return;
-                            }
-                            else if (Math.Max(0, filecount - filesprocessed) > 0)
-                                output.MessageEvent(string.Format("{0} files needs to be examined ({1}){2}", Math.Max(0, filecount - filesprocessed), Library.Utility.Utility.FormatSizeString(Math.Max(0, filesize - filesizeprocessed)), counting ? " (still counting)" : ""));
-                        }
-                    }
+                    if (finished)
+                        return;
+
+                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));                    
                 }
             };
 
@@ -273,6 +290,8 @@ namespace Duplicati.CommandLine
                 finally
                 {
                     finished = true;
+                    readyEvent.Set();
+                    
                     if (reporter != null && reporter.IsAlive)
                     {
                         reporter.Abort();
@@ -281,8 +300,29 @@ namespace Duplicati.CommandLine
                 }
             }
 
-			Console.WriteLine("Backup completed");
-			Library.Utility.Utility.PrintSerializeObject(result, Console.Out);
+            output.MessageEvent("Backup completed successfully!");
+            
+            if (output.VerboseOutput)
+            {
+                Library.Utility.Utility.PrintSerializeObject(result, Console.Out);
+            }
+            else
+            {
+                var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
+                output.MessageEvent(string.Format("Duration of backup: {0}", result.Duration));
+                if (parsedStats != null && parsedStats.KnownFileCount > 0)
+                {
+                    output.MessageEvent(string.Format("Remote files: {0}", parsedStats.KnownFileCount));
+                    output.MessageEvent(string.Format("Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                }
+                
+                output.MessageEvent(string.Format("Files added: {0}", result.AddedFiles));
+                output.MessageEvent(string.Format("Files deleted: {0}", result.DeletedFiles));
+                output.MessageEvent(string.Format("Files changed: {0}", result.ModifiedFiles));
+                
+                output.MessageEvent(string.Format("Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
+                output.MessageEvent(string.Format("Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
+            }
 
             //Interrupted = 50
             if (result.PartialBackup)
