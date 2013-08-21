@@ -1038,13 +1038,14 @@ namespace Duplicati.Library.Utility
             // instead we salt and rehash repeatedly
             using(var h = System.Security.Cryptography.SHA256.Create())
             {
+                h.Initialize();
                 h.TransformBlock(salt, 0, salt.Length, salt, 0);
                 h.TransformFinalBlock(data, 0, data.Length);
                 var buf = h.Hash;
             
                 for(var i = 0; i < repeats; i++)
                 {
-                    h.Clear();
+                    h.Initialize();
                     h.TransformBlock(salt, 0, salt.Length, salt, 0);
                     h.TransformFinalBlock(buf, 0, buf.Length);
                     buf = h.Hash;
