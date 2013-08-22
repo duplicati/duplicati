@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Duplicati.Library.Main.Database
 {
-    public class LocalBackupDatabase : LocalDatabase
+    internal class LocalBackupDatabase : LocalDatabase
     {
         /// <summary>
         /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)

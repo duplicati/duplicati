@@ -21,7 +21,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Database
 {
-    public class LocalTestDatabase : LocalDatabase
+    internal class LocalTestDatabase : LocalDatabase
     {
         public LocalTestDatabase(string path)
             : base(LocalDatabase.CreateConnection(path), "Test")

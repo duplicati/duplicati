@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Duplicati.Library.Main.Database
 {
-    public class LocalDatabase : IDisposable
+    internal class LocalDatabase : IDisposable
     {    	
         protected readonly System.Data.IDbConnection m_connection;
         protected readonly long m_operationid = -1;
@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
         private readonly System.Data.IDbCommand m_insertIndexBlockLink;
 
-        private BasicResults m_result;
+        protected BasicResults m_result;
 
         public const long FOLDER_BLOCKSET_ID = -100;
         public const long SYMLINK_BLOCKSET_ID = -200;
@@ -66,6 +66,7 @@ namespace Duplicati.Library.Main.Database
 			this.OperationTimestamp = db.OperationTimestamp;
 			this.m_connection = db.m_connection;
 			this.m_operationid = db.m_operationid;
+            this.m_result = db.m_result;
 		}
 		
         /// <summary>

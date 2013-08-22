@@ -31,7 +31,20 @@ namespace Duplicati.Library.Main
         Backup_VerificationUpload,
         Backup_PostBackupVerify,
         Backup_Complete,
-        Backup_Error
+        
+        Restore_Begin,
+        Restore_RecreateDatabase,
+        Restore_PreRestoreVerify,
+        Restore_CreateFileList,
+        Restore_CreateTargetFolders,
+        Restore_ScanForExistingFiles,
+        Restore_ScanForLocalBlocks,
+        Restore_PatchWithLocalBlocks,
+        Restore_DownloadingRemoteFiles,
+        Restore_PostRestoreVerify,
+        Restore_Complete,
+        
+        Error
     }
 }
 

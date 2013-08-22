@@ -75,19 +75,26 @@ namespace Duplicati.Library.Main.Operation
         }
 
         public void Run(string[] paths, Library.Utility.IFilter filter = null)
-		{
+        {
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
+                
             // If we have both target paths and a filter, combine into a single filter
-			filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
+            filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
 			
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
             {
-				using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
-    	            DoRun(db, filter, m_result);
+                using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
+                {
+                    db.SetResult(m_result);
+                    DoRun(db, filter, m_result);
+                }
                     
                 return;
             }
             
+            
             m_result.AddMessage("No local database, building a temporary database");
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_RecreateDatabase);
 
             using (var tmpdb = new Library.Utility.TempFile())
             {
@@ -207,57 +214,75 @@ namespace Duplicati.Library.Main.Operation
         }
 
         private void DoRun(LocalDatabase dbparent, Library.Utility.IFilter filter, RestoreResults result)
-		{
-			//In this case, we check that the remote storage fits with the database.
-			//We can then query the database and find the blocks that we need to do the restore
-			using(var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
-			using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
-			{
-				Utility.VerifyParameters(database, m_options);
+        {
+            //In this case, we check that the remote storage fits with the database.
+            //We can then query the database and find the blocks that we need to do the restore
+            using(var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
+            using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
+            {
+                Utility.VerifyParameters(database, m_options);
 	        	
-				var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-				var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
-				if (blockhasher == null)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
-				if (!blockhasher.CanReuseTransform)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
+                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                if (blockhasher == null)
+                    throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
+                if (!blockhasher.CanReuseTransform)
+                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
 
-				if (filehasher == null)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
-				if (!filehasher.CanReuseTransform)
-					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
+                if (filehasher == null)
+                    throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
+                if (!filehasher.CanReuseTransform)
+                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
 
-				if (!m_options.NoBackendverification)
-					FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter);
+                if (!m_options.NoBackendverification)
+                {
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);                
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter);
+                }
 
-				//Figure out what files are to be patched, and what blocks are needed
-				using(new Logging.Timer("PrepareBlockList"))
-				    PrepareBlockAndFileList(database, m_options, filter, result);
+                //Figure out what files are to be patched, and what blocks are needed
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
+                using(new Logging.Timer("PrepareBlockList"))
+                    PrepareBlockAndFileList(database, m_options, filter, result);
 
-				//Make the entire output setup
-				using(new Logging.Timer("CreateDirectory"))
-				    CreateDirectoryStructure(database, m_options, result);
+                //Make the entire output setup
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
+                using(new Logging.Timer("CreateDirectory"))
+                    CreateDirectoryStructure(database, m_options, result);
                 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
-				using(new Logging.Timer("ScanForexistingTargetBlocks"))
-				    ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, result);
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
+                using(new Logging.Timer("ScanForexistingTargetBlocks"))
+                    ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, result);
 
                 //Look for existing blocks in the original source files only
-				using(new Logging.Timer("ScanForExistingSourceBlocksFast"))
+                using(new Logging.Timer("ScanForExistingSourceBlocksFast"))
 #if DEBUG
-				    if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
+                    if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
 #else
 				    if (!string.IsNullOrEmpty(m_options.Restorepath))
 #endif
-					    ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
+                    {
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
+                        ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
+                    }
 
-				// If other local files already have the blocks we want, we use them instead of downloading
-				if (m_options.PatchWithLocalBlocks)
+                // If other local files already have the blocks we want, we use them instead of downloading
+                if (m_options.PatchWithLocalBlocks)
+                {
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
                     using(new Logging.Timer("PatchWithLocalBlocks"))
-    					ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
+                        ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
+                }
 
-				// Fill BLOCKS with remote sources
-				var volumes = database.GetMissingVolumes().ToList();
+                // Fill BLOCKS with remote sources
+                var volumes = database.GetMissingVolumes().ToList();
+
+                if (volumes.Count > 0)
+                {
+                    m_result.AddMessage(string.Format("{0} remote files are required to restore", volumes.Count));
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
+                }
 
 				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
 					try
@@ -274,6 +299,7 @@ namespace Duplicati.Library.Main.Operation
                 // Reset the filehasher if it was used to verify existing files
                 filehasher.Initialize();
 					
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
                 // After all blocks in the files are restored, verify the file hash
                 using(new Logging.Timer("RestoreVerification"))
                     foreach (var file in database.GetFilesToRestore())
@@ -297,7 +323,7 @@ namespace Duplicati.Library.Main.Operation
                         } 
                         catch (Exception ex)
                         {
-                            result.AddWarning(string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
+                            result.AddWarning(ex.Message, ex);
                         }
                     }
 
@@ -306,6 +332,7 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(database, null);
             }
             
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
             result.EndTime = DateTime.Now;
         }
 
@@ -553,9 +580,9 @@ namespace Duplicati.Library.Main.Operation
         private static void ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
         {
             // Scan existing files for existing BLOCKS
-            using (var blockmarker = database.CreateBlockMarker())
+            using(var blockmarker = database.CreateBlockMarker())
             {
-                foreach (var restorelist in database.GetExistingFilesWithBlocks())
+                foreach(var restorelist in database.GetExistingFilesWithBlocks())
                 {
                     var rename = !options.Overwrite;
                     var targetpath = restorelist.TargetPath;
@@ -568,9 +595,9 @@ namespace Duplicati.Library.Main.Operation
                             if (rename)
                                 filehasher.Initialize();
 
-                            using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                            using (var block = new Blockprocessor(file, blockbuffer))
-                                foreach (var targetblock in restorelist.Blocks)
+                            using(var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                            using(var block = new Blockprocessor(file, blockbuffer))
+                                foreach(var targetblock in restorelist.Blocks)
                                 {
                                     var size = block.Readblock();
                                     if (size <= 0)
@@ -598,6 +625,12 @@ namespace Duplicati.Library.Main.Operation
                                     result.AddVerboseMessage("Target file exists and is correct version: {0}", targetpath);
                                     rename = false;
                                 }
+                                else
+                                {
+                                    // The new file will have none of the correct blocks,
+                                    // even if the scanned file had some
+                                    blockmarker.SetAllBlocksMissing(targetfileid);
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -619,21 +652,35 @@ namespace Duplicati.Library.Main.Operation
                             ext = "." + ext;
                         
                         // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = System.IO.Path.ChangeExtension(targetpath, null) + ".";
-                        newname += database.RestoreTime.ToLocalTime().ToString("yyyy-mm-dd");
-                        newname += ext;
-                        
-                        // If that file exists, go to full timestamp
-                        if (System.IO.File.Exists(newname))
-                        {    
-                            newname = System.IO.Path.ChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyymmddThhMMss");
-                            var tr = newname + ext;
-                            var c = 0;
-                            while (System.IO.File.Exists(tr) && c < 1000)
-                                tr = newname + " (" + c.ToString() + ")" + ext;
-                            
-                            newname = tr;
+                        var newname = System.IO.Path.ChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd");
+                        var tr = newname + ext;
+                        var c = 0;
+                        while (System.IO.File.Exists(tr) && c < 1000)
+                        {
+                            try
+                            {
+                                // If we have a file with the correct name, 
+                                // it is most likely the file we want
+                                filehasher.Initialize();
+                                
+                                string key;
+                                using(var file = System.IO.File.Open(tr, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                    key = Convert.ToBase64String(filehasher.ComputeHash(file));
+                                    
+                                if (key == targetfilehash)
+                                {
+                                    blockmarker.SetAllBlocksRestored(targetfileid);
+                                    break;
+                                }
+                            }
+                            catch(Exception ex)
+                            {
+                                result.AddWarning(string.Format("Failed to read candidate restore target {0}", tr), ex);
+                            }
+                            tr = newname + " (" + (c++).ToString() + ")" + ext;
                         }
+                        
+                        newname = tr;
                         
                         result.AddVerboseMessage("Target file exists and will be restored to: {0}", newname);
                         database.UpdateTargetPath(targetfileid, newname); 

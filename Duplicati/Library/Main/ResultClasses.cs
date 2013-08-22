@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main
         void SetDatabase(LocalDatabase db);
         
         OperationMode MainOperation { get; }
-        IMessageSink MessageSink { set; }
+        IMessageSink MessageSink { set; }        
     }
     
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics

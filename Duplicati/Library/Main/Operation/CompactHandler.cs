@@ -236,7 +236,6 @@ namespace Duplicati.Library.Main.Operation
 			}
 			else
 			{
-				m_result.AddMessage("Compacting not required");
                 return false;
 			}
 		}

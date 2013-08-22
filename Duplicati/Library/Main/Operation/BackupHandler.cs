@@ -394,7 +394,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            m_result.AddMessage("removing temp files, as no data needs to be uploaded");
+                            m_result.AddVerboseMessage("removing temp files, as no data needs to be uploaded");
                             m_database.RemoveRemoteVolume(m_filesetvolume.RemoteFilename, m_transaction);
                         }
     									
@@ -447,11 +447,6 @@ namespace Duplicati.Library.Main.Operation
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);                        
                         return;
                     }
-                }
-                catch
-                {
-                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Error);                        
-                    throw;
                 }
                 finally
                 {
@@ -696,7 +691,6 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 m_result.AddWarning(string.Format("Failed to process path: {0}", path), ex);
-                m_result.AddWarning(string.Format("Extra debug info: {0}, {1}, {2}", oldId, oldScanned, lastModified), ex);
                 m_result.FilesWithError++;
             }
 

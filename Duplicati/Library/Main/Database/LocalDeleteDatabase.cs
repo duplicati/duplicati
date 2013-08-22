@@ -23,7 +23,7 @@ using System.IO;
 
 namespace Duplicati.Library.Main.Database
 {
-	public class LocalDeleteDatabase : LocalDatabase
+	internal class LocalDeleteDatabase : LocalDatabase
 	{
         /// <summary>
         /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
@@ -219,11 +219,14 @@ namespace Duplicati.Library.Main.Database
 			}
 			
 			public void ReportCompactData(ILogWriter log)
-			{
-				var wastepercentage = ((m_wastedspace / (float)m_wastethreshold) * 100);
-				log.AddMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
-				log.AddMessage(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
-				log.AddMessage(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
+            {
+                var wastepercentage = ((m_wastedspace / (float)m_wastethreshold) * 100);
+                if (log.VerboseOutput)
+                {
+                    log.AddVerboseMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
+                    log.AddVerboseMessage(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
+                    log.AddVerboseMessage(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
+                }
 				
 				if (m_deletablevolumes > 0)
 					log.AddMessage(string.Format("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes));
@@ -232,7 +235,7 @@ namespace Duplicati.Library.Main.Database
 				else if (m_smallspace > m_volsize)
 					log.AddMessage(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
 				else
-					log.AddMessage("Not compacting");
+					log.AddMessage("Compacting not required");
 			}
 			
 			public bool ShouldReclaim

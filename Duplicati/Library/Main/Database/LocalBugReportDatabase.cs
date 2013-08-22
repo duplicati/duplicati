@@ -19,7 +19,7 @@ using System;
 
 namespace Duplicati.Library.Main.Database
 {
-	public class LocalBugReportDatabase : LocalDatabase
+	internal class LocalBugReportDatabase : LocalDatabase
 	{
 		public LocalBugReportDatabase(string path)
 			: base(path, "BugReportCreate")

@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Database
 {
-	public class LocalRepairDatabase : LocalDatabase
+	internal class LocalRepairDatabase : LocalDatabase
 	{
 		public LocalRepairDatabase(string path)
 			: base(LocalDatabase.CreateConnection(path), "Repair")

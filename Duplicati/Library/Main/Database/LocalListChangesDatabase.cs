@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Database
 {
-    public class LocalListChangesDatabase : LocalDatabase
+    internal class LocalListChangesDatabase : LocalDatabase
     {
         public LocalListChangesDatabase(string path)
             : base(path, "ListChanges")

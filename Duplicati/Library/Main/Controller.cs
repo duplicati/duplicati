@@ -249,7 +249,15 @@ namespace Duplicati.Library.Main
 			catch(Exception ex)
 			{
                 Logging.Log.WriteMessage("Terminated with error: " + ex.Message, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                
+                try { result.AddError(string.Format("Fatal error: {0}", ex.Message), ex); }
+                catch { }
+                
 				OnOperationComplete(ex);
+                
+                try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                catch { }
+                
 				throw;
 			}
 		}

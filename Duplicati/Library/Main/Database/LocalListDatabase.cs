@@ -22,7 +22,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
-    public class LocalListDatabase : LocalDatabase
+    internal class LocalListDatabase : LocalDatabase
     {
         public LocalListDatabase(string path)
             : base(path, "List")

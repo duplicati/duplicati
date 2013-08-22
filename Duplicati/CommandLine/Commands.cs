@@ -196,20 +196,51 @@ namespace Duplicati.CommandLine
             
             bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
             options.Remove("control-files");
+            
+            var output = new ConsoleOutput(options);
+            output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));            
 
-            using(var i = new Library.Main.Controller(backend, options, new ConsoleOutput(options)))
+            using(var i = new Library.Main.Controller(backend, options, output))
                 if (controlFiles)
                 {
                     var res = i.RestoreControlFiles(args.ToArray(), filter);
-                    Console.WriteLine("Restore control files completed:");
+                    output.MessageEvent("Restore control files completed:");
                     foreach(var s in res.Files)
                         Console.WriteLine(s);
                 }
                 else
                 {
+                    output.PhaseChanged += (phase, previousPhase) => {
+                        if (phase == Duplicati.Library.Main.OperationPhase.Restore_PreRestoreVerify)
+                            output.MessageEvent("Checking remote backup ...");
+                        else if (phase == Duplicati.Library.Main.OperationPhase.Restore_ScanForExistingFiles)
+                            output.MessageEvent("Checking existing target files ...");
+                        /*else if (phase == Duplicati.Library.Main.OperationPhase.Restore_DownloadingRemoteFiles)
+                            output.MessageEvent("Downloading remote files ..."); */
+                        else if (phase == Duplicati.Library.Main.OperationPhase.Restore_PatchWithLocalBlocks)
+                            output.MessageEvent("Updating target files with local data ...");
+                        else if (phase == Duplicati.Library.Main.OperationPhase.Restore_PostRestoreVerify)
+                            output.MessageEvent("Verifying restored files ...");
+                        else if (phase == Duplicati.Library.Main.OperationPhase.Restore_ScanForLocalBlocks)
+                            output.MessageEvent("Scanning local files for needed data ...");
+                            
+                    };
+                
                     var res = i.Restore(args.ToArray(), filter);
-                    Console.WriteLine("Restore completed");
-                    Library.Utility.Utility.PrintSerializeObject(res, Console.Out);
+                    string restorePath;
+                    options.TryGetValue("restore-path", out restorePath);
+                    
+                    output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.FilesRestored, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
+                    if (res.FilesRestored > 0)
+                    {
+                        output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation.");
+                        output.MessageEvent("");
+                        output.MessageEvent("Paypal: http://goo.gl/P4XJ6S");
+                        output.MessageEvent("Bitcoin: 1ADgoUoE9uN725Ypeh9M9WTKFLJzfWWMBh");
+                    }
+                    
+                    if (output.VerboseOutput)
+                        Library.Utility.Utility.PrintSerializeObject(res, Console.Out);
                 }
             
             return 0;
@@ -226,17 +257,16 @@ namespace Duplicati.CommandLine
             var output = new ConsoleOutput(options);
             
             var readyEvent = new System.Threading.ManualResetEvent(false);
-            bool finished = false;
+            var finishEvent = new System.Threading.ManualResetEvent(false);
             
             output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
             
-            output.PhaseChanged += 
-                (Duplicati.Library.Main.OperationPhase phase, Duplicati.Library.Main.OperationPhase previousPhase) => 
+            output.PhaseChanged += (phase, previousPhase) => 
             {
                 if (phase == Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles)
                     readyEvent.Set();
-                else if (phase == Duplicati.Library.Main.OperationPhase.Backup_WaitForUpload)
-                    finished = true;
+                else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Finalize)
+                    finishEvent.Set();
                 else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify)
                     output.MessageEvent("Checking remote backup ...");
                 else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Compact)
@@ -246,10 +276,11 @@ namespace Duplicati.CommandLine
             System.Threading.ThreadStart periodicOutput = () => {
                 
                 readyEvent.WaitOne();
-                if (finished)
+                if (finishEvent.WaitOne(TimeSpan.FromMilliseconds(10), true))
                     return;
                     
                 var last_count = -1L;
+                var finished = false;
                 
                 while (true)
                 {
@@ -265,7 +296,7 @@ namespace Duplicati.CommandLine
                     var files = Math.Max(0, filecount - filesprocessed);
                     
                     if (files != 0 || (last_count >= 0 && files != last_count) || finished)
-                        output.MessageEvent(string.Format("{0} files needs to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(Math.Max(0, filesize - filesizeprocessed)), counting ? " (still counting)" : ""));
+                        output.MessageEvent(string.Format("{0} files need to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(Math.Max(0, filesize - filesizeprocessed)), counting ? " (still counting)" : ""));
                     
                     if (!counting)
                         last_count = files;
@@ -273,7 +304,7 @@ namespace Duplicati.CommandLine
                     if (finished)
                         return;
 
-                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));                    
+                    finished = finishEvent.WaitOne(TimeSpan.FromSeconds(5), true); 
                 }
             };
 
@@ -289,7 +320,7 @@ namespace Duplicati.CommandLine
                 }
                 finally
                 {
-                    finished = true;
+                    finishEvent.Set();
                     readyEvent.Set();
                     
                     if (reporter != null && reporter.IsAlive)
