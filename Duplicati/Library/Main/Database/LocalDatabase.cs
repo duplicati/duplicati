@@ -328,18 +328,18 @@ namespace Duplicati.Library.Main.Database
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
 				
                 // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" = ?)", volumeid);
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""VolumeID"" = ?", volumeid);
-                
+                                                
 				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
 
-				deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN " + subQuery, volumeid);
-				deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
 				
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
-				
 
                 ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
                 m_removeremotevolumeCommand.Transaction = tr.Parent;

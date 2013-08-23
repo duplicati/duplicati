@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM ""FilesetEntry"" INNER JOIN ""File"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" GROUP BY ""FilesetEntry"".""FileID"", ""File"".""Path"" ", m_scantimelookupTablename));
 
-            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
+            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 AND ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_fileScantimeLookup != null)
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" ", m_scantimelookupTablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 ", m_scantimelookupTablename)))
                         while (rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
@@ -640,8 +640,16 @@ namespace Duplicati.Library.Main.Database
 
         public string GetFileHash(long fileid)
         {
-            m_selectfileHashCommand.SetParameterValue(0, fileid);
-            return m_selectfileHashCommand.ExecuteScalar().ToString();
+            try
+            {
+                m_selectfileHashCommand.SetParameterValue(0, fileid);
+                return m_selectfileHashCommand.ExecuteScalar().ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
             
         }
         
@@ -720,7 +728,7 @@ namespace Duplicati.Library.Main.Database
 
                 results.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", lastFilesetId, FOLDER_BLOCKSET_ID, m_filesetId, FOLDER_BLOCKSET_ID));
                 results.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", lastFilesetId, SYMLINK_BLOCKSET_ID, m_filesetId, SYMLINK_BLOCKSET_ID));
-                results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryFiles + @") A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_filesetId));
+                results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryFiles + @") A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", lastFilesetId, m_filesetId));
             }
 
             if (m_blockHashLookup != null && m_fileHashLookup != null && ((m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD || (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD))
