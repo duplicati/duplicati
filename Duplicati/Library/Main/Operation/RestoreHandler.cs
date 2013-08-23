@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Operation
                                     if (targetblock.Size == size)
                                     {
                                         file.Write(blockbuffer, 0, size);
-                                        blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, blocksize);
+                                        blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size);
                                     }   
                                     
                                 }
