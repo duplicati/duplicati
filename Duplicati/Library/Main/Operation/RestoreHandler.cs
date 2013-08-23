@@ -221,7 +221,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
                 
-                blockmarker.Commit();
+                blockmarker.Commit(result);
             }
         }
 
@@ -444,7 +444,7 @@ namespace Duplicati.Library.Main.Operation
                     	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
             	}
             	
-            	blockmarker.Commit();
+            	blockmarker.Commit(result);
             }
         }
 
@@ -522,7 +522,7 @@ namespace Duplicati.Library.Main.Operation
                     	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
                 }
 
-                blockmarker.Commit();
+                blockmarker.Commit(result);
             }
         }
 
@@ -718,7 +718,7 @@ namespace Duplicati.Library.Main.Operation
                     
                 }
 
-                blockmarker.Commit();
+                blockmarker.Commit(result);
             }
         }
     }

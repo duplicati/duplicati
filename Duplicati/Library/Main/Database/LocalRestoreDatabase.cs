@@ -404,7 +404,7 @@ namespace Duplicati.Library.Main.Database
             void SetBlockRestored(long targetfileid, long index, string hash, long blocksize);
             void SetAllBlocksMissing(long targetfileid);
             void SetAllBlocksRestored(long targetfileid);
-            void Commit();
+            void Commit(ILogWriter log);
             void UpdateProcessed(IOperationProgressUpdater writer);
             System.Data.IDbTransaction Transaction { get; }
         }
@@ -504,17 +504,17 @@ namespace Duplicati.Library.Main.Database
                     throw new Exception("Unexpected insert result");
             }
             
-            public void Commit()
+            public void Commit(ILogWriter log)
             {
-            	m_insertblockCommand.Parameters.Clear();
-            	var rc = m_insertblockCommand.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable));
-            	var nc = Convert.ToInt64(m_insertblockCommand.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable)));
-            
-        		m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
-        		m_updateTable = null;
-        		
-        		if (rc != nc)
-        			throw new Exception(string.Format("Inconsistency while marking blocks as updated. Updated blocks: {0}, Registered blocks: {1}", rc, nc));
+                m_insertblockCommand.Parameters.Clear();
+                var rc = m_insertblockCommand.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable));
+                var nc = Convert.ToInt64(m_insertblockCommand.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable)));
+                    		
+                if (rc != nc)
+                    log.AddWarning(string.Format("Inconsistency while marking blocks as updated. Updated blocks: {0}, Registered blocks: {1}", rc, nc), null);
+                
+                m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_updateTable));
+                m_updateTable = null;
 
                 var tr = m_insertblockCommand.Transaction;
                 m_insertblockCommand.Dispose();
