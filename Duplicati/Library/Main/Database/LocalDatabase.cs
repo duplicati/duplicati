@@ -348,6 +348,12 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
+        
+        public void Vacuum()
+        {
+            using(var cmd = m_connection.CreateCommand())
+                cmd.ExecuteNonQuery("VACUUM");
+        }
 
 		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
 		{

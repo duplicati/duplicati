@@ -433,7 +433,9 @@ namespace Duplicati.Library.Main.Operation
                         {
                             using(new Logging.Timer("CommitFinalizingBackup"))
                                 m_transaction.Commit();
+                                
                             m_transaction = null;
+                            m_database.Vacuum();
                             
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
                             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))

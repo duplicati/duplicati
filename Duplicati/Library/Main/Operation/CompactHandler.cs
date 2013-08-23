@@ -57,10 +57,12 @@ namespace Duplicati.Library.Main.Operation
                 {
                     using(new Logging.Timer("CommitCompact"))
                         tr.Commit();
+                    if (changed)
+                        db.Vacuum();
                 }
 				else
 					tr.Rollback();
-			}
+            }
 		}
 		
 		internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
