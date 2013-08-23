@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Database
             m_blocksize = blocksize;
         }
 
-        public void PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
+        public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
         {
             var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -136,19 +136,23 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
                 
-                var count_obj = cmd.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_tempfiletable));
-                var filecount = 0L;
-                var filesize = 0L;
                 
-                if (count_obj != null && count_obj != null)
+                using(var rd = cmd.ExecuteReader(string.Format(@"SELECT COUNT(DISTINCT ""{0}"".""Path""), SUM(""Blockset"".""Length"") FROM ""{0}"", ""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
                 {
-                    filecount = Convert.ToInt64(count_obj);
-                    var size_obj = cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Blockset"".""Length"") FROM ""{0}"", ""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable));
-                    if (size_obj != null && size_obj != DBNull.Value)
-                        filesize = Convert.ToInt64(size_obj);
-                }
-                
-                log.AddMessage(string.Format("{0} files need to be restored ({1}) ...", filecount, Library.Utility.Utility.FormatSizeString(filesize)));
+                    var filecount = 0L;
+                    var filesize = 0L;
+                    
+                    var r0 = rd.GetValue(0);
+                    var r1 = rd.GetValue(1);
+                    if (r0 != null && r0 != DBNull.Value)
+                        filecount = Convert.ToInt64(r0);
+                    if (r1 != null && r1 != DBNull.Value)
+                        filesize = Convert.ToInt64(r1);
+                        
+                    log.AddVerboseMessage("Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
+                        
+                    return new Tuple<long, long>(filecount, filesize);
+                }                
             }
         }
 
@@ -309,6 +313,7 @@ namespace Duplicati.Library.Main.Database
         public interface IVolumePatch
         {
             string Path { get; }
+            long FileID { get; }
             IEnumerable<IPatchBlock> Blocks { get; }
         }
 
@@ -400,6 +405,7 @@ namespace Duplicati.Library.Main.Database
             void SetAllBlocksMissing(long targetfileid);
             void SetAllBlocksRestored(long targetfileid);
             void Commit();
+            void UpdateProcessed(IOperationProgressUpdater writer);
             System.Data.IDbTransaction Transaction { get; }
         }
 
@@ -408,6 +414,8 @@ namespace Duplicati.Library.Main.Database
             private System.Data.IDbCommand m_insertblockCommand;
             private System.Data.IDbCommand m_resetfileCommand;
             private System.Data.IDbCommand m_updateAsRestoredCommand;
+            private System.Data.IDbCommand m_statUpdateCommand;
+            private bool m_hasUpdates = false;
             
             private string m_updateTable;
             private string m_blocktablename;
@@ -419,10 +427,12 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand = connection.CreateCommand();
                 m_resetfileCommand  = connection.CreateCommand();
                 m_updateAsRestoredCommand = connection.CreateCommand();
+                m_statUpdateCommand = connection.CreateCommand();
                 
                 m_insertblockCommand.Transaction = connection.BeginTransaction();
                 m_resetfileCommand.Transaction = m_insertblockCommand.Transaction;
                 m_updateAsRestoredCommand.Transaction = m_insertblockCommand.Transaction;
+                m_statUpdateCommand.Transaction = m_insertblockCommand.Transaction;
                 
                 m_blocktablename = blocktablename;
                 m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -436,10 +446,37 @@ namespace Duplicati.Library.Main.Database
                 
                 m_updateAsRestoredCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"") SELECT ""FileID"", ""Index"", ""Hash"", ""Size"" FROM ""{1}"" WHERE ""{1}"".""FileID"" = ?", m_updateTable, m_blocktablename);
                 m_updateAsRestoredCommand.AddParameters(1);
+                
+                m_statUpdateCommand.CommandText = string.Format(@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{0}"" WHERE ""Restored"" = 1 OR ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable);
+            }
+            
+            public void UpdateProcessed(IOperationProgressUpdater updater)
+            {
+                if (!m_hasUpdates)
+                    return;
+                    
+                m_hasUpdates = false;
+                using(var rd = m_statUpdateCommand.ExecuteReader())
+                {
+                    var r0 = rd.GetValue(0);
+                    var r1 = rd.GetValue(1);
+                    
+                    var filesprocessed = 0L;
+                    var processedsize = 0L;
+                    
+                    if (r0 != null && r0 != DBNull.Value)
+                        filesprocessed = Convert.ToInt64(r0);
+                    
+                    if (r1 != null && r1 != DBNull.Value)
+                        processedsize = Convert.ToInt64(r1);
+
+                    updater.UpdatefilesProcessed(filesprocessed, processedsize);
+                }
             }
             
             public void SetAllBlocksMissing(long targetfileid)
             {
+                m_hasUpdates = true;
                 m_resetfileCommand.SetParameterValue(0, targetfileid);
                 var r = m_resetfileCommand.ExecuteNonQuery();
                 if (r <= 0)
@@ -448,6 +485,7 @@ namespace Duplicati.Library.Main.Database
 
             public void SetAllBlocksRestored(long targetfileid)
             {
+                m_hasUpdates = true;
                 m_updateAsRestoredCommand.SetParameterValue(0, targetfileid);
                 var r = m_updateAsRestoredCommand.ExecuteNonQuery();
                 if (r <= 0)
@@ -456,6 +494,7 @@ namespace Duplicati.Library.Main.Database
             
             public void SetBlockRestored(long targetfileid, long index, string hash, long size)
             {
+                m_hasUpdates = true;
                 m_insertblockCommand.SetParameterValue(0, targetfileid);
                 m_insertblockCommand.SetParameterValue(1, index);
                 m_insertblockCommand.SetParameterValue(2, hash);

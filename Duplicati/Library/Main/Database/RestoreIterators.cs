@@ -712,7 +712,7 @@ namespace Duplicati.Library.Main.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(1);
+                                        var v = m_reader.GetValue(2);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
 
@@ -724,7 +724,7 @@ namespace Duplicati.Library.Main.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(2);
+                                        var v = m_reader.GetValue(3);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
 
@@ -736,7 +736,7 @@ namespace Duplicati.Library.Main.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(3);
+                                        var v = m_reader.GetValue(4);
                                         if (v == null || v == DBNull.Value)
                                             return null;
 
@@ -831,6 +831,18 @@ namespace Duplicati.Library.Main.Database
                                 return null;
 
                             return v.ToString();
+                        }
+                    }
+                    
+                    public long FileID
+                    {
+                        get
+                        {
+                            var v = m_reader.GetValue(1);
+                            if (v == null || v == DBNull.Value)
+                                return 0;
+
+                            return Convert.ToInt64(v);
                         }
                     }
 
@@ -933,7 +945,7 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     m_command = m_connection.CreateCommand();
-                    m_command.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", (""B"".""Index"" * {3}), ""B"".""Size"", ""C"".""Hash"" FROM ""{0}"" A, ""{1}"" B, ""{2}"" C WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"" AND ""B"".""Restored"" = 0 ORDER BY ""A"".""TargetPath"", ""B"".""Index""", m_filetablename, m_blocktablename, m_tmptable, m_blocksize);
+                    m_command.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""FileID"", (""B"".""Index"" * {3}), ""B"".""Size"", ""C"".""Hash"" FROM ""{0}"" A, ""{1}"" B, ""{2}"" C WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"" AND ""B"".""Restored"" = 0 ORDER BY ""A"".""TargetPath"", ""B"".""Index""", m_filetablename, m_blocktablename, m_tmptable, m_blocksize);
                     m_reader = m_command.ExecuteReader();
                     m_patch = new VolumePatch(m_reader);
                     m_patch.HasMoreData = m_reader.Read();

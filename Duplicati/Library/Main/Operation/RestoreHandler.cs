@@ -163,53 +163,65 @@ namespace Duplicati.Library.Main.Operation
             }
         }
         
-        private static void PatchWithBlocklist (LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer)
+        private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer)
         {
-            foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
+            var blocksize = options.Blocksize;
+            using(var blockmarker = database.CreateBlockMarker())
             {
-                var targetpath = restorelist.Path;
-                result.AddVerboseMessage("Patching file with remote data: {0}", targetpath);
-                
-                if (options.Dryrun)
+                foreach(var restorelist in database.GetFilesWithMissingBlocks(blocks))
                 {
-                	result.AddDryrunMessage(string.Format("Would patch file with remote data: {0}", targetpath));
-                }
-                else
-                {
-	                try 
-	                {   
-                        var folderpath = System.IO.Path.GetDirectoryName(targetpath);
-                        if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
-                        {
-                            result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
-                            System.IO.Directory.CreateDirectory(folderpath);
+                    var targetpath = restorelist.Path;
+                    result.AddVerboseMessage("Patching file with remote data: {0}", targetpath);
+                    
+                    if (options.Dryrun)
+                    {
+                        result.AddDryrunMessage(string.Format("Would patch file with remote data: {0}", targetpath));
+                    }
+                    else
+                    {
+                        try
+                        {   
+                            var folderpath = System.IO.Path.GetDirectoryName(targetpath);
+                            if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+                            {
+                                result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+                                System.IO.Directory.CreateDirectory(folderpath);
+                            }
+                            
+                            // TODO: Much faster if we iterate the volume and checks what blocks are used,
+                            // because the compressors usually like sequential reading
+                            using(var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                foreach(var targetblock in restorelist.Blocks)
+                                {
+                                    file.Position = targetblock.Offset;
+                                    var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                                    if (targetblock.Size == size)
+                                    {
+                                        file.Write(blockbuffer, 0, size);
+                                        blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, blocksize);
+                                    }   
+                                    
+                                }
+                                
+                                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
-                        
-	                	// TODO: Much faster if we iterate the volume and checks what blocks are used,
-	                	// because the compressors usually like sequential reading
-	                    using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-	                        foreach (var targetblock in restorelist.Blocks)
-		                    {
-		                        file.Position = targetblock.Offset;
-		                        var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
-		                        if (targetblock.Size == size)
-		                            file.Write(blockbuffer, 0, size);
-		                    }
-	                } 
-	                catch (Exception ex)
-	                {
-	                    result.AddWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
-	                }
-	                
-	                try
-	                {
-	                    ApplyMetadata(targetpath, database);
-	                }
-	                catch (Exception ex)
-	                {
-	                    result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
-	                }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
+                        }
+    	                
+                        try
+                        {
+                            ApplyMetadata(targetpath, database);
+                        }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                        }
+                    }
                 }
+                
+                blockmarker.Commit();
             }
         }
 
@@ -284,6 +296,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                 }
 
+                var brokenFiles = new List<string>();
 				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
 					try
 					{
@@ -293,13 +306,16 @@ namespace Duplicati.Library.Main.Operation
 					}
 					catch (Exception ex)
 					{
+                        brokenFiles.Add(blockvolume.Name);
                         result.AddError(string.Format("Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message), ex);
 					}
-                    
+                
                 // Reset the filehasher if it was used to verify existing files
                 filehasher.Initialize();
 					
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
+                
+                var fileErrors = 0L;
                 // After all blocks in the files are restored, verify the file hash
                 using(new Logging.Timer("RestoreVerification"))
                     foreach (var file in database.GetFilesToRestore())
@@ -323,9 +339,13 @@ namespace Duplicati.Library.Main.Operation
                         } 
                         catch (Exception ex)
                         {
+                            fileErrors++;
                             result.AddWarning(ex.Message, ex);
                         }
                     }
+                    
+                if (fileErrors > 0 && brokenFiles.Count > 0)
+                    m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
 
                 // Drop the temp tables
                 database.DropRestoreTable();
@@ -400,7 +420,10 @@ namespace Duplicati.Library.Main.Operation
 	                			{
 	                                result.AddWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
 	                			}
-	                		}	
+	                		}
+                            
+                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                            
 	                	}
                         else
                         {
@@ -482,6 +505,8 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             }
+                            
+                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                     }
                     catch (Exception ex)
                     {
@@ -502,11 +527,14 @@ namespace Duplicati.Library.Main.Operation
         }
 
         private static void PrepareBlockAndFileList(LocalRestoreDatabase database, Options options, Library.Utility.IFilter filter, RestoreResults result)
-		{
-			// Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
-			// Delete all entries from the temp table that are excluded by the filter(s)
-			using(new Logging.Timer("PrepareRestoreFileList"))
-			    database.PrepareRestoreFilelist(options.Time, options.Version, filter, result);
+        {
+            // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
+            // Delete all entries from the temp table that are excluded by the filter(s)
+            using(new Logging.Timer("PrepareRestoreFileList"))
+            {
+                var c = database.PrepareRestoreFilelist(options.Time, options.Version, filter, result);
+                result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
+            }
 
 			using(new Logging.Timer("SetTargetPaths"))
     			if (!string.IsNullOrEmpty(options.Restorepath))
@@ -632,6 +660,8 @@ namespace Duplicati.Library.Main.Operation
                                     blockmarker.SetAllBlocksMissing(targetfileid);
                                 }
                             }
+                            
+                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
                         catch (Exception ex)
                         {
