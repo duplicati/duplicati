@@ -191,7 +191,7 @@ namespace Duplicati.Library.Main.Database
                         using(var cmd = m_connection.CreateCommand())
                         {
                             cmd.Transaction = m_transaction;
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}""", m_tablename));
+                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tablename));
                         }
                     }
                     catch {}
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main.Database
                 var extra = @"SELECT ? AS ""Type"", ""{0}"".""Path"" AS ""Path"" FROM ""{0}"" WHERE ""{0}"".""Path"" NOT IN ( SELECT ""Path"" FROM ""{1}"" )";
                 var missing = @"SELECT ? AS ""Type"", ""Path"" AS ""Path"" FROM ""{1}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{0}"")";
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ";
-                var drop = @"DROP TABLE ""{1}"" ";
+                var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main.Database
                 var extra = @"SELECT ? AS ""Type"", ""{0}"".""Name"" AS ""Name"" FROM ""{0}"" WHERE ""{0}"".""Name"" NOT IN ( SELECT ""Name"" FROM ""{1}"" )";
                 var missing = @"SELECT ? AS ""Type"", ""Name"" AS ""Name"" FROM ""{1}"" WHERE ""Name"" NOT IN (SELECT ""Name"" FROM ""{0}"")";
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ";
-                var drop = @"DROP TABLE ""{1}"" ";
+                var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
@@ -355,7 +355,7 @@ namespace Duplicati.Library.Main.Database
                 var extra = @"SELECT ? AS ""Type"", ""{0}"".""Hash"" AS ""Hash"" FROM ""{0}"" WHERE ""{0}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{1}"" )";
                 var missing = @"SELECT ? AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{1}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{0}"")";
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND (""D"".""Size"" != ""E"".""Size"")  ";
-                var drop = @"DROP TABLE ""{1}"" ";
+                var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
                 
                 using(var cmd = m_connection.CreateCommand())
                 {

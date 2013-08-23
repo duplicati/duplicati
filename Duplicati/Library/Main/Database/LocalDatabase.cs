@@ -810,9 +810,9 @@ namespace Duplicati.Library.Main.Database
                     try 
                     { 
                         using(var cmd = m_connection.CreateCommand())
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", Tablename));
+                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", Tablename));
                     }
-                    catch {}
+                    catch { }
                     finally { Tablename = null; }
             }                
         }

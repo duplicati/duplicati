@@ -894,12 +894,16 @@ namespace Duplicati.Library.Main.Database
 
                     if (m_tmptable != null)
                     {
-                        using (var c = m_connection.CreateCommand())
+                        try
                         {
-                            c.CommandText = string.Format(@"DROP TABLE ""{0}""", m_tmptable);
-                            c.ExecuteNonQuery();
-                            m_tmptable = null;
+                            using (var c = m_connection.CreateCommand())
+                            {
+                                c.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tmptable);
+                                c.ExecuteNonQuery();
+                            }
                         }
+                        catch { }
+                        finally { m_tmptable = null; }
                     }
                 }
 

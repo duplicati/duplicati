@@ -664,8 +664,9 @@ namespace Duplicati.Library.Main.Database
                 try 
                 { 
                     using(var cmd = m_connection.CreateCommand())
-                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_scantimelookupTablename));
+                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_scantimelookupTablename));
                 }
+                catch { }
                 finally
                 {
                     m_scantimelookupTablename = null;
@@ -673,22 +674,27 @@ namespace Duplicati.Library.Main.Database
 
             if (m_blockHashLookup != null)
                 try { m_blockHashLookup.Dispose(); }
+                catch { }
                 finally { m_blockHashLookup = null; }
 
             if (m_fileHashLookup != null)
                 try { m_fileHashLookup.Dispose(); }
+                catch { }
                 finally { m_fileHashLookup = null; }
 
             if (m_metadataLookup != null)
                 try { m_metadataLookup.Dispose(); }
+                catch { }
                 finally { m_metadataLookup = null; }
 
             if (m_fileScantimeLookup != null)
                 try { m_fileScantimeLookup.Dispose(); }
+                catch { }
                 finally { m_fileScantimeLookup = null; }
 
             if (m_filesetLookup != null)
                 try { m_filesetLookup.Dispose(); }
+                catch { }
                 finally { m_filesetLookup = null; }
 
             base.Dispose();

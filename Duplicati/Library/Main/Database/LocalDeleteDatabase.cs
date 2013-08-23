@@ -170,7 +170,7 @@ namespace Duplicati.Library.Main.Database
 				}
 				finally 
 				{
-					try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", tmptablename)); }
+					try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tmptablename)); }
 					catch { }
 				}
 			}

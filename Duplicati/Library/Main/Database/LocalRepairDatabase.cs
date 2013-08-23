@@ -228,7 +228,7 @@ namespace Duplicati.Library.Main.Database
                         using(var cmd = m_connection.CreateCommand())
                         {
                             cmd.Transaction = m_transaction.Parent;
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_transaction));
+                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_transaction));
                         }
                     }
                     catch { }

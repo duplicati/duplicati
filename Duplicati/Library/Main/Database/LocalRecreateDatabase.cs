@@ -646,9 +646,10 @@ namespace Duplicati.Library.Main.Database
                 if (m_tempblocklist != null)
                     try
                     {
-                        cmd.CommandText = string.Format(@"DROP TABLE ""{0}""", m_tempblocklist);
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempblocklist);
                         cmd.ExecuteNonQuery();
                     }
+                    catch { }
                     finally { m_tempblocklist = null; }
                     
             }

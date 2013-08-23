@@ -100,7 +100,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.Parameters.Clear();
                         }
                         
-                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_filenamestable));
+                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
                         
                         using(new Logging.Timer("CommitPrepareFileset"))
                             tr.Commit();
@@ -531,18 +531,32 @@ namespace Duplicati.Library.Main.Database
 	            	try 
 	            	{
 	            		m_insertblockCommand.Parameters.Clear();
-	            		m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
+	            		m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_updateTable));
 	            	}
 	            	catch { }
 	            	finally { m_updateTable = null; }
 	            }
-            
+                            
                 if (m_insertblockCommand != null)
-                {
-                    var t = m_insertblockCommand;
-                    m_insertblockCommand = null;
-                    t.Dispose();
-                }
+                    try { m_insertblockCommand.Dispose(); }
+                    catch { }
+                    finally { m_insertblockCommand = null; }
+                    
+                if (m_resetfileCommand != null)
+                    try { m_resetfileCommand.Dispose(); }
+                    catch { }
+                    finally { m_resetfileCommand = null; }
+                    
+                if (m_updateAsRestoredCommand != null)
+                    try { m_updateAsRestoredCommand.Dispose(); }
+                    catch { }
+                    finally { m_updateAsRestoredCommand = null; }
+                    
+                if (m_statUpdateCommand != null)
+                    try { m_statUpdateCommand.Dispose(); }
+                    catch { }
+                    finally { m_statUpdateCommand = null; }
+                
             }
         }
 

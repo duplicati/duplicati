@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main.Database
                     try 
                     { 
                         using(var cmd = m_connection.CreateCommand())
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_tablename));
+                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tablename));
                     }
                     catch {}
                     finally { m_tablename = null; }
