@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Volumes
 								
 				REMOTE_TYPENAME_MAP = dict;
 				REVERSE_REMOTE_TYPENAME_MAP = reversedict;
-				FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-((?<guid>(([A-Za-z])[0-9A-Fa-f]+))|(backup\-(?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+				FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
 			}
 
             private ParsedVolume() { }
@@ -110,9 +110,9 @@ namespace Duplicati.Library.Main.Volumes
 			string volumename;
 
             if (filetype == RemoteVolumeType.Files)
-                volumename = prefix + "-backup" + "-" + Library.Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
+                volumename = prefix + "-" + Library.Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
             else
-                volumename = prefix + "-" + (filetype == RemoteVolumeType.Blocks ? "D" : "I") + guid + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
+                volumename = prefix + "-" + (filetype == RemoteVolumeType.Blocks ? "b" : "i") + guid + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
 
             if (!string.IsNullOrEmpty(encryptionmodule))
                 volumename += "." + encryptionmodule;
