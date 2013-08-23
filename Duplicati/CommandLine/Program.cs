@@ -172,7 +172,7 @@ namespace Duplicati.CommandLine
                 knownCommands["repair"] = Commands.Repair;
 
                 knownCommands["compact"] = Commands.Compact;
-                knownCommands["create-bug-report"] = Commands.CreateBugReport;
+                knownCommands["create-report"] = Commands.CreateBugReport;
                 knownCommands["list-changes"] = Commands.ListChanges;
                 knownCommands["test"] = Commands.Test;
 
