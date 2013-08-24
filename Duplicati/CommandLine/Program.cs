@@ -147,8 +147,14 @@ namespace Duplicati.CommandLine
                         return 100;
                 }
 
-                string command = cargs[0];
-                cargs.RemoveAt(0);
+                string command;
+                if (cargs.Count > 0)
+                {
+                    command = cargs[0];
+                    cargs.RemoveAt(0);
+                }
+                else
+                    command = "help";
 
                 if (!options.ContainsKey("passphrase"))
                     if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
