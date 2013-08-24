@@ -11,12 +11,12 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   Examples: example
-  Commands: backup, list, restore, delete, compact, test
+  Commands: backup, list, restore, delete, compact, test, list-changes, repair, create-report
   Debugging: debug, logging
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
-  Advanced: advanced, returncodes, filter, <option>
+  Advanced: mail, advanced, returncodes, filter, <option>
 
 http://www.duplicati.com/              Version: %VERSION%
 
@@ -110,12 +110,12 @@ Usage: delete <storage-URL> [<options>]
   
   Marks old data deleted and removes outdated dlist files. A backup is deleted when it is older than <keep-time> or when there are more newer versions than <keep-versions>. Data is considered old, when it is not required from any existing backup anymore.
   
-	--keep-time=<time>
-	  Marks data outdated that is older than <time>.
-	--keep-versions=<int>
-	  Marks data outdated that is older than <int> versions.
-	--version=<int>
-	  Deletes all files that belong to the specified version(s).
+  --keep-time=<time>
+    Marks data outdated that is older than <time>.
+  --keep-versions=<int>
+    Marks data outdated that is older than <int> versions.
+  --version=<int>
+    Deletes all files that belong to the specified version(s).
   
   
   
@@ -132,8 +132,61 @@ Usage: compact <storage-URL> [<options>]
     Files smaller than this size are considered to be small and will be compacted with other small files as soon as there are <small-file-max-count> of them. --small-file-size=20 means 20% of <dblock-size>. 
   --threshold=<percent_value>	
 	The amount of old data that a dblock file can contain before it is considered to be replaced.
-  
+	
+	
 
+  
+# =============================================================================
+> duplicati.commandline.exe help list-changes
+
+Usage: list-changes <storage-URL> [<base-version>] [<compare-to>] [<options>]
+
+  Shows changes between two versions. If no versions are given, changes are shown between the two latest backups. The versions can either be timestamps or backup version numbers. If only one version is given, the most recent backup is compared to that version.
+
+  --verbose
+    Shows names of files
+  --include=<filter>
+    Adds an include filter (for verbose output)
+  --exclude=<filter>
+    Adds an exclude filter (for verbose output)
+
+
+
+# =============================================================================
+> duplicati.commandline.exe help create-report
+
+Usage: create-report <storage-URL> <output-file> [<options>]
+
+  Analyses the backup and prepares a report with anonymous information what went wrong. This report can be sent to the developers for a better analysis in case something went wrong.
+
+
+
+
+# =============================================================================
+> duplicati.commandline.exe help repair
+
+Usage: repair <storage-URL> [<options>]
+  
+  Tries to repair the backup. If no local db is found or the db is empty, the db is re-created with data from the storage. If the db is in place but the remote storage is corrupt, the remote storage gets repaired with local data (if available).
+
+
+
+
+# =============================================================================
+> duplicati.commandline.exe help test
+> duplicati.commandline.exe help verify
+
+Usage: test <storage-URL> [<samples>] [<options>]
+  
+  Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
+  
+  --time=<time>
+  Checks samples from a specific time
+  --version=<int>
+  Checks samples from specific versions. Delimiters are , -
+  
+  
+  
   
 # =============================================================================
 > duplicati.commandline.exe help debug
@@ -290,6 +343,43 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
 
 
 
+# =============================================================================
+> duplicati.commandline.exe help mail
+> duplicati.commandline.exe help email
+
+Duplicati can send email notifications.
+
+  --send-mail-to=<email-address>
+    After a backup an email is sent to <email-address>. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
+  --send-mail-from=<email-address>
+    This is the sender address of an email.
+  --send-mail-subject=<subject>
+    This is the subject line of the email that is sent. E.g. this can be "Duplicati %OPERATIONNAME% Report"
+  --send-mail-body=<body>
+    The content of the email message. This should contain "%RESULT%".
+  --send-mail-url=<smtp-url>
+    An URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587"
+  --send-mail-username=<username>
+    Required username to authenticate with SMTP server.
+  --send-mail-password=<password>
+    Required password to authenticate with SMTP server.
+  --send-mail-level=<level>
+    When email messages are sent: "Success", "Warning", "Error" are possible.
+  --send-mail-any-operation=true
+    Also send emails after other operations like restore etc.
+	
+  Allowed placeholders are:
+    %RESULT%
+	  The result/log of the backup
+    %OPERATIONNAME%
+	  The name of the operation, usually "backup", but could also be "restore" etc.
+    %REMOTEURL%
+	  The backend url
+    %LOCALPATH%
+	  The path to the local folders involved (i.e. the folders being backed up)
+
+
+  
 # =============================================================================
 > duplicati.commandline.exe help advanced
 > duplicati.commandline.exe help option
