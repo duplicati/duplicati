@@ -196,9 +196,11 @@ namespace Duplicati.Library.Main.Database
 			private long m_wastedspace;
 			private long m_smallspace;
 			private long m_fullsize;
+            private long m_smallvolumecount;
 			
 			private long m_wastethreshold;
 			private long m_volsize;
+            private long m_maxsmallfilecount;
 			
 			public CompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IEnumerable<VolumeUsage> report)
 			{
@@ -210,12 +212,14 @@ namespace Duplicati.Library.Main.Database
 
 				m_wastethreshold = wastethreshold;
 				m_volsize = volsize;
+                m_maxsmallfilecount = maxsmallfilecount;
 
 				m_deletablevolumes = m_cleandelete.Count();
 				m_fullsize = report.Select(x => x.DataSize).Sum();
 				
 				m_wastedspace = m_wastevolumes.Select(x => x.WastedSize).Sum();
 				m_smallspace = m_smallvolumes.Select(x => x.CompressedSize).Sum();
+                m_smallvolumecount = m_smallvolumes.Count();
 			}
 			
 			public void ReportCompactData(ILogWriter log)
@@ -234,6 +238,8 @@ namespace Duplicati.Library.Main.Database
 					log.AddMessage(string.Format("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold));
 				else if (m_smallspace > m_volsize)
 					log.AddMessage(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
+                else if (m_smallvolumecount > m_maxsmallfilecount)
+                    log.AddMessage(string.Format("Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount));
 				else
 					log.AddMessage("Compacting not required");
 			}
@@ -250,7 +256,7 @@ namespace Duplicati.Library.Main.Database
 			{
 				get 
 				{
-					return ((m_wastedspace / (float)m_wastethreshold) * 100) >= m_wastethreshold || m_smallspace > m_volsize;
+					return ((m_wastedspace / (float)m_wastethreshold) * 100) >= m_wastethreshold || m_smallspace > m_volsize || m_smallvolumecount > m_maxsmallfilecount;
 				}
 			}
 
