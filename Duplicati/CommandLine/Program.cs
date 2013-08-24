@@ -175,6 +175,7 @@ namespace Duplicati.CommandLine
                 knownCommands["create-report"] = Commands.CreateBugReport;
                 knownCommands["list-changes"] = Commands.ListChanges;
                 knownCommands["test"] = Commands.Test;
+                knownCommands["verify"] = Commands.Test;
 
                 if (verbose)
                 {
