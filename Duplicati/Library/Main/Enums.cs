@@ -32,7 +32,6 @@ namespace Duplicati.Library.Main
     {
         Backup,
         Restore,
-        FindLastFileVersion,
         List,
         ListChanges,
         Delete,
