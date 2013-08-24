@@ -526,6 +526,13 @@ namespace Duplicati.CommandLine
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 i.CreateLogDatabase(args[1]);
 
+            Console.WriteLine("Completed!");
+            Console.WriteLine();
+            Console.WriteLine("Please examine the log table of the database to see that no filenames are accidentially left over.");
+            Console.WriteLine("If you are concerned that your filenames may contain sensitive information,");
+            Console.WriteLine(" do not attach the database to an issue!!!");
+            Console.WriteLine();
+
             return 0;
         }
         
