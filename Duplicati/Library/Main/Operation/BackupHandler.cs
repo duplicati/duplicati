@@ -158,7 +158,6 @@ namespace Duplicati.Library.Main.Operation
     
                 try
                 {
-                    m_transaction = m_database.BeginTransaction();
                     m_snapshot = GetSnapshot(sources, m_options, m_result);
 
                     // Start parallel scan
@@ -199,7 +198,19 @@ namespace Duplicati.Library.Main.Operation
                                         throw;
                                 }
                             }
+                            
+                            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+                            {
+                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupTest);
+                                m_result.TestResults = new TestResults(m_result);
+                                
+                                using(var testdb = new LocalTestDatabase(m_database))
+                                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                                        .DoRun(m_options.BackupTestSampleCount, testdb, m_backend);
+                            }
                         }
+
+                        m_transaction = m_database.BeginTransaction();
                         
                         var incompleteFilesets = m_database.GetIncompleteFilesets(m_transaction).ToArray();
                         if (incompleteFilesets.Length != 0)

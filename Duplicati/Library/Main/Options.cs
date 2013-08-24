@@ -439,6 +439,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Size, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Lookup.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
+                    new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, string.Format(Strings.Options.BackendtestsamplesLong, "no-backend-verification"), "1"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
                     new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
@@ -1395,6 +1396,22 @@ namespace Duplicati.Library.Main
         public bool NoBackendverification
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-backend-verification"); }
+        }
+                
+        /// <summary>
+        /// Gets the number of samples to test during a backup operation
+        /// </summary>
+        public long BackupTestSampleCount
+        {
+            get 
+            { 
+                string s;
+                m_options.TryGetValue("backup-test-samples", out s);
+                if (string.IsNullOrEmpty(s))
+                    return 1;
+                
+                return long.Parse(s);
+            }
         }
         
         /// <summary>

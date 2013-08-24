@@ -471,6 +471,7 @@ namespace Duplicati.Library.Main
         public ICompactResults CompactResults { get; internal set; }
         public IDeleteResults DeleteResults { get; internal set; }
         public IRepairResults RepairResults { get; internal set; }        
+        public ITestResults TestResults { get; internal set; }        
     }
     
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
@@ -682,6 +683,9 @@ namespace Duplicati.Library.Main
     
     internal class TestResults : BasicResults, ITestResults
     {
+        public TestResults() : base() { }
+        public TestResults(BasicResults p) : base(p) { }
+        
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get { return m_changes; } }
         private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_changes = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();

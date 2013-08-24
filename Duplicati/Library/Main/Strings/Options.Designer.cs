@@ -130,6 +130,12 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
+        internal static string BackendtestsamplesShort {
+            get {
+                return ResourceManager.GetString("BackendtestsamplesShort", resourceCulture);
+            }
+        }
+        
         internal static string UsnpolicyShort {
             get {
                 return ResourceManager.GetString("UsnpolicyShort", resourceCulture);
@@ -361,6 +367,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string DisablemoduleLong {
             get {
                 return ResourceManager.GetString("DisablemoduleLong", resourceCulture);
+            }
+        }
+        
+        internal static string BackendtestsamplesLong {
+            get {
+                return ResourceManager.GetString("BackendtestsamplesLong", resourceCulture);
             }
         }
         

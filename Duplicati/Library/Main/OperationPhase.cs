@@ -22,6 +22,7 @@ namespace Duplicati.Library.Main
     {
         Backup_Begin,
         Backup_PreBackupVerify,
+        Backup_PreBackupTest,
         Backup_PreviousBackupFinalize,
         Backup_ProcessingFiles,
         Backup_Finalize,

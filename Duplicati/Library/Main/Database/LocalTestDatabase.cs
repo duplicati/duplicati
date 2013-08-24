@@ -28,6 +28,11 @@ namespace Duplicati.Library.Main.Database
         {        
         }
         
+        public LocalTestDatabase(LocalDatabase parent)
+            : base(parent)
+        {        
+        }
+        
         public void UpdateVerificationCount(string name)
         {
             using(var cmd = m_connection.CreateCommand())
