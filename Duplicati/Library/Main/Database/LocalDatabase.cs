@@ -370,31 +370,42 @@ namespace Duplicati.Library.Main.Database
                 return r;
             }
         }
-        
+
         public long GetFilesetID(DateTime restoretime, long[] versions)
-		{
-			if (restoretime.Kind == DateTimeKind.Unspecified)
-				throw new Exception("Invalid DateTime given, must be either local or UTC");
+        {
+            return GetFilesetIDs(restoretime, versions).First();
+        }        
 
-			var tmp = GetFilelistWhereClause(restoretime, versions);
-			string query = tmp.Item1;
-			var args = tmp.Item2;
+        public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions)
+        {
+            if (restoretime.Kind == DateTimeKind.Unspecified)
+                throw new Exception("Invalid DateTime given, must be either local or UTC");
 
-			using(var cmd = m_connection.CreateCommand())
-			{            
-                object r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" " + query  + @" ORDER BY ""Timestamp"" DESC", args);
-                if (r == null)
+            var tmp = GetFilelistWhereClause(restoretime, versions);
+            string query = tmp.Item1;
+            var args = tmp.Item2;
+
+            var res = new List<long>();
+            using(var cmd = m_connection.CreateCommand())
+            {            
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" " + query  + @" ORDER BY ""Timestamp"" DESC", args))
+                    while (rd.Read())
+                        res.Add(Convert.ToInt64(rd.GetValue(0)));
+                        
+                if (res.Count == 0)
                 {
                     cmd.Parameters.Clear();
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ";
-                    r = cmd.ExecuteScalar();
-                    if (r == null)
+                    using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
+                    while (rd.Read())
+                        res.Add(Convert.ToInt64(rd.GetValue(0)));
+                    
+                    if (res.Count == 0)
                         throw new Exception("No backup at the specified date");
                     else
                         m_result.AddWarning(string.Format("Restore time or version did not match any existing backups, selecting newest backup"), null);
                 }
 
-                return Convert.ToInt64(r);
+                return res;
             }
         }
 

@@ -36,124 +36,133 @@ namespace Duplicati.Library.Main.Database
 
             using(var cmd = m_connection.CreateCommand())
             {
-                long filesetId = GetFilesetID(NormalizeDateTime(restoretime), versions);
-                m_restoreTime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
-                
-                var ix = this.FilesetTimes.Select((value, index) => new { value.Key, index })
-                        .Where(n => n.Key == filesetId)
-                        .Select(pair => pair.index + 1)
-                        .FirstOrDefault() - 1;
-                        
-                log.AddMessage(string.Format("Searching backup {0} ({1}) ...", ix, m_restoreTime));
-                
-                cmd.Parameters.Clear();
-
-                cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable);
-                cmd.ExecuteNonQuery();
-
-                cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL)", m_tempblocktable);
-                cmd.ExecuteNonQuery();
-
-                if (filter == null || filter.Empty)
+                var filesetIds = GetFilesetIDs(NormalizeDateTime(restoretime), versions).ToList();
+                while(filesetIds.Count > 0)
                 {
-                    // Simple case, restore everything
-                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
-                    cmd.AddParameter(filesetId);
-                    cmd.ExecuteNonQuery();
-                }
-                else if (filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
-                {
-                    // If we get a list of filenames, the lookup table is faster
-                    using(var tr = m_connection.BeginTransaction())
-                    {
-                        var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
-                        var m_filenamestable = "Filenames-" + guid;
-                        cmd.Transaction = tr;
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
-                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
-                        cmd.AddParameter();
-                        
-                        foreach(var s in p)
-                        {
-                            cmd.SetParameterValue(0, s);
-                            cmd.ExecuteNonQuery();
-                        }
-                        
-                        //TODO: Handle case-insensitive filename lookup
-                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
-                        cmd.SetParameterValue(0, filesetId);
-                        var c = cmd.ExecuteNonQuery();
-                        
-                        cmd.Parameters.Clear();
-                        
-                        if (c != p.Length)
-                        {
-                            var sb = new StringBuilder();
-                            sb.AppendLine();
-                            
-                            using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
-                                while (rd.Read())
-                                    sb.AppendLine(rd.GetValue(0).ToString());
-
-                            var actualrestoretime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
-                            log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
-                            cmd.Parameters.Clear();
-                        }
-                        
-                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
-                        
-                        using(new Logging.Timer("CommitPrepareFileset"))
-                            tr.Commit();
-                    }
-                }
-                else
-                {
-                    // Restore but filter elements based on the filter expression
-                    // If this is too slow, we could add a special handler for wildcard searches too
-                    cmd.CommandText = string.Format(@"SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?");
-                    cmd.AddParameter(filesetId);
-
-                    object[] values = new object[3];
-                    using(var cmd2 = m_connection.CreateCommand())
-                    {
-                        cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?)", m_tempfiletable);
-                        cmd2.AddParameter();
-                        cmd2.AddParameter();
-                        cmd2.AddParameter();
-
-                        using(var rd = cmd.ExecuteReader())
-                            while (rd.Read())
-                            {
-                                rd.GetValues(values);
-                                if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
-                                {
-                                    cmd2.SetParameterValue(0, values[0]);
-                                    cmd2.SetParameterValue(1, values[1]);
-                                    cmd2.SetParameterValue(2, values[2]);
-                                    cmd2.ExecuteNonQuery();
-                                }
-                            }
-                    }
-                }
-                
-                
-                using(var rd = cmd.ExecuteReader(string.Format(@"SELECT COUNT(DISTINCT ""{0}"".""Path""), SUM(""Blockset"".""Length"") FROM ""{0}"", ""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
-                {
-                    var filecount = 0L;
-                    var filesize = 0L;
+                    var filesetId = filesetIds[0];
+                    filesetIds.RemoveAt(0);
                     
-                    var r0 = rd.GetValue(0);
-                    var r1 = rd.GetValue(1);
-                    if (r0 != null && r0 != DBNull.Value)
-                        filecount = Convert.ToInt64(r0);
-                    if (r1 != null && r1 != DBNull.Value)
-                        filesize = Convert.ToInt64(r1);
+                    m_restoreTime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
+                    
+                    var ix = this.FilesetTimes.Select((value, index) => new { value.Key, index })
+                            .Where(n => n.Key == filesetId)
+                            .Select(pair => pair.index + 1)
+                            .FirstOrDefault() - 1;
+                            
+                    log.AddMessage(string.Format("Searching backup {0} ({1}) ...", ix, m_restoreTime));
+                    
+                    cmd.Parameters.Clear();
+    
+                    cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempblocktable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL)", m_tempblocktable));
+    
+                    if (filter == null || filter.Empty)
+                    {
+                        // Simple case, restore everything
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
+                        cmd.AddParameter(filesetId);
+                        cmd.ExecuteNonQuery();
+                    }
+                    else if (filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
+                    {
+                        // If we get a list of filenames, the lookup table is faster
+                        using(var tr = m_connection.BeginTransaction())
+                        {
+                            var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
+                            var m_filenamestable = "Filenames-" + guid;
+                            cmd.Transaction = tr;
+                            cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
+                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
+                            cmd.AddParameter();
+                            
+                            foreach(var s in p)
+                            {
+                                cmd.SetParameterValue(0, s);
+                                cmd.ExecuteNonQuery();
+                            }
+                            
+                            //TODO: Handle case-insensitive filename lookup
+                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+                            cmd.SetParameterValue(0, filesetId);
+                            var c = cmd.ExecuteNonQuery();
+                            
+                            cmd.Parameters.Clear();
+                            
+                            if (c != p.Length && c != 0)
+                            {
+                                var sb = new StringBuilder();
+                                sb.AppendLine();
+                                
+                                using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
+                                    while (rd.Read())
+                                        sb.AppendLine(rd.GetValue(0).ToString());
+    
+                                var actualrestoretime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
+                                log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
+                                cmd.Parameters.Clear();
+                            }
+                            
+                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
+                            
+                            using(new Logging.Timer("CommitPrepareFileset"))
+                                tr.Commit();
+                        }
+                    }
+                    else
+                    {
+                        // Restore but filter elements based on the filter expression
+                        // If this is too slow, we could add a special handler for wildcard searches too
+                        cmd.CommandText = string.Format(@"SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?");
+                        cmd.AddParameter(filesetId);
+    
+                        object[] values = new object[3];
+                        using(var cmd2 = m_connection.CreateCommand())
+                        {
+                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?)", m_tempfiletable);
+                            cmd2.AddParameter();
+                            cmd2.AddParameter();
+                            cmd2.AddParameter();
+    
+                            using(var rd = cmd.ExecuteReader())
+                                while (rd.Read())
+                                {
+                                    rd.GetValues(values);
+                                    if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
+                                    {
+                                        cmd2.SetParameterValue(0, values[0]);
+                                        cmd2.SetParameterValue(1, values[1]);
+                                        cmd2.SetParameterValue(2, values[2]);
+                                        cmd2.ExecuteNonQuery();
+                                    }
+                                }
+                        }
+                    }
+                    
+                    
+                    using(var rd = cmd.ExecuteReader(string.Format(@"SELECT COUNT(DISTINCT ""{0}"".""Path""), SUM(""Blockset"".""Length"") FROM ""{0}"", ""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
+                    {
+                        var filecount = 0L;
+                        var filesize = 0L;
                         
-                    log.AddVerboseMessage("Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
+                        var r0 = rd.GetValue(0);
+                        var r1 = rd.GetValue(1);
+                        if (r0 != null && r0 != DBNull.Value)
+                            filecount = Convert.ToInt64(r0);
+                        if (r1 != null && r1 != DBNull.Value)
+                            filesize = Convert.ToInt64(r1);
                         
-                    return new Tuple<long, long>(filecount, filesize);
-                }                
+                        if (filecount > 0)
+                        {
+                            log.AddVerboseMessage("Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
+                            return new Tuple<long, long>(filecount, filesize);
+                        }
+                    }                
+                }
             }
+            
+            return new Tuple<long, long>(0, 0);
         }
 
         public string GetLargestPrefix()
