@@ -218,17 +218,17 @@ namespace Duplicati.Library.Main.Operation
                     
 					if (m_result.Dryrun)
 					{
-						if (m_result.DownloadedFileCount == 0)
-							m_result.AddMessage(string.Format("Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
-						else
-							m_result.AddMessage(string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(downloadSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
+                        if (downloadedVolumes.Count == 0)
+                            m_result.AddDryrunMessage(string.Format("Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
+                        else
+                            m_result.AddDryrunMessage(string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
 					}
 					else
 					{
-						if (downloadedVolumes.Count == 0)
-							m_result.AddDryrunMessage(string.Format("Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
-						else
-							m_result.AddDryrunMessage(string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
+                        if (m_result.DownloadedFileCount == 0)
+                            m_result.AddMessage(string.Format("Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
+                        else
+                            m_result.AddMessage(string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", m_result.DownloadedFileCount, Library.Utility.Utility.FormatSizeString(downloadSize), m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), m_result.DeletedFileCount - m_result.UploadedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
 					}
 							
 					backend.WaitForComplete(db, transaction);
