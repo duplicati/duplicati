@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation
 		public void Run()
         {
             if (System.IO.File.Exists(m_targetpath))
-                throw new Exception(string.Format("Output file already exists, not overwriting {0}"));
+                throw new Exception(string.Format("Output file already exists, not overwriting: {0}", m_targetpath));
 				
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
