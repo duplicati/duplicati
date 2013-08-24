@@ -79,7 +79,15 @@ namespace Duplicati.CommandLine
                     var files = Math.Max(0, filecount - filesprocessed);
                     var size = Math.Max(0, filesize - filesizeprocessed);
                     
-                    if (last_count < 0 || files != last_count || finished)
+                    if (finished)
+                    {
+                        files = 0;
+                        size = 0;
+                    }
+                    else if (size > 0)
+                        files = Math.Min(1, files);
+                    
+                    if (last_count < 0 || files != last_count)
                         if (WriteOutput != null)
                             WriteOutput(progress, files, size, counting);
                     
@@ -327,7 +335,7 @@ namespace Duplicati.CommandLine
                         };
                         
                         periodicOutput.WriteOutput += (progress, files, size, counting) => {
-                            output.MessageEvent(string.Format("{0} files need to be restored ({1})", files, Library.Utility.Utility.FormatSizeString(size)));
+                            output.MessageEvent(string.Format("  {0} files need to be restored ({1})", files, Library.Utility.Utility.FormatSizeString(size)));
                         };
                     
                         var res = i.Restore(args.ToArray(), filter);
@@ -335,6 +343,8 @@ namespace Duplicati.CommandLine
                         options.TryGetValue("restore-path", out restorePath);
                     
                         output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.FilesRestored, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
+                        output.MessageEvent(string.Format("Duration of restore: {0:hh\\:mm\\:ss}", res.Duration));
+                        
                         if (res.FilesRestored > 0)
                         {
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation.");
@@ -380,7 +390,7 @@ namespace Duplicati.CommandLine
                 };
                 
                 periodicOutput.WriteOutput += (progress, files, size, counting) => {
-                    output.MessageEvent(string.Format("{0} files need to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(size), counting ? " (still counting)" : ""));
+                    output.MessageEvent(string.Format("  {0} files need to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(size), counting ? " (still counting)" : ""));
                 };
     
                 using(var i = new Library.Main.Controller(backend, options, output))
@@ -396,7 +406,7 @@ namespace Duplicati.CommandLine
             else
             {
                 var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
-                output.MessageEvent(string.Format("Duration of backup: {0}", result.Duration));
+                output.MessageEvent(string.Format("Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
                 if (parsedStats != null && parsedStats.KnownFileCount > 0)
                 {
                     output.MessageEvent(string.Format("Remote files: {0}", parsedStats.KnownFileCount));
