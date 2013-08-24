@@ -85,7 +85,7 @@ namespace Duplicati.CommandLine
                         size = 0;
                     }
                     else if (size > 0)
-                        files = Math.Min(1, files);
+                        files = Math.Max(1, files);
                     
                     if (last_count < 0 || files != last_count)
                         if (WriteOutput != null)
