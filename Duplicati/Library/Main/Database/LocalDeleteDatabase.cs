@@ -224,7 +224,7 @@ namespace Duplicati.Library.Main.Database
 			
 			public void ReportCompactData(ILogWriter log)
             {
-                var wastepercentage = ((m_wastedspace / (float)m_wastethreshold) * 100);
+                var wastepercentage = ((m_wastedspace / (float)m_fullsize) * 100);
                 if (log.VerboseOutput)
                 {
                     log.AddVerboseMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
@@ -256,7 +256,7 @@ namespace Duplicati.Library.Main.Database
 			{
 				get 
 				{
-					return ((m_wastedspace / (float)m_wastethreshold) * 100) >= m_wastethreshold || m_smallspace > m_volsize || m_smallvolumecount > m_maxsmallfilecount;
+					return (((m_wastedspace / (float)m_fullsize) * 100) >= m_wastethreshold && m_wastevolumes.Count() >= 2) || m_smallspace > m_volsize || m_smallvolumecount > m_maxsmallfilecount;
 				}
 			}
 
