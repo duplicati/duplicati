@@ -875,13 +875,13 @@ namespace Duplicati.Library.Main
 				throw m_lastException;
         }
 
-        public void Delete(string remotename, bool synchronous = false)
+        public void Delete(string remotename, long size, bool synchronous = false)
 		{
 			if (m_lastException != null)
 				throw m_lastException;
 				
-			m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, -1, null);
-			var req = new FileEntryItem(OperationType.Delete, remotename);
+			m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, size, null);
+			var req = new FileEntryItem(OperationType.Delete, remotename, size, null);
 			if (m_queue.Enqueue(req) && synchronous)
 			{
 				req.WaitForComplete();

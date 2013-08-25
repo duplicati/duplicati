@@ -73,9 +73,9 @@ namespace Duplicati.Library.Main.Operation
                 {
                     count++;
                     if (!m_options.Dryrun)
-                        backend.Delete(f);
+                        backend.Delete(f.Key, f.Value);
                     else
-                        m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f));
+                        m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f.Key));
                 }
 				
                 backend.WaitForComplete(db, transaction);

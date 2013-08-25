@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Operation
 			foreach(var f in db.GetDeletableVolumes(deleteableVolumes, transaction))
 			{
 				if (!m_options.Dryrun)
-					backend.Delete(f.Name);
+					backend.Delete(f.Name, f.Size);
 				else
 					m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
 

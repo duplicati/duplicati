@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Database
 		/// <param name="toDelete">The fileset entries to delete</param>
 		/// <param name="transaction">The transaction to execute the commands in</param>
 		/// <returns>A list of filesets to delete</returns>
-		public IEnumerable<string> DropFilesetsFromTable(DateTime[] toDelete, System.Data.IDbTransaction transaction)
+		public IEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete, System.Data.IDbTransaction transaction)
 		{
 			using(var cmd = m_connection.CreateCommand())
 			{
@@ -105,9 +105,9 @@ namespace Duplicati.Library.Main.Database
 				if (deleted != updated)
 					throw new Exception(string.Format("Unexpected number of remote volumes marked as deleted. Found {0} filesets, but {1} volumes", deleted, updated));
 	
-				using (var rd = cmd.ExecuteReader(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
+				using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
 				while (rd.Read())
-					yield return rd.GetValue(0).ToString();
+					yield return new KeyValuePair<string, long>(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
 			}
 		}
 

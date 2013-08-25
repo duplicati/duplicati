@@ -170,7 +170,7 @@ namespace Duplicati.Library.Main.Operation
                 else if (i.State == RemoteVolumeState.Deleting && lookup.ContainsKey(i.Name))
                 {
                     log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
-                    backend.Delete(i.Name, true);
+                    backend.Delete(i.Name, i.Size, true);
                     lookup.Remove(i.Name);
                 }
                 else
