@@ -297,6 +297,11 @@ namespace Duplicati.CommandLine
             
             bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
             options.Remove("control-files");
+
+            // Prefix all filenames with "*/" so we search all folders
+            for (var ix = 0; ix < args.Count; ix++)
+                if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("["))
+                    args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
             
             var output = new ConsoleOutput(options);
             output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));
