@@ -145,14 +145,17 @@ namespace Duplicati.Library.Main.Database
                     {
                         var filecount = 0L;
                         var filesize = 0L;
-                        
-                        var r0 = rd.GetValue(0);
-                        var r1 = rd.GetValue(1);
-                        if (r0 != null && r0 != DBNull.Value)
-                            filecount = Convert.ToInt64(r0);
-                        if (r1 != null && r1 != DBNull.Value)
-                            filesize = Convert.ToInt64(r1);
-                        
+
+                        if (rd.Read())
+                        {
+                            var r0 = rd.GetValue(0);
+                            var r1 = rd.GetValue(1);
+                            if (r0 != null && r0 != DBNull.Value)
+                                filecount = Convert.ToInt64(r0);
+                            if (r1 != null && r1 != DBNull.Value)
+                                filesize = Convert.ToInt64(r1);
+                        }
+
                         if (filecount > 0)
                         {
                             log.AddVerboseMessage("Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
