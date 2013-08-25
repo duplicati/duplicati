@@ -1019,8 +1019,8 @@ namespace Duplicati.Library.Utility
         public static byte[] RepeatedHashWithSalt(string data, string salt, int repeats = 1200)
         {
             return RepeatedHashWithSalt(
-                System.Text.Encoding.UTF8.GetBytes(data),
-                System.Text.Encoding.UTF8.GetBytes(salt),
+                System.Text.Encoding.UTF8.GetBytes(data ?? ""),
+                System.Text.Encoding.UTF8.GetBytes(salt ?? ""),
                 repeats);
         }
     
