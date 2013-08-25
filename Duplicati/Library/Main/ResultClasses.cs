@@ -186,8 +186,43 @@ namespace Duplicati.Library.Main
         protected readonly object m_lock = new object();
         protected Queue<DbMessage> m_dbqueue;
         
-        public bool VerboseOutput { get; set; }
-        public bool VerboseErrors { get; set; }
+        private bool m_verboseOutput;
+        private bool m_verboseErrors;
+        
+        public bool VerboseOutput
+        { 
+            get
+            { 
+                if (m_parent != null)
+                    return m_parent.VerboseOutput;
+                else
+                    return m_verboseOutput;
+            } 
+            set
+            {
+                if (m_parent != null)
+                    m_parent.VerboseOutput = value;
+                else
+                    m_verboseOutput = value;
+            }
+        }
+        public bool VerboseErrors
+        { 
+            get
+            { 
+                if (m_parent != null)
+                    return m_parent.VerboseErrors;
+                else
+                    return m_verboseErrors;
+            } 
+            set
+            {
+                if (m_parent != null)
+                    m_parent.VerboseErrors = value;
+                else
+                    m_verboseErrors = value;
+            }
+        }
         
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
