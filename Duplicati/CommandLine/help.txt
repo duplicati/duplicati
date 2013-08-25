@@ -178,12 +178,12 @@ Usage: repair <storage-URL> [<options>]
 
 Usage: test <storage-URL> [<samples>] [<options>]
   
-  Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
+  Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. <samples> specifies the number of samples to be tested. If "all” is specified, all files in the backup will be tested. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
   
   --time=<time>
-  Checks samples from a specific time
+    Checks samples from a specific time.
   --version=<int>
-  Checks samples from specific versions. Delimiters are , -
+    Checks samples from specific versions. Delimiters are , -
   
   
   
