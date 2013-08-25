@@ -198,16 +198,6 @@ namespace Duplicati.Library.Main.Operation
                                         throw;
                                 }
                             }
-                            
-                            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
-                            {
-                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupTest);
-                                m_result.TestResults = new TestResults(m_result);
-                                
-                                using(var testdb = new LocalTestDatabase(m_database))
-                                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
-                                        .DoRun(m_options.BackupTestSampleCount, testdb, m_backend);
-                            }
                         }
 
                         m_transaction = m_database.BeginTransaction();
@@ -434,7 +424,7 @@ namespace Duplicati.Library.Main.Operation
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
                             FilelistProcessor.UploadVerificationFile(m_backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
                         }
-                        
+
                         if (m_options.Dryrun)
                         {
                             m_transaction.Rollback();
@@ -448,13 +438,27 @@ namespace Duplicati.Library.Main.Operation
                             m_transaction = null;
                             m_database.Vacuum();
                             
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
-                            using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
+                            if (!m_options.NoBackendverification)
                             {
-                                using(new Logging.Timer("AfterBackupVerify"))
-                                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
-                                backend.WaitForComplete(m_database, null);
+                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
+                                using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
+                                {
+                                    using(new Logging.Timer("AfterBackupVerify"))
+                                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                                    backend.WaitForComplete(m_database, null);
+                                }
+
+                                if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+                                {
+                                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
+                                    m_result.TestResults = new TestResults(m_result);
+
+                                    using (var testdb = new LocalTestDatabase(m_database))
+                                        new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                                            .DoRun(m_options.BackupTestSampleCount, testdb, m_backend);
+                                }
                             }
+
                         }
                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);                        
