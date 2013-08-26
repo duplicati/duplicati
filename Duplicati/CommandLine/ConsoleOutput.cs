@@ -78,7 +78,7 @@ namespace Duplicati.CommandLine
                     else if (action == BackendActionType.CreateFolder)
                         Console.WriteLine("  Creating remote folder ...");
                     else if (action == BackendActionType.Delete)
-                        Console.WriteLine("  Deleting file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                        Console.WriteLine("  Deleting file {0}{1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
                 }
         }
                         

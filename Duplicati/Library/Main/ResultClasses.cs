@@ -570,10 +570,10 @@ namespace Duplicati.Library.Main
 
     internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
     {
-        public IEnumerable<DateTime> DeletedSets { get; private set; }
+        public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
         public bool Dryrun { get; private set; }
         
-        public void SetResults(IEnumerable<DateTime> deletedSets, bool dryrun)
+        public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
         {
             DeletedSets = deletedSets;
             Dryrun = dryrun;

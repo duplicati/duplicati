@@ -78,7 +78,7 @@ namespace Duplicati.Library.Interface
         
     public interface IDeleteResults : IBasicResults
     {
-        IEnumerable<DateTime> DeletedSets { get; }
+        IEnumerable<Tuple<long, DateTime>> DeletedSets { get; }
         ICompactResults CompactResults { get; }
         bool Dryrun { get; }
     }

@@ -66,8 +66,12 @@ namespace Duplicati.Library.Main.Operation
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
 				
+                var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value));
                 var toDelete = m_options.GetFilesetsToDelete(db.FilesetTimes.Select(x => x.Value).ToArray());
-                                    
+                
+                if (toDelete != null && toDelete.Length > 0)
+                    m_result.AddMessage(string.Format("Deleting {0} remote fileset(s) ...", toDelete.Length));
+                
                 var count = 0L;
                 foreach(var f in db.DropFilesetsFromTable(toDelete, transaction))
                 {
@@ -104,8 +108,12 @@ namespace Duplicati.Library.Main.Operation
                     m_result.CompactResults = new CompactResults(m_result);
                     new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, transaction);
                 }
-					
-                m_result.SetResults(toDelete, m_options.Dryrun);
+				
+                m_result.SetResults(
+                    from n in filesetNumbers
+                    where toDelete.Contains(n.Item2)
+                    select n, 
+                    m_options.Dryrun);
 			}
         }
 	}

@@ -268,7 +268,7 @@ namespace Duplicati.CommandLine
 						Console.WriteLine(Strings.Program.DeletedBackups);
 						
 					foreach(var f in res.DeletedSets)
-						Console.WriteLine(f);
+						Console.WriteLine(string.Format("{0}: {1}", f.Item1, f.Item2));
 				}
             }
             
