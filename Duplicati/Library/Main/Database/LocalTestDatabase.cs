@@ -356,7 +356,9 @@ namespace Duplicati.Library.Main.Database
             public IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var create = @"CREATE TEMPORARY TABLE ""{1}"" AS SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = ? AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID"" ";
+                var curBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = ? AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""";
+                var delBlocks = @"SELECT ""DeletedBlock"".""Hash"", ""DeletedBlock"".""Size"" FROM ""DeletedBlock"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ? AND ""RemoteVolume"".""ID"" = ""DeletedBlock"".""VolumeID""";
+                var create = @"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Hash"", ""Size"" FROM ({1} UNION {2})";
                 var extra = @"SELECT ? AS ""Type"", ""{0}"".""Hash"" AS ""Hash"" FROM ""{0}"" WHERE ""{0}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{1}"" )";
                 var missing = @"SELECT ? AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{1}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{0}"")";
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND (""D"".""Size"" != ""E"".""Size"")  ";
@@ -368,7 +370,7 @@ namespace Duplicati.Library.Main.Database
                     
                     try
                     {
-                        cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
+                        cmd.ExecuteNonQuery(string.Format(create, cmpName, curBlocks, delBlocks), m_volumename, m_volumename);
                         using(var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while(rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)Convert.ToInt64(rd.GetValue(0)), rd.GetValue(1).ToString() );
