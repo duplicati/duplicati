@@ -384,12 +384,19 @@ namespace Duplicati.CommandLine
                 
                 output.PhaseChanged += (phase, previousPhase) => 
                 {
+                    if (previousPhase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
+                        output.MessageEvent("Remote backup verification completed");
+                
                     if (phase == Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles)
                         periodicOutput.SetReady();
                     else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Finalize)
                         periodicOutput.SetFinished();
+                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify)
+                        output.MessageEvent("Checking remote backup ...");
                     else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify)
                         output.MessageEvent("Checking remote backup ...");
+                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
+                        output.MessageEvent("Verifying remote backup ...");
                     else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Compact)
                         output.MessageEvent("Compacting remote backup ...");
                 };
@@ -553,10 +560,9 @@ namespace Duplicati.CommandLine
                 else            
                     result = i.ListChanges(args.Count > 1 ? args[1] : null, args.Count > 2 ? args[2] : null, null, filter);
             
-            Console.WriteLine("Listing changes from");
-            Console.WriteLine("{0}: {1}", result.BaseVersionIndex, result.BaseVersionTimestamp);
-            Console.WriteLine(" to");
-            Console.WriteLine("{0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
+            Console.WriteLine("Listing changes");
+            Console.WriteLine("  {0}: {1}", result.BaseVersionIndex, result.BaseVersionTimestamp);
+            Console.WriteLine("  {0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
             Console.WriteLine();
             
             if (result.ChangeDetails != null)
@@ -619,10 +625,10 @@ namespace Duplicati.CommandLine
                 Console.WriteLine();
             }
             
-            Console.WriteLine("Previous size: {0}", Library.Utility.Utility.FormatSizeString(result.PreviousSize));
-            Console.WriteLine(" Size of added files   {0}", Library.Utility.Utility.FormatSizeString(result.AddedSize));
-            Console.WriteLine(" Size of removed files {0}", Library.Utility.Utility.FormatSizeString(result.DeletedSize));
-            Console.WriteLine("Current size: {0}", Library.Utility.Utility.FormatSizeString(result.CurrentSize));
+            Console.WriteLine("Size of backup {0}: {1}", result.BaseVersionIndex, Library.Utility.Utility.FormatSizeString(result.PreviousSize));
+            Console.WriteLine(" Files added  : {0} ({1})", result.AddedFiles, Library.Utility.Utility.FormatSizeString(result.AddedSize));
+            Console.WriteLine(" Files removed: {0} ({1})", result.DeletedFiles, Library.Utility.Utility.FormatSizeString(result.DeletedSize));
+            Console.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));
             
             return 0;
         }
