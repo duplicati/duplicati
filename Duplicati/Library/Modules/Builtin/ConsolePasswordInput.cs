@@ -29,7 +29,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// These actions only use the local database and do not require access to the data inside the files.
         /// For List and ListChanges this may not be true if there is no local database
         /// </summary>
-        private readonly static string[] PASSPHRASELESS_ACTIONS = { "Delete", "CreateLogDb", "List", "ListChanges" };
+        private readonly static string[] PASSPHRASELESS_ACTIONS = { "CreateLogDb" };
 
         #region IGenericModule Members
 
