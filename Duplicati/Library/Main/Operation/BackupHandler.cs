@@ -454,8 +454,9 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.TestResults = new TestResults(m_result);
 
                                     using (var testdb = new LocalTestDatabase(m_database))
+                                    using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
                                         new TestHandler(m_backendurl, m_options, new TestResults(m_result))
-                                            .DoRun(m_options.BackupTestSampleCount, testdb, m_backend);
+                                            .DoRun(m_options.BackupTestSampleCount, testdb, backend);
                                 }
                             }
 
