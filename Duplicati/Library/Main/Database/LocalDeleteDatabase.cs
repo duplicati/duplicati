@@ -385,28 +385,29 @@ namespace Duplicati.Library.Main.Database
 				var lookupIndexfiles = new Dictionary<string, List<string>>();
 				
 				cmd.Transaction = transaction;
-					using(var rd = cmd.ExecuteReader(@"SELECT ""C"".""Name"", ""B"".""Name"", ""B"".""Hash"", ""B"".""Size"" FROM ""IndexBlockLink"" A, ""RemoteVolume"" B, ""RemoteVolume"" C WHERE ""A"".""IndexVolumeID"" = ""B"".""ID"" AND ""A"".""BlockVolumeID"" = ""C"".""ID"" "))
-						while(rd.Read())
-						{
-							var name = rd.GetValue(0).ToString();
-							List<IRemoteVolume> indexfileList;
-							if (!lookupBlock.TryGetValue(name, out indexfileList))
-							{	
-								indexfileList = new List<IRemoteVolume>();
-								lookupBlock.Add(name, indexfileList);
-							}
-							
-							var v = new RemoteVolume(rd.GetValue(1).ToString(), rd.GetValue(2).ToString(), Convert.ToInt64(rd.GetValue(3)));
-							indexfileList.Add(v);
-
-							List<string> blockList;
-							if (!lookupIndexfiles.TryGetValue(v.Name, out blockList))
-							{	
-								blockList = new List<string>();
-								lookupIndexfiles.Add(v.Name, blockList);
-							}
-							blockList.Add(name);
+                
+				using(var rd = cmd.ExecuteReader(@"SELECT ""C"".""Name"", ""B"".""Name"", ""B"".""Hash"", ""B"".""Size"" FROM ""IndexBlockLink"" A, ""RemoteVolume"" B, ""RemoteVolume"" C WHERE ""A"".""IndexVolumeID"" = ""B"".""ID"" AND ""A"".""BlockVolumeID"" = ""C"".""ID"" AND ""B"".""Hash"" IS NOT NULL AND ""B"".""Size"" IS NOT NULL "))
+					while(rd.Read())
+					{
+						var name = rd.GetValue(0).ToString();
+						List<IRemoteVolume> indexfileList;
+						if (!lookupBlock.TryGetValue(name, out indexfileList))
+						{	
+							indexfileList = new List<IRemoteVolume>();
+							lookupBlock.Add(name, indexfileList);
 						}
+						
+						var v = new RemoteVolume(rd.GetValue(1).ToString(), rd.GetValue(2).ToString(), Convert.ToInt64(rd.GetValue(3)));
+						indexfileList.Add(v);
+
+						List<string> blockList;
+						if (!lookupIndexfiles.TryGetValue(v.Name, out blockList))
+						{	
+							blockList = new List<string>();
+							lookupIndexfiles.Add(v.Name, blockList);
+						}
+						blockList.Add(name);
+					}
 
 				foreach(var r in deleteableVolumes.Distinct())
 				{

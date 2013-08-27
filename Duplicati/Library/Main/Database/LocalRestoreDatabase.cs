@@ -469,18 +469,21 @@ namespace Duplicati.Library.Main.Database
                     
                 m_hasUpdates = false;
                 using(var rd = m_statUpdateCommand.ExecuteReader())
-                {
-                    var r0 = rd.GetValue(0);
-                    var r1 = rd.GetValue(1);
-                    
+                {                    
                     var filesprocessed = 0L;
                     var processedsize = 0L;
                     
-                    if (r0 != null && r0 != DBNull.Value)
-                        filesprocessed = Convert.ToInt64(r0);
+                    if (rd.Read())
+                    {
+                        var r0 = rd.GetValue(0);
+                        var r1 = rd.GetValue(1);
                     
-                    if (r1 != null && r1 != DBNull.Value)
-                        processedsize = Convert.ToInt64(r1);
+                        if (r0 != null && r0 != DBNull.Value)
+                            filesprocessed = Convert.ToInt64(r0);
+                    
+                        if (r1 != null && r1 != DBNull.Value)
+                            processedsize = Convert.ToInt64(r1);
+                    }
 
                     updater.UpdatefilesProcessed(filesprocessed, processedsize);
                 }

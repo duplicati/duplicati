@@ -84,7 +84,8 @@ namespace Duplicati.Library.Main.Operation
 					if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
 					{
 						newvolindex = new IndexVolumeWriter(m_options);
-						db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+						newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
 						newvolindex.StartVolume(newvol.RemoteFilename);
 					}
 					
@@ -159,7 +160,8 @@ namespace Duplicati.Library.Main.Operation
 												if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
 												{
 													newvolindex = new IndexVolumeWriter(m_options);
-													db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+													newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+                                                    db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
 													newvolindex.StartVolume(newvol.RemoteFilename);
 												}
 												
