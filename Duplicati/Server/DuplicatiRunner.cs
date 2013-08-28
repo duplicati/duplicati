@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using Duplicati.Library.Main;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -40,6 +43,45 @@ namespace Duplicati.Server
             public int Progress { get; set; }
             public int SubProgress { get; set; }
             public long LastEventID { get; set; }
+        }
+        
+        private class MessageSink : IMessageSink
+        {
+            #region IMessageSink implementation
+            public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+            {
+            }
+            public void VerboseEvent(string message, object[] args)
+            {
+            }
+            public void MessageEvent(string message)
+            {
+            }
+            public void RetryEvent(string message, Exception ex)
+            {
+            }
+            public void WarningEvent(string message, Exception ex)
+            {
+            }
+            public void ErrorEvent(string message, Exception ex)
+            {
+            }
+            public void DryrunEvent(string message)
+            {
+            }
+            public IBackendProgress BackendProgress
+            {
+                set
+                {
+                }
+            }
+            public IOperationProgress OperationProgress
+            {
+                set
+                {
+                }
+            }
+            #endregion
         }
 
         public delegate void ResultEventDelegate(RunnerResult result, string parsedMessage, string message);
@@ -89,7 +131,7 @@ namespace Duplicati.Server
                 string destination = task.GetConfiguration(options);
 
                 //TODO: Its a bit dirty to set the options after creating the instance
-                using (Duplicati.Library.Main.Controller i = new Duplicati.Library.Main.Controller(destination, options))
+                using (Duplicati.Library.Main.Controller i = new Duplicati.Library.Main.Controller(destination, options, new MessageSink()))
                 {
                     lock (m_lock)
                     {
