@@ -355,7 +355,7 @@ namespace Duplicati.CommandLine
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation.");
                             output.MessageEvent("");
                             output.MessageEvent("Paypal: http://goo.gl/P4XJ6S");
-                            output.MessageEvent("Bitcoin: 1ADgoUoE9uN725Ypeh9M9WTKFLJzfWWMBh");
+                            output.MessageEvent("Bitcoin: 1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf");
                         }
                     
                         if (output.VerboseOutput)
@@ -408,8 +408,6 @@ namespace Duplicati.CommandLine
                 using(var i = new Library.Main.Controller(backend, options, output))
                     result = i.Backup(dirs, filter);
             }
-
-            output.MessageEvent("Backup completed successfully!");
             
             if (output.VerboseOutput)
             {
@@ -418,21 +416,23 @@ namespace Duplicati.CommandLine
             else
             {
                 var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
-                output.MessageEvent(string.Format("Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
+                output.MessageEvent(string.Format("  Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
                 if (parsedStats != null && parsedStats.KnownFileCount > 0)
                 {
-                    output.MessageEvent(string.Format("Remote files: {0}", parsedStats.KnownFileCount));
-                    output.MessageEvent(string.Format("Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                    output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
+                    output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
                 }
                 
-                output.MessageEvent(string.Format("Files added: {0}", result.AddedFiles));
-                output.MessageEvent(string.Format("Files deleted: {0}", result.DeletedFiles));
-                output.MessageEvent(string.Format("Files changed: {0}", result.ModifiedFiles));
+                output.MessageEvent(string.Format("  Files added: {0}", result.AddedFiles));
+                output.MessageEvent(string.Format("  Files deleted: {0}", result.DeletedFiles));
+                output.MessageEvent(string.Format("  Files changed: {0}", result.ModifiedFiles));
                 
-                output.MessageEvent(string.Format("Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
-                output.MessageEvent(string.Format("Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
+                output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
+                output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
             }
 
+            output.MessageEvent("Backup completed successfully!");
+            
             //Interrupted = 50
             if (result.PartialBackup)
                 return 50;
@@ -565,8 +565,12 @@ namespace Duplicati.CommandLine
             Console.WriteLine("  {0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
             Console.WriteLine();
             
+            Console.WriteLine("Size of backup {0}: {1}", result.BaseVersionIndex, Library.Utility.Utility.FormatSizeString(result.PreviousSize));
+            
             if (result.ChangeDetails != null)
             {
+                Console.WriteLine();
+                
                 var added = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Added);
                 var deleted = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Deleted);
                 var modified = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Modified);
@@ -574,17 +578,17 @@ namespace Duplicati.CommandLine
                 var count = added.Count();
                 if (count > 0)
                 {
-                    Console.WriteLine("{0} added entries:", count);
+                    Console.WriteLine("  {0} added entries:", count);
                     foreach(var n in added)
-                        Console.WriteLine(" + {0}", n.Item3);
+                        Console.WriteLine("  + {0}", n.Item3);
                     Console.WriteLine();
                 }
                 count = modified.Count();
                 if (count > 0)
                 {
-                    Console.WriteLine("{0} modified entries:", count);
+                    Console.WriteLine("  {0} modified entries:", count);
                     foreach(var n in modified)
-                        Console.WriteLine(" ~ {0}", n.Item3);
+                        Console.WriteLine("  ~ {0}", n.Item3);
                     Console.WriteLine();
                 }
                 count = deleted.Count();
@@ -592,42 +596,39 @@ namespace Duplicati.CommandLine
                 {
                     Console.WriteLine("{0} deleted entries:", count);
                     foreach(var n in deleted)
-                        Console.WriteLine(" - {0}", n.Item3);
+                        Console.WriteLine("  - {0}", n.Item3);
                     Console.WriteLine();
                 }
+                
+                Console.WriteLine();
             }
             else
             {
                 if (result.AddedFolders > 0)
-                    Console.WriteLine("{0} added folders", result.AddedFolders);
+                    Console.WriteLine("  Added folders:     {0}", result.AddedFolders);
                 if (result.AddedSymlinks > 0)
-                    Console.WriteLine("{0} added symlinks", result.AddedSymlinks);
+                    Console.WriteLine("  Added symlinks:    {0}", result.AddedSymlinks);
                 if (result.AddedFiles > 0)
-                    Console.WriteLine("{0} added files", result.AddedFiles);
+                    Console.WriteLine("  Added files:       {0}", result.AddedFiles);
                 if (result.DeletedFolders > 0)
-                    Console.WriteLine("{0} deleted folders", result.DeletedFolders);
+                    Console.WriteLine("  Deleted folders:   {0}", result.DeletedFolders);
                 if (result.DeletedSymlinks > 0)
-                    Console.WriteLine("{0} deleted symlinks", result.DeletedSymlinks);
+                    Console.WriteLine("  Deleted symlinks:  {0}", result.DeletedSymlinks);
                 if (result.DeletedFiles > 0)
-                    Console.WriteLine("{0} deleted files", result.DeletedFiles);
+                    Console.WriteLine("  Deleted files:     {0}", result.DeletedFiles);
                 if (result.ModifiedFolders > 0)
-                    Console.WriteLine("{0} modified folders", result.ModifiedFolders);
+                    Console.WriteLine("  Modified folders:  {0}", result.ModifiedFolders);
                 if (result.ModifiedSymlinks > 0)
-                    Console.WriteLine("{0} modified symlinks", result.ModifiedSymlinks);
+                    Console.WriteLine("  Modified symlinka: {0}", result.ModifiedSymlinks);
                 if (result.ModifiedFiles > 0)
-                    Console.WriteLine("{0} modified files", result.ModifiedFiles);
+                    Console.WriteLine("  Modified files:    {0}", result.ModifiedFiles);
 
                 if (result.AddedFolders + result.AddedSymlinks + result.AddedFolders +
                     result.ModifiedFolders + result.ModifiedSymlinks + result.ModifiedFiles +
                     result.DeletedFolders + result.DeletedSymlinks + result.DeletedFiles == 0)
-                        Console.WriteLine("No changes found");
-
-                Console.WriteLine();
+                        Console.WriteLine("  No changes found");
             }
             
-            Console.WriteLine("Size of backup {0}: {1}", result.BaseVersionIndex, Library.Utility.Utility.FormatSizeString(result.PreviousSize));
-            Console.WriteLine(" Files added  : {0} ({1})", result.AddedFiles, Library.Utility.Utility.FormatSizeString(result.AddedSize));
-            Console.WriteLine(" Files removed: {0} ({1})", result.DeletedFiles, Library.Utility.Utility.FormatSizeString(result.DeletedSize));
             Console.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));
             
             return 0;

@@ -170,6 +170,7 @@ namespace Duplicati.CommandLine
 
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["help"] = Commands.Help;                
+                knownCommands["find"] = Commands.List;
                 knownCommands["list"] = Commands.List;
                 knownCommands["delete"] = Commands.Delete;
                 knownCommands["backup"] = Commands.Backup;
@@ -179,7 +180,7 @@ namespace Duplicati.CommandLine
 
                 knownCommands["compact"] = Commands.Compact;
                 knownCommands["create-report"] = Commands.CreateBugReport;
-                knownCommands["list-changes"] = Commands.ListChanges;
+                knownCommands["compare"] = Commands.ListChanges;
                 knownCommands["test"] = Commands.Test;
                 knownCommands["verify"] = Commands.Test;
 
