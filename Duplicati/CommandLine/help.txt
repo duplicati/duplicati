@@ -11,8 +11,8 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   Examples: example
-  Commands: backup, list, restore, delete, compact, test, list-changes, repair, create-report
-  Debugging: debug, logging
+  Commands: backup, find, restore, delete, compact, test, compare, repair
+  Debugging: debug, logging, create-report
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
@@ -32,11 +32,11 @@ Make an encrypted backup
   
   %MONO%"%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
   
-Search files in a backup
-========================
+Search for files in a backup
+============================
   The backup can be searched for specific files. The following command returns all files "%EXAMPLE_SOURCE_FILE%" of the last backup. File names can also contain the wildcards * and ?. 
   
-  %MONO%"%APP_PATH%" list ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%"
+  %MONO%"%APP_PATH%" find ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%"
 
 Restore a specific file
 =======================
@@ -68,16 +68,16 @@ Usage: backup <storage-URL> "<source-path>" [<options>]
 
 
 # =============================================================================
-> duplicati.commandline.exe help list
+> duplicati.commandline.exe help find
 
-Usage: list <storage-URL> ["<filename>"] [<options>]
+Usage: find <storage-URL> ["<filename>"] [<options>]
 
-  Lists all available backups and their numbers. Can also be used to search for specific files in specific backups. If <filename> is specified, all occurrences of <filename> in the backup are listed. <filename> can contain * and ? as wildcards. File names in [brackets] are interpreted as regular expression. Latest backup is searched by default. If entire path is specified, all available versions of the file are listed. 
+  Finds specific files in specific backups. If <filename> is specified, all occurrences of <filename> in the backup are listed. <filename> can contain * and ? as wildcards. File names in [brackets] are interpreted as regular expression. Latest backup is searched by default. If entire path is specified, all available versions of the file are listed. If no <filename> is specified, a list of all available backups is shown.
 
   --time=<time>
     Shows what the files looked like at a specific time. Absolute and relative times can be specified.
   --version=<int>
-    Shows what the files looked like in a specific backup.
+    Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will besearched automatically.
   --include=<string>
     Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed. 
   --exclude=<string>
@@ -137,11 +137,11 @@ Usage: compact <storage-URL> [<options>]
 
   
 # =============================================================================
-> duplicati.commandline.exe help list-changes
+> duplicati.commandline.exe help compare
 
-Usage: list-changes <storage-URL> [<base-version>] [<compare-to>] [<options>]
+Usage: compare <storage-URL> [<base-version>] [<compare-to>] [<options>]
 
-  Shows changes between two versions. If no versions are given, changes are shown between the two latest backups. The versions can either be timestamps or backup version numbers. If only one version is given, the most recent backup is compared to that version.
+  Compares two backups and shows differences. If no versions are given, changes are shown between the two latest backups. The versions can either be timestamps or backup version numbers. If only one version is given, the most recent backup is compared to that version.
 
   --verbose
     Shows names of files
@@ -157,7 +157,7 @@ Usage: list-changes <storage-URL> [<base-version>] [<compare-to>] [<options>]
 
 Usage: create-report <storage-URL> <output-file> [<options>]
 
-  Analyses the backup and prepares a report with anonymous information what went wrong. This report can be sent to the developers for a better analysis in case something went wrong.
+  Analyses the backup and prepares a report with anonymous information. This report can be sent to the developers for a better analysis in case something went wrong.
 
 
 
