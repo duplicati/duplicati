@@ -845,7 +845,7 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = transaction;
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"")"))
+                using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""Timestamp"" FROM (SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"") AND ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"") UNION SELECT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Uploaded"" OR ""RemoteVolume"".""State"" = ""Temporary""))"))
                     while(rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(
