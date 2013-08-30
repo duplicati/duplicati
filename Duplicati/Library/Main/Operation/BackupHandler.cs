@@ -189,6 +189,8 @@ namespace Duplicati.Library.Main.Operation
                     using(m_backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(m_filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
+                        var incompleteFilesets = m_database.GetIncompleteFilesets(m_transaction).ToArray();
+                        
                         if (!m_options.NoBackendverification)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
@@ -215,9 +217,9 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
+                        m_database.BuildLookupTable(m_options);
                         m_transaction = m_database.BeginTransaction();
                         
-                        var incompleteFilesets = m_database.GetIncompleteFilesets(m_transaction).ToArray();
                         if (incompleteFilesets.Length != 0)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
@@ -227,12 +229,14 @@ namespace Duplicati.Library.Main.Operation
                                 FilesetVolumeWriter fsw = null;
                                 try
                                 {
-                                    fsw = new FilesetVolumeWriter(m_options, fs.Value);
+                                    var fileTime = fs.Value + TimeSpan.FromSeconds(1);
+                                    fsw = new FilesetVolumeWriter(m_options, fileTime);
                                     fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                                    m_database.LinkFilesetToVolume(fs.Key, fsw.VolumeID, m_transaction);
-                                    m_database.AppendFilesFromPreviousSet(m_transaction, null, fs.Key, fs.Value);
+                                    var filesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, m_transaction);
+                                    m_database.LinkFilesetToVolume(filesetID, fsw.VolumeID, m_transaction);
+                                    m_database.AppendFilesFromPreviousSet(m_transaction, null, filesetID, fileTime);
                                     
-                                    m_database.WriteFileset(fsw, m_transaction, fs.Key);
+                                    m_database.WriteFileset(fsw, m_transaction, filesetID);
                                     
                                     if (m_options.Dryrun)
                                     {

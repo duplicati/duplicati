@@ -151,8 +151,15 @@ namespace Duplicati.Library.Main.Database
 
             m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
             m_updateblockCommand.AddParameters(3);
-                        
-			if (options.BlockHashLookupMemory > 0)
+        }
+        
+        /// <summary>
+        /// Builds the lookup tables. Call this method after deleting items, and before processing items
+        /// </summary>
+        /// <param name="options">The option settings</param>
+        public void BuildLookupTable(Options options)
+        {
+            if (options.BlockHashLookupMemory > 0)
                 m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);            
             if (options.FileHashLookupMemory > 0)
                 m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FileHashLookupMemory);
@@ -220,7 +227,6 @@ namespace Duplicati.Library.Main.Database
                                                         
                 m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
             }
-
         }
 
         /// <summary>
@@ -400,6 +406,7 @@ namespace Duplicati.Library.Main.Database
                     var c = m_insertblocksetentryCommand.ExecuteNonQuery();
                     if (c != 1)
                         throw new Exception(string.Format("Unexpected result count: {0}, expected {1}", c, 1));
+
                     ix++;
                     remainsize -= blocksize;
                 }
