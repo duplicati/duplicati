@@ -100,9 +100,7 @@ namespace Duplicati.CommandLine
                         sorted.Add(arg.Name, arg);
 
                     foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
-
-                        sorted.Add(arg.Name, arg);
-
+                        sorted[arg.Name] = arg;
 
                     foreach (Library.Interface.ICommandLineArgument arg in sorted.Values)
                         lines.Add(PrintArgSimple(arg, arg.Name));
