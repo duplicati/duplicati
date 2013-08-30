@@ -257,25 +257,54 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
         {
-            if (System.IO.Directory.Exists(rootpath))
+            Stack<string> lst = new Stack<string>();
+        
+            var isFolder = false;
+            try
             {
-                Queue<string> lst = new Queue<string>();
-                lst.Enqueue(rootpath);
+                if (attributeReader == null)
+                    isFolder = true;
+                else
+                    isFolder = (attributeReader(rootpath) & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
+            }
+            catch
+            {
+            }
+        
+            if (isFolder)
+            {
+                rootpath = AppendDirSeparator(rootpath);
+                try
+                {
+                    
+                    System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(rootpath);
+                    if (callback(rootpath, rootpath, attr))
+                        lst.Push(rootpath);
+                }
+                catch (System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    callback(rootpath, rootpath, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                }
 
                 while (lst.Count > 0)
                 {
-                    string f = AppendDirSeparator(lst.Dequeue());
-                    string fv = null;
+                    string f = AppendDirSeparator(lst.Pop());
+            
+                    yield return f;
+                                
                     try
                     {
-                        System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(f);
-                        if (!callback(rootpath, f, attr))
-                            continue;
-
-                        fv = f;
-				
                         foreach(string s in folderList(f))
-                            lst.Enqueue(s);
+                        {
+                            var sf = AppendDirSeparator(s);
+                            System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(sf);
+                            if (callback(rootpath, sf, attr))
+                                lst.Push(sf);
+                        }
                     }
                     catch (System.Threading.ThreadAbortException)
                     {
@@ -285,10 +314,7 @@ namespace Duplicati.Library.Utility
                     {
                         callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
                     }
-			
-                    if (fv != null)
-                        yield return fv;
-			
+
                     string[] files = null;
                     if (fileList != null)
                         try
@@ -303,7 +329,7 @@ namespace Duplicati.Library.Utility
                         {
                             callback(rootpath, f, ATTRIBUTE_ERROR);
                         }
-				
+		
                     if (files != null)
                         foreach(var s in files)
                         {
@@ -326,7 +352,7 @@ namespace Duplicati.Library.Utility
                         }
                 }
             }
-            else if (System.IO.File.Exists(rootpath))
+            else
             {
                 try
                 {
@@ -343,6 +369,7 @@ namespace Duplicati.Library.Utility
                     callback(rootpath, rootpath, ATTRIBUTE_ERROR);
                     yield break;
                 }
+                
                 yield return rootpath;
             }
         }
