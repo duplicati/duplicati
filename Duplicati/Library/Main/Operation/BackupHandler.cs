@@ -39,6 +39,11 @@ namespace Duplicati.Library.Main.Operation
         // is on another thread
         private readonly TimeSpan FLUSH_TIMESPAN = TimeSpan.FromSeconds(10);
         private DateTime m_backendLogFlushTimer;
+        
+        // Speed up things by caching these
+        private readonly FileAttributes m_attributeFilter;
+        private readonly Options.SymlinkStrategy m_symlinkPolicy;
+        private readonly int m_blocksize;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -49,6 +54,10 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backendurl;
 
             m_blockbuffer = new byte[m_options.Blocksize];
+            m_attributeFilter = m_options.FileAttributeFilter;
+            m_symlinkPolicy = m_options.SymlinkPolicy;
+            m_blocksize = m_options.Blocksize;
+
             m_blocklistbuffer = new byte[m_options.Blocksize];
 
             m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
@@ -90,7 +99,7 @@ namespace Duplicati.Library.Main.Operation
 
         private bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
         {
-            if ((m_options.FileAttributeFilter & attributes) != 0)
+            if ((m_attributeFilter & attributes) != 0)
             {
                 m_result.AddVerboseMessage("Excluding path due to attribute filter {0}", path);
                 return false;
@@ -99,6 +108,12 @@ namespace Duplicati.Library.Main.Operation
             if (!Library.Utility.FilterExpression.Matches(m_filter, path))
             {
                 m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
+                return false;
+            }
+            
+            if (m_symlinkPolicy != Options.SymlinkStrategy.Follow && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+            {
+                m_result.AddVerboseMessage("Excluding symlink {0}", path);
                 return false;
             }
                             
@@ -121,7 +136,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 if (followSymlinks && ((fa & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
                     continue;
-                else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)                
+                else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)
                     continue;
                     
                 count++;
