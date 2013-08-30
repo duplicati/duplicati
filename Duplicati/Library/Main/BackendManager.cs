@@ -515,10 +515,11 @@ namespace Duplicati.Library.Main
                 {
                     var hashsize = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
                     wr = new IndexVolumeWriter(m_options);
-                    using(var rd = new IndexVolumeReader(p.CompressionModule, item.LocalFilename, m_options, hashsize))
+                    using(var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
                     item.Indexfile.Item1.Dispose();
                     item.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(wr, item.Indexfile.Item2);
+                    item.Indexfile.Item2.LocalTempfile.Dispose();
                     item.Indexfile.Item2.LocalTempfile = wr.TempFile;
                     wr.Close();
                 }
