@@ -47,7 +47,7 @@ namespace Duplicati.Library.Snapshots
                 return UnixSupport.File.GetSymlinkTarget(file.Substring(0, file.Length - 1));
             else
                 return UnixSupport.File.GetSymlinkTarget(file);
-        }
+        }        
     }
 }
 
