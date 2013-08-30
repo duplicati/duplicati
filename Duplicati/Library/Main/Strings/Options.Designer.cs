@@ -622,6 +622,12 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
+        internal static string FilereadbuffersizeShort {
+            get {
+                return ResourceManager.GetString("FilereadbuffersizeShort", resourceCulture);
+            }
+        }
+        
         internal static string NoencryptionShort {
             get {
                 return ResourceManager.GetString("NoencryptionShort", resourceCulture);
@@ -709,6 +715,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string AllowsleepShort {
             get {
                 return ResourceManager.GetString("AllowsleepShort", resourceCulture);
+            }
+        }
+        
+        internal static string FilereadbuffersizeLong {
+            get {
+                return ResourceManager.GetString("FilereadbuffersizeLong", resourceCulture);
             }
         }
         

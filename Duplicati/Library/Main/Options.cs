@@ -40,9 +40,14 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
         
         /// <summary>
-        /// The default block size for Foresthash
+        /// The default block size
         /// </summary>
         private const string DEFAULT_BLOCKSIZE = "100kb";
+        
+        /// <summary>
+        /// The default size of the read-ahead buffer
+        /// </summary>
+        private const string DEFAULT_READ_BUFFER_SIZE = "5mb";
         
         /// <summary>
         /// The default threshold value
@@ -428,6 +433,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
+                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, DEFAULT_READ_BUFFER_SIZE),
                     new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "false"),
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
@@ -1205,6 +1211,22 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Gets the size the read-ahead buffer
+        /// </summary>
+        public long FileReadBufferSize
+        {
+            get
+            {
+                string tmp;
+                if (!m_options.TryGetValue("file-read-buffer-size", out tmp))
+                    tmp = DEFAULT_READ_BUFFER_SIZE;
+
+                long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
+                return (int)t;
+            }
+        }
+        
         /// <summary>
         /// Gets a flag indicating if metadata for files and folders should be ignored
         /// </summary>

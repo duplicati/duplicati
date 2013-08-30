@@ -135,7 +135,7 @@ namespace Duplicati.Library.Main.Operation
 											if (s != e.Value)
 												throw new Exception("Size mismatch problem, {0} vs {1}");
 												
-											newvol.AddBlock(e.Key, buffer, s, Duplicati.Library.Interface.CompressionHint.Compressible);
+											newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
 											if (newvolindex != null)
 												newvolindex.AddBlock(e.Key, e.Value);
 												

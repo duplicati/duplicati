@@ -562,9 +562,15 @@
     <value>Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files.</value>
   </data>  
   <data name="BackendtestsamplesShort" xml:space="preserve">
-    <value>The number of samples to test before a backup</value>
+    <value>The number of samples to test after a backup</value>
   </data>
   <data name="BackendtestsamplesLong" xml:space="preserve">
-    <value>Before a backup is started, some files are selected for verification on the remote backend. Use this option to change how many. If this value is set to 0 or the option --{0} is set, no remote files are verified</value>
+    <value>After a backup is completed, some files are selected for verification on the remote backend. Use this option to change how many. If this value is set to 0 or the option --{0} is set, no remote files are verified</value>
   </data>
+  <data name="FilereadbuffersizeShort" xml:space="preserve">
+    <value>Size of the file read buffer</value>
+  </data>
+  <data name="FilereadbuffersizeLong" xml:space="preserve">
+    <value>Use this size to control how many bytes a read from a file before processing</value>
+  </data>  
 </root>

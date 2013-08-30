@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main.Operation
                                     
                                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                                         foreach(var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
-                                            w.WriteBlocklist(b.Item1, b.Item2, b.Item3);
+                                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
                                 }
 								
                                 w.Close();
@@ -220,7 +220,7 @@ namespace Duplicati.Library.Main.Operation
                                                             if (newhash == hash)
                                                             {
                                                                 if (mbl.SetBlockRestored(hash, size))
-                                                                    w.AddBlock(hash, buffer, size, Duplicati.Library.Interface.CompressionHint.Default);
+                                                                    w.AddBlock(hash, buffer, 0, size, Duplicati.Library.Interface.CompressionHint.Default);
                                                                 break;
                                                             }
                                                         }
@@ -243,7 +243,7 @@ namespace Duplicati.Library.Main.Operation
                                                 foreach(var b in f.Blocks)
                                                     if (mbl.SetBlockRestored(b.Key, b.Value))
                                                         if (f.ReadBlock(b.Key, buffer) == b.Value)
-                                                            w.AddBlock(b.Key, buffer, (int)b.Value, Duplicati.Library.Interface.CompressionHint.Default);
+                                                            w.AddBlock(b.Key, buffer, 0, (int)b.Value, Duplicati.Library.Interface.CompressionHint.Default);
                                         }
                                         catch (Exception ex)
                                         {

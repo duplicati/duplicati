@@ -21,14 +21,14 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
-        public void AddBlock(string hash, byte[] data, int size, CompressionHint hint)
+        public void AddBlock(string hash, byte[] data, int offset, int size, CompressionHint hint)
         {
             m_blocks++;
             m_sourcesize += size;
 
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
             using (var s = m_compression.CreateFile(Library.Utility.Utility.Base64PlainToBase64Url(hash), hint, DateTime.UtcNow))
-                s.Write(data, 0, size);
+                s.Write(data, offset, size);
         }
     }
 }

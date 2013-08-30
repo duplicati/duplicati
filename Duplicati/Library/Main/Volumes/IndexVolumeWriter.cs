@@ -67,12 +67,12 @@ namespace Duplicati.Library.Main.Volumes
             finally { m_streamwriter = null; }
         }
 
-        public void WriteBlocklist(string hash, byte[] data, int size)
+        public void WriteBlocklist(string hash, byte[] data, int offset, int size)
         {
             m_blocklists++;
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
             using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
-                s.Write(data, 0, size);
+                s.Write(data, offset, size);
         }
 
         public void WriteBlocklist(string hash, Stream source)

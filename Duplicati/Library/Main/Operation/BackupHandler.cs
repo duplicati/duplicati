@@ -53,11 +53,11 @@ namespace Duplicati.Library.Main.Operation
             m_result = results;
             m_backendurl = backendurl;
 
-            m_blockbuffer = new byte[m_options.Blocksize];
             m_attributeFilter = m_options.FileAttributeFilter;
             m_symlinkPolicy = m_options.SymlinkPolicy;
             m_blocksize = m_options.Blocksize;
 
+            m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
             m_blocklistbuffer = new byte[m_options.Blocksize];
 
             m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
@@ -509,93 +509,93 @@ namespace Duplicati.Library.Main.Operation
 
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
-            m_result.OperationProgressUpdater.StartFile(path, -1);            
-            
-            if (m_backendLogFlushTimer < DateTime.Now)
+            try
             {
-                m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
-                m_backend.FlushDbMessages(m_database, null);
-            }
-                                        
-            if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-            {
-                if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                m_result.OperationProgressUpdater.StartFile(path, -1);            
+                
+                if (m_backendLogFlushTimer < DateTime.Now)
                 {
-                    m_result.AddVerboseMessage("Ignoring symlink {0}", path);
-                    return false;
+                    m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
+                    m_backend.FlushDbMessages(m_database, null);
                 }
-
-                if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                                            
+                if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
-                    Dictionary<string, string> metadata;
-
+                    if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                    {
+                        m_result.AddVerboseMessage("Ignoring symlink {0}", path);
+                        return false;
+                    }
+    
+                    if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                    {
+                        Dictionary<string, string> metadata;
+    
+                        if (m_options.StoreMetadata)
+                        {
+                            metadata = null; //snapshot.GetMetadata(path);
+                            if (metadata == null)
+                                metadata = new Dictionary<string, string>();
+    
+                            if (!metadata.ContainsKey("CoreAttributes"))
+                                metadata["CoreAttributes"] = attributes.ToString();
+                            if (!metadata.ContainsKey("CoreLastWritetime"))
+                                metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTime(path).ToUniversalTime().Ticks.ToString();
+                        }
+                        else
+                        {
+                            metadata = new Dictionary<string, string>();
+                        }
+    
+                        if (!metadata.ContainsKey("CoreSymlinkTarget"))
+                            metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
+    
+                        var metahash = Utility.WrapMetadata(metadata, m_options);
+                        AddSymlinkToOutput(path, DateTime.UtcNow, metahash);
+                        
+                        m_result.AddVerboseMessage("Stored symlink {0}", path);
+                        //Do not recurse symlinks
+                        return false;
+                    }
+                }
+    
+                if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
+                {
+                    IMetahash metahash;
+    
                     if (m_options.StoreMetadata)
                     {
-                        metadata = null; //snapshot.GetMetadata(path);
+                        Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
                         if (metadata == null)
                             metadata = new Dictionary<string, string>();
-
+    
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
                         if (!metadata.ContainsKey("CoreLastWritetime"))
                             metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTime(path).ToUniversalTime().Ticks.ToString();
+                        metahash = Utility.WrapMetadata(metadata, m_options);
                     }
                     else
                     {
-                        metadata = new Dictionary<string, string>();
+                        metahash = EMPTY_METADATA;
                     }
-
-                    if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                        metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
-
-                    var metahash = Utility.WrapMetadata(metadata, m_options);
-                    AddSymlinkToOutput(path, DateTime.UtcNow, metahash);
-                    
-                    m_result.AddVerboseMessage("Stored symlink {0}", path);
-                    //Do not recurse symlinks
-                    return false;
+    
+                    m_result.AddVerboseMessage("Adding directory {0}", path);
+                    AddFolderToOutput(path, DateTime.UtcNow, metahash);
+                    return true;
                 }
-            }
+    
+                m_result.OperationProgressUpdater.UpdatefilesProcessed(++m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
+                
+                DateTime oldScanned;
+                var oldId = m_database.GetFileEntry(path, out oldScanned);
+    
+                bool changed = false;
+                DateTime lastModified = new DateTime(0, DateTimeKind.Utc);
 
-            if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
-            {
-                IMetahash metahash;
-
-                if (m_options.StoreMetadata)
-                {
-                    Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
-                    if (metadata == null)
-                        metadata = new Dictionary<string, string>();
-
-                    if (!metadata.ContainsKey("CoreAttributes"))
-                        metadata["CoreAttributes"] = attributes.ToString();
-                    if (!metadata.ContainsKey("CoreLastWritetime"))
-                        metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTime(path).ToUniversalTime().Ticks.ToString();
-                    metahash = Utility.WrapMetadata(metadata, m_options);
-                }
-                else
-                {
-                    metahash = EMPTY_METADATA;
-                }
-
-                m_result.AddVerboseMessage("Adding directory {0}", path);
-                AddFolderToOutput(path, DateTime.UtcNow, metahash);
-                return true;
-            }
-
-            m_result.OperationProgressUpdater.UpdatefilesProcessed(++m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
-            
-            DateTime oldScanned;
-            var oldId = m_database.GetFileEntry(path, out oldScanned);
-
-            bool changed = false;
-            DateTime lastModified = new DateTime(0, DateTimeKind.Utc);
-
-            try
-            {
                 lastModified = m_snapshot.GetLastWriteTime(path).ToUniversalTime();
                 long filestatsize = m_snapshot.GetFileSize(path);
-                if (oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned && (m_options.SkipFilesLargerThan == long.MaxValue || filestatsize < m_options.SkipFilesLargerThan))
+                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || filestatsize < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                 
@@ -634,22 +634,25 @@ namespace Duplicati.Library.Main.Operation
                             try { m_result.OperationProgressUpdater.StartFile(path, fs.Length); }
                             catch (Exception ex) { m_result.AddWarning(string.Format("Failed to read file length for file {0}", path), ex); }
                             
-                            int size;
                             int blocklistoffset = 0;
 
                             m_filehasher.Initialize();
+
+                            
+                            var offset = 0;
+                            var remaining = fs.Readblock();
                             
                             do
                             {
-                                size = fs.Readblock();
+                                var size = Math.Min(m_blocksize, remaining);
 
-                                m_filehasher.TransformBlock(m_blockbuffer, 0, size, m_blockbuffer, 0);
-                                var blockkey = m_blockhasher.ComputeHash(m_blockbuffer, 0, size);
+                                m_filehasher.TransformBlock(m_blockbuffer, offset, size, m_blockbuffer, offset);
+                                var blockkey = m_blockhasher.ComputeHash(m_blockbuffer, offset, size);
                                 if (m_blocklistbuffer.Length - blocklistoffset < blockkey.Length)
                                 {
                                     var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                     blocklisthashes.Add(blkey);
-                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible, true);
+                                    AddBlockToOutput(blkey, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                                     blocklistoffset = 0;
                                 }
 
@@ -657,20 +660,28 @@ namespace Duplicati.Library.Main.Operation
                                 blocklistoffset += blockkey.Length;
 
                                 var key = Convert.ToBase64String(blockkey);
-                                AddBlockToOutput(key, m_blockbuffer, size, hint, false);
+                                AddBlockToOutput(key, m_blockbuffer, offset, size, hint, false);
                                 hashcollector.Add(key);
                                 filesize += size;
 
                                 m_result.OperationProgressUpdater.UpdateFileProgress(filesize);
+                                remaining -= size;
+                                offset += size;
+                                
+                                if (remaining == 0)
+                                {
+                                    offset = 0;
+                                    remaining = fs.Readblock();
+                                }
 
-                            } while (size == m_blockbuffer.Length);
+                            } while (remaining > 0);
 
                             //If all fits in a single block, don't bother with blocklists
                             if (hashcollector.Count > 1)
                             {
                                 var blkeyfinal = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                 blocklisthashes.Add(blkeyfinal);
-                                AddBlockToOutput(blkeyfinal, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible, true);
+                                AddBlockToOutput(blkeyfinal, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                             }
                         }
 
@@ -740,20 +751,21 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="key">The block hash</param>
         /// <param name="data">The data matching the hash</param>
         /// <param name="len">The size of the data</param>
+        /// <param name="offset">The offset into the data</param>
         /// <param name="hint">Hint for compression module</param>
         /// <param name="isBlocklistData">Indicates if the block is list data</param>
-        private bool AddBlockToOutput(string key, byte[] data, int len, CompressionHint hint, bool isBlocklistData)
+        private bool AddBlockToOutput(string key, byte[] data, int offset, int len, CompressionHint hint, bool isBlocklistData)
         {
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
-                m_blockvolume.AddBlock(key, data, len, hint);
+                m_blockvolume.AddBlock(key, data, offset, len, hint);
                 
                 //TODO: In theory a normal data block and blocklist block could be equal.
                 // this would cause the index file to not contain all data,
                 // if the data file is added before the blocklist data
                 // ... highly theoretical ...
                 if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full && isBlocklistData)
-                    m_indexvolume.WriteBlocklist(key, data, len);
+                    m_indexvolume.WriteBlocklist(key, data, offset, len);
                     
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
                 {
@@ -833,7 +845,7 @@ namespace Duplicati.Library.Main.Operation
             bool r = false;
 
             //TODO: If meta.Size > blocksize...
-            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default, false);
+            r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
             m_database.AddDirectoryEntry(filename, metadataid, scantime, m_transaction);
@@ -855,7 +867,7 @@ namespace Duplicati.Library.Main.Operation
             bool r = false;
 
             //TODO: If meta.Size > blocksize...
-            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default, false);
+            r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
             m_database.AddSymlinkEntry(filename, metadataid, scantime, m_transaction);
@@ -877,10 +889,10 @@ namespace Duplicati.Library.Main.Operation
             long blocksetid;
             
             //TODO: If metadata.Size > blocksize...
-            AddBlockToOutput(metadata.Hash, metadata.Blob, (int)metadata.Size, CompressionHint.Default, false);
+            AddBlockToOutput(metadata.Hash, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
             m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
-            m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist, blocklisthashes, out blocksetid, m_transaction);
+            m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
 
             //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
             m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);
