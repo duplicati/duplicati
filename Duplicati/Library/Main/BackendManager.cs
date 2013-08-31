@@ -931,14 +931,6 @@ namespace Duplicati.Library.Main
         {
             if (m_queue != null && !m_queue.Completed)
                 m_queue.SetCompleted();
-
-			//TODO: We cannot null this, because it will be recreated
-			//Should we wait for queue completion or abort immediately?
-            if (m_backend != null)
-            {
-                m_backend.Dispose();
-                m_backend = null;
-            }
             
             if (m_thread != null)
             {
@@ -949,6 +941,14 @@ namespace Duplicati.Library.Main
                 }
 
                 m_thread = null;
+            }
+            
+            //TODO: We cannot null this, because it will be recreated
+            //Should we wait for queue completion or abort immediately?
+            if (m_backend != null)
+            {
+                m_backend.Dispose();
+                m_backend = null;
             }
             
         	try { m_db.FlushDbMessages(true); }
