@@ -183,16 +183,59 @@ namespace Duplicati.Library.Utility
                 return;
             }
             
-            m_filters = 
+            m_filters = Compact(
                 (from n in filter
                 let nx = new FilterEntry(n)
                 where nx.Type != FilterType.Empty
-                select nx).ToList();
+                select nx)
+            );
             
             if (m_filters.Count == 0)
                 this.Type = FilterType.Empty;
             else
                 this.Type = (FilterType)m_filters.Max((a) => a.Type);
+        }
+        
+        private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
+        {
+            var r = new List<FilterEntry>();
+            string combined = null;
+            bool first = false;
+            foreach(var f in items)
+                if (combined == null)
+                {
+                    if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard)
+                        r.Add(f);
+                    else if (f.Type != FilterType.Empty)
+                    {
+                        combined = f.Regexp.ToString();
+                        first = true;
+                    }
+                }
+                else
+                {
+                    if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard)
+                    {
+                        r.Add(new FilterEntry("[" + combined + "]"));
+                        r.Add(f);
+                        combined = null;
+                    }
+                    else if (f.Type != FilterType.Empty)
+                    {
+                        if (first)
+                        {
+                            combined = "(" + combined + ")";
+                            first = false;
+                        }
+                        
+                        combined += "|(" + f.Regexp.ToString() + ")";
+                    }
+                }
+                
+            if (combined != null)
+                r.Add(new FilterEntry("[" + combined + "]"));
+
+            return r;                    
         }
         
         /// <summary>
