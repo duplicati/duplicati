@@ -372,6 +372,7 @@ namespace Duplicati.Library.Main
         
         private void ThreadRun()
         {
+            var uploadSuccess = false;
             while (!m_queue.Completed)
             {
                 var item = m_queue.Dequeue();
@@ -392,12 +393,17 @@ namespace Duplicati.Library.Main
 
                             if (m_backend == null)
                                 m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+                            if (m_backend == null)
+                                throw new Exception("Backend failed to re-load");
 
                             using(new Logging.Timer(string.Format("RemoteOperation{0}", item.Operation)))
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
                                         DoPut(item);
+                                        // We do not auto create folders,
+                                        // because we know the folder exists
+                                        uploadSuccess = true;
                                         break;
                                     case OperationType.Get:
                                         DoGet(item);
@@ -427,7 +433,7 @@ namespace Duplicati.Library.Main
                             m_statwriter.SendEvent(item.BackendActionType, retries < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
 							bool recovered = false;
-                            if (ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
+                            if (!uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                             {
 	                            try 
 	                            { 
