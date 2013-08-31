@@ -104,6 +104,11 @@ namespace Duplicati.Library.Main.Volumes
                 };
             }
         }
+        
+        public static string GenerateFilename(RemoteVolumeType filetype, Options options, string guid, DateTime timestamp)
+        {
+            return GenerateFilename(filetype, options.Prefix, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+        }
 
 		public static string GenerateFilename(RemoteVolumeType filetype, string prefix, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
 		{

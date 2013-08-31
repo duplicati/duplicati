@@ -799,15 +799,15 @@ namespace Duplicati.Library.Main.Database
 
         public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted)
         {
-            AppendFilesFromPreviousSet(transaction, deleted, m_filesetId, OperationTimestamp);
+            AppendFilesFromPreviousSet(transaction, deleted, m_filesetId, -1, OperationTimestamp);
         }
 
-        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted, long filesetid, DateTime timestamp)
+        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted, long filesetid, long prevId, DateTime timestamp)
         {
             using(var cmd = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                long lastFilesetId = GetPreviousFilesetID(cmd, timestamp, filesetid);
+                long lastFilesetId = prevId < 0 ? GetPreviousFilesetID(cmd, timestamp, filesetid) : prevId;
 
                 cmd.Transaction = tr.Parent;
                 cmd.ExecuteNonQuery(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Scantime"") SELECT ? AS ""FilesetID"", ""FileID"", ""Scantime"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?) ", filesetid, lastFilesetId, filesetid);
