@@ -190,7 +190,8 @@ namespace Duplicati.Library.Main
             public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                    return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH).ComputeHash(fs));
+                using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+                    return Convert.ToBase64String(hasher.ComputeHash(fs));
             }
 
             public bool UpdateHashAndSize(Options options)
@@ -335,6 +336,7 @@ namespace Duplicati.Library.Main
         private Options m_options;
         private volatile Exception m_lastException;
         private Library.Interface.IEncryption m_encryption;
+        private readonly object m_encryptionLock = new object();
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
         private IBackendWriter m_statwriter;
@@ -542,7 +544,10 @@ namespace Duplicati.Library.Main
 
         private void DoPut(FileEntryItem item)
         {
-            item.Encrypt(m_encryption, m_statwriter);
+            if (m_encryption != null)
+                lock(m_encryptionLock)
+                    item.Encrypt(m_encryption, m_statwriter);
+                
             if (item.UpdateHashAndSize(m_options) && !item.NotTrackedInDb)
             	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
@@ -633,7 +638,8 @@ namespace Duplicati.Library.Main
                         using(var tmpfile2 = tmpfile)
                         { 
                         	tmpfile = new Library.Utility.TempFile();
-                        	m_encryption.Decrypt(tmpfile2, tmpfile);
+                            lock(m_encryptionLock)
+                        	    m_encryption.Decrypt(tmpfile2, tmpfile);
                         }
                     }
                     catch (Exception ex)
@@ -764,6 +770,17 @@ namespace Duplicati.Library.Main
 
             FileEntryItem req2 = null;
             
+            // As the network link is the bottleneck,
+            // we encrypt the dblock volume before the
+            // upload is enqueue (i.e. on the worker thread)
+            if (m_encryption != null)
+                lock (m_encryptionLock)
+                    req.Encrypt(m_encryption, m_statwriter);
+                    
+            req.UpdateHashAndSize(m_options);
+            
+            // We do not encrypt the dindex volume, because it is small,
+            // and may need to be re-written if the dblock upload is retried
 			if (indexfile != null)
 			{
 				m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
