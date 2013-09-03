@@ -45,6 +45,7 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_insertfileCommand;
 
         private readonly System.Data.IDbCommand m_insertblocksetCommand;
+        private readonly System.Data.IDbCommand m_insertblocksetentryFastCommand;
         private readonly System.Data.IDbCommand m_insertblocksetentryCommand;
         private readonly System.Data.IDbCommand m_insertblocklistHashesCommand;
 
@@ -59,7 +60,7 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
 		
-		private HashDatabaseProtector<string> m_blockHashLookup;
+		private HashDatabaseProtector<string, KeyValuePair<long, long>> m_blockHashLookup;
         private HashDatabaseProtector<string, long> m_fileHashLookup;
         private HashDatabaseProtector<string, long> m_metadataLookup;
         private HashDatabaseProtector<string, KeyValuePair<long, DateTime>> m_fileScantimeLookup;
@@ -95,8 +96,9 @@ namespace Duplicati.Library.Main.Database
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_findmetadatasetProbeCommand = m_connection.CreateCommand();
+            m_insertblocksetentryFastCommand = m_connection.CreateCommand();
 				
-			m_findblockCommand.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
+			m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
 
             m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
@@ -111,7 +113,7 @@ namespace Duplicati.Library.Main.Database
             m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""File"" WHERE ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""Path"" = ?";
             m_findfilesetCommand.AddParameters(3);
 
-            m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?)";
+            m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?); SELECT last_insert_rowid();";
             m_insertblockCommand.AddParameters(3);
 
             m_insertfileOperationCommand.CommandText = @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Scantime"") VALUES (?, ?, ?)";
@@ -122,6 +124,9 @@ namespace Duplicati.Library.Main.Database
 
             m_insertblocksetCommand.CommandText = @"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (?, ?); SELECT last_insert_rowid();";
             m_insertblocksetCommand.AddParameters(2);
+
+            m_insertblocksetentryFastCommand.CommandText = @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") VALUES (?,?,?)";
+            m_insertblocksetentryFastCommand.AddParameters(3);
 
             m_insertblocksetentryCommand.CommandText = @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT ? AS A, ? AS B, ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_insertblocksetentryCommand.AddParameters(4);
@@ -160,7 +165,7 @@ namespace Duplicati.Library.Main.Database
         public void BuildLookupTable(Options options)
         {
             if (options.BlockHashLookupMemory > 0)
-                m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);            
+                m_blockHashLookup = new HashDatabaseProtector<string, KeyValuePair<long, long>>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);            
             if (options.FileHashLookupMemory > 0)
                 m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FileHashLookupMemory);
             if (options.MetadataHashMemory > 0)
@@ -176,12 +181,14 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 if (m_blockHashLookup != null)
-                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
+                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"", ""Block"".""ID"", ""Block"".""Size"" FROM ""Block"" "))
                         while (rd.Read())
                         {
                             var str = rd.GetValue(0).ToString();
+                            var id = Convert.ToInt64(rd.GetValue(1));
+                            var size = Convert.ToInt64(rd.GetValue(2));
                             var key = HashPrefixLookup.DecodeBase64Hash(str);
-                            m_blockHashLookup.Add(key, str);
+                            m_blockHashLookup.Add(key, str, new KeyValuePair<long, long>(id, size));
                         }
                 
                 if (m_fileHashLookup != null)
@@ -242,7 +249,8 @@ namespace Duplicati.Library.Main.Database
             if (m_blockHashLookup != null) 
             {
                 hashdata = HashPrefixLookup.DecodeBase64Hash(key);
-                switch (m_blockHashLookup.HasValue(hashdata, key)) 
+                KeyValuePair<long, long> blockid;
+                switch (m_blockHashLookup.HasValue(hashdata, key, out blockid)) 
                 {
                     case HashLookupResult.NotFound:
                         //We insert it
@@ -262,7 +270,7 @@ namespace Duplicati.Library.Main.Database
                             m_blockHashLookup.NegativeMisses++;
                             if (m_missingBlockHashes == 0) {
                                 //Update the lookup table, MRU style
-                                m_blockHashLookup.Add(hashdata, key);
+                                m_blockHashLookup.Add(hashdata, key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
                                 return false;
                             }
                         }
@@ -283,16 +291,16 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(0, key);
                 m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
-                m_insertblockCommand.ExecuteNonQuery();
+                r = m_insertblockCommand.ExecuteScalar();
                 if (m_blockHashLookup != null)
-                    m_blockHashLookup.Add(hashdata, key);
+                    m_blockHashLookup.Add(hashdata, key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
                 return true;
             }
             else
             {
                 //We add/update it now
                 if (m_blockHashLookup != null)
-                    m_blockHashLookup.Add(hashdata, key);
+                    m_blockHashLookup.Add(hashdata, key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
 
                 //If the block is found and the volume is broken somehow.
                 m_findremotevolumestateCommand.Transaction = transaction;
@@ -322,7 +330,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashes">The list of hashes</param>
         /// <param name="blocksetid">The id of the blockset, new or old</param>
         /// <returns>True if the blockset was created, false otherwise</returns>
-        public bool AddBlockset (string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
+        public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
         {
             object r = null;
             ulong hashdata = 0;
@@ -331,7 +339,7 @@ namespace Duplicati.Library.Main.Database
             {
                 hashdata = HashPrefixLookup.DecodeBase64Hash(filehash);
                 
-                switch (m_fileHashLookup.HasValue(hashdata, filehash, out blocksetid)) 
+                switch (m_fileHashLookup.HasValue(hashdata, filehash, out blocksetid))
                 {
                     case HashLookupResult.NotFound:
                         //We insert it, but avoid looking for it
@@ -357,19 +365,19 @@ namespace Duplicati.Library.Main.Database
                         }
                         break;
                 }
-            } 
-            else 
+            }
+            else
             {
                 m_findblocksetCommand.Transaction = transaction;
                 r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
                 if (r != null && r != DBNull.Value)
                 {
                     blocksetid = Convert.ToInt64(r);
-                	return false; //Found it
+                    return false; //Found it
                 }
             }
                 
-            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 m_insertblocksetCommand.Transaction = tr.Parent;
                 m_insertblocksetCommand.SetParameterValue(0, size);
@@ -383,7 +391,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     m_insertblocklistHashesCommand.SetParameterValue(0, blocksetid);
                     m_insertblocklistHashesCommand.Transaction = tr.Parent;
-                    foreach (var bh in blocklistHashes)
+                    foreach(var bh in blocklistHashes)
                     {
                         m_insertblocklistHashesCommand.SetParameterValue(1, ix);
                         m_insertblocklistHashesCommand.SetParameterValue(2, bh);
@@ -395,18 +403,40 @@ namespace Duplicati.Library.Main.Database
                 m_insertblocksetentryCommand.SetParameterValue(0, blocksetid);
                 m_insertblocksetentryCommand.Transaction = tr.Parent;
 
+                m_insertblocksetentryFastCommand.SetParameterValue(0, blocksetid);
+                m_insertblocksetentryFastCommand.Transaction = tr.Parent;
 
                 ix = 0;
                 long remainsize = size;
-                foreach (var h in hashes)
+                foreach(var h in hashes)
                 {
-                    m_insertblocksetentryCommand.SetParameterValue(1, ix);
-                    m_insertblocksetentryCommand.SetParameterValue(2, h);
-                    m_insertblocksetentryCommand.SetParameterValue(3, remainsize < blocksize ? remainsize : blocksize);
-                    var c = m_insertblocksetentryCommand.ExecuteNonQuery();
-                    if (c != 1)
-                        throw new Exception(string.Format("Unexpected result count: {0}, expected {1}", c, 1));
-
+                    var exsize = remainsize < blocksize ? remainsize : blocksize;
+                    var found = false;
+                    if (m_blockHashLookup != null)
+                    {
+                        KeyValuePair<long, long> id;
+                        ulong hdata = HashPrefixLookup.DecodeBase64Hash(h);
+                        if (m_blockHashLookup.HasValue(hdata, h, out id) == HashLookupResult.Found && id.Value == exsize)
+                        {
+                            m_insertblocksetentryFastCommand.SetParameterValue(1, ix);
+                            m_insertblocksetentryFastCommand.SetParameterValue(2, id);
+                            var cx = m_insertblocksetentryFastCommand.ExecuteNonQuery();
+                            if (cx != 1)
+                                throw new Exception(string.Format("Unexpected result count: {0}, expected {1}", cx, 1));
+                            found = true;
+                        }
+                    }
+                
+                    if (!found)
+                    {
+                        m_insertblocksetentryCommand.SetParameterValue(1, ix);
+                        m_insertblocksetentryCommand.SetParameterValue(2, h);
+                        m_insertblocksetentryCommand.SetParameterValue(3, exsize);
+                        var c = m_insertblocksetentryCommand.ExecuteNonQuery();
+                        if (c != 1)
+                            throw new Exception(string.Format("Unexpected result count: {0}, expected {1}", c, 1));
+                    }
+                    
                     ix++;
                     remainsize -= blocksize;
                 }
