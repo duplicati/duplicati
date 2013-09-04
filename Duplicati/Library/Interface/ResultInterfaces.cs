@@ -238,7 +238,11 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// The element was not the same as expected
         /// </summary>
-        Modified
+        Modified,
+        /// <summary>
+        /// An error was encountered
+        /// </summary>
+        Error
     }
 
     public interface ITestResults : IBasicResults

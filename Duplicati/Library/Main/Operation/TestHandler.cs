@@ -157,6 +157,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 catch (Exception ex)
                 {
+                    m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                     m_results.AddError(string.Format("Failed to process file {0}", vol.Name), ex);
                 }
             }
