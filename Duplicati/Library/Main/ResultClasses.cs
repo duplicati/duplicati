@@ -332,6 +332,8 @@ namespace Duplicati.Library.Main
                 if (type == BackendEventType.Started)
                     this.BackendProgressUpdater.StartAction(action, path, size);
 
+                Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information);
+
                 if (MessageSink != null)
                     MessageSink.BackendEvent(action, type, path, size);
             }
@@ -342,16 +344,26 @@ namespace Duplicati.Library.Main
         {
             if (m_parent != null)
                 m_parent.AddDryrunMessage(message);
-            else if (MessageSink != null)
-                MessageSink.DryrunEvent(message);
+            else
+            {
+                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
+                if (MessageSink != null)
+                    MessageSink.DryrunEvent(message);
+            }
         }
                
         public void AddVerboseMessage(string message, params object[] args)
         {
             if (m_parent != null)
                 m_parent.AddVerboseMessage(message, args);
-            else if (MessageSink != null)
-                MessageSink.VerboseEvent(message, args);
+            else
+            {
+                if (Logging.Log.LogLevel == Duplicati.Library.Logging.LogMessageType.Profiling || VerboseOutput)
+                    Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Information);
+                    
+                if (MessageSink != null)
+                    MessageSink.VerboseEvent(message, args);
+            }
         }
         
         public void AddMessage(string message)
@@ -362,6 +374,7 @@ namespace Duplicati.Library.Main
             {
                 lock(m_lock)
                 {
+                    Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
                     m_messages.Add(message);
             
                     if (MessageSink != null)
@@ -381,9 +394,11 @@ namespace Duplicati.Library.Main
                 m_parent.AddWarning(message, ex);
             else
             {
+                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                
                 var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
                 m_warnings.Add(s);
-
+                
                 if (MessageSink != null)
                     MessageSink.WarningEvent(message, ex);
                 
@@ -400,6 +415,8 @@ namespace Duplicati.Library.Main
                 m_parent.AddRetryAttempt(message, ex);
             else
             {
+                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                
                 var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
                 m_retryAttempts.Add(s);
 
@@ -419,6 +436,8 @@ namespace Duplicati.Library.Main
                 m_parent.AddError(message, ex);
             else
             {
+                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                
                 var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
                 m_errors.Add(s);
             
