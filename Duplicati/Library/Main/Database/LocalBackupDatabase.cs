@@ -419,7 +419,7 @@ namespace Duplicati.Library.Main.Database
                         if (m_blockHashLookup.HasValue(hdata, h, out id) == HashLookupResult.Found && id.Value == exsize)
                         {
                             m_insertblocksetentryFastCommand.SetParameterValue(1, ix);
-                            m_insertblocksetentryFastCommand.SetParameterValue(2, id);
+                            m_insertblocksetentryFastCommand.SetParameterValue(2, id.Key);
                             var cx = m_insertblocksetentryFastCommand.ExecuteNonQuery();
                             if (cx != 1)
                                 throw new Exception(string.Format("Unexpected result count: {0}, expected {1}", cx, 1));
