@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main
             public string ParameterFile;
         }
         
-        public static string GetDatabasePath(string backend, Options options)
+        public static string GetDatabasePath(string backend, Options options, bool autoCreate = true, bool anyUsername = false)
         {
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main
                     if (username == null && o.Aliases != null && o.Aliases.Contains("auth-username", StringComparer.InvariantCultureIgnoreCase) && ropts.ContainsKey(o.Name))
                         username = ropts[o.Name];
                     if (password == null && o.Aliases != null && o.Aliases.Contains("auth-password", StringComparer.InvariantCultureIgnoreCase) && ropts.ContainsKey(o.Name))
-                        username = ropts[o.Name];
+                        password = ropts[o.Name];
                 }
                 
                 foreach(var o in sopts)
@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main
                     if (username == null && o.Name.Equals("auth-username", StringComparison.InvariantCultureIgnoreCase) && ropts.ContainsKey("auth-username"))
                         username = ropts["auth-username"];
                     if (password == null && o.Name.Equals("auth-password", StringComparison.InvariantCultureIgnoreCase) && ropts.ContainsKey("auth-password"))
-                        username = ropts["auth-username"];
+                        password = ropts["auth-password"];
                 }
             }
             
@@ -103,6 +103,25 @@ namespace Duplicati.Library.Main
             
             if (matches.Count > 1)
                 throw new Exception(string.Format("Multiple sources found for: {0}", backend));
+            
+            // Re-select
+            if (matches.Count == 0 && anyUsername && string.IsNullOrEmpty(username))
+            {
+                matches = (from n in configs
+                    where 
+                        n.Type == type && 
+                        n.Port == port && 
+                        n.Server == server && 
+                        n.Path == path && 
+                        n.Prefix == prefix
+                    select n).ToList();
+                    
+                if (matches.Count > 1)
+                    throw new Exception(String.Format("Multiple sources found for \"{0}\", try supplying --{1}", backend, "auth-username"));
+            }
+            
+            if (matches.Count == 0 && !autoCreate)
+                return null;
             
             if (matches.Count == 0)
             {

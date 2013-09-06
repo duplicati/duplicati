@@ -534,7 +534,22 @@ namespace Duplicati.CommandLine
         {
             if (args.Count != 2)
                 return PrintWrongNumberOfArguments(args, 2);
-                
+             
+            // Support for not adding the --auth-username if possible
+            string dbpath;
+            options.TryGetValue("dbpath", out dbpath);
+            if (string.IsNullOrEmpty(dbpath))
+            {
+                dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                if (dbpath == null)
+                {
+                    Console.WriteLine("No local database found, please add --{0}", "dbpath");
+                    return 100;
+                }
+                else
+                    options["dbpath"] = dbpath;
+            }
+             
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 i.CreateLogDatabase(args[1]);
 
