@@ -99,21 +99,35 @@ namespace Duplicati.Library.Main.Operation
 
         private bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
         {
+            try
+            {
+                if (m_snapshot.IsBlockDevice(path))
+                {
+                    m_result.AddVerboseMessage("Excluding block device: {0}", path);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                m_result.AddWarning(string.Format("Failed to process path: ", path), ex);
+                return false;
+            }            
+        
             if ((m_attributeFilter & attributes) != 0)
             {
-                m_result.AddVerboseMessage("Excluding path due to attribute filter {0}", path);
+                m_result.AddVerboseMessage("Excluding path due to attribute filter: {0}", path);
                 return false;
             }
                         
             if (!Library.Utility.FilterExpression.Matches(m_filter, path))
             {
-                m_result.AddVerboseMessage("Excluding path due to filter {0}", path);
+                m_result.AddVerboseMessage("Excluding path due to filter: {0}", path);
                 return false;
             }
             
             if (m_symlinkPolicy != Options.SymlinkStrategy.Follow && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
-                m_result.AddVerboseMessage("Excluding symlink {0}", path);
+                m_result.AddVerboseMessage("Excluding symlink: {0}", path);
                 return false;
             }
                             
