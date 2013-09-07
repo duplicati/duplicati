@@ -438,11 +438,11 @@
   <data name="FilehashlookupsizeShort" xml:space="preserve">
     <value>Memory used by the file hash</value>
   </data>
-  <data name="FilepathlookupsizeLong" xml:space="preserve">
-    <value>This option can be used to speed up backup operations by keeping scantimes and other path related data in memory</value>
+  <data name="DisablefilepathcacheShort" xml:space="preserve">
+    <value>This option can be used to reduce the memory footprint by not keeping paths and scantimes in memory</value>
   </data>
-  <data name="FilepathlookupsizeShort" xml:space="preserve">
-    <value>Memory used to keep paths cached</value>
+  <data name="DisablefilepathcacheLong" xml:space="preserve">
+    <value>Reduce memory footprint by disabling in-memory lookups</value>
   </data>
   <data name="StoremetadataLong" xml:space="preserve">
     <value>Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time.</value>

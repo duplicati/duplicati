@@ -64,12 +64,6 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
-        internal static string FilepathlookupsizeLong {
-            get {
-                return ResourceManager.GetString("FilepathlookupsizeLong", resourceCulture);
-            }
-        }
-        
         internal static string TimeShort {
             get {
                 return ResourceManager.GetString("TimeShort", resourceCulture);
@@ -193,6 +187,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string VssexcludewritersShort {
             get {
                 return ResourceManager.GetString("VssexcludewritersShort", resourceCulture);
+            }
+        }
+        
+        internal static string DisablefilepathcacheShort {
+            get {
+                return ResourceManager.GetString("DisablefilepathcacheShort", resourceCulture);
             }
         }
         
@@ -850,9 +850,9 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
-        internal static string FilepathlookupsizeShort {
+        internal static string DisablefilepathcacheLong {
             get {
-                return ResourceManager.GetString("FilepathlookupsizeShort", resourceCulture);
+                return ResourceManager.GetString("DisablefilepathcacheLong", resourceCulture);
             }
         }
         

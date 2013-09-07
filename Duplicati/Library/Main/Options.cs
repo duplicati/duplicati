@@ -34,7 +34,6 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_BLOCK_HASH_LOOKUP_SIZE = "64mb";
         private const string DEFAULT_METADATA_HASH_LOOKUP_SIZE = "64mb";
         private const string DEFAULT_FILE_HASH_LOOKUP_SIZE = "32mb";
-        private const string DEFAULT_FILENAME_LOOKUP_SIZE = "64mb";
         
         private const string DEFAULT_BLOCK_HASH_ALGORITHM = "SHA256";
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
@@ -438,7 +437,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("filepath-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilepathlookupsizeShort, Strings.Options.FilepathlookupsizeLong, DEFAULT_FILENAME_LOOKUP_SIZE),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Size, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "false"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
@@ -1286,16 +1285,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the file hash size
         /// </summary>
-        public long FilePathMemory
+        public bool UseFilepathCache
         {
             get
             {
-                string v;
-                m_options.TryGetValue("filepath-lookup-memory", out v);
-                if (string.IsNullOrEmpty(v))
-                    v = DEFAULT_FILENAME_LOOKUP_SIZE;
-
-                return Library.Utility.Sizeparser.ParseSize(v, "mb");
+                return !Library.Utility.Utility.ParseBoolOption(m_options, "disable-filepath-cache");
             }
         }
         

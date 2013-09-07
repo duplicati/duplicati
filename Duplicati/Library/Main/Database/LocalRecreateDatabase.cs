@@ -8,6 +8,42 @@ namespace Duplicati.Library.Main.Database
 {
     internal partial class LocalRecreateDatabase : LocalRestoreDatabase
     {
+        private class PathEntryKeeper
+        {
+            private SortedList<KeyValuePair<long, long>, long> m_versions;
+                        
+            public long GetFilesetID(long blocksetId, long metadataId)
+            {
+                if (m_versions == null)
+                    return -1;
+
+                long r;
+                if (!m_versions.TryGetValue(new KeyValuePair<long, long>(blocksetId, metadataId), out r))
+                    return -1;
+                else
+                    return r;
+            }
+            
+            public void AddFilesetID(long blocksetId, long metadataId, long filesetId)
+            {
+                if (m_versions == null)
+                    m_versions = new SortedList<KeyValuePair<long, long>, long>(1, new KeyValueComparer());
+                m_versions.Add(new KeyValuePair<long, long>(blocksetId, metadataId), filesetId);
+            }
+            
+            private struct KeyValueComparer : IComparer<KeyValuePair<long, long>>
+            {
+                public int Compare(KeyValuePair<long, long> x, KeyValuePair<long, long> y)
+                {
+                    return x.Key == y.Key ? 
+                            (x.Value == y.Value ? 
+                                0 
+                                : (x.Value < y.Value ? -1 : 1)) 
+                            : (x.Key < y.Key ? -1 : 1);
+                }
+            }
+        }
+        
         private System.Data.IDbCommand m_insertFileCommand;
         private System.Data.IDbCommand m_insertFilesetEntryCommand;
         private System.Data.IDbCommand m_insertMetadatasetCommand;
@@ -27,7 +63,7 @@ namespace Duplicati.Library.Main.Database
         private HashDatabaseProtector<string, long> m_blockHashLookup;
         private HashDatabaseProtector<string, long> m_fileHashLookup;
         private HashDatabaseProtector<string, long> m_metadataLookup;
-        private HashDatabaseProtector<Tuple<string, long,long>, long> m_filesetLookup;
+        private PathLookupHelper<PathEntryKeeper> m_filesetLookup;
         
         private string m_tempblocklist;
         
@@ -119,8 +155,8 @@ namespace Duplicati.Library.Main.Database
                 m_fileHashLookup = new HashDatabaseProtector<string, long>(LocalBackupDatabase.HASH_GUESS_SIZE, (ulong)options.FileHashLookupMemory);
             if (options.MetadataHashMemory > 0)
                 m_metadataLookup = new HashDatabaseProtector<string, long>(LocalBackupDatabase.HASH_GUESS_SIZE, (ulong)options.MetadataHashMemory);
-            if (options.FilePathMemory > 0)
-                m_filesetLookup = new HashDatabaseProtector<Tuple<string, long, long>, long>(LocalBackupDatabase.PATH_STRING_GUESS_SIZE, (ulong)options.FilePathMemory);
+            if (options.UseFilepathCache)
+                m_filesetLookup = new PathLookupHelper<PathEntryKeeper>();
         }
 
         public void FindMissingBlocklistHashes(long hashsize, System.Data.IDbTransaction transaction)
@@ -220,38 +256,12 @@ namespace Duplicati.Library.Main.Database
         {
             var fileid = -1L;
             var metadataid = AddMetadataset(metahash, metahashsize, transaction);
-            
-            var hashdata = (ulong)blocksetid ^ (ulong)metadataid ^ (ulong)path.GetHashCode();
-            var tp = new Tuple<string, long, long>(path, blocksetid, metadataid);
-            
+                        
             if (m_filesetLookup != null)
             {
-                switch (m_filesetLookup.HasValue(hashdata, tp, out fileid))
-                {
-                    case HashLookupResult.Found:
-                        break;
-                    case HashLookupResult.NotFound:
-                        fileid = -1;
-                        break;
-                    case HashLookupResult.Uncertain:
-                        m_findFilesetCommand.Transaction = transaction;
-                        m_findFilesetCommand.SetParameterValue(0, path);
-                        m_findFilesetCommand.SetParameterValue(1, blocksetid);
-                        m_findFilesetCommand.SetParameterValue(2, metadataid);
-                        var r = m_findFilesetCommand.ExecuteScalar();
-                        if (r == null || r == DBNull.Value)
-                        {
-                            m_filesetLookup.PositiveMisses++;
-                            fileid = -1;
-                        }
-                        else
-                        {
-                            fileid = Convert.ToInt64(r);
-                            m_filesetLookup.NegativeMisses++;
-                            m_filesetLookup.Add(hashdata, tp, fileid);
-                        }
-                        break;
-                }
+                PathEntryKeeper e;
+                if (m_filesetLookup.TryFind(path, out e))
+                    fileid = e.GetFilesetID(blocksetid, metadataid);
             }
             else
             {
@@ -272,7 +282,17 @@ namespace Duplicati.Library.Main.Database
                 m_insertFileCommand.SetParameterValue(2, metadataid);
                 fileid = Convert.ToInt64(m_insertFileCommand.ExecuteScalar());
                 if (m_filesetLookup != null)
-                    m_filesetLookup.Add(hashdata, tp, fileid);
+                {
+                    PathEntryKeeper e;
+                    if (m_filesetLookup.TryFind(path, out e))
+                        e.AddFilesetID(blocksetid, metadataid, fileid);
+                    else
+                    {
+                        e = new PathEntryKeeper();
+                        e.AddFilesetID(blocksetid, metadataid, fileid);
+                        m_filesetLookup.Insert(path, e);
+                    }
+                }
             }
             
             m_insertFilesetEntryCommand.Transaction = transaction;
@@ -668,7 +688,6 @@ namespace Duplicati.Library.Main.Database
                 m_blockHashLookup,
                 m_fileHashLookup,
                 m_metadataLookup,
-                m_filesetLookup,
                 m_findblocklisthashCommand,
                 m_findHashBlockCommand,
                 m_insertBlockCommand,

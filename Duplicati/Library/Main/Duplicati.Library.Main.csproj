@@ -117,6 +117,7 @@
     <Compile Include="Database\LocalRecreateDatabase.cs" />
     <Compile Include="ProgressClasses.cs" />
     <Compile Include="OperationPhase.cs" />
+    <Compile Include="Database\PathLookupHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
