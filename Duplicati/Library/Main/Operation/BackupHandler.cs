@@ -544,7 +544,7 @@ namespace Duplicati.Library.Main.Operation
                 } 
             }
         }
-
+        
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
             try
@@ -571,7 +571,7 @@ namespace Duplicati.Library.Main.Operation
     
                         if (m_options.StoreMetadata)
                         {
-                            metadata = null; //snapshot.GetMetadata(path);
+                            metadata = m_snapshot.GetMetadata(path);
                             if (metadata == null)
                                 metadata = new Dictionary<string, string>();
     
@@ -603,7 +603,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
+                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
                         if (metadata == null)
                             metadata = new Dictionary<string, string>();
     
@@ -645,7 +645,7 @@ namespace Duplicati.Library.Main.Operation
                     IMetahash metahashandsize;
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = null; //snapshot.GetMetadata(file);
+                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
                         if (metadata == null)
                             metadata = new Dictionary<string, string>();
 
