@@ -68,5 +68,19 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The file attributes</returns>
         /// <param name="file">The file or folder to examine</param>
         System.IO.FileAttributes GetAttributes(string file);
+        
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        Dictionary<string, string> GetMetadata(string file);
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        bool IsBlockDevice(string file);
     }
 }

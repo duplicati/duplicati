@@ -36,6 +36,11 @@ namespace Duplicati.Library.Snapshots
     public class LinuxSnapshot : ISnapshotService
     {
         /// <summary>
+        /// A frequently used char-as-string
+        /// </summary>
+        protected readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
+        
+        /// <summary>
         /// Internal helper class for keeping track of a single snapshot volume
         /// </summary>
         private class SnapShot : IDisposable
@@ -432,7 +437,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public System.IO.FileAttributes GetAttributes(string file)
         {
-            return System.IO.File.GetAttributes(file);
+            return System.IO.File.GetAttributes(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
         }
 
         /// <summary>
@@ -442,9 +447,44 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
         {
-            return UnixSupport.File.GetSymlinkTarget(file);
+            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
+            return UnixSupport.File.GetSymlinkTarget(local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local);
         }
 
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public Dictionary<string, string> GetMetadata(string file)
+        {
+            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
+            var n = UnixSupport.File.GetExtendedAttributes(local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local);
+            var dict = new Dictionary<string, string>();
+            foreach(var x in n)
+                dict[x.Key] = Convert.ToBase64String(x.Value);
+                
+            return dict;
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public bool IsBlockDevice(string file)
+        {
+            var n = UnixSupport.File.GetFileType(file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file);
+            switch (n)
+            {
+                case UnixSupport.File.FileType.Directory:
+                case UnixSupport.File.FileType.Symlink:
+                case UnixSupport.File.FileType.File:
+                    return false;
+                default:
+                    return true;
+            }
+        }    
         #endregion
 
         #region IDisposable Members

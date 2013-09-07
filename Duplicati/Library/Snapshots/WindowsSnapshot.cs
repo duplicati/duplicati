@@ -364,6 +364,26 @@ namespace Duplicati.Library.Snapshots
 
             return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(spath)).PrintName;
         }
+        
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public Dictionary<string, string> GetMetadata(string file)
+        {
+            return null;
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public bool IsBlockDevice(string file)
+        {
+            return false;
+        }        
         #endregion
 
         #region IDisposable Members

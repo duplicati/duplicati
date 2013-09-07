@@ -134,6 +134,26 @@ namespace Duplicati.Library.Snapshots
 
             return res;
         }
+        
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public override Dictionary<string, string> GetMetadata(string file)
+        {
+            return null;
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public override bool IsBlockDevice(string file)
+        {
+            return false;
+        }
     }
 }
 
