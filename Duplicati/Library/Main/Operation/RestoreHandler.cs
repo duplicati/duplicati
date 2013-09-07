@@ -166,6 +166,7 @@ namespace Duplicati.Library.Main.Operation
         private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer)
         {
             var blocksize = options.Blocksize;
+            var updateCounter = 0L;
             using(var blockmarker = database.CreateBlockMarker())
             {
                 foreach(var restorelist in database.GetFilesWithMissingBlocks(blocks))
@@ -202,7 +203,8 @@ namespace Duplicati.Library.Main.Operation
                                     }   
                                     
                                 }
-                                
+                            
+                            if (updateCounter++ % 20 == 0)
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
                         catch (Exception ex)
@@ -221,6 +223,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
                 
+                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                 blockmarker.Commit(result);
             }
         }
@@ -366,6 +369,7 @@ namespace Duplicati.Library.Main.Operation
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
             {
+                var updateCount = 0L;
             	foreach(var entry in database.GetFilesAndSourceBlocksFast())
             	{
                     var targetpath = entry.TargetPath;
@@ -422,7 +426,8 @@ namespace Duplicati.Library.Main.Operation
 	                			}
 	                		}
                             
-                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                            if (updateCount++ % 20 == 0)
+                                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                             
 	                	}
                         else
@@ -444,6 +449,7 @@ namespace Duplicati.Library.Main.Operation
                     	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
             	}
             	
+                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
             	blockmarker.Commit(result);
             }
         }
@@ -454,6 +460,7 @@ namespace Duplicati.Library.Main.Operation
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
             {
+                var updateCount = 0L;
                 foreach (var restorelist in database.GetFilesAndSourceBlocks())
                 {
                     var targetpath = restorelist.TargetPath;
@@ -506,7 +513,8 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                            if (updateCount++ % 20 == 0)
+                                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                     }
                     catch (Exception ex)
                     {
@@ -522,6 +530,7 @@ namespace Duplicati.Library.Main.Operation
                     	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
                 }
 
+                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                 blockmarker.Commit(result);
             }
         }
@@ -610,6 +619,7 @@ namespace Duplicati.Library.Main.Operation
             // Scan existing files for existing BLOCKS
             using(var blockmarker = database.CreateBlockMarker())
             {
+                var updateCount = 0L;
                 foreach(var restorelist in database.GetExistingFilesWithBlocks())
                 {
                     var rename = !options.Overwrite;
@@ -661,7 +671,8 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                            if (updateCount++ % 20 == 0)
+                                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
                         catch (Exception ex)
                         {
@@ -718,6 +729,7 @@ namespace Duplicati.Library.Main.Operation
                     
                 }
 
+                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                 blockmarker.Commit(result);
             }
         }
