@@ -778,7 +778,6 @@ namespace Duplicati.Library.Main.Database
 
                 results.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", lastFilesetId, FOLDER_BLOCKSET_ID, m_filesetId, FOLDER_BLOCKSET_ID));
                 results.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", lastFilesetId, SYMLINK_BLOCKSET_ID, m_filesetId, SYMLINK_BLOCKSET_ID));
-                results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryFiles + @") A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", lastFilesetId, m_filesetId));
             }
 
             if (m_blockHashLookup != null && m_fileHashLookup != null && ((m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD || (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD))
@@ -813,6 +812,10 @@ namespace Duplicati.Library.Main.Database
                     Logging.Log.WriteMessage(string.Format("Prefix Metadata Lookup entries {0}, usage: {1}, positive misses: {2}", m_metadataLookup.PrefixBits, m_metadataLookup.PrefixUsageRatio, m_metadataLookup.PositiveMisses), Logging.LogMessageType.Profiling);
                     Logging.Log.WriteMessage(string.Format("Full Metadata Lookup entries {0}, usage: {1}, negative misses: {2}", m_metadataLookup.FullEntries, m_metadataLookup.FullUsageRatio, m_metadataLookup.NegativeMisses), Logging.LogMessageType.Profiling);
                 }
+                
+                var tmpName = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles + @"; SELECT COUNT(*) FROM ""{0}"" A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", tmpName), lastFilesetId, m_filesetId));
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"";", tmpName));
             }
         }
 
