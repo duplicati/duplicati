@@ -25,11 +25,6 @@ namespace Duplicati.Library.Main.Database
 {
 	internal class LocalDeleteDatabase : LocalDatabase
 	{
-        /// <summary>
-        /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
-        /// </summary>
-        private const uint HASH_GUESS_SIZE = 128;
-        
         private System.Data.IDbCommand m_moveBlockToNewVolumeCommand;
 
 		public LocalDeleteDatabase(string path, bool isCompact)
@@ -291,7 +286,7 @@ namespace Duplicati.Library.Main.Database
 		private class BlockQuery : IBlockQuery
 		{
 			private System.Data.IDbCommand m_command;
-			private HashDatabaseProtector<string, long> m_lookup;
+			private HashLookupHelper<long> m_lookup;
 			
 			public BlockQuery(System.Data.IDbConnection con, Options options, System.Data.IDbTransaction transaction)
 			{
@@ -300,13 +295,13 @@ namespace Duplicati.Library.Main.Database
 				
 				if (options.BlockHashLookupMemory > 0)
 				{
-					m_lookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);
+					m_lookup = new HashLookupHelper<long>((ulong)options.BlockHashLookupMemory);
 					using(var reader = m_command.ExecuteReader(@"SELECT ""Hash"", ""Size"" FROM ""Block"" "))
 					while (reader.Read())
 					{
 						var hash = reader.GetValue(0).ToString();
 						var size = Convert.ToInt64(reader.GetValue(1));
-						m_lookup.Add(HashPrefixLookup.DecodeBase64Hash(hash), hash, size);
+						m_lookup.Add(hash, size);
 					}
 				}
 				
@@ -320,15 +315,10 @@ namespace Duplicati.Library.Main.Database
 				if (m_lookup != null)
 				{
 					long nsize;
-					switch(m_lookup.HasValue(HashPrefixLookup.DecodeBase64Hash(hash), hash, out nsize))
-					{
-						case HashLookupResult.Found:
-							if (nsize == size)
-								return true;
-							break;
-						case HashLookupResult.NotFound:
-							return false;
-					}
+					if(m_lookup.TryGet(hash, out nsize) && nsize == size)
+                        return true;
+                    else
+                        return false;
 				}
 				
 				m_command.SetParameterValue(0, hash);	
@@ -339,10 +329,7 @@ namespace Duplicati.Library.Main.Database
 			
 			public void Dispose()
 			{
-				if (m_lookup != null)
-					try { m_lookup.Dispose(); } 
-					finally { m_lookup = null; }
-					
+        		m_lookup = null;
 				if (m_command != null)
 					try { m_command.Dispose(); }
 					finally { m_command = null; }

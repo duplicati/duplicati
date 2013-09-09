@@ -71,7 +71,6 @@
     <Compile Include="Database\RemoteVolume.cs" />
     <Compile Include="Database\RemoteVolumeEntry.cs" />
     <Compile Include="Database\ExtensionMethods.cs" />
-    <Compile Include="Database\HashDatabaseProtector.cs" />
     <Compile Include="Database\LocalDeleteDatabase.cs" />
     <Compile Include="Database\RestoreIterators.cs" />
     <Compile Include="Database\LocalBugReportDatabase.cs" />
@@ -118,6 +117,7 @@
     <Compile Include="ProgressClasses.cs" />
     <Compile Include="OperationPhase.cs" />
     <Compile Include="Database\PathLookupHelper.cs" />
+    <Compile Include="Database\HashLookupHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

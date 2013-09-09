@@ -55,20 +55,6 @@ namespace Duplicati.Library.Main.Database
             }
         }
     
-        /// <summary>
-        /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
-        /// </summary>
-        internal const uint HASH_GUESS_SIZE = 128;
-        
-        /// <summary>
-        /// The usage threshold for a lookup table that triggers a warning
-        /// </summary>
-        private const double FULL_HASH_USAGE_THRESHOLD = 0.05;
-        /// <summary>
-        /// The number of hash misses that triggers a warning
-        /// </summary>
-        private const long HASH_MISS_THRESHOLD = 200;
-
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
         private readonly System.Data.IDbCommand m_findfilesetCommand;
@@ -95,9 +81,9 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
 		
-		private HashDatabaseProtector<string, KeyValuePair<long, long>> m_blockHashLookup;
-        private HashDatabaseProtector<string, long> m_fileHashLookup;
-        private HashDatabaseProtector<string, long> m_metadataLookup;
+		private HashLookupHelper<KeyValuePair<long, long>> m_blockHashLookup;
+        private HashLookupHelper<long> m_fileHashLookup;
+        private HashLookupHelper<long> m_metadataLookup;
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
         
         private long m_missingBlockHashes;
@@ -199,11 +185,11 @@ namespace Duplicati.Library.Main.Database
         public void BuildLookupTable(Options options)
         {
             if (options.BlockHashLookupMemory > 0)
-                m_blockHashLookup = new HashDatabaseProtector<string, KeyValuePair<long, long>>(HASH_GUESS_SIZE, (ulong)options.BlockHashLookupMemory);            
+                m_blockHashLookup = new HashLookupHelper<KeyValuePair<long, long>>((ulong)options.BlockHashLookupMemory);            
             if (options.FileHashLookupMemory > 0)
-                m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FileHashLookupMemory);
+                m_fileHashLookup = new HashLookupHelper<long>((ulong)options.FileHashLookupMemory);
             if (options.MetadataHashMemory > 0)
-                m_metadataLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.MetadataHashMemory);
+                m_metadataLookup = new HashLookupHelper<long>((ulong)options.MetadataHashMemory);
             if (options.UseFilepathCache)
                 m_pathLookup = new PathLookupHelper<PathEntryKeeper>(true);
 
@@ -218,8 +204,7 @@ namespace Duplicati.Library.Main.Database
                             var str = rd.GetValue(0).ToString();
                             var id = Convert.ToInt64(rd.GetValue(1));
                             var size = Convert.ToInt64(rd.GetValue(2));
-                            var key = HashPrefixLookup.DecodeBase64Hash(str);
-                            m_blockHashLookup.Add(key, str, new KeyValuePair<long, long>(id, size));
+                            m_blockHashLookup.Add(str, new KeyValuePair<long, long>(id, size));
                         }
                 
                 if (m_fileHashLookup != null)
@@ -228,8 +213,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             var str = rd.GetValue(0).ToString();
                             var id = Convert.ToInt64(rd.GetValue(1));
-                            var key = HashPrefixLookup.DecodeBase64Hash(str);
-                            m_fileHashLookup.Add(key, str, id);
+                            m_fileHashLookup.Add(str, id);
                         }
 
                 if (m_metadataLookup != null)
@@ -238,8 +222,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             var metadataid = Convert.ToInt64(rd.GetValue(0));
                             var hash = rd.GetValue(1).ToString();
-                            var hashdata = HashPrefixLookup.DecodeBase64Hash(hash);
-                            m_metadataLookup.Add(hashdata, hash, metadataid);
+                            m_metadataLookup.Add(hash, metadataid);
                         }
 
                 if (m_pathLookup != null)
@@ -284,37 +267,11 @@ namespace Duplicati.Library.Main.Database
         public bool AddBlock (string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
         {
             object r = null;
-            ulong hashdata = 0;
             if (m_blockHashLookup != null) 
             {
-                hashdata = HashPrefixLookup.DecodeBase64Hash(key);
                 KeyValuePair<long, long> blockid;
-                switch (m_blockHashLookup.HasValue(hashdata, key, out blockid)) 
-                {
-                    case HashLookupResult.NotFound:
-                        //We insert it
-                        break;
-                        
-                    case HashLookupResult.Found:
-                        return false;
-                        
-                    default:
-                        m_findblockCommand.Transaction = transaction;
-                        m_findblockCommand.SetParameterValue(0, key);
-                        m_findblockCommand.SetParameterValue(1, size);
-                        r = m_findblockCommand.ExecuteScalar();
-                        if (r == null || r == DBNull.Value) {
-                            m_blockHashLookup.PositiveMisses++;
-                        } else {
-                            m_blockHashLookup.NegativeMisses++;
-                            if (m_missingBlockHashes == 0) {
-                                //Update the lookup table, MRU style
-                                m_blockHashLookup.Add(hashdata, key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
-                                return false;
-                            }
-                        }
-                        break;
-                }
+                if (m_blockHashLookup.TryGet(key, out blockid))
+                    return false;
             }
             else
             {
@@ -332,14 +289,14 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(2, size);
                 r = m_insertblockCommand.ExecuteScalar();
                 if (m_blockHashLookup != null)
-                    m_blockHashLookup.Add(hashdata, key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
+                    m_blockHashLookup.Add(key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
                 return true;
             }
             else
             {
                 //We add/update it now
                 if (m_blockHashLookup != null)
-                    m_blockHashLookup.Add(hashdata, key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
+                    m_blockHashLookup.Add(key, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
 
                 //If the block is found and the volume is broken somehow.
                 m_findremotevolumestateCommand.Transaction = transaction;
@@ -372,38 +329,10 @@ namespace Duplicati.Library.Main.Database
         public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
         {
             object r = null;
-            ulong hashdata = 0;
-            
             if (m_fileHashLookup != null)
             {
-                hashdata = HashPrefixLookup.DecodeBase64Hash(filehash);
-                
-                switch (m_fileHashLookup.HasValue(hashdata, filehash, out blocksetid))
-                {
-                    case HashLookupResult.NotFound:
-                        //We insert it, but avoid looking for it
-                        break;
-                        
-                    case HashLookupResult.Found:
-                        //Got it, just return it
-                        return false;
-                        
-                    default:
-                        m_findblocksetCommand.Transaction = transaction;
-                        r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
-                        if (r == null || r == DBNull.Value)
-                            m_fileHashLookup.PositiveMisses++;
-                        else
-                        {
-                            m_fileHashLookup.NegativeMisses++;
-                            blocksetid = Convert.ToInt64(r);
-                            
-                            //Update, MRU style
-                            m_fileHashLookup.Add(hashdata, filehash, blocksetid);
-                            return false;
-                        }
-                        break;
-                }
+                if (m_fileHashLookup.TryGet(filehash, out blocksetid))
+                    return false;
             }
             else
             {
@@ -423,7 +352,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertblocksetCommand.SetParameterValue(1, filehash);
                 blocksetid = Convert.ToInt64(m_insertblocksetCommand.ExecuteScalar());
                 if (m_fileHashLookup != null)
-                    m_fileHashLookup.Add(hashdata, filehash, blocksetid);
+                    m_fileHashLookup.Add(filehash, blocksetid);
 
                 long ix = 0;
                 if (blocklistHashes != null)
@@ -454,8 +383,7 @@ namespace Duplicati.Library.Main.Database
                     if (m_blockHashLookup != null)
                     {
                         KeyValuePair<long, long> id;
-                        ulong hdata = HashPrefixLookup.DecodeBase64Hash(h);
-                        if (m_blockHashLookup.HasValue(hdata, h, out id) == HashLookupResult.Found && id.Value == exsize)
+                        if (m_blockHashLookup.TryGet(h, out id) && id.Value == exsize)
                         {
                             m_insertblocksetentryFastCommand.SetParameterValue(1, ix);
                             m_insertblocksetentryFastCommand.SetParameterValue(2, id.Key);
@@ -495,48 +423,12 @@ namespace Duplicati.Library.Main.Database
         /// <returns>True if the set was added to the database, false otherwise</returns>
         public bool AddMetadataset(string hash, long size, out long metadataid, System.Data.IDbTransaction transaction = null)
         {
-            ulong hashdata = 0;
             if (size > 0)
             {
                 if (m_metadataLookup != null)
                 {
-                    hashdata = HashPrefixLookup.DecodeBase64Hash(hash);
-                    
-                    switch(m_metadataLookup.HasValue(hashdata, hash, out metadataid))
-                    {
-                        case HashLookupResult.NotFound:
-                            //We insert it, but avoid looking for it
-                            break;
-                            
-                        case HashLookupResult.Found:
-                            //Got it, just return the result
-                            return false;
-                        
-                        default:
-                            //Highly unlikely that we find matching metadata, due to the timestamp
-                            m_findmetadatasetProbeCommand.Transaction = transaction;
-                            var r = m_findmetadatasetProbeCommand.ExecuteScalar(null, hash, size);
-                            if (r != null && r != DBNull.Value)
-                            {
-                                m_findmetadatasetCommand.Transaction = transaction;
-                                r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
-                                if (r != null && r != DBNull.Value)
-                                {
-                                    m_metadataLookup.NegativeMisses++;
-                                    //Update the lookup table, MRU style
-                                    metadataid = Convert.ToInt64(r);
-                                    m_metadataLookup.Add(hashdata, hash, metadataid);
-                                    return false;
-                                }
-                            }
-                            
-                            if (r == null || r == DBNull.Value)
-                                m_metadataLookup.PositiveMisses++;
-                            else
-                                m_metadataLookup.NegativeMisses++;
-                                
-                            break;
-                    }
+                    if(m_metadataLookup.TryGet(hash, out metadataid))
+                        return false;
                 }
                 else
                 {
@@ -560,7 +452,7 @@ namespace Duplicati.Library.Main.Database
                     metadataid = Convert.ToInt64(m_insertmetadatasetCommand.ExecuteScalar());
                     tr.Commit();
                     if (m_metadataLookup != null)
-                        m_metadataLookup.Add(hashdata, hash, metadataid);
+                        m_metadataLookup.Add(hash, metadataid);
                 }
 
                 return true;
@@ -724,21 +616,10 @@ namespace Duplicati.Library.Main.Database
                     m_scantimelookupTablename = null;
                 }
 
-            if (m_blockHashLookup != null)
-                try { m_blockHashLookup.Dispose(); }
-                catch { }
-                finally { m_blockHashLookup = null; }
 
-            if (m_fileHashLookup != null)
-                try { m_fileHashLookup.Dispose(); }
-                catch { }
-                finally { m_fileHashLookup = null; }
-
-            if (m_metadataLookup != null)
-                try { m_metadataLookup.Dispose(); }
-                catch { }
-                finally { m_metadataLookup = null; }
-
+            m_fileHashLookup = null;
+            m_metadataLookup = null;
+            m_blockHashLookup = null;
             m_pathLookup = null;
 
             base.Dispose();
@@ -778,40 +659,6 @@ namespace Duplicati.Library.Main.Database
 
                 results.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", lastFilesetId, FOLDER_BLOCKSET_ID, m_filesetId, FOLDER_BLOCKSET_ID));
                 results.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (" + subqueryNonFiles + @") A, (" + subqueryNonFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ", lastFilesetId, SYMLINK_BLOCKSET_ID, m_filesetId, SYMLINK_BLOCKSET_ID));
-            }
-
-            if (m_blockHashLookup != null && m_fileHashLookup != null && ((m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD || (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD))
-                results.AddWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses, m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses), null);
-
-            if (m_blockHashLookup != null && (m_blockHashLookup.PositiveMisses + m_blockHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_blockHashLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
-                results.AddWarning(string.Format("Block hash lookup table is too small, usage is: {0:0.00}%. Adjust with --{1}", m_blockHashLookup.FullUsageRatio * 100, "blockhash-lookup-memory"), null);
-
-            if (m_fileHashLookup != null && (m_fileHashLookup.PositiveMisses + m_fileHashLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_fileHashLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
-                results.AddWarning(string.Format("File hash lookup table is too small, usage is: {0:0.00}%. Adjust with --{1}", m_fileHashLookup.FullUsageRatio * 100, "filehash-lookup-memory"), null);
-
-            if (m_metadataLookup != null && (m_metadataLookup.PositiveMisses + m_metadataLookup.NegativeMisses) > HASH_MISS_THRESHOLD && m_metadataLookup.FullUsageRatio > FULL_HASH_USAGE_THRESHOLD)
-                results.AddWarning(string.Format("Metadata hash lookup table is too small, usage is: {0:0.00}%. Adjust with --{1}", m_metadataLookup.FullUsageRatio * 100, "metadatahash-lookup-memory"), null);
-            
-            // Good for profiling, but takes some time to calculate these stats
-            if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
-            {
-                if (m_blockHashLookup != null)
-                {
-                    Logging.Log.WriteMessage(string.Format("Prefix BlockHash Lookup entries {0}, usage: {1}, positive misses: {2}", m_blockHashLookup.PrefixBits, m_blockHashLookup.PrefixUsageRatio, m_blockHashLookup.PositiveMisses), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full BlockHash Lookup entries {0}, usage: {1}, negative misses: {2}", m_blockHashLookup.FullEntries, m_blockHashLookup.FullUsageRatio, m_blockHashLookup.NegativeMisses), Logging.LogMessageType.Profiling);
-                }
-
-                if (m_fileHashLookup != null)
-                {
-                    Logging.Log.WriteMessage(string.Format("Prefix FileHash Lookup entries {0}, usage: {1}, positive misses: {2}", m_fileHashLookup.PrefixBits, m_fileHashLookup.PrefixUsageRatio, m_fileHashLookup.PositiveMisses), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full FileHash Lookup entries {0}, usage: {1}, negative misses: {2}", m_fileHashLookup.FullEntries, m_fileHashLookup.FullUsageRatio, m_fileHashLookup.NegativeMisses), Logging.LogMessageType.Profiling);
-                }
-
-                if (m_metadataLookup != null)
-                {
-                    Logging.Log.WriteMessage(string.Format("Prefix Metadata Lookup entries {0}, usage: {1}, positive misses: {2}", m_metadataLookup.PrefixBits, m_metadataLookup.PrefixUsageRatio, m_metadataLookup.PositiveMisses), Logging.LogMessageType.Profiling);
-                    Logging.Log.WriteMessage(string.Format("Full Metadata Lookup entries {0}, usage: {1}, negative misses: {2}", m_metadataLookup.FullEntries, m_metadataLookup.FullUsageRatio, m_metadataLookup.NegativeMisses), Logging.LogMessageType.Profiling);
-                }
                 
                 var tmpName = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 results.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles + @"; SELECT COUNT(*) FROM ""{0}"" A, (" + subqueryFiles + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", tmpName), lastFilesetId, m_filesetId));
