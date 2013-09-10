@@ -38,9 +38,9 @@ namespace Duplicati.Library.Main
         /// Initializes a new instance of the <see cref="Duplicati.Library.Main.HashLookupHelper"/> class.
         /// </summary>
         /// <param name="maxmemory">The maximum amount of bytes to use for the lookup table</param>
-        public HashLookupHelper (ulong maxmemory = 8 * 16 * 1024 * 1024)
+        public HashLookupHelper (ulong maxmemory)
         {
-            m_entries = Math.Max(16, maxmemory / 8);
+            m_entries = Math.Max(16, maxmemory / (ulong)IntPtr.Size);
             m_lookup = new SortedList<string, T>[m_entries];
         }
         
