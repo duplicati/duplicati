@@ -28,9 +28,14 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class TempFile : IDisposable 
     {
+        /// <summary>
+        /// The prefix applied to all temporary files
+        /// </summary>
+        public static string APPLICATION_PREFIX = System.Reflection.Assembly.GetEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        
         private string m_path;
         private bool m_protect;
-        
+                
 #if DEBUG
 		//In debug mode, we track the creation of temporary files, and encode the generating method into the name
 		private static object m_lock = new object();
@@ -67,13 +72,32 @@ namespace Duplicati.Library.Utility
 				m_fileTrace.Add(s, st);
 			return s;			
         }
-
+        
 #else
         private static string GenerateUniqueName()
         {
-			return Guid.NewGuid().ToString();
+			return APPLICATION_PREFIX + Guid.NewGuid().ToString();
         }
 #endif
+
+        /// <summary>
+        /// Gets all temporary files found in the current tempdir, that matches the application prefix
+        /// </summary>
+        /// <returns>The application temp files.</returns>
+        public static IEnumerable<string> GetApplicationTempFiles()
+        {
+            return System.IO.Directory.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
+        }
+        
+        /// <summary>
+        /// Attempts to delete all temporary files for this application
+        /// </summary>
+        public static void RemoveAllApplicationTempFiles()
+        {
+            foreach(var s in GetApplicationTempFiles())
+                try { System.IO.File.Delete(s); }
+                catch { }
+        }
         
         public TempFile()
             : this(System.IO.Path.Combine(TempFolder.SystemTempPath, GenerateUniqueName()))
