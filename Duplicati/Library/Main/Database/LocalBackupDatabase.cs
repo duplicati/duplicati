@@ -198,6 +198,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 if (m_blockHashLookup != null)
+                    using(new Logging.Timer("Build blockhash lookup table"))
                     using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"", ""Block"".""ID"", ""Block"".""Size"" FROM ""Block"" "))
                         while (rd.Read())
                         {
@@ -208,6 +209,7 @@ namespace Duplicati.Library.Main.Database
                         }
                 
                 if (m_fileHashLookup != null)
+                    using(new Logging.Timer("Build filehash lookup table"))
                     using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"", ""ID"" FROM ""BlockSet"""))
                         while (rd.Read())
                         {
@@ -217,6 +219,7 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_metadataLookup != null)
+                    using(new Logging.Timer("Build metahash lookup table"))
                     using (var rd = cmd.ExecuteReader(@"SELECT ""Metadataset"".""ID"", ""Blockset"".""FullHash"" FROM ""Metadataset"", ""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" "))
                         while (rd.Read())
                         {
@@ -226,6 +229,7 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_pathLookup != null)
+                    using(new Logging.Timer("Build path scantime lookup table"))
                     using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 ", m_scantimelookupTablename)))
                         while (rd.Read())
                         {
@@ -236,6 +240,7 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_pathLookup != null)
+                    using(new Logging.Timer("Build path lookup table"))
                     using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""File"" ")))
                         while (rd.Read())
                         {
