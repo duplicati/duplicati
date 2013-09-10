@@ -625,23 +625,23 @@ namespace Duplicati.Library.Main.Operation
     
                 m_result.OperationProgressUpdater.UpdatefilesProcessed(++m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
                 
-                DateTime oldScanned;
-                var oldId = m_database.GetFileEntry(path, out oldScanned);
-    
                 bool changed = false;
-                DateTime lastModified = new DateTime(0, DateTimeKind.Utc);
+                
+                // The time we scan
+                DateTime scantime = DateTime.UtcNow;
+                // Last scan time
+                DateTime oldScanned;
+                // Last file modification
+                DateTime lastModified = m_snapshot.GetLastWriteTime(path).ToUniversalTime();
+                var oldId = m_database.GetFileEntry(path, out oldScanned);
 
-                lastModified = m_snapshot.GetLastWriteTime(path).ToUniversalTime();
                 long filestatsize = m_snapshot.GetFileSize(path);
                 if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || filestatsize < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
-                
                     m_result.OpenedFiles++;
                     
                     long filesize = 0;
-                    DateTime scantime = DateTime.UtcNow;
-                    
                     IMetahash metahashandsize;
                     if (m_options.StoreMetadata)
                     {
@@ -755,6 +755,8 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
+                            // When we write the file to output, update the scan time
+                            oldScanned = scantime;
                             m_result.AddVerboseMessage("File has not changed {0}", path);
                         }
                     }
