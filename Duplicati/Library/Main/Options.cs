@@ -493,7 +493,7 @@ namespace Duplicati.Library.Main
 #if DEBUG
                 return Math.Max(1024 * 10, Library.Utility.Sizeparser.ParseSize(volsize, "mb"));
 #else
-                return Math.Max(1024 * 1024, Utility.Sizeparser.ParseSize(volsize, "mb"));
+                return Math.Max(1024 * 1024, Library.Utility.Sizeparser.ParseSize(volsize, "mb"));
 #endif
             }
         }
@@ -1529,12 +1529,17 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); } 
         }
+#endif
+
+        /// <summary>
+        /// Gets a flag indicating if the local database should not be used
+        /// </summary>
+        /// <value><c>true</c> if no local db is used; otherwise, <c>false</c>.</value>
         public bool NoLocalDb
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-db"); }
         }
-#endif
-
+        
         /// <summary>
         /// Gets a lookup table with compression hints, the key is the file extension with the leading period
         /// </summary>
