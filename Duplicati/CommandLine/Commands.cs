@@ -388,7 +388,10 @@ namespace Duplicati.CommandLine
                         output.MessageEvent("Remote backup verification completed");
                 
                     if (phase == Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles)
+                    {
+                        output.MessageEvent("Scanning local files ...");
                         periodicOutput.SetReady();
+                    }
                     else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Finalize)
                         periodicOutput.SetFinished();
                     else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify)
