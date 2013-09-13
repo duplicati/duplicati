@@ -379,9 +379,7 @@ namespace Duplicati.Library.Main
             
                     if (MessageSink != null)
                         MessageSink.MessageEvent(message);
-                
-                    Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
-            
+                            
                     if (m_db != null && !m_db.IsDisposed)
                         LogDbMessage("Message", message, null);
                 }
@@ -402,8 +400,6 @@ namespace Duplicati.Library.Main
                 if (MessageSink != null)
                     MessageSink.WarningEvent(message, ex);
                 
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-
                 if (m_db != null && !m_db.IsDisposed)
                     LogDbMessage("Warning", message, ex);
             }
@@ -423,8 +419,6 @@ namespace Duplicati.Library.Main
                 if (MessageSink != null)
                     MessageSink.RetryEvent(message, ex);
                 
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-
                 if (m_db != null && !m_db.IsDisposed)
                     LogDbMessage("Retry", message, ex);
             }
@@ -443,8 +437,6 @@ namespace Duplicati.Library.Main
             
                 if (MessageSink != null)
                     MessageSink.ErrorEvent(message, ex);
-
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
 
                 if (m_db != null && !m_db.IsDisposed)
                     LogDbMessage("Error", message, ex);
