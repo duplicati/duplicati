@@ -190,10 +190,9 @@ namespace Duplicati.Library.Main.Operation
                     m_snapshot = GetSnapshot(sources, m_options, m_result);
 
                     // Start parallel scan
-                    if (m_options.ChangedFilelist == null || m_options.ChangedFilelist.Length < 1)                    
+                    if (m_options.ChangedFilelist == null || m_options.ChangedFilelist.Length < 1)
                     {
-                        parallelScanner = new System.Threading.Thread(CountFilesThread)
-                        {
+                        parallelScanner = new System.Threading.Thread(CountFilesThread) {
                             Name = "Read ahead file counter",
                             IsBackground = true
                         };
@@ -208,7 +207,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
                             m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
-                            using (var trn = m_database.BeginTransaction())
+                            using(var trn = m_database.BeginTransaction())
                             {
                                 var incompleteSet = incompleteFilesets.Last();
                                 var badIds = from n in incompleteFilesets select n.Key;
@@ -231,7 +230,7 @@ namespace Duplicati.Library.Main.Operation
                                     var oldFilesetID = incompleteSet.Key;
                                     
                                     // Probe for an unused filename
-                                    while(s < 60)
+                                    while (s < 60)
                                     {
                                         var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
                                         if (id < 0)
@@ -510,7 +509,7 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                                     m_result.TestResults = new TestResults(m_result);
 
-                                    using (var testdb = new LocalTestDatabase(m_database))
+                                    using(var testdb = new LocalTestDatabase(m_database))
                                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
                                         new TestHandler(m_backendurl, m_options, new TestResults(m_result))
                                             .DoRun(m_options.BackupTestSampleCount, testdb, backend);
