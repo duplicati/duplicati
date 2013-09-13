@@ -9,6 +9,8 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>SQLiteTool</RootNamespace>
     <AssemblyName>SQLiteTool</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\Duplicati\Library\Main\Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
