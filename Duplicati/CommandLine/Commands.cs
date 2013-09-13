@@ -172,6 +172,25 @@ namespace Duplicati.CommandLine
                     if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("["))
                         args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
                 
+                // Support for not adding the --auth-username if possible
+                string dbpath;
+                options.TryGetValue("dbpath", out dbpath);
+                if (string.IsNullOrEmpty(dbpath))
+                {
+                    dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                    if (dbpath != null)
+                        options["dbpath"] = dbpath;
+                }
+
+                // Don't ask for passphrase if we have a local db
+                if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption") && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "no-local-db"))
+                {
+                    string passphrase;
+                    options.TryGetValue("passphrase", out passphrase);
+                    if (string.IsNullOrEmpty(passphrase))
+                        options["no-encryption"] = "true";
+                }
+            
                 bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
                 options.Remove("control-files");
                 
@@ -571,6 +590,25 @@ namespace Duplicati.CommandLine
             if (args.Count < 1)
                 return PrintWrongNumberOfArguments(args, 1);
             
+            // Support for not adding the --auth-username if possible
+            string dbpath;
+            options.TryGetValue("dbpath", out dbpath);
+            if (string.IsNullOrEmpty(dbpath))
+            {
+                dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                if (dbpath != null)
+                    options["dbpath"] = dbpath;
+            }
+            
+            // Don't ask for passphrase if we have a local db
+            if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption") && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "no-local-db"))
+            {
+                string passphrase;
+                options.TryGetValue("passphrase", out passphrase);
+                if (string.IsNullOrEmpty(passphrase))
+                    options["no-encryption"] = "true";
+            }
+                            
             Library.Interface.IListChangesResults result;
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 if (args.Count == 2)
