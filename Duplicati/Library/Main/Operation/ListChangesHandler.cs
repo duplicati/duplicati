@@ -59,8 +59,8 @@ namespace Duplicati.Library.Main.Operation
             var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
             
             var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
-            baseVersion = string.IsNullOrEmpty(baseVersion) ? "0" : baseVersion;
-            compareVersion = string.IsNullOrEmpty(compareVersion) ? "1" : compareVersion;
+            baseVersion = string.IsNullOrEmpty(baseVersion) ? "1" : baseVersion;
+            compareVersion = string.IsNullOrEmpty(compareVersion) ? "0" : compareVersion;
             
             long baseVersionIndex = -1;
             long compareVersionIndex = -1;
