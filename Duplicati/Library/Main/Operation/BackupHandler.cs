@@ -523,6 +523,11 @@ namespace Duplicati.Library.Main.Operation
                         return;
                     }
                 }
+                catch (Exception ex)
+                {
+                    m_result.AddError("Fatal error", ex);
+                    throw;
+                }
                 finally
                 {
                     if (parallelScanner != null && parallelScanner.IsAlive)
