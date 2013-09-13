@@ -51,7 +51,7 @@ namespace Duplicati.Library.Modules.Builtin
                     return;
 
             //See if a password is already present or encryption is disabled
-            if (!commandlineOptions.ContainsKey("passphrase") && !commandlineOptions.ContainsKey("no-encryption"))
+            if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions, "no-encryption"))
             {
                 //Get the passphrase
                 bool confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.InvariantCultureIgnoreCase);
