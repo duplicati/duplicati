@@ -96,7 +96,7 @@ namespace Duplicati.Server
             foreach (string i in sourceFolders)
                 foreach (string x in exFolders)
                     if (x.StartsWith(i, Library.Utility.Utility.ClientFilenameStringComparision))
-                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(x)));
+                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Utility.Utility.ConvertGlobbingToRegExp(x)));
 
             return sourceFolders;
         }
@@ -153,7 +153,7 @@ namespace Duplicati.Server
                 foreach (string s2 in folders)
                     if (s.StartsWith(s2))
                     {
-                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(s)));
+                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Utility.Utility.ConvertGlobbingToRegExp(s)));
                         break;
                     }
             }

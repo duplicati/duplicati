@@ -121,7 +121,8 @@ namespace Duplicati.Library.Utility
             if (m_progresscounter > REPORT_DISTANCE_SIZE)
             {
                 m_progresscounter %= REPORT_DISTANCE_SIZE;
-                Callback(this);
+                if (Callback != null)
+                    Callback(this);
             }
 
             return bytesRead;
@@ -138,7 +139,8 @@ namespace Duplicati.Library.Utility
             if (m_progresscounter > REPORT_DISTANCE_SIZE)
             {
                 m_progresscounter %= REPORT_DISTANCE_SIZE;
-                Callback(this);
+                if (Callback != null)
+                    Callback(this);
             }
         }
 

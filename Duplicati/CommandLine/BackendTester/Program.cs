@@ -95,7 +95,7 @@ namespace Duplicati.CommandLine.BackendTester
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unittest failed: " + ex.Message);
+                Console.WriteLine("Unittest failed: " + ex.ToString());
             }
         }
 
@@ -190,7 +190,7 @@ namespace Duplicati.CommandLine.BackendTester
                 if (options.ContainsKey("min-file-size"))
                     min_file_size = (int)Duplicati.Library.Utility.Sizeparser.ParseSize(options["min-file-size"], "mb");
                 if (options.ContainsKey("max-file-size"))
-                    max_file_size = (int)Duplicati.Library.Utility.Sizeparser.ParseSize(options["max-file-size"]);
+                    max_file_size = (int)Duplicati.Library.Utility.Sizeparser.ParseSize(options["max-file-size"], "mb");
 
                 if (options.ContainsKey("min-filename-length"))
                     min_filename_size = int.Parse(options["min-filename-length"]);
@@ -223,7 +223,7 @@ namespace Duplicati.CommandLine.BackendTester
                     if (!skipOverwriteTest)
                     {
                         Console.WriteLine("Uploading wrong files ...");
-                        using (Library.Utility.TempFile dummy = new Library.Utility.TempFile(CreateRandomFile(tf, files.Count, 1024, 2048, rnd)))
+                        using (Library.Utility.TempFile dummy = Library.Utility.TempFile.WrapExistingFile(CreateRandomFile(tf, files.Count, 1024, 2048, rnd)))
                         {
                             using (System.IO.FileStream fs = new System.IO.FileStream(dummy, System.IO.FileMode.Open, System.IO.FileAccess.Read))
                                 dummyFileHash = sha.ComputeHash(fs);

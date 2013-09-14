@@ -16,10 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using Duplicati.Library.Main;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using Duplicati.Datamodel;
 using Duplicati.Server.Serialization;
 
@@ -28,7 +32,7 @@ namespace Duplicati.Server
     /// <summary>
     /// This class translates tasks into Duplicati calls, and executes them
     /// </summary>
-    public class DuplicatiRunner : Duplicati.Library.Main.LiveControl.ILiveControl
+    public class DuplicatiRunner
     {
         public class ProgressEventData : IProgressEventData
         {
@@ -39,6 +43,45 @@ namespace Duplicati.Server
             public int Progress { get; set; }
             public int SubProgress { get; set; }
             public long LastEventID { get; set; }
+        }
+        
+        private class MessageSink : IMessageSink
+        {
+            #region IMessageSink implementation
+            public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+            {
+            }
+            public void VerboseEvent(string message, object[] args)
+            {
+            }
+            public void MessageEvent(string message)
+            {
+            }
+            public void RetryEvent(string message, Exception ex)
+            {
+            }
+            public void WarningEvent(string message, Exception ex)
+            {
+            }
+            public void ErrorEvent(string message, Exception ex)
+            {
+            }
+            public void DryrunEvent(string message)
+            {
+            }
+            public IBackendProgress BackendProgress
+            {
+                set
+                {
+                }
+            }
+            public IOperationProgress OperationProgress
+            {
+                set
+                {
+                }
+            }
+            #endregion
         }
 
         public delegate void ResultEventDelegate(RunnerResult result, string parsedMessage, string message);
@@ -54,10 +97,7 @@ namespace Duplicati.Server
 
         private object m_lock = new object();
         private CloseReason m_stopReason = CloseReason.None;
-        private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
         private bool m_isAborted = false;
-
-        private RunnerState m_currentRunnerState = RunnerState.Suspended;
 
         public DuplicatiRunner()
         {
@@ -66,7 +106,6 @@ namespace Duplicati.Server
 
         void DuplicatiRunner_ProgressEvent(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress)
         {
-            m_currentRunnerState = state;
         }
 
         public void ExecuteTask(IDuplicityTask task)
@@ -75,6 +114,9 @@ namespace Duplicati.Server
 
             //Set the log level to be that of the GUI
             options["log-level"] = Duplicati.Library.Logging.Log.LogLevel.ToString();
+            
+            //Disable console output so it is logged
+            options["quiet-console"] = "true";
 
             //Set the name of the backup
             if (task.Schedule != null)
@@ -89,18 +131,12 @@ namespace Duplicati.Server
                 string destination = task.GetConfiguration(options);
 
                 //TODO: Its a bit dirty to set the options after creating the instance
-                using (Duplicati.Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
+                using (Duplicati.Library.Main.Controller i = new Duplicati.Library.Main.Controller(destination, options, new MessageSink()))
                 {
                     lock (m_lock)
                     {
                         m_stopReason = CloseReason.None;
-                        m_currentBackupControlInterface = i;
                     }
-
-                    SetupControlInterface();
-
-                    i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(Duplicati_OperationProgress);
-                    i.MetadataReport += new Library.Main.MetadataReportDelegate(new MetadataReportCapture(task).Duplicati_MetadataReport);
 
                     switch (task.TaskType)
                     {
@@ -128,7 +164,7 @@ namespace Duplicati.Server
                                         string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
 
                                         System.IO.File.Copy(Program.DatabasePath, filename, true);
-                                        using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType))
+                                        using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Library.Utility.SQLiteLoader.SQLiteConnectionType))
                                         {
                                             con.ConnectionString = "Data Source=" + filename;
 
@@ -159,15 +195,15 @@ namespace Duplicati.Server
                                     List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
                                     string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(task.Task, new ApplicationSettings(task.Task.DataParent), filters);
 
-                                    if (options.ContainsKey("filter"))
+                                    /*if (options.ContainsKey("filter"))
                                         filters.AddRange(Library.Utility.FilenameFilter.DecodeFilter(options["filter"]));
 
-                                    options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
+                                    options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);*/
 
                                     //At this point we register the backup as being in progress
                                     ((FullOrIncrementalTask)task).WriteBackupInProgress(Strings.DuplicatiRunner.ShutdownWhileBackupInprogress);
 
-                                    results = i.Backup(sourceFolders);
+                                    results = i.Backup(sourceFolders).ToString();
                                 }
                                 finally
                                 {
@@ -179,35 +215,8 @@ namespace Duplicati.Server
                                 }
                                 break;
                             }
-                        case DuplicityTaskType.ListBackups:
-
-                            List<string> res = new List<string>();
-                            foreach (Duplicati.Library.Main.ManifestEntry be in i.GetBackupSets())
-                            {
-                                res.Add(be.Time.ToString());
-                                foreach (Duplicati.Library.Main.ManifestEntry bei in be.Incrementals)
-                                    res.Add(bei.Time.ToString());
-                            }
-
-                            (task as ListBackupsTask).Backups = res.ToArray();
-                            break;
-                        case DuplicityTaskType.ListBackupEntries:
-                            (task as ListBackupEntriesTask).Backups = i.GetBackupSets();
-                            break;
                         case DuplicityTaskType.ListFiles:
-                            (task as ListFilesTask).Files = i.ListCurrentFiles();
-                            break;
-                        case DuplicityTaskType.ListSourceFolders:
-                            (task as ListSourceFoldersTask).Files = new List<string>(i.ListSourceFolders() ?? new string[0]);
-                            break;
-                        case DuplicityTaskType.ListActualFiles:
-                            (task as ListActualFilesTask).Files = i.ListActualSignatureFiles();
-                            break;
-                        case DuplicityTaskType.RemoveAllButNFull:
-                            results = i.DeleteAllButNFull();
-                            break;
-                        case DuplicityTaskType.RemoveOlderThan:
-                            results = i.DeleteOlderThan();
+                            (task as ListFilesTask).Files = (from n in i.List("*").Files select n.Path).ToList();
                             break;
                         case DuplicityTaskType.Restore:
                             options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
@@ -218,7 +227,7 @@ namespace Duplicati.Server
                             {
                                 if (ProgressEvent != null)
                                     ProgressEvent(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
-                                results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator));
+                                results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator)).ToString();
                             }
                             finally
                             {
@@ -228,7 +237,8 @@ namespace Duplicati.Server
                             break;
 
                         case DuplicityTaskType.RestoreSetup:
-                            i.RestoreControlFiles(task.LocalPath);
+                            options["restore-path"] = task.LocalPath;
+                            i.RestoreControlFiles();
                             break;
                         default:
                             return;
@@ -245,8 +255,6 @@ namespace Duplicati.Server
                     m_isAborted = true;
                     System.Threading.Thread.ResetAbort();
                 }
-                else if (ex is Library.Main.LiveControl.ExecutionStoppedException)
-                    m_isAborted = true;
 
                 if (m_isAborted && m_stopReason != CloseReason.None)
                 {
@@ -294,11 +302,6 @@ namespace Duplicati.Server
                     results += Environment.NewLine + "InnerError: " + ex.ToString(); //Don't localize
                 }
                 
-            }
-            finally
-            {
-                lock (m_lock)
-                    m_currentBackupControlInterface = null;
             }
 
             try
@@ -435,13 +438,7 @@ namespace Duplicati.Server
 
         }
 
-
-        void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, Duplicati.Library.Main.DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
-        {
-            Duplicati_OperationProgress(caller, EnumConverter.Convert<DuplicatiOperation>(operation), EnumConverter.Convert<DuplicatiOperationMode>(specificmode), progress, subprogress, message, submessage);
-        }
-
-        void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
+        void Duplicati_OperationProgress(Duplicati.Library.Main.Controller caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
         {
             m_lastEvent.Operation = operation;
             m_lastEvent.Mode = specificmode;
@@ -489,7 +486,7 @@ namespace Duplicati.Server
             return task.Backups;
         }
 
-        public List<Duplicati.Library.Main.ManifestEntry> ListBackupEntries(Schedule schedule)
+        public List<DateTime> ListBackupEntries(Schedule schedule)
         {
             ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
             ExecuteTask(task);
@@ -501,20 +498,6 @@ namespace Duplicati.Server
                 throw new Exception(task.Result);
 
             return task.Backups;
-        }
-
-        public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> ListActualFiles(Schedule schedule, DateTime when)
-        {
-            ListActualFilesTask task = new ListActualFilesTask(schedule, when);
-            ExecuteTask(task);
-            
-            if (task.IsAborted)
-                return null;
-            
-            if (task.Result.StartsWith("Error:"))
-                throw new Exception(task.Result);
-            
-            return task.Files;
         }
 
         public IList<string> ListFiles(Schedule schedule, DateTime when)
@@ -559,112 +542,5 @@ namespace Duplicati.Server
         /// </summary>
         public bool IsAborted { get { return m_isAborted; } }
 
-        /// <summary>
-        /// Function used to apply settings to a new interface
-        /// </summary>
-        private void SetupControlInterface()
-        {
-            //Copy the values to avoid thread race problems
-            System.Threading.ThreadPriority? priority = Program.LiveControl.ThreadPriority;
-            long? uploadLimit = Program.LiveControl.UploadLimit;
-            long? downloadLimit = Program.LiveControl.DownloadLimit;
-
-            if (priority != null)
-                m_currentBackupControlInterface.SetThreadPriority(priority.Value);
-            if (uploadLimit != null)
-                m_currentBackupControlInterface.SetUploadLimit(uploadLimit.Value.ToString() + "b");
-            if (downloadLimit != null)
-                m_currentBackupControlInterface.SetDownloadLimit(downloadLimit.Value.ToString() + "b");
-        }
-
-        public void Pause()
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.Pause();
-        }
-
-        public void Resume()
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.Resume();
-        }
-
-        public RunnerState CurrentState { get { return m_currentRunnerState; } }
-        public ProgressEventData LastEvent { get { return m_lastEvent; } }
-
-        public void Stop()
-        {
-            Stop(CloseReason.None);
-        }
-
-        public void Stop(CloseReason reason)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                {
-                    m_stopReason = reason;
-                    if (m_currentBackupControlInterface.IsStopRequested)
-                        m_currentBackupControlInterface.Terminate();
-                    else
-                        m_currentBackupControlInterface.Stop();
-                }
-        }
-
-        public void Terminate(CloseReason reason)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                {
-                    m_stopReason = reason;
-                    m_currentBackupControlInterface.Terminate();
-                }
-        }
-
-        public void Terminate()
-        {
-            Terminate(CloseReason.None);
-        }
-
-        public bool IsStopRequested
-        {
-            get 
-            { 
-                lock (m_lock)
-                    if (m_currentBackupControlInterface != null)
-                        return m_currentBackupControlInterface.IsStopRequested;
-                    else
-                        return false;
-            }
-        }
-
-        public void SetUploadLimit(string limit)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.SetUploadLimit(limit);
-        }
-
-        public void SetDownloadLimit(string limit)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.SetDownloadLimit(limit);
-        }
-
-        public void SetThreadPriority(System.Threading.ThreadPriority priority)
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.SetThreadPriority(priority);
-        }
-
-        public void UnsetThreadPriority()
-        {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.UnsetThreadPriority();
-        }
     }
 }

@@ -262,7 +262,8 @@ namespace Duplicati.Server
                     }
                 }
 
-                Version sqliteVersion = new Version((string)SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
+
+                Version sqliteVersion = new Version((string)Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
                 {
                     if (writeConsole)
@@ -278,7 +279,7 @@ namespace Duplicati.Server
                 }
 
                 //Create the connection instance
-                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType);
+                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType);
 
                 try
                 {
@@ -297,7 +298,7 @@ namespace Duplicati.Server
                     //Attempt to open the database, handling any encryption present
                     OpenDatabase(con);
 
-                    Duplicati.Datamodel.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath);
+                    Duplicati.Library.Utility.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Datamodel.Schedule));
                 }
                 catch (Exception ex)
                 {
@@ -342,7 +343,7 @@ namespace Duplicati.Server
                 Program.WebServer = new Server.WebServer(commandlineOptions);
 
                 DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
-    
+
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
             }
@@ -391,12 +392,7 @@ namespace Duplicati.Server
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private static void LiveControl_ThreadPriorityChanged(object sender, EventArgs e)
-        {
-            if (LiveControl.ThreadPriority == null)
-                Runner.UnsetThreadPriority();
-            else
-                Runner.SetThreadPriority(LiveControl.ThreadPriority.Value);
-        
+        {        
             StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -407,16 +403,6 @@ namespace Duplicati.Server
         /// <param name="e"></param>
         private static void LiveControl_ThrottleSpeedChanged(object sender, EventArgs e)
         {
-            if (LiveControl.DownloadLimit == null)
-                Runner.SetDownloadLimit(null);
-            else
-                Runner.SetDownloadLimit(LiveControl.DownloadLimit.Value.ToString() + "b");
-
-            if (LiveControl.UploadLimit == null)
-                Runner.SetUploadLimit(null);
-            else
-                Runner.SetUploadLimit(LiveControl.UploadLimit.Value.ToString() + "b");
-
             StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -429,11 +415,9 @@ namespace Duplicati.Server
             {
                 case LiveControls.LiveControlState.Paused:
                     WorkThread.Pause();
-                    Runner.Pause();
                     break;
                 case LiveControls.LiveControlState.Running:
                     WorkThread.Resume();
-                    Runner.Resume();
                     break;
             }
 

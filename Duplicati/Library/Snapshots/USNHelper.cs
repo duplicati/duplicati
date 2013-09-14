@@ -122,7 +122,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="rootpath">The root path to look in and use as filter base</param>
         /// <param name="callback">The callback function that collects the output</param>
-        public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
         {
             //Under normal enumeration, the filter will prevent visiting subfolders for excluded folders
             //But when using USN all files/folders are present in the list, so we have to maintain
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Snapshots
                             if (local_filter.Length != 0)
                                 local_filter.Append("|");
                             local_filter.Append("(");
-                            local_filter.Append(Utility.FilenameFilter.ConvertGlobbingToRegExp(r.Key + "*"));
+                            local_filter.Append(Utility.Utility.ConvertGlobbingToRegExp(r.Key + "*"));
                             local_filter.Append(")");
 
                             if (Utility.Utility.IsFSCaseSensitive)

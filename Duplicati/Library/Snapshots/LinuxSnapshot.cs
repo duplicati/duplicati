@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -32,6 +35,11 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public class LinuxSnapshot : ISnapshotService
     {
+        /// <summary>
+        /// A frequently used char-as-string
+        /// </summary>
+        protected readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
+        
         /// <summary>
         /// Internal helper class for keeping track of a single snapshot volume
         /// </summary>
@@ -65,7 +73,7 @@ namespace Duplicati.Library.Snapshots
             public SnapShot(string path)
             {
                 m_name = string.Format("duplicati-{0}", Guid.NewGuid().ToString());
-                m_realDir = Utility.Utility.AppendDirSeparator(path);
+                m_realDir = System.IO.Directory.Exists(path) ? Utility.Utility.AppendDirSeparator(path) : path;
                 GetVolumeName(m_realDir);
             }
 
@@ -258,7 +266,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots for</param>
         /// <param name="options">A set of commandline options</param>
-        public LinuxSnapshot(string[] folders, Dictionary<string, string> options)
+        public LinuxSnapshot(string[] sources, Dictionary<string, string> options)
         {
             try
             {
@@ -266,7 +274,7 @@ namespace Duplicati.Library.Snapshots
 
                 //Make sure we do not create more snapshots than we have to
                 Dictionary<string, SnapShot> snaps = new Dictionary<string, SnapShot>();
-                foreach (string s in folders)
+                foreach (string s in sources)
                 {
                     SnapShot sn = new SnapShot(s);
                     if (!snaps.ContainsKey(sn.DeviceName))
@@ -383,30 +391,13 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerates all files and folders in the snapshot
         /// </summary>
-        /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
         {
-            foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                if (s.Key.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
-                {
-                    Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles);
-                    return;
-                }
-
-            throw new InvalidOperationException(string.Format(Strings.Shared.InvalidEnumPathError, startpath));
-        }
-
-        /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="filter">The filter to apply when evaluating files and folders</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
-        {
-            foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles);
+        	return m_entries.SelectMany(
+        		s => Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+        	);
         }
 
         /// <summary>
@@ -446,7 +437,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public System.IO.FileAttributes GetAttributes(string file)
         {
-            return System.IO.File.GetAttributes(file);
+            return System.IO.File.GetAttributes(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
         }
 
         /// <summary>
@@ -456,9 +447,44 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
         {
-            return UnixSupport.File.GetSymlinkTarget(file);
+            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
+            return UnixSupport.File.GetSymlinkTarget(local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local);
         }
 
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public Dictionary<string, string> GetMetadata(string file)
+        {
+            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
+            var n = UnixSupport.File.GetExtendedAttributes(local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local);
+            var dict = new Dictionary<string, string>();
+            foreach(var x in n)
+                dict[x.Key] = Convert.ToBase64String(x.Value);
+                
+            return dict;
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public bool IsBlockDevice(string file)
+        {
+            var n = UnixSupport.File.GetFileType(file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file);
+            switch (n)
+            {
+                case UnixSupport.File.FileType.Directory:
+                case UnixSupport.File.FileType.Symlink:
+                case UnixSupport.File.FileType.File:
+                    return false;
+                default:
+                    return true;
+            }
+        }    
         #endregion
 
         #region IDisposable Members

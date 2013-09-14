@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.IO;
 
@@ -148,7 +147,7 @@ namespace Duplicati.Library.Snapshots
                 Win32API.DDD_Flags flags = Win32API.DDD_Flags.DDD_REMOVE_DEFINITION | Win32API.DDD_Flags.DDD_EXACT_MATCH_ON_REMOVE;
                 if (m_shellBroadcast)
                     flags |= Win32API.DDD_Flags.DDD_NO_BROADCAST_SYSTEM;
-                bool success = Win32API.DefineDosDevice(flags, m_drive, m_targetPath);
+                Win32API.DefineDosDevice(flags, m_drive, m_targetPath);
                 m_drive = null;
             }
 

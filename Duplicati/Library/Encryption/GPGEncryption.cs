@@ -52,10 +52,6 @@ namespace Duplicati.Library.Encryption
         /// </summary>
         public const string COMMANDLINE_OPTIONS_PATH = "gpg-program-path";
         /// <summary>
-        /// The commandline option that supplies a signature key to test the GPG with (--sign-key)
-        /// </summary>
-        private const string COMMANDLINE_OPTIONS_SIGNATURE_KEY = "sign-key";
-        /// <summary>
         /// The commandline option that changes the default encryption command (--gpg-encryption-command)
         /// </summary>
         private const string COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND = "gpg-encryption-command";
@@ -116,11 +112,6 @@ namespace Duplicati.Library.Encryption
         private string m_key;
 
         /// <summary>
-        /// An optional key, used for signature verification
-        /// </summary>
-        private string m_signaturekey;
-
-        /// <summary>
         /// Constructs a GPG instance for reading the interface values
         /// </summary>
         public GPGEncryption()
@@ -135,8 +126,6 @@ namespace Duplicati.Library.Encryption
         public GPGEncryption(string passphrase, Dictionary<string, string> options)
         {
             m_key = passphrase;
-            if (options.ContainsKey(COMMANDLINE_OPTIONS_SIGNATURE_KEY))
-                m_signaturekey = options[COMMANDLINE_OPTIONS_SIGNATURE_KEY];
 
             //NOTE: For reasons unknown, GPG commandline options are divided into "options" and "commands".
             //NOTE: The "options" must be placed before "commands" or it wont work!
@@ -222,7 +211,6 @@ namespace Duplicati.Library.Encryption
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptionswitchesShort, Strings.GPGEncryption.GpgencryptionencryptionswitchesLong, GPG_ENCRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptionswitchesShort, Strings.GPGEncryption.GpgencryptiondecryptionswitchesLong, GPG_DECRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_PATH, CommandLineArgument.ArgumentType.Path, Strings.GPGEncryption.GpgprogrampathShort, Strings.GPGEncryption.GpgprogrampathLong),
-                    new CommandLineArgument(COMMANDLINE_OPTIONS_SIGNATURE_KEY, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.SignkeyShort, Strings.GPGEncryption.SignkeyLong),
                 });
             }
         }

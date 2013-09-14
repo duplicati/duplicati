@@ -28,15 +28,83 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class TempFile : IDisposable 
     {
+        /// <summary>
+        /// The prefix applied to all temporary files
+        /// </summary>
+        public static string APPLICATION_PREFIX = System.Reflection.Assembly.GetEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        
         private string m_path;
         private bool m_protect;
+                
+#if DEBUG
+		//In debug mode, we track the creation of temporary files, and encode the generating method into the name
+		private static object m_lock = new object();
+		private static Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
+		
+		public static System.Diagnostics.StackTrace GetStackTraceForTempFile(string filename)
+		{
+			lock(m_lock)
+				if (m_fileTrace.ContainsKey(filename))
+					return m_fileTrace[filename];
+				else
+					return null;
+		}
+        
+        private static string GenerateUniqueName()
+        {
+			var st = new System.Diagnostics.StackTrace();
+			foreach(var f in st.GetFrames())
+				if (f.GetMethod().DeclaringType.Assembly != typeof(TempFile).Assembly)
+				{
+					var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssK"), Guid.NewGuid().ToString().Substring(0, 8));
+					if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
+						n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssK"), Guid.NewGuid().ToString().Substring(0, 8));
+					if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0)
+					{
+						lock(m_lock)
+							m_fileTrace.Add(n, st);
+						return n;
+					}
+				}
+				
+			var s = Guid.NewGuid().ToString();
+			lock(m_lock)
+				m_fileTrace.Add(s, st);
+			return s;			
+        }
+        
+#else
+        private static string GenerateUniqueName()
+        {
+			return APPLICATION_PREFIX + Guid.NewGuid().ToString();
+        }
+#endif
 
+        /// <summary>
+        /// Gets all temporary files found in the current tempdir, that matches the application prefix
+        /// </summary>
+        /// <returns>The application temp files.</returns>
+        public static IEnumerable<string> GetApplicationTempFiles()
+        {
+            return System.IO.Directory.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
+        }
+        
+        /// <summary>
+        /// Attempts to delete all temporary files for this application
+        /// </summary>
+        public static void RemoveAllApplicationTempFiles()
+        {
+            foreach(var s in GetApplicationTempFiles())
+                try { System.IO.File.Delete(s); }
+                catch { }
+        }
+        
         public TempFile()
-            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, Guid.NewGuid().ToString()))
+            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, GenerateUniqueName()))
         {
         }
 
-        public TempFile(string path)
+        private TempFile(string path)
         {
             m_path = path;
             m_protect = false;
@@ -64,11 +132,27 @@ namespace Duplicati.Library.Utility
         {
             return new TempFile(path);
         }
-
-        #region IDisposable Members
-
-        public void Dispose()
+        
+        public static TempFile WrapExistingFile(string path)
         {
+        	return new TempFile(path);
+        }
+
+        public static TempFile CreateInFolder(string path)
+        {
+        	return new TempFile(System.IO.Path.Combine(path, GenerateUniqueName()));
+        }
+
+        public static TempFile CreateWritePrefix(string prefix)
+        {
+        	return new TempFile(System.IO.Path.Combine(TempFolder.SystemTempPath, prefix + GenerateUniqueName()));
+        }
+
+        protected void Dispose(bool disposing)
+        {
+            if (disposing)
+                GC.SuppressFinalize(this);
+                
             try
             {
                 if (!m_protect && m_path != null && System.IO.File.Exists(m_path))
@@ -79,8 +163,20 @@ namespace Duplicati.Library.Utility
             {
             }
         }
+        
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         #endregion
+        
+        ~TempFile()
+        {
+            Dispose(false);
+        }
 
         /// <summary>
         /// Swaps two instances of temporary files, equivalent to renaming the files but requires no IO

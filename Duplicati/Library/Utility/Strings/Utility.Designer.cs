@@ -106,6 +106,15 @@ namespace Duplicati.Library.Utility.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The string &quot;{0}&quot; could not be parsed into a date.
+        /// </summary>
+        internal static string InvalidDateError {
+            get {
+                return ResourceManager.GetString("InvalidDateError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The digit &#39;{0}&#39; is not a valid hex digit.
         /// </summary>
         internal static string InvalidHexDigitError {

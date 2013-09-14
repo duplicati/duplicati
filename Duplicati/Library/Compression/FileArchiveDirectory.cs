@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -69,6 +72,22 @@ namespace Duplicati.Library.Compression
         {
             if (prefix == null) prefix = "";
             return Utility.Utility.EnumerateFiles(System.IO.Path.Combine(m_folder, prefix)).ToArray();
+        }
+
+        /// <summary>
+        /// Returns a list of files in the archive
+        /// </summary>
+        /// <param name="prefix">An optional prefix that is used to filter the list</param>
+        /// <returns>A filtered list of filenames</returns>
+        public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
+        {
+            if (prefix == null) prefix = "";
+            List<KeyValuePair<string, long>> res = new List<KeyValuePair<string,long>>();
+            foreach(string s in Utility.Utility.EnumerateFiles(System.IO.Path.Combine(m_folder, prefix)))
+                res.Add(new KeyValuePair<string, long>(s, new System.IO.FileInfo(s).Length));
+
+            return res;
+
         }
 
         /// <summary>

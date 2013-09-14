@@ -101,10 +101,6 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Duplicati.CommandLine.csproj">
-      <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
-      <Name>Duplicati.CommandLine</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

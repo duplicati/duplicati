@@ -504,9 +504,9 @@ namespace Duplicati.Server
                 if (LongPollCheck(request, response, bw, Program.ProgressEventNotifyer, ref id, out isError) || !isError)
                 {
                     //TODO: Don't block if the backup is completed when entering the wait state
-                    var ev = Program.Runner.LastEvent;
+                    /*var ev = Program.Runner.LastEvent;
                     ev.LastEventID = id;
-                    OutputObject(bw, ev);
+                    OutputObject(bw, ev);*/
                 }
             }
 
@@ -730,7 +730,7 @@ namespace Duplicati.Server
                     }
 
                     Serializer.Deserialize<Datamodel.Schedule>(new StringReader(schedule_string), schedule);
-                    var task = Serializer.Deserialize<Datamodel.Task>(new StringReader(task_string), schedule.Task);
+                    Serializer.Deserialize<Datamodel.Task>(new StringReader(task_string), schedule.Task);
 
                     //TODO: Validate, duplicate names etc.
 
@@ -817,8 +817,8 @@ namespace Duplicati.Server
 
                             bool hasPaused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
                             Program.LiveControl.Pause();
-                            if (Program.WorkThread.CurrentTask.Schedule.ID == schedule.ID)
-                                Program.Runner.Terminate();
+                            /*if (Program.WorkThread.CurrentTask.Schedule.ID == schedule.ID)
+                                Program.Runner.Terminate();*/
 
 
                             try
@@ -950,16 +950,9 @@ namespace Duplicati.Server
                         break;
 
                     case "stop":
-                        if (!Program.Runner.IsStopRequested)
-                            Program.Runner.Stop(CloseReason.UserClosing);
                         break;
 
                     case "abort":
-                        if (!Program.Runner.IsStopRequested)
-                        {
-                            Program.Runner.Stop(CloseReason.UserClosing);
-                            Program.Runner.Stop(CloseReason.UserClosing);
-                        }
                         break;
 
                     case "run":

@@ -100,9 +100,7 @@ namespace Duplicati.CommandLine
                         sorted.Add(arg.Name, arg);
 
                     foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
-
-                        sorted.Add(arg.Name, arg);
-
+                        sorted[arg.Name] = arg;
 
                     foreach (Library.Interface.ICommandLineArgument arg in sorted.Values)
                         lines.Add(PrintArgSimple(arg, arg.Name));
@@ -117,9 +115,7 @@ namespace Duplicati.CommandLine
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
 
-
                     foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
-
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
                     lines.Add("");
@@ -152,7 +148,7 @@ namespace Duplicati.CommandLine
 
                     tp = tp.Replace("%ALLOPTIONS%", string.Join(Environment.NewLine, lines.ToArray()));
                 }
-
+				
                 if (tp.Contains("%MODULEOPTIONS%"))
                 {
                     //Figure out which module we are in
@@ -357,7 +353,15 @@ namespace Duplicati.CommandLine
 
         private static void PrintFormatted(IEnumerable<string> lines)
         {
-            int windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth);
+            int windowWidth = 80;
+            
+            try 
+            {
+                // This can go wrong if we have no attached console
+                windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth); 
+            }
+            catch { }
+            
             foreach (string s in lines)
             {
                 if (string.IsNullOrEmpty(s) || s.Trim().Length == 0)
@@ -405,7 +409,6 @@ namespace Duplicati.CommandLine
 
             public Matcher()
             {
-                Library.Main.Options opts = new Library.Main.Options(new Dictionary<string, string>());
                 List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
                 foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
                 foundArgs.Add(Program.SupportedCommands);

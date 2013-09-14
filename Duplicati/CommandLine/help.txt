@@ -10,20 +10,13 @@
 > duplicati.commandline.exe help
 
 See duplicati.commandline.exe help <topic> for more information.
-
   Examples: example
-  
-  Commands: backup, restore, delete-all-but-n-full, delete-all-but-n, cleanup, delete-older-than, list, list-current-files, list-source-folders, list-actual-signature-files, collection-status, create-folder, find-last-version, verify
-  
-  Debugging: debug, logging
-  
+  Commands: backup, find, restore, delete, compact, test, compare, repair
+  Debugging: debug, logging, create-report
   Targets: %BACKENDS%
-  
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
-  
   Formats: date, time, size, encryption, compression
-  
-  Advanced options: advanced, returncodes, filter, <option> (e.g. --auto-cleanup)
+  Advanced: mail, advanced, returncodes, filter, <option>
 
 http://www.duplicati.com/              Version: %VERSION%
 
@@ -35,114 +28,165 @@ http://www.duplicati.com/              Version: %VERSION%
 
 Make an encrypted backup
 ========================
-  The following command will make an encrypted backup and store it on an FTP server. The first backup will be full followed by 10 incremental backups before another full backup is made. As no passphrase is specified, the user will be prompted for a password. The upload speed is throttled to 500kB/s.
+  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than onemonth are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
   
-  %MONO%"%APP_PATH%" backup 
-    "%EXAMPLE_SOURCE_PATH%" "ftp://ftp.example.com/target"
-    --auth-username=username
-    --auth-password=password
-    --full-if-more-than-n-incrementals=10
-    --auto-cleanup
-    --max-upload-pr-second=500kB
-
-
-Delete old backups
-==================
-  The following command will delete old backups. If no passphrase is specified, the user will be prompted for a passphrase. The option --force is required to delete the files; without that option no files will be deleted. Duplicati does not delete backup files that are required to restore files from a valid newer backup (a full backup is always required to restore files from an incremental backup).
+  %MONO%"%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
   
-  %MONO%"%APP_PATH%" delete-older-than 10D 
-    "ftp://ftp.example.com/target"
-    --auth-username=username
-    --auth-password=password
-    --force
-
+Search for files in a backup
+============================
+  The backup can be searched for specific files. The following command returns all files "%EXAMPLE_SOURCE_FILE%" of the last backup. File names can also contain the wildcards * and ?. 
+  
+  %MONO%"%APP_PATH%" find ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%"
 
 Restore a specific file
 =======================
-  The following command will restore "%EXAMPLE_SOURCE_FILE%" from the backup in the latest version to the local folder "%EXAMPLE_RESTORE_PATH%".
+  The following command will restore "%EXAMPLE_SOURCE_FILE%" from the backup in the latest version to its original destination and overwrite an existing file.
   
-  %MONO%"%APP_PATH%" restore 
-    "ftp://ftp.example.com/target" "%EXAMPLE_RESTORE_PATH%"
-    --auth-username=username
-    --auth-password=password
-    --file-to-restore="%EXAMPLE_SOURCE_FILE%"
+  %MONO%"%APP_PATH%" restore ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%" --overwrite
     
 
 # =============================================================================
 > duplicati.commandline.exe help backup
   
-Usage: backup <source folder> <target url> <options>
+Usage: backup <storage-URL> "<source-path>" [<options>]
 
-  This will perform full or incremental backups. It reads all files from <source folder> and stores the backups in <target url>. If no rule for full backups is specified, Duplicati will create one full backup and incremental backups afterwards. Multiple source folders have to be separated by the operating system's delimiter (semicolon ";" on Windows, colon ":" on Linux).
+  Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is protocol://username:password@hostname:port/path?backend
+  _option1=value1&backend_option2=value2. Multiple source paths can be specified if they are separated by a space. Defaults are: The maximum file size is 100MB, backups are deleted when they are older than one month.
 
-Options:
-  --auto-cleanup
-    Removes all files that do not belong to the backup (e.g. partial files caused by interrupted uploads).
-  --backup-prefix = <string>
+  <username> must not contain : and <password> must not contain @. If they do, specify username and password using --auth-username and --auth-password.
+
+  --auth-password=<string>
+    The password that is required to authenticate with the server the backup is stored on.
+  --auth-username=<string>
+    The username that is required to authenticate with the server the backup is stored on.
+  --no-encryption=<boolean>
+	Use this to make an unencrypted backup.
+  --passphrase
+    This is the passphrase that is used to encrypt all data before it is uploaded. If an empty passphrase is specified, the backup will not be encrypted. This is the same as using --no-encryption.
+  --prefix=<string>
     Replaces the default "duplicati" with <string> in the file names of the backup files. It is required to specify different prefixes if multiple backups are stored in the same target folder.
-  --full
-    Make a full backup. If nothing is specified, an initial full backup is made with incremental backups afterwards.
-  --full-if-older-than = <date> 
-    Make a new full backup after the specified relative date or time.
-  --full-if-more-than-n-incrementals = <number>
-    Make a full backup after n incremental backups.
-  --max-upload-pr-second = <size>
-    Limits the upload speed to the specified value. <size> is interpreted as bandwidth/s.
-  --no-encryption
-    The backup is NOT encrypted with a passphrase. Unencrypted files are stored.
-  --passphrase = <passphrase>
-    The passphrase that is used to encrypt the backup. If nothing is specified here, the environment variable PASSPHRASE will be used or the user will be prompted to type in the passphrase. 
-  --volsize = <size>
-    The maximum size of files being written to the target. Default size is 10MB.
+
+
+# =============================================================================
+> duplicati.commandline.exe help find
+
+Usage: find <storage-URL> ["<filename>"] [<options>]
+
+  Finds specific files in specific backups. If <filename> is specified, all occurrences of <filename> in the backup are listed. <filename> can contain * and ? as wildcards. File names in [brackets] are interpreted as regular expression. Latest backup is searched by default. If entire path is specified, all available versions of the file are listed. If no <filename> is specified, a list of all available backups is shown.
+
+  --time=<time>
+    Shows what the files looked like at a specific time. Absolute and relative times can be specified.
+  --version=<int>
+    Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will besearched automatically.
+  --include=<string>
+    Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed. 
+  --exclude=<string>
+    Removes matching files from the list of files in a backup. This is applied before the search is executed. 
+
+
 
 # =============================================================================
 > duplicati.commandline.exe help restore
 
-Usage: restore <source url> <target folder>
+Usage: restore <storage-URL> ["<filename>"] [<options>]
   
-  This will restore one or more files from the backup in <source url> to the local folder <target folder>.
+  Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
-Options:
-  --file-to-restore = <list of files>
-    List of files to be restored separated by a semicolon ";" on Windows or colon ":" on Linux.
-  --restore-time = <date>
-    Restore from a specific or relative date or time. If nothing is specified, the latest version is restored.
+  --overwrite=<boolen>
+    Overwrites existing files.
+  --restore-path=<string>
+    Restores files to <restore-path> instead of their original destination. Top folders are removed if possible.
+  --time=<time>
+	Restore files that are older than the specified time.
+  --version=<int>
+    Restore files from a specific backup.
+
+
+	
+# =============================================================================
+> duplicati.commandline.exe help delete
+
+Usage: delete <storage-URL> [<options>]
+  
+  Marks old data deleted and removes outdated dlist files. A backup is deleted when it is older than <keep-time> or when there are more newer versions than <keep-versions>. Data is considered old, when it is not required from any existing backup anymore.
+  
+  --keep-time=<time>
+    Marks data outdated that is older than <time>.
+  --keep-versions=<int>
+    Marks data outdated that is older than <int> versions.
+  --version=<int>
+    Deletes all files that belong to the specified version(s).
+  
+  
+  
+# =============================================================================
+> duplicati.commandline.exe help compact
+
+Usage: compact <storage-URL> [<options>]
+  
+  Old data is not deleted immediately as in most cases only small parts of a dblock file are old data. When the amount of old data in a dblock file grows it might be worth to replace it. This is especially the case when the number of dblock files and thus the required storage space can be reduced. When backups are frequently made and only few files have changed, the uploaded dblock files are small. At some point it might make sense to replace a large number of small files with one large file. This is what compacting does.
+  
+  --small-file-max-count=<int>
+    The maximum allowed number of small files.
+  --small-file-size=<int>
+    Files smaller than this size are considered to be small and will be compacted with other small files as soon as there are <small-file-max-count> of them. --small-file-size=20 means 20% of <dblock-size>. 
+  --threshold=<percent_value>	
+	The amount of old data that a dblock file can contain before it is considered to be replaced.
+	
+	
+
+  
+# =============================================================================
+> duplicati.commandline.exe help compare
+
+Usage: compare <storage-URL> [<base-version>] [<compare-to>] [<options>]
+
+  Compares two backups and shows differences. If no versions are given, changes are shown between the two latest backups. The versions can either be timestamps or backup version numbers. If only one version is given, the most recent backup is compared to that version.
+
+  --verbose
+    Shows names of files
+  --include=<filter>
+    Adds an include filter (for verbose output)
+  --exclude=<filter>
+    Adds an exclude filter (for verbose output)
+
 
 
 # =============================================================================
-> duplicati.commandline.exe help delete-all-but-n-full
-  
-Usage: delete-all-but-n-full <number> <source url>
-  
-  This will keep the <number> latests full backups and delete older ones.
+> duplicati.commandline.exe help create-report
 
-Options: 
-%OPTION:force%
-%OPTION:allow-full-removal%
+Usage: create-report <storage-URL> <output-file> [<options>]
+
+  Analyses the backup and prepares a report with anonymous information. This report can be sent to the developers for a better analysis in case something went wrong.
+
+
 
 
 # =============================================================================
-> duplicati.commandline.exe help delete-all-but-n
+> duplicati.commandline.exe help repair
 
-Usage: delete-all-but-n <number> <target url>
+Usage: repair <storage-URL> [<options>]
   
-  This will keep the <number> latest backups no matter if they are full or incremental. Older backups will be deleted. No backups are deleted that are required to restore files from a valid newer backup.
-  
-Options:
-%OPTION:force%
-%OPTION:allow-full-removal%
+  Tries to repair the backup. If no local db is found or the db is empty, the db is re-created with data from the storage. If the db is in place but the remote storage is corrupt, the remote storage gets repaired with local data (if available).
+
+
 
 
 # =============================================================================
-> duplicati.commandline.exe help delete-older-than
+> duplicati.commandline.exe help test
+> duplicati.commandline.exe help verify
 
-Usage: delete-older-than <date> <target url>
+Usage: test <storage-URL> [<samples>] [<options>]
   
-  This will delete all backups from the target that are older than the specified absolute or relative date and time.
-
-Options:
-%OPTION:force%
-%OPTION:allow-full-removal%
+  Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. <samples> specifies the number of samples to be tested. If "all” is specified, all files in the backup will be tested. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
+  
+  --time=<time>
+    Checks samples from a specific time.
+  --version=<int>
+    Checks samples from specific versions. Delimiters are , -
+  
+  
+  
   
 # =============================================================================
 > duplicati.commandline.exe help debug
@@ -189,67 +233,15 @@ Options:
 
 
 # =============================================================================
-> duplicati.commandline.exe help cleanup
-
-Usage: cleanup <target url>
-
-  Removes all files that do not belong to the backup (e.g. partial files caused by interrupted uploads). This can also be performed when the actions backup, restore are run with the option --auto-cleanup.
-
-Options: 
-%OPTION:force%
-
-# =============================================================================
-> duplicati.commandline.exe help list
-
-Usage: list <target url>
-
-  Lists all files stored on the remote server. These are manifest files, signature files, content files and other files that do not belong to any backup created by duplicati. This command can be used to see the contents of the remote folder.
-
-
-# =============================================================================
-> duplicati.commandline.exe help list-current-files
-
-Usage: list-current-files <target url>
-
-  Lists the (source) files that are contained in a backup. By default, the latest versions are listed. This action is useful to try out what files would be restored with a given set or options.
-
-Options:
- --restore-time = <date>
-   By default, Duplicati will restore files from the most recent backup, use this option to restore older versions of a file. You may use relative times, like "-2M" for a backup from two months ago. Duplicati will pick the next older version of the value specified. If you specify "-2M", the restored version could be 2 months and 3 days old.
-
-
-# =============================================================================
-> duplicati.commandline.exe help list-source-folders
-
-Usage: list-source-folders <target url>
-
-  Lists the source folders that have been included in a backup. By default, the source folders of the latest backup are listed. This action is useful to check what source folders had been included in a backup at a given date or time.
-
-Options:
- --restore-time = <date>
-   By default, Duplicati will restore files from the most recent backup, use this option to restore older versions of a file. You may use relative times, like "-2M" for a backup from two months ago. Duplicati will pick the next older version of the value specified. If you specify "-2M", the restored version could be 2 months and 3 days old.
-
-
-# =============================================================================
-> duplicati.commandline.exe help list-actual-signature-files
-
-Usage: list-actual-signature-files <target url>
-  
-  Lists the files found in a single backup set with a status: (added, modified, deleted). This is the same as a "change set".
-
-Options:
- --restore-time = <date>
-   By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like "-2M" for a backup from two months ago.
-
-
-# =============================================================================
 > duplicati.commandline.exe help file
 
 Duplicati can use the local file system to store backups. The following target URL formats can be used:
-  file://hostname/folder
-  file://\\server\folder (UNC path)
-  file://c:\folder (Windows)
-  file:///usr/pub/files (Linux)
+
+  file://hostname/folder%20for%20backup
+  file://\\server\folder%20for%20backup (UNC path)
+  "C:\folder for backup"
+  file://c:\folder%20for%20backup (Windows)
+  file:///usr/pub/folder%20for%20backup (Linux)
 
 Options:
 %MODULEOPTIONS%
@@ -345,48 +337,49 @@ For speed limits, use the same format. If you enter 1MB this will be 1MB/sec.
 > duplicati.commandline.exe help filter
 > duplicati.commandline.exe help filters
 
-Duplicati can apply globbing and regex filter rules to backup and restore specific files only. It can also exclude files that meet specific conditions. It is recommended to check the website for more information how Duplicati processes filter rules. For more information, please visit http://code.google.com/p/duplicati/wiki/FilterUsage
+Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the file name in [brackets]. 
+  Globbing: *.txt
+  Regex: [.*test\.txt]
 
-%OPTION:include%
-%OPTION:exclude%
-%OPTION:include-regexp%
-%OPTION:exclude-regexp%
-%OPTION:skip-files-larger-than%
 
 
 # =============================================================================
-> duplicati.commandline.exe help collection-status
-Usage: collection-status <target url>
+> duplicati.commandline.exe help mail
+> duplicati.commandline.exe help email
 
-Collection status will list all backup chains found on the target, along with the combined size of each volume.
+Duplicati can send email notifications.
 
-# =============================================================================
-> duplicati.commandline.exe help create-folder
-Usage: create-folder <target url>
+  --send-mail-to=<email-address>
+    After a backup an email is sent to <email-address>. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
+  --send-mail-from=<email-address>
+    This is the sender address of an email.
+  --send-mail-subject=<subject>
+    This is the subject line of the email that is sent. E.g. this can be "Duplicati %OPERATIONNAME% Report"
+  --send-mail-body=<body>
+    The content of the email message. This should contain "%RESULT%".
+  --send-mail-url=<smtp-url>
+    An URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587"
+  --send-mail-username=<username>
+    Required username to authenticate with SMTP server.
+  --send-mail-password=<password>
+    Required password to authenticate with SMTP server.
+  --send-mail-level=<level>
+    When email messages are sent: "Success", "Warning", "Error" are possible.
+  --send-mail-any-operation=true
+    Also send emails after other operations like restore etc.
+	
+  Allowed placeholders are:
+    %RESULT%
+	  The result/log of the backup
+    %OPERATIONNAME%
+	  The name of the operation, usually "backup", but could also be "restore" etc.
+    %REMOTEURL%
+	  The backend url
+    %LOCALPATH%
+	  The path to the local folders involved (i.e. the folders being backed up)
 
-  This command can be used to create the folder on the remote backend.
 
-# =============================================================================
-> duplicati.commandline.exe help find-last-version
-Usage: find-last-version <target url> --file-to-restore=%EXAMPLE_SOURCE_FILE%
-
-  This command finds the last backup set that contains a specified file. This can be used to locate the last backup of a file that has been deleted.
-
-# =============================================================================
-> duplicati.commandline.exe help verify
-Usage: verify <target url> --verification-level=manifest
-
-  Duplicati will check the integrity of a remote backup. Therefore, it will download backup files and check their integrity locally. Default behaviour is, that only the manifest files required to restore the latest version of the backup are checked. Using the below listed options, it is possible to also check signature and content files. It is also possible to check older versions of a backup. Please note that this command might download a lot of data!
-
-Options:
-  --verification-level = Manifest | Signature | Full
-    Defines what files are downloaded and checked.
-      Manifest --> manifest files
-      Signature --> manifest + signature files
-      Full --> manifest + signature + content files
-  --restore-time = <date>
-    Select another version of the backup that is older than the specified absolute or relative date.
-
+  
 # =============================================================================
 > duplicati.commandline.exe help advanced
 > duplicati.commandline.exe help option
@@ -408,4 +401,3 @@ Duplicati reports the following return/exit codes:
   50 - Backup uploaded some files, but did not finish
   100 - An error occurred
   200 - Invalid commandline arguments found
-

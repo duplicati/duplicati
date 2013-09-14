@@ -78,7 +78,6 @@
     <Compile Include="Serializable\TreeNode.cs" />
     <Compile Include="Serializable\FilterSet.cs" />
     <Compile Include="SingleInstance.cs" />
-    <Compile Include="SQLiteLoader.cs" />
     <Compile Include="Strings\DuplicatiRunner.Designer.cs">
       <DependentUpon>DuplicatiRunner.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -237,9 +236,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
-    <Folder Include="SQLite\pinvoke\" />
-    <Folder Include="SQLite\win32\" />
-    <Folder Include="SQLite\win64\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -249,18 +245,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <Content Include="..\..\thirdparty\SQLite\pinvoke\System.Data.SQLite.dll">
-      <Link>SQLite\pinvoke\System.Data.SQLite.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SQLite\win32\System.Data.SQLite.dll">
-      <Link>SQLite\win32\System.Data.SQLite.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SQLite\win64\System.Data.SQLite.dll">
-      <Link>SQLite\win64\System.Data.SQLite.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 </Project>

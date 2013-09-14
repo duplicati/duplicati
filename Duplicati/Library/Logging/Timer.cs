@@ -28,20 +28,17 @@ namespace Duplicati.Library.Logging
     /// </summary>
     public class Timer : IDisposable
     {
-#if DEBUG
         private DateTime m_begin;
         private string m_operation;
-#endif
+
         /// <summary>
         /// Constructs a new timer, and starts timing
         /// </summary>
         /// <param name="operation">The name of the operation being performed</param>
         public Timer(string operation)
         {
-#if DEBUG
             m_operation = operation;
             m_begin = DateTime.Now;
-#endif
         }
 
         #region IDisposable Members
@@ -51,16 +48,12 @@ namespace Duplicati.Library.Logging
         /// </summary>
         public void Dispose()
         {
-#if DEBUG
             if (m_operation == null)
                 return;
 
-            TimeSpan ts = DateTime.Now - m_begin;
-            string time = ts.Minutes.ToString("00") + ":" + ts.Seconds.ToString("00") + ":" + ts.Milliseconds.ToString("000");
-
-            Log.WriteMessage(m_operation + " took " + time, LogMessageType.Profiling);
+            if (Log.LogLevel == LogMessageType.Profiling)
+                Log.WriteMessage(string.Format("{0} took {1:mm\\:ss\\.fff}", m_operation, DateTime.Now - m_begin), LogMessageType.Profiling);
             m_operation = null;
-#endif
         }
 
         #endregion

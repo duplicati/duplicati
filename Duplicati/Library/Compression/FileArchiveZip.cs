@@ -231,6 +231,32 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
+        /// Returns a list of files matching the given prefix
+        /// </summary>
+        /// <param name="prefix">The prefix to match</param>
+        /// <returns>A list of files matching the prefix</returns>
+        public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
+        {
+            List<KeyValuePair<string, long>> results = new List<KeyValuePair<string, long>>();
+            foreach (IArchiveEntry e in Archive.Entries)
+            {
+                if (prefix == null)
+                {
+                    results.Add(new KeyValuePair<string, long>(e.FilePath, e.Size));
+                }
+                else
+                {
+                    if (e.FilePath.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(new KeyValuePair<string, long>(e.FilePath, e.Size));
+                    //Some old archives may have been created with windows style paths
+                    else if (e.FilePath.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(new KeyValuePair<string, long>(e.FilePath, e.Size));
+                }
+            }
+
+            return results;
+        }
+        /// <summary>
         /// Opens an file for reading
         /// </summary>
         /// <param name="file">The name of the file to open</param>

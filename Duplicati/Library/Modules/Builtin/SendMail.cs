@@ -279,7 +279,7 @@ namespace Duplicati.Library.Modules.Builtin
                     MailLevels level;
                     if (result is Exception)
                         level = MailLevels.Error;
-                    else if (result != null && result.GetType().Name == "BackupStatistics" && result.ToString().IndexOf("NumberOfErrors") >= 0)
+                    else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
                         level = MailLevels.Warning;
                     else
                         level = MailLevels.Success;

@@ -16,6 +16,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Text.RegularExpressions;
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -43,7 +47,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The EPOCH offset (unix style)
         /// </summary>
-        public static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
+        public static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         /// The attribute value used to indicate error
@@ -57,7 +61,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The current element</param>
         /// <param name="attributes">The attributes of the element</param>
         /// <returns>A value indicating if the folder should be recursed, ignored for other types</returns>
-        public delegate bool EnumerationCallbackDelegate(string rootpath, string path, System.IO.FileAttributes attributes);
+        public delegate bool EnumerationFilterDelegate(string rootpath, string path, System.IO.FileAttributes attributes);
 
         /// <summary>
         /// Copies the content of one stream into another
@@ -89,54 +93,38 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Returns an IEnumerable with all filesystem entries, recursive
+        /// These are characters that must be escaped when using a globbing expression
         /// </summary>
-        /// <param name="rootpath">The folder to look in</param>
-        /// <param name="filter">An optional filter to apply to the filenames</param>
-        /// <param name="callback">The function to call with the filenames</param>
-        /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
-        /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
-        /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to skip symlink detection</param>
-        /// <returns>The file system entries</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntriesBlocked(string rootpath, FilenameFilter filter, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
-        {
-            BlockingQueue<string> queue = new BlockingQueue<string>();
-            new BlockedCollector(queue, rootpath, filter, folderList, fileList);
-            return new BlockingQueueAsEnumerable<string>(queue);
-        }
+        private static readonly string BADCHARS = "\\" + string.Join("|\\", new string[] {
+                "\\",
+                "+",
+                "|",
+                "{",
+                "[",
+                "(",
+                ")",
+                "]",
+                "}",
+                "^",
+                "$",
+                "#",
+                "."
+            });
 
         /// <summary>
-        /// Class used to implement blocked collection of files and folders
+        /// Most people will probably want to use fileglobbing, but RegExp's are more flexible.
+        /// By converting from the weak globbing to the stronger regexp, we support both.
         /// </summary>
-        private class BlockedCollector
+        /// <param name="globexp"></param>
+        /// <returns></returns>
+        public static string ConvertGlobbingToRegExp(string globexp)
         {
-            private BlockingQueue<string> m_queue;
-            public BlockedCollector(BlockingQueue<string> queue, string rootpath, FilenameFilter filter, FileSystemInteraction folderList, FileSystemInteraction fileList)
-            {
-                m_queue = queue;
-                System.Threading.Thread t = new System.Threading.Thread(BlockedThreadRunner);
-                t.Start(new object[] { rootpath, filter, folderList, fileList});
-            }
+            //First escape all special characters
+            globexp = Regex.Replace(globexp, BADCHARS, "\\$&");
 
-            private bool Callback(string rootpath, string path, System.IO.FileAttributes attributes)
-            {
-                if ((attributes & ATTRIBUTE_ERROR) == 0)
-                    m_queue.Enqueue(path);
-
-                return true;
-            }
-
-            private void BlockedThreadRunner(object _args)
-            {
-                object[] args = (object[])_args;
-                string roothpath = (string)args[0];
-                FilenameFilter filter = (FilenameFilter)args[1];
-                FileSystemInteraction folderList = (FileSystemInteraction)args[2];
-                FileSystemInteraction fileList = (FileSystemInteraction)args[3];
-
-                EnumerateFileSystemEntries(roothpath, Callback, folderList, fileList);
-                m_queue.SetCompleted();
-            }
+            //Replace the globbing expressions with the corresponding regular expressions
+            globexp = globexp.Replace('?', '.').Replace("*", ".*");
+            return globexp;
         }
 
         /// <summary>
@@ -146,7 +134,7 @@ namespace Duplicati.Library.Utility
         /// <param name="basepath">The folder to look in</param>
         /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full filenames</returns>
-        public static List<string> EnumerateFiles(string basepath)
+        public static IEnumerable<string> EnumerateFiles(string basepath)
         {
             return EnumerateFiles(basepath, null);
         }
@@ -157,7 +145,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="basepath">The folder to look in</param>
         /// <returns>A list of the full paths</returns>
-        public static List<string> EnumerateFolders(string basepath)
+        public static IEnumerable<string> EnumerateFolders(string basepath)
         {
             return EnumerateFolders(basepath, null);
         }
@@ -168,9 +156,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="basepath">The folder to look in.</param>
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
-        public static List<string> EnumerateFileSystemEntries(string basepath)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
-            return EnumerateFileSystemEntries(basepath, (FilenameFilter)null);
+            return EnumerateFileSystemEntries(basepath, (IFilter)null);
         }
 
         /// <summary>
@@ -180,11 +168,9 @@ namespace Duplicati.Library.Utility
         /// <param name="basepath">The folder to look in</param>
         /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full filenames</returns>
-        public static List<string> EnumerateFiles(string basepath, FilenameFilter filter)
+        public static IEnumerable<string> EnumerateFiles(string basepath, IFilter filter)
         {
-            PathCollector c = new PathCollector(false, true, filter);
-            EnumerateFileSystemEntries(basepath, new EnumerationCallbackDelegate(c.Callback));
-            return c.Files;
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(DirectorySeparatorString));
         }
 
         /// <summary>
@@ -194,11 +180,9 @@ namespace Duplicati.Library.Utility
         /// <param name="basepath">The folder to look in</param>
         /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full paths</returns>
-        public static List<string> EnumerateFolders(string basepath, FilenameFilter filter)
+        public static IEnumerable<string> EnumerateFolders(string basepath, IFilter filter)
         {
-            PathCollector c = new PathCollector(true, false, filter);
-            EnumerateFileSystemEntries(basepath, new EnumerationCallbackDelegate(c.Callback));
-            return c.Files;
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(DirectorySeparatorString));
         }
 
         /// <summary>
@@ -208,11 +192,16 @@ namespace Duplicati.Library.Utility
         /// <param name="basepath">The folder to look in.</param>
         /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
-        public static List<string> EnumerateFileSystemEntries(string basepath, FilenameFilter filter)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string basepath, IFilter filter)
         {
-            PathCollector c = new PathCollector(true, true, filter);
-            EnumerateFileSystemEntries(basepath, new EnumerationCallbackDelegate(c.Callback));
-            return c.Files;
+            filter = filter ?? new FilterExpression();
+            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => { 
+                bool result;
+                if (!filter.Matches(path, out result))
+                    result = true;
+
+                return result;
+            });
         }
 
         /// <summary>
@@ -237,9 +226,9 @@ namespace Duplicati.Library.Utility
         /// <param name="filter">An optional filter to apply to the filenames</param>
         /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
-        public static void EnumerateFileSystemEntries(string rootpath, EnumerationCallbackDelegate callback)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
         {
-            EnumerateFileSystemEntries(rootpath, callback, new FileSystemInteraction(System.IO.Directory.GetDirectories), new FileSystemInteraction(System.IO.Directory.GetFiles));
+            return EnumerateFileSystemEntries(rootpath, callback, new FileSystemInteraction(System.IO.Directory.GetDirectories), new FileSystemInteraction(System.IO.Directory.GetFiles));
         }
 
         /// <summary>
@@ -251,10 +240,9 @@ namespace Duplicati.Library.Utility
         /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <returns>A list of the full filenames</returns>
-        public static void EnumerateFileSystemEntries(string rootpath, EnumerationCallbackDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
         {
-
-            EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
+            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
         }
 
         /// <summary>
@@ -267,25 +255,31 @@ namespace Duplicati.Library.Utility
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
         /// <returns>A list of the full filenames</returns>
-        public static void EnumerateFileSystemEntries(string rootpath, EnumerationCallbackDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
         {
-            if (!System.IO.Directory.Exists(rootpath))
-                return;
-
-            Queue<string> lst = new Queue<string>();
-            lst.Enqueue(rootpath);
-
-            while (lst.Count > 0)
+            Stack<string> lst = new Stack<string>();
+        
+            var isFolder = false;
+            try
             {
-                string f = AppendDirSeparator(lst.Dequeue());
+                if (attributeReader == null)
+                    isFolder = true;
+                else
+                    isFolder = (attributeReader(rootpath) & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
+            }
+            catch
+            {
+            }
+        
+            if (isFolder)
+            {
+                rootpath = AppendDirSeparator(rootpath);
                 try
                 {
-                    System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(f);
-                    if (!callback(rootpath, f, attr))
-                        continue;
-
-                    foreach (string s in folderList(f))
-                        lst.Enqueue(s);
+                    
+                    System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(rootpath);
+                    if (callback(rootpath, rootpath, attr))
+                        lst.Push(rootpath);
                 }
                 catch (System.Threading.ThreadAbortException)
                 {
@@ -293,19 +287,58 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception)
                 {
-                    callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                    callback(rootpath, rootpath, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
                 }
 
-                try
+                while (lst.Count > 0)
                 {
+                    string f = AppendDirSeparator(lst.Pop());
+            
+                    yield return f;
+                                
+                    try
+                    {
+                        foreach(string s in folderList(f))
+                        {
+                            var sf = AppendDirSeparator(s);
+                            System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(sf);
+                            if (callback(rootpath, sf, attr))
+                                lst.Push(sf);
+                        }
+                    }
+                    catch (System.Threading.ThreadAbortException)
+                    {
+                        throw;
+                    }
+                    catch (Exception)
+                    {
+                        callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                    }
+
+                    string[] files = null;
                     if (fileList != null)
-                        foreach (string s in fileList(f))
+                        try
+                        {
+                            files = fileList(f);
+                        }
+                        catch (System.Threading.ThreadAbortException)
+                        {
+                            throw;
+                        }
+                        catch (Exception)
+                        {
+                            callback(rootpath, f, ATTRIBUTE_ERROR);
+                        }
+		
+                    if (files != null)
+                        foreach(var s in files)
                         {
                             try
                             {
                                 System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Normal : attributeReader(s);
-                                callback(rootpath, s, attr);
-                            } 
+                                if (!callback(rootpath, s, attr))
+                                    continue;
+                            }
                             catch (System.Threading.ThreadAbortException)
                             {
                                 throw;
@@ -313,8 +346,19 @@ namespace Duplicati.Library.Utility
                             catch (Exception)
                             {
                                 callback(rootpath, s, ATTRIBUTE_ERROR);
+                                continue;
                             }
+                            yield return s;
                         }
+                }
+            }
+            else
+            {
+                try
+                {
+                    System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Normal : attributeReader(rootpath);
+                    if (!callback(rootpath, rootpath, attr))
+                        yield break;
                 }
                 catch (System.Threading.ThreadAbortException)
                 {
@@ -322,79 +366,12 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception)
                 {
-                    callback(rootpath, f, ATTRIBUTE_ERROR);
+                    callback(rootpath, rootpath, ATTRIBUTE_ERROR);
+                    yield break;
                 }
+                
+                yield return rootpath;
             }
-        }
-
-        /// <summary>
-        /// An internal helper class to collect filenames from the enumeration callback
-        /// </summary>
-        private class PathCollector
-        {
-            private List<string> m_files;
-            private FilenameFilter m_filter;
-            private bool m_includeFolders;
-            private bool m_includeFiles;
-
-            public PathCollector(bool includeFolders, bool includeFiles, FilenameFilter filter)
-            {
-                m_files = new List<string>();
-                m_filter = filter;
-                m_includeFolders = includeFolders;
-                m_includeFiles = includeFiles;
-            }
-
-            public bool Callback(string rootpath, string path, System.IO.FileAttributes attributes)
-            {
-                if ((attributes & ATTRIBUTE_ERROR) != 0)
-                {
-                    //Don't care
-                }
-                else
-                {
-                    if (m_filter != null && !m_filter.ShouldInclude(rootpath, path))
-                        return false;
-
-                    bool isDirectory = (attributes & System.IO.FileAttributes.Directory) != 0;
-                    if (m_includeFolders && isDirectory)
-                        m_files.Add(path);
-                    else if (m_includeFiles && !isDirectory)
-                        m_files.Add(path);
-                }
-
-                return true;
-            }
-
-            public List<string> Files { get { return m_files; } }
-        }
-
-        /// <summary>
-        /// An internal helper class to calculate the size of a folders files
-        /// </summary>
-        private class PathSizeCalculator
-        {
-            private long m_size = 0;
-            private FilenameFilter m_filter;
-
-            public PathSizeCalculator(FilenameFilter filter)
-            {
-                m_filter = filter;
-            }
-
-            public bool Callback(string rootpath, string path, System.IO.FileAttributes attributes)
-            {
-                if (m_filter != null && !m_filter.ShouldInclude(rootpath, path))
-                    return false;
-
-                if ((attributes & System.IO.FileAttributes.Directory) == 0)
-                    try { m_size += new System.IO.FileInfo(path).Length; }
-                    catch { }
-
-                return true;
-            }
-
-            public long Size { get { return m_size; } }
         }
 
         /// <summary>
@@ -403,11 +380,9 @@ namespace Duplicati.Library.Utility
         /// <param name="folder">The folder to examine</param>
         /// <param name="filter">A filter to apply</param>
         /// <returns>The combined size of all files that match the filter</returns>
-        public static long GetDirectorySize(string folder, FilenameFilter filter)
+        public static long GetDirectorySize(string folder, IFilter filter)
         {
-            PathSizeCalculator c = new PathSizeCalculator(filter);
-            EnumerateFileSystemEntries(folder, new EnumerationCallbackDelegate(c.Callback));
-            return c.Size;
+            return EnumerateFolders(folder, filter).Sum((path) => new System.IO.FileInfo(path).Length);
         }
 
         /// <summary>
@@ -447,8 +422,7 @@ namespace Duplicati.Library.Utility
                 a = stream.Read(buf, index, count);
                 index += a;
                 count -= a;
-            }
-            while (a != 0 && count > 0);
+            } while (a != 0 && count > 0);
 
             return index;
         }
@@ -483,13 +457,13 @@ namespace Duplicati.Library.Utility
             while ((a1 = ForceStreamRead(stream1, buf1, buf1.Length)) == (a2 = ForceStreamRead(stream2, buf2, buf2.Length)))
             {
                 int ix = 0;
-                for (int i = 0; i < a1 / longSize; i++)
+                for(int i = 0; i < a1 / longSize; i++)
                     if (BitConverter.ToUInt64(buf1, ix) != BitConverter.ToUInt64(buf2, ix))
                         return false;
                     else
                         ix += longSize;
 
-                for (int i = 0; i < a1 % longSize; i++)
+                for(int i = 0; i < a1 % longSize; i++)
                     if (buf1[ix] != buf2[ix])
                         return false;
                     else
@@ -503,40 +477,13 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Removes an entire folder, and its contents.
-        /// Equal to System.IO.Directory.Delete
-        /// </summary>
-        /// <param name="path">The folder to remove</param>
-        public static void DeleteFolder(string path)
-        {
-            if (!System.IO.Directory.Exists(path))
-                return;
-
-            foreach (string s in EnumerateFiles(path))
-            {
-                System.IO.File.SetAttributes(s, System.IO.FileAttributes.Normal);
-                System.IO.File.Delete(s);
-            }
-            
-            List<string> folders = Utility.EnumerateFolders(path);
-            folders.Sort();
-            folders.Reverse();
-
-            foreach (string s in folders)
-                System.IO.Directory.Delete(s);
-
-            System.IO.Directory.Delete(path);
-        }
-
-
-        /// <summary>
         /// Calculates the hash of a given file, and returns the results as an base64 encoded string
         /// </summary>
         /// <param name="path">The path to the file to calculate the hash for</param>
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(string path)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using(System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 return CalculateHash(fs);
         }
 
@@ -561,7 +508,7 @@ namespace Duplicati.Library.Utility
             // we need to detect the encoding (at least that it's not UTF8).
             // So we read the first 4096 bytes and try to decode them as UTF8. 
             byte[] buffer = new byte[4096];
-            using (System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open))
+            using(System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open))
                 file.Read(buffer, 0, 4096);
 
             Encoding enc = Encoding.UTF8;
@@ -576,7 +523,7 @@ namespace Duplicati.Library.Utility
             }
 
             // This will load the text using the BOM, or the detected encoding if no BOM.
-            using (System.IO.StreamReader reader = new System.IO.StreamReader(filename, enc, true))
+            using(System.IO.StreamReader reader = new System.IO.StreamReader(filename, enc, true))
             {
                 // Remove all \r from the file and split on \n, then pass directly to ExtractOptions
                 return reader.ReadToEnd();
@@ -691,9 +638,9 @@ namespace Duplicati.Library.Utility
         {
             if (data == null || data.Length == 0)
                 return "";
-            
+    
             StringBuilder sb = new StringBuilder();
-            foreach (byte b in data)
+            foreach(byte b in data)
             {
                 sb.Append(HEX_DIGITS_UPPER[(b >> 4) & 0xF]);
                 sb.Append(HEX_DIGITS_UPPER[b & 0xF]);
@@ -716,9 +663,9 @@ namespace Duplicati.Library.Utility
 
             if (hex.Length % 2 != 0)
                 throw new Exception(Strings.Utility.InvalidHexStringLengthError);
-            
+    
             byte[] data = new byte[hex.Length];
-            for (int i = 0; i < hex.Length; i+= 2)
+            for(int i = 0; i < hex.Length; i+= 2)
             {
                 int upper = HEX_DIGITS_UPPER.IndexOf(hex[i]);
                 int lower = HEX_DIGITS_UPPER.IndexOf(hex[i + 1]);
@@ -733,9 +680,9 @@ namespace Duplicati.Library.Utility
 
             return data;
         }
-		
+
         private static string UNAME;
-        
+
         /// <value>
         /// Gets or sets a value indicating if the client is running OSX
         /// </value>
@@ -743,68 +690,70 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                if(!IsClientLinux)
+                if (!IsClientLinux)
                     return false;
-                
-                try 
+        
+                try
                 {
                     if (UNAME == null)
                     {
                         var psi = new System.Diagnostics.ProcessStartInfo("uname");
                         psi.RedirectStandardOutput = true;
                         psi.UseShellExecute = false;
-                        
+                
                         var pi = System.Diagnostics.Process.Start(psi);
                         pi.WaitForExit(5000);
                         if (pi.HasExited)
                             UNAME = pi.StandardOutput.ReadToEnd().Trim();
                     }
                 }
-                catch {}
-                
+                catch
+                {
+                }
+        
                 return "Darwin".Equals(UNAME);
-                    
+            
             }
         }
-        
-		/// <value>
-		/// Gets or sets a value indicating if the client is Linux/Unix based
-		/// </value>
-		public static bool IsClientLinux
-		{
-			get 
-			{
+
+        /// <value>
+        /// Gets or sets a value indicating if the client is Linux/Unix based
+        /// </value>
+        public static bool IsClientLinux
+        {
+            get
+            {
 #if __MonoCS__
-        	    if (Environment.OSVersion.Platform == PlatformID.Unix || (int)Environment.OSVersion.Platform == 6)
-					return true;
+                if (Environment.OSVersion.Platform == PlatformID.Unix || (int)Environment.OSVersion.Platform == 6)
+                    return true;
 #else
-                if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
-					return true;
+        if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
+			return true;
 #endif
-				return false;
-				
-			}
-		}
+                return false;
 		
-		/// <value>
-		/// Returns a value indicating if the filesystem, is case sensitive 
-		/// </value>
-		public static bool IsFSCaseSensitive
-		{
-			get 
-			{
-	            //TODO: This should probably be determined by filesystem rather than OS,
+            }
+        }
+
+        /// <value>
+        /// Returns a value indicating if the filesystem, is case sensitive 
+        /// </value>
+        public static bool IsFSCaseSensitive
+        {
+            get
+            {
+                //TODO: This should probably be determined by filesystem rather than OS,
                 // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-    	        return IsClientLinux && !IsClientOSX;
-			}
-		}
+                return IsClientLinux && !IsClientOSX;
+            }
+        }
 
         /// <summary>
         /// Returns a value indicating if the app is running under Mono
         /// </summary>
         public static bool IsMono
         {
-            get 
+            get
             {
                 return Type.GetType("Mono.Runtime") != null;
             }
@@ -849,9 +798,10 @@ namespace Duplicati.Library.Utility
                 return t.CurrentUICulture;
             }
         }
-
         //Unused function, used to create a dummy thread
-        private static void DummyMethod() { }
+        private static void DummyMethod()
+        {
+        }
 
         /// <summary>
         /// Gets a string comparer that matches the client filesystems case sensitivity
@@ -875,24 +825,31 @@ namespace Duplicati.Library.Utility
                 if (System.IO.Path.IsPathRooted(filename))
                     return System.IO.File.Exists(filename) ? filename : null;
 
-                try { filename = System.IO.Path.GetFileName(filename); }
-                catch { }
+                try
+                {
+                    filename = System.IO.Path.GetFileName(filename);
+                }
+                catch
+                {
+                }
 
                 string homedir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + System.IO.Path.PathSeparator.ToString();
 
                 //Look in application base folder and all system path folders
-                foreach (string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(System.IO.Path.PathSeparator))
+                foreach(string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(System.IO.Path.PathSeparator))
                     if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
                         try
                         {
-                            foreach (string sx in System.IO.Directory.GetFiles(Environment.ExpandEnvironmentVariables(s), filename))
+                            foreach(string sx in System.IO.Directory.GetFiles(Environment.ExpandEnvironmentVariables(s), filename))
                                 return sx;
                         }
-                        catch 
-                        { }
+                        catch
+                        {
+                        }
             }
-            catch 
-            { }
+            catch
+            {
+            }
 
             return null;
         }
@@ -904,10 +861,68 @@ namespace Duplicati.Library.Utility
         /// <returns>True if the hostname is valid, false otherwise</returns>
         public static bool IsValidHostname(string hostname)
         {
-            try { return System.Uri.CheckHostName(hostname) != UriHostNameType.Unknown; }
-            catch { return false; }
+            try
+            {
+                return System.Uri.CheckHostName(hostname) != UriHostNameType.Unknown;
+            }
+            catch
+            {
+                return false;
+            }
         }
-        
+
+        /// <summary>
+        /// Returns a string representation of a <see cref="System.DateTime"/> in UTC format
+        /// </summary>
+        /// <param name="dt">The <see cref="System.DateTime"/> instance</param>
+        /// <returns>A string representing the time</returns>
+        public static string SerializeDateTime(DateTime dt)
+        {
+            //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
+            return dt.ToUniversalTime().ToString("yyyyMMdd'T'HHmmssK");
+        }
+
+        /// <summary>
+        /// Parses a serialized <see cref="System.DateTime"/> instance
+        /// </summary>
+        /// <param name="str">The string to parse</param>
+        /// <returns>The parsed <see cref="System.DateTime"/> instance</returns>
+        public static DateTime DeserializeDateTime(string str)
+        {
+            DateTime dt;
+            if (!DateTime.TryParseExact(str, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
+                throw new Exception(string.Format(Strings.Utility.InvalidDateError, str));
+
+            return dt;
+        }
+
+        /// <summary>
+        /// Helper method that replaces one file with another
+        /// </summary>
+        /// <param name="target">The file to replace</param>
+        /// <param name="sourcefile">The file to replace with</param>
+        public static void ReplaceFile(string target, string sourcefile)
+        {
+            if (System.IO.File.Exists(target))
+                System.IO.File.Delete(target);
+
+            //Nasty workaround for the fact that a recently deleted file occasionally blocks a new write
+            long i = 5;
+            do
+            {
+                try
+                {
+                    System.IO.File.Move(sourcefile, target);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    if (i == 0)
+                        throw new Exception(string.Format("Failed to replace the file \"{0}\" volume with the \"{1}\", error: {2}", target, sourcefile, ex.Message));
+                    System.Threading.Thread.Sleep(250);
+                }
+            } while (i-- > 0);
+        }
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
         // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
@@ -918,6 +933,153 @@ namespace Duplicati.Library.Utility
         public static System.Reflection.Assembly getEntryAssembly()
         {
             return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
+        }
+
+        /// <summary>
+        /// Converts a Base64 encoded string to &quot;base64 for url&quot;
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The base64 encoded string</param>
+        /// <returns>The base64 for url encoded string</returns>
+        public static string Base64PlainToBase64Url(string data)
+        {
+            return data.Replace('+', '-').Replace('/', '_');
+        }
+
+        /// <summary>
+        /// Converts a &quot;base64 for url&quot; encoded string to a Base64 encoded string.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The base64 for url encoded string</param>
+        /// <returns>The base64 encoded string</returns>
+        public static string Base64UrlToBase64Plain(string data)
+        {
+            return data.Replace('-', '+').Replace('_', '/');
+        }
+
+        /// <summary>
+        /// Encodes a byte array into a &quot;base64 for url&quot; encoded string.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The data to encode</param>
+        /// <returns>The base64 for url encoded string</returns>
+        public static string Base64UrlEncode(byte[] data)
+        {
+            return Base64PlainToBase64Url(Convert.ToBase64String(data));
+        }
+
+        /// <summary>
+        /// Decodes a &quot;base64 for url&quot; encoded string into the raw byte array.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The data to decode</param>
+        /// <returns>The raw data</returns>
+        public static byte[] Base64UrlDecode(string data)
+        {
+            return Convert.FromBase64String(Base64UrlToBase64Plain(data));
+        }
+
+        /// <summary>
+        /// Prints the object to a stream, which can be used for display or logging
+        /// </summary>
+        /// <returns>The serialized object</returns>
+        /// <param name="item">The object to serialize</param>
+        public static void PrintSerializeObject(object item, System.IO.TextWriter writer, Func<System.Reflection.PropertyInfo, bool> filter = null)
+        {
+            foreach(var p in item.GetType().GetProperties())
+            {
+                if (filter != null && !filter(p))
+                    continue;
+                
+                if (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string))
+                {
+                    writer.WriteLine("{0}: {1}", p.Name, p.GetValue(item, null));
+                }
+                else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
+                {
+                    var enumerable = (System.Collections.IEnumerable)p.GetValue(item, null);
+                    if (enumerable != null)
+                    {
+                        var enumerator = enumerable.GetEnumerator();
+                        if (enumerator != null)
+                        {
+                            writer.Write("{0}: [", p.Name);
+                            if (enumerator.MoveNext())
+                            {
+                                writer.Write(enumerator.Current);
+                                while (enumerator.MoveNext())
+                                {
+                                    writer.Write(", ");
+                                    writer.Write(enumerator.Current);
+                                }
+                            }
+                            writer.WriteLine("]");
+                        }
+                    }
+                }
+            }
+            writer.Flush();
+        }
+
+        /// <summary>
+        /// Returns a string representing the object, which can be used for display or logging
+        /// </summary>
+        /// <returns>The serialized object</returns>
+        /// <param name="item">The object to serialize</param>
+        public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null, Func<System.Reflection.PropertyInfo, bool> filter = null)
+        {
+            sb = sb ?? new StringBuilder();
+            using(var sw = new System.IO.StringWriter(sb))
+                PrintSerializeObject(item, sw);
+            return sb;
+        }
+
+        /// <summary>
+        /// Repeatedly hash a value with a salt.
+        /// This effectively masks the original value,
+        /// and destroys lookup methods, like rainbow tables
+        /// </summary>
+        /// <param name="data">The data to hash</param>
+        /// <param name="salt">The salt to apply</param>
+        /// <param name="repeats">The number of times to repeat the hashing</param>
+        /// <returns>The salted hash</returns>
+        public static byte[] RepeatedHashWithSalt(string data, string salt, int repeats = 1200)
+        {
+            return RepeatedHashWithSalt(
+                System.Text.Encoding.UTF8.GetBytes(data ?? ""),
+                System.Text.Encoding.UTF8.GetBytes(salt ?? ""),
+                repeats);
+        }
+    
+        /// <summary>
+        /// Repeatedly hash a value with a salt.
+        /// This effectively masks the original value,
+        /// and destroys lookup methods, like rainbow tables
+        /// </summary>
+        /// <param name="data">The data to hash</param>
+        /// <param name="salt">The salt to apply</param>
+        /// <returns>The salted hash</returns>
+        public static byte[] RepeatedHashWithSalt(byte[] data, byte[] salt, int repeats = 1200)
+        {
+            // We avoid storing the passphrase directly, 
+            // instead we salt and rehash repeatedly
+            using(var h = System.Security.Cryptography.SHA256.Create())
+            {
+                h.Initialize();
+                h.TransformBlock(salt, 0, salt.Length, salt, 0);
+                h.TransformFinalBlock(data, 0, data.Length);
+                var buf = h.Hash;
+            
+                for(var i = 0; i < repeats; i++)
+                {
+                    h.Initialize();
+                    h.TransformBlock(salt, 0, salt.Length, salt, 0);
+                    h.TransformFinalBlock(buf, 0, buf.Length);
+                    buf = h.Hash;
+                }
+                
+                return buf;
+            }
         }
     }
 }

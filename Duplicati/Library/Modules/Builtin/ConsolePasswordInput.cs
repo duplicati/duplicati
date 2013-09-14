@@ -26,10 +26,10 @@ namespace Duplicati.Library.Modules.Builtin
     public class ConsolePasswordInput : Duplicati.Library.Interface.IGenericModule
     {
         /// <summary>
-        /// These actions only use the file list and do not require access to the data inside the files,
-        /// and thus require no encryption setup
+        /// These actions only use the local database and do not require access to the data inside the files.
+        /// For List and ListChanges this may not be true if there is no local database
         /// </summary>
-        private readonly static string[] PASSPHRASELESS_ACTIONS = { "List", "DeleteAllButNFull", "DeleteAllButN", "DeleteOlderThan", "GetBackupSets", "CreateFolder" };
+        private readonly static string[] PASSPHRASELESS_ACTIONS = { "CreateLogDb" };
 
         #region IGenericModule Members
 
@@ -51,7 +51,7 @@ namespace Duplicati.Library.Modules.Builtin
                     return;
 
             //See if a password is already present or encryption is disabled
-            if (!commandlineOptions.ContainsKey("passphrase") && !commandlineOptions.ContainsKey("no-encryption"))
+            if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions, "no-encryption"))
             {
                 //Get the passphrase
                 bool confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.InvariantCultureIgnoreCase);

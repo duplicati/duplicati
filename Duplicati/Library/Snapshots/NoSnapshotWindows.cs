@@ -29,13 +29,13 @@ namespace Duplicati.Library.Snapshots
     {
         private SystemIOWindows m_sysIO = new SystemIOWindows();
 
-        public NoSnapshotWindows(string[] sourcefolders)
-            : base(sourcefolders)
+        public NoSnapshotWindows(string[] sources)
+            : base(sources)
         {
         }
 
-        public NoSnapshotWindows(string[] sourcefolders, Dictionary<string, string> options)
-            : base(sourcefolders, options)
+        public NoSnapshotWindows(string[] sources, Dictionary<string, string> options)
+            : base(sources, options)
         {
         }
 
@@ -81,20 +81,6 @@ namespace Duplicati.Library.Snapshots
                 catch (System.IO.PathTooLongException) { }
 
             return File.GetLastWriteTime(SystemIOWindows.PrefixWithUNC(file));
-        }
-
-        /// <summary>
-        /// Opens a locked file for reading
-        /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
-        /// <returns>An open filestream that can be read</returns>
-        public override System.IO.Stream OpenLockedRead (string file)
-        {
-            if (!SystemIOWindows.IsPathTooLong(file))
-                try { return base.OpenLockedRead(file); }
-                catch (System.IO.PathTooLongException) { }
-
-            return File.Open(SystemIOWindows.PrefixWithUNC(file), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         }
 
         /// <summary>
@@ -147,6 +133,26 @@ namespace Duplicati.Library.Snapshots
                 res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
 
             return res;
+        }
+        
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public override Dictionary<string, string> GetMetadata(string file)
+        {
+            return null;
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public override bool IsBlockDevice(string file)
+        {
+            return false;
         }
     }
 }

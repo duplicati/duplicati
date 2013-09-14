@@ -1,10 +1,32 @@
 using System;
+using System.Collections.Generic;
 using Mono.Unix.Native;
 
 namespace UnixSupport
 {
 	public static class File
 	{
+    
+        private static readonly bool SUPPORTS_LLISTXATTR;
+        
+        static File ()
+        {
+            bool works = false;
+            try
+            { 
+                string[] v;
+                Mono.Unix.Native.Syscall.llistxattr("/", out v);
+                works = true;
+            }
+            catch (EntryPointNotFoundException e)
+            {
+            }
+            catch
+            {
+            }
+            SUPPORTS_LLISTXATTR = works;
+        }
+        
 		/// <summary>
 		/// Opens the file and honors advisory locking.
 		/// </summary>
@@ -81,6 +103,15 @@ namespace UnixSupport
 			}
 		}
 
+        [Serializable]
+        private class FileAccesException : System.IO.IOException
+        {
+            public FileAccesException(string filename, string method)
+                : base(string.Format("Unable to access the file \"{0}\" with method {1}, error: {2} ({3})", filename, method, Syscall.GetLastError(), (int)Syscall.GetLastError()))
+            {
+            }
+        }
+        
         /// <summary>
         /// Gets the symlink target for the given path
         /// </summary>
@@ -104,6 +135,100 @@ namespace UnixSupport
         {
             if (Mono.Unix.Native.Syscall.symlink(target, path) != 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink from \"{0}\" to \"{1}\", error: {2} ({3})", path, target, Syscall.GetLastError(), (int)Syscall.GetLastError()));
+        }
+        
+        /// <summary>
+        /// Enum that describes the different filesystem entry types
+        /// </summary>
+        public enum FileType
+        {
+            File,
+            Directory,
+            Symlink,
+            Fifo,
+            Socket,
+            CharacterDevice,
+            BlockDevice,
+            Unknown
+        }
+        
+        /// <summary>
+        /// Gets the type of the file.
+        /// </summary>
+        /// <returns>The file type</returns>
+        /// <param name="path">The full path to look up</param>
+        public static FileType GetFileType(string path)
+        {
+            
+            var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
+            if (fse.IsRegularFile)
+                return FileType.File;
+            else if (fse.IsDirectory)
+                return FileType.Directory;
+            else if (fse.IsSymbolicLink)
+                return FileType.Symlink;
+            else if (fse.IsFifo)
+                return FileType.Fifo;
+            else if (fse.IsSocket)
+                return FileType.Socket;
+            else if (fse.IsCharacterDevice)
+                return FileType.CharacterDevice;
+            else if (fse.IsBlockDevice)
+                return FileType.CharacterDevice;
+            else
+                return FileType.Unknown;
+        }
+        
+        
+        /// <summary>
+        /// Gets the extended attributes.
+        /// </summary>
+        /// <returns>The extended attributes.</returns>
+        /// <param name="path">The full path to look up</param>
+        public static Dictionary<string, byte[]> GetExtendedAttributes(string path)
+        {
+            string[] values;
+            var size = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
+            if (size < 0)
+                throw new FileAccesException(path, "llistxattr");
+            
+            var dict = new Dictionary<string, byte[]>();
+            foreach(var s in values)
+            {
+                byte[] v;
+                var n = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.lgetxattr(path, s, out v) : Mono.Unix.Native.Syscall.getxattr(path, s, out v);
+                if (n > 0)
+                    dict.Add(s, v);
+            }
+            
+            return dict;
+        }
+        
+        /// <summary>
+        /// Describes the basic user/group/perm tuplet for a file or folder
+        /// </summary>
+        public struct FileInfo
+        {
+            public readonly long UID;
+            public readonly long GID;
+            public readonly long Permissions;
+            
+            internal FileInfo(Mono.Unix.UnixFileSystemInfo fse)
+            {
+                UID = fse.OwnerUser.UserId;
+                GID = fse.OwnerGroupId;
+                Permissions = (long)fse.FileAccessPermissions;
+            }
+        }
+        
+        /// <summary>
+        /// Gets the basic user/group/perm tuplet for a file or folder
+        /// </summary>
+        /// <returns>The basic user/group/perm tuplet for a file or folder</returns>
+        /// <param name="path">The full path to look up</param>
+        public static FileInfo GetUserGroupAndPermissions(string path)
+        {
+            return new FileInfo(Mono.Unix.UnixFileInfo.GetFileSystemEntry(path));
         }
 	}
 }

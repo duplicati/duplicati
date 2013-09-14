@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Utility</RootNamespace>
     <AssemblyName>Duplicati.Library.Utility</AssemblyName>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -19,9 +19,9 @@
     </UpgradeBackupLocation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>False</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -29,7 +29,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>True</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -40,19 +40,14 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
-    <Compile Include="ComboBoxItemPair.cs" />
-    <Compile Include="FilelistFilter.cs" />
-    <Compile Include="FilenameFilter.cs" />
-    <Compile Include="PlugableEnumerable.cs" />
-    <Compile Include="IFilenameFilter.cs" />
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RegularExpressionFilter.cs" />
     <Compile Include="Sizeparser.cs" />
     <Compile Include="SslCertificateValidator.cs" />
     <Compile Include="Strings\FilenameFilter.Designer.cs">
@@ -96,14 +91,27 @@
     <Compile Include="WorkerThread.cs" />
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="DatabaseUpgrader.cs" />
+    <Compile Include="SQLiteLoader.cs" />
+    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
+      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
+    </Compile>
     <Compile Include="Uri.cs" />
     <Compile Include="Strings\Uri.Designer.cs">
       <DependentUpon>Uri.resx</DependentUpon>
     </Compile>
+    <Compile Include="IFilter.cs" />
+    <Compile Include="FilterExpression.cs" />
+    <Compile Include="FileBackedList.cs" />
+    <Compile Include="JoinedFilterExpression.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <None Include="Strings\DatabaseUpgrader.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\FilenameFilter.resx">
@@ -148,4 +156,24 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="SQLite\" />
+    <Folder Include="SQLite\pinvoke\" />
+    <Folder Include="SQLite\win32\" />
+    <Folder Include="SQLite\win64\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\thirdparty\SQLite\win64\System.Data.SQLite.dll">
+      <Link>SQLite\win64\System.Data.SQLite.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\SQLite\win32\System.Data.SQLite.dll">
+      <Link>SQLite\win32\System.Data.SQLite.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\SQLite\pinvoke\System.Data.SQLite.dll">
+      <Link>SQLite\pinvoke\System.Data.SQLite.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

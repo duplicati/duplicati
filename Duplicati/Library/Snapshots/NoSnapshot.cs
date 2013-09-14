@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -32,7 +35,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The list of all folders in the snapshot
         /// </summary>
-        protected string[] m_sourcefolders;
+        protected string[] m_sources;
 
         /// <summary>
         /// A frequently used char-as-string
@@ -43,8 +46,8 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
-        public NoSnapshot(string[] folders)
-            : this(folders, new Dictionary<string, string>())
+        public NoSnapshot(string[] sources)
+            : this(sources, new Dictionary<string, string>())
         {
         }
 
@@ -53,11 +56,11 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="folders">The folders that are about to be backed up</param>
         /// <param name="options">A set of system options</param>
-        public NoSnapshot(string[] folders, Dictionary<string, string> options)
+        public NoSnapshot(string[] sources, Dictionary<string, string> options)
         {
-            m_sourcefolders = new string[folders.Length];
-            for (int i = 0; i < m_sourcefolders.Length; i++)
-                m_sourcefolders[i] = Utility.Utility.AppendDirSeparator(folders[i]);
+            m_sources = new string[sources.Length];
+            for (int i = 0; i < m_sources.Length; i++)
+                    m_sources[i] = System.IO.Directory.Exists(sources[i]) ? Utility.Utility.AppendDirSeparator(sources[i]) : sources[i];
         }
 
         #region Private Methods
@@ -95,28 +98,12 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerates all files and folders in the snapshot
         /// </summary>
-        /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
         {
-            foreach (string s in m_sourcefolders)
-                if (s.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
-                {
-                    Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
-                    return;
-                }
-
-            throw new InvalidOperationException(string.Format(Strings.Shared.InvalidEnumPathError, startpath));
-        }
-
-        /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
-        {
-            foreach (string s in m_sourcefolders)
-                Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
+        	return m_sources.SelectMany(
+        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+        	);
         }
 
         /// <summary>
@@ -135,16 +122,6 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
         public virtual System.IO.Stream OpenRead(string file)
-        {
-            return System.IO.File.OpenRead(file);
-        }
-
-        /// <summary>
-        /// Opens a locked file for reading
-        /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
-        /// <returns>An open filestream that can be read</returns>
-        public virtual System.IO.Stream OpenLockedRead(string file)
         {
             return System.IO.File.Open(file, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
         }
@@ -178,6 +155,20 @@ namespace Duplicati.Library.Snapshots
             else
                 return System.IO.File.GetAttributes(file);
         }
+        
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public abstract Dictionary<string, string> GetMetadata(string file);
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public abstract bool IsBlockDevice(string file);
         #endregion
     }
 }

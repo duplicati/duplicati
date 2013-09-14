@@ -132,6 +132,9 @@
   <data name="FormatStringTB" xml:space="preserve">
     <value>{0:N} TB</value>
   </data>
+  <data name="InvalidDateError" xml:space="preserve">
+    <value>The string "{0}" could not be parsed into a date</value>
+  </data>
   <data name="InvalidHexDigitError" xml:space="preserve">
     <value>The digit '{0}' is not a valid hex digit</value>
   </data>

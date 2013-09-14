@@ -28,18 +28,14 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class ProgressReportingStream : OverrideableStream
     {
-        public delegate void ProgressDelegate(int progress);
-        public event ProgressDelegate Progress;
-        private int m_lastPg;
-        private long m_expectedSize;
+        private Action<long> m_progress;
         private long m_streamOffset;
 
-        public ProgressReportingStream(System.IO.Stream basestream, long expectedSize)
+        public ProgressReportingStream(System.IO.Stream basestream, long expectedSize, Action<long> progress)
             : base(basestream)
         {
-            m_lastPg = -1;
-            m_expectedSize = expectedSize;
             m_streamOffset = 0;
+            m_progress = progress;
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -66,22 +62,13 @@ namespace Duplicati.Library.Utility
 
         protected override void Dispose(bool disposing)
         {
-            /*if (Progress != null)
-                Progress(100);*/
             base.Dispose(disposing);
         }
 
         private void ReportProgress()
         {
-            if (Progress != null && m_expectedSize > 0)
-            {
-                int pg = (int)(((m_streamOffset) / (double)m_expectedSize) * 100);
-                if (pg != m_lastPg)
-                {
-                    m_lastPg = pg;
-                    Progress(pg);
-                }
-            }
+            if (m_progress != null)
+                m_progress(m_streamOffset);
         }
     }
 }

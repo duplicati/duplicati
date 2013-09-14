@@ -32,14 +32,7 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates all files and folders in the snapshot
         /// </summary>
         /// <param name="callback">The callback to invoke with each found path</param>
-        void EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback);
-
-        /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="startpath">The path from which to retrieve files and folders</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback);
+        IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback);
 
         /// <summary>
         /// Gets the last write time of a given file
@@ -75,5 +68,19 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The file attributes</returns>
         /// <param name="file">The file or folder to examine</param>
         System.IO.FileAttributes GetAttributes(string file);
+        
+        /// <summary>
+        /// Gets the metadata for the given file or folder
+        /// </summary>
+        /// <returns>The metadata for the given file or folder</returns>
+        /// <param name="file">The file or folder to examine</param>
+        Dictionary<string, string> GetMetadata(string file);
+        
+        /// <summary>
+        /// Gets a value indicating if the path points to a block device
+        /// </summary>
+        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <param name="file">The file or folder to examine</param>
+        bool IsBlockDevice(string file);
     }
 }

@@ -30,11 +30,9 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public static class Timeparser
     {
-        private static readonly List<string> MONTH_NAMES = new List<string>(new string[] { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" });
-    
         public static TimeSpan ParseTimeSpan(string datestring)
         {
-            DateTime dt = new DateTime(0);
+            DateTime dt = new DateTime(0, DateTimeKind.Local);
             return ParseTimeInterval(datestring, dt) - dt;
         }
 
@@ -45,6 +43,8 @@ namespace Duplicati.Library.Utility
 
         public static DateTime ParseTimeInterval(string datestring, DateTime offset, bool negate)
         {
+            if (offset.Kind == DateTimeKind.Unspecified)
+                offset = new DateTime(offset.Ticks, DateTimeKind.Local);
 
             int multiplier = negate ? -1 : 1;
 
@@ -59,7 +59,7 @@ namespace Duplicati.Library.Utility
                 return offset.AddSeconds(l * multiplier);
             
             DateTime t;
-            if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.None, out t))
+            if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.AssumeLocal, out t))
                 return t;
 
             char[] separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
@@ -109,32 +109,6 @@ namespace Duplicati.Library.Utility
                 throw new Exception(string.Format(Strings.Timeparser.UnparsedDataFragmentError, datestring.Substring(previndex)));
 
             return offset;
-        }
-
-        public static DateTime ParseDuplicityFileTime(string filetime)
-        {
-            string[] parts = filetime.Trim().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-
-            int mon = MONTH_NAMES.IndexOf(parts[1].Trim().ToLower());
-            if (mon < 0)
-                throw new Exception(string.Format(Strings.Timeparser.UnknownMonthError, filetime, parts[1]));
-
-            mon++;
-
-            int day;
-            int year;
-            if (!int.TryParse(parts[2].Trim(), out day) || day < 0)
-                throw new Exception(string.Format(Strings.Timeparser.InvalidDayError, filetime, parts[2]));
-
-            if (!int.TryParse(parts[4].Trim(), out year) || year < 0)
-                throw new Exception(string.Format(Strings.Timeparser.InvalidYearError, filetime, parts[4]));
-
-            DateTime t;
-            if (!DateTime.TryParse(parts[3].Trim(), null, System.Globalization.DateTimeStyles.NoCurrentDateDefault, out t))
-                throw new Exception(string.Format(Strings.Timeparser.InvalidTimeError, filetime, parts[3]));
-
-            return new DateTime(year, mon, day).Add(t.TimeOfDay);
-
         }
     }
 }

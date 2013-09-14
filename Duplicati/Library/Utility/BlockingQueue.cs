@@ -176,20 +176,20 @@ namespace Duplicati.Library.Utility
         /// Enqueues the specified item.
         /// </summary>
         /// <param name='item'>The item to put into the queue</param>
-        public void Enqueue(T item)
+        public bool Enqueue(T item)
         {
             while (true)
             {
                 lock(m_lock)
                 {
                     if (m_completed)
-                        throw new InvalidOperationException("Cannot insert items after complete flag has been set");
+                        return false;
 
                     if (m_queue.Count < m_maxCapacity)
                     {
                         m_queue.Enqueue(item);
                         m_itemsProduced.Set();
-                        return;
+                        return true;
                     }
 
                     m_itemsConsumed.Reset();
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Utility
                 {
                     if (m_queue.Count > 0)
                     {
-                        m_itemsConsumed.Reset();
+                        m_itemsConsumed.Set();
                         return m_queue.Dequeue();
                     }
 

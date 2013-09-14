@@ -1,0 +1,384 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="BadSortingDetectedError" xml:space="preserve">
+    <value>Bad sorting of backup times detected</value>
+  </data>
+  <data name="BadVolumeSortOrder" xml:space="preserve">
+    <value>Bad sort order on volumes detected</value>
+  </data>
+  <data name="CannotCleanWithoutHashesError" xml:space="preserve">
+    <value>When using cleanup the manifests and hashes must be verified</value>
+  </data>
+  <data name="DeletingBackupSetMessage" xml:space="preserve">
+    <value>Deleting backup at {0}</value>
+  </data>
+  <data name="DeprecatedOptionUsedWarning" xml:space="preserve">
+    <value>The option {0} is deprecated: {1}</value>
+  </data>
+  <data name="DuplicateOptionNameWarning" xml:space="preserve">
+    <value>The option --{0} exists more than once, please report this to the developers</value>
+  </data>
+  <data name="FailedToFindControlFilesMessage" xml:space="preserve">
+    <value>Failed to find control files in: {0}</value>
+  </data>
+  <data name="FileHashFailure" xml:space="preserve">
+    <value>A hash check failed, this is an indication of a corrupt file: {0}</value>
+  </data>
+  <data name="FilesAreNotForceDeletedMessage" xml:space="preserve">
+    <value>Files are not deleted, use the --force command to actually remove files</value>
+  </data>
+  <data name="InternalDeleteCountError" xml:space="preserve">
+    <value>An internal error occured, and the operation was aborted to protect the backup sets</value>
+  </data>
+  <data name="ManifestsMustBeReadOnBackups" xml:space="preserve">
+    <value>It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
+  </data>
+  <data name="ManifestVersionRequiresRelativeNamesWarning" xml:space="preserve">
+    <value>One or more manifests are from version 1, which requires that filenames searched are relative</value>
+  </data>
+  <data name="MissingSignatureFile" xml:space="preserve">
+    <value>The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}</value>
+  </data>
+  <data name="NoFilesGivenError" xml:space="preserve">
+    <value>No filenames given for find-last-file</value>
+  </data>
+  <data name="NoSourceFoldersError" xml:space="preserve">
+    <value>No source folders specified for backup</value>
+  </data>
+  <data name="NotDeletingBackupSetMessage" xml:space="preserve">
+    <value>Not deleting backup at time: {0}, because later backups depend on it</value>
+  </data>
+  <data name="NotDeletingLastFullMessage" xml:space="preserve">
+    <value>The backup at time {0} is not removed because it is the last full backup, use --allow-full-removal to include this backup in the delete</value>
+  </data>
+  <data name="NumberOfSourceFoldersHasChangedError" xml:space="preserve">
+    <value>The number of source folders in the latest backup is {0}, but the number of specified folders is now {1}. It is not allowed to change source folders for a backup.</value>
+  </data>
+  <data name="PartialUploadMessage" xml:space="preserve">
+    <value>Failed after uploading {0} volume(s). Error message: {1}</value>
+  </data>
+  <data name="PrimaryManifestReadErrorLogMessage" xml:space="preserve">
+    <value>Failed to read the primary manifest {0}, attempting secondary, if available. Error message: {1}</value>
+  </data>
+  <data name="ReadingSecondaryManifestLogMessage" xml:space="preserve">
+    <value>Secondary manifest file found: {0}, attempting read.</value>
+  </data>
+  <data name="RemovingPartialFilesMessage" xml:space="preserve">
+    <value>Removing partial file: {0}</value>
+  </data>
+  <data name="SecondaryManifestReadErrorLogMessage" xml:space="preserve">
+    <value>Failed to read the secondary manifest {0}. Error message: {1}</value>
+  </data>
+  <data name="SignatureCachePathMissingError" xml:space="preserve">
+    <value>Signature cache path was not given as an argument</value>
+  </data>
+  <data name="SkippedContentVolumeLogMessage" xml:space="preserve">
+    <value>The content volume {0} is not present in the manifest and is not used</value>
+  </data>
+  <data name="SkippedUnlistedSignatureFileWarning" xml:space="preserve">
+    <value>The signature file {0} was skipped because the signature file was not found in the manifest</value>
+  </data>
+  <data name="SourceIsMissingError" xml:space="preserve">
+    <value>The source folder {0} does not exist, aborting backup</value>
+  </data>
+  <data name="StatusBuildingFilelist" xml:space="preserve">
+    <value>Building filelist ...</value>
+  </data>
+  <data name="StatusCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="StatusCreatingVolume" xml:space="preserve">
+    <value>Creating volume {0}</value>
+  </data>
+  <data name="StatusDownloadingContentVolume" xml:space="preserve">
+    <value>Downloading content, volume {0}</value>
+  </data>
+  <data name="StatusDownloadingSignatureVolume" xml:space="preserve">
+    <value>Downloading signatures, volume {0}</value>
+  </data>
+  <data name="StatusLoadingFilelist" xml:space="preserve">
+    <value>Loading remote filelist</value>
+  </data>
+  <data name="StatusPatching" xml:space="preserve">
+    <value>Patching restore with #{0}</value>
+  </data>
+  <data name="StatusProcessing" xml:space="preserve">
+    <value>Processing: {0}</value>
+  </data>
+  <data name="StatusReadingIncrementalData" xml:space="preserve">
+    <value>Reading incremental data ...</value>
+  </data>
+  <data name="StatusReadingIncrementalFile" xml:space="preserve">
+    <value>Reading incremental data from: {0}</value>
+  </data>
+  <data name="StatusReadingIncrementals" xml:space="preserve">
+    <value>Reading incremental data</value>
+  </data>
+  <data name="StatusReadingManifest" xml:space="preserve">
+    <value>Reading manifest file: {0}</value>
+  </data>
+  <data name="StatusReadingSignatureFile" xml:space="preserve">
+    <value>Reading signatures: {0}, vol {1}</value>
+  </data>
+  <data name="StatusStarted" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="StatusUploadingContentVolume" xml:space="preserve">
+    <value>Uploading content, volume {0}</value>
+  </data>
+  <data name="StatusUploadingManifestVolume" xml:space="preserve">
+    <value>Uploading manifest, volume {0}</value>
+  </data>
+  <data name="StatusUploadingSignatureVolume" xml:space="preserve">
+    <value>Uploading signatures, volume {0}</value>
+  </data>
+  <data name="StatusWaitingForUpload" xml:space="preserve">
+    <value>Waiting for upload to complete ...</value>
+  </data>
+  <data name="TooFewTargetFoldersError" xml:space="preserve">
+    <value>The backup contains {0} folders but {1} target folders were supplied</value>
+  </data>
+  <data name="TooManyTargetFoldersWarning" xml:space="preserve">
+    <value>The backup contains {0} folder(s) but {1} target folders were supplied</value>
+  </data>
+  <data name="UnexpectedCompressionError" xml:space="preserve">
+    <value>Unexpected compression mode: {0}</value>
+  </data>
+  <data name="UnexpectedOperationTypeError" xml:space="preserve">
+    <value>The operation mode {0} was not expected</value>
+  </data>
+  <data name="UnsupportedBooleanValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to "true"</value>
+  </data>
+  <data name="UnsupportedEnumerationValue" xml:space="preserve">
+    <value>The option --{0} does not support the value "{1}", supported values are: {2}</value>
+  </data>
+  <data name="UnsupportedIntegerValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid integer</value>
+  </data>
+  <data name="UnsupportedOptionDisabledModuleWarning" xml:space="preserve">
+    <value>The option --{0} is not supported because the module {1} is not currently loaded</value>
+  </data>
+  <data name="UnsupportedOptionWarning" xml:space="preserve">
+    <value>The supplied option --{0} is not supported and will be ignored</value>
+  </data>
+  <data name="UnsupportedPathValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid path</value>
+  </data>
+  <data name="UnsupportedSizeValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid size</value>
+  </data>
+  <data name="UnsupportedTimeValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid time</value>
+  </data>
+  <data name="CannotSkipHashChecksOnBackup" xml:space="preserve">
+    <value>Hash checks cannot be disabled while performing a backup</value>
+  </data>
+  <data name="CannotVerifyChain" xml:space="preserve">
+    <value>Unable to verfiy the backup chain when the option --dont-read-manifests is active</value>
+  </data>
+  <data name="CannotVerifyWithoutHashes" xml:space="preserve">
+    <value>Hash checks cannot be disabled while performing a verification</value>
+  </data>
+  <data name="DisablingSignatureCacheForVerification" xml:space="preserve">
+    <value>The signature cache is disabled when performing verification</value>
+  </data>
+  <data name="ManifestsMustBeRead" xml:space="preserve">
+    <value>Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
+  </data>
+  <data name="PreviousManifestFilenameMismatchError" xml:space="preserve">
+    <value>The manifest file {0} indicates that the previous manifest file should be {1} but it was {2}</value>
+  </data>
+  <data name="PreviousManifestHashMismatchError" xml:space="preserve">
+    <value>The manifest file {0} indicates that the previous manifest hash should be {1} but it was {2}</value>
+  </data>
+  <data name="FileSizeMismatchError" xml:space="preserve">
+    <value>The file {0} has size {1} but should have size {2}</value>
+  </data>
+  <data name="FilenameMismatchError" xml:space="preserve">
+    <value>The manifest report that the file should be named {0} but it was named {1}</value>
+  </data>
+  <data name="StatusUploadingVerificationVolume" xml:space="preserve">
+    <value>Uploading verification file</value>
+  </data>
+  <data name="DeleteManifestsSuggestion" xml:space="preserve">
+    <value>If this error cannot be resolved, you can either create a new full backup or delete the offending manifests manually, followed by a cleanup command. The offending manifest files are:</value>
+  </data>
+  <data name="FullBecauseBackendIsEmpty" xml:space="preserve">
+    <value>A full backup is made because no existing backup chains were found on the destination</value>
+  </data>
+  <data name="FullBecauseFlagWasSet" xml:space="preserve">
+    <value>A full backup was forced with the --{0} flag</value>
+  </data>
+  <data name="FullBecauseLastFullIsFrom" xml:space="preserve">
+    <value>A full backup is made because the latest full backup is from {0} and the full backup threshold is {1}</value>
+  </data>
+  <data name="FullBecauseSourceFoldersChanged" xml:space="preserve">
+    <value>A full backup is made because the source folders have changed</value>
+  </data>
+  <data name="FullBecauseThereAreNIncrementals" xml:space="preserve">
+    <value>A full backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}</value>
+  </data>
+  <data name="IncrementalBecauseLastFullIsFrom" xml:space="preserve">
+    <value>An incremental backup is made because the latest full backup is from {0} and the full backup threshold is {1}</value>
+  </data>
+  <data name="IncrementalBecauseNoFlagsWereSet" xml:space="preserve">
+    <value>An incremental backup is made because no full backup criteria was found</value>
+  </data>
+  <data name="IncrementalBecauseThereAreNIncrementals" xml:space="preserve">
+    <value>An incremental backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}</value>
+  </data>
+  <data name="ErrorRunningBackup" xml:space="preserve">
+    <value>An error occurred while running the backup, no files were uploaded: {0}</value>
+  </data>
+  <data name="StartingOperationMessage" xml:space="preserve">
+    <value>The operation {0} has started</value>
+  </data>
+  <data name="CompressionModuleNotFoundError" xml:space="preserve">
+    <value>The specified compression module was not found: {0}. Avaliable compression modules: {1}</value>
+  </data>
+  <data name="EncryptionModuleNotFoundError" xml:space="preserve">
+    <value>The specified encryption module was not found: {0}. Avaliable encryption modules: {1}</value>
+  </data>
+  <data name="InvalidManifestFileCount" xml:space="preserve">
+    <value>The manifest file {0} is invalid, as it specifies that there should be {1} signature volumes and {2} content volumes.</value>
+  </data>
+  <data name ="ExtraFilesMessage" xml:space="preserve">
+  	<value>Additionally these files were found but are not listed in the manifest:</value>
+  </data>
+  <data name="MissingFilesDetected" xml:space="preserve">
+    <value>The manifest file {0} specifies that there should be {1} volume pairs, but the following pairs were not found: {2}</value>
+  </data>
+  <data name="SignatureDownloadBestEffortError" xml:space="preserve">
+    <value>Failed to download signature file {0}, error message: {1}</value>
+  </data>
+  <data name="PatchProcessingBestEffortError" xml:space="preserve">
+    <value>Failed to apply content file {0}, error message: {1}</value>
+  </data>
+  <data name="HashMismatchError" xml:space="preserve">
+    <value>Hash mismatch on file "{0}", recorded hash: {1}, actual hash {2}</value>
+  </data>
+  <data name="DownloadedFileSizeError" xml:space="preserve">
+    <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>
+  </data>
+  <data name="InvalidPathError" xml:space="preserve">
+    <value>Invalid path: "{0}" ({1})</value>
+  </data>  
+</root>

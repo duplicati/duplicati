@@ -35,7 +35,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The parsed list of commandline options</returns>
         /// <param name='args'>The commandline arguments</param>
-        public static Dictionary<string, string> ExtractOptions(List<string> args)
+        public static Dictionary<string, string> ExtractOptions(List<string> args, Func<string, string, bool> parserCallback = null)
         {
             Dictionary<string, string> options = new Dictionary<string, string>();
 
@@ -59,7 +59,8 @@ namespace Duplicati.Library.Utility
                         value = value.Substring(1, value.Length - 2);
 
                     //Last argument overwrites the current
-                    options[key] = value;
+					if (parserCallback == null || parserCallback(key, value))
+	                    options[key] = value;
 
                     args.RemoveAt(i);
                     i--;
