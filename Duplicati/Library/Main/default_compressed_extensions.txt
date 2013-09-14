@@ -1,69 +1,107 @@
 # List of compressed archives
-.7z #7-Zip Compressed File
-.alz #ALZip Archive
-.bz #Bzip Compressed File
-.bz2 #Bzip2 Compressed Fil
-.cbr #Comic Book RAR Archive
-.cbz #Comic Book Zip Archive
-.deb #Debian Software Package
-.gz #Gnu Zipped Archive
-.mpkg #Meta Package File
-.pet #Puppy Linux Install Package
-.rar #WinRAR Compressed Archive
-.rpm #Red Hat Package Manager File
-.sfx #Windows Self-Extracting Archive
-.sit #StuffIt Archive
-.sitx #StuffIt X Archive
-.tgz #Gzipped Tar File
-.war #Java Web Archive
-.zip #Zipped File
-.zipx #Extended Zip File
+.7z     #7-Zip Compressed File
+.alz    #ALZip Archive
+.bz     #Bzip Compressed File
+.bz2    #Bzip2 Compressed Fil
+.cbr    #Comic Book RAR Archive
+.cbz    #Comic Book Zip Archive
+.deb    #Debian Software Package
+.gz     #Gnu Zipped Archive
+.mpkg   #Meta Package File
+.pet    #Puppy Linux Install Package
+.rar    #WinRAR Compressed Archive
+.rpm    #Red Hat Package Manager File
+.sfx    #Windows Self-Extracting Archive
+.sit    #StuffIt Archive
+.sitx   #StuffIt X Archive
+.tgz    #Gzipped Tar File
+.war    #Java Web Archive
+.zip    #Zipped File
+.zipx   #Extended Zip File
 
 
 # Compressed media files (audio)
-.3gp #Advanced Audio Coding
-.aa3 #ATRAC Audio File
-.aac #Advanced Audio Coding File
-.aif #Audio Interchange File Format
-.iff #Interchange File Format
-.m4a #MPEG-4 Audio File
-.mp3 #MP3 Audio File
-.mpa #MPEG-2 Audio File
-.ra #Real Audio File
-.3gp #multimedia container format
-.ogg #a free, open source container format
-.wma #the popular Windows Media Audio format
+.3gp    #Advanced Audio Coding
+.aa3    #ATRAC Audio File
+.aac    #Advanced Audio Coding File
+.aif    #Audio Interchange File Format
+.iff    #Interchange File Format
+.m4a    #MPEG-4 Audio File
+.mp3    #MP3 Audio File
+.mpa    #MPEG-2 Audio File
+.ra     #Real Audio File
+.3gp    #multimedia container format
+.ogg    #a free, open source container format
+.wma    #the popular Windows Media Audio format
 
 
 # Compressed media files (video)
-.3g2 #3GPP2 Multimedia File
-.3gp #3GPP Multimedia File
-.asf #Advanced Systems Format File
-.asx #Microsoft ASF Redirector File
-.avi #Audio Video Interleave File
-.bsf #Blu-ray AVC Video File
-.divx #DivX-Encoded Movie File
-.f4v #Flash MP4 Video File
-.flv #Flash Video File
-.hdmov #QuickTime HD Movie File
-.m2p #MPEG-2 Program Stream File
-.m4v #iTunes Video File
-.mov #Apple QuickTime Movie
-.mp4 #MPEG-4 Video File
-.mpg #MPEG Video File
-.mts #AVCHD Video File
-.ogv #Ogg Video File
-.rm #Real Media File
-.swf #Shockwave Flash Movie
-.trp #HD Video Transport Stream
-.ts #Video Transport Stream File
-.vob #DVD Video Object File
-.webm #WebM Video File
-.wmv #Windows Media Video File
+.3g2    #3GPP2 Multimedia File
+.3gp    #3GPP Multimedia File
+.asf    #Advanced Systems Format File
+.asx    #Microsoft ASF Redirector File
+.avi    #Audio Video Interleave File
+.bsf    #Blu-ray AVC Video File
+.divx   #DivX-Encoded Movie File
+.f4v    #Flash MP4 Video File
+.flv    #Flash Video File
+.hdmov  #QuickTime HD Movie File
+.m2p    #MPEG-2 Program Stream File
+.m4v    #iTunes Video File
+.mov    #Apple QuickTime Movie
+.mp4    #MPEG-4 Video File
+.mpg    #MPEG Video File
+.mts    #AVCHD Video File
+.ogv    #Ogg Video File
+.rm     #Real Media File
+.swf    #Shockwave Flash Movie
+.trp    #HD Video Transport Stream
+.ts     #Video Transport Stream File
+.vob    #DVD Video Object File
+.webm   #WebM Video File
+.wmv    #Windows Media Video File
 
 
 # Compressed image files
-.gif #Graphical Interchange Format File
-.jpeg #JPEG Image
-.jpg #JPEG Image
-.png #Portable Network Graphic
+.gif    #Graphical Interchange Format File
+.jpeg   #JPEG Image
+.jpg    #JPEG Image
+.png    #Portable Network Graphic
+
+# OpenOffice files
+.odt		#application/vnd.oasis.opendocument.text
+.ods		#application/vnd.oasis.opendocument.spreadsheet
+.odp		#application/vnd.oasis.opendocument.presentation
+.odg		#application/vnd.oasis.opendocument.graphics
+.odc		#application/vnd.oasis.opendocument.chart
+.odf		#application/vnd.oasis.opendocument.formula
+.odi		#application/vnd.oasis.opendocument.image
+.odm		#application/vnd.oasis.opendocument.text-master
+
+.ott		#application/vnd.oasis.opendocument.text-template
+.ots		#application/vnd.oasis.opendocument.spreadsheet-template
+.otp		#application/vnd.oasis.opendocument.presentation-template
+.otg		#application/vnd.oasis.opendocument.graphics-template
+
+
+#MS Office files
+docx 	  #Word 2007 XML Document
+docm 	  #Word 2007 XML Macro-Enabled Document
+dotx 	  #Word 2007 XML Template
+dotm 	  #Word 2007 XML Macro-Enabled Template
+
+xlsx 	  #Excel 2007 XML Workbook
+xlsm 	  #Excel 2007 XML Macro-Enabled Workbook
+xltx 	  #Excel 2007 XML Template
+xltm 	  #Excel 2007 XML Macro-Enabled Template
+xlsb  	#Excel 2007 binary workbook (BIFF12)
+xlam    #Excel 2007 XML Macro-Enabled Add-In
+xll 		#Excel 2007 compiled macros
+
+pptx 	  #PowerPoint 2007 XML Presentation
+pptm 	  #PowerPoint 2007 Macro-Enabled XML Presentation
+potx		#PowerPoint 2007 XML Template
+potm 	  #PowerPoint 2007 Macro-Enabled XML Template
+ppam 	  #PowerPoint 2007 Macro-Enabled XML Add-In
+ppsx		#PowerPoint 2007 XML Show not work
+ppsm		#PowerPoint 2007 Macro-Enabled XML Show
