@@ -715,7 +715,34 @@ namespace Duplicati.Library.Utility
             
             }
         }
-
+        /// <value>
+        /// Gets the output of "uname -a" on Linux, or null on Windows
+        /// </value>
+        public static string UnameAll
+        {
+            get
+            {
+                if (!IsClientLinux)
+                    return null;
+        
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a");
+                    psi.RedirectStandardOutput = true;
+                    psi.UseShellExecute = false;
+            
+                    var pi = System.Diagnostics.Process.Start(psi);
+                    pi.WaitForExit(5000);
+                    if (pi.HasExited)
+                        return pi.StandardOutput.ReadToEnd().Trim();
+                }
+                catch
+                {
+                }
+        
+                return null;            
+            }
+        }
         /// <value>
         /// Gets or sets a value indicating if the client is Linux/Unix based
         /// </value>
