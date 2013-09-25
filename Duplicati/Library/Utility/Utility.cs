@@ -768,22 +768,45 @@ namespace Duplicati.Library.Utility
             {
                 try
                 {
-                    Type t = Type.GetType("Mono.Runtime");
-                    if (t != null)
+                    var v = MonoDisplayVersion;
+                    if (v != null)
                     {
-                        System.Reflection.MethodInfo mi = t.GetMethod("GetDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                        if (mi != null)
-                        {
-                            string version = (string)mi.Invoke(null, null);
-                            return new Version(version.Substring(version.Trim().LastIndexOf(' ')));
-                        }
-                    }
+                        var regex = new System.Text.RegularExpressions.Regex(@"\d+\.\d+(\.\d+)?(\.\d+)?");
+                        var match = regex.Match(v);
+                        if (match.Success)
+                            return new Version(match.Value);
+                    }   
                 }
                 catch
                 {
                 }
 
                 return new Version();
+            }
+        }
+        
+        /// <summary>
+        /// Gets the Mono display version, or null if not running Mono
+        /// </summary>
+        public static string MonoDisplayVersion
+        {
+            get 
+            {
+                try
+                {
+                    Type t = Type.GetType("Mono.Runtime");
+                    if (t != null)
+                    {
+                        System.Reflection.MethodInfo mi = t.GetMethod("GetDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+                        if (mi != null)
+                            return (string)mi.Invoke(null, null);
+                    }
+                }
+                catch
+                {
+                }
+
+                return null;            
             }
         }
 
