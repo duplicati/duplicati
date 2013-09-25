@@ -159,8 +159,9 @@ namespace Duplicati.Library.Main.Database
 
             //Need a temporary table with path/scantime lookups
             m_scantimelookupTablename = "ScanTime-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            var scantableDefinition = @"SELECT ""A"".""FileID"" AS ""FileID"", ""A"".""Scantime"" AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM (SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"" FROM ""FilesetEntry"" GROUP BY ""FilesetEntry"".""FileID"") A, ""File"" WHERE ""File"".""ID"" = ""A"".""FileID""";
             using (var cmd = m_connection.CreateCommand())
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM ""FilesetEntry"" INNER JOIN ""File"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" GROUP BY ""FilesetEntry"".""FileID"", ""File"".""Path"" ", m_scantimelookupTablename));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + scantableDefinition, m_scantimelookupTablename));
 
             m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 AND ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
