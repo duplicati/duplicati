@@ -556,7 +556,13 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
             	cmd.Transaction = transaction;
-                using(var rd = cmd.ExecuteReader(@"SELECT * FROM (SELECT SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"", ""Blockset"".""ID"", ""File"".""Path"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"", ""File"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Blockset"".""ID"" = ""BlocksetEntry"".""BlocksetID"" AND ""File"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""Blockset"".""ID"", ""File"".""ID"") WHERE ""CalcLen"" != ""Length"" "))
+
+                // Calculate the lengths for each blockset                
+                var combinedLengths = @"SELECT ""BlocksetEntry"".""BlocksetID"" AS ""BlocksetID"", SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""BlocksetEntry"".""BlocksetID""";
+                // For each blockset with wrong lengths, fetch the file path
+                var reportDetails = @"SELECT ""CalcLen"", ""Length"", ""A"".""BlocksetID"", ""File"".""Path"" FROM (" + combinedLengths + @") A, ""File"" WHERE ""A"".""BlocksetID"" = ""File"".""BlocksetID"" AND ""A"".""CalcLen"" != ""A"".""Length"" ";
+                
+                using(var rd = cmd.ExecuteReader(reportDetails))
                 	if (rd.Read())
                 	{
                 		var sb = new StringBuilder();
