@@ -37,6 +37,7 @@ namespace Duplicati.Library.Logging
         public StreamLog(System.IO.Stream stream)
         {
             m_stream = new System.IO.StreamWriter(stream);
+            m_stream.AutoFlush = true;
         }
 
         /// <summary>
