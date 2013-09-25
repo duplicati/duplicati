@@ -35,6 +35,12 @@ namespace Duplicati.Library.Main.Operation
 		
 		public void Run()
         {
+            var ext = System.IO.Path.GetExtension(m_targetpath);
+            var module = m_options.CompressionModule;
+            
+            if (ext != module)
+                m_targetpath = m_targetpath + "." + module;
+        
             if (System.IO.File.Exists(m_targetpath))
                 throw new Exception(string.Format("Output file already exists, not overwriting: {0}", m_targetpath));
 				
@@ -43,11 +49,34 @@ namespace Duplicati.Library.Main.Operation
 				
             m_result.AddMessage("Scrubbing filenames from database, this may take a while, please wait");
 
-            System.IO.File.Copy(m_options.Dbpath, m_targetpath);
-            using(var db = new LocalBugReportDatabase(m_targetpath))
+            using(var tmp = new Library.Utility.TempFile())
             {
-                m_result.SetDatabase(db);
-                db.Fix();
+                System.IO.File.Copy(m_options.Dbpath, tmp, true);
+                using(var db = new LocalBugReportDatabase(tmp))
+                {
+                    m_result.SetDatabase(db);
+                    db.Fix();
+                }
+                
+                using(var cm = DynamicLoader.CompressionLoader.GetModule(module, m_targetpath, m_options.RawOptions))
+                {
+                    using(var cs = cm.CreateFile("log-database.sqlite", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.Now))
+                    using(var fs = System.IO.File.Open(tmp, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                        Library.Utility.Utility.CopyStream(fs, cs);
+                        
+                    using(var cs = new System.IO.StreamWriter(cm.CreateFile("system-info.txt", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.Now)))
+                    {
+                        cs.WriteLine("Duplicati: {0} ({1})", System.Reflection.Assembly.GetEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
+                        cs.WriteLine("OS: {0}", Environment.OSVersion);
+                        cs.WriteLine("Uname: {0}", Duplicati.Library.Utility.Utility.UnameAll);
+                        
+                        cs.WriteLine("64bit: {0} ({1})", Environment.Is64BitOperatingSystem, Environment.Is64BitProcess);
+                        cs.WriteLine("Machinename: {0}", Environment.MachineName);
+                        cs.WriteLine("Processors: {0}", Environment.ProcessorCount);
+                        cs.WriteLine(".Net Version: {0}", Environment.Version);
+                        cs.WriteLine("Mono: {0} ({1}) ({2})", Duplicati.Library.Utility.Utility.IsMono, Duplicati.Library.Utility.Utility.MonoVersion, Duplicati.Library.Utility.Utility.MonoDisplayVersion);
+                    }
+                }
             }				
 		}
 	}
