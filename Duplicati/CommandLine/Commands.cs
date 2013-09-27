@@ -138,6 +138,7 @@ namespace Duplicati.CommandLine
         {
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
             {
+                var backend = args[0];
                 args.RemoveAt(0);
                                 
                 if (args.Count == 1)
@@ -177,7 +178,7 @@ namespace Duplicati.CommandLine
                 options.TryGetValue("dbpath", out dbpath);
                 if (string.IsNullOrEmpty(dbpath))
                 {
-                    dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                    dbpath = Library.Main.DatabaseLocator.GetDatabasePath(backend, new Duplicati.Library.Main.Options(options), false, true);
                     if (dbpath != null)
                         options["dbpath"] = dbpath;
                 }
