@@ -1,107 +1,164 @@
 # List of compressed archives
-.7z     #7-Zip Compressed File
-.alz    #ALZip Archive
-.bz     #Bzip Compressed File
-.bz2    #Bzip2 Compressed Fil
-.cbr    #Comic Book RAR Archive
-.cbz    #Comic Book Zip Archive
-.deb    #Debian Software Package
-.gz     #Gnu Zipped Archive
-.mpkg   #Meta Package File
-.pet    #Puppy Linux Install Package
-.rar    #WinRAR Compressed Archive
-.rpm    #Red Hat Package Manager File
-.sfx    #Windows Self-Extracting Archive
-.sit    #StuffIt Archive
-.sitx   #StuffIt X Archive
-.tgz    #Gzipped Tar File
-.war    #Java Web Archive
-.zip    #Zipped File
-.zipx   #Extended Zip File
+.7z #7-Zip Compressed File
+.alz #ALZip Archive
+.bz #Bzip Compressed File
+.bz2 #Bzip2 Compressed File
+.cab #Microsoft Cabinet File / InstallShield Cabinet File
+.cbr #Comic Book RAR Archive
+.cbz #Comic Book Zip Archive
+.deb #Debian Software Package
+.dl_ #Windows Dynamic Link Library, packed
+.dsft #Microsoft Application Virtualization package
+.ex_ #Windows Executable, packed
+.gz #Gnu Zipped Archive
+.jar #Java Archive File
+.lzma #Lzma Archive File
+.mpkg #Meta Package File
+.msi #Microsoft Windows Installer Package
+.msp #Microsoft Windows Installer Patch
+.msu #Microsoft Update Standalone Package
+.pet #Puppy Linux Install Package
+.rar #WinRAR Compressed Archive
+.rpm #Red Hat Package Manager File
+.sft #Microsoft Application Virtualization package
+.sfx #Windows Self-Extracting Archive
+.sit #StuffIt Archive
+.sitx #StuffIt X Archive
+.sy_ #Windows Driver file, Packed
+.tgz #Gzipped Tar File
+.war #Java Web Archive
+.wim #Windows Imaging File Format
+.xar #eXtensible ARchiver file (or Xara Vector Image format, also compressed)
+.xz #Lzma-compressed file (linux)
+.zip #Zipped File
+.zipx #Extended Zip File
 
 
 # Compressed media files (audio)
-.3gp    #Advanced Audio Coding
-.aa3    #ATRAC Audio File
-.aac    #Advanced Audio Coding File
-.aif    #Audio Interchange File Format
-.iff    #Interchange File Format
-.m4a    #MPEG-4 Audio File
-.mp3    #MP3 Audio File
-.mpa    #MPEG-2 Audio File
-.ra     #Real Audio File
-.3gp    #multimedia container format
-.ogg    #a free, open source container format
-.wma    #the popular Windows Media Audio format
+.3gp #Advanced Audio Coding
+.aa3 #ATRAC Audio File
+.aac #Advanced Audio Coding File
+.aif #Audio Interchange File Format
+.ape #Monkey's Audio File
+.file #Spotify temp/local cache media file
+.flac #FLAC (Free Lossless Audio Codec) Audio File
+.gsm #Full Rate GSM speech coding audio file
+.iff #Interchange File Format
+.m4a #MPEG-4 Audio File
+.mp3 #MP3 Audio File
+.mpa #MPEG-2 Audio File
+.mpc #Musepack (MPEGplus) Audio File
+.ra #Real Audio File
+.ogg #a free, open source container format
+.wma #the popular Windows Media Audio format
+.wv #WavPack Audio File
 
 
 # Compressed media files (video)
-.3g2    #3GPP2 Multimedia File
-.3gp    #3GPP Multimedia File
-.asf    #Advanced Systems Format File
-.asx    #Microsoft ASF Redirector File
-.avi    #Audio Video Interleave File
-.bsf    #Blu-ray AVC Video File
-.divx   #DivX-Encoded Movie File
-.f4v    #Flash MP4 Video File
-.flv    #Flash Video File
-.hdmov  #QuickTime HD Movie File
-.m2p    #MPEG-2 Program Stream File
-.m4v    #iTunes Video File
-.mov    #Apple QuickTime Movie
-.mp4    #MPEG-4 Video File
-.mpg    #MPEG Video File
-.mts    #AVCHD Video File
-.ogv    #Ogg Video File
-.rm     #Real Media File
-.swf    #Shockwave Flash Movie
-.trp    #HD Video Transport Stream
-.ts     #Video Transport Stream File
-.vob    #DVD Video Object File
-.webm   #WebM Video File
-.wmv    #Windows Media Video File
+.3g2 #3GPP2 Multimedia File
+.3gp #3GPP Multimedia File
+.asf #Advanced Systems Format File
+.asx #Microsoft ASF Redirector File
+.avi #Audio Video Interleave File
+.bsf #Blu-ray AVC Video File
+.divx #DivX-Encoded Movie File
+.f4v #Flash MP4 Video File
+.flv #Flash Video File
+.hdmov #QuickTime HD Movie File
+.m2p #MPEG-2 Program Stream File
+.m4v #iTunes Video File
+.mkv #Matroshka Video Stream Container
+.mov #Apple QuickTime Movie
+.mp4 #MPEG-4 Video File
+.mpg #MPEG Video File
+.mts #AVCHD Video File
+.ogv #Ogg Video File
+.rm #Real Media File
+.swf #Shockwave Flash Movie
+.trp #HD Video Transport Stream
+.ts #Video Transport Stream File
+.vob #DVD Video Object File
+.webm #WebM Video File
+.wmv #Windows Media Video File
+.wtv #Windows Recorded TV Show
 
 
 # Compressed image files
-.gif    #Graphical Interchange Format File
-.jpeg   #JPEG Image
-.jpg    #JPEG Image
-.png    #Portable Network Graphic
-
-# OpenOffice files
-.odt		#application/vnd.oasis.opendocument.text
-.ods		#application/vnd.oasis.opendocument.spreadsheet
-.odp		#application/vnd.oasis.opendocument.presentation
-.odg		#application/vnd.oasis.opendocument.graphics
-.odc		#application/vnd.oasis.opendocument.chart
-.odf		#application/vnd.oasis.opendocument.formula
-.odi		#application/vnd.oasis.opendocument.image
-.odm		#application/vnd.oasis.opendocument.text-master
-
-.ott		#application/vnd.oasis.opendocument.text-template
-.ots		#application/vnd.oasis.opendocument.spreadsheet-template
-.otp		#application/vnd.oasis.opendocument.presentation-template
-.otg		#application/vnd.oasis.opendocument.graphics-template
+.emz #Windows Compressed Enhanced Metafile
+.gif #Graphical Interchange Format File
+.j2c #JPEG 2000 Image
+.jpeg #JPEG Image
+.jpg #JPEG Image
+.pamp #PowerAmp Image Cache
+.pdn #Paint.NET Image
+.png #Portable Network Graphic
+.pspimage #PaintShopPro Image
+.tif #TIFF image
 
 
-#MS Office files
-docx 	  #Word 2007 XML Document
-docm 	  #Word 2007 XML Macro-Enabled Document
-dotx 	  #Word 2007 XML Template
-dotm 	  #Word 2007 XML Macro-Enabled Template
+# Compressed Font files
+.eot #Embedded OpenType
+.woff #Web Open Font Format
 
-xlsx 	  #Excel 2007 XML Workbook
-xlsm 	  #Excel 2007 XML Macro-Enabled Workbook
-xltx 	  #Excel 2007 XML Template
-xltm 	  #Excel 2007 XML Macro-Enabled Template
-xlsb  	#Excel 2007 binary workbook (BIFF12)
-xlam    #Excel 2007 XML Macro-Enabled Add-In
-xll 		#Excel 2007 compiled macros
 
-pptx 	  #PowerPoint 2007 XML Presentation
-pptm 	  #PowerPoint 2007 Macro-Enabled XML Presentation
-potx		#PowerPoint 2007 XML Template
-potm 	  #PowerPoint 2007 Macro-Enabled XML Template
-ppam 	  #PowerPoint 2007 Macro-Enabled XML Add-In
-ppsx		#PowerPoint 2007 XML Show not work
-ppsm		#PowerPoint 2007 Macro-Enabled XML Show
+# Compressed Game files
+.bik #Valve/Steam Game Video File
+.mpq #Blizzard Mo'PaQ File
+
+
+# Compressed Productivity Suite / Document Files
+.chm #Microsoft Compiled HTML Help File
+.docx #Microsoft Office Open XML Format Document
+.docm #Microsoft Office Open XML Format Document (macros enabled)
+.dotm #Microsoft Word Template
+.dotx #Microsoft Office Open XML Format Template
+.epub #Open Packaging Format EBook File
+.graffle #OmniGraffle Diagram File
+.hxs #Microsoft Help Compiled Storage File	
+.max #Paperport document/image file (legacy)
+.mobi #Mobipocket EBook File
+.mshc #Microsoft Help Container File
+.odp #OpenDocument Presentation	
+.ods #OpenDocument Spreadsheet
+.odt #OpenDocument Text Document
+.otp #OpenDocument Presentation Template
+.ots #OpenDocument Spreadsheet Template
+.ott #OpenDocument Text Document Template
+.pages #Apple iWork Document
+.pdf #Portable Document Format
+.pptx #Microsoft PowerPoint Presentation
+.pptm #Microsoft PowerPoint Presentation (macros enabled)
+.stw #OpenOffice.org Text Document Template	
+.trf #DocuMagix PaperMaster File (legacy)
+.webarchive #Apple Safari Web Page Archive
+.xlsx #Microsoft Excel Worksheet	
+.xlsm #Microsoft Excel Worksheet (macros enabled)
+.xlsb #Microsoft Excel Worksheet (binary)
+.xps #Open XML Paper Specification Document
+
+
+# Compressed Source Control or Development Files
+.d #Mercurial data file
+.dess #Microsoft DeviceEmulator Saved State File
+.i #Mercurial index file
+.idx #Git index file
+.nupkg #NuGet package
+.pack #Git packfile
+.swz #Adobe Flex Signed RSL file
+
+
+# Encrypted Files
+.gpg #GnuPG Encrypted file
+.kdbx #KeePass Password Database
+.tc #TrueCrypt Encrypted Volume
+
+
+# Other Compressed or High-Entropy Files
+.apk #Android Application Package
+.eftx #Microsoft Office Theme Effects
+.sdg #OpenOffice.org Configuration File	
+.thmx #Microsoft Office Theme
+.vsix #Microsoft Visual Studio Extension
+.vsv #Microsoft Virtual Machine Saved State	
+.wmz #Windows Media Player Skin Package	
+.xpi #Mozilla Extension Package
