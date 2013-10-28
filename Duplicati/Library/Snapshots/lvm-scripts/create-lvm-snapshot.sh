@@ -45,7 +45,7 @@ fi
 #
 # If there is too little space the snapshot may be dropped, 
 #  resulting in an incomplete backup.
-# Aome users may want to change this number
+# Some users may want to change this number
 #
 if [ "$FREEBLOCKS" -lt "$MIN_FREE_BLOCKS" ]
 then
@@ -82,7 +82,7 @@ then
 	exit $EXIT_CODE
 fi
 
-LV_SNAPSHOT=`lvdisplay "$LV_GROUP/$NAME" | grep "LV Name" | awk '{ print $NF}'`
+LV_SNAPSHOT=`lvdisplay "$LV_GROUP/$NAME" | grep "LV (Name|Path)" | awk '{ print $NF}'`
 if [ "$?" -ne 0 ]
 then
 	EXIT_CODE=$?
