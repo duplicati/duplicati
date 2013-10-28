@@ -27,7 +27,7 @@ namespace Duplicati.Library.Backend
 {
     public class CloudFiles : IBackend, IStreamingBackend
     {
-        public const string AUTH_URL_US = "https://api.mosso.com/auth";
+        public const string AUTH_URL_US = "https://identity.api.rackspacecloud.com/auth";
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
 
