@@ -94,7 +94,7 @@ namespace Duplicati.Library.Backend
 
             if (UseCredentials.Checked)
             {
-                if (!Duplicati.Library.Backend.File.PreAuthenticate(targetpath, Username.Text, Password.Text))
+                if (!Duplicati.Library.Backend.File.PreAuthenticate(targetpath, Username.Text, Password.Text, true))
                 {
                     MessageBox.Show(this, Strings.FileUI.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
