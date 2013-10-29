@@ -172,6 +172,6 @@
     <value>Disable upload verification</value>
   </data>
   <data name="DescriptionDisableUploadVerifyLong" xml:space="preserve">
-    <value>To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe.</value>
+    <value>To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster but less reliable.</value>
   </data>
 </root>
