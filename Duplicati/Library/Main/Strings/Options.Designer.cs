@@ -70,6 +70,12 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
+        internal static string AllowpassphrasechangeShort {
+            get {
+                return ResourceManager.GetString("AllowpassphrasechangeShort", resourceCulture);
+            }
+        }
+        
         internal static string NolocaldbShort {
             get {
                 return ResourceManager.GetString("NolocaldbShort", resourceCulture);
@@ -391,6 +397,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string RetrydelayLong {
             get {
                 return ResourceManager.GetString("RetrydelayLong", resourceCulture);
+            }
+        }
+        
+        internal static string AllowpassphrasechangeLong {
+            get {
+                return ResourceManager.GetString("AllowpassphrasechangeLong", resourceCulture);
             }
         }
         

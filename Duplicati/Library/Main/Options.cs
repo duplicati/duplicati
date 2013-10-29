@@ -334,7 +334,8 @@ namespace Duplicati.Library.Main
                     "dont-read-manifests",
                     "restore-path",
                     "time",
-                    "version"
+                    "version",
+                    "allow-passphrase-change",
                 };
             }
         }
@@ -460,6 +461,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
+                    new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
 #if DEBUG
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
 #endif
@@ -1452,6 +1454,14 @@ namespace Duplicati.Library.Main
         public bool UploadVerificationFile
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "upload-verification-file"); } 
+        }
+        
+        /// <summary>
+        /// Gets a value indicating if a passphrase change is allowed
+        /// </summary>
+        public bool AllowPassphraseChange
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-passphrase-change"); } 
         }
 
         /// <summary>

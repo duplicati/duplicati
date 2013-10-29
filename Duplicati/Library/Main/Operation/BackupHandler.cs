@@ -72,6 +72,9 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
             if (!m_filehasher.CanReuseTransform)
                 throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
+                
+            if (options.AllowPassphraseChange)
+                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
         }
 
         private static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)

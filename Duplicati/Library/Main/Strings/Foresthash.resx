@@ -123,4 +123,7 @@
   <data name="InvalidHashAlgorithm" xml:space="preserve">
     <value>The cryptolibrary does not support the hash algorithm {0}</value>
   </data>
+  <data name="PassphraseChangeUnsupported" xml:space="preserve">
+    <value>The passphrase cannot be changed for an existing backup</value>
+  </data>
 </root>

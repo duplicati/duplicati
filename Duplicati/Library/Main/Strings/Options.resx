@@ -573,4 +573,10 @@
   <data name="FilereadbuffersizeLong" xml:space="preserve">
     <value>Use this size to control how many bytes a read from a file before processing</value>
   </data>  
+  <data name="AllowpassphrasechangeShort" xml:space="preserve">
+    <value>Allow the passphrase to change</value>
+  </data>
+  <data name="AllowpassphrasechangeLong" xml:space="preserve">
+    <value>Use this option to allow the passphrase to change, note that this option is not permitted for a backup or repair operation</value>
+  </data>  
 </root>

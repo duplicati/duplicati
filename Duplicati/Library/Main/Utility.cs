@@ -138,10 +138,15 @@ namespace Duplicati.Library.Main
                 {
                     if (k.Key == "passphrase")
                     {
-                        if (newDict[k.Key] == "no-encryption")
-                            throw new Exception("Unsupported removal of passphrase");
-                        else if (opts[k.Key] == "no-encryption")
-                            throw new Exception("Unsupported addition of passphrase");
+                        if (!options.AllowPassphraseChange)
+                        {
+                            if (newDict[k.Key] == "no-encryption")
+                                throw new Exception("Unsupported removal of passphrase");
+                            else if (opts[k.Key] == "no-encryption")
+                                throw new Exception("Unsupported addition of passphrase");
+                            else
+                                throw new Exception("Unsupported change of passphrase");
+                        }
                     }
                     else
                         throw new Exception(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));

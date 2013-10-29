@@ -18,6 +18,9 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backend;
             m_options = options;
             m_result = result;
+            
+            if (options.AllowPassphraseChange)
+                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
         }
         
         public void Run()
