@@ -30,6 +30,9 @@ namespace Duplicati.Library.Backend
         private static extern int WNetAddConnection2(ref NETRESOURCE netResource,
            string password, string username, int flags);
 
+        [DllImport("mpr.dll")]
+        public static extern int WNetCancelConnection2(string sharename, int dwFlags, int fForce);
+
         private struct NETRESOURCE
         {
             public ResourceScope dwScope;
@@ -87,7 +90,7 @@ namespace Duplicati.Library.Backend
 
         private const int CONNECT_UPDATE_PROFILE = 0x1;
 
-        internal static bool PreAuthenticate(string path, string username, string password)
+        internal static bool PreAuthenticate(string path, string username, string password, bool forceReauth)
         {
             //Strip it down from \\server\share\folder1\folder2\filename.extension to
             // \\server\share
@@ -115,7 +118,13 @@ namespace Duplicati.Library.Backend
                 rsc.LocalName = null;
                 rsc.RemoteName = minpath;
 
-                return WNetAddConnection2(ref rsc, password, username, CONNECT_UPDATE_PROFILE) == 0;
+                // Forces close an existing network connection
+                if (forceReauth)
+                    WNetCancelConnection2(minpath, CONNECT_UPDATE_PROFILE, 1);
+
+                int retCode = WNetAddConnection2(ref rsc, password, username, CONNECT_UPDATE_PROFILE);
+
+                return retCode == 0;
             }
             catch
             {
