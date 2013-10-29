@@ -29,12 +29,14 @@ namespace Duplicati.Library.Backend
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
         private const string OPTION_MOVE_FILE = "use-move-for-put";
+        private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
 
         private string m_path;
         private string m_username;
         private string m_password;
         private bool m_moveFile;
         private bool m_hasAutenticated;
+        private bool m_forceReauth;
 
         public File()
         {
@@ -111,6 +113,7 @@ namespace Duplicati.Library.Backend
             }
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
+            m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
             m_hasAutenticated = false;
         }
 
@@ -122,7 +125,7 @@ namespace Duplicati.Library.Backend
                 {
                     if (!m_hasAutenticated)
                     {
-                        Win32.PreAuthenticate(m_path, m_username, m_password);
+                        Win32.PreAuthenticate(m_path, m_username, m_password, m_forceReauth);
                         m_hasAutenticated = true;
                     }
                 }
@@ -243,6 +246,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, string.Format(Strings.FileBackend.AlternateDestinationMarkerLong, OPTION_ALTERNATE_PATHS)),
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, string.Format(Strings.FileBackend.AlternateTargetPathsLong, OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
+                    new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
                 });
 
             }
@@ -283,9 +287,9 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        public static bool PreAuthenticate(string path, string username, string password)
+        public static bool PreAuthenticate(string path, string username, string password, bool forceReauth)
         {
-            return Win32.PreAuthenticate(path, username, password);
+            return Win32.PreAuthenticate(path, username, password, forceReauth);
         }
 
         private System.IO.DriveInfo GetDrive()

@@ -159,4 +159,10 @@
   <data name="UseMoveForPutShort" xml:space="preserve">
     <value>Move the file instead of copying it</value>
   </data>
+  <data name="ForceReauthShort" xml:space="preserve">
+    <value>Force authentication against remote share</value>
+  </data>
+  <data name="ForceReauthLong" xml:space="preserve">
+    <value>If this option is set, any existing authentication against the remote share is dropped before attempting to authenticate</value>
+  </data>
 </root>
