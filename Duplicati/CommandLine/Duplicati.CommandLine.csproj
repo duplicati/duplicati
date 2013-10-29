@@ -95,14 +95,6 @@
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.SkyDrive</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\SSH\Duplicati.Library.Backend.SSH.csproj">
-      <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
-      <Name>Duplicati.Library.Backend.SSH</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
-      <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
-      <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
@@ -153,42 +145,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <Content Include="..\..\thirdparty\gpg\gpg2.exe">
-      <Link>win-tools\gpg2.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\gpg\gpg.exe">
-      <Link>win-tools\gpg\gpg.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\iconv.dll">
-      <Link>win-tools\iconv.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libadns-1.dll">
-      <Link>win-tools\libadns-1.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libassuan-0.dll">
-      <Link>win-tools\libassuan-0.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libgcrypt-11.dll">
-      <Link>win-tools\libgcrypt-11.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libgpg-error-0.dll">
-      <Link>win-tools\libgpg-error-0.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\zlib1.dll">
-      <Link>win-tools\zlib1.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Putty\pscp.exe">
-      <Link>win-tools\pscp.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <EmbeddedResource Include="help.txt" />
     <Content Include="TrayWarning.ico" />
   </ItemGroup>

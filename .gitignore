@@ -1,5 +1,8 @@
-bin/
+*~
 obj/
+bin/
+*.mdb
+*.pidb
 *.resources
 *.userprefs
 *.user
