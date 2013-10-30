@@ -1290,7 +1290,7 @@ namespace Duplicati.Library.Main
                 else if (lastEx is System.Security.Cryptography.CryptographicException)
                     throw lastEx;
                 else
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError2, filename, lastEx.Message), lastEx);
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError2, remote.Filename, lastEx.Message), lastEx);
 
             m_statistics.AddBytesDownloaded(new System.IO.FileInfo(filename).Length);
         }
