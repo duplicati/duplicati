@@ -75,6 +75,20 @@ namespace Duplicati.Library.Main.Operation
                         cs.WriteLine("Processors: {0}", Environment.ProcessorCount);
                         cs.WriteLine(".Net Version: {0}", Environment.Version);
                         cs.WriteLine("Mono: {0} ({1}) ({2})", Duplicati.Library.Utility.Utility.IsMono, Duplicati.Library.Utility.Utility.MonoVersion, Duplicati.Library.Utility.Utility.MonoDisplayVersion);
+
+                        Type sqlite = null;
+                        string sqliteversion = "";
+
+                        try { sqlite = Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType; }
+                        catch { }
+                        
+                        if (sqlite != null)
+                        {
+                            try { sqliteversion = (string)sqlite.GetProperty("SQLiteVersion").GetValue(null, null); }
+                            catch { }
+                            
+                            cs.WriteLine("SQLite: {0} - {1}", sqliteversion, sqlite.FullName);
+                        }
                     }
                 }
             }				
