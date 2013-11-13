@@ -45,6 +45,20 @@ namespace Duplicati.Library.Interface
         Noncompressible
 
     }
+    
+    /// <summary>
+    /// An interface for passing additional hints to the compressor
+    /// about the expected contents of the volume
+    /// </summary>
+    public interface ICompressionHinting : ICompression
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="Duplicati.Library.Interface.ICompression"/>
+        /// instance is in low overhead mode.
+        /// </summary>
+        /// <value><c>true</c> if low overhead mode; otherwise, <c>false</c>.</value>
+        bool LowOverheadMode { get; set; }
+    }
 
     /// <summary>
     /// An interface for accessing files in an archive, such as a folder or compressed file.

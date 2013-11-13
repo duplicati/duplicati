@@ -47,6 +47,10 @@ namespace Duplicati.Library.Main.Volumes
 
 			m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
+            
+            if (this is IndexVolumeWriter && m_compression is Library.Interface.ICompressionHinting)
+                ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
+                
             AddManifestfile();
         }
 

@@ -7,7 +7,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Compression
 {
-    public class SevenZipCompression: ICompression
+    public class SevenZipCompression: ICompressionHinting
     {
         // next file starts a new stream if the previous stream is larger than this
         private const int kStreamThreshold = 1 << 20; // 1 MB
@@ -19,6 +19,13 @@ namespace Duplicati.Library.Compression
         private master._7zip.Legacy.ArchiveReader m_reader;
         private master._7zip.Legacy.CArchiveDatabaseEx m_archive;
         private int m_threadCount;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="Duplicati.Library.Compression.SevenZipCompression"/>
+        /// is in low overhead mode.
+        /// </summary>
+        /// <value><c>true</c> if low overhead mode; otherwise, <c>false</c>.</value>
+        public bool LowOverheadMode { get; set; }
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands.
