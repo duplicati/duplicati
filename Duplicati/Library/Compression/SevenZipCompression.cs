@@ -15,17 +15,31 @@ namespace Duplicati.Library.Compression
         private FileStream m_file;
         private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter m_writer;
         private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.PlainEncoder m_copyEncoder;
-        private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.Lzma2Encoder m_lzma2Encoder;
+        private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.ThreadedEncoder m_lzma2Encoder;
         private master._7zip.Legacy.ArchiveReader m_reader;
         private master._7zip.Legacy.CArchiveDatabaseEx m_archive;
         private int m_threadCount;
+        private bool m_lowOverheadMode;
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="Duplicati.Library.Compression.SevenZipCompression"/>
         /// is in low overhead mode.
         /// </summary>
         /// <value><c>true</c> if low overhead mode; otherwise, <c>false</c>.</value>
-        public bool LowOverheadMode { get; set; }
+        public bool LowOverheadMode
+        {
+            get { return m_lowOverheadMode; }
+            set
+            {
+                if(m_lowOverheadMode != value)
+                {
+                    if(m_lzma2Encoder != null)
+                        throw new NotSupportedException("Cannot change LowOverheadMode after writing has started.");
+
+                    m_lowOverheadMode = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands.
@@ -237,7 +251,11 @@ namespace Duplicati.Library.Compression
             {
                 if(m_lzma2Encoder == null)
                 {
-                    m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.Lzma2Encoder(m_threadCount);
+                    if(m_lowOverheadMode)
+                        m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.LzmaEncoder();
+                    else
+                        m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.Lzma2Encoder(m_threadCount);
+
                     m_lzma2Encoder.OnOutputThresholdReached += mLzma2Encoder_OnOutputThresholdReached;
                     m_lzma2Encoder.SetOutputThreshold(kStreamThreshold);
                 }
