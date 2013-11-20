@@ -59,9 +59,9 @@ namespace Duplicati.Library.Main.Database
             
             if (m_lookup == null)
                 return;
-            
+
             var hotIx = Math.Min(m_lookup.Count, paths.Length) - 1;
-            while (hotIx > 0)
+            while (hotIx >= 0)
             {
                 if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                 {
@@ -75,10 +75,13 @@ namespace Duplicati.Library.Main.Database
                         paths = paths.Skip(hotIx + 1).ToArray();
                         m_lookup.RemoveRange(hotIx + 1, m_lookup.Count - (hotIx + 1));
                     }
-                    break;
+                    return;
                 }
                 hotIx--;
             }
+
+            //Fallback, no matches at all
+            m_lookup.Clear();
         }
         
         /// <summary>
