@@ -12,13 +12,13 @@ namespace Duplicati.Library.Main.Database
         private class PathEntryKeeper
         {
             public DateTime ScanTime;
-            public long FilesetId;
+            public long FileID;
             
             private SortedList<KeyValuePair<long, long>, long> m_versions;
             
-            public PathEntryKeeper(long filesetId, DateTime scanTime)
+            public PathEntryKeeper(long fileId, DateTime scanTime)
             {
-                this.FilesetId = filesetId;
+                this.FileID = fileId;
                 this.ScanTime = scanTime;
                 this.m_versions = null;
             }
@@ -486,7 +486,7 @@ namespace Duplicati.Library.Main.Database
             
             if (m_pathLookup != null)
             {
-                if (entryFound = m_pathLookup.TryFind(filename, out entry))
+                if (entryFound = (m_pathLookup.TryFind(filename, out entry) && entry != null))
                 {
                     var fid = entry.GetFilesetID(blocksetID, metadataID);
                     if (fid >= 0)
@@ -560,10 +560,10 @@ namespace Duplicati.Library.Main.Database
             if (m_pathLookup != null)
             {            
                 PathEntryKeeper tmp;
-                if (m_pathLookup.TryFind(path, out tmp) && tmp.FilesetId >= 0)
+                if (m_pathLookup.TryFind(path, out tmp) && tmp != null && tmp.FileID >= 0)
                 {
                     oldScanned = tmp.ScanTime;
-                    return tmp.FilesetId;
+                    return tmp.FileID;
                 }
                 else
                 {
@@ -590,17 +590,12 @@ namespace Duplicati.Library.Main.Database
 
         public string GetFileHash(long fileid)
         {
-            try
-            {
-                m_selectfileHashCommand.SetParameterValue(0, fileid);
-                return m_selectfileHashCommand.ExecuteScalar().ToString();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                throw;
-            }
-            
+            m_selectfileHashCommand.SetParameterValue(0, fileid);
+            var r = m_selectfileHashCommand.ExecuteScalar();
+            if (r == null || r == DBNull.Value)
+                return null;
+                
+            return r.ToString();
         }
         
         public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, System.Data.IDbTransaction transaction)
