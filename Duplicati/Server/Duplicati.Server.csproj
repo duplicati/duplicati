@@ -109,8 +109,8 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-    <None Include="Database\Database Schema\Schema.sql" />
     <EmbeddedResource Include="newbackup.json" />
+    <EmbeddedResource Include="Database\Database schema\Schema.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
@@ -229,7 +229,7 @@
   <ItemGroup>
     <Folder Include="webroot\" />
     <Folder Include="Database\" />
-    <Folder Include="Database\Database Schema\" />
+    <Folder Include="Database\Database schema\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
