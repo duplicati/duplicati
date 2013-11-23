@@ -5,11 +5,9 @@ using System.Text;
 
 namespace Duplicati.Server.Serialization.Implementations
 {
-    internal class ProgressEventData : IProgressEventData
+    internal class ProgressEventData : Interface.IProgressEventData
     {
         public DuplicatiOperation Operation { get; set; }
-
-        public DuplicatiOperationMode Mode { get; set; }
 
         public string Message { get; set; }
 
@@ -21,7 +19,7 @@ namespace Duplicati.Server.Serialization.Implementations
 
         public long LastEventID { get; set; }
 
-        public IProgressEventData Clone()
+        public Interface.IProgressEventData Clone()
         {
             return (ProgressEventData)this.MemberwiseClone();
         }

@@ -19,9 +19,7 @@ namespace Duplicati.Server.Serialization
             m_jsonSettings.ContractResolver = new JsonSerializer();
             m_jsonSettings.Converters = new JsonConverter[] {
                 new SerializableStatusCreator(),
-                new ProgressEventDataCreator(),
-                new BackendSettingsCreator(),
-                new FilterSetCreator(),
+                new ProgressEventDataCreator()
             }.ToList();
         }
 

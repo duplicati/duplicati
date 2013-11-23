@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Data.LightDatamodel;
 
 namespace Duplicati.Server
 {
@@ -41,7 +40,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the only access to the database
         /// </summary>
-        public static IDataFetcherWithRelations DataConnection;
+        public static Database.Connection DataConnection;
 
         /// <summary>
         /// This is the lock to be used before manipulating the shared resources
@@ -56,17 +55,12 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the working thread
         /// </summary>
-        public static Duplicati.Library.Utility.WorkerThread<IDuplicityTask> WorkThread;
+        public static Duplicati.Library.Utility.WorkerThread<Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>> WorkThread;
 
         /// <summary>
         /// The path to the file that contains the current database
         /// </summary>
         public static string DatabasePath;
-
-        /// <summary>
-        /// The actual runner, do not call directly. Only used for events.
-        /// </summary>
-        public static DuplicatiRunner Runner;
 
         /// <summary>
         /// The controller interface for pause/resume and throttle options
@@ -298,7 +292,7 @@ namespace Duplicati.Server
                     //Attempt to open the database, handling any encryption present
                     OpenDatabase(con);
 
-                    Duplicati.Library.Utility.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Datamodel.Schedule));
+                    Duplicati.Library.Utility.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Server.Database.Connection));
                 }
                 catch (Exception ex)
                 {
@@ -317,32 +311,28 @@ namespace Duplicati.Server
                     }
                 }
 
-                DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
+                DataConnection = new Duplicati.Server.Database.Connection(con);
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
-                LiveControl = new LiveControls(new Duplicati.Datamodel.ApplicationSettings(DataConnection));
+                LiveControl = new LiveControls(DataConnection.ApplicationSettings);
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
                 LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
-                Runner = new DuplicatiRunner();
-                WorkThread = new Duplicati.Library.Utility.WorkerThread<IDuplicityTask>(new Duplicati.Library.Utility.WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask), LiveControl.State == LiveControls.LiveControlState.Paused);
+                WorkThread = new Duplicati.Library.Utility.WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>>(Runner.Run, LiveControl.State == LiveControls.LiveControlState.Paused);
                 Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
 
                 Program.WorkThread.StartingWork += new EventHandler(SignalNewEvent);
                 Program.WorkThread.CompletedWork += new EventHandler(SignalNewEvent);
                 Program.WorkThread.WorkQueueChanged += new EventHandler(SignalNewEvent);
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
-                Program.Runner.ProgressEvent += new DuplicatiRunner.ProgressEventDelegate(Runner_ProgressEvent);
 
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
                 LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
                 Program.WebServer = new Server.WebServer(commandlineOptions);
-
-                DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
 
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
@@ -373,11 +363,6 @@ namespace Duplicati.Server
                     Duplicati.Library.Logging.Log.CurrentLog = null;
 #endif
             }
-        }
-
-        private static void Runner_ProgressEvent(Serialization.DuplicatiOperation operation, Serialization.RunnerState state, string message, string submessage, int progress, int subprogress)
-        {
-            ProgressEventNotifyer.SignalNewEvent();
         }
 
         private static void SignalNewEvent(object sender, EventArgs e)
@@ -424,46 +409,25 @@ namespace Duplicati.Server
             StatusEventNotifyer.SignalNewEvent();
         }
 
-
-        private static void DataConnection_AfterDataConnection(object sender, DataActions action)
-        {
-            if (action == DataActions.Insert || action == DataActions.Update)
-            {
-                System.Threading.Interlocked.Increment(ref LastDataUpdateID);
-                Scheduler.Reschedule();
-                StatusEventNotifyer.SignalNewEvent();
-            }
-        }
-
         /// <summary>
         /// Returns a localized name for a task type
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static string LocalizeTaskType(DuplicityTaskType type)
+        public static string LocalizeTaskType(Server.Serialization.DuplicatiOperation type)
         {
             switch (type)
             {
-                case DuplicityTaskType.FullBackup:
+                case Server.Serialization.DuplicatiOperation.Backup:
                     return Strings.TaskType.FullBackup;
-                case DuplicityTaskType.IncrementalBackup:
+                case Server.Serialization.DuplicatiOperation.List:
                     return Strings.TaskType.IncrementalBackup;
-                case DuplicityTaskType.ListActualFiles:
+                case Server.Serialization.DuplicatiOperation.Remove:
                     return Strings.TaskType.ListActualFiles;
-                case DuplicityTaskType.ListBackupEntries:
+                case Server.Serialization.DuplicatiOperation.Verify:
                     return Strings.TaskType.ListBackupEntries;
-                case DuplicityTaskType.ListBackups:
+                case Server.Serialization.DuplicatiOperation.Restore:
                     return Strings.TaskType.ListBackups;
-                case DuplicityTaskType.ListFiles:
-                    return Strings.TaskType.ListFiles;
-                case DuplicityTaskType.RemoveAllButNFull:
-                    return Strings.TaskType.RemoveAllButNFull;
-                case DuplicityTaskType.RemoveOlderThan:
-                    return Strings.TaskType.RemoveOlderThan;
-                case DuplicityTaskType.Restore:
-                    return Strings.TaskType.Restore;
-                case DuplicityTaskType.RestoreSetup:
-                    return Strings.TaskType.RestoreSetup;
                 default:
                     return type.ToString();
             }

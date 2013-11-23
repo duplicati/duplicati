@@ -48,9 +48,6 @@
     <Reference Include="HttpServer.MVC">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.MVC.dll</HintPath>
     </Reference>
-    <Reference Include="LightDatamodel">
-      <HintPath>..\..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -66,17 +63,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DuplicatiOutputParser.cs" />
-    <Compile Include="DuplicatiRunner.cs" />
-    <Compile Include="DynamicSetupHelper.cs" />
     <Compile Include="EventPollNotify.cs" />
     <Compile Include="LiveControls.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scheduler.cs" />
-    <Compile Include="Serializable\BackendSettings.cs" />
     <Compile Include="Serializable\TreeNode.cs" />
-    <Compile Include="Serializable\FilterSet.cs" />
     <Compile Include="SingleInstance.cs" />
     <Compile Include="Strings\DuplicatiRunner.Designer.cs">
       <DependentUpon>DuplicatiRunner.resx</DependentUpon>
@@ -103,14 +95,22 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="TaskPackages.cs" />
     <Compile Include="WebServer.cs" />
     <Compile Include="Serializable\ServerStatus.cs" />
+    <Compile Include="Database\Backup.cs" />
+    <Compile Include="Serializable\ServerSettings.cs" />
+    <Compile Include="Database\Connection.cs" />
+    <Compile Include="Database\Filter.cs" />
+    <Compile Include="Database\Setting.cs" />
+    <Compile Include="Database\ApplicationSettings.cs" />
+    <Compile Include="Runner.cs" />
+    <Compile Include="Database\Schedule.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-    <EmbeddedResource Include="backup defaults.xml" />
+    <None Include="Database\Database Schema\Schema.sql" />
+    <EmbeddedResource Include="newbackup.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
@@ -125,17 +125,9 @@
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
       <Name>Duplicati.CommandLine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\GUI\Datamodel\Datamodel.csproj">
-      <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
-      <Name>Datamodel</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
@@ -236,6 +228,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
+    <Folder Include="Database\" />
+    <Folder Include="Database\Database Schema\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

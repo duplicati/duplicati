@@ -1,1 +1,0 @@
-﻿ALTER TABLE "Log" ADD COLUMN "ParsedMessage" TEXT NULL;

@@ -42,30 +42,10 @@ namespace Duplicati.Server.Serialization
         Backup,
         Restore,
         List,
-        Remove
-    }
-
-    public enum DuplicatiOperationMode
-    {
-        Backup,
-        BackupFull,
-        BackupIncremental,
-        Restore,
-        RestoreControlfiles,
-        List,
-        GetBackupSets,
-        ListCurrentFiles,
-        ListSourceFolders,
-        ListActualSignatureFiles,
-        DeleteAllButNFull,
-        DeleteAllButN,
-        DeleteOlderThan,
-        CleanUp,
-        CreateFolder,
-        FindLastFileVersion,
+        Remove,
         Verify
     }
-    
+
     public enum SuggestedStatusIcon
     {
         Ready,

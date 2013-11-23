@@ -63,19 +63,12 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A callback that performs the actual work on the item
         /// </summary>
-        private ProcessItemDelegate m_delegate;
-
-        /// <summary>
-        /// A delegate used to signal a changed state
-        /// </summary>
-        /// <param name="sender">The sender of the event</param>
-        /// <param name="state">The new state</param>
-        public delegate void WorkerStateChangedDelegate(WorkerThread<Tx> sender, RunState state);
+        private Action<Tx> m_delegate;
 
         /// <summary>
         /// An event that is raised when the runner state changes
         /// </summary>
-        public event WorkerStateChangedDelegate WorkerStateChanged;
+        public event Action<WorkerThread<Tx>, RunState> WorkerStateChanged;
 
         /// <summary>
         /// Event that occurs when a new operation is being processed
@@ -89,8 +82,6 @@ namespace Duplicati.Library.Utility
         /// An evnet that occurs when a new task is added to the queue or an existing one is removed
         /// </summary>
         public event EventHandler WorkQueueChanged;
-
-        public delegate void ProcessItemDelegate(Tx item);
 
         /// <summary>
         /// The internal state
@@ -116,7 +107,7 @@ namespace Duplicati.Library.Utility
         /// Constructs a new WorkerThread
         /// </summary>
         /// <param name="item">The callback that performs the work</param>
-        public WorkerThread(ProcessItemDelegate item, bool paused)
+        public WorkerThread(Action<Tx> item, bool paused)
         {
             m_delegate = item;
             m_event = new AutoResetEvent(paused);

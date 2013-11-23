@@ -164,7 +164,7 @@ namespace Duplicati.Server
         /// Constructs a new instance of the LiveControl
         /// </summary>
         /// <param name="initialTimeout">The duration that the backups should be initially suspended</param>
-        public LiveControls(Datamodel.ApplicationSettings settings)
+        public LiveControls(Database.ApplicationSettings settings)
         {
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
@@ -350,7 +350,7 @@ namespace Duplicati.Server
                 {
                     long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
                     
-                    Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
+                    var appset = Program.DataConnection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
                         try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
                         catch { }

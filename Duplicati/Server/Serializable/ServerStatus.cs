@@ -27,7 +27,7 @@ namespace Duplicati.Server.Serializable
     /// <summary>
     /// This class collects all reportable status properties into a single class that can be exported as JSON
     /// </summary>
-    public class ServerStatus : IServerStatus
+    public class ServerStatus : Duplicati.Server.Serialization.Interface.IServerStatus
     {
         public LiveControlState ProgramState
         {
@@ -43,18 +43,18 @@ namespace Duplicati.Server.Serializable
         {
             get 
             { 
-                IDuplicityTask t = Program.WorkThread.CurrentTask;
-                if (t == null || t.Schedule == null)
+                var t = Program.WorkThread.CurrentTask;
+                if (t == null || t.Item2 != DuplicatiOperation.Backup)
                     return -1;
                 else
-                    return t.Schedule.ID;
+                    return t.Item1;
 
             }
         }
 
         public IList<long> SchedulerQueueIds
         {
-            get { return Program.Scheduler.WorkerQueue.Select(x => x.ID).ToList(); }
+            get { return (from n in Program.Scheduler.WorkerQueue where n.Item2 == DuplicatiOperation.Backup select n.Item1).ToList(); }
         }
         
         public bool HasWarning { get { return Program.HasWarning; } }
@@ -83,18 +83,6 @@ namespace Duplicati.Server.Serializable
                     else
                         return SuggestedStatusIcon.ActivePaused;
                 }
-            }
-        }
-
-        public DateTime LastLogUpdate
-        {
-            get 
-            { 
-                var lst = Program.DataConnection.GetObjects<Datamodel.Log>().Select(x => x.EndTime).ToList();
-                if (lst.Count == 0)
-                    return new DateTime(0);
-                else
-                    return lst.Max();
             }
         }
 

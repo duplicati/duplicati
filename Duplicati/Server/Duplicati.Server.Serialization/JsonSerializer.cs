@@ -26,82 +26,29 @@ namespace Duplicati.Server.Serialization
 {
 	internal class JsonSerializer : DefaultContractResolver
 	{
-        private static readonly Dictionary<string, string> m_ignoreList;
-        private static readonly Dictionary<string, string> m_renameList;
-
         static JsonSerializer()
         {
-            m_ignoreList = new Dictionary<string, string>();
-            m_ignoreList.Add("Duplicati.Datamodel.ApplicationSettings!RawOptions", null);
-            m_ignoreList.Add("Duplicati.Datamodel.Task!Extensions", null);
-            m_ignoreList.Add("Duplicati.Datamodel.Task!SortedFilters", null);
-            m_ignoreList.Add("Duplicati.Datamodel.Task!EncodedFilter", null);
-            m_ignoreList.Add("Duplicati.Datamodel.Task!ExistsInDb", null);
-            m_ignoreList.Add("Duplicati.Datamodel.Schedule!ExistsInDb", null);
-
-            m_renameList = new Dictionary<string, string>();
-            m_renameList.Add("Duplicati.Datamodel.Schedule!MetadataLookup", "Metadata");
-            m_renameList.Add("Duplicati.Datamodel.Task!BackendSettingsLookup", "BackendSettings");
-            m_renameList.Add("Duplicati.Datamodel.Task!TaskExtensionsLookup", "Extensions");
-            m_renameList.Add("Duplicati.Datamodel.Task!TaskOverridesLookup", "Overrides");
-            m_renameList.Add("Duplicati.Datamodel.Task!EncryptionSettingsLookup", "EncryptionSettings");
-            m_renameList.Add("Duplicati.Datamodel.Task!CompressionSettingsLookup", "CompressionSettings");
-            m_renameList.Add("Duplicati.Datamodel.Task!FilterXml", "Filter");
         }
 
         private static string MemberInfoAsKey(MemberInfo mi) { return mi.DeclaringType.FullName + "!" + mi.Name; }
         private static string ExposedNamed(MemberInfo mi)
         {
-            string newname;
+            /*string newname;
             if (!m_renameList.TryGetValue(MemberInfoAsKey(mi), out newname))
                 newname = mi.Name;
-            return newname;
+            return newname;*/
+            return mi.Name;
         }
 
         protected override List<MemberInfo> GetSerializableMembers(Type objectType)
         {
-            return base.GetSerializableMembers(objectType).Where(x => !m_ignoreList.ContainsKey(MemberInfoAsKey(x))).ToList();
+            //return base.GetSerializableMembers(objectType).Where(x => !m_ignoreList.ContainsKey(MemberInfoAsKey(x))).ToList();
+            return base.GetSerializableMembers(objectType);
         }
 
         protected override JsonObjectContract CreateObjectContract (Type objectType)
         {
-            if (typeof(System.Data.LightDatamodel.IDataFetcher).IsAssignableFrom(objectType))
-            {
-                //If this type was ever serialized, it would expose the entire internal object cache, and we do NOT want that :)
-                throw new Exception("Internal error, a non-serializable type was hit");
-            }
-            else if (typeof(System.Data.LightDatamodel.IDataClass).IsAssignableFrom(objectType))
-            {
-                JsonObjectContract joc = new JsonObjectContract(objectType);
-                joc.OverrideConstructor = objectType.GetConstructor(Type.EmptyTypes);
-
-                foreach(var pi in objectType.GetProperties( BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance ))
-                {
-                    var customs = pi.GetCustomAttributes(false);
-                    bool isRef = customs.Select(x => x.GetType()).Contains(typeof(System.Data.LightDatamodel.DataClassAttributes.Affects));
-                    bool isParent = typeof(System.Data.LightDatamodel.IDataFetcher).IsAssignableFrom(pi.PropertyType);
-                    isRef |= typeof(System.Data.LightDatamodel.IDataClass).IsAssignableFrom(pi.PropertyType);
-                    bool ignored = isRef || isParent || m_ignoreList.ContainsKey(MemberInfoAsKey(pi));
-
-                    if (!ignored)
-                    {
-                        joc.Properties.Add(new JsonProperty()
-                        {
-                            PropertyName = ExposedNamed(pi),
-                            PropertyType = pi.PropertyType,
-                            Ignored = ignored,
-                            UnderlyingName = pi.Name,
-                            Readable = pi.CanRead,
-                            Writable = pi.CanWrite & pi.Name != "ID",
-                            ValueProvider = CreateMemberValueProvider(pi)
-                        });
-                    }
-                }
-
-                return joc;
-            }
-            else
-                return base.CreateObjectContract (objectType);
+            return base.CreateObjectContract (objectType);
         }
 
         protected override IValueProvider CreateMemberValueProvider(MemberInfo member)

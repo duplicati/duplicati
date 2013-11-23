@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Duplicati.Server.Serialization;
+using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.GUI.TrayIcon
 {

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Duplicati.Server.Serialization;
+using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.GUI.TrayIcon.Windows
 {

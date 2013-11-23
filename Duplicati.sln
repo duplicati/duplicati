@@ -25,8 +25,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.W
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.CloudFiles", "Duplicati\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj", "{1BFAE226-8364-4086-825C-BB83F6F3EE4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datamodel", "Duplicati\GUI\Datamodel\Datamodel.csproj", "{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Interface", "Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
@@ -119,10 +117,6 @@ Global
 		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -177,7 +171,7 @@ Global
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Duplicati\CommandLine\Duplicati.CommandLine.csproj
+		StartupItem = Duplicati\GUI\Duplicati.GUI.MacTrayIcon\Duplicati.GUI.MacTrayIcon.csproj
 		Policies = $0
 		$0.StandardHeader = $1
 		$1.Text = @ Copyright (C) 2011, Kenneth Skovhede\r\n http://www.hexad.dk, opensource@hexad.dk\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -199,7 +193,6 @@ Global
 		$4.EventRemoveBraceStyle = NextLine
 		$4.StatementBraceStyle = NextLine
 		$4.ElseNewLinePlacement = NewLine
-		$4.ElseIfNewLinePlacement = SameLine
 		$4.CatchNewLinePlacement = NewLine
 		$4.FinallyNewLinePlacement = NewLine
 		$4.BeforeMethodDeclarationParentheses = False

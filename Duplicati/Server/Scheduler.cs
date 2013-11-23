@@ -16,13 +16,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using Duplicati.Server.Serialization.Interface;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using System.Threading;
-using Duplicati.Datamodel;
-using System.Data.LightDatamodel;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Server
@@ -39,7 +41,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The connection to the database
         /// </summary>
-        private IDataFetcherCached m_connection;
+        private Database.Connection m_connection;
         /// <summary>
         /// A termination flag
         /// </summary>
@@ -47,7 +49,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The worker thread that is invoked to do work
         /// </summary>
-        private WorkerThread<IDuplicityTask> m_worker;
+        private WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>> m_worker;
         /// <summary>
         /// The wait event
         /// </summary>
@@ -69,7 +71,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The currently scheduled items
         /// </summary>
-        private Schedule[] m_schedule;
+        private ISchedule[] m_schedule;
 
         /// <summary>
         /// Constructs a new scheduler
@@ -77,13 +79,13 @@ namespace Duplicati.Server
         /// <param name="connection">The database connection</param>
         /// <param name="worker">The worker thread</param>
         /// <param name="datalock">The database lock object</param>
-        public Scheduler(IDataFetcherCached connection, WorkerThread<IDuplicityTask> worker, object datalock)
+        public Scheduler(Database.Connection connection, WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>> worker, object datalock)
         {
             m_datalock = datalock;
             m_connection = connection;
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
-            m_schedule = new Schedule[0];
+            m_schedule = new ISchedule[0];
             m_terminate = false;
             m_event = new AutoResetEvent(false);
             m_thread.IsBackground = true;
@@ -102,28 +104,23 @@ namespace Duplicati.Server
         /// <summary>
         /// A snapshot copy of the current schedule list
         /// </summary>
-        public List<Schedule> Schedule 
+        public List<ISchedule> Schedule 
         { 
             get 
             {
                 lock (m_lock)
-                    return new List<Schedule>(m_schedule);
+                    return m_schedule.ToList();
             } 
         }
 
         /// <summary>
         /// A snapshot copy of the current worker queue, that is items that are scheduled, but waiting for execution
         /// </summary>
-        public List<Schedule> WorkerQueue
+        public List<Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>> WorkerQueue
         {
             get
             {
-                List<IDuplicityTask> tasks = m_worker.CurrentTasks;
-                List<Schedule> result = new List<Schedule>();
-                foreach (var t in tasks)
-                    if (t != null && t.Schedule != null)
-                        result.Add(t.Schedule);
-                return result;
+                return (from t in m_worker.CurrentTasks where t != null select t).ToList();
             }
         }
 
@@ -172,56 +169,65 @@ namespace Duplicati.Server
 
             return res;
         }
-
+        
         /// <summary>
         /// The actual scheduling procedure
         /// </summary>
         private void Runner()
         {
+            var scheduled = new Dictionary<long, DateTime>();
             while (!m_terminate)
             {
-                List<Schedule> reps = new List<Schedule>();
-                List<Schedule> tmp;
-                lock (m_datalock)
-                    tmp = new List<Schedule>(m_connection.GetObjects<Schedule>());
-
+            
+                //TODO: As this is executed repeatedly we should cache it
+                // to avoid frequent db lookups
+                
                 //Determine schedule list
-                foreach (Schedule sc in tmp)
+                var lst = Program.DataConnection.Schedules;
+                foreach(var sc in lst)
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {
-                        DateTime start = sc.NextScheduledTime;
+                        DateTime start;
+                        if (!scheduled.TryGetValue(sc.ID, out start))
+                            start = new DateTime(Math.Max(sc.Time.Ticks, sc.LastRun.Ticks));
 
-                        try { start = GetNextValidTime(sc.NextScheduledTime, sc.Repeat, sc.AllowedWeekdays); }
-                        catch { } //TODO: Report this somehow
+                        try
+                        {
+                            start = GetNextValidTime(start, sc.Repeat, sc.AllowedDays);
+                        }
+                        catch
+                        {
+                        }
 
                         //If time is exceeded, run it now
                         if (start <= DateTime.Now)
                         {
-                            //See if it is already queued
-                            List<IDuplicityTask> tmplst = m_worker.CurrentTasks;
-                            IDuplicityTask tastTemp = m_worker.CurrentTask;
-                            if (tastTemp != null)
-                                tmplst.Add(tastTemp);
-
-                            bool found = false;
-                            foreach (IDuplicityTask t in tmplst)
-                                if (t != null && t is IncrementalBackupTask && ((IncrementalBackupTask)t).Schedule.ID == sc.ID)
-                                {
-                                    found = true;
-                                    break;
-                                }
-
-                            //If it is not already in queue, put it there
-                            if (!found)
-                                m_worker.AddTask(new IncrementalBackupTask(sc));
+                            //TODO: Cache this to avoid frequent lookups
+                            foreach(var id in Program.DataConnection.GetBackupIDsForTags(sc.Tags))
+                            {
+                                //See if it is already queued
+                                var tmplst = from n in m_worker.CurrentTasks
+                                                                     where n.Item2 == Duplicati.Server.Serialization.DuplicatiOperation.Backup
+                                                                     select n.Item1;
+                                var tastTemp = m_worker.CurrentTask;
+                                if (tastTemp != null && tastTemp.Item2 == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
+                                    tmplst.Union(new long[] { tastTemp.Item1 });
+                            
+                                //If it is not already in queue, put it there
+                                if (!tmplst.Any(x => x == id))
+                                    m_worker.AddTask(new Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>(id, Duplicati.Server.Serialization.DuplicatiOperation.Backup));
+                            }
 
                             //Caluclate next time, by adding the interval to the start until we have
                             // passed the current date and time
                             //TODO: Make this more efficient
                             int i = 50000;
                             while (start <= DateTime.Now && i-- > 0)
-                                try { start = GetNextValidTime(Timeparser.ParseTimeInterval(sc.Repeat, start), sc.Repeat, sc.AllowedWeekdays); }
+                                try
+                                {
+                                    start = GetNextValidTime(Timeparser.ParseTimeInterval(sc.Repeat, start), sc.Repeat, sc.AllowedDays);
+                                }
                                 catch
                                 {
                                     //TODO: Report this somehow
@@ -232,17 +238,22 @@ namespace Duplicati.Server
                                 continue;
                         }
 
-                        //Add to schedule list at the new time
-                        reps.Add(sc);
-                        sc.NextScheduledTime = start;
+                        scheduled[sc.ID] = start;
                     }
                 }
 
-                System.Data.LightDatamodel.QueryModel.OperationOrParameter op = System.Data.LightDatamodel.QueryModel.Parser.ParseQuery("ORDER BY When ASC");
-
+                var existing = lst.ToDictionary(x => x.ID);
+                Server.Serialization.Interface.ISchedule sc_tmp = null;
                 //Sort them, lock as we assign the m_schedule variable
                 lock(m_lock)
-                    m_schedule = op.EvaluateList<Schedule>(reps).ToArray();
+                    m_schedule = (from n in scheduled
+                        where existing.TryGetValue(n.Key, out sc_tmp)
+                        orderby n.Value
+                        select existing[n.Key]).ToArray();
+
+                // Remove unused entries                        
+                foreach(var c in (from n in scheduled where !existing.ContainsKey(n.Key) select n.Key).ToArray())
+                    scheduled.Remove(c);
 
                 //Raise event if needed
                 if (NewSchedule != null)
@@ -251,10 +262,10 @@ namespace Duplicati.Server
                 int waittime = 0;
 
                 //Figure out a sensible amount of time to sleep the thread
-                if (m_schedule.Length > 0)
+                if (scheduled.Count > 0)
                 {
                     //When is the next run scheduled?
-                    TimeSpan nextrun = m_schedule[0].NextScheduledTime - DateTime.Now;
+                    TimeSpan nextrun = scheduled.Min((x) => x.Value) - DateTime.Now;
                     if (nextrun.TotalMilliseconds < 0)
                         continue;
 

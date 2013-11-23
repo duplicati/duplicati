@@ -36,9 +36,6 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LightDatamodel">
-      <HintPath>..\..\..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -52,18 +49,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums.cs" />
-    <Compile Include="IBackendSettings.cs" />
-    <Compile Include="IFilterSet.cs" />
-    <Compile Include="Implementations\BackendSettings.cs" />
-    <Compile Include="Implementations\FilterSet.cs" />
     <Compile Include="Implementations\ProgressEventData.cs" />
     <Compile Include="Implementations\ServerStatus.cs" />
     <Compile Include="InterfaceResolver.cs" />
-    <Compile Include="IProgressEventData.cs" />
-    <Compile Include="IServerStatus.cs" />
     <Compile Include="JsonSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
+    <Compile Include="Interface\IBackup.cs" />
+    <Compile Include="Interface\ISetting.cs" />
+    <Compile Include="Interface\IFilter.cs" />
+    <Compile Include="Interface\IServerSettings.cs" />
+    <Compile Include="Interface\IDynamicModule.cs" />
+    <Compile Include="Interface\IServerStatus.cs" />
+    <Compile Include="Interface\IProgressEventData.cs" />
+    <Compile Include="Interface\ISchedule.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
@@ -86,4 +85,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="Interface\" />
+  </ItemGroup>
 </Project>
