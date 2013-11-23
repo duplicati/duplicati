@@ -43,6 +43,7 @@ namespace Duplicati.Server.Serialization
         Restore,
         List,
         Remove,
+        Repair,
         Verify
     }
 
