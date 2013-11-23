@@ -49,6 +49,9 @@ namespace Duplicati.Library.Encryption
         /// <param name="key">The key used for encryption. The key gets stretched through SHA hashing to fit the key size requirements</param>
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
+            if(string.IsNullOrEmpty(passphrase))
+                throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, "passphrase");
+                
             m_key = passphrase;
         }
 

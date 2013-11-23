@@ -123,4 +123,7 @@
   <data name="DisplayName" xml:space="preserve">
     <value>AES-256 encryption, built in</value>
   </data>
+  <data name="EmptyKeyError" xml:space="preserve">
+    <value>Blank or empty passphrase not allowed</value>
+  </data>
 </root>
