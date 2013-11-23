@@ -94,7 +94,7 @@ CREATE TABLE "Log" (
     "Description" TEXT NOT NULL,
     "Start" INTEGER NOT NULL,
     "Finish" INTEGER NOT NULL,
-    "Result" TEXT NOT NULL
+    "Result" TEXT NOT NULL,
     "SuggestedIcon" TEXT NOT NULL
 );
 
