@@ -265,7 +265,7 @@ namespace Duplicati.Library.Main.Operation
                                         
                                         if (!m_options.Dryrun)
                                         {
-                                            m_result.AddMessage("This may be fixed by deleting the filesets and running reapir again");
+                                            m_result.AddMessage("This may be fixed by deleting the filesets and running repair again");
                                             
                                             throw new Exception(string.Format("Repair not possible, missing {0} blocks!!!", missingBlocks));
                                         }
