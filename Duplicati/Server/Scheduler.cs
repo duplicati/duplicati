@@ -39,10 +39,6 @@ namespace Duplicati.Server
         /// </summary>
         private Thread m_thread;
         /// <summary>
-        /// The connection to the database
-        /// </summary>
-        private Database.Connection m_connection;
-        /// <summary>
         /// A termination flag
         /// </summary>
         private volatile bool m_terminate;
@@ -58,10 +54,6 @@ namespace Duplicati.Server
         /// The data syncronization lock
         /// </summary>
         private object m_lock = new object();
-        /// <summary>
-        /// The program lock for the database connection
-        /// </summary>
-        private object m_datalock;
 
         /// <summary>
         /// An event that is raised when the schedule changes
@@ -79,10 +71,8 @@ namespace Duplicati.Server
         /// <param name="connection">The database connection</param>
         /// <param name="worker">The worker thread</param>
         /// <param name="datalock">The database lock object</param>
-        public Scheduler(Database.Connection connection, WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>> worker, object datalock)
+        public Scheduler(WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>> worker)
         {
-            m_datalock = datalock;
-            m_connection = connection;
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
             m_schedule = new ISchedule[0];

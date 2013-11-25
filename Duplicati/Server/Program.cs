@@ -320,8 +320,8 @@ namespace Duplicati.Server
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
                 LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
-                WorkThread = new Duplicati.Library.Utility.WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>>(Runner.Run, LiveControl.State == LiveControls.LiveControlState.Paused);
-                Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
+                Program.WorkThread = new Duplicati.Library.Utility.WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>>(Runner.Run, LiveControl.State == LiveControls.LiveControlState.Paused);
+                Program.Scheduler = new Scheduler(WorkThread);
 
                 Program.WorkThread.StartingWork += new EventHandler(SignalNewEvent);
                 Program.WorkThread.CompletedWork += new EventHandler(SignalNewEvent);
