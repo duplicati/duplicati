@@ -372,9 +372,13 @@ namespace Duplicati.Server.Database
                 cmd.CommandText = sql;
                 if (args != null)
                     foreach(var a in args)
-                        cmd.Parameters.Add(a);
+                    {
+                        var p = cmd.CreateParameter();
+                        p.Value = a;
+                        cmd.Parameters.Add(p);
+                    }
                 
-                return Read(cmd, f);
+                return Read(cmd, f).ToArray();
             }
         }
         
@@ -389,7 +393,11 @@ namespace Duplicati.Server.Database
                     cmd.CommandText = deleteSql;
                     if (deleteArgs != null)
                         foreach(var a in deleteArgs)
-                            cmd.Parameters.Add(a);
+                        {
+                            var p = cmd.CreateParameter();
+                            p.Value = a;
+                            cmd.Parameters.Add(p);
+                        }
                 
                     cmd.ExecuteNonQuery();
                     cmd.Parameters.Clear();
