@@ -98,5 +98,13 @@ CREATE TABLE "Log" (
     "SuggestedIcon" TEXT NOT NULL
 );
 
+/*
+Internal version tracking
+*/
+CREATE TABLE "Version" (
+    "ID" INTEGER PRIMARY KEY,
+    "Version" INTEGER NOT NULL
+);
 
+INSERT INTO "Version" ("Version") VALUES (0);
 
