@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>com.hexad.DuplicatiTrayMac</string>
+	<string>com.hexad.DuplicatiTrayIconMac</string>
 	<key>CFBundleName</key>
 	<string>TestMonoMac</string>
 	<key>CFBundleVersion</key>
@@ -16,5 +16,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>CFBundleDisplayName</key>
+	<string>Duplicati</string>
 </dict>
 </plist>
