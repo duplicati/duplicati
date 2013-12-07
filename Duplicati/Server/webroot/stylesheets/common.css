@@ -1,1 +1,77 @@
-/* Placeholder for customization */
+/*
+ * Common style config
+ */
+
+body {
+    border: 0px none;
+    margin: 0px;
+    padding: 0px;
+    font-family: Arial;
+    min-width: 320px;
+}
+
+.action-link, .action-links li {
+    text-decoration: underline;
+    color: #56acbb;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.hint-text {
+    color: #9b9b9b;
+    font-size: 0.9em;
+}
+
+.hint-text-caption {
+    font-weight: bold;
+    color: #9b9b9b;
+    font-size: 0.9em;
+}
+
+.caption-text {
+    color: #68845f;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.progressbar-background {
+    background-color: #b1bead;
+}
+
+.menu {
+    background-color: #ffffff;
+    position: absolute;
+    display: none;
+    list-style: none;
+    border: 1px solid #9b9b9b;
+    margin: 0px;
+    padding: 0px;
+    border-radius: 3px;
+    z-index: 10000;
+    opacity: 0.9;
+}
+
+.menu li {
+    padding: 5px 10px 5px 10px;
+    background-color: #ffffff;
+    cursor: pointer;
+}
+
+.menu li.menu-sep {
+    border-top: 1px solid;
+    padding: 0px 10px 0px 10px;
+}
+
+.large-loader-icon {
+    width: 66px;
+    height: 66px;
+    background-repeat: no-repeat;
+    background-image: url('../images/ajax-loader-big.gif');
+}
+
+.small-loader-icon {
+    width: 32px;
+    height: 32px;
+    background-repeat: no-repeat;
+    background-image: url('../images/ajax-loader-small.gif');
+}

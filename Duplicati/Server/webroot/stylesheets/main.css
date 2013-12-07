@@ -1,0 +1,285 @@
+/*
+ * CSS config for the main window
+ */
+
+#main-topbar {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    height: 46px;
+    background-color: #3a5e30;
+    color: #9dab98;
+    vertical-align: middle;
+}
+
+#main-bottombar {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    background-color: #4c7641;
+    color: #d4dcd2;
+    vertical-align: middle;
+    height: 46px;
+}
+
+#main-bottombar a {
+    vertical-align: middle;
+    color: #d4dcd2;
+    display: inline-block;
+    padding: 10px 10px 10px 20px;
+}
+
+
+#main-list {
+    position: absolute;
+    top: 46px;
+    bottom: 46px;
+    left: 0px;
+    right: 0px;
+    padding-left: 20px;
+    overflow: auto;
+	margin: 0 auto;
+}
+
+#main-list-container {
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: auto;
+}
+
+#main-list-loader {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    padding-left: 20px;
+    overflow: auto;
+    margin: 0 auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#main-list-loader-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  width: 250px;
+  height: 100px;
+}
+
+#main-list-loader-icon {
+    margin: auto;
+}
+
+#main-list-loader-text {
+    padding-top: 5px;
+    text-align: center;
+}
+
+#main-appname {
+    padding: 10px 10px 10px 20px;
+    font-weight: bold;
+    font-size: 1.4em;
+    display: inline-block;
+    text-transform: uppercase;
+}
+
+#main-appname.has-subtitle {
+    padding-top: 5px;
+}
+
+#main-appname-subtitle {
+    font-size: 0.5em;
+    font-weight: normal;
+    font-style: italic;
+}
+
+#main-newbackup {
+    background-color: #3a5e30;
+    color: white;
+    padding: 6px 12px 6px 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: inline-block;
+    clear: both;
+    float: left;
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+#main-control-menu {
+    margin-right: 10px;
+}
+
+.main-shortcuts {
+    float: right;
+    padding-top: 8px;
+    padding-right: 8px;
+    margin: 0px;
+    padding-left: 0px;
+}
+
+.main-shortcuts li {
+    padding-left: 8px;
+    padding-right: 4px;
+    cursor: pointer;
+    background-color: #3a5e30;    
+}
+
+.main-backup-entry {
+    padding: 40px 40px 10px 0px;
+    clear: both;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.main-backup-entry .action-links {
+    display: block;
+    margin-top: 10px;
+    padding-left: 0px;
+}
+
+.main-backup-entry .hint-text, .main-shortcuts {
+    display: table-row;
+}
+
+.main-backup-entry .action-links li, .main-backup-entry .hint-text li, .main-shortcuts li {
+    display: table-cell;
+}
+
+.main-backup-entry .action-links li {
+    display: table-cell;
+    border-right: 1px solid #56acbb;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.main-backup-entry .action-links .last {
+    border-right: 0px none;
+    padding-right: 0px;
+}
+
+.main-backup-entry .action-links .first {
+    padding-left: 0px;
+}
+
+.main-backup-entry .hint-text-caption {
+    padding-right: 5px;
+}
+
+.main-backup-entry .caption-text {
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 300px;
+    white-space: nowrap;
+}
+
+.main-icon-plus {
+    width: 23px;
+    height: 23px;
+    display: block;
+    background-repeat: no-repeat;
+    background-image: url('../images/plus.png');
+}
+
+.main-icon-clock {
+    width: 23px;
+    height: 23px;
+    background-repeat: no-repeat;
+    background-image: url('../images/clock.png');
+}
+
+.main-icon-donate {
+    width: 28px;
+    height: 28px;
+    background-repeat: no-repeat;
+    background-image: url('../images/donate.png');
+}
+
+.main-icon-hourglass {
+    width: 18px;
+    height: 24px;
+    background-repeat: no-repeat;
+    background-image: url('../images/hourglass.png');
+}
+
+.main-icon-pause {
+    width: 28px;
+    height: 28px;
+    background-repeat: no-repeat;
+    background-image: url('../images/pause.png');
+}
+
+.main-icon-settings {
+    width: 28px;
+    height: 28px;
+    background-repeat: no-repeat;
+    background-image: url('../images/settings.png');
+}
+
+.main-icon-small-close {
+    width: 19px;
+    height: 19px;
+    background-repeat: no-repeat;
+    background-image: url('../images/small-close');
+}
+
+#main-newbackup .main-icon-plus {
+    display: inline-block;
+}
+
+.main-button-add-text {
+    display: inline-block;
+    vertical-align: top;
+    padding-left: 10px;
+    padding-top: 4px;
+}
+
+.progress-area {
+    background-color: #c8d1c5;
+    color: #8f968e;
+    border-radius: 3px;
+    display: block;
+    padding: 6px 12px 6px 12px;    
+    display: block;
+}
+
+.in-progress {
+    color: #ecf0eb;
+    min-height: 23px;
+}
+
+.main-progress-cell {
+    width: 100%;
+}
+
+.progress-area .main-icon-hourglass, .progress-area .main-icon-clock {
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.main-progress-text {
+    display: inline-block;
+    vertical-align: top;
+    padding-top: 4px;
+    white-space: nowrap;
+}
+
+.backup-details {
+    float: left;
+    width: 300px;
+}
+
+.backup-progress {
+    float: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    min-width: 250px;
+    white-space: nowrap;
+}

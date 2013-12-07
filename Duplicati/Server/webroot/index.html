@@ -1,0 +1,168 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=9" />
+<title>Backup</title>
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/common.css" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/main.css" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/customized.css" />
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.js"></script>
+    <script type="text/javascript" src="scripts/config.js"></script>
+    <script type="text/javascript" src="scripts/app.js"></script>
+    <script type="text/javascript" src="scripts/customized.js"></script>
+
+
+    <script id="backup-item-template" type="text/x-jquery-tmpl">
+            <div id="backup-${ID}" class="main-backup-entry">
+                <div class="backup-details">
+                    <div class="caption-text">${Name}</div>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Source</li>
+                        <li class="source-size">${SourceSizeString}</li>
+                    </ul>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Backup</li>
+                        <li class="target-size">${TargetSizeString}</li>
+                    </ul>
+                    <ul class="action-links">
+                        <li class="first">Backup</li>
+                        <li>Restore</li>
+                        <li>Edit</li>
+                        <li class="last">Delete</li>
+                    </ul>
+                </div>
+                <div class="backup-progress">
+                    <div class="progress-area">
+                    <div class="${ProgressIconClass}"></div>
+                    <div class="in-progress main-progress-text">${ProgressText}</div>
+                    </div>
+                </div>
+            </div>
+    </script>
+
+</head>
+<body>
+
+    <div id="main-topbar">
+        <div id="main-appname">DUPLICATI</div>
+
+        <ul class="main-shortcuts">
+            <li id="main-donate" class="main-icon-donate"></li>
+            <li id="main-control" class="main-icon-pause"></li>
+            <li id="main-settings" class="main-icon-settings"></li>
+        </ul>
+
+        <ul id="main-control-menu" class="menu">
+            <li>Settings..</li>
+            <li class="menu-sep"></li>
+            <li>Pause ...</li>
+            <li>Throttle ...</li>
+            <li class="menu-sep"></li>
+            <li>About ...</li>
+        </ul>
+    </div>
+
+    <div id="main-bottombar">
+        <a href="http://www.duplicati.com" target="_blank">Version 2.0.1 is available</a>
+    </div>
+
+    <div id="main-list-loader">
+        <div id="main-list-loader-content">
+            <div id="main-list-loader-icon" class="large-loader-icon"></div>
+            <div id="main-list-loader-text">
+                Loading backups ...
+            </div>
+        </div>
+    </div>
+
+    <div id="main-list">
+        <div id="main-list-container">
+            <div id="backup-1" class="main-backup-entry first">
+                <div class="backup-details">
+                    <div class="caption-text">My Music to Backify.com</div>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Source</li>
+                        <li class="source-size">12.56 GB</li>
+                    </ul>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Backup</li>
+                        <li class="target-size">14.31 GB</li>
+                    </ul>
+                    <ul class="action-links">
+                        <li class="first">Backup</li>
+                        <li>Restore</li>
+                        <li>Edit</li>
+                        <li class="last">Delete</li>
+                    </ul>
+                </div>
+                <div class="backup-progress">
+                    <div class="progress-area">
+                    <div class="in-progress main-progress-text">512 files remanining</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="backup-2" class="main-backup-entry">
+                <div class="backup-details">
+                    <div class="caption-text">My Photos to SkyDrive</div>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Source</li>
+                        <li class="source-size">12.56 GB</li>
+                    </ul>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Backup</li>
+                        <li class="target-size">14.31 GB</li>
+                    </ul>
+                    <ul class="action-links">
+                        <li class="first">Backup</li>
+                        <li>Restore</li>
+                        <li>Edit</li>
+                        <li class="last">Delete</li>
+                    </ul>
+                </div>
+                <div class="backup-progress">
+                    <div class="progress-area">
+                    <div class="main-icon-hourglass"></div>
+                    <div class="main-progress-text">#1 in queue</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="backup-3" class="main-backup-entry last">
+                <div class="backup-details">
+                    <div class="caption-text">My Videos to Amazon S3</div>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Source</li>
+                        <li class="source-size">12.56 GB</li>
+                    </ul>
+                    <ul class="hint-text">
+                        <li class="hint-text-caption">Backup</li>
+                        <li class="target-size">14.31 GB</li>
+                    </ul>
+                    <ul class="action-links">
+                        <li class="first">Backup</li>
+                        <li>Restore</li>
+                        <li>Edit</li>
+                        <li class="last">Delete</li>
+                    </ul>
+                </div>
+                <div  class="backup-progress">
+                    <div class="progress-area">
+                    <div class="main-icon-clock"></div>
+                    <div class="main-progress-text">2013-11-02 5.00pm</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="main-newbackup">
+                <div class="main-icon-plus"></div>
+                <div class="main-button-add-text">Add new backup</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
