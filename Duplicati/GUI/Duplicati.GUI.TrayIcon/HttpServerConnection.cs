@@ -10,7 +10,7 @@ namespace Duplicati.GUI.TrayIcon
     public class HttpServerConnection : IDisposable
     {
         private const string CONTROL_SCRIPT = "control.cgi";
-        private const string STATUS_WINDOW = "status-window.html";
+        private const string STATUS_WINDOW = "index.html";
         private const string EDIT_WINDOW = "edit-window.html";
         
         private Uri m_controlUri;
