@@ -76,8 +76,75 @@ namespace Duplicati.Library.Main.Operation
             if (options.AllowPassphraseChange)
                 throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
         }
+        
+        
+        public class FilterHandler
+        {
+            private Snapshots.ISnapshotService m_snapshot;
+            private FileAttributes m_attributeFilter;
+            private Duplicati.Library.Utility.IFilter m_filter;
+            private Options.SymlinkStrategy m_symlinkPolicy;
+            private ILogWriter m_logWriter;
+            
+            public FilterHandler(Snapshots.ISnapshotService snapshot,FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, ILogWriter logWriter)
+            {
+                m_snapshot = snapshot;
+                m_attributeFilter = attributeFilter;
+                m_filter = filter;
+                m_symlinkPolicy = symlinkPolicy;
+                m_logWriter = logWriter;
+            }
+        
+            public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
+            {
+                try
+                {
+                    if (m_snapshot.IsBlockDevice(path))
+                    {
+                        if (m_logWriter != null)
+                            m_logWriter.AddVerboseMessage("Excluding block device: {0}", path);
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddWarning(string.Format("Failed to process path: ", path), ex);
+                    return false;
+                }            
+            
+                if ((m_attributeFilter & attributes) != 0)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Excluding path due to attribute filter: {0}", path);
+                    return false;
+                }
+                            
+                Library.Utility.IFilter match;
+                if (!Library.Utility.FilterExpression.Matches(m_filter, path, out match))
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
+                    return false;
+                }
+                else if (match != null)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Including path due to filter: {0} => {1}", path, match.ToString());
+                }
+                
+                if (m_symlinkPolicy != Options.SymlinkStrategy.Follow && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Excluding symlink: {0}", path);
+                    return false;
+                }
+                                
+                return true;
+            }
+        }
 
-        private static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
+        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
             try
             {
@@ -100,44 +167,6 @@ namespace Duplicati.Library.Main.Operation
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
         }
 
-        private bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
-        {
-            try
-            {
-                if (m_snapshot.IsBlockDevice(path))
-                {
-                    m_result.AddVerboseMessage("Excluding block device: {0}", path);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                m_result.AddWarning(string.Format("Failed to process path: ", path), ex);
-                return false;
-            }            
-        
-            if ((m_attributeFilter & attributes) != 0)
-            {
-                m_result.AddVerboseMessage("Excluding path due to attribute filter: {0}", path);
-                return false;
-            }
-                        
-            if (!Library.Utility.FilterExpression.Matches(m_filter, path))
-            {
-                m_result.AddVerboseMessage("Excluding path due to filter: {0}", path);
-                return false;
-            }
-            
-            if (m_symlinkPolicy != Options.SymlinkStrategy.Follow && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-            {
-                m_result.AddVerboseMessage("Excluding symlink: {0}", path);
-                return false;
-            }
-                            
-            return true;
-        }
-
-
         private void CountFilesThread()
         {
             var updater = m_result.OperationProgressUpdater;
@@ -145,7 +174,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in m_snapshot.EnumerateFilesAndFolders(AttributeFilter))
+            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, null).AttributeFilter))
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -315,6 +344,8 @@ namespace Duplicati.Library.Main.Operation
                             m_indexvolume = new IndexVolumeWriter(m_options);
                             m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
                         }
+                        
+                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, null);
     		                		                        	
                         using(new Logging.Timer("BackupMainOperation"))
                         {
@@ -335,7 +366,7 @@ namespace Duplicati.Library.Main.Operation
                                         m_result.AddWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex);
                                     }
     		
-                                    if (AttributeFilter(null, p, fa))
+                                    if (filterhandler.AttributeFilter(null, p, fa))
                                     {                                        
                                         try
                                         {
@@ -352,7 +383,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {                                    
-                                foreach(var path in m_snapshot.EnumerateFilesAndFolders(AttributeFilter))
+                                foreach(var path in m_snapshot.EnumerateFilesAndFolders(filterhandler.AttributeFilter))
                                     this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
                                 
                             }

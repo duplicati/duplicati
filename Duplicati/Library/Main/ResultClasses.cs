@@ -741,6 +741,15 @@ namespace Duplicati.Library.Main
             m_changes.Add(new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes));
         }
     }
+    
+    internal class TestFilterResults : BasicResults, ITestFilterResults
+    {
+        public long FileCount { get; set; }
+        public long FileSize { get; set; }
+        public override OperationMode MainOperation { get { return OperationMode.TestFilters; } }
+
+    }
+
 
 }
 

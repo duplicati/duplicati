@@ -249,5 +249,12 @@ namespace Duplicati.Library.Interface
     {
         IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get; }
     }
+    
+    public interface ITestFilterResults : IBasicResults
+    {
+        long FileSize { get; set; }
+        long FileCount { get; set; }
+    }
+    
 }
 

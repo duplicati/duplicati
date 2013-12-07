@@ -30,9 +30,9 @@ namespace Duplicati.Library.Utility
             this.Second = second ?? new FilterExpression();
         }
 
-        public bool Matches(string entry, out bool result)
+        public bool Matches(string entry, out bool result, out IFilter match)
         {
-            return First.Matches(entry, out result) || Second.Matches(entry, out result);
+            return First.Matches(entry, out result, out match) || Second.Matches(entry, out result, out match);
         }
 
         public bool Empty { get { return First.Empty && Second.Empty; } }
@@ -50,6 +50,16 @@ namespace Duplicati.Library.Utility
                 
                 return new JoinedFilterExpression(first, second);
             }
+        }
+        
+        public override string ToString()
+        {
+            if (this.First.Empty)
+                return this.Second.ToString();
+            else if (this.Second.Empty)
+                return this.First.ToString();
+            else
+                return "(" + this.First.ToString() + ") || (" + this.Second.ToString() + ")";
         }
     }
 }

@@ -84,7 +84,7 @@ namespace Duplicati.Library.Utility
                 else
                 {
                     this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
-                    this.Filter = Utility.IsFSCaseSensitive ? filter.ToUpper() : filter;
+                    this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper() : filter;
                     this.Regexp = new System.Text.RegularExpressions.Regex(Library.Utility.Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
                 }
             }
@@ -180,7 +180,7 @@ namespace Duplicati.Library.Utility
                     case FilterType.Simple:
                         return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparision);
                     case FilterType.Wildcard:
-                        return IsWildcardMatch(Utility.IsFSCaseSensitive ? path.ToUpper() : path, this.Filter);
+                        return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper() : path, this.Filter);
                     case FilterType.Regexp:
                         var m = this.Regexp.Match(path);
                         return m.Success && m.Length == path.Length;
@@ -226,19 +226,26 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Gets a value indicating if the filter matches the path
         /// </summary>
-        /// <param name="path">The path to match</param>
-        public bool Matches(string path, out bool result)
+        /// <param name="result">The match result</param>
+        /// <param name="result">The match result</param>
+        /// <param name="match">The filter that matched</param>
+        public bool Matches(string path, out bool result, out IFilter match)
         {
             result = false;
             if (this.Type == FilterType.Empty)
+            {
+                match = null;
                 return false;
+            }
             
             if (m_filters.Where(x => x.Matches(path)).Any())
             {
+                match = this;
                 result = this.Result;
                 return true;
             }
             
+            match = null;
             return false;
         }
 
@@ -336,11 +343,26 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The path to evaluate</param>
         public static bool Matches(IFilter filter, string path)
         {
+            IFilter match;
+            return Matches(filter, path, out match);
+        }
+        
+        /// <summary>
+        /// Utility function to match a filter with a default fall-through value
+        /// </summary>
+        /// <param name="filter">The filter to evaluate</param>
+        /// <param name="path">The path to evaluate</param>
+        /// <param name="match">The filter that matched</param>
+        public static bool Matches(IFilter filter, string path, out IFilter match)
+        {
             if (filter == null || filter.Empty)
+            {
+                match = null;
                 return true;
+            }
         
             bool result;
-            if (filter.Matches(path, out result))
+            if (filter.Matches(path, out result, out match))
                 return result;
 
             // If we only exclude files, choose to include by default
@@ -353,7 +375,10 @@ namespace Duplicati.Library.Utility
                 if (p == null || p.Empty)
                     continue;
                 else if (p is FilterExpression && ((FilterExpression)filter).Result)
+                {
+                    match = p;
                     return false; // We have an include filter, so we exclude by default
+                }
                 else if (p is JoinedFilterExpression)
                 {
                     q.Enqueue(((JoinedFilterExpression)p).First);
@@ -362,6 +387,7 @@ namespace Duplicati.Library.Utility
             }
                     
             // Only excludes, we return true
+            match = null;
             return true;
         }
         
@@ -373,6 +399,20 @@ namespace Duplicati.Library.Utility
         public static FilterExpression Combine(FilterExpression first, FilterExpression second)
         {
             return new FilterExpression(first.m_filters.Union(second.m_filters).Select(x => x.Type == FilterType.Regexp ? ("[" + x.Filter + "]") : x.Filter), first.Result);
+        }
+        
+        public override string ToString()
+        {
+            if (this.Empty)
+                return "";
+            
+            return 
+                "(" +
+                string.Join(") || (",
+                    (from n in m_filters
+                        select n.Type == FilterType.Regexp ? "[" + n.Filter + "]" : n.Filter)
+                ) +
+                ")";
         }
     }
 }

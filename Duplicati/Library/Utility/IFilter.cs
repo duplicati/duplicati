@@ -29,12 +29,13 @@ namespace Duplicati.Library.Utility
 		/// </summary>
 		/// <value><c>true</c> if empty; otherwise, <c>false</c>.</value>
 		bool Empty { get; }
-		/// <summary>
-		/// Performs a test to see if the entry matches the filter
-		/// </summary>
-		/// <param name="entry">The entry to match</param>
+        /// <summary>
+        /// Performs a test to see if the entry matches the filter
+        /// </summary>
+        /// <param name="entry">The entry to match</param>
         /// <param name="result">The match result</param>
-		bool Matches(string entry, out bool result);
+        /// <param name="match">The filter that matched</param>
+        bool Matches(string entry, out bool result, out IFilter match);
 	}
 }
 

@@ -12,7 +12,7 @@
 See duplicati.commandline.exe help <topic> for more information.
   Examples: example
   Commands: backup, find, restore, delete, compact, test, compare, repair
-  Debugging: debug, logging, create-report
+  Debugging: debug, logging, create-report, test-filters
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
@@ -185,7 +185,16 @@ Usage: test <storage-URL> [<samples>] [<options>]
   --version=<int>
     Checks samples from specific versions. Delimiters are , -
   
+
+
   
+# =============================================================================
+> duplicati.commandline.exe help test-filters
+
+Usage: test-filters <source-path> [<options>]
+  
+  Scans the source files and tests against the filters specified, the console output shows which files and folders are examined and the result.
+    
   
   
 # =============================================================================

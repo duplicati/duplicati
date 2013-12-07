@@ -118,6 +118,7 @@
     <Compile Include="OperationPhase.cs" />
     <Compile Include="Database\PathLookupHelper.cs" />
     <Compile Include="Database\HashLookupHelper.cs" />
+    <Compile Include="Operation\TestFilterHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

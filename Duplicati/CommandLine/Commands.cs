@@ -695,6 +695,26 @@ namespace Duplicati.CommandLine
             
             return 0;
         }
+        
+        public static int TestFilters(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args == null || args.Count < 1)
+            {
+                Console.WriteLine("No source paths given");
+                return 200;
+            }
+        
+            options["verbose"] = "true";
+        
+            using(var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(options)))
+            {
+                var result = i.TestFilter(args.ToArray(), filter);
+                
+                Console.WriteLine("Matched {0} files ({1})", result.FileCount, Duplicati.Library.Utility.Utility.FormatSizeString(result.FileSize));
+            }
+            
+            return 0;
+        }
     }
 }
 

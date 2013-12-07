@@ -39,7 +39,8 @@ namespace Duplicati.Library.Main
         Repair,
         CreateLogDb,
         Compact,
-        Test
+        Test,
+        TestFilters
     }
 
     /// <summary>

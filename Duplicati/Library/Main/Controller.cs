@@ -220,6 +220,17 @@ namespace Duplicati.Library.Main
             });
         }
         
+        public Library.Interface.ITestFilterResults TestFilter(string[] paths, Library.Utility.IFilter filter = null)
+        {
+            m_options.RawOptions["verbose"] = "true";
+            m_options.RawOptions["dry-run"] = "true";
+            m_options.RawOptions["dbpath"] = "INVALID!";
+            
+            return RunAction(new TestFilterResults(), ref paths, (result) => {
+                new Operation.TestFilterHandler(m_options, result).Run(paths, filter);
+            });
+        }
+        
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions
         {

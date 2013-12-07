@@ -183,6 +183,7 @@ namespace Duplicati.CommandLine
                 knownCommands["compare"] = Commands.ListChanges;
                 knownCommands["test"] = Commands.Test;
                 knownCommands["verify"] = Commands.Test;
+                knownCommands["test-filters"] = Commands.TestFilters;
 
                 if (verbose)
                 {
