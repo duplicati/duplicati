@@ -89,12 +89,8 @@ namespace Duplicati.GUI.TrayIcon
                     }
                     else
                     {
-                        int port;
-                        string p;
-                        if (!options.TryGetValue("webservice-port", out p) || !int.TryParse(p, out port))
-                            port = 8080;
-
-                        url = "http://localhost:" + port;
+                        int port = Duplicati.Server.Program.ServerPort;
+                        url = "http://127.0.0.1:" + port;
                     }
                 }
 

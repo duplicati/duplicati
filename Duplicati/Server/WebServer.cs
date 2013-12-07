@@ -14,16 +14,21 @@ namespace Duplicati.Server
         /// <summary>
         /// Option for changing the webroot folder
         /// </summary>
-        private const string OPTION_WEBROOT = "webservice-webroot";
+        public const string OPTION_WEBROOT = "webservice-webroot";
         /// <summary>
         /// Option for changing the webservice listen port
         /// </summary>
-        private const string OPTION_PORT = "webservice-port";
+        public const string OPTION_PORT = "webservice-port";
 
         /// <summary>
         /// The single webserver instance
         /// </summary>
         private HttpServer.HttpServer m_server;
+        
+        /// <summary>
+        /// The webserver listening port
+        /// </summary>
+        public readonly int Port;
 
         /// <summary>
         /// Sets up the webserver and starts it
@@ -42,14 +47,15 @@ namespace Duplicati.Server
             tmpwebroot = System.IO.Path.Combine(tmpwebroot, "Server");
             if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
                 webroot = tmpwebroot;
-            else {
+            else
+            {
                 //If we are running the server standalone, we only need to exit "bin/Debug"
                 tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", ".."));
                 if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
                     webroot = tmpwebroot;
             }
 
-            if (Library.Utility.Utility.IsClientOSX) 
+            if (Library.Utility.Utility.IsClientOSX)
             {
                 string osxTmpWebRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", "..", "..", "..", ".."));
                 osxTmpWebRoot = System.IO.Path.Combine(osxTmpWebRoot, "Server");
@@ -66,7 +72,7 @@ namespace Duplicati.Server
 #if DEBUG
                 //In debug mode we do not care where the path points
 #else
-                //In release mode we check that the usersupplied path is located
+                //In release mode we check that the user supplied path is located
                 // in the same folders as the running application, to avoid users
                 // that inadvertently expose top level folders
                 if (!string.IsNullOrWhiteSpace(userroot)
@@ -88,7 +94,7 @@ namespace Duplicati.Server
             fh.MimeTypes.Add("htc", "text/x-component");
             fh.MimeTypes.Add("json", "application/json");
             m_server.Add(fh);
-            m_server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "status-window.html")));
+            m_server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "index.html")));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
             m_server.Add(new DebugReportHandler());
@@ -96,10 +102,34 @@ namespace Duplicati.Server
 
             int port;
             string portstring;
-            if (!options.TryGetValue(OPTION_PORT, out portstring) || !int.TryParse(portstring, out port))
-                port = 8080;
+            IEnumerable<int> ports = null;
+            options.TryGetValue(OPTION_PORT, out portstring);
+            if (!string.IsNullOrEmpty(portstring))
+                ports = 
+                    from n in portstring.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                where int.TryParse(n, out port)
+                                select int.Parse(n);
 
-            m_server.Start(System.Net.IPAddress.Any, port);
+            if (ports == null || ports.Count() == 0)
+                ports = new int[] { 8080 };                                
+
+            // If we are in hosted mode with no specified port, 
+            // then try different ports
+            Exception e = null;
+            foreach(var p in ports)
+                try
+                {
+                    // TODO: Bug in webserver makes this fail,
+                    // because it calls init before attempting to listen
+                    m_server.Start(System.Net.IPAddress.Any, p);
+                    this.Port = p;
+                    return;
+                }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                }
+                
+            throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
         }
 
         private class BodyWriter : System.IO.StreamWriter, IDisposable

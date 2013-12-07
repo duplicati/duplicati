@@ -100,6 +100,14 @@ namespace Duplicati.Server
         //TODO: These should be persisted to the database
         public static bool HasError;
         public static bool HasWarning;
+        
+        public static int ServerPort
+        {
+            get
+            {
+                return WebServer.Port;
+            }
+        }
 
         /// <summary>
         /// The main entry point for the application.
