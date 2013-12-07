@@ -38,7 +38,8 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = backend.ProtocolKey;
                 this.Description = backend.Description;
-                this.Options = backend.SupportedCommands.ToArray();
+                if (backend.SupportedCommands != null)
+                    this.Options = backend.SupportedCommands.ToArray();
             }
         
             /// <summary>
@@ -48,7 +49,8 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
-                this.Options = module.SupportedCommands.ToArray();
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -58,7 +60,8 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
-                this.Options = module.SupportedCommands.ToArray();
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -68,7 +71,8 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = module.Key;
                 this.Description = module.Description;
-                this.Options = module.SupportedCommands.ToArray();
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
