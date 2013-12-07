@@ -293,10 +293,10 @@ namespace Duplicati.CommandLine
                     
                 if (!string.IsNullOrEmpty(newtarget))
                	{
-               		if (cargs.Count == 0)
+               		if (cargs.Count <= 1)
                			cargs.Add(newtarget);
                		else
-               			cargs[0] = newtarget;
+               			cargs[1] = newtarget;
                	}
                	
                	cargs.AddRange(newsource);
