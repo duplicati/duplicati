@@ -93,6 +93,7 @@ namespace Duplicati.Server
             fh.AddDefaultMimeTypes();
             fh.MimeTypes.Add("htc", "text/x-component");
             fh.MimeTypes.Add("json", "application/json");
+            fh.MimeTypes.Add("map", "application/json");
             m_server.Add(fh);
             m_server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "index.html")));
 #if DEBUG
