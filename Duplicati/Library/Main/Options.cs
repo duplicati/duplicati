@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "backup-prefix",
+                    "prefix",
                     "tempdir"
                 };
             }
@@ -654,7 +654,7 @@ namespace Duplicati.Library.Main
             get
             {
             	string v;
-            	m_options.TryGetValue("backup", out v);
+            	m_options.TryGetValue("prefix", out v);
             	if (!string.IsNullOrEmpty(v))
             		return v;
             		
