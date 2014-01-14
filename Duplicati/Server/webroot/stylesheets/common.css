@@ -8,6 +8,11 @@ body {
     padding: 0px;
     font-family: Arial;
     min-width: 320px;
+    font-size: 75%;
+}
+
+.ui-widget {
+    font-family: Arial;
 }
 
 .action-link, .action-links li {
@@ -39,7 +44,7 @@ body {
 }
 
 .menu {
-    background-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.8);
     position: absolute;
     display: none;
     list-style: none;
@@ -48,7 +53,6 @@ body {
     padding: 0px;
     border-radius: 3px;
     z-index: 10000;
-    opacity: 0.9;
 }
 
 .menu li {
@@ -66,6 +70,7 @@ body {
     width: 66px;
     height: 66px;
     background-repeat: no-repeat;
+    margin: auto;
     background-image: url('../images/ajax-loader-big.gif');
 }
 
@@ -74,4 +79,14 @@ body {
     height: 32px;
     background-repeat: no-repeat;
     background-image: url('../images/ajax-loader-small.gif');
+}
+
+.button-area {
+    float: right;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+.clearfix {
+    clear: both;
 }

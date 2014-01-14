@@ -1,0 +1,149 @@
+/*
+ * CSS config for the edit dialog
+ */
+
+ .edit-dialog label:before {
+    clear: both;
+ }
+
+.edit-dialog {
+    float: left;
+}
+
+ .edit-dialog label {
+    min-width: 250px;
+    display: inline-block;
+ }
+
+ .edit-dialog-label {
+    min-width: 250px;
+    clear: both;
+    float: left;
+ }
+
+.edit-dialog input, .edit-dialog textarea, .edit-dialog select {
+    float: left;
+}
+
+.edit-dialog input, .edit-dialog select, .button-area {
+    width: 250px;
+}
+
+.edit-dialog textarea {
+    width: 248px;
+}
+
+.input-hint {
+    padding-top: 20px;
+    padding-bottom: 8px;
+    clear:  both;
+}
+
+.field-group {
+    display: inline-block;
+}
+
+.action-link-input:before {
+    clear: both;
+}
+.action-link-input {
+    float: left;
+}
+
+.backup-password-strength {
+    float: right;
+}
+
+.button-area {
+    clear: both;
+}
+
+#backend-type {
+    width: 140px;
+}
+
+#server-port {
+    width: 80px;
+}
+
+#server-name {
+    width: 165px;
+}
+
+#server-use-ssl {
+    width: auto;
+    margin-left: 10px;
+}
+
+.checkbox-label {
+    display: inline-block;
+    margin-top: 2px;
+}
+
+#source-folder-paths {
+    margin-top: 35px;
+}
+
+#source-folder-paths.empty {
+    padding: 20px;
+    background-color: lightgray;
+    margin-bottom: 10px;
+    border-radius: 3px;
+}
+
+#source-folder-paths > div.source-folder {
+    padding: 5px 5px 5px 5px;
+    background-color: lightgray;
+    border-radius: 3px;
+    display: inline-block;
+    margin: 8px;
+    float: left;
+}
+
+#source-folder-paths > div.source-folder .focused {
+}
+
+#source-folder-browser {
+    clear: both;
+    height: 200px;
+    overflow: auto;
+}
+
+#source-folder-path-text {
+    max-width: 205px;
+}
+
+#source-folder-path-add {
+    margin-right: 0px;
+    float: right;
+}
+
+#use-scheduled-run {
+    width: auto;
+    margin-right: 10px;
+}
+
+#next-run-time, #next-run-date, #repeat-run-number, #repeat-run-multiplier, #dblock-size-number, #dblock-size-multiplier {
+    width: 120px;
+}
+
+ input.simple-checkbox {
+    width: auto;
+    float: none;
+}
+
+.days-label {
+    display: inline-block;
+}
+
+.input-wrapper {
+    float: left;
+}
+
+.hint-line-last {
+    margin-bottom: 20px;
+}
+
+#edit-tab-schedule > div.clearfix, #edit-tab-options > div.clearfix {
+    height: 10px;
+}

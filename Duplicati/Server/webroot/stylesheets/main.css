@@ -49,38 +49,6 @@
     overflow: auto;
 }
 
-#main-list-loader {
-    position: absolute;
-    top: 0px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-    padding-left: 20px;
-    overflow: auto;
-    margin: 0 auto;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-#main-list-loader-content {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: auto;
-  width: 250px;
-  height: 100px;
-}
-
-#main-list-loader-icon {
-    margin: auto;
-}
-
-#main-list-loader-text {
-    padding-top: 5px;
-    text-align: center;
-}
-
 #main-appname {
     padding: 10px 10px 10px 20px;
     font-weight: bold;

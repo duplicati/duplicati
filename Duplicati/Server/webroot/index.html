@@ -5,11 +5,16 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9" />
 <title>Backup</title>
 
+    <link rel="stylesheet" type="text/css" href="stylesheets/green-theme/jquery-ui-1.10.3.min.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/common.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/main.css" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/editdialog.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/customized.css" />
 
-    <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.js"></script>
+    <script type="text/javascript" src="scripts/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery-ui-1.10.3.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery.tmpl.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery.watermark.min.js"></script>
     <script type="text/javascript" src="scripts/config.js"></script>
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/customized.js"></script>
@@ -67,15 +72,6 @@
 
     <div id="main-bottombar">
         <a href="http://www.duplicati.com" target="_blank">Version 2.0.1 is available</a>
-    </div>
-
-    <div id="main-list-loader">
-        <div id="main-list-loader-content">
-            <div id="main-list-loader-icon" class="large-loader-icon"></div>
-            <div id="main-list-loader-text">
-                Loading backups ...
-            </div>
-        </div>
     </div>
 
     <div id="main-list">
@@ -162,6 +158,10 @@
                 <div class="main-button-add-text">Add new backup</div>
             </div>
         </div>
+    </div>
+
+    <div id="loading-dialog" class="modal-dialog" title="Loading...">
+        <div id="main-list-loader-icon" class="large-loader-icon"></div>
     </div>
 
 </body>
