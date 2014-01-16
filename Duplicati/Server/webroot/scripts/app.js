@@ -23,43 +23,13 @@ $(document).ready(function() {
         $('#main-appname').addClass('has-subtitle');
     }
 
-    $('.dialog').dialog({modal: false});
-    $('.modal-dialog').dialog({modal: true});
-    $('.tabs').tabs({ active: 2 });
+    $('.dialog').dialog({modal: false, autoOpen: false});
+    $('.modal-dialog').dialog({modal: true, autoOpen: false});
+    $('.tabs').tabs({ active: 0 });
     $('.button').button();
 
     $('#main-list-container > div.main-backup-entry').remove();
     $('#loading-dialog').show();
-
-    $('#source-folder-browser').jstree({
-        'json': {
-            'ajax': {
-                'url': APP_CONFIG.server_url,
-                'data': function(n) {
-                    return {
-                        'action': 'get-folder-contents',
-                        'onlyfolders': true,
-                        'path': n === -1 ? "/" : n.data('id')
-                    };
-                },
-                'success': function(data, status, xhr) {
-                    for(var i = 0; i < data.length; i++) {
-                        var o = data[i];
-                        o.title = o.text;
-                        o.children = !o.leaf;
-                        o.data = { id: o.id };
-                        delete o.text;
-                        delete o.leaf;
-                    }
-                    return data;
-                }
-            },
-            'progressive_render' : true,
-        },
-        'plugins' : [ 'themes', 'json', 'ui' ],
-        'core': {
-        }
-    });
 
     //$('#edit-dialog').dialog('close');
 
@@ -118,7 +88,6 @@ $(document).ready(function() {
     PRIVATE_DATA.refresh_server_settings();
     PRIVATE_DATA.refresh_backup_list();
 
-
     APP_DATA.getServerConfig = function(callback) {
         if (PRIVATE_DATA.server_config == null) {
             PRIVATE_DATA.refresh_server_settings(callback);
@@ -147,6 +116,10 @@ $(document).ready(function() {
     });
 
     $('#main-control').click(function() {
+    });
+
+    $('#main-newbackup').click(function() {
+        $("#edit_dialog").load('editdialog.html').dialog('show');
     });
 
 
