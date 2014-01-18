@@ -323,16 +323,37 @@ namespace Duplicati.Library.Modules.Builtin
                 if (string.IsNullOrEmpty(server))
                 {
                     var dnslite = new DnsLib.DnsLite();
-                    var dnslist = new ArrayList();
+                    var dnslist = new List<string>();
 
                     //Grab all IPv4 adresses
                     foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
-                        if (networkInterface.OperationalStatus == OperationalStatus.Up)
+                        try 
+                        {
                             foreach (IPAddress dnsAdress in networkInterface.GetIPProperties().DnsAddresses)
                                 if (dnsAdress.AddressFamily == AddressFamily.InterNetwork)
                                     dnslist.Add(dnsAdress.ToString());
-
-                    dnslite.setDnsServers(dnslist);
+                        }
+                        catch { }
+                    
+                    dnslist = dnslist.Distinct().ToList();
+                    
+                    // If we have no DNS servers, try Google and OpenDNS
+                    if (dnslist.Count == 0) 
+                    {
+                        // https://developers.google.com/speed/public-dns/
+                        dnslist.Add("8.8.8.8");
+                        dnslist.Add("8.8.4.4");
+                        
+                        //http://www.opendns.com/opendns-ip-addresses/
+                        dnslist.Add("208.67.222.222");
+                        dnslist.Add("208.67.220.220");
+                    }
+                    
+                    var oldStyleList = new ArrayList();
+                    foreach(var s in dnslist)
+                        oldStyleList.Add(s);
+                        
+                    dnslite.setDnsServers(oldStyleList);
 
                     var tmp = dnslite.getMXRecords(message.To[0].Host).OfType<MXRecord>().OrderBy(record => record.preference).ToList();
                     if (tmp.Count > 0)
