@@ -178,7 +178,8 @@ Mail Sender &lt;sender@example.com&gt;</value>
     <value>The messages to send</value>
   </data>
   <data name="OptionServerLong" xml:space="preserve">
-    <value>A url for the SMTP server, e.g. smtp://example.com:25. If no server is supplied, a DNS lookup is performed to find the first recipient's MX record. A random server from the top priority servers is chosen and used as the SMTP server.
+    <value>A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, seperated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
+If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
 
 To enable TLS, use the format smtptls://example.com or tls://example.com. If no port is specified, port 25 is used for non-ssl, and 587 for SSL connections. Note that only TLS/STARTTLS is supported and not SMTP over SSL.</value>
   </data>
@@ -199,5 +200,11 @@ To enable TLS, use the format smtptls://example.com or tls://example.com. If no 
   </data>
   <data name="SendMailFailedError" xml:space="preserve">
     <value>Failed to send email: {0}</value>
+  </data>
+  <data name="SendMailFailedRetryError" xml:space="preserve">
+    <value>Failed to send email with server: {0}, message: {1}, retrying with {2}</value>
+  </data>
+  <data name="SendMailSuccess" xml:space="preserve">
+    <value>Email sent successfully using server: {0}</value>
   </data>
 </root>

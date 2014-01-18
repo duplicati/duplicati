@@ -318,9 +318,8 @@ namespace Duplicati.Library.Modules.Builtin
                 message.Body = body;
                 message.BodyEncoding = message.SubjectEncoding = Encoding.UTF8;
 
-                string server = m_server;
-
-                if (string.IsNullOrEmpty(server))
+                List<string> servers = null;
+                if (string.IsNullOrEmpty(m_server))
                 {
                     var dnslite = new DnsLib.DnsLite();
                     var dnslist = new List<string>();
@@ -355,30 +354,54 @@ namespace Duplicati.Library.Modules.Builtin
                         
                     dnslite.setDnsServers(oldStyleList);
 
-                    var tmp = dnslite.getMXRecords(message.To[0].Host).OfType<MXRecord>().OrderBy(record => record.preference).ToList();
-                    if (tmp.Count > 0)
-                    {
-                        int maxPref = tmp[0].preference;
-                        tmp = tmp.Where(record => record.preference == maxPref).ToList();
-                        server = "smtp://" + tmp[new Random().Next(0, tmp.Count)].exchange;
-                    }
-
-                    if (string.IsNullOrEmpty(server))
+                    servers = dnslite.getMXRecords(message.To[0].Host).OfType<MXRecord>().OrderBy(record => record.preference).Select(x => "smtp://" +  x.exchange).Distinct().ToList();
+                    if (servers.Count == 0)
                         throw new IOException(string.Format(Strings.SendMail.FailedToLookupMXServer, OPTION_SERVER));
                 }
-
-                var serverUri = new System.Uri(server);
-                var useTls = string.Equals(serverUri.Scheme, "smtptls", StringComparison.InvariantCultureIgnoreCase) || string.Equals(serverUri.Scheme, "tls", StringComparison.InvariantCultureIgnoreCase);
-                var port = serverUri.Port <= 0 ? (useTls ? 587 : 25) : serverUri.Port;
-                var client = new SmtpClient(serverUri.Host, port);
-                if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
-                    client.Credentials = new NetworkCredential(m_username, m_password);
+                else 
+                {
+                    servers = (from n in m_server.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
+                              let srv = (n == null || n.IndexOf("://", StringComparison.InvariantCultureIgnoreCase) > 0) ? n : "smtp://" + n
+                              where !string.IsNullOrEmpty(srv)
+                              select srv).Distinct().ToList();
+                }
                 
-                //This ensures that you can override settings from an app.config file
-                if (useTls)
-                    client.EnableSsl = true;
+                Exception lastEx = null;
+                string lastServer = null;
 
-                client.Send(message);
+                foreach(var server in servers)
+                {
+                    if (lastEx != null)
+                        Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailFailedRetryError, lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
+                
+                    lastServer = server;
+                    try
+                    {
+                        var serverUri = new System.Uri(server);
+                        var useTls = string.Equals(serverUri.Scheme, "smtptls", StringComparison.InvariantCultureIgnoreCase) || string.Equals(serverUri.Scheme, "tls", StringComparison.InvariantCultureIgnoreCase);
+                        var port = serverUri.Port <= 0 ? (useTls ? 587 : 25) : serverUri.Port;
+                        var client = new SmtpClient(serverUri.Host, port);
+                        client.Timeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+                        if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
+                            client.Credentials = new NetworkCredential(m_username, m_password);
+                        
+                        //This ensures that you can override settings from an app.config file
+                        if (useTls)
+                            client.EnableSsl = true;
+        
+                        client.Send(message);
+                        lastEx = null;
+                        Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailSuccess, server), LogMessageType.Information);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastEx = ex;                        
+                    }
+                }
+                
+                if (lastEx != null)
+                    throw lastEx;
             }
             catch (Exception ex)
             {
