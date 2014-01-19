@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.Operation
                             PatchWithBlocklist(database, rd, m_options, m_result, m_blockbuffer);
                         };
 
-                    // TODO: When UpdateMisisngBlocksTable is implemented, the localpatcher can be activated
+                    // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher can be activated
                     // and this will reduce the need for multiple downloads of the same volume
                     // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
