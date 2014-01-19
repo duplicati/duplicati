@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using(new Logging.Timer("Recreate temporary database for restore"))
                         new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                            .DoRun(database, filter, filelistfilter, /*localpatcher*/ null);
+                            .DoRun(database, filter, filelistfilter, /*localpatcher*/null);
 
 	                DoRun(database, filter, m_result);
                 }
