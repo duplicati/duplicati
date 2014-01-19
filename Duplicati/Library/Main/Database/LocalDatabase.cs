@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Database
                 
                 if (versions != null && versions.Length > 0)
                 {
-                    var qs ="";
+                    var qs = "";
                     
                     foreach(var v in versions)
                         if (v >= 0 && v < filesets.Length)
