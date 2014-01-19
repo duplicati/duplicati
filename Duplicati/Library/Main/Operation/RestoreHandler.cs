@@ -96,14 +96,14 @@ namespace Duplicati.Library.Main.Operation
             m_result.AddMessage("No local database, building a temporary database");
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_RecreateDatabase);
 
-            using (var tmpdb = new Library.Utility.TempFile())
+            using(var tmpdb = new Library.Utility.TempFile())
             {
                 RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
 
                 // Simultaneously with downloading blocklists, we patch as much as we can from the blockvolumes
                 // This prevents repeated downloads, except for cases where the blocklists refer blocks
                 // that have been previously handled. A local blockvolume cache can reduce this issue
-                using (var database = new LocalRestoreDatabase(tmpdb, m_options.Blocksize))
+                using(var database = new LocalRestoreDatabase(tmpdb, m_options.Blocksize))
                 {
                     var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                     var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
