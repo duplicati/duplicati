@@ -33,17 +33,6 @@ $(document).ready(function() {
 
     //$('#edit-dialog').dialog('close');
 
-    $('#backup-name').watermark('Enter a name for your backup');
-    $('#backup-uri').watermark('webdavs://example.com/mybackup?');
-    $('#encryption-password').watermark('Enter a secure passphrase');
-    $('#repeat-password').watermark('Repeat the passphrase');
-    $('#server-name').watermark('example.com');
-    $('#server-port').watermark('8801');
-    $('#server-path').watermark('mybackup');
-    $('#server-username').watermark('Username for authentication');
-    $('#server-password').watermark('Password for authentication');
-    $('#server-options').watermark('Enter connection options here');
-    $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
 
     PRIVATE_DATA.refresh_server_settings = function(callback) {
         $.ajax({
@@ -119,7 +108,7 @@ $(document).ready(function() {
     });
 
     $('#main-newbackup').click(function() {
-        $("#edit_dialog").load('editdialog.html').dialog('show');
+        $("#edit-dialog").load('editdialog.html').dialog('open');
     });
 
 
