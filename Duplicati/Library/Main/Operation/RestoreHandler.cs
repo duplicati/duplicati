@@ -158,6 +158,11 @@ namespace Duplicati.Library.Main.Operation
                         new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
                             .DoRun(database, filter, filelistfilter, /*localpatcher*/null);
 
+                    //If we have --version set, we need to adjust, as the db has only the required versions
+                    //TODO: Bit of a hack to set options that way
+                    if (m_options.Version != null && m_options.Version.Length > 0)
+                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, m_options.Version.Length).Select(x => x.ToString()));
+
 	                DoRun(database, filter, m_result);
                 }
             }
@@ -235,6 +240,7 @@ namespace Duplicati.Library.Main.Operation
             using(var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
             using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
             {
+                database.SetResult(m_result);
                 Utility.VerifyParameters(database, m_options);
 	        	
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
