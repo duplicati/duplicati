@@ -650,12 +650,14 @@ namespace Duplicati.Library.Utility
             return sb.ToString();
         }
 
+        
         /// <summary>
         /// Converts the given hex string into a byte array
         /// </summary>
         /// <param name="hex">The hex string</param>
+        /// <param name="data">A pre-allocated output data array, or null</param>
         /// <returns>The byte array</returns>
-        public static byte[] HexStringAsByteArray(string hex)
+        public static byte[] HexStringAsByteArray(string hex, byte[] data = null)
         {
             if (string.IsNullOrEmpty(hex))
                 return new byte[0];
@@ -664,8 +666,12 @@ namespace Duplicati.Library.Utility
 
             if (hex.Length % 2 != 0)
                 throw new Exception(Strings.Utility.InvalidHexStringLengthError);
-    
-            byte[] data = new byte[hex.Length];
+                
+            if (data == null)
+                data = new byte[hex.Length / 2];
+            else if (data.Length < hex.Length / 2)
+                throw new ArgumentOutOfRangeException("data");
+                
             for(int i = 0; i < hex.Length; i+= 2)
             {
                 int upper = HEX_DIGITS_UPPER.IndexOf(hex[i]);
@@ -680,7 +686,7 @@ namespace Duplicati.Library.Utility
             }
 
             return data;
-        }
+        }        
 
         private static string UNAME;
 
