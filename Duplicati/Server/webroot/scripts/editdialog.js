@@ -2,9 +2,8 @@
  * Editdialog app code
  */
 $(document).ready(function() {
-    $('.tabs').tabs({ active: 0 });
     $('.button').button();
-    
+
     $('#backup-name').watermark('Enter a name for your backup');
     $('#backup-uri').watermark('webdavs://example.com/mybackup?');
     $('#encryption-password').watermark('Enter a secure passphrase');
@@ -46,4 +45,24 @@ $(document).ready(function() {
         'core': {
         }
     });
+
+    $('.save-button').click(function() {
+    });
+
+    $('#connection-uri-dialog').dialog({ 
+        modal: true, 
+        minWidth: 320, 
+        width: $('body').width, 
+        autoOpen: false, 
+        closeOnEscape: true,
+        buttons: [
+            {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
+            {text: 'Create URI', click: function() { $( this ).dialog( "close" ); } }
+        ]
+     })
+
+    $('#edit-connection-uri-link').click(function() {
+        $('#connection-uri-dialog').dialog('open');
+    });
+
 });

@@ -23,9 +23,11 @@
 
 .edit-dialog input, .edit-dialog textarea, .edit-dialog select {
     float: left;
+    background: none;
+    border-color: #c0c0c0;
 }
 
-.edit-dialog input, .edit-dialog select, .button-area {
+.edit-dialog input, .edit-dialog select {
     width: 250px;
 }
 
@@ -56,6 +58,10 @@
 
 .button-area {
     clear: both;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    float: right;
 }
 
 #backend-type {
@@ -81,7 +87,7 @@
 }
 
 #source-folder-paths {
-    margin-top: 35px;
+    margin-top: 10px;
 }
 
 #source-folder-paths.empty {
@@ -110,7 +116,8 @@
 }
 
 #source-folder-path-text {
-    max-width: 205px;
+    /*max-width: 205px;*/
+    width: 70%;
 }
 
 #source-folder-path-add {
@@ -146,4 +153,13 @@
 
 #edit-tab-schedule > div.clearfix, #edit-tab-options > div.clearfix {
     height: 10px;
+}
+
+#edit-dialog {
+    width: 100%;
+}
+
+.ui-tabs-nav {
+    border-top-right-radius: 0px;
+    border-top-left-radius: 0px;
 }

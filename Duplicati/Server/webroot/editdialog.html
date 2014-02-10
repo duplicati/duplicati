@@ -56,8 +56,9 @@
             <div class="edit-dialog-label">Connection URI</div>
             <div class="field-group">
                 <input type="text" name="backup-uri" id="backup-uri" value="" class="text ui-widget-content ui-corner-all" />
-                <div class="action-link">Create connection URI</div>
+                <div  id="edit-connection-uri-link" class="action-link">Create connection URI</div>
             </div>
+
         </div>
 
         <div id="edit-tab-sourcedata">
@@ -65,6 +66,8 @@
                 <input id="source-folder-path-text" type="text" />
                 <div id="source-folder-path-add" class="button">Add</div>
             </div>
+
+            <div class="clearfix"></div>
 
             <div id="source-folder-paths" class="empty">
                 <div id="source-folder-paths-hint" class="hint-text">To add files and folders, drag and drop them here. <br/>(Double click also works)</div>
@@ -122,6 +125,7 @@
                 <input type="checkbox" class="simple-checkbox" id="allow-day-sun" />
                 <div class="days-label">Sun</div>
             </div>
+
         </div>
 
         <div id="edit-tab-options">
@@ -149,7 +153,7 @@
 
     </div>
 
-    <div id="connection-uri-dialog" class="modal-xxdialog edit-dialog" style="display: none" title="Connection URI">
+    <div id="connection-uri-dialog" class="modal-dialog edit-dialog" style="display: none" title="Connection URI">
         <div class="edit-dialog-label">Target Type</div>
         <div class="field-group">
             <select id="backend-type" name="backend-type"></select>
@@ -173,11 +177,6 @@
 
         <div class="edit-dialog-label">Options</div>
         <textarea id="server-options" name="server-options"></textarea>
-
-        <div class="button-area">
-            <div id="cancel-edit-uri" class="cancel-button button">Cancel</div>
-            <div id="accept-edit-uri" class="accept-button button">Create Connection URI</div>
-        </div>
     </div>
 
 </body>

@@ -52,13 +52,14 @@
 #main-appname {
     padding: 10px 10px 10px 20px;
     font-weight: bold;
-    font-size: 1.4em;
+    font-size: 1.8em;
     display: inline-block;
     text-transform: uppercase;
 }
 
 #main-appname.has-subtitle {
     padding-top: 5px;
+    font-size: 1.4em;
 }
 
 #main-appname-subtitle {
@@ -74,6 +75,7 @@
     cursor: pointer;
     border-radius: 3px;
     display: inline-block;
+    font-size: 1.2em;
     clear: both;
     float: left;
     margin-top: 40px;
@@ -250,4 +252,14 @@
     padding-bottom: 20px;
     min-width: 250px;
     white-space: nowrap;
+}
+
+#edit-dialog {
+    padding: 0px;
+    border: 0px none;
+}
+
+.ui-dialog-titlebar {
+    border-bottom-right-radius: 0px;
+    border-bottom-left-radius: 0px;
 }

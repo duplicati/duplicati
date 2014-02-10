@@ -23,13 +23,10 @@ $(document).ready(function() {
         $('#main-appname').addClass('has-subtitle');
     }
 
-    $('.dialog').dialog({modal: false, autoOpen: false});
-    $('.modal-dialog').dialog({modal: true, autoOpen: false});
-    $('.tabs').tabs({ active: 0 });
     $('.button').button();
 
     $('#main-list-container > div.main-backup-entry').remove();
-    $('#loading-dialog').show();
+    $('#loading-dialog').dialog({modal: true}).show();
 
     //$('#edit-dialog').dialog('close');
 
@@ -108,9 +105,47 @@ $(document).ready(function() {
     });
 
     $('#main-newbackup').click(function() {
-        $("#edit-dialog").load('editdialog.html').dialog('open');
+        $("#edit-dialog").dialog('open');
     });
 
+    $('#edit-dialog').tabs({ active: 0, activate: function(event, ui) {
+        var buttons = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button');
 
+        if (ui.newPanel[0].id == 'edit-tab-general')
+            $(buttons[0]).button('option', 'disabled', true);
+        else if (ui.oldPanel[0].id == 'edit-tab-general')
+            $(buttons[0]).button('option', 'disabled', false);
+
+        if (ui.newPanel[0].id == 'edit-tab-options')
+            $(buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Save'});
+        else if (ui.oldPanel[0].id == 'edit-tab-options')
+            $(buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Next'});
+    }});
+
+    $("#edit-dialog").dialog({ 
+        minWidth: 320, 
+        width: $('body').width > 600 ? 320 : 600, 
+        minHeight: 480, 
+        height: 500, 
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Previous', disabled: true, click: function(event, ui) {
+                var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
+                cur = Math.max(cur-1, 0);
+                $('#edit-dialog').tabs( "option", "active", cur);
+            }},
+            { text: 'Next', click: function(event, ui) {
+                var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
+                cur = Math.min(cur+1, 4);
+                $('#edit-dialog').tabs( "option", "active", cur);
+            }}
+        ]
+    });    
+
+    // Hack the tabs into the dialog title
+    $('#edit-dialog').parent().find('.ui-dialog-titlebar').after($('#edit-dialog').find('.ui-tabs-nav'));
+    $('#edit-dialog').parent().addClass('ui-tabs');
 
 });
