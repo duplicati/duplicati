@@ -674,7 +674,7 @@ namespace Duplicati.Library.Main.Operation
                 var oldId = m_database.GetFileEntry(path, out oldScanned);
 
                 long filestatsize = m_snapshot.GetFileSize(path);
-                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || filestatsize < m_options.SkipFilesLargerThan))
+                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || filestatsize < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                     m_result.OpenedFiles++;
@@ -801,7 +801,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    if (m_options.SkipFilesLargerThan == long.MaxValue || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan)                
+                    if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || m_snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan)                
                         m_result.AddVerboseMessage("Skipped checking file, because timestamp was not updated {0}", path);
                     else
                         m_result.AddVerboseMessage("Skipped checking file, because the size exceeds limit {0}", path);
