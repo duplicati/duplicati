@@ -38,6 +38,7 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = backend.ProtocolKey;
                 this.Description = backend.Description;
+                this.DisplayName = backend.DisplayName;
                 if (backend.SupportedCommands != null)
                     this.Options = backend.SupportedCommands.ToArray();
             }
@@ -49,6 +50,7 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
                 if (module.SupportedCommands != null)
                     this.Options = module.SupportedCommands.ToArray();
             }
@@ -60,6 +62,7 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
                 if (module.SupportedCommands != null)
                     this.Options = module.SupportedCommands.ToArray();
             }
@@ -71,6 +74,7 @@ namespace Duplicati.Server.Serializable
             {
                 this.Key = module.Key;
                 this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
                 if (module.SupportedCommands != null)
                     this.Options = module.SupportedCommands.ToArray();
             }
@@ -83,6 +87,11 @@ namespace Duplicati.Server.Serializable
             /// The localized module description
             /// </summary>
             public string Description { get; private set; }
+            /// <summary>
+            /// Gets the localized display name
+            /// </summary>
+            /// <value>The display name.</value>
+            public string DisplayName { get; private set; }
             /// <summary>
             /// The options supported by the module
             /// </summary>

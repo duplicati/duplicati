@@ -34,6 +34,11 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         string Description { get; }
         /// <summary>
+        /// Gets the localized display name
+        /// </summary>
+        /// <value>The display name.</value>
+        string DisplayName { get; }
+        /// <summary>
         /// The options supported by the module
         /// </summary>
         Duplicati.Library.Interface.ICommandLineArgument[] Options { get; }
