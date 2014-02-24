@@ -90,3 +90,30 @@ body {
 .clearfix {
     clear: both;
 }
+
+.password-strength-0 {
+    color: #ff0000
+}
+
+.password-strength-1 {
+    color: #ff7700
+}
+.password-strength-2 {
+    color: #aaaa00
+}
+
+.password-strength-3 {
+    color: #007700
+}
+
+.password-strength-4 {
+    color: #00ff00
+}
+
+.password-strength-unknown {
+    color: #999999
+}
+
+.password-mismatch {
+    color: #ff0000;
+}

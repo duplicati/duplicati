@@ -30,6 +30,30 @@ $(document).ready(function() {
 
     //$('#edit-dialog').dialog('close');
 
+    // Register a global function for password strength
+    $.passwordStrength = function(password, callback) {
+        if (callback == null)
+            return;
+
+        var onUpdate = function(res) {
+            try { callback(res); }
+            catch (e) { }
+        };
+
+        try { onUpdate(zxcvbn(password)); }
+        catch (e) { 
+            // Not loaded, try this:
+            $.getScript('/scripts/zxcvbn.js', function() {
+                try {
+                    onUpdate(zxcvbn(password));
+                }
+                catch (e) {
+                    onUpdate(null);
+                }
+            })
+        }
+    };
+
 
     PRIVATE_DATA.refresh_server_settings = function(callback) {
         $.ajax({

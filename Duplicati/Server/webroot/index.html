@@ -21,6 +21,7 @@
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/editdialog.js"></script>
     <script type="text/javascript" src="scripts/customized.js"></script>
+    <script type="text/javascript" src="scripts/hideShowPassword.min.js"></script>
 
 
     <script id="backup-item-template" type="text/x-jquery-tmpl">
@@ -186,11 +187,11 @@
 
             <div class="clearfix"></div>
 
-            <div class="edit-dialog-label">Repeat passphrase</div>
+            <div class="edit-dialog-label" id="repeat-password-label">Repeat passphrase</div>
             <div class="field-group">
                 <input type="password" name="repeat-password" id="repeat-password" value="" class="ui-corner-all" /><br/>
-                <div class="action-link action-link-input">Show passwords</div>
-                <div class="backup-password-strength">Strength: unknown</div>
+                <div id="toggle-show-password" class="action-link action-link-input">Show passwords</div>
+                <div id="backup-password-strength" class="backup-password-strength" title="Time it takes to break this password">Strength: unknown</div>
             </div>
             <div class="input-hint">
             The connection URI defines where your backup is stored. It contains everything that is required to connect to your storage.
