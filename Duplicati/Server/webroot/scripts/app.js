@@ -55,7 +55,7 @@ $(document).ready(function() {
     };
 
 
-    PRIVATE_DATA.refresh_server_settings = function(callback) {
+    PRIVATE_DATA.refresh_server_settings = function(callback, errorhandler) {
         $.ajax({
             url: APP_CONFIG.server_url,
             dataType: 'json',
@@ -68,10 +68,12 @@ $(document).ready(function() {
                 callback(PRIVATE_DATA.server_config);
         })
         .fail(function(data, status) {
+            if (errorhandler)
+                errorhandler(data, status)
         });
     };
 
-    PRIVATE_DATA.refresh_backup_list = function(callback) {
+    PRIVATE_DATA.refresh_backup_list = function(callback, errorhandler) {
         $.ajax({
             url: APP_CONFIG.server_url,
             dataType: 'json',
@@ -92,15 +94,17 @@ $(document).ready(function() {
                 callback(PRIVATE_DATA.backup_list);
         })
         .fail(function(data, status) {
+            if (errorhandler)
+                errorhandler(data, status)
         });
     };
 
     PRIVATE_DATA.refresh_server_settings();
     PRIVATE_DATA.refresh_backup_list();
 
-    APP_DATA.getServerConfig = function(callback) {
+    APP_DATA.getServerConfig = function(callback, errorhandler) {
         if (PRIVATE_DATA.server_config == null) {
-            PRIVATE_DATA.refresh_server_settings(callback);
+            PRIVATE_DATA.refresh_server_settings(callback, errorhandler);
         } else {
             callback(PRIVATE_DATA.server_config);
         }
@@ -129,23 +133,19 @@ $(document).ready(function() {
     });
 
     $('#main-newbackup').click(function() {
-        $("#edit-dialog").dialog('open');
+        APP_DATA.getServerConfig(function(data) {
+            $("#edit-dialog").dialog('open');
+
+            // Bug-fix, this will remove style="width: auto", which breaks Chrome a bit
+            $("#edit-dialog").css('width', '');
+        },
+        function() {
+            alert('Failed to get server setup...')
+        });
+
     });
 
-    $('#edit-dialog').tabs({ active: 0, activate: function(event, ui) {
-        var buttons = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button');
-
-        if (ui.newPanel[0].id == 'edit-tab-general')
-            $(buttons[0]).button('option', 'disabled', true);
-        else if (ui.oldPanel[0].id == 'edit-tab-general')
-            $(buttons[0]).button('option', 'disabled', false);
-
-        if (ui.newPanel[0].id == 'edit-tab-options')
-            $(buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Save'});
-        else if (ui.oldPanel[0].id == 'edit-tab-options')
-            $(buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Next'});
-    }});
-
+    $('#edit-dialog').tabs({ active: 0 });
     $("#edit-dialog").dialog({ 
         minWidth: 320, 
         width: $('body').width > 600 ? 320 : 600, 
@@ -162,6 +162,8 @@ $(document).ready(function() {
             }},
             { text: 'Next', click: function(event, ui) {
                 var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
+                event.curPage = cur;
+                event.currentTarget.curPage = cur;
                 cur = Math.min(cur+1, 4);
                 $('#edit-dialog').tabs( "option", "active", cur);
             }}

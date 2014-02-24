@@ -52,7 +52,12 @@
     float: left;
 }
 
+.backup-password-generate {
+    float: right;
+}
+
 .backup-password-strength {
+    margin-top: 20px;
     float: right;
 }
 
@@ -111,7 +116,7 @@
 
 #source-folder-browser {
     clear: both;
-    height: 200px;
+    /*height: 160px;*/
     overflow: auto;
 }
 

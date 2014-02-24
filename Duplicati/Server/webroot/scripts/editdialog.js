@@ -1,8 +1,12 @@
 /*
  * Editdialog app code
  */
+
+ EDIT_STATE = null;
+
 $(document).ready(function() {
     $('#backup-name').watermark('Enter a name for your backup');
+    $('#backup-labels').watermark('work, docs, s3, movies, other');
     $('#backup-uri').watermark('webdavs://example.com/mybackup?');
     $('#encryption-password').watermark('Enter a secure passphrase');
     $('#repeat-password').watermark('Repeat the passphrase');
@@ -14,6 +18,15 @@ $(document).ready(function() {
     $('#server-options').watermark('Enter connection options here');
     $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
 
+    var updateState = function() { if (EDIT_STATE != null) EDIT_STATE.dataModified = true; };
+
+    $('#backup-name').change(updateState);
+    $('#backup-labels').change(updateState);
+    $('#backup-uri').change(updateState);
+    $('#encryption-password').change(updateState);
+    $('#repeat-password').change(updateState);
+    $('#backup-options').change(updateState);
+
     var updatePasswordIndicator = function() {
         $.passwordStrength($('#encryption-password')[0].value, function(r) {
             var f = $('#backup-password-strength');
@@ -21,7 +34,7 @@ $(document).ready(function() {
                 f.text('Strength: Unknown');
                 r = {score: -1}
             } else {
-                f.text(r.crack_time_display);
+                f.text('Time to break password: ' +  r.crack_time_display);
             }
 
             f.removeClass('password-strength-0');
@@ -46,7 +59,7 @@ $(document).ready(function() {
 
         });
 
-        if ($('#encryption-password')[0].value != $('#repeat-password')[0].value) {
+        if ($('#encryption-password').val() != $('#repeat-password').val()) {
             $('#repeat-password').addClass('password-mismatch');
             //$('#encryption-password').addClass('password-mismatch');
         } else {
@@ -67,14 +80,56 @@ $(document).ready(function() {
     $('#encryption-password').on('passwordShown', function () {
         $('#toggle-show-password').text('Hide passwords')
         $('#repeat-password').showPassword();
+        EDIT_STATE.passwordShown = true;
         //$('#repeat-password').hide();
         //$('#repeat-password-label').hide();
     }).on('passwordHidden', function () {
         $('#toggle-show-password').text('Show passwords')        
         $('#repeat-password').hidePassword();
+        EDIT_STATE.passwordShown = false;
         //$('#repeat-password').show();
         //$('#repeat-password-label').show();
-    });    
+    });
+
+    $('#generate-password').click(function() {
+        var specials = '!@#$%^&*()_+{}:"<>?[];\',./';
+        var lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        var uppercase = lowercase.toUpperCase();
+        var numbers = '0123456789';
+        var all = specials + lowercase + uppercase + numbers;
+
+        function choose(str, n) {
+            var res = '';
+            for (var i = 0; i < n; i++) {
+                res += str.charAt(Math.floor(Math.random() * str.length));
+            }
+
+            return res;
+        };
+
+        var pwd = (
+            choose(specials, 2) + 
+            choose(lowercase, 2) + 
+            choose(uppercase, 2) + 
+            choose(numbers, 2) + 
+            choose(all, (Math.random()*5) + 5)
+        ).split('');
+
+        for(var i = 0; i < pwd.length; i++) {
+            var pos = parseInt(Math.random() * pwd.length);
+            var t = pwd[i]
+            pwd[i] = pwd[pos];
+            pwd[pos] = t;
+        }
+
+        pwd = pwd.join('');
+
+        $('#encryption-password')[0].value = pwd;
+        $('#repeat-password')[0].value = pwd;
+
+        $('#encryption-password').showPassword(); 
+        updatePasswordIndicator();
+    });
 
     $('#source-folder-browser').jstree({
         'json': {
@@ -106,9 +161,6 @@ $(document).ready(function() {
         }
     });
 
-    $('.save-button').click(function() {
-    });
-
     $('#connection-uri-dialog').dialog({ 
         modal: true, 
         minWidth: 320, 
@@ -123,6 +175,92 @@ $(document).ready(function() {
 
     $('#edit-connection-uri-link').click(function() {
         $('#connection-uri-dialog').dialog('open');
+    });
+
+    $('#edit-dialog').on( "tabsbeforeactivate", function( event, ui ) {
+    });
+
+    var dlg_buttons = $('#edit-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button');
+
+    $('#edit-dialog').on( "tabsactivate", function( event, ui ) {
+
+        if (ui.newPanel[0].id == 'edit-tab-general')
+            $(dlg_buttons[0]).button('option', 'disabled', true);
+        else if (ui.oldPanel[0].id == 'edit-tab-general')
+            $(dlg_buttons[0]).button('option', 'disabled', false);
+
+        if (ui.newPanel[0].id == 'edit-tab-options')
+            $(dlg_buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Save'});
+        else if (ui.oldPanel[0].id == 'edit-tab-options')
+            $(dlg_buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Next'});
+
+    });
+
+    $('#edit-dialog').on( "dialogopen", function( event, ui ) {
+        
+        EDIT_STATE = {
+            passwordShown: false,
+            dataModified: false,
+            passwordModified: false,
+            newBackup: true
+        };
+
+        APP_DATA.getServerConfig(function(serverdata) {
+            if (serverdata['EncryptionModules'] == null || serverdata['EncryptionModules'].length == 0) {
+                $('#encryption-area').hide();
+            } else {
+                $('#encryption-area').show();
+
+                var drop = $('#encryption-method');
+                drop.empty();
+
+                drop.append($("<option></option>").attr("value", '').text('No encryption'));
+
+                var encmodules = serverdata['EncryptionModules'];
+
+                for (var i = 0; i < encmodules.length; i++)
+                  drop.append($("<option></option>").attr("value", encmodules[i].Key).text(encmodules[i].DisplayName));
+            }
+
+            $('#encryption-method').change();            
+        });
+    });
+
+    $('#encryption-method').change(function() {
+        if ($('#encryption-method').val() == '')
+            $('#encryption-password-area').hide();
+        else
+            $('#encryption-password-area').show();
+    });
+
+
+    $('#edit-dialog').on( "dialogbeforeclose", function( event, ui ) {
+        if (EDIT_STATE.dataModified) {
+            return false;
+        }
+    });
+
+    $(dlg_buttons[1]).click(function(event, ui) {
+        if (event.curPage == 4) {
+            // Saving, validate first 
+
+            if ($('#backup-name').val().trim() == '') {
+                $('#edit-dialog').tabs( "option", "active", 0);                
+                $('#backup-name').focus();
+                return false;
+            }
+
+            if ($('#encryption-method').val() != '') {
+                if (!EDIT_STATE.passwordShown && $('#repeat-password').hasClass('password-mismatch')) {
+                    $('#edit-dialog').tabs( "option", "active", 0);                
+                    $('#repeat-password').focus();
+                }
+            }
+
+            EDIT_STATE.dataModified = false;
+            $('#edit-dialog').dialog('close');
+
+        }
     });
 
 });
