@@ -93,6 +93,7 @@
 
 #source-folder-paths {
     margin-top: 10px;
+    position: relative;
 }
 
 #source-folder-paths.empty {
@@ -128,6 +129,15 @@
 #source-folder-path-add {
     margin-right: 0px;
     float: right;
+}
+
+#source-folder-droptarget { 
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: block;
+    top: 0;
+    left: 0;
 }
 
 #use-scheduled-run {

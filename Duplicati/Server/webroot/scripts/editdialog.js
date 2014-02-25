@@ -156,10 +156,16 @@ $(document).ready(function() {
             },
             'progressive_render' : true,
         },
-        'plugins' : [ 'themes', 'json', 'ui' ],
-        'core': {
-        }
+        'plugins' : [ 'themes', 'json', 'ui', 'dnd', 'wholerow' ],
+        'core': { 
+            'check_callback': function(method, item, parent, position) { 
+                // We never allow drops in the tree itself
+                return false; 
+            }
+        },
+        'dnd': { copy: false },
     });
+
 
     $('#connection-uri-dialog').dialog({ 
         modal: true, 
@@ -262,5 +268,44 @@ $(document).ready(function() {
 
         }
     });
+
+    var addSourceFolder = function(path) {
+        console.log('Add folder: ' + path);
+    };
+
+    $('#source-folder-browser').bind("dblclick.jstree", function (event) {
+       var node = $(event.target).closest("li");
+       var id = node.data('id');
+        addSourceFolder(id);
+    });
+
+    // Register a drop target for folder nodes
+    var inActualMove = false;
+    $('#source-folder-droptarget').jstree({ 
+        'core': {
+            'check_callback': function(method, item, parent, position) {
+                if (inActualMove)
+                    addSourceFolder(item.data('id'));
+
+                return !inActualMove;
+            },
+        },
+        'dnd': { copy: false }
+    });
+
+    // We need to know if the check callback happens on drop or on drag
+    // but jstree only sends "move_node"
+    var tree = $('#source-folder-droptarget').data('jstree');
+    tree.tree_move_orig = tree.move_node;
+    tree.move_node = function(obj, par, pos, callback, is_loaded) {
+        try { 
+            inActualMove = true;
+            this.tree_move_orig(obj, par, pos, callback, is_loaded); 
+        } finally { 
+            inActualMove = false; 
+        }
+        
+    }
+
 
 });
