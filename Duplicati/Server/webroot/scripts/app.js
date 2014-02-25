@@ -28,8 +28,6 @@ $(document).ready(function() {
     $('#main-list-container > div.main-backup-entry').remove();
     $('#loading-dialog').dialog({modal: true}).show();
 
-    //$('#edit-dialog').dialog('close');
-
     // Register a global function for password strength
     $.passwordStrength = function(password, callback) {
         if (callback == null)
@@ -50,7 +48,7 @@ $(document).ready(function() {
                 catch (e) {
                     onUpdate(null);
                 }
-            })
+            });
         }
     };
 
@@ -69,7 +67,7 @@ $(document).ready(function() {
         })
         .fail(function(data, status) {
             if (errorhandler)
-                errorhandler(data, status)
+                errorhandler(data, status);
         });
     };
 
@@ -95,7 +93,7 @@ $(document).ready(function() {
         })
         .fail(function(data, status) {
             if (errorhandler)
-                errorhandler(data, status)
+                errorhandler(data, status);
         });
     };
 
