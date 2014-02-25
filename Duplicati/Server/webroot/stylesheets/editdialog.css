@@ -94,25 +94,45 @@
 #source-folder-paths {
     margin-top: 10px;
     position: relative;
+
+    padding: 10px;
+    background-color: lightgray;
+    margin-bottom: 10px;
+    border-radius: 3px;
+    overflow: hidden;
 }
 
 #source-folder-paths.empty {
     padding: 20px;
-    background-color: lightgray;
-    margin-bottom: 10px;
-    border-radius: 3px;
 }
 
 #source-folder-paths > div.source-folder {
-    padding: 5px 5px 5px 5px;
-    background-color: lightgray;
+    padding: 5px 25px 5px 5px;
+    background-color: white;
     border-radius: 3px;
     display: inline-block;
     margin: 8px;
+    position: relative;
     float: left;
 }
 
-#source-folder-paths > div.source-folder .focused {
+#source-folder-paths > div.source-folder .focused, #source-folder-paths > div.source-folder:hover {
+    /*background-color: grey;
+    color: black;*/
+}
+
+.source-folder-close-icon {
+    width: 16px;
+    height: 16px;
+    background-image: url('../images/clock.png');
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+}
+
+.source-folder-close-icon:hover {
+    background-color: red;
 }
 
 #source-folder-browser {

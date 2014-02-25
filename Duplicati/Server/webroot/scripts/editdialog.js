@@ -269,9 +269,56 @@ $(document).ready(function() {
         }
     });
 
-    var addSourceFolder = function(path) {
-        console.log('Add folder: ' + path);
+    var removeSourceFolder = function(el) {
+        var container = $('#source-folder-paths');
+        container[0].removeChild(el);
+
+        if (container.find('.source-folder').length == 0) {
+            container.addClass('empty');
+            $('#source-folder-paths-hint').show();
+        }
     };
+
+    var addSourceFolder = function(path) {
+        var container = $('#source-folder-paths');
+        container.removeClass('empty');
+        $('#source-folder-paths-hint').hide();
+
+        if (path == null || path.trim() == '')
+            return false;
+
+        var exists = false;
+        container.find('.source-folder').each(function(i,el) {
+            exists |= $(el).text() == path;
+        });
+
+        if (exists)
+            return false;
+
+        var div = $('<div>').addClass('source-folder').text(path);
+        var closer = $('<div></div>').addClass('source-folder-close-icon');
+        div.append(closer);
+
+        closer[0].addEventListener('click', function() {
+            removeSourceFolder(div[0]);
+        });
+
+        container.append(div);
+        return true;
+    };
+
+    $('#source-folder-path-add').click(function() {
+        var txt = $('#source-folder-path-text').val();
+        if (addSourceFolder(txt)) {
+            $('#source-folder-path-text').val('');
+            $('#source-folder-path-text').focus();
+        }
+    });
+
+    $('#source-folder-path-text').keypress(function(e) {
+        if (e.which == 13)
+            $('#source-folder-path-add').click();
+    });
 
     $('#source-folder-browser').bind("dblclick.jstree", function (event) {
        var node = $(event.target).closest("li");
