@@ -105,6 +105,7 @@
     <Compile Include="Database\ApplicationSettings.cs" />
     <Compile Include="Runner.cs" />
     <Compile Include="Database\Schedule.cs" />
+    <Compile Include="SpecialFolders.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

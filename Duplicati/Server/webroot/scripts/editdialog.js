@@ -271,7 +271,7 @@ $(document).ready(function() {
 
     var removeSourceFolder = function(el) {
         var container = $('#source-folder-paths');
-        container[0].removeChild(el);
+        container.each(function(i, e) { e.removeChild(el) });
 
         if (container.find('.source-folder').length == 0) {
             container.addClass('empty');
@@ -279,7 +279,7 @@ $(document).ready(function() {
         }
     };
 
-    var addSourceFolder = function(path) {
+    var addSourceFolder = function(path, display) {
         var container = $('#source-folder-paths');
         container.removeClass('empty');
         $('#source-folder-paths-hint').hide();
@@ -289,27 +289,38 @@ $(document).ready(function() {
 
         var exists = false;
         container.find('.source-folder').each(function(i,el) {
-            exists |= $(el).text() == path;
+            exists |= $(el).data('id') == path;
         });
 
         if (exists)
             return false;
 
-        var div = $('<div>').addClass('source-folder').text(path);
+        var div = $('<div>').addClass('source-folder').text(display).each(function(i, e) { if (path[0] != '%') { e.title = path; }});
         var closer = $('<div></div>').addClass('source-folder-close-icon');
         div.append(closer);
 
-        closer[0].addEventListener('click', function() {
+        closer.click(function() {
             removeSourceFolder(div[0]);
         });
 
         container.append(div);
+
+        $(div).data('id', path);
+
+        APP_DATA.validatePath(path, function(path, success) {
+            if (success) 
+                div.addClass('path-valid');
+            else
+                div.addClass('path-invalid');
+        });
+
         return true;
     };
 
     $('#source-folder-path-add').click(function() {
         var txt = $('#source-folder-path-text').val();
-        if (addSourceFolder(txt)) {
+        var disp = txt.split('/');
+        if (addSourceFolder(txt, disp[disp.length - 1])) {
             $('#source-folder-path-text').val('');
             $('#source-folder-path-text').focus();
         }
@@ -323,7 +334,7 @@ $(document).ready(function() {
     $('#source-folder-browser').bind("dblclick.jstree", function (event) {
        var node = $(event.target).closest("li");
        var id = node.data('id');
-        addSourceFolder(id);
+        addSourceFolder(id, node.text());
     });
 
     // Register a drop target for folder nodes
@@ -332,7 +343,7 @@ $(document).ready(function() {
         'core': {
             'check_callback': function(method, item, parent, position) {
                 if (inActualMove)
-                    addSourceFolder(item.data('id'));
+                    addSourceFolder(item.data('id'), item.text());
 
                 return !inActualMove;
             },

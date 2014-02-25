@@ -121,6 +121,14 @@
     color: black;*/
 }
 
+#source-folder-paths > div.source-folder.path-valid {
+}
+
+#source-folder-paths > div.source-folder.path-invalid {
+    background-color: #ffcccc;
+}
+
+
 .source-folder-close-icon {
     width: 16px;
     height: 16px;

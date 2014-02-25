@@ -222,6 +222,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("add-backup", AddBackup);
                 SUPPORTED_METHODS.Add("update-backup", UpdateBackup);
                 SUPPORTED_METHODS.Add("delete-backup", DeleteBackup);
+                SUPPORTED_METHODS.Add("validate-path", ValidatePath);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -331,6 +332,45 @@ namespace Duplicati.Server
                 OutputObject(bw, Program.DataConnection.Backups);
             }
 
+            private void ValidatePath(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                if (input["path"] == null || input["path"].Value == null)
+                {
+                    ReportError(response, bw, "The path parameter was not set");
+                    return;
+                }
+                
+                string path = input["path"].Value;
+                
+                if (path.StartsWith("%") && path.EndsWith("%"))
+                {
+                    if (SpecialFolders.Nodes.Any(x => x.id == path))
+                        OutputObject(bw, null);
+                }
+                
+                if (!path.StartsWith("/"))
+                {
+                    ReportError(response, bw, "The path parameter must start with a forward-slash");
+                    return;
+                }
+                
+                try
+                {
+                    if (System.IO.Path.IsPathRooted(path) && System.IO.Directory.Exists(path))
+                    {
+                        OutputObject(bw, null);
+                        return;
+                    }
+                }
+                catch
+                {
+                }
+                
+                ReportError(response, bw, "File or folder not found");
+                return;
+            }
+
             private void GetFolderContents(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
@@ -414,6 +454,11 @@ namespace Duplicati.Server
                             };
                     }
 
+                    if (path.Equals("/")) 
+                    {
+                        // Prepend special folders
+                        res = SpecialFolders.Nodes.Union(res);
+                    }
 
                     OutputObject(bw, res);
                 }

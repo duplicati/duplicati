@@ -108,6 +108,22 @@ $(document).ready(function() {
         }
     };
 
+    APP_DATA.validatePath = function(path, callback) {
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            dataType: 'json',
+            data: { action: 'validate-path', path: path }
+        })
+        .done(function(data) {
+            if (callback != null)
+                callback(path, true, null);
+        })
+        .fail(function(data, status) {
+            if (callback)
+                callback(path, false, status);
+        });        
+    };
+
 
     $('#main-settings').click(function() {
         var pos = $('#main-settings').position();
