@@ -10,12 +10,6 @@ $(document).ready(function() {
     $('#backup-uri').watermark('webdavs://example.com/mybackup?');
     $('#encryption-password').watermark('Enter a secure passphrase');
     $('#repeat-password').watermark('Repeat the passphrase');
-    $('#server-name').watermark('example.com');
-    $('#server-port').watermark('8801');
-    $('#server-path').watermark('mybackup');
-    $('#server-username').watermark('Username for authentication');
-    $('#server-password').watermark('Password for authentication');
-    $('#server-options').watermark('Enter connection options here');
     $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
 
     var updateState = function() { if (EDIT_STATE != null) EDIT_STATE.dataModified = true; };
@@ -362,8 +356,7 @@ $(document).ready(function() {
         } finally { 
             inActualMove = false; 
         }
-        
-    }
+    }    
 
 
 });

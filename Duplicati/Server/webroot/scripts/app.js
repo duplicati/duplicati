@@ -10,7 +10,13 @@ APP_EVENTS= {};
 $(document).ready(function() {
 
     // Flag as loaded in case we have plugins
-    APP_DATA = {};
+    APP_DATA = {
+        plugins: {
+            backend: {},
+            compression: {},
+            encryption: {}
+        }
+    };
 
     var PRIVATE_DATA = {};
 
