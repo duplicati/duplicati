@@ -11,7 +11,17 @@ $(document).ready(function() {
         createFieldset: function(config) {
             var outer = $('<div></div>');
             var label = config.label ? $('<div></div>').addClass('edit-dialog-label ' + (config.labelclass || '')).html(config.label) : null;
-            var field = config.field === false ? null : $('<input type="' + (config.type || 'text') + '" />').addClass('text ui-widget-content ui-corner-all ' + (config.fieldclass || ''));
+            var field;
+            if (config.type == 'link') {
+                field = config.field === false ? null : $('<a />').text(config.title).addClass('action-link ' + (config.fieldclass || '')).each(function(i, e) {
+                    if (config.href)
+                        e.href = config.href;
+                    e.target = config.target || '_blank';
+                });
+            } else {
+                field = config.field === false ? null : $('<input type="' + (config.type || 'text') + '" />').addClass('text ui-widget-content ui-corner-all ' + (config.fieldclass || ''));
+            }
+
             var checklabel = config.checklabel ? $('<div></div>').addClass('checkbox-label ' + (config.labelclass || '')).html(config.checklabel) : null;
 
             outer.append(label, field, checklabel);
