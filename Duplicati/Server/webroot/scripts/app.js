@@ -130,6 +130,22 @@ $(document).ready(function() {
         });        
     };
 
+    APP_DATA.getLabels = function(callback) {
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            dataType: 'json',
+            data: { action: 'list-tags' }
+        })
+        .done(function(data) {
+            if (callback != null)
+                callback(data, true, null);
+        })
+        .fail(function(data, status) {
+            if (callback)
+                callback(null, false, status);
+        });         
+    };
+
 
     $('#main-settings').click(function() {
         var pos = $('#main-settings').position();

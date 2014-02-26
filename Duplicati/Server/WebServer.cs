@@ -223,6 +223,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("update-backup", UpdateBackup);
                 SUPPORTED_METHODS.Add("delete-backup", DeleteBackup);
                 SUPPORTED_METHODS.Add("validate-path", ValidatePath);
+                SUPPORTED_METHODS.Add("list-tags", ListTags);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -330,6 +331,21 @@ namespace Duplicati.Server
             private void ListBackups (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 OutputObject(bw, Program.DataConnection.Backups);
+            }
+
+            private void ListTags(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                var r = 
+                    from n in 
+                    Serializable.ServerSettings.CompressionModules
+                        .Union(Serializable.ServerSettings.EncryptionModules)
+                        .Union(Serializable.ServerSettings.BackendModules)
+                        .Union(Serializable.ServerSettings.GenericModules)
+                        select n.Key.ToLower();
+                
+                // Append all known tags
+                r = r.Union(from n in Program.DataConnection.Backups select n.Tags into p from x in p select x.ToLower());
+                OutputObject(bw, r);
             }
 
             private void ValidatePath(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)

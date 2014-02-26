@@ -21,6 +21,35 @@ $(document).ready(function() {
     $('#repeat-password').change(updateState);
     $('#backup-options').change(updateState);
 
+    function split(val) {
+        return val.split(/,\s*/);
+    }
+    function extractLast(val) {
+        return split(val).pop();
+    }
+
+    $('#backup-labels').autocomplete({
+        minLength: 0,
+
+        source: function(request, response) {
+            if (EDIT_STATE != null && EDIT_STATE.tags != null)
+                response( $.ui.autocomplete.filter(EDIT_STATE.tags, extractLast(request.term)));
+        },
+
+        focus: function() {
+            return false;
+        },
+
+        select: function( event, ui ) {
+            var terms = split( this.value );
+            terms.pop(); //remove current
+            terms.push(ui.item.value);
+            terms.push(''); //prepare for new
+            this.value = terms.join(', ');
+            return false;
+        }
+    });
+
     var updatePasswordIndicator = function() {
         $.passwordStrength($('#encryption-password')[0].value, function(r) {
             var f = $('#backup-password-strength');
@@ -223,6 +252,10 @@ $(document).ready(function() {
             }
 
             $('#encryption-method').change();            
+        });
+
+        APP_DATA.getLabels(function(labels) {
+            EDIT_STATE.tags = labels;
         });
     });
 
