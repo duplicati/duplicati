@@ -3,8 +3,47 @@
  */
 
 BACKEND_STATE = null;
+EDIT_URI = null;
 
 $(document).ready(function() {
+
+    EDIT_URI = {
+        createFieldset: function(config) {
+            var outer = $('<div></div>');
+            var label = config.label ? $('<div></div>').addClass('edit-dialog-label ' + (config.labelclass || '')).html(config.label) : null;
+            var field = config.field === false ? null : $('<input type="' + (config.type || 'text') + '" />').addClass('text ui-widget-content ui-corner-all ' + (config.fieldclass || ''));
+            var checklabel = config.checklabel ? $('<div></div>').addClass('checkbox-label ' + (config.labelclass || '')).html(config.checklabel) : null;
+
+            outer.append(label, field, checklabel);
+
+            var r = {
+                outer: outer,
+                label: label,
+                field: field,
+                checklabel: checklabel
+            };
+
+            if (config.title)
+                for(var k in r)
+                    if (r[k])
+                        r[k].each(function(i,e) { e.title = config.title});
+
+            if (config.watermark && field != null)
+                field.watermark(config.watermark);
+
+
+            if (config.after)
+                outer.insertAfter(config.after);
+            else if (config.before)
+                outer.insertBefore(config.before);
+            else if (config.append)
+                config.append(outer);
+            else
+                $('#edit-dialog-extensions').append(outer);
+
+            return r;
+        }
+    };
 
     var resetform = function() {
         $('#server-name').watermark('example.com');
@@ -14,11 +53,12 @@ $(document).ready(function() {
         $('#server-password').watermark('Password for authentication');
         $('#server-options').watermark('Enter connection options here');
         $('#edit-dialog-extensions').empty();
+        $('#server-username-label').text('Username');
+        $('#server-password-label').text('Password');
 
-        if (BACKEND_STATE.custom_cleanup != null) {
-            BACKEND_STATE.custom_cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));
-            BACKEND_STATE.custom_cleanup = null;
-        }
+        if (BACKEND_STATE && BACKEND_STATE.current_state && BACKEND_STATE.current_state.custom_cleanup )
+            BACKEND_STATE.current_state.custom_cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));        
+        BACKEND_STATE.current_state = null;
     };
 
     $('#connection-uri-dialog').on( "dialogopen", function( event, ui ) {
@@ -71,8 +111,17 @@ $(document).ready(function() {
         $('#server-port').toggle(cfg.hideport != true);
         $('#server-username-and-password').toggle(cfg.hideusernameandpassword != true);
 
-        BACKEND_STATE.custom_cleanup = cfg.custom_cleanup;
-        
+        if (cfg.usernamelabel)
+            $('#server-username-label').text(cfg.usernamelabel);
+        if (cfg.passwordlabel)
+            $('#server-password-label').text(cfg.passwordlabel);
+        if (cfg.usernamewatermark)
+            $('#server-username-label').watermark(cfg.usernamewatermark);
+        if (cfg.passwordwatermark)
+            $('#server-password-label').watermark(cfg.passwordwatermark);
+
+        BACKEND_STATE.current_state = cfg;
+
         if (cfg.custom_callback != null) {
             cfg.custom_callback($('#connection-uri-dialog'), $('#edit-dialog-extensions'));
         }
