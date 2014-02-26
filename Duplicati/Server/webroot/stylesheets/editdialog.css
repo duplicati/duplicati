@@ -206,3 +206,7 @@
     border-top-right-radius: 0px;
     border-top-left-radius: 0px;
 }
+
+.edit-dialog-hint-text {
+    width: 100%;
+}
