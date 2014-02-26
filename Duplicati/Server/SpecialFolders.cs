@@ -72,7 +72,7 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
             }
             
-            TryAdd(lst, Library.Utility.Utility.IsClientLinux ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%"), "/%HOME%", "Home");
+            TryAdd(lst, Library.Utility.Utility.IsClientLinux ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%"), "%HOME%", "Home");
             
             Nodes = lst.ToArray();
         }
