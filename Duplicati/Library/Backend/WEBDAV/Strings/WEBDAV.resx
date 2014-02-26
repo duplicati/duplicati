@@ -145,7 +145,7 @@
     <value>Use windows integrated authentication to connect to the server</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>WEBDAV based</value>
+    <value>WEBDAV</value>
   </data>
   <data name="MissingFolderError" xml:space="preserve">
     <value>The folder {0} was not found, message: {1}</value>

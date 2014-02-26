@@ -157,7 +157,7 @@
     <value>Instructs Duplicati to use an SSL (ftps) connection</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>FTP based</value>
+    <value>FTP</value>
   </data>
   <data name="MissingFolderError" xml:space="preserve">
     <value>The folder {0} was not found, message: {1}</value>

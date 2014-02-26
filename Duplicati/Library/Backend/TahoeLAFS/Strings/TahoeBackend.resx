@@ -127,7 +127,7 @@
     <value>Instructs Duplicati to use an SSL (https) connection</value>
   </data>
   <data name="Displayname" xml:space="preserve">
-    <value>Tahoe-LAFS based</value>
+    <value>Tahoe-LAFS</value>
   </data>
   <data name="MissingFolderError" xml:space="preserve">
     <value>The folder {0} was not found, message: {1}</value>

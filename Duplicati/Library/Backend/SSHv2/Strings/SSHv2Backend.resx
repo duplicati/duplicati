@@ -157,7 +157,7 @@
     <value>Sets the timeout for transfering a file</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>SSH based on SSH.NET</value>
+    <value>SFTP (SSH)</value>
   </data>
   <data name="FolderNotFoundManagedError" xml:space="preserve">
     <value>Unable to set folder to {0}, error message: {1}</value>
