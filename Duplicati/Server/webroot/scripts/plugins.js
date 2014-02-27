@@ -39,7 +39,8 @@ $(document).ready(function() {
 
     APP_DATA.plugins.backend['file'] = {
         hasssl: false,
-        hideport: true,
+        hideserverandport: true,
+        serverpathlabel: 'Path or UNC',
         custom_callback: function(dlg, div) {
             //$('#server-path').watermark('/my/data');
             //div.text('Awesome plugin stuff');
@@ -48,6 +49,35 @@ $(document).ready(function() {
         }
     }
 
+    APP_DATA.plugins.backend['webdav'] = {
+        defaultport: 80,
+        defaultportssl: 443
+    }
+
+    APP_DATA.plugins.backend['cloudfiles'] = {
+        defaultport: 80,
+        defaultportssl: 443
+    }
+
+    APP_DATA.plugins.backend['ftp'] = {
+        defaultport: 21,
+        defaultportssl: 443
+    }
+
+    APP_DATA.plugins.backend['ssh'] = {
+        defaultport: 22,
+        hasssl: false
+    }
+
+    APP_DATA.plugins.backend['skydrive'] = {
+        hideserverandport: true
+    }
+
+    APP_DATA.plugins.backend['googledocs'] = {
+        hideserverandport: true
+    }
+
+
     APP_DATA.plugins.backend['s3'] = {
         hasssl: true,
         hideserverandport: true,
@@ -55,7 +85,6 @@ $(document).ready(function() {
         passwordlabel: 'AWS Secret Key',
         usernamewatermark: 'AWS Access ID',
         passwordwatermark: 'AWS Secret Key',
-        cleanup: null,
 
         custom_callback: function(dlg, div) {
             $('#server-path-label').hide();
@@ -68,8 +97,6 @@ $(document).ready(function() {
             var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: PLUGIN_S3_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
 
             signuplink.outer.css('margin-bottom', '10px');
-
-            this.cleanup = [serverdrop, bucketfield, regiondrop, rrscheck, signuplink];
 
             var servers = [];
             for (var k in PLUGIN_S3_HOSTS)
@@ -99,14 +126,6 @@ $(document).ready(function() {
         custom_cleanup: function(dlg, div) {
             $('#server-path-label').show();
             $('#server-path').show();
-
-            if (this.cleanup)
-                for(var i in this.cleanup)
-                    if (this.cleanup[i].outer)
-                        this.cleanup[i].outer.remove();
-                    else
-                        this.cleanup[i].remove();
-            this.cleanup = null;
         }
     }
 

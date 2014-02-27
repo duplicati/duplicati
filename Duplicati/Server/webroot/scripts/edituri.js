@@ -13,11 +13,12 @@ $(document).ready(function() {
             var label = config.label ? $('<div></div>').addClass('edit-dialog-label ' + (config.labelclass || '')).html(config.label) : null;
             var field;
             if (config.type == 'link') {
-                field = config.field === false ? null : $('<a />').text(config.title).addClass('action-link ' + (config.fieldclass || '')).each(function(i, e) {
-                    if (config.href)
-                        e.href = config.href;
-                    e.target = config.target || '_blank';
-                });
+                field = config.field === false ? null : 
+                    $('<a />').text(config.title)
+                    .addClass('action-link ' + (config.fieldclass || ''))
+                    .attr('href', config.href || '#')
+                    .attr('target', config.target || '_blank');
+
             } else {
                 field = config.field === false ? null : $('<input type="' + (config.type || 'text') + '" />').addClass('text ui-widget-content ui-corner-all ' + (config.fieldclass || ''));
             }
@@ -36,11 +37,12 @@ $(document).ready(function() {
             if (config.title)
                 for(var k in r)
                     if (r[k])
-                        r[k].each(function(i,e) { e.title = config.title});
+                        r[k].attr('title', config.title);
 
             if (config.watermark && field != null)
                 field.watermark(config.watermark);
 
+            BACKEND_STATE.fieldset_cleanup.push(outer);
 
             if (config.after)
                 outer.insertAfter(config.after);
@@ -62,13 +64,19 @@ $(document).ready(function() {
         $('#server-username').watermark('Username for authentication');
         $('#server-password').watermark('Password for authentication');
         $('#server-options').watermark('Enter connection options here');
-        $('#edit-dialog-extensions').empty();
         $('#server-username-label').text('Username');
         $('#server-password-label').text('Password');
+
+        if (BACKEND_STATE.fieldset_cleanup != null)
+            for(var i in BACKEND_STATE.fieldset_cleanup)
+                BACKEND_STATE.fieldset_cleanup[i].remove();
 
         if (BACKEND_STATE && BACKEND_STATE.current_state && BACKEND_STATE.current_state.custom_cleanup )
             BACKEND_STATE.current_state.custom_cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));        
         BACKEND_STATE.current_state = null;
+        BACKEND_STATE.fieldset_cleanup = [];
+
+        $('#edit-dialog-extensions').empty();        
     };
 
     $('#connection-uri-dialog').on( "dialogopen", function( event, ui ) {
@@ -88,6 +96,16 @@ $(document).ready(function() {
         function() {
             alert('Failed to get server setup...')
         });
+    });
+
+    $('#server-use-ssl').change(function() {
+        if (BACKEND_STATE.current_state.defaultportssl) {
+            if ($('#server-use-ssl').is(':checked')) {
+                $('#server-port').watermark(BACKEND_STATE.current_state.defaultportssl + '');            
+            } else {
+                $('#server-port').watermark(BACKEND_STATE.current_state.defaultport + '');            
+            }
+        }
     });
 
     $('#backend-type').change(function() {
@@ -122,19 +140,30 @@ $(document).ready(function() {
         $('#server-username-and-password').toggle(cfg.hideusernameandpassword != true);
 
         if (cfg.usernamelabel)
-            $('#server-username-label').text(cfg.usernamelabel);
+            $('#server-username-label').text(cfg.usernamelabel + '');
         if (cfg.passwordlabel)
-            $('#server-password-label').text(cfg.passwordlabel);
+            $('#server-password-label').text(cfg.passwordlabel + '');
+        if (cfg.serverandportlabel)
+            $('#server-name-and-port-label').text(cfg.serverandportlabel + '');
+        if (cfg.serverpathlabel)
+            $('#server-path').text(cfg.serverpathlabel + '');
         if (cfg.usernamewatermark)
-            $('#server-username-label').watermark(cfg.usernamewatermark);
+            $('#server-username-label').watermark(cfg.usernamewatermark + '');
         if (cfg.passwordwatermark)
-            $('#server-password-label').watermark(cfg.passwordwatermark);
+            $('#server-password-label').watermark(cfg.passwordwatermark + '');
+        if (cfg.defaultport)
+            $('#server-port').watermark(cfg.defaultport + '');
+
 
         BACKEND_STATE.current_state = cfg;
 
         if (cfg.custom_callback != null) {
             cfg.custom_callback($('#connection-uri-dialog'), $('#edit-dialog-extensions'));
         }
+
+        if (!(cfg.hasssl == true))
+            $('#server-use-ssl').attr('checked', false);
+        $('#server-use-ssl').change();
 
 
     });
