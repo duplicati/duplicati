@@ -107,13 +107,13 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
-        /// Gets the last write time of a given file
+        /// Gets the last write time of a given file in UTC
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public virtual DateTime GetLastWriteTime(string file)
+        public virtual DateTime GetLastWriteTimeUtc(string file)
         {
-            return System.IO.File.GetLastWriteTime(file);
+            return System.IO.File.GetLastWriteTimeUtc(file);
         }
 
         /// <summary>

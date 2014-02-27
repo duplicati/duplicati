@@ -33,13 +33,13 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="callback">The callback to invoke with each found path</param>
         IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback);
-
+        
         /// <summary>
-        /// Gets the last write time of a given file
+        /// Gets the last write time of a given file in UTC
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        DateTime GetLastWriteTime(string file);
+        DateTime GetLastWriteTimeUtc(string file);
 
         /// <summary>
         /// Opens a file for reading

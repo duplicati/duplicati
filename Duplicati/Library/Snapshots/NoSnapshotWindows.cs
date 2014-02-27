@@ -70,17 +70,17 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
-        /// Gets the last write time of a given file
+        /// Gets the last write time of a given file in UTC
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public override DateTime GetLastWriteTime (string file)
+        public override DateTime GetLastWriteTimeUtc (string file)
         {
             if (!SystemIOWindows.IsPathTooLong(file))
-                try { return base.GetLastWriteTime(file); }
+                try { return base.GetLastWriteTimeUtc(file); }
                 catch (System.IO.PathTooLongException) { }
 
-            return File.GetLastWriteTime(SystemIOWindows.PrefixWithUNC(file));
+            return File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(file));
         }
 
         /// <summary>

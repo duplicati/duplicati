@@ -399,17 +399,16 @@ namespace Duplicati.Library.Snapshots
         		s => Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
         	);
         }
-
+        
         /// <summary>
-        /// Gets the last write time of a given file
+        /// Gets the last write time of a given file in UTC
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public DateTime GetLastWriteTime(string file)
+        public DateTime GetLastWriteTimeUtc(string file)
         {
-            return System.IO.File.GetLastWriteTime(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
+            return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
         }
-
         /// <summary>
         /// Opens a file for reading
         /// </summary>

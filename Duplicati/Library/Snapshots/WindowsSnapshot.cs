@@ -301,23 +301,22 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
-        /// Gets the last write time of a given file
+        /// Gets the last write time of a given file in UTC
         /// </summary>
         /// <param name="file">The full path to the file in non-shadow format</param>
         /// <returns>The last write time of the file</returns>
-        public DateTime GetLastWriteTime(string file)
+        public DateTime GetLastWriteTimeUtc(string file)
         {
             string spath = GetSnapshotPath(file);
             if (!SystemIOWindows.IsPathTooLong(spath))
                 try
                 {
-                    return File.GetLastWriteTime(spath);
+                    return File.GetLastWriteTimeUtc(spath);
                 }
                 catch (PathTooLongException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTime(SystemIOWindows.PrefixWithUNC(spath));
+            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
-
         /// <summary>
         /// Opens a file for reading
         /// </summary>
