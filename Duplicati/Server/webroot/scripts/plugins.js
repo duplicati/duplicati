@@ -40,12 +40,13 @@ $(document).ready(function() {
     APP_DATA.plugins.backend['file'] = {
         hasssl: false,
         hideserverandport: true,
+        optionalauth: true,
         serverpathlabel: 'Path or UNC',
-        custom_callback: function(dlg, div) {
+        setup: function(dlg, div) {
             //$('#server-path').watermark('/my/data');
             //div.text('Awesome plugin stuff');
         },
-        custom_cleanup: function(dlg, div) {
+        cleanup: function(dlg, div) {
         }
     }
 
@@ -61,11 +62,13 @@ $(document).ready(function() {
 
     APP_DATA.plugins.backend['ftp'] = {
         defaultport: 21,
-        defaultportssl: 443
+        defaultportssl: 443,
+        optionalpassword: true
     }
 
     APP_DATA.plugins.backend['ssh'] = {
         defaultport: 22,
+        optionalauth: true,
         hasssl: false
     }
 
@@ -85,15 +88,17 @@ $(document).ready(function() {
         passwordlabel: 'AWS Secret Key',
         usernamewatermark: 'AWS Access ID',
         passwordwatermark: 'AWS Secret Key',
+        serverdrop_field: null,
+        bucket_field: null,
 
-        custom_callback: function(dlg, div) {
+        setup: function(dlg, div) {
             $('#server-path-label').hide();
             $('#server-path').hide();
 
-            var serverdrop = EDIT_URI.createFieldset({label: 'S3 servername', after: $('#server-path'), watermark: 'Click for a list of providers'});
-            var bucketfield = EDIT_URI.createFieldset({label: 'S3 Bucket name', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
-            var regiondrop = EDIT_URI.createFieldset({label: 'Bucket create region', before: $('#server-options-label'), watermark: 'Click for a list of regions', title: 'Note that region is only used when creating buckets'});
-            var rrscheck = EDIT_URI.createFieldset({'label': 'Use RRS', type: 'checkbox', before: $('#server-options-label'), title: 'Reduced Redundancy Storage is cheaper, but less reliable'});
+            var serverdrop = EDIT_URI.createFieldset({label: 'S3 servername', name: 's3-server', after: $('#server-path'), watermark: 'Click for a list of providers'});
+            var bucketfield = EDIT_URI.createFieldset({label: 'S3 Bucket name', name: 's3-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
+            var regiondrop = EDIT_URI.createFieldset({label: 'Bucket create region', name: 's3-region', before: $('#server-options-label'), watermark: 'Click for a list of regions', title: 'Note that region is only used when creating buckets'});
+            var rrscheck = EDIT_URI.createFieldset({'label': 'Use RRS', name: 's3-rrs', type: 'checkbox', before: $('#server-options-label'), title: 'Reduced Redundancy Storage is cheaper, but less reliable'});
             var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: PLUGIN_S3_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
 
             signuplink.outer.css('margin-bottom', '10px');
@@ -122,10 +127,53 @@ $(document).ready(function() {
             regiondrop.field.click(function() {  
                 regiondrop.field.autocomplete('search', '');
             });
+
+            this.serverdrop_field = serverdrop.field;
+            this.bucket_field = bucketfield.field;
         },
-        custom_cleanup: function(dlg, div) {
+        cleanup: function(dlg, div) {
             $('#server-path-label').show();
             $('#server-path').show();
+            this.serverdrop_field = null;
+            this.bucket_field = null;
+        },
+        validate: function(dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return;
+            if (values['s3-server'] == '')
+                return EDIT_URI.validation_error(this.serverdrop_field, 'You must fill in or select the S3 server to use');                
+            if (values['s3-bucket'] == '')
+                return EDIT_URI.validation_error(this.bucket_field, 'You must enter a S3 bucket name');
+            if (values['s3-bucket'].toLowerCase() != values['s3-bucket']) {
+                if (!confirm('The bucket name must be all lower case, convert automatically?')) {
+                    this.bucket_field.focus();
+                    return false;
+                }
+                values['s3-bucket'] = values['s3-bucket'].toLowerCase();
+                this.bucket_field.val(values['s3-bucket']);
+            }
+            if (values['s3-bucket'].indexOf(values['server-username'].toLowerCase()) != 0) {
+                if (confirm('The bucket name should start with your username, append automatically?')) {
+                    values['s3-bucket'] = values['server-username'].toLowerCase() + '-' + values['s3-bucket'];
+                    this.bucket_field.val(values['s3-bucket']);
+                }
+            }
+
+            return true;
+        },
+        build_uri: function(dlg, values) {
+            var cp = $.extend(true, {}, values);
+            cp['server-name'] = values['s3-bucket'];
+            cp['--s3-server-name'] = values['s3-server'];
+            cp['--s3-use-rrs'] = values['s3-rrs'];
+            if (values['s3-region'] && values['s3-region'] != '')
+                cp['--s3-location-constraint'] = values['s3-region'];
+
+            return EDIT_URI.build_uri(cp);
+        },
+        decode_uri: function(uri) {
+            var opts = EDIT_URI.decodeuri(uri);
+            return opts;
         }
     }
 

@@ -189,19 +189,6 @@ $(document).ready(function() {
         'dnd': { copy: false },
     });
 
-
-    $('#connection-uri-dialog').dialog({ 
-        modal: true, 
-        minWidth: 320, 
-        width: $('body').width, 
-        autoOpen: false, 
-        closeOnEscape: true,
-        buttons: [
-            {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
-            {text: 'Create URI', click: function() { $( this ).dialog( "close" ); } }
-        ]
-     })
-
     $('#edit-connection-uri-link').click(function() {
         $('#connection-uri-dialog').dialog('open');
     });
