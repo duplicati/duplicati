@@ -321,34 +321,35 @@
     </div>
 
     <div id="connection-uri-dialog" class="modal-dialog edit-dialog" style="display: none" title="Connection URI">
-        <div class="edit-dialog-label">Target Type</div>
-        <div class="field-group">
-            <select id="backend-type" name="backend-type"></select>
-            <input type="checkbox" id="server-use-ssl" name="server-use-ssl" value="use-ssl"/><div class="checkbox-label" id="server-use-ssl-label" >Use SSL</div>
-        </div>
+        <form id="edit-dialog-form">
+            <div class="edit-dialog-label">Target Type</div>
+            <div class="field-group">
+                <select id="backend-type" name="backend-type"></select>
+                <input type="checkbox" id="server-use-ssl" name="server-use-ssl" value="use-ssl"/><div class="checkbox-label" id="server-use-ssl-label" >Use SSL</div>
+            </div>
 
-        <div class="edit-dialog-label" id="server-name-and-port-label">Server &amp; Port</div>
-        <div class="field-group" id="server-name-and-port">
-            <input type="text" name="server-name" id="server-name" value="" class="text ui-widget-content ui-corner-all" />
-            <input type="text" name="server-port" id="server-port" value="" class="text ui-widget-content ui-corner-all" />
-        </div>
+            <div class="edit-dialog-label" id="server-name-and-port-label">Server &amp; Port</div>
+            <div class="field-group" id="server-name-and-port">
+                <input type="text" name="server-name" id="server-name" value="" class="text ui-widget-content ui-corner-all" />
+                <input type="text" name="server-port" id="server-port" value="" class="text ui-widget-content ui-corner-all" />
+            </div>
 
-        <div class="edit-dialog-label" id="server-path-label">Path on server</div>
-        <input type="text" name="server-path" id="server-path" class="text ui-widget-content ui-corner-all" />
+            <div class="edit-dialog-label" id="server-path-label">Path on server</div>
+            <input type="text" name="server-path" id="server-path" class="text ui-widget-content ui-corner-all" />
 
-        <div id="server-username-and-password">
-            <div id="server-username-label" class="edit-dialog-label">Username</div>
-            <input type="text" name="server-username" id="server-username" class="text ui-widget-content ui-corner-all" />
+            <div id="server-username-and-password">
+                <div id="server-username-label" class="edit-dialog-label">Username</div>
+                <input type="text" name="server-username" id="server-username" class="text ui-widget-content ui-corner-all" />
 
-            <div id="server-password-label" class="edit-dialog-label">Password</div>
-            <input type="password" name="server-password" id="server-password" class="text ui-widget-content ui-corner-all" />
-        </div>
+                <div id="server-password-label" class="edit-dialog-label">Password</div>
+                <input type="password" name="server-password" id="server-password" class="text ui-widget-content ui-corner-all" />
+            </div>
 
-        <div class="edit-dialog-label" id="server-options-label">Options</div>
-        <textarea id="server-options" name="server-options"></textarea>
+            <div class="edit-dialog-label" id="server-options-label">Options</div>
+            <textarea id="server-options" name="server-options"></textarea>
 
-        <div id="edit-dialog-extensions"></div>
-    </div>        
+            <div id="edit-dialog-extensions"></div>
+        </form>
     </div>
 
 </body>
