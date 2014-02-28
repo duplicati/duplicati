@@ -33,7 +33,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:]+)\:((?<password>[^@]*))\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?(/(?<path>[^\?]*))|(?<path>([^\?]*)))?(\?(?<query>.+))?");
+        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:]+)(\:(?<password>[^@]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)(/(?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
