@@ -5,9 +5,14 @@
 BACKEND_STATE = null;
 EDIT_URI = null;
 
+
 $(document).ready(function() {
 
     EDIT_URI = {
+        URL_REGEXP_FIELDS: ['source_uri', 'backend-type', 'server-username', 'server-password', 'server-name', 'server-port', 'server-path', 'querystring'],
+        URL_REGEXP: /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]+)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/,
+        QUERY_REGEXP: /(?:^|&)([^&=]*)=?([^&]*)/g,
+
         createFieldset: function(config) {
             var outer = $('<div></div>');
             var label = config.label ? $('<div></div>').addClass('edit-dialog-label ' + (config.labelclass || '')).html(config.label) : null;
@@ -198,11 +203,117 @@ $(document).ready(function() {
             }
 
             return url;
-
         },
 
         decode_uri: function(uri) {
-            return {};
+            var i = EDIT_URI.URL_REGEXP_FIELDS.length + 1;
+            var res = {};
+
+            var m = EDIT_URI.URL_REGEXP.exec(uri);
+
+            // Invalid URI
+            if (!m)
+                return res;
+
+            while (i--) {
+                res[EDIT_URI.URL_REGEXP_FIELDS[i]] = m[i] || "";
+            }
+
+            res.querystring.replace(EDIT_URI.QUERY_REGEXP, function(str, key, val) {
+                if (key)
+                    res['--' + key] = val;
+            });
+
+            var scheme = res['backend-type'];
+
+            if (scheme && scheme[scheme.length - 1] == 's' && !APP_DATA.plugins.backend[scheme] && APP_DATA.plugins.backend[scheme.substr(0, scheme.length-1)]) {
+                res['backend-type'] = scheme.substr(0, scheme.length-1);
+                res['server-use-ssl'] = true;
+            }
+
+            return res;
+        },
+
+        find_scheme: function(uri) {
+            if (!uri || uri.length == 0)
+                return null;
+
+            uri = uri.trim().toLowerCase();
+            var ix = uri.indexOf('://');
+            if (ix <= 0) {
+                if (BACKEND_STATE.module_lookup['file'])
+                    return 'file';
+                return BACKEND_STATE.modules[0];
+            }
+
+            return (EDIT_URI.decode_uri(uri)['backend-type'] || '').toLowerCase()
+        },
+
+        read_form: function(form) {
+            var values = {};
+
+            form.find('select').each(function(i, e) { 
+                values[e.name] = $(e).val();
+            });
+            form.find('input').each(function(i, e) { 
+                if (e.type == 'checkbox')
+                    values[e.name] = $(e).is(':checked');
+                else
+                    values[e.name] = $(e).val();
+            });
+
+            return values;
+        },
+
+        fill_form: function(form, values) {
+            var found = {};
+
+            form.find('select').each(function(i, e) { 
+                if(values[e.name] && e.name != 'backend-type') {
+                    $(e).val(values[e.name]); 
+                    found[e.name] = true;
+                }
+            });
+
+            form.find('input').each(function(i, e) { 
+                var v = values[e.name];
+                if (v === undefined && e.name.indexOf('--') == 0) {
+                    v = values[e.name.substr(2)];
+                }
+
+                if (v === undefined || v == '') {
+                    if (e.name == 'server-username') {
+                        v = values['--auth-username'];
+                        found['--auth-username'] = true;
+                    } else if (e.name == 'server-password') {
+                        v = values['--auth-password'];
+                        found['--auth-password'] = true;
+                    } else if (e.name == 'server-use-ssl') {
+                        v = values['--use-ssl'];
+                        found['--use-ssl'] = true;
+                    }
+                }
+
+                if(v !== undefined) {
+                    found[e.name] = true;
+                    if (e.type == 'checkbox') {
+                        var str = (v + '').toLowerCase();
+                        v = str == '' || str == 'true' || str == '1' || str == 'yes' || str == 'on';
+                        $(e).attr('checked', v);
+                    } else {
+                        $(e).val(v);
+                    }
+                }
+            });
+
+            var opttext = '';
+            for(var k in values) {
+                if (!found[k] && k.indexOf('--') == 0) {
+                    opttext += k.substr(2) + '=' + decodeURIComponent(values[k] || '') + '\n';
+                }
+            }
+
+            form.find('#server-options').val(opttext);
         }
     };
 
@@ -243,6 +354,18 @@ $(document).ready(function() {
               BACKEND_STATE.module_lookup[BACKEND_STATE.modules[i].Key] = BACKEND_STATE.modules[i];
             }
 
+            BACKEND_STATE.orig_uri = $('#backup-uri').val();
+            BACKEND_STATE.orig_cfg = EDIT_URI.decode_uri(BACKEND_STATE.orig_uri);
+            var scheme = BACKEND_STATE.orig_cfg['backend-type'];
+
+            if (scheme && APP_DATA.plugins.backend[scheme] && APP_DATA.plugins.backend[scheme].decode_uri) {
+                BACKEND_STATE.orig_cfg = APP_DATA.plugins.backend[scheme].decode_uri(BACKEND_STATE.orig_uri);
+            }
+
+            BACKEND_STATE.first_setup = true;
+            if (scheme && BACKEND_STATE.module_lookup[scheme])
+                drop.val(scheme);
+
             drop.change();
         },
         function() {
@@ -268,7 +391,7 @@ $(document).ready(function() {
         var cfg = APP_DATA.plugins.backend[k] || {};
 
         // Auto-detect for SSL
-        if (cfg.hasssl == null) {
+        if (cfg.hasssl === undefined) {
             var m = BACKEND_STATE.module_lookup[k];
             
             if (m && m.Options)
@@ -314,8 +437,15 @@ $(document).ready(function() {
         if (!cfg.hasssl)
             $('#server-use-ssl').attr('checked', false);
         $('#server-use-ssl').change();
-    });
 
+        if (BACKEND_STATE.first_setup) {
+            BACKEND_STATE.first_setup = false;
+            if (cfg.fill_form)
+                cfg.fill_form($('#edit-dialog-form'), BACKEND_STATE.orig_cfg);
+            else
+                EDIT_URI.fill_form($('#edit-dialog-form'), BACKEND_STATE.orig_cfg);
+        }
+    });
 
     $('#connection-uri-dialog').dialog({ 
         modal: true, 
@@ -327,15 +457,7 @@ $(document).ready(function() {
             {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Create URI', click: function() { 
 
-                var values = {};
-
-                $('#edit-dialog-form').find('select').each(function(i, e) { values[e.name] = $(e).val() });
-                $('#edit-dialog-form').find('input').each(function(i, e) { 
-                    if (e.type == 'checkbox')
-                        values[e.name] = $(e).is(':checked');
-                    else
-                        values[e.name] = $(e).val();
-                });
+                var values = EDIT_URI.read_form($('#edit-dialog-form'));
 
                 if (!EDIT_URI.parse_extra_options($('#server-options'), values))
                     return;
@@ -362,4 +484,5 @@ $(document).ready(function() {
         ]
      });
 
+    $('#backup-uri').val('webdavs://user@test.com:33/path?auth-password=pwd&opt=1');
 });
