@@ -146,6 +146,22 @@ $(document).ready(function() {
         });         
     };
 
+    APP_DATA.getBackupDefaults = function(callback, errorhandler) {
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            dataType: 'json',
+            data: { action: 'get-backup-defaults' }
+        })
+        .done(function(data) {
+            if (callback != null)
+                callback(data, true, null);
+        })
+        .fail(function(data, status) {
+            if (callback)
+                callback(null, false, status);
+        });         
+    };
+
 
     $('#main-settings').click(function() {
         var pos = $('#main-settings').position();
@@ -170,10 +186,18 @@ $(document).ready(function() {
 
     $('#main-newbackup').click(function() {
         APP_DATA.getServerConfig(function(data) {
-            $("#edit-dialog").dialog('open');
+            APP_DATA.getBackupDefaults(function(defaults) {
+                $("#edit-dialog").dialog('open');
 
-            // Bug-fix, this will remove style="width: auto", which breaks Chrome a bit
-            $("#edit-dialog").css('width', '');
+                // Bug-fix, this will remove style="width: auto", which breaks Chrome a bit
+                $("#edit-dialog").css('width', '');
+
+                // Send the defaults to the dialog
+                $("#edit-dialog").trigger('setup-dialog', defaults);                
+            },
+            function() {
+                alert('Failed to get server setup...')
+            })
         },
         function() {
             alert('Failed to get server setup...')
