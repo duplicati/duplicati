@@ -198,9 +198,10 @@ $(document).ready(function() {
             }},
             { text: 'Next', click: function(event, ui) {
                 var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
+                var max = $('#edit-dialog').tabs("length");
                 event.curPage = cur;
                 event.currentTarget.curPage = cur;
-                cur = Math.min(cur+1, 4);
+                cur = Math.min(cur+1, max);
                 $('#edit-dialog').tabs( "option", "active", cur);
             }}
         ]
