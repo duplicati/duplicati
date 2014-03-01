@@ -561,18 +561,105 @@ namespace Duplicati.Server
             {
                 OutputObject(bw, Program.DataConnection.ApplicationSettings);
             }
+            
+            private static void MergeJsonObjects(Newtonsoft.Json.Linq.JObject self, Newtonsoft.Json.Linq.JObject other)
+            {
+                foreach(var p in other.Properties())
+                {
+                    var sp = self.Property(p.Name);
+                    if (sp == null)
+                        self.Add(p);
+                    else
+                    {
+                        switch (p.Type)
+                        {
+                            // Primitives override
+                            case Newtonsoft.Json.Linq.JTokenType.Boolean:
+                            case Newtonsoft.Json.Linq.JTokenType.Bytes:
+                            case Newtonsoft.Json.Linq.JTokenType.Comment:
+                            case Newtonsoft.Json.Linq.JTokenType.Constructor:
+                            case Newtonsoft.Json.Linq.JTokenType.Date:
+                            case Newtonsoft.Json.Linq.JTokenType.Float:
+                            case Newtonsoft.Json.Linq.JTokenType.Guid:
+                            case Newtonsoft.Json.Linq.JTokenType.Integer:
+                            case Newtonsoft.Json.Linq.JTokenType.String:
+                            case Newtonsoft.Json.Linq.JTokenType.TimeSpan:
+                            case Newtonsoft.Json.Linq.JTokenType.Uri:
+                            case Newtonsoft.Json.Linq.JTokenType.None:
+                            case Newtonsoft.Json.Linq.JTokenType.Null:
+                            case Newtonsoft.Json.Linq.JTokenType.Undefined:
+                                self.Replace(p);
+                                break;
+
+                            // Arrays merge
+                            case Newtonsoft.Json.Linq.JTokenType.Array:
+                                if (sp.Type == Newtonsoft.Json.Linq.JTokenType.Array)
+                                    sp.Value = new Newtonsoft.Json.Linq.JArray(((Newtonsoft.Json.Linq.JArray)sp.Value).Union((Newtonsoft.Json.Linq.JArray)p.Value));
+                                else
+                                {
+                                    var a = new Newtonsoft.Json.Linq.JArray(sp.Value);
+                                    sp.Value = new Newtonsoft.Json.Linq.JArray(a.Union((Newtonsoft.Json.Linq.JArray)p.Value));
+                                }
+                                
+                                break;
+                                
+                            // Objects merge
+                            case Newtonsoft.Json.Linq.JTokenType.Object:
+                                if (sp.Type == Newtonsoft.Json.Linq.JTokenType.Object)
+                                    MergeJsonObjects((Newtonsoft.Json.Linq.JObject)sp.Value, (Newtonsoft.Json.Linq.JObject)p.Value);
+                                else
+                                    sp.Value = p.Value;
+                                break;
+                                
+                            // Ignore other stuff                                
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
 
             private void GetBackupDefaults(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {   
-                //TODO: Read newbackup.json and return it             
+                // Start with a scratch object
+                var o = new Newtonsoft.Json.Linq.JObject();
                 
+                // Add application wide settings
+                o.Add("ApplicationOptions", new Newtonsoft.Json.Linq.JArray(Program.DataConnection.Settings));
+                
+                try
+                {
+                    // Add built-in defaults
+                    Newtonsoft.Json.Linq.JObject n;
+                    using(var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + ".newbackup.json")))
+                        n = (Newtonsoft.Json.Linq.JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(s.ReadToEnd());
+                    
+                    MergeJsonObjects(o, n);
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    // Add install defaults/overrides, if present
+                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "newbackup.json");
+                    if (System.IO.File.Exists(path))
+                    {
+                        Newtonsoft.Json.Linq.JObject n;
+                        n = (Newtonsoft.Json.Linq.JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(System.IO.File.ReadAllText(path));
+                        
+                        MergeJsonObjects(o, n);
+                    }
+                }
+                catch
+                {
+                }
+
                 OutputObject(bw, new
                 {
                     success = true,
-                    data = new
-                    {
-                        Options = Program.DataConnection.Settings
-                    }
+                    data = o
                 });
             }
 

@@ -7,7 +7,7 @@
         }
     },
     Schedule: {
-        Repeat: "1D"
+        Repeat: "1D",
         Time: "13:00:00"
     }
 }
