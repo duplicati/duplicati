@@ -173,6 +173,18 @@ $(document).ready(function() {
         },
         decode_uri: function(uri) {
             var opts = EDIT_URI.decodeuri(uri);
+
+            //TODO: Use a simple map instead?
+            opts['s3-server'] = opts['--s3-server-name'];
+            opts['s3-rrs'] = opts['--s3-use-rrs'];
+            opts['s3-bucket'] = opts['server-name'];
+            opts['s3-region'] = opts['--s3-location-constraint'];
+
+            opts['--s3-server-name'] = undefined;
+            opts['--s3-use-rrs'] = undefined;
+            opts['server-name'] = undefined;
+            opts['--s3-location-constraint'] = undefined;
+
             return opts;
         }
     }
