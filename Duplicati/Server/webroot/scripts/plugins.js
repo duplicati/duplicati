@@ -131,7 +131,7 @@ $(document).ready(function() {
             this.serverdrop_field = serverdrop.field;
             this.bucket_field = bucketfield.field;
         },
-        
+
         cleanup: function(dlg, div) {
             $('#server-path-label').show();
             $('#server-path').show();
@@ -142,22 +142,22 @@ $(document).ready(function() {
         validate: function(dlg, values) {
             if (!EDIT_URI.validate_input(values, true))
                 return;
-            if (values['s3-server'] == '')
+            if (values['--s3-server-name'] == '')
                 return EDIT_URI.validation_error(this.serverdrop_field, 'You must fill in or select the S3 server to use');                
             if (values['s3-bucket'] == '')
                 return EDIT_URI.validation_error(this.bucket_field, 'You must enter a S3 bucket name');
-            if (values['s3-bucket'].toLowerCase() != values['s3-bucket']) {
+            if (values['server-name'].toLowerCase() != values['server-name']) {
                 if (!confirm('The bucket name must be all lower case, convert automatically?')) {
                     this.bucket_field.focus();
                     return false;
                 }
-                values['s3-bucket'] = values['s3-bucket'].toLowerCase();
-                this.bucket_field.val(values['s3-bucket']);
+                values['server-name'] = values['server-name'].toLowerCase();
+                this.bucket_field.val(values['server-name']);
             }
-            if (values['s3-bucket'].indexOf(values['server-username'].toLowerCase()) != 0) {
+            if (values['server-name'].indexOf(values['--auth-username'].toLowerCase()) != 0) {
                 if (confirm('The bucket name should start with your username, append automatically?')) {
-                    values['s3-bucket'] = values['server-username'].toLowerCase() + '-' + values['s3-bucket'];
-                    this.bucket_field.val(values['s3-bucket']);
+                    values['server-name'] = values['--auth-username'].toLowerCase() + '-' + values['server-name'];
+                    this.bucket_field.val(values['server-name']);
                 }
             }
 
@@ -165,14 +165,14 @@ $(document).ready(function() {
         },
 
         fill_form_map: {
-            's3-bucket': 'server-name',
+            'server-name': 's3-bucket',
             '--s3-server-name': 's3-server',
             '--s3-use-rrs': 's3-rrs',
             '--s3-location-constraint': 's3-region'
         },
 
         fill_dict_map: {
-            'server-name': 's3-bucket',
+            's3-bucket': 'server-name',
             's3-server': '--s3-server-name',
             's3-rrs': '--s3-use-rrs',
             's3-region': '--s3-location-constraint'

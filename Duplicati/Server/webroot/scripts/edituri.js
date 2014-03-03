@@ -9,7 +9,7 @@ EDIT_URI = null;
 $(document).ready(function() {
 
     EDIT_URI = {
-        URL_REGEXP_FIELDS: ['source_uri', 'backend-type', 'server-username', 'server-password', 'server-name', 'server-port', 'server-path', 'querystring'],
+        URL_REGEXP_FIELDS: ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'],
         URL_REGEXP: /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]+)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/,
         QUERY_REGEXP: /(?:^|&)([^&=]*)=?([^&]*)/g,
 
@@ -20,6 +20,7 @@ $(document).ready(function() {
             if (config.type == 'link') {
                 field = config.field === false ? null : 
                     $('<a />').text(config.title)
+                    .attr('id', (config.name || ''))
                     .addClass('action-link ' + (config.fieldclass || ''))
                     .attr('href', config.href || '#')
                     .attr('target', config.target || '_blank');
@@ -27,6 +28,7 @@ $(document).ready(function() {
             } else {
                 field = config.field === false ? null : 
                     $('<input type="' + (config.type || 'text') + '" name="' + (config.name || '') + '" />')
+                    .attr('id', (config.name || ''))
                     .addClass('text ui-widget-content ui-corner-all ' + (config.fieldclass || ''));
                 
                 if (field && config.value !== undefined)
@@ -73,10 +75,10 @@ $(document).ready(function() {
             }
 
             if (!BACKEND_STATE.current_state.optionalauth) {
-                if (values['server-username'] == '')
+                if (values['--auth-username'] == '')
                     return EDIT_URI.validation_error($('server-username'), 'You must fill in a username');
                 if (!BACKEND_STATE.current_state.optionalpassword)
-                    if (values['server-password'] == '')
+                    if (values['--auth-password'] == '')
                         return EDIT_URI.validation_error($('server-password'), 'You must fill in a password');
             }
 
@@ -223,16 +225,19 @@ $(document).ready(function() {
 
         read_form: function(form) {
             var map = EDIT_URI.fill_dict_map;
-            if (BACKEND_STATE.current_state.fill_dict_map)
-                map = $.extend(true, {}, map, BACKEND_STATE.current_state.fill_dict_map);
 
-            return APP_UTIL.read_form(form, map);
+            var values = APP_UTIL.read_form(form, map);
+            if (BACKEND_STATE.current_state.fill_dict_map)
+                values = APP_UTIL.read_form(form, BACKEND_STATE.current_state.fill_dict_map, values);
+
+            return values;
         },
 
         fill_form_map: {
             '--auth-username': 'server-username',
             '--auth-password': 'server-password',
-            '--use-ssl': 'server-use-ssl'
+            '--use-ssl': 'server-use-ssl',
+            'backend-type': function() {}
         },
 
         fill_dict_map: {
@@ -245,14 +250,20 @@ $(document).ready(function() {
             var found = {};
 
             var map = EDIT_URI.fill_form_map;
-            if (BACKEND_STATE.current_state.fill_form_map)
-                map = $extend(true, {}, map, BACKEND_STATE.current_state.fill_form_map);
-
             APP_UTIL.fill_form($('#edit-uri-form'), values, map);
+            if (BACKEND_STATE.current_state.fill_form_map) {
+                map = $.extend(true, {}, map);
+                for(var k in map)
+                    map[k] = false;
+
+                $.extend(true, map, BACKEND_STATE.current_state.fill_form_map);
+
+                APP_UTIL.fill_form($('#edit-uri-form'), values, map);
+            }
 
             var opttext = '';
             for(var k in values) {
-                if (!map[k] && k.indexOf('--') == 0) {
+                if (map[k] === undefined && k.indexOf('--') == 0) {
                     opttext += k.substr(2) + '=' + decodeURIComponent(values[k] || '') + '\n';
                 }
             }
@@ -271,17 +282,22 @@ $(document).ready(function() {
         $('#server-username-label').text('Username');
         $('#server-password-label').text('Password');
 
-        if (BACKEND_STATE.fieldset_cleanup != null)
-            for(var i in BACKEND_STATE.fieldset_cleanup)
-                BACKEND_STATE.fieldset_cleanup[i].remove();
+        if (BACKEND_STATE != null) {
+            if (BACKEND_STATE.fieldset_cleanup != null)
+                for(var i in BACKEND_STATE.fieldset_cleanup)
+                    BACKEND_STATE.fieldset_cleanup[i].remove();
 
-        if (BACKEND_STATE && BACKEND_STATE.current_state && BACKEND_STATE.current_state.cleanup )
-            BACKEND_STATE.current_state.cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));        
-        BACKEND_STATE.current_state = null;
-        BACKEND_STATE.fieldset_cleanup = [];
-
+            if (BACKEND_STATE && BACKEND_STATE.current_state && BACKEND_STATE.current_state.cleanup )
+                BACKEND_STATE.current_state.cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));        
+            BACKEND_STATE.current_state = null;
+            BACKEND_STATE.fieldset_cleanup = [];
+        }
         $('#edit-dialog-extensions').empty();        
     };
+
+    $('#connection-uri-dialog').on( "dialogclose", function( event, ui ) {
+        resetform();
+    });
 
     $('#connection-uri-dialog').on( "dialogopen", function( event, ui ) {
         BACKEND_STATE = {};

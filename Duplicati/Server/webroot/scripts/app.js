@@ -67,20 +67,22 @@ APP_UTIL = {
             var m = map[key];
             var v = data[k];
 
-            if (m && typeof(m) == typeof(''))
-                key = m;
+            if (m !== false) {
+                if (m && typeof(m) == typeof(''))
+                    key = m;
 
-            if (m && typeof(m) == typeof(function() {})) {
-                m(data, key, v, extra);
-            } else {                    
-                var n = form.find('#' + key);
-                if (n.attr('type') == 'checkbox') {
-                    n.attr('checked', APP_UTIL.parseBoolOption(v));
-                } else {
-                    n.val(v);
+                if (m && typeof(m) == typeof(function() {})) {
+                    m(data, key, v, extra);
+                } else {                    
+                    var n = form.find('#' + key);
+                    if (n.attr('type') == 'checkbox') {
+                        n.attr('checked', APP_UTIL.parseBoolOption(v));
+                    } else {
+                        n.val(v);
+                    }
+
+                    n.change();
                 }
-
-                n.change();
             }
         }
     },
@@ -93,13 +95,15 @@ APP_UTIL = {
             var key = e.name;
             var m = map[e.name];
 
-            if (m && typeof(m) == typeof(function() {})) {
-                m(data, key, e, extra);
-            } else {
-                if (m && typeof(m) == typeof(''))
-                    key = m;
+            if (m !== false) {
+                if (m && typeof(m) == typeof(function() {})) {
+                    m(data, key, e, extra);
+                } else {
+                    if (m && typeof(m) == typeof(''))
+                        key = m;
 
-                values[key] = $(e).val();
+                    values[key] = $(e).val();
+                }
             }
         });
 
@@ -107,18 +111,19 @@ APP_UTIL = {
             var key = e.name;
             var m = map[e.name];
 
-            if (m && typeof(m) == typeof(function() {})) {
-                m(data, key, e, extra);
-            } else {
-                if (m && typeof(m) == typeof(''))
-                    key = m;
+            if (m !== false) {
+                if (m && typeof(m) == typeof(function() {})) {
+                    m(data, key, e, extra);
+                } else {
+                    if (m && typeof(m) == typeof(''))
+                        key = m;
 
-            if (e.type == 'checkbox')
-                values[key] = $(e).is(':checked');
-            else
-                values[key] = $(e).val();
+                if (e.type == 'checkbox')
+                    values[key] = $(e).is(':checked');
+                else
+                    values[key] = $(e).val();
+                }
             }
-
         });
 
         return values;
