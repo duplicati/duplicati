@@ -277,7 +277,8 @@ $(document).ready(function() {
     });
 
     $(dlg_buttons[1]).click(function(event, ui) {
-        if (event.curPage == 4) {
+        var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
+        if (event.curPage == tabs.size() - 1) {
             // Saving, validate first 
 
             if ($('#backup-name').val().trim() == '') {

@@ -345,7 +345,7 @@ $(document).ready(function() {
             }},
             { text: 'Next', click: function(event, ui) {
                 var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
-                var max = $('#edit-dialog').tabs("length");
+                var max = $('#edit-dialog').parent().find('[role=tablist] > li').size() - 1;
                 event.curPage = cur;
                 event.currentTarget.curPage = cur;
                 cur = Math.min(cur+1, max);
