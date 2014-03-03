@@ -8,6 +8,104 @@
 $(document).ready(function() {
 
     EDIT_BACKUP = {
+        validate_tab: function(tab) {
+            var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
+            tab += '';
+
+            if (tab.length > 0 && tab[0] == '#')
+                tab = tab.substr(1);
+
+            if (parseInt(tab) + '' == tab) {
+                tab = tabs[parseInt(tab)]
+            } else {
+                var tt = tab;
+                tab = null;
+                for(var n in tabs) {
+                    var href = $(n).find('a').attr('href');
+                    if (href && href[0] == '#') {
+                        href = href.substr(1);
+                    }
+
+                    if (tabs[n] == tt || href == tab) {
+                        tab = tabs[n];
+                        break;
+                    }
+                }
+            }
+
+            if (tab) {
+                var href = $(tab).find('a').attr('href');
+                if (href && href[0] == '#')
+                    href = href.substr(1);
+
+                var index;
+                for(index in tabs)
+                    if (tab == tabs[index])
+                        break;
+
+                if (EDIT_BACKUP.validate_form_map[href]) {
+                    if (!EDIT_BACKUP.validate_form_map[href](index)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+
+        },
+
+        validate_form_map: {
+            'edit-tab-general': function(tabindex) {
+                if ($('#backup-name').val().trim() == '') {
+                    $('#edit-dialog').tabs( "option", "active", tabindex);                
+                    $('#backup-name').focus();
+                    alert('You must enter a name for the backup');
+                    return false;
+                }
+
+                if ($('#encryption-method').val() != '') {
+                    if ($('#encryption-password').val().trim() == '') {
+                        $('#edit-dialog').tabs( "option", "active", tabindex);                
+                        $('#encryption-password').focus();
+                        alert('You must enter a passphrase');
+                        return false;
+                    }
+
+                    if (!EDIT_STATE.passwordShown && $('#repeat-password').hasClass('password-mismatch')) {
+                        $('#edit-dialog').tabs( "option", "active", tabindex);                
+                        $('#repeat-password').focus();
+                        alert('The passwords do not match');
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            'edit-tab-sourcedata': function(tabindex) {
+
+                return true;
+            },
+
+            'edit-tab-target': function(tabindex) {
+                if ($('#backup-uri').val().trim() == '') {
+                    $('#edit-dialog').tabs( "option", "active", tabindex);                
+                    $('#backup-uri').focus();
+                    alert('You must enter a connection url for the backup');
+                    return false;
+                }
+
+                return true;
+            },
+
+            'edit-tab-schedule': function(tabindex) {
+
+                return true;
+            }
+        },
+
         fill_form_map: {
             'encryption-module': 'encryption-method',
             'Repeat': function(dict, key, val, cfgel) {
@@ -351,16 +449,9 @@ $(document).ready(function() {
         if (event.curPage == tabs.size() - 1) {
             // Saving, validate first 
 
-            if ($('#backup-name').val().trim() == '') {
-                $('#edit-dialog').tabs( "option", "active", 0);                
-                $('#backup-name').focus();
-                return false;
-            }
-
-            if ($('#encryption-method').val() != '') {
-                if (!EDIT_STATE.passwordShown && $('#repeat-password').hasClass('password-mismatch')) {
-                    $('#edit-dialog').tabs( "option", "active", 0);                
-                    $('#repeat-password').focus();
+            for(var n in tabs) {
+                if (!EDIT_BACKUP.validate_tab(n)) {
+                    return;
                 }
             }
 
@@ -465,7 +556,6 @@ $(document).ready(function() {
     }    
 
     $("#edit-dialog").on('setup-dialog', function(e, data) {
-
         for (var d in data) {
             APP_UTIL.fill_form($('#edit-dialog-form'), data[d], EDIT_BACKUP.fill_form_map, d);
         }
