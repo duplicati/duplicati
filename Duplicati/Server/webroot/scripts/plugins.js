@@ -131,12 +131,14 @@ $(document).ready(function() {
             this.serverdrop_field = serverdrop.field;
             this.bucket_field = bucketfield.field;
         },
+        
         cleanup: function(dlg, div) {
             $('#server-path-label').show();
             $('#server-path').show();
             this.serverdrop_field = null;
             this.bucket_field = null;
         },
+
         validate: function(dlg, values) {
             if (!EDIT_URI.validate_input(values, true))
                 return;
@@ -161,31 +163,19 @@ $(document).ready(function() {
 
             return true;
         },
-        build_uri: function(dlg, values) {
-            var cp = $.extend(true, {}, values);
-            cp['server-name'] = values['s3-bucket'];
-            cp['--s3-server-name'] = values['s3-server'];
-            cp['--s3-use-rrs'] = values['s3-rrs'];
-            if (values['s3-region'] && values['s3-region'] != '')
-                cp['--s3-location-constraint'] = values['s3-region'];
 
-            return EDIT_URI.build_uri(cp);
+        fill_form_map: {
+            's3-bucket': 'server-name',
+            '--s3-server-name': 's3-server',
+            '--s3-use-rrs': 's3-rrs',
+            '--s3-location-constraint': 's3-region'
         },
-        decode_uri: function(uri) {
-            var opts = EDIT_URI.decodeuri(uri);
 
-            //TODO: Use a simple map instead?
-            opts['s3-server'] = opts['--s3-server-name'];
-            opts['s3-rrs'] = opts['--s3-use-rrs'];
-            opts['s3-bucket'] = opts['server-name'];
-            opts['s3-region'] = opts['--s3-location-constraint'];
-
-            opts['--s3-server-name'] = undefined;
-            opts['--s3-use-rrs'] = undefined;
-            opts['server-name'] = undefined;
-            opts['--s3-location-constraint'] = undefined;
-
-            return opts;
+        fill_dict_map: {
+            'server-name': 's3-bucket',
+            's3-server': '--s3-server-name',
+            's3-rrs': '--s3-use-rrs',
+            's3-region': '--s3-location-constraint'
         }
     }
 

@@ -3,8 +3,24 @@
  */
 
  EDIT_STATE = null;
+ EDIT_BACKUP = null;
 
 $(document).ready(function() {
+
+    EDIT_BACKUP = {
+        fill_form_map: {
+            'encryption-module': 'encryption-method',
+            'Repeat': function(dict, key, val, cfgel) {},
+            'Time': function(dict, key, val, cfgel) {}
+        },
+
+        fill_dict_map: {
+            'encryption-method': 'encryption-module',
+            'Repeat': function(dict, key, val, cfgel) {},
+            'Time': function(dict, key, val, cfgel) {}
+        }
+    };
+
     $('#backup-name').watermark('Enter a name for your backup');
     $('#backup-labels').watermark('work, docs, s3, movies, other');
     $('#backup-uri').watermark('webdavs://example.com/mybackup?');
@@ -377,6 +393,13 @@ $(document).ready(function() {
             inActualMove = false; 
         }
     }    
+
+    $("#edit-dialog").on('setup-dialog', function(e, data) {
+
+        for (var d in data) {
+            APP_UTIL.fill_form($('#edit-dialog-form'), data[d], EDIT_BACKUP.fill_form_map, d);
+        }
+    });
 
 
 });

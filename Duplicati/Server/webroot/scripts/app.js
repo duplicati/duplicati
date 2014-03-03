@@ -6,6 +6,124 @@
 
 APP_DATA = null;
 APP_EVENTS= {};
+APP_UTIL = {
+    parseBoolOption: function(val, def) {
+        if (val == null) {
+            if (def === undefined)
+                return true;
+            else
+                return def == true;
+        }
+
+        var str = (val + '').toLowerCase();
+        return str == '' || str == 'true' || str == '1' || str == 'yes' || str == 'on';
+    },
+
+    isValidBoolOption: function(val) {
+        if (val == null)
+            return true;
+
+        var t = (val + '').toLowerCase();
+        return val == '' || t == '1' || t == 'true' || t == 'on' || t == 'yes' || t == '0' || t == 'false' || t == 'off' || t == 'no';
+    },
+
+    parseOptionStrings: function(val, dict, validateCallback) {
+        dict = dict || {};
+        var lines = val.replace('\r', '\n').split('\n');
+        for(var i in lines) {
+            var line = lines[i].trim();
+            if (line != '' && line[0] != '#') {
+                if (line.indexOf('--') == 0) {
+                    line = line.substr(2);
+                }
+
+                var eqpos = line.indexOf('=');
+                var key = line;
+                var value = true;
+                if (eqpos > 0) {
+                    key = line.substr(0, eqpos).trim();
+                    value = line.substr(eqpos + 1).trim();
+                    if (value == '')
+                        value = true;
+                }
+
+                if (validateCallback)
+                    if (!validateCallback(dict, key, value))
+                        return null;
+
+                dict['--' + key] = value;
+            }
+        }
+
+        return dict;
+    },
+
+    fill_form: function(form, data, map, extra) {
+        map = map || {};
+        data = data || {};
+
+        for(var k in data) {
+            var key = k;
+            var m = map[key];
+            var v = data[k];
+
+            if (m && typeof(m) == typeof(''))
+                key = m;
+
+            if (m && typeof(m) == typeof(function() {})) {
+                m(data, key, v, extra);
+            } else {                    
+                var n = form.find('#' + key);
+                if (n.attr('type') == 'checkbox') {
+                    n.attr('checked', APP_UTIL.parseBoolOption(v));
+                } else {
+                    n.val(v);
+                }
+
+                n.change();
+            }
+        }
+    },
+
+    read_form: function(form, map, values, extra) {
+        values = values || {};
+        map = map || {};
+
+        form.find('select').each(function(i, e) {
+            var key = e.name;
+            var m = map[e.name];
+
+            if (m && typeof(m) == typeof(function() {})) {
+                m(data, key, e, extra);
+            } else {
+                if (m && typeof(m) == typeof(''))
+                    key = m;
+
+                values[key] = $(e).val();
+            }
+        });
+
+        form.find('input').each(function(i, e) { 
+            var key = e.name;
+            var m = map[e.name];
+
+            if (m && typeof(m) == typeof(function() {})) {
+                m(data, key, e, extra);
+            } else {
+                if (m && typeof(m) == typeof(''))
+                    key = m;
+
+            if (e.type == 'checkbox')
+                values[key] = $(e).is(':checked');
+            else
+                values[key] = $(e).val();
+            }
+
+        });
+
+        return values;
+    }
+};
 
 $(document).ready(function() {
 
@@ -193,7 +311,7 @@ $(document).ready(function() {
                 $("#edit-dialog").css('width', '');
 
                 // Send the defaults to the dialog
-                $("#edit-dialog").trigger('setup-dialog', defaults);                
+                $("#edit-dialog").trigger('setup-dialog', defaults.data);                
             },
             function() {
                 alert('Failed to get server setup...')

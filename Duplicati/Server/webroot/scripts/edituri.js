@@ -81,7 +81,6 @@ $(document).ready(function() {
             }
 
             if (validateOptions) {
-
                 var validOptions = BACKEND_STATE.module_lookup[values['backend-type']].Options;
                 var validOptionsDict = {};
                 var names = [];
@@ -110,10 +109,8 @@ $(document).ready(function() {
                         var val = values[k];
 
                         if (opt.Typename == 'Boolean') {
-                            var t = val.toUpperCase();
-                            if (val != '' && t != '1' && t != 'true' && t != 'on' && t != 'yes' && t != '0' && t != 'false' && t != 'off' && t != 'no') {
+                            if (!APP_UTIL.isValidBoolOption(val))
                                 return EDIT_URI.validation_error($('#server-options'), 'Invalid value for ' + k.substr(2) + ': ' + val + ' is not a valid boolean value');
-                            }
 
                         } else if (opt.Typename == 'Password') {
 
@@ -141,37 +138,16 @@ $(document).ready(function() {
         },
 
         parse_extra_options: function(el, dict) {
-            var str = el.val();
-            var lines = el.val().replace('\r', '\n').split('\n');
-            for(var i in lines) {
-                var line = lines[i].trim();
-                if (line != '' && line[0] != '#') {
-                    if (line.indexOf('--') == 0) {
-                        line = line.substr(2);
-                    }
+            return APP_UTIL.parseOptionStrings(el.val(), dict, function(d, k, v) {
+                if (d['--' + k] !== undefined)
+                    return EDIT_URI.validation_error(el, 'Duplicate option ' + k);
 
-                    var eqpos = line.indexOf('=');
-                    var key = line;
-                    var value = true;
-                    if (eqpos > 0) {
-                        key = line.substr(0, eqpos).trim();
-                        value = line.substr(eqpos + 1).trim();
-                        if (value == '')
-                            value = true;
-                    }
-
-                    if (dict['--' + key] !== undefined)
-                        return EDIT_URI.validation_error(el, 'Duplicate option ' + key);
-
-                    dict['--' + key] = value;
-                }
-            }
-
-            return true;
+                return true;
+            }) != null;
         },
         build_uri: function(cfg) {
             var url = cfg['backend-type'];
-            if (cfg['server-use-ssl'] || cfg['use-ssl'] || cfg['--use-ssl'])
+            if (APP_UTIL.parseBoolOption(cfg['--use-ssl'], false))
                 url += 's';
 
             url += '://';
@@ -183,18 +159,14 @@ $(document).ready(function() {
 
             var opts = [];
 
-            if (cfg['server-username'])
-                opts.push('auth-username=' + encodeURIComponent(cfg['server-username']));
-            else if (cfg['--auth-username'])
-                opts.push('auth-username=' + encodeURIComponent(cfg['server-username']));
+            if (cfg['--auth-username'] && cfg['--auth-username'] != '')
+                opts.push('auth-username=' + encodeURIComponent(cfg['--auth-username']));
 
-            if (cfg['server-password'])
-                opts.push('auth-password=**********');
-            else if (cfg['--auth-password'])
+            if (cfg['--auth-password'] && cfg['--auth-password'] != '')
                 opts.push('auth-password=**********');
 
             for(var k in cfg)
-                if (k.substr(0, 2) == '--' && k != '--auth-password' && k != '--auth-username')
+                if (k.substr(0, 2) == '--' && k != '--auth-password' && k != '--auth-username' && k != '--use-ssl')
                     opts.push(encodeURIComponent(k.substr(2)) + '=' + encodeURIComponent(cfg[k]));
 
             if (opts.length > 0) {
@@ -228,7 +200,7 @@ $(document).ready(function() {
 
             if (scheme && scheme[scheme.length - 1] == 's' && !APP_DATA.plugins.backend[scheme] && APP_DATA.plugins.backend[scheme.substr(0, scheme.length-1)]) {
                 res['backend-type'] = scheme.substr(0, scheme.length-1);
-                res['server-use-ssl'] = true;
+                res['--use-ssl'] = true;
             }
 
             return res;
@@ -250,65 +222,37 @@ $(document).ready(function() {
         },
 
         read_form: function(form) {
-            var values = {};
+            var map = EDIT_URI.fill_dict_map;
+            if (BACKEND_STATE.current_state.fill_dict_map)
+                map = $.extend(true, {}, map, BACKEND_STATE.current_state.fill_dict_map);
 
-            form.find('select').each(function(i, e) { 
-                values[e.name] = $(e).val();
-            });
-            form.find('input').each(function(i, e) { 
-                if (e.type == 'checkbox')
-                    values[e.name] = $(e).is(':checked');
-                else
-                    values[e.name] = $(e).val();
-            });
+            return APP_UTIL.read_form(form, map);
+        },
 
-            return values;
+        fill_form_map: {
+            '--auth-username': 'server-username',
+            '--auth-password': 'server-password',
+            '--use-ssl': 'server-use-ssl'
+        },
+
+        fill_dict_map: {
+            'server-username': '--auth-username',
+            'server-password': '--auth-password',
+            'server-use-ssl': '--use-ssl'
         },
 
         fill_form: function(form, values) {
             var found = {};
 
-            form.find('select').each(function(i, e) { 
-                if(values[e.name] && e.name != 'backend-type') {
-                    $(e).val(values[e.name]); 
-                    found[e.name] = true;
-                }
-            });
+            var map = EDIT_URI.fill_form_map;
+            if (BACKEND_STATE.current_state.fill_form_map)
+                map = $extend(true, {}, map, BACKEND_STATE.current_state.fill_form_map);
 
-            form.find('input').each(function(i, e) { 
-                var v = values[e.name];
-                if (v === undefined && e.name.indexOf('--') == 0) {
-                    v = values[e.name.substr(2)];
-                }
-
-                if (v === undefined || v == '') {
-                    if (e.name == 'server-username') {
-                        v = values['--auth-username'];
-                        found['--auth-username'] = true;
-                    } else if (e.name == 'server-password') {
-                        v = values['--auth-password'];
-                        found['--auth-password'] = true;
-                    } else if (e.name == 'server-use-ssl') {
-                        v = values['--use-ssl'];
-                        found['--use-ssl'] = true;
-                    }
-                }
-
-                if(v !== undefined) {
-                    found[e.name] = true;
-                    if (e.type == 'checkbox') {
-                        var str = (v + '').toLowerCase();
-                        v = str == '' || str == 'true' || str == '1' || str == 'yes' || str == 'on';
-                        $(e).attr('checked', v);
-                    } else {
-                        $(e).val(v);
-                    }
-                }
-            });
+            APP_UTIL.fill_form($('#edit-uri-form'), values, map);
 
             var opttext = '';
             for(var k in values) {
-                if (!found[k] && k.indexOf('--') == 0) {
+                if (!map[k] && k.indexOf('--') == 0) {
                     opttext += k.substr(2) + '=' + decodeURIComponent(values[k] || '') + '\n';
                 }
             }
@@ -441,9 +385,9 @@ $(document).ready(function() {
         if (BACKEND_STATE.first_setup) {
             BACKEND_STATE.first_setup = false;
             if (cfg.fill_form)
-                cfg.fill_form($('#edit-dialog-form'), BACKEND_STATE.orig_cfg);
+                cfg.fill_form($('#edit-uri-form'), BACKEND_STATE.orig_cfg);
             else
-                EDIT_URI.fill_form($('#edit-dialog-form'), BACKEND_STATE.orig_cfg);
+                EDIT_URI.fill_form($('#edit-uri-form'), BACKEND_STATE.orig_cfg);
         }
     });
 
@@ -457,7 +401,7 @@ $(document).ready(function() {
             {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Create URI', click: function() { 
 
-                var values = EDIT_URI.read_form($('#edit-dialog-form'));
+                var values = EDIT_URI.read_form($('#edit-uri-form'));
 
                 if (!EDIT_URI.parse_extra_options($('#server-options'), values))
                     return;
@@ -483,6 +427,4 @@ $(document).ready(function() {
             } }
         ]
      });
-
-    $('#backup-uri').val('webdavs://user@test.com:33/path?auth-password=pwd&opt=1');
 });
