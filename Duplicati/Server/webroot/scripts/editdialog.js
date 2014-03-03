@@ -10,8 +10,78 @@ $(document).ready(function() {
     EDIT_BACKUP = {
         fill_form_map: {
             'encryption-module': 'encryption-method',
-            'Repeat': function(dict, key, val, cfgel) {},
-            'Time': function(dict, key, val, cfgel) {}
+            'Repeat': function(dict, key, val, cfgel) {
+                $('#use-scheduled-run').attr('checked', val != '');
+                $('#use-scheduled-run').change();
+
+                if (!$('#use-scheduled-run').is(':checked'))
+                    return;
+
+                var m = (/(\d*)(\w)/mg).exec(val);
+                var mul = null;
+                if (m) {
+                    switch(m[2]) {
+                        case 'D':
+                            mul = 'days';
+                            break;
+                        case 'h':
+                            mul = 'hours';
+                            break;
+                        case 'M':
+                            mul = 'months';
+                            break;
+                        case 'Y':
+                            mul = 'years';
+                            break;
+                        case 'W':
+                            mul = 'weeks';
+                            break;
+                    }
+                }
+
+                if (!mul) {
+                    // Strange stuff, just use it as-is
+                    $('#repeat-run-number').val(val + '');
+                    $('#repeat-run-multiplier').val('custom');
+                } else {
+                    $('#repeat-run-number').val(m[1]);
+                    $('#repeat-run-multiplier').val(m[2]);
+                }
+            },
+            'Time': function(dict, key, val, cfgel) {
+                $('#next-run-time').val(val);
+                if (!dict['Date']) {
+                    var parts = val.split(':');
+                    var now = new Date();
+                    while(parts.length < 3)
+                        parts.push('00');
+
+                    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
+                    if (d < now)
+                        d.setDate(d.getDate()+1);
+
+                    var y = d.getFullYear() + '';
+                    var m = d.getMonth() + '';
+                    var n = d.getDate() + '';
+                    if (m.length == 1)
+                        m = '0' + m;
+                    if (n.length == 1)
+                        n = '0' + n;
+
+                    $('#next-run-date').val(y + '-' + m + '-' + n);
+                }
+            },
+            'Date': function(dict, key, val, cfgel) {
+                $('#next-run-date').val(val);
+            },
+            'dblock-size': function(dict, key, val, cfgel) {
+                var m = (/(\d*)(\w*)/mg).exec(val);
+                var mul = null;
+                if (m) {
+                    $('#dblock-size-number').val(m[1]);
+                    $('#dblock-size-multiplier').val(m[2]);
+                }
+            }
         },
 
         fill_dict_map: {
