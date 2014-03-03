@@ -256,7 +256,7 @@ $(document).ready(function() {
                         var o = data[i];
                         o.title = o.text;
                         o.children = !o.leaf;
-                        o.data = { id: o.id };
+                        o.data = { id: o.id, display: o.text };
                         delete o.text;
                         delete o.leaf;
                     }
@@ -434,8 +434,7 @@ $(document).ready(function() {
 
     $('#source-folder-browser').bind("dblclick.jstree", function (event) {
        var node = $(event.target).closest("li");
-       var id = node.data('id');
-        addSourceFolder(id, node.text());
+        addSourceFolder(node.data('id'), node.data('display'));
     });
 
     // Register a drop target for folder nodes
@@ -444,7 +443,7 @@ $(document).ready(function() {
         'core': {
             'check_callback': function(method, item, parent, position) {
                 if (inActualMove)
-                    addSourceFolder(item.data('id'), item.text());
+                    addSourceFolder(item.data('id'), item.data('display'));
 
                 return !inActualMove;
             },
