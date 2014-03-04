@@ -285,6 +285,39 @@ $(document).ready(function() {
         });         
     };
 
+    APP_DATA.addBackup = function(cfg, callback, errorhandler) {
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            type: 'POST',
+            dataType: 'json',
+            data: { action: 'add-backup', data: JSON.stringify(cfg) }
+        })
+        .done(function(data) {
+            if (callback != null)
+                callback(data, true, null);
+        })
+        .fail(function(data, status) {
+            if (errorhandler)
+                errorhandler(null, false, data.statusText);
+        });         
+    };
+
+    APP_DATA.updateBackup = function(cfg, callback, errorhandler) {
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            type: 'POST',
+            dataType: 'json',
+            data: { action: 'update-backup', data: JSON.stringify(cfg) }
+        })
+        .done(function(data) {
+            if (callback != null)
+                callback(data, true, null);
+        })
+        .fail(function(data, status) {
+            if (errorhandler)
+                errorhandler(null, false, data.statusText);
+        });         
+    };
 
     $('#main-settings').click(function() {
         var pos = $('#main-settings').position();
