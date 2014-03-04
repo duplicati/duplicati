@@ -115,6 +115,9 @@ $(document).ready(function() {
 
         fill_form_map: {
             'encryption-module': 'encryption-method',
+            'Schedule': function(dict, key, val, cfgel) {
+                $('#use-scheduled-run').attr('checked', val != null)
+            },
             'Repeat': function(dict, key, val, cfgel) {
                 $('#use-scheduled-run').attr('checked', val != '');
                 $('#use-scheduled-run').change();
@@ -179,6 +182,30 @@ $(document).ready(function() {
             'Date': function(dict, key, val, cfgel) {
                 $('#next-run-date').val(val);
             },
+            'AllowedDays': function(dict, key, val, cfgel) {
+
+                var d = false;
+                if (val == null || val.length == 0)
+                    d = true;
+
+                var n = {
+                    'mon': d,
+                    'tue': d,
+                    'wed': d,
+                    'thu': d,
+                    'fri': d,
+                    'sat': d,
+                    'sun': d
+                };
+
+                for(var i in val)
+                    if (n[val[i]] !== undefined)
+                        n[val[i]] = true;
+
+                for(var k in n) {
+                    $('#allow-day-' + k).attr('checked', n[k]);
+                }
+            },
             'dblock-size': function(dict, key, val, cfgel) {
                 var m = (/(\d*)(\w*)/mg).exec(val);
                 var mul = null;
@@ -190,9 +217,83 @@ $(document).ready(function() {
         },
 
         fill_dict_map: {
-            'encryption-method': 'encryption-module',
-            'Repeat': function(dict, key, val, cfgel) {},
-            'Time': function(dict, key, val, cfgel) {}
+            'source-folder-path-text': false,
+            'repeat-password': false,
+            'dblock-size-multiplier': false,
+            'repeat-run-multiplier': false,
+            'allow-day-mon': false,
+            'allow-day-tue': false,
+            'allow-day-wed': false,
+            'allow-day-thu': false,
+            'allow-day-fri': false,
+            'allow-day-sat': false,
+
+            'allow-day-sun': function(dict, key, el, cfgel) { 
+                if (!dict['Schedule'])
+                    return;
+
+                // Collect all days 
+                var days = [];
+                var r = ['mon', 'tue', 'wed', 'thu','fri', 'sat', 'sun'];
+                for(var k in r)
+                    if ($('#allow-day-' + r[k]).is(':checked'))
+                        days.push(r[k]);
+
+                dict['Schedule']['AllowedDays']= days;
+            },
+            'encryption-password': function(dict, key, el, cfgel) { 
+                dict['Backup']['Settings']['passphrase'] = $(el).val();
+            }, 
+            'source-folder-list': function(dict, key, el, cfgel) { 
+                var sources = [];
+                $('#source-folder-paths').find('.source-folder').each(function(i,el) {
+                    sources.push($(el).data('id'));
+                });
+
+                dict['Backup']['Sources'] = sources;
+            },
+            'use-scheduled-run': function(dict, key, el, cfgel) { 
+                if (!$(el).is(':checked')) {
+                    dict['Schedule'] = null;
+                }
+            },
+            'backup-uri': function(dict, key, el, cfgel) { 
+                dict['Backup']['TargetURL'] = $(el).val();
+            },
+            'backup-name':  function(dict, key, el, cfgel) {
+                dict['Backup']['Name'] = $(el).val();
+            },
+            'backup-labels': function(dict, key, el, cfgel) {
+                dict['Backup']['Tags'] = $(el).val().split(',');
+            },
+            'encryption-method': function(dict, key, el, cfgel) {
+                dict['Backup']['Settings']['encryption-module'] = $(el).val();
+            },
+            'next-run-time': function(dict, key, el, cfgel) {
+                if (!dict['Schedule'])
+                    return;
+
+                dict['Schedule']['Time'] = $(el).val();
+            },
+            'next-run-date': function(dict, key, el, cfgel) {
+                if (!dict['Schedule'])
+                    return;
+
+                dict['Schedule']['Date'] = $(el).val();
+            },
+            'dblock-size-number': function(dict, key, el, cfgel) {
+                dict['Backup']['Settings']['dblock-size'] = $(el).val() + $('#dblock-size-multiplier').val();
+            },
+            'repeat-run-number': function(dict, key, el, cfgel) {
+                if (!dict['Schedule'])
+                    return;
+
+                var m = $('#repeat-run-multiplier').val();
+                if (m == 'custom')
+                    dict['Schedule']['Repeat'] = $(el).val();
+                else
+                    dict['Schedule']['Repeat'] = $(el).val() + m;
+            },
         }
     };
 
@@ -462,8 +563,38 @@ $(document).ready(function() {
                 }
             }
 
-            EDIT_STATE.dataModified = false;
-            $('#edit-dialog').dialog('close');
+            var obj = {
+                'Schedule': {},
+                'Backup': {
+                    'Settings': {},
+                    'Filters': [],
+                    'Sources': [],
+                    'Tags': []
+                }
+            };
+
+            // To protect against data loss, we use the orig config and update it
+            if (EDIT_STATE.orig_config != null)
+                $.extend(true, obj, EDIT_STATE.orig_config);
+
+            APP_UTIL.read_form($('#edit-dialog-form'), EDIT_BACKUP.fill_dict_map, obj);
+            if (!APP_UTIL.parseOptionStrings($('#backup-options').val(), obj, function() {
+                //TODO: Add validation
+                return true;
+            })) {
+                //TODO: Add validation
+                return;
+            }
+
+            var method = EDIT_STATE.newBackup ? APP_DATA.addBackup : APP_DATA.updateBackup;
+            method(obj, function() {
+                EDIT_STATE.dataModified = false;
+                $('#edit-dialog').dialog('close');
+            },
+            function(data, succes, status) {
+                alert('Could not save: ' + status);
+            });
+
 
         }
     });
@@ -563,9 +694,13 @@ $(document).ready(function() {
     }    
 
     $("#edit-dialog").on('setup-dialog', function(e, data) {
-        for (var d in data) {
-            APP_UTIL.fill_form($('#edit-dialog-form'), data[d], EDIT_BACKUP.fill_form_map, d);
-        }
+        if (data['Schedule'] == null || data['Schedule']['Repeat'] == null || data['Schedule']['Repeat'] == '')
+            APP_UTIL.fill_form($('#edit-dialog-form'), { 'Schedule': null }, EDIT_BACKUP.fill_form_map, 'Schedule');
+        else
+            APP_UTIL.fill_form($('#edit-dialog-form'), data['Schedule'], EDIT_BACKUP.fill_form_map, 'Schedule');
+
+        for(var d in data['Backup'])
+            APP_UTIL.fill_form($('#edit-dialog-form'), data['Backup'][d], EDIT_BACKUP.fill_form_map, d);
     });
 
 });
