@@ -92,12 +92,12 @@ APP_UTIL = {
         map = map || {};
 
         form.find('select').each(function(i, e) {
-            var key = e.name;
-            var m = map[e.name];
+            var key = e.id;
+            var m = map[e.id];
 
             if (m !== false) {
                 if (m && typeof(m) == typeof(function() {})) {
-                    m(data, key, e, extra);
+                    m(values, key, e, extra);
                 } else {
                     if (m && typeof(m) == typeof(''))
                         key = m;
@@ -108,12 +108,12 @@ APP_UTIL = {
         });
 
         form.find('input').each(function(i, e) { 
-            var key = e.name;
-            var m = map[e.name];
+            var key = e.id;
+            var m = map[e.id];
 
             if (m !== false) {
                 if (m && typeof(m) == typeof(function() {})) {
-                    m(data, key, e, extra);
+                    m(values, key, e, extra);
                 } else {
                     if (m && typeof(m) == typeof(''))
                         key = m;
