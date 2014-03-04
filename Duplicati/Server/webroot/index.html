@@ -17,6 +17,7 @@
     <script type="text/javascript" src="scripts/jquery.tmpl.min.js"></script>
     <script type="text/javascript" src="scripts/jquery.watermark.min.js"></script>
     <script type="text/javascript" src="scripts/jquery.jstree.js"></script>
+    <script type="text/javascript" src="scripts/json2.js"></script>
     <script type="text/javascript" src="scripts/config.js"></script>
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/editdialog.js"></script>
@@ -218,6 +219,7 @@
             </div>
 
             <div id="edit-tab-sourcedata">
+                <input id="source-folder-list" name="source-folder-list" type="hidden" />
                 <div id="source-folder-entry">
                     <input id="source-folder-path-text" type="text" />
                     <div id="source-folder-path-add" class="button">Add</div>
@@ -256,16 +258,16 @@
 
                 <div class="edit-dialog-label">Next time</div>
                 <div class="input-wrapper">
-                    <input type="time" id="next-run-time" />
-                    <input type="date" id="next-run-date" />
+                    <input type="time" id="next-run-time" name="next-run-time"/>
+                    <input type="date" id="next-run-date" name="next-run-date" />
                 </div>
 
                 <div class="clearfix"></div>
 
                 <div class="edit-dialog-label">Run again every</div>
                 <div class="input-wrapper">
-                    <input type="number" id="repeat-run-number" />
-                    <select id="repeat-run-multiplier">
+                    <input type="number" id="repeat-run-number" name="repeat-run-number"/>
+                    <select id="repeat-run-multiplier" name="repeat-run-multiplier">
                         <option value="h">hours</option>
                         <option value="D">days</option>
                         <option value="W">weeks</option>
@@ -279,19 +281,19 @@
 
                 <div class="edit-dialog-label">Allowed days</div>
                 <div class="input-wrapper">
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-mon" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-mon" name="allow-day-mon" />
                     <div class="days-label">Mon</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-tue" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-tue" name="allow-day-tue" />
                     <div class="days-label">Tue</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-wed" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-wed" name="allow-day-wed" />
                     <div class="days-label">Wed</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-thu" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-thu" name="allow-day-thu" />
                     <div class="days-label">Thu</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-fri" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-fri" name="allow-day-fri" />
                     <div class="days-label">Fri</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-sat" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-sat" name="allow-day-sat" />
                     <div class="days-label">Sat</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-sun" />
+                    <input type="checkbox" class="simple-checkbox" id="allow-day-sun" name="allow-day-sun" />
                     <div class="days-label">Sun</div>
                 </div>
 
@@ -304,8 +306,8 @@
 
                 <div class="edit-dialog-label">Max backup file size</div>
                 <div class="input-wrapper">
-                    <input type="number" id="dblock-size-number" />
-                    <select id="dblock-size-multiplier">
+                    <input type="number" id="dblock-size-number" name="dblock-size-number" />
+                    <select id="dblock-size-multiplier" name="dblock-size-multiplier">
                         <option value="kb">KByte</option>
                         <option value="mb">MByte</option>
                         <option value="gb">GByte</option>
