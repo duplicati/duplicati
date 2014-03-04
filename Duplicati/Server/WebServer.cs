@@ -111,7 +111,7 @@ namespace Duplicati.Server
                                 where int.TryParse(n, out port)
                                 select int.Parse(n);
 
-            if (ports == null || ports.Count() == 0)
+            if (ports == null || !ports.Any())
                 ports = new int[] { 8080 };                                
 
             // If we are in hosted mode with no specified port, 
@@ -674,12 +674,20 @@ namespace Duplicati.Server
                     var bk = Program.DataConnection.GetBackup(id);
                     if (bk == null)
                         ReportError(response, bw, "Invalid or missing backup id");
-                    else                
+                    else
+                    {
+                        var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + id });
+                        var schedule = scheduleId.Any() ? null : Program.DataConnection.GetSchedule(scheduleId.First());
+                        
                         OutputObject(bw, new
                         {
                             success = true,
-                            data = bk
+                            data = new {
+                                Schedule = schedule,
+                                Backup = bk,
+                            }
                         });
+                    }
                 }
             }
 
@@ -692,29 +700,54 @@ namespace Duplicati.Server
                     return;
                 }
 
-                long id;
-                if (!long.TryParse(request.Form["id"].Value, out id))
-                {
-                    ReportError(response, bw, "Invalid or missing backup id");
-                    return;
-                }
-
                 try
                 {
+                    var data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
+                    if (data.Backup == null)
+                    {
+                        ReportError(response, bw, "Data object had no backup entry");
+                        return;
+                    }
+                    
+                    if (data.Backup.ID <= 0)
+                    {
+                        ReportError(response, bw, "Invalid or missing backup id");
+                        return;
+                    }                    
+                    
                     lock(Program.DataConnection.m_lock)
                     {
-                        var backup = Program.DataConnection.GetBackup(id);
+                        var backup = Program.DataConnection.GetBackup(data.Backup.ID);
                         if (backup == null)
                         {
                             ReportError(response, bw, "Invalid or missing backup id");
                             return;
                         }
     
-                        backup = Serializer.Deserialize<Database.Backup>(new StringReader(str));
-                        backup.ID = id;
+                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase) && x.ID != data.Backup.ID).Any())
+                        {
+                            ReportError(response, bw, "There already exists a backup with the name: " + data.Backup.Name);
+                            return;
+                        }
                         
-                        //TODO: Validate, duplicate names etc.
-                        Program.DataConnection.AddOrUpdateBackup(backup);
+                        Program.DataConnection.AddOrUpdateBackup(data.Backup);
+                        var ids = Program.DataConnection.GetScheduleIDsFromTags(new string[] {"ID=" + data.Backup.ID});
+                        
+                        //TODO: Should be a transaction
+                        if (data.Schedule == null)
+                        {
+                            foreach(var i in ids)
+                                Program.DataConnection.DeleteSchedule(i);
+                        }
+                        else
+                        {
+                            if (ids.Any())
+                                data.Schedule.ID = ids.First();
+                            else
+                                data.Schedule.ID = -1;
+                            
+                            Program.DataConnection.AddOrUpdateSchedule(data.Schedule);
+                        }
                     }
                     
                     OutputObject(bw, new { status = "OK" });
@@ -723,6 +756,12 @@ namespace Duplicati.Server
                 {
                     ReportError(response, bw, string.Format("Unable to parse backup object: {0}", ex.Message));
                 }
+            }
+            
+            private class AddOrUpdateBackupData
+            {
+                public Database.Schedule Schedule {get; set;}
+                public Database.Backup Backup {get; set;}
             }
 
             private void AddBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -736,14 +775,33 @@ namespace Duplicati.Server
 
                 try
                 {
+                    
+                    var data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
+                    if (data.Backup == null)
+                    {
+                        ReportError(response, bw, "Data object had no backup entry");
+                        return;
+                    }
+                        
+                    data.Backup.ID = -1;
+                    
                     lock(Program.DataConnection.m_lock)
                     {
-                        var backup = Serializer.Deserialize<Database.Backup>(new StringReader(str));
-                        backup.ID = -1;
-    
-                        //TODO: Validate, duplicate names etc.
-    
-                        Program.DataConnection.AddOrUpdateBackup(backup);
+                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                        {
+                            ReportError(response, bw, "There already exists a backup with the name: " + data.Backup.Name);
+                            return;
+                        }
+                        
+                        Program.DataConnection.AddOrUpdateBackup(data.Backup);
+                        
+                        //TODO: Should be a transaction
+                        if (data.Schedule != null)
+                        {
+                            data.Schedule.ID = -1;
+                            data.Schedule.Tags = new string[] {"ID=" + data.Backup.ID };
+                            Program.DataConnection.AddOrUpdateSchedule(data.Schedule);
+                        }
                     }
                     
                     OutputObject(bw, new { status = "OK" });
@@ -834,6 +892,8 @@ namespace Duplicati.Server
                         return;
                     }
                 }
+                
+                Program.DataConnection.DeleteBackup(backup);
 
                 //We have fiddled with the schedules
                 Program.Scheduler.Reschedule();
