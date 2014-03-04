@@ -210,6 +210,51 @@ namespace Duplicati.Server.Database
             }
         }
         
+        internal ISchedule GetSchedule(long id)
+        {
+            lock(m_lock)
+            {
+                var bk = ReadFromDb(
+                    (rd) => new Schedule() {
+                        ID = ConvertToInt64(rd.GetValue(0)),
+                        Tags = (ConvertToString(rd.GetValue(1)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                        Time = ConvertToDateTime(rd.GetValue(2)),
+                        Repeat = ConvertToString(rd.GetValue(3)),
+                        LastRun = ConvertToDateTime(rd.GetValue(4)),
+                        Rule = ConvertToString(rd.GetValue(5)),
+                    },
+                    @"SELECT ""ID"", ""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"" FROM ""Schedule"" WHERE ID = ?", id)
+                    .FirstOrDefault();
+
+                return bk;
+            }
+        }        
+
+        internal long[] GetScheduleIDsFromTags(string[] tags)
+        {
+            if (tags == null || tags.Length == 0)
+                return new long[0];
+                                
+            lock(m_lock)
+                using(var cmd = m_connection.CreateCommand())
+                {
+                    var sb = new StringBuilder();
+                    
+                    foreach(var t in tags)
+                    {
+                        if (sb.Length != 0)
+                            sb.Append(" OR ");
+                        sb.Append(@" ("","" || ""Tag"" || "","" LIKE ""%,"" || ? || "",%"") ");
+                        
+                        cmd.Parameters.Add(t);
+                    }
+                
+                    cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb.ToString();
+                    
+                    return Read(cmd, (rd) => ConvertToInt64(rd.GetValue(0))).ToArray();
+                }
+        }
+        
         internal void AddOrUpdateBackup(IBackup item)
         {
             lock(m_lock)
@@ -246,6 +291,69 @@ namespace Duplicati.Server.Database
                     
                     tr.Commit();
                 }
+        }
+        
+        internal void AddOrUpdateSchedule(ISchedule item)
+        {
+            lock(m_lock)
+                using(var tr = m_connection.BeginTransaction())
+                {
+                    bool update = item.ID >= 0;
+                    OverwriteAndUpdateDb(
+                        tr,
+                        update ? @"DELETE FROM ""Schedule"" WHERE ""ID"" = ?" : null,
+                        new object[] { item.ID },
+                        new ISchedule[] { item },
+                        update ?
+                            @"UPDATE ""Schedule"" SET ""Tags""=?, ""Time""=?, ""Repeat""=?, ""LastRun""=?, ""Rule""=? WHERE ""ID""=?" :
+                            @"INSERT INTO ""Schedule"" (""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"") VALUES (?,?,?,?)",
+                        (n) => new object[] {
+                            string.Join(",", n.Tags),
+                            n.Time,
+                            n.Repeat,
+                            n.LastRun,
+                            n.Rule,
+                            update ? (object)item.ID : null
+                        });
+                        
+                    if (!update)
+                        using(var cmd = m_connection.CreateCommand())
+                        {
+                            cmd.Transaction = tr;
+                            cmd.CommandText = @"SELECT last_insert_rowid;";
+                            item.ID = ConvertToInt64(cmd.ExecuteScalar());
+                        }
+                                            
+                    tr.Commit();
+                }
+        }
+
+        public void DeleteBackup(long ID)
+        {
+            if (ID < 0)
+                return;
+            
+            lock(m_lock)
+                DeleteFromDb("Backup", ID);
+        }
+        
+        public void DeleteBackup(IBackup backup)
+        {
+            DeleteSchedule(backup.ID);
+        }
+        
+        public void DeleteSchedule(long ID)
+        {
+            if (ID < 0)
+                return;
+            
+            lock(m_lock)
+                DeleteFromDb("Schedule", ID);
+        }
+        
+        public void DeleteSchedule(ISchedule schedule)
+        {
+            DeleteSchedule(schedule.ID);
         }
         
         public IBackup[] Backups
@@ -350,6 +458,35 @@ namespace Duplicati.Server.Database
                 return @default;
             else
                 return Convert.ToInt64(r);
+        }
+                        
+        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)                        
+        {
+            if (transaction == null) 
+            {
+                using(var tr = m_connection.BeginTransaction())
+                {
+                    var r = DeleteFromDb(tablename, id, tr);
+                    tr.Commit();
+                    return r;
+                }
+            }
+            else
+            {
+                using(var cmd = m_connection.CreateCommand())
+                {
+                    cmd.Transaction = transaction;
+                    cmd.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ID=?", tablename);
+                    var p = cmd.CreateParameter();
+                    p.Value = id;
+                    cmd.Parameters.Add(p);
+                    
+                    var r = cmd.ExecuteNonQuery();
+                    if (r > 1)
+                        throw new Exception(string.Format("Too many records attempted deleted from table {0} for id {1}: {2}", tablename, id, r));
+                    return r == 1;
+                }
+            }
         }
         
         private static IEnumerable<T> Read<T>(System.Data.IDbCommand cmd, Func<System.Data.IDataReader, T> f)
