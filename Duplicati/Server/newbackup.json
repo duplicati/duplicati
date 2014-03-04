@@ -1,11 +1,14 @@
 {
-    Option: {
-        "encryption-module": "aes",
-        "compression-module": "zip",
-        "dblock-size": "50mb"
+    Backup: {
+        Settings: {
+            "encryption-module": "aes",
+            "compression-module": "zip",
+            "dblock-size": "50mb"
+        }
     },
     Schedule: {
         Repeat: "1D",
-        Time: "13:00:00"
+        Time: "13:00:00",
+        AllowedDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
     }
 }
