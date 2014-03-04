@@ -18,7 +18,7 @@ CREATE TABLE "Backup" (
  * The table that stores all schedules
  * 
  * Tags is a comma separated parsed field that indicates 
- * which backups  * to run when activated.
+ * which backups to run when activated.
  * special tags are ID:1 which means backup with ID = 1
  * 
  * Time is the scheduled time, and lastRun is the last time the backup was executed
