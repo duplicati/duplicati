@@ -249,7 +249,7 @@ $(document).ready(function() {
         })
         .fail(function(data, status) {
             if (callback)
-                callback(path, false, status);
+                callback(path, false, data.statusText);
         });        
     };
 
@@ -265,7 +265,7 @@ $(document).ready(function() {
         })
         .fail(function(data, status) {
             if (callback)
-                callback(null, false, status);
+                callback(null, false, data.statusText);
         });         
     };
 
@@ -280,8 +280,8 @@ $(document).ready(function() {
                 callback(data, true, null);
         })
         .fail(function(data, status) {
-            if (callback)
-                callback(null, false, status);
+            if (errorhandler)
+                errorhandler(null, false, data.statusText);
         });         
     };
 
