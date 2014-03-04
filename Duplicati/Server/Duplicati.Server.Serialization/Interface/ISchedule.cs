@@ -48,6 +48,10 @@ namespace Duplicati.Server.Serialization.Interface
         /// <summary>
         /// The rule that is parsed to figure out when to run this backup next time
         /// </summary>
+        string Rule { get; set; }
+        /// <summary>
+        /// The days that the backup is allowed to run
+        /// </summary>
         DayOfWeek[] AllowedDays { get; set; }
     }
 }
