@@ -86,6 +86,13 @@ $(document).ready(function() {
 
             'edit-tab-sourcedata': function(tabindex) {
 
+                if ($('#source-folder-paths').find('.source-folder').length == 0) {
+                    $('#edit-dialog').tabs( "option", "active", tabindex);                
+                    $('#source-folder-paths').focus();
+                    alert('You must select at least one source folder to back up');
+                    return false;
+                }
+
                 return true;
             },
 
