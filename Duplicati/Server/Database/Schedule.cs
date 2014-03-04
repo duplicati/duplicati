@@ -17,10 +17,11 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
+using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.Server.Database
 {
-    public class Schedule
+    public class Schedule : ISchedule
     {
         public long ID { get; set; }
         public string[] Tags { get; set; }
