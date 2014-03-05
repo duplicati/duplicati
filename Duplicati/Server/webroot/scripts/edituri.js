@@ -168,7 +168,7 @@ $(document).ready(function() {
                 opts.push('auth-password=**********');
 
             for(var k in cfg)
-                if (k.substr(0, 2) == '--' && k != '--auth-password' && k != '--auth-username' && k != '--use-ssl')
+                if (k.substr(0, 2) == '--' && k != '--auth-password' && k != '--auth-username' && k != '--use-ssl' && cfg[k] !== false && cfg[k] != '')
                     opts.push(encodeURIComponent(k.substr(2)) + '=' + encodeURIComponent(cfg[k]));
 
             if (opts.length > 0) {
