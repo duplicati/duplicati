@@ -422,6 +422,10 @@ $(document).ready(function() {
                 if (!EDIT_URI.parse_extra_options($('#server-options'), values))
                     return;
 
+                if (!BACKEND_STATE.current_state.hasssl && values['--use-ssl'] !== undefined)
+                    delete values['--use-ssl'];
+
+
                 if (BACKEND_STATE.current_state.validate)
                 {
                     if (!BACKEND_STATE.current_state.validate($('#connection-uri-dialog'), values))
