@@ -61,16 +61,16 @@ namespace Duplicati.Server.Database
                     (from n in this.Rule.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries) 
                                where !n.StartsWith("AllowedWeekDays=", StringComparison.InvariantCultureIgnoreCase)
                                select n);
-                           
+                                                           
                 if (value != null && value.Length != 0)
-                    parts.Union(new string[] {
+                    parts = parts.Union(new string[] {
                         "AllowedWeekDays=" +
                         string.Join(
                         ",",
                         (from n in value
-                        select Enum.GetName(typeof(DayOfWeek), n))
-                        .Distinct())
-                    });
+                                select Enum.GetName(typeof(DayOfWeek), n)).Distinct()
+                        )
+                    }).Distinct();
                 
                 this.Rule = string.Join(";", parts);
             }
