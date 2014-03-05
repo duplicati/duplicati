@@ -586,6 +586,13 @@ $(document).ready(function() {
                 return;
             }
 
+            //Fixup, change settings dict into array
+
+            var set = obj.Backup.Settings;
+            obj.Backup.Settings = [];
+            for(var k in set)
+                obj.Backup.Settings.push({Name: k, Value: set[k]});
+
             var method = EDIT_STATE.newBackup ? APP_DATA.addBackup : APP_DATA.updateBackup;
             method(obj, function() {
                 EDIT_STATE.dataModified = false;

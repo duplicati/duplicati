@@ -168,7 +168,7 @@ namespace Duplicati.Library.Main
             
         }
         
-        private static string GenerateRandomName()
+        public static string GenerateRandomName()
         {
             var backupname = "";
             var rnd = new Random();

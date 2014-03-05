@@ -63,6 +63,7 @@
     <Compile Include="Interface\IServerStatus.cs" />
     <Compile Include="Interface\IProgressEventData.cs" />
     <Compile Include="Interface\ISchedule.cs" />
+    <Compile Include="Implementations\Setting.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">

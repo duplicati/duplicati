@@ -1,4 +1,4 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+﻿//  Copyright (C) 2014, Kenneth Skovhede
 
 //  http://www.hexad.dk, opensource@hexad.dk
 //
@@ -17,10 +17,24 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 
-namespace Duplicati.Server.Database
+namespace Duplicati.Server.Serialization.Implementations
 {
-    public class Setting : Duplicati.Server.Serialization.Implementations.Setting
+    public class Setting : Interface.ISetting
     {
+        public string Filter { get; set; }
+        /// <summary>
+        /// The setting option
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// The setting value
+        /// </summary>
+        public string Value { get; set; }
+        
+        /// <summary>
+        /// The actual option arguments
+        /// </summary>
+        public Duplicati.Library.Interface.ICommandLineArgument Argument { get; private set; }
     }
 }
 

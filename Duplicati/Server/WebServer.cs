@@ -730,24 +730,8 @@ namespace Duplicati.Server
                             return;
                         }
                         
-                        Program.DataConnection.AddOrUpdateBackup(data.Backup);
-                        var ids = Program.DataConnection.GetScheduleIDsFromTags(new string[] {"ID=" + data.Backup.ID});
-                        
-                        //TODO: Should be a transaction
-                        if (data.Schedule == null)
-                        {
-                            foreach(var i in ids)
-                                Program.DataConnection.DeleteSchedule(i);
-                        }
-                        else
-                        {
-                            if (ids.Any())
-                                data.Schedule.ID = ids.First();
-                            else
-                                data.Schedule.ID = -1;
-                            
-                            Program.DataConnection.AddOrUpdateSchedule(data.Schedule);
-                        }
+                        Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
+
                     }
                     
                     OutputObject(bw, new { status = "OK" });
@@ -793,15 +777,7 @@ namespace Duplicati.Server
                             return;
                         }
                         
-                        Program.DataConnection.AddOrUpdateBackup(data.Backup);
-                        
-                        //TODO: Should be a transaction
-                        if (data.Schedule != null)
-                        {
-                            data.Schedule.ID = -1;
-                            data.Schedule.Tags = new string[] {"ID=" + data.Backup.ID };
-                            Program.DataConnection.AddOrUpdateSchedule(data.Schedule);
-                        }
+                        Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
                     }
                     
                     OutputObject(bw, new { status = "OK" });
