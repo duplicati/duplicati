@@ -710,4 +710,91 @@ $(document).ready(function() {
             APP_UTIL.fill_form($('#edit-dialog-form'), data['Backup'][d], EDIT_BACKUP.fill_form_map, d);
     });
 
+    /*
+
+    Too bad, we can drop files and folders, 
+    but not read the paths, only the contents.
+    That seems to make sense for web apps, 
+    but not cross-local like this
+
+    if(window.FileReader) { 
+        var dragHandler = function(e) {
+            e = e || window.event;
+
+            if (e.preventDefault) { e.preventDefault(); }
+
+            var dt = e.dataTransfer;
+            if (!dt && e.originalEvent)
+                dt = e.originalEvent.dataTransfer;
+
+            if (dt != null)
+            {
+                var allFiles = true;
+                for (var i=0; i<dt.types.length; i++)
+                    allFiles &= dt.types[i] == 'Files';
+
+                if (allFiles) {
+                    console.log('Setting drag target');
+                    dt.dropEffect = 'move';
+                    $('#source-folder-paths').addClass('file-drag-target');                    
+                    return true;
+                }
+            }
+
+            return false;
+
+            var files = dt.items;
+            for (var i=0; i<files.length; i++) {
+                var file = files[i];
+                var reader = new FileReader();
+                alert(reader.readAsDataURL(file));
+
+            }            
+            return false;
+        };
+
+        var dragEndHandler = function() { 
+            console.log('Removing drag target');
+            $('#source-folder-paths').removeClass('file-drag-target'); 
+        };
+
+        $('#source-folder-paths').on('dragover', dragHandler);
+        $('#source-folder-paths').on('dragenter', dragHandler);
+        $('#source-folder-paths').on('dragleave', dragEndHandler);
+        $('#source-folder-paths').on('dragend', function(e) { 
+            e = e || window.event;
+            if (e.preventDefault) { e.preventDefault(); }
+            if (e.stopPropagation) { e.stopPropagation(); }
+            dragEndHandler();
+            return false;
+        });
+
+        $('#source-folder-paths').on('drop', function(e) { 
+            e = e || window.event;
+
+            if (e.preventDefault) { e.preventDefault(); }
+            if (e.stopPropagation) { e.stopPropagation(); }
+            dragEndHandler();
+
+            var dt = e.dataTransfer;
+            if (!dt && e.originalEvent)
+                dt = e.originalEvent.dataTransfer;
+
+            if (dt != null)
+            {
+                var allFiles = true;
+                for (var i=0; i<dt.types.length; i++)
+                    allFiles &= dt.types[i] == 'Files';
+
+                if (allFiles) {
+                    $('#source-folder-paths').addClass('file-drag-target');                    
+                }
+            }
+
+            return false;
+
+        });
+
+    }*/
+
 });

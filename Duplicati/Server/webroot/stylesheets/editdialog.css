@@ -210,3 +210,7 @@
 .edit-dialog-hint-text {
     width: 100%;
 }
+
+#source-folder-paths.file-drag-target {
+    background-color: #00ff00;
+}
