@@ -52,18 +52,18 @@
 #main-appname {
     padding: 10px 10px 10px 20px;
     font-weight: bold;
-    font-size: 1.8em;
+    font-size: 18pt;
     display: inline-block;
     text-transform: uppercase;
 }
 
 #main-appname.has-subtitle {
     padding-top: 5px;
-    font-size: 1.4em;
+    font-size: 16pt;
 }
 
 #main-appname-subtitle {
-    font-size: 0.5em;
+    font-size: 7em;
     font-weight: normal;
     font-style: italic;
 }
@@ -75,7 +75,7 @@
     cursor: pointer;
     border-radius: 3px;
     display: inline-block;
-    font-size: 1.2em;
+    font-size: 12pt;
     clear: both;
     float: left;
     margin-top: 40px;

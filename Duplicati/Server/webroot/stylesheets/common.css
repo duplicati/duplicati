@@ -18,25 +18,25 @@ body {
 .action-link, .action-links li {
     text-decoration: underline;
     color: #56acbb;
-    font-size: 0.9em;
+    font-size: 12pt;
     cursor: pointer;
 }
 
 .hint-text {
     color: #9b9b9b;
-    font-size: 0.9em;
+    font-size: 12pt;
 }
 
 .hint-text-caption {
     font-weight: bold;
     color: #9b9b9b;
-    font-size: 0.9em;
+    font-size: 12pt;
 }
 
 .caption-text {
     color: #68845f;
     font-weight: bold;
-    font-size: 1.1em;
+    font-size: 18pt;
 }
 
 .progressbar-background {
