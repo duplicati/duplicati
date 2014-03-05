@@ -293,10 +293,12 @@ $(document).ready(function() {
             data: { action: 'add-backup', data: JSON.stringify(cfg) }
         })
         .done(function(data) {
+            PRIVATE_DATA.refresh_backup_list();
             if (callback != null)
                 callback(data, true, null);
         })
         .fail(function(data, status) {
+            PRIVATE_DATA.refresh_backup_list();
             if (errorhandler)
                 errorhandler(null, false, data.statusText);
         });         
@@ -310,10 +312,12 @@ $(document).ready(function() {
             data: { action: 'update-backup', data: JSON.stringify(cfg) }
         })
         .done(function(data) {
+            PRIVATE_DATA.refresh_backup_list();
             if (callback != null)
                 callback(data, true, null);
         })
         .fail(function(data, status) {
+            PRIVATE_DATA.refresh_backup_list();
             if (errorhandler)
                 errorhandler(null, false, data.statusText);
         });         
