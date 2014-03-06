@@ -62,71 +62,105 @@ namespace Duplicati.Server
             }
             #endregion
         }
+        
+        private static string DecodeSource(string n, long backupId)
+        {
+            if (string.IsNullOrWhiteSpace(n))
+                return null;
+            
+            var t = n;
+            if (n.StartsWith("%") && n.EndsWith("%"))
+            {
+                t = SpecialFolders.TranslateString(n);
+                if (t == null)
+                    t = System.Environment.ExpandEnvironmentVariables(n);
+            }
+            
+            if (string.IsNullOrWhiteSpace(t) || (t.StartsWith("%") && t.EndsWith("%")))
+            {
+                Program.DataConnection.LogError(backupId, string.Format("Skipping source \"{0}\"", n), null);
+                return null;
+            }
+            
+            return t;
+        }
     
         public static void Run(Tuple<long, Server.Serialization.DuplicatiOperation> item)
         {
-            var backup = Program.DataConnection.GetBackup(item.Item1);
-            if (backup == null)
-            {
-                //TODO: Log this
-                return;
-            }
+            Duplicati.Server.Serialization.Interface.IBackup backup = null;
             
-            Program.ProgressEventNotifyer.SignalNewEvent();            
-            var options = ApplyOptions(backup, item.Item2, GetCommonOptions(backup, item.Item2));
-            var sink = new MessageSink();
-            
-            using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
+            try
             {
-                switch (item.Item2)
+                backup = Program.DataConnection.GetBackup(item.Item1);
+                if (backup == null)
+                    throw new Exception(string.Format("No backup with ID: {0}", item.Item1));
+                
+                Program.ProgressEventNotifyer.SignalNewEvent();            
+                var options = ApplyOptions(backup, item.Item2, GetCommonOptions(backup, item.Item2));
+                var sink = new MessageSink();
+                
+                using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
-                    case DuplicatiOperation.Backup:
-                        {
-                            var filter = ApplyFilter(backup, item.Item2, GetCommonFilter(backup, item.Item2));
-                            var r = controller.Backup(backup.Sources, filter);
-                            UpdateMetadata(backup, r);
-                        }
-                        break;
-                        
-                    case DuplicatiOperation.List:
-                        {
-                            //TODO: Need to pass arguments
-                            var r = controller.List();
-                            UpdateMetadata(backup, r);
-                        }
-                        break;
-                    case DuplicatiOperation.Repair:
-                        {
-                            var r = controller.Repair();
-                            UpdateMetadata(backup, r);
-                        }
-                        break;
-                    case DuplicatiOperation.Remove:
-                        {
-                            var r = controller.Delete();
-                            UpdateMetadata(backup, r);
-                        }
-                        break;
-                    case DuplicatiOperation.Restore:
-                        {
-                            //TODO: Need to pass arguments
-                            var r = controller.Restore(new string[] {"*"});
-                            UpdateMetadata(backup, r);
-                        }
-                        break;
-                    case DuplicatiOperation.Verify:
-                        {
-                            //TODO: Need to pass arguments
-                            var r = controller.Test();
-                            UpdateMetadata(backup, r);
-                        }
-                        break;
-                    default:
-                        //TODO: Log this
-                        return;
+                    switch (item.Item2)
+                    {
+                        case DuplicatiOperation.Backup:
+                            {
+                                var filter = ApplyFilter(backup, item.Item2, GetCommonFilter(backup, item.Item2));
+                                var sources = 
+                                        (from n in backup.Sources
+                                        let p = DecodeSource(n, backup.ID)
+                                        where !string.IsNullOrWhiteSpace(p)
+                                        select p).ToArray();
+                                
+                                var r = controller.Backup(sources, filter);
+                                UpdateMetadata(backup, r);
+                            }
+                            break;
+                            
+                        case DuplicatiOperation.List:
+                            {
+                                //TODO: Need to pass arguments
+                                var r = controller.List();
+                                UpdateMetadata(backup, r);
+                            }
+                            break;
+                        case DuplicatiOperation.Repair:
+                            {
+                                var r = controller.Repair();
+                                UpdateMetadata(backup, r);
+                            }
+                            break;
+                        case DuplicatiOperation.Remove:
+                            {
+                                var r = controller.Delete();
+                                UpdateMetadata(backup, r);
+                            }
+                            break;
+                        case DuplicatiOperation.Restore:
+                            {
+                                //TODO: Need to pass arguments
+                                var r = controller.Restore(new string[] { "*" });
+                                UpdateMetadata(backup, r);
+                            }
+                            break;
+                        case DuplicatiOperation.Verify:
+                            {
+                                //TODO: Need to pass arguments
+                                var r = controller.Test();
+                                UpdateMetadata(backup, r);
+                            }
+                            break;
+                        default:
+                            //TODO: Log this
+                            return;
+                    }
                 }
             }
-            
+            catch (Exception ex)
+            {
+                Program.DataConnection.LogError(item.Item1, string.Format("Failed while executing \"{0}\" with id: {1}", item.Item2, item.Item1), ex);
+                    
+            }
         }
         
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)

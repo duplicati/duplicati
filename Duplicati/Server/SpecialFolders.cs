@@ -24,6 +24,16 @@ namespace Duplicati.Server
     public static class SpecialFolders
     {
         public static readonly Serializable.TreeNode[] Nodes;
+        private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        
+        public static string TranslateString(string str) 
+        {
+            string res;
+            if (PathMap.TryGetValue(str, out res))
+                return res;
+            
+            return null;
+        }
         
         private static void TryAdd(List<Serializable.TreeNode> lst, System.Environment.SpecialFolder folder, string id, string display)
         {
@@ -41,12 +51,16 @@ namespace Duplicati.Server
             try
             {
                 if (System.IO.Path.IsPathRooted(folder) && System.IO.Directory.Exists(folder))
+                {
                     lst.Add(new Serializable.TreeNode() {
                         id = id,
                         text = display,
                         leaf = true,
                         iconCls = "x-tree-icon-special"
                     });
+                    
+                    PathMap[id] = folder;
+                }
             }
             catch
             {
