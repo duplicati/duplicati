@@ -36,9 +36,47 @@ namespace Duplicati.Server
         /// <param name="options">A set of options</param>
         public WebServer(IDictionary<string, string> options)
         {
-            m_server = new HttpServer.HttpServer();
+            int port;
+            string portstring;
+            IEnumerable<int> ports = null;
+            options.TryGetValue(OPTION_PORT, out portstring);
+            if (!string.IsNullOrEmpty(portstring))
+                ports = 
+                    from n in portstring.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                where int.TryParse(n, out port)
+                                select int.Parse(n);
 
-            m_server.Add(new DynamicHandler());
+            if (ports == null || !ports.Any())
+                ports = new int[] { 8080 };                                
+
+            // If we are in hosted mode with no specified port, 
+            // then try different ports
+            Exception e = null;
+            foreach(var p in ports)
+                try
+                {
+                    // Due to the way the server is initialized, 
+                    // we cannot try to start it again on another port, 
+                    // so we create a new server for each attempt
+                
+                    var server = CreateServer(options);
+                    server.Start(System.Net.IPAddress.Any, p);
+                    m_server = server;
+                    this.Port = p;
+                    return;
+                }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                }
+                
+            throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
+        }
+        
+        private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
+        {
+            HttpServer.HttpServer server = new HttpServer.HttpServer();
+
+            server.Add(new DynamicHandler());
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 #if DEBUG
@@ -94,43 +132,14 @@ namespace Duplicati.Server
             fh.MimeTypes.Add("htc", "text/x-component");
             fh.MimeTypes.Add("json", "application/json");
             fh.MimeTypes.Add("map", "application/json");
-            m_server.Add(fh);
-            m_server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "index.html")));
+            server.Add(fh);
+            server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "index.html")));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
-            m_server.Add(new DebugReportHandler());
+            server.Add(new DebugReportHandler());
 #endif
-
-            int port;
-            string portstring;
-            IEnumerable<int> ports = null;
-            options.TryGetValue(OPTION_PORT, out portstring);
-            if (!string.IsNullOrEmpty(portstring))
-                ports = 
-                    from n in portstring.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                where int.TryParse(n, out port)
-                                select int.Parse(n);
-
-            if (ports == null || !ports.Any())
-                ports = new int[] { 8080 };                                
-
-            // If we are in hosted mode with no specified port, 
-            // then try different ports
-            Exception e = null;
-            foreach(var p in ports)
-                try
-                {
-                    // TODO: Bug in webserver makes this fail,
-                    // because it calls init before attempting to listen
-                    m_server.Start(System.Net.IPAddress.Any, p);
-                    this.Port = p;
-                    return;
-                }
-                catch (System.Net.Sockets.SocketException ex)
-                {
-                }
-                
-            throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
+            
+            return server;
         }
 
         private class BodyWriter : System.IO.StreamWriter, IDisposable
