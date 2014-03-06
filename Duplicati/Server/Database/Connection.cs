@@ -26,6 +26,7 @@ namespace Duplicati.Server.Database
     public class Connection : IDisposable
     {
         private System.Data.IDbConnection m_connection;
+        private System.Data.IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int APP_SETTINGS_ID = -2;
@@ -35,7 +36,24 @@ namespace Duplicati.Server.Database
         public Connection(System.Data.IDbConnection connection)
         {
             m_connection = connection;
+            m_errorcmd = m_connection.CreateCommand();
+            m_errorcmd.CommandText = @"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (?,?,?,?)";
+            for(var i = 0; i < 4; i++)
+                m_errorcmd.Parameters.Add(m_errorcmd.CreateParameter());
+            
             this.ApplicationSettings = new ApplicationSettings(this);
+        }
+        
+        internal void LogError(long backupid, string message, Exception ex)
+        {
+            lock(m_lock)
+            {
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[0]).Value = backupid;
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[1]).Value = message;
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[2]).Value = ex == null ? null : ex.ToString();
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[3]).Value = NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
+                m_errorcmd.ExecuteNonQuery();
+            }
         }
         
         public ApplicationSettings ApplicationSettings { get; private set; }
@@ -177,9 +195,11 @@ namespace Duplicati.Server.Database
                     {
                         if (sb.Length != 0)
                             sb.Append(" OR ");
-                        sb.Append(@" ("","" || ""Tag"" || "","" LIKE ""%,"" || ? || "",%"") ");
+                        sb.Append(@" ("","" || ""Tags"" || "","" LIKE ""%,"" || ? || "",%"") ");
                         
-                        cmd.Parameters.Add(t);
+                        var p = cmd.CreateParameter();
+                        p.Value = t;
+                        cmd.Parameters.Add(p);
                     }
                 
                     cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb.ToString();
@@ -200,7 +220,7 @@ namespace Duplicati.Server.Database
                         TargetURL = ConvertToString(rd.GetValue(3)),
                         DBPath = ConvertToString(rd.GetValue(4)),
                     },
-                    @"SELECT ""ID"", ""Name"", ""Tag"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
+                    @"SELECT ""ID"", ""Name"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
                     .FirstOrDefault();
                     
                 if (bk != null)
@@ -244,7 +264,7 @@ namespace Duplicati.Server.Database
                     {
                         if (sb.Length != 0)
                             sb.Append(" OR ");
-                        sb.Append(@" ("","" || ""Tag"" || "","" LIKE ""%,"" || ? || "",%"") ");
+                        sb.Append(@" ("","" || ""Tags"" || "","" LIKE ""%,"" || ? || "",%"") ");
                         
                         var p = cmd.CreateParameter();
                         p.Value = t;
@@ -280,7 +300,7 @@ namespace Duplicati.Server.Database
                     
                     for(var i = 0; i < 100; i++)
                     {
-                        var guess = System.IO.Path.Combine(System.IO.Path.ChangeExtension(Duplicati.Library.Main.DatabaseLocator.GenerateRandomName(), ".sqlite"));
+                        var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(Duplicati.Library.Main.DatabaseLocator.GenerateRandomName(), ".sqlite"));
                         if (!System.IO.File.Exists(guess))
                         {
                             ((Backup)item).DBPath = guess;
@@ -300,8 +320,8 @@ namespace Duplicati.Server.Database
                         new object[] { item.ID },
                         new IBackup[] { item },
                         update ?
-                            @"UPDATE ""Backup"" SET ""Name""=?, ""Tag""=?, ""TargetURL""=? WHERE ""ID""=?" :
-                            @"INSERT INTO ""Backup"" (""Name"", ""Tag"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
+                            @"UPDATE ""Backup"" SET ""Name""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
+                            @"INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
                         (n) => new object[] {
                             n.Name,
                             string.Join(",", n.Tags),
@@ -340,6 +360,11 @@ namespace Duplicati.Server.Database
                                 
                                 schedule = cur;
                             }
+                            else
+                            {
+                                schedule.ID = -1;
+                            }
+                            
                             schedule.Tags = tags;
                             AddOrUpdateSchedule(schedule, tr);
                         }
@@ -372,12 +397,12 @@ namespace Duplicati.Server.Database
                     new ISchedule[] { item },
                     update ?
                         @"UPDATE ""Schedule"" SET ""Tags""=?, ""Time""=?, ""Repeat""=?, ""LastRun""=?, ""Rule""=? WHERE ""ID""=?" :
-                        @"INSERT INTO ""Schedule"" (""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"") VALUES (?,?,?,?)",
+                        @"INSERT INTO ""Schedule"" (""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"") VALUES (?,?,?,?,?)",
                     (n) => new object[] {
                         string.Join(",", n.Tags),
-                        n.Time,
+                        NormalizeDateTimeToEpochSeconds(n.Time),
                         n.Repeat,
-                        n.LastRun,
+                        NormalizeDateTimeToEpochSeconds(n.LastRun),
                         n.Rule,
                         update ? (object)item.ID : null
                     });
@@ -445,7 +470,7 @@ namespace Duplicati.Server.Database
                             TargetURL = ConvertToString(rd.GetValue(3)),
                             DBPath = ConvertToString(rd.GetValue(4)),
                         },
-                        @"SELECT ""ID"", ""Name"", ""Tag"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
+                        @"SELECT ""ID"", ""Name"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
                         .ToArray();
                         
                     foreach(var n in lst)
@@ -470,7 +495,7 @@ namespace Duplicati.Server.Database
                             LastRun = ConvertToDateTime(rd.GetValue(4)),
                             Rule = ConvertToString(rd.GetValue(5)),
                         },
-                        @"SELECT ""ID"", ""Tag"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"" FROM ""Schedule"" ")
+                        @"SELECT ""ID"", ""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"" FROM ""Schedule"" ")
                         .ToArray();
             }        
         }

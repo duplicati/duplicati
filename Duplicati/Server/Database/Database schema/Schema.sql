@@ -9,7 +9,7 @@
 CREATE TABLE "Backup" (
     "ID" INTEGER PRIMARY KEY,
     "Name" TEXT NOT NULL,
-    "Tag" TEXT NOT NULL,
+    "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
     "DBPath" TEXT NOT NULL
 );
@@ -29,7 +29,7 @@ CREATE TABLE "Schedule" (
     "ID" INTEGER PRIMARY KEY,
     "Tags" TEXT NOT NULL,
     "Time" INTEGER NOT NULL,
-    "Repeat" INTEGER NOT NULL,
+    "Repeat" TEXT NOT NULL,
     "LastRun" INTEGER NOT NULL,
     "Rule" TEXT NOT NULL
 );
@@ -96,6 +96,16 @@ CREATE TABLE "Log" (
     "Finish" INTEGER NOT NULL,
     "Result" TEXT NOT NULL,
     "SuggestedIcon" TEXT NOT NULL
+);
+
+/*
+ * The log of errors
+ */
+CREATE TABLE "ErrorLog" (
+    "BackupID" INTEGER,
+    "Message" TEXT NOT NULL,
+    "Exception" TEXT,
+    "Timestamp" INTEGER NOT NULL
 );
 
 /*
