@@ -133,9 +133,15 @@ $(document).ready(function() {
             'Sources': function(dict, key, val, cfgel) {
                 var sources = val || [];
 
-                $('#source-folder-paths').find('.source-folder').empty();
-                for(var n in sources)
-                    addSourceFolder(sources[n]);
+                var lookup = {};
+                if (EDIT_STATE.orig_config && EDIT_STATE.orig_config.DisplayNames)
+                    lookup = EDIT_STATE.orig_config.DisplayNames;
+
+                $('#source-folder-paths').find('.source-folder').remove();
+                for(var n in sources) {
+                    var p = sources[n];
+                    addSourceFolder(sources[n], lookup[p] || p);
+                }
             },
             'Tags': function(dict, key, val, cfgel) {
                 var tags = val || [];
