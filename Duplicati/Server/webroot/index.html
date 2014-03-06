@@ -33,17 +33,17 @@
                     <div class="caption-text">${Name}</div>
                     <ul class="hint-text">
                         <li class="hint-text-caption">Source</li>
-                        <li class="source-size">${SourceSizeString}</li>
+                        <li class="source-size">${Metadata.SourceSizeString}</li>
                     </ul>
                     <ul class="hint-text">
                         <li class="hint-text-caption">Backup</li>
-                        <li class="target-size">${TargetSizeString}</li>
+                        <li class="target-size">${Metadata.TargetSizeString}</li>
                     </ul>
                     <ul class="action-links">
-                        <li class="first">Backup</li>
-                        <li>Restore</li>
-                        <li>Edit</li>
-                        <li class="last">Delete</li>
+                        <li class="first" id="backup-details-run-${ID}">Backup</li>
+                        <li id="backup-details-restore-${ID}">Restore</li>
+                        <li id="backup-details-edit-${ID}">Edit</li>
+                        <li class="last" id="backup-details-delete-${ID}">Delete</li>
                     </ul>
                 </div>
                 <div class="backup-progress">

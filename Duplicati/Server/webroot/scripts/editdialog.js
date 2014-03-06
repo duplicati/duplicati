@@ -108,6 +108,15 @@ $(document).ready(function() {
             },
 
             'edit-tab-schedule': function(tabindex) {
+                if ($('#use-scheduled-run').is(':checked')) {
+                    var t = Date.parse($('#next-run-date').val() + 'T' + $('#next-run-time').val());
+                    if (isNaN(t)) {
+                        $('#edit-dialog').tabs( "option", "active", tabindex);                
+                        $('#next-run-time').focus();
+                        alert('You must enter a valid time');
+                        return false;
+                    }
+                }
 
                 return true;
             }
@@ -115,6 +124,23 @@ $(document).ready(function() {
 
         fill_form_map: {
             'encryption-module': 'encryption-method',
+            'Name': 'backup-name',
+            'TargetURL': 'backup-uri',
+            'passphrase': function(dict, key, val, cfgel) {
+                $('#encryption-password').val(val);
+                $('#repeat-password').val(val);
+            },
+            'Sources': function(dict, key, val, cfgel) {
+                var sources = val || [];
+
+                $('#source-folder-paths').find('.source-folder').empty();
+                for(var n in sources)
+                    addSourceFolder(sources[n]);
+            },
+            'Tags': function(dict, key, val, cfgel) {
+                var tags = val || [];
+                $('#backup-labels').val(tags.join(', '));
+            },
             'Schedule': function(dict, key, val, cfgel) {
                 $('#use-scheduled-run').attr('checked', val != null)
             },
@@ -157,30 +183,48 @@ $(document).ready(function() {
                 }
             },
             'Time': function(dict, key, val, cfgel) {
-                $('#next-run-time').val(val);
-                if (!dict['Date']) {
-                    var parts = val.split(':');
-                    var now = new Date();
-                    while(parts.length < 3)
-                        parts.push('00');
+                var parts = val.split(':');
+                var now = new Date();
+                var msec = Date.parse(val);
+                if (isNaN(msec))
+                    msec = Date.parse("1970-01-01T" + val);
 
-                    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
-                    if (d < now)
-                        d.setDate(d.getDate()+1);
+                var d = null;
+                if (isNaN(msec)) {
+                    d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0, 0);
 
-                    var y = d.getFullYear() + '';
-                    var m = d.getMonth() + '';
-                    var n = d.getDate() + '';
-                    if (m.length == 1)
-                        m = '0' + m;
-                    if (n.length == 1)
-                        n = '0' + n;
-
-                    $('#next-run-date').val(y + '-' + m + '-' + n);
+                    $('#next-run-time').val('13:00');
+                    $('#next-run-date').val(now);
+                } else {
+                    d = new Date(msec);
+                    if (d.getFullYear() <= 1970) {
+                        msec += new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).getTime();
+                        d = new Date(msec);
+                    }
                 }
-            },
-            'Date': function(dict, key, val, cfgel) {
-                $('#next-run-date').val(val);
+
+                var y = d.getFullYear() + '';
+                var m = (d.getMonth() + 1) + '';
+                var n = d.getDate() + '';
+
+                var h = d.getHours() + '';
+                var l = d.getMinutes() + '';
+                var s = d.getSeconds() + '';
+
+                if (m.length == 1)
+                    m = '0' + m;
+                if (n.length == 1)
+                    n = '0' + n;
+                if (h.length == 1)
+                    h = '0' + h;
+                if (l.length == 1)
+                    l = '0' + l;
+                if (s.length == 1)
+                    s = '0' + s;
+
+                $('#next-run-date').val(y + '-' + m + '-' + n);
+                $('#next-run-time').val(h + ':' + l + ':' + s);
+
             },
             'AllowedDays': function(dict, key, val, cfgel) {
 
@@ -221,6 +265,7 @@ $(document).ready(function() {
             'repeat-password': false,
             'dblock-size-multiplier': false,
             'repeat-run-multiplier': false,
+            'next-run-date': false,
             'allow-day-mon': false,
             'allow-day-tue': false,
             'allow-day-wed': false,
@@ -273,13 +318,13 @@ $(document).ready(function() {
                 if (!dict['Schedule'])
                     return;
 
-                dict['Schedule']['Time'] = $(el).val();
-            },
-            'next-run-date': function(dict, key, el, cfgel) {
-                if (!dict['Schedule'])
-                    return;
+                var t = Date.parse($('#next-run-date').val() + 'T' + $('#next-run-time').val());
+                if (t != NaN) {
+                    var d = new Date(t);
 
-                dict['Schedule']['Date'] = $(el).val();
+                    //TODO: Not correct UTC, returns GMT instead
+                    dict['Schedule']['Time'] = d.toUTCString();
+                }
             },
             'dblock-size-number': function(dict, key, el, cfgel) {
                 dict['Backup']['Settings']['dblock-size'] = $(el).val() + $('#dblock-size-multiplier').val();
@@ -293,7 +338,7 @@ $(document).ready(function() {
                     dict['Schedule']['Repeat'] = $(el).val();
                 else
                     dict['Schedule']['Repeat'] = $(el).val() + m;
-            },
+            }
         }
     };
 
@@ -303,6 +348,7 @@ $(document).ready(function() {
     $('#encryption-password').watermark('Enter a secure passphrase');
     $('#repeat-password').watermark('Repeat the passphrase');
     $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
+    $('#source-folder-path-text').watermark('Enter a path to back up');
 
     var updateState = function() { if (EDIT_STATE != null) EDIT_STATE.dataModified = true; };
 
@@ -536,6 +582,8 @@ $(document).ready(function() {
         APP_DATA.getLabels(function(labels) {
             EDIT_STATE.tags = labels;
         });
+
+        $('#edit-dialog').tabs('option', 'active', 0);
     });
 
     $('#encryption-method').change(function() {
@@ -578,7 +626,7 @@ $(document).ready(function() {
                 $.extend(true, obj, EDIT_STATE.orig_config);
 
             APP_UTIL.read_form($('#edit-dialog-form'), EDIT_BACKUP.fill_dict_map, obj);
-            if (!APP_UTIL.parseOptionStrings($('#backup-options').val(), obj, function() {
+            if (!APP_UTIL.parseOptionStrings($('#backup-options').val(), obj.Backup.Settings, function() {
                 //TODO: Add validation
                 return true;
             })) {
@@ -701,13 +749,31 @@ $(document).ready(function() {
     }    
 
     $("#edit-dialog").on('setup-dialog', function(e, data) {
+        if (data.Backup && data.Backup.ID && parseInt(data.Backup.ID) > 0) {
+            EDIT_STATE.orig_config = data;
+            EDIT_STATE.newBackup = false;
+        } else {
+            EDIT_STATE.orig_config = null;
+            EDIT_STATE.newBackup = true;
+        }
+
         if (data['Schedule'] == null || data['Schedule']['Repeat'] == null || data['Schedule']['Repeat'] == '')
             APP_UTIL.fill_form($('#edit-dialog-form'), { 'Schedule': null }, EDIT_BACKUP.fill_form_map, 'Schedule');
         else
             APP_UTIL.fill_form($('#edit-dialog-form'), data['Schedule'], EDIT_BACKUP.fill_form_map, 'Schedule');
 
+        // Convert from list-form to key/value map
+        var orig = data['Backup'].Settings;
+        var settings = {};
+        data['Backup'].Settings = settings;
+        for(var n in orig)
+            settings[orig[n].Name] = orig[n].Value;
+
+        APP_UTIL.fill_form($('#edit-dialog-form'), data['Backup'], EDIT_BACKUP.fill_form_map, d);
+
         for(var d in data['Backup'])
-            APP_UTIL.fill_form($('#edit-dialog-form'), data['Backup'][d], EDIT_BACKUP.fill_form_map, d);
+            if (typeof(data['Backup'][d]) == typeof({}))
+                APP_UTIL.fill_form($('#edit-dialog-form'), data['Backup'][d], EDIT_BACKUP.fill_form_map, d);
     });
 
     /*

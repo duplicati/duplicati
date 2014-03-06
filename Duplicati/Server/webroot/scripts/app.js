@@ -137,7 +137,9 @@ $(document).ready(function() {
         plugins: {
             backend: {},
             compression: {},
-            encryption: {}
+            encryption: {},
+            primary: {}
+
         }
     };
 
@@ -212,12 +214,55 @@ $(document).ready(function() {
 
             // Clear existing stuff
             $('#main-list-container > div.main-backup-entry').remove();
-            if ($('#backup-item-template').length > 0 && data.length > 0)
+
+            if ($('#backup-item-template').length > 0 && data.length > 0) {
+
+                // Pre-processing of data
+                for(var n in data) {
+                    var b = data[n];
+                    b.Metadata = b.Metadata || {};
+
+                    if (!b.Metadata['TargetSizeString'])
+                        b.Metadata['TargetSizeString'] = '< unknown >'
+                    if (!b.Metadata['SourceSizeString'])
+                        b.Metadata['SourceSizeString'] = '< unknown >'
+                }
+
+                if (APP_DATA.plugins.primary['backup-list-preprocess'])
+                    APP_DATA.plugins.primary['backup-list-preprocess'](data);
+
+                //Fill with jQuery template
                 $.tmpl($('#backup-item-template'), data).prependTo($('#main-list-container'));
 
-            //Fill with jQuery template
 
-            if (callback != null)
+                // Post processing of data
+                for(var n in data) {
+                    var id = data[n].ID;
+
+                    $('#backup-details-run-' + id).click(function() {
+                        APP_DATA.runBackup(id);
+                    });
+
+                    $('#backup-details-restore-' + id).click(function() { 
+                        APP_DATA.restoreBackup(id);
+                    });
+
+                    $('#backup-details-edit-' + id).click(function() {
+                        APP_DATA.editBackup(id);
+                    });
+
+                    $('#backup-details-delete-' + id).click(function() {
+                        APP_DATA.deleteBackup(id);
+                    });
+
+                }
+                
+                if (APP_DATA.plugins.primary['backup-list-postrocess'])
+                    APP_DATA.plugins.primary['backup-list-postrocess']($('#main-list-container'), $('#main-list-container > div.main-backup-entry'), data);
+
+            }
+
+            if (callback)
                 callback(PRIVATE_DATA.backup_list);
         })
         .fail(function(data, status) {
@@ -228,6 +273,38 @@ $(document).ready(function() {
 
     PRIVATE_DATA.refresh_server_settings();
     PRIVATE_DATA.refresh_backup_list();
+    var serverWithCallback = function(data, callback, errorhandler, refreshMethod) {
+        if (typeof(data) == typeof(''))
+            data = { action: data };
+
+        var method = 'GET';
+        if (data.HTTP_METHOD) {
+            method = data.HTTP_METHOD;
+            delete data.HTTP_METHOD;
+        }
+
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            type: method,
+            dataType: 'json',
+            data: data
+        })
+        .done(function(data) {
+            if (refreshMethod)
+                refreshMethod(data, true, null);
+
+            if (callback != null)
+                callback(data, true, null);
+        })
+        .fail(function(data, status) {
+            if (refreshMethod)
+                refreshMethod(data, false, data.statusText);
+
+            if (errorhandler)
+                errorhandler(data, false, data.statusText);
+        });
+    };
+
 
     APP_DATA.getServerConfig = function(callback, errorhandler) {
         if (PRIVATE_DATA.server_config == null) {
@@ -237,90 +314,86 @@ $(document).ready(function() {
         }
     };
 
-    APP_DATA.validatePath = function(path, callback) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            dataType: 'json',
-            data: { action: 'validate-path', path: path }
-        })
-        .done(function(data) {
-            if (callback != null)
-                callback(path, true, null);
-        })
-        .fail(function(data, status) {
-            if (callback)
-                callback(path, false, data.statusText);
-        });        
+    APP_DATA.validatePath = function(path, callback) { 
+        serverWithCallback({ action: 'validate-path', path: path }, callback, callback); 
+    };
+    APP_DATA.getLabels = function(callback) { 
+        serverWithCallback('list-tags', callback, callback); 
     };
 
-    APP_DATA.getLabels = function(callback) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            dataType: 'json',
-            data: { action: 'list-tags' }
-        })
-        .done(function(data) {
-            if (callback != null)
-                callback(data, true, null);
-        })
-        .fail(function(data, status) {
-            if (callback)
-                callback(null, false, data.statusText);
-        });         
+    APP_DATA.getBackupDefaults = function(callback, errorhandler) { 
+        serverWithCallback('get-backup-defaults', callback, errorhandler); 
     };
-
-    APP_DATA.getBackupDefaults = function(callback, errorhandler) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            dataType: 'json',
-            data: { action: 'get-backup-defaults' }
-        })
-        .done(function(data) {
-            if (callback != null)
-                callback(data, true, null);
-        })
-        .fail(function(data, status) {
-            if (errorhandler)
-                errorhandler(null, false, data.statusText);
-        });         
+    APP_DATA.getBackupData = function(id, callback, errorhandler) { 
+        serverWithCallback({ action: 'get-backup', id: id}, callback, errorhandler); 
     };
 
     APP_DATA.addBackup = function(cfg, callback, errorhandler) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            type: 'POST',
-            dataType: 'json',
-            data: { action: 'add-backup', data: JSON.stringify(cfg) }
-        })
-        .done(function(data) {
-            PRIVATE_DATA.refresh_backup_list();
-            if (callback != null)
-                callback(data, true, null);
-        })
-        .fail(function(data, status) {
-            PRIVATE_DATA.refresh_backup_list();
-            if (errorhandler)
-                errorhandler(null, false, data.statusText);
-        });         
+        serverWithCallback(
+            { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}, 
+            callback, 
+            errorhandler, 
+            function() { PRIVATE_DATA.refresh_backup_list(); }
+        );
     };
 
     APP_DATA.updateBackup = function(cfg, callback, errorhandler) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            type: 'POST',
-            dataType: 'json',
-            data: { action: 'update-backup', data: JSON.stringify(cfg) }
-        })
-        .done(function(data) {
-            PRIVATE_DATA.refresh_backup_list();
-            if (callback != null)
-                callback(data, true, null);
-        })
-        .fail(function(data, status) {
-            PRIVATE_DATA.refresh_backup_list();
-            if (errorhandler)
-                errorhandler(null, false, data.statusText);
-        });         
+        serverWithCallback(
+            { action: 'update-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}, 
+            callback, 
+            errorhandler, 
+            function() { PRIVATE_DATA.refresh_backup_list(); }
+        );
+    };
+
+
+    APP_DATA.editNewBackup = function() {
+        APP_DATA.editBackup();
+    };
+
+    APP_DATA.deleteBackup = function(id, callback, errorhandler) {
+        serverWithCallback(
+            { action: 'delete-backup', id: id }, 
+            callback, 
+            errorhandler, 
+            function() { PRIVATE_DATA.refresh_backup_list(); }
+        );
+    };
+
+    APP_DATA.editBackup = function(id) {
+        APP_DATA.getServerConfig(function(data) {
+
+            var callback = function(data) {
+                $("#edit-dialog").dialog('open');
+
+                // Bug-fix, this will remove style="width: auto", which breaks Chrome a bit
+                $("#edit-dialog").css('width', '');
+
+                // Send the defaults to the dialog
+                $("#edit-dialog").trigger('setup-dialog', data.data);  
+            };
+
+            var errorhandler = function() {
+                alert('Failed to get server setup...')
+            };
+
+            if (id == undefined || parseInt(id) < 0)
+                APP_DATA.getBackupDefaults(callback, errorhandler);
+            else
+                APP_DATA.getBackupData(id, callback, errorhandler);
+        },
+        function() {
+            alert('Failed to get server setup...')
+        });
+        
+    };
+
+    APP_DATA.runBackup = function(id) {
+        
+    };
+
+    APP_DATA.restoreBackup = function(id) {
+        
     };
 
     $('#main-settings').click(function() {
@@ -345,23 +418,7 @@ $(document).ready(function() {
     });
 
     $('#main-newbackup').click(function() {
-        APP_DATA.getServerConfig(function(data) {
-            APP_DATA.getBackupDefaults(function(defaults) {
-                $("#edit-dialog").dialog('open');
-
-                // Bug-fix, this will remove style="width: auto", which breaks Chrome a bit
-                $("#edit-dialog").css('width', '');
-
-                // Send the defaults to the dialog
-                $("#edit-dialog").trigger('setup-dialog', defaults.data);                
-            },
-            function() {
-                alert('Failed to get server setup...')
-            })
-        },
-        function() {
-            alert('Failed to get server setup...')
-        });
+        APP_DATA.editNewBackup();
 
     });
 
