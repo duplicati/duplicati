@@ -686,7 +686,7 @@ namespace Duplicati.Server
                     else
                     {
                         var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + id });
-                        var schedule = scheduleId.Any() ? null : Program.DataConnection.GetSchedule(scheduleId.First());
+                        var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
                         
                         OutputObject(bw, new
                         {
@@ -709,9 +709,10 @@ namespace Duplicati.Server
                     return;
                 }
 
+                AddOrUpdateBackupData data = null;
                 try
                 {
-                    var data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
+                    data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
                     if (data.Backup == null)
                     {
                         ReportError(response, bw, "Data object had no backup entry");
@@ -747,7 +748,11 @@ namespace Duplicati.Server
                 }
                 catch (Exception ex)
                 {
-                    ReportError(response, bw, string.Format("Unable to parse backup object: {0}", ex.Message));
+                    if (data == null)
+                        ReportError(response, bw, string.Format("Unable to parse backup or schedule object: {0}", ex.Message));
+                    else
+                        ReportError(response, bw, string.Format("Unable to save backup or schedule: {0}", ex.Message));
+                        
                 }
             }
             
@@ -766,10 +771,10 @@ namespace Duplicati.Server
                     return;
                 }
 
+                AddOrUpdateBackupData data = null;
                 try
                 {
-                    
-                    var data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
+                    data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
                     if (data.Backup == null)
                     {
                         ReportError(response, bw, "Data object had no backup entry");
@@ -793,7 +798,10 @@ namespace Duplicati.Server
                 }
                 catch (Exception ex)
                 {
-                    ReportError(response, bw, string.Format("Unable to parse schedule or task object: {0}", ex.Message));
+                    if (data == null)
+                        ReportError(response, bw, string.Format("Unable to parse backup or schedule object: {0}", ex.Message));
+                    else
+                        ReportError(response, bw, string.Format("Unable to save schedule or backup object: {0}", ex.Message));
                 }
             }
 
