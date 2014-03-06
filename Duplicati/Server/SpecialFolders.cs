@@ -25,6 +25,7 @@ namespace Duplicati.Server
     {
         public static readonly Serializable.TreeNode[] Nodes;
         private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        private static readonly Dictionary<string, string> DisplayMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         
         public static string TranslateToPath(string str) 
         {
@@ -34,7 +35,16 @@ namespace Duplicati.Server
             
             return null;
         }
-        
+
+        public static string TranslateToDisplayString(string str) 
+        {
+            string res;
+            if (DisplayMap.TryGetValue(str, out res))
+                return res;
+            
+            return null;
+        }
+
         private static void TryAdd(List<Serializable.TreeNode> lst, System.Environment.SpecialFolder folder, string id, string display)
         {
             try
@@ -60,6 +70,7 @@ namespace Duplicati.Server
                     });
                     
                     PathMap[id] = folder;
+                    DisplayMap[id] = display;
                 }
             }
             catch

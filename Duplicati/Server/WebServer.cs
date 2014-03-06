@@ -687,6 +687,25 @@ namespace Duplicati.Server
                     {
                         var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + id });
                         var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
+                        var sourcenames = bk.Sources.Distinct().Select(x => {
+                            var sp = SpecialFolders.TranslateToDisplayString(x);
+                            if (sp != null)
+                                return new KeyValuePair<string, string>(x, sp);
+                            
+                            try {
+                                var n = System.IO.Path.GetFileName(x);
+                                if (!string.IsNullOrWhiteSpace(n))
+                                    return new KeyValuePair<string, string>(x, System.IO.Path.GetFileName(n));
+                            } catch {
+                            }
+                            
+                            if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
+                                return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1));
+                            else
+                                return new KeyValuePair<string, string>(x, x);
+                            
+                        }).ToDictionary(x => x.Key, x => x.Value);
+                        
                         
                         OutputObject(bw, new
                         {
@@ -694,6 +713,7 @@ namespace Duplicati.Server
                             data = new {
                                 Schedule = schedule,
                                 Backup = bk,
+                                DisplayNames = sourcenames
                             }
                         });
                     }
