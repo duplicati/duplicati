@@ -71,7 +71,7 @@ namespace Duplicati.Server
             var t = n;
             if (n.StartsWith("%") && n.EndsWith("%"))
             {
-                t = SpecialFolders.TranslateString(n);
+                t = SpecialFolders.TranslateToPath(n);
                 if (t == null)
                     t = System.Environment.ExpandEnvironmentVariables(n);
             }

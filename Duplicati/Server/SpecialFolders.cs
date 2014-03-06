@@ -26,7 +26,7 @@ namespace Duplicati.Server
         public static readonly Serializable.TreeNode[] Nodes;
         private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         
-        public static string TranslateString(string str) 
+        public static string TranslateToPath(string str) 
         {
             string res;
             if (PathMap.TryGetValue(str, out res))
