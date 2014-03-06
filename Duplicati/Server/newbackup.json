@@ -1,10 +1,10 @@
 {
     Backup: {
-        Settings: {
-            "encryption-module": "aes",
-            "compression-module": "zip",
-            "dblock-size": "50mb"
-        }
+        Settings: [
+            {Name: "encryption-module", Value: "aes"},
+            {Name: "compression-module", Value: "zip"},
+            {Name: "dblock-size", Value: "50mb"}
+        ]
     },
     Schedule: {
         Repeat: "1D",
