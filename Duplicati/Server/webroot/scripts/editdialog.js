@@ -318,12 +318,16 @@ $(document).ready(function() {
                 if (!dict['Schedule'])
                     return;
 
-                var t = Date.parse($('#next-run-date').val() + 'T' + $('#next-run-time').val());
+                var t = Date.parse($('#next-run-date').val());
                 if (t != NaN) {
-                    var d = new Date(t);
+                    var tp = $('#next-run-time').val().split(':');
+                    while(tp.length < 3)
+                        tp.push('00');
 
-                    //TODO: Not correct UTC, returns GMT instead
-                    dict['Schedule']['Time'] = d.toUTCString();
+                    var d = new Date(t);
+                    d = new Date(d.getFullYear(), d.getMonth(), d.getDate(), parseInt(tp[0]), parseInt(tp[1]), parseInt(tp[2]))
+
+                    dict['Schedule']['Time'] = d.toISOString();
                 }
             },
             'dblock-size-number': function(dict, key, el, cfgel) {
