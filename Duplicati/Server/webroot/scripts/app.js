@@ -369,7 +369,7 @@ $(document).ready(function() {
                 // Bug-fix, this will remove style="width: auto", which breaks Chrome a bit
                 $("#edit-dialog").css('width', '');
 
-                // Send the defaults to the dialog
+                // Send data to the dialog
                 $("#edit-dialog").trigger('setup-dialog', data.data);  
             };
 
