@@ -605,8 +605,10 @@ $(document).ready(function() {
 
 
     $('#edit-dialog').on( "dialogbeforeclose", function( event, ui ) {
+        //TODO: Actually set this flag
         if (EDIT_STATE.dataModified) {
-            return false;
+            if (!confirm('Close without saving?'))
+                return false;
         }
     });
 
@@ -791,6 +793,8 @@ $(document).ready(function() {
                 opttext += k.substr(2) + '=' + (data['Backup']['Settings'][k] || '') + '\n';
 
         $('#backup-options').val(opttext);
+
+        EDIT_STATE.dataModified = false;        
     });
 
     /*
