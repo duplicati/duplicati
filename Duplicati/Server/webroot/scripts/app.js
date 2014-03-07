@@ -389,7 +389,12 @@ $(document).ready(function() {
     };
 
     APP_DATA.runBackup = function(id) {
-        
+        serverWithCallback(
+            { action: 'send-command', command: 'run-backup', id: id }, 
+            function() {}, 
+            function(d,s,m) { alert('Failed to start backup: ' + m); }, 
+            function() { PRIVATE_DATA.refresh_backup_list(); }
+        );
     };
 
     APP_DATA.restoreBackup = function(id) {
