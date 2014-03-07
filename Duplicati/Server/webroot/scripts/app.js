@@ -183,96 +183,6 @@ $(document).ready(function() {
         }
     };
 
-
-    PRIVATE_DATA.refresh_server_settings = function(callback, errorhandler) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            dataType: 'json',
-            data: { action: 'system-info' }
-        })
-        .done(function(data) {
-            PRIVATE_DATA.server_config = data;
-            $('#loading-dialog').dialog("close");
-            if (callback != null)
-                callback(PRIVATE_DATA.server_config);
-        })
-        .fail(function(data, status) {
-            if (errorhandler)
-                errorhandler(data, status);
-        });
-    };
-
-    PRIVATE_DATA.refresh_backup_list = function(callback, errorhandler) {
-        $.ajax({
-            url: APP_CONFIG.server_url,
-            dataType: 'json',
-            data: { action: 'list-backups' }
-        })
-        .done(function(data) {
-            PRIVATE_DATA.backup_list = data;
-            $('#loading-dialog').dialog("close");
-
-            // Clear existing stuff
-            $('#main-list-container > div.main-backup-entry').remove();
-
-            if ($('#backup-item-template').length > 0 && data.length > 0) {
-
-                // Pre-processing of data
-                for(var n in data) {
-                    var b = data[n];
-                    b.Metadata = b.Metadata || {};
-
-                    if (!b.Metadata['TargetSizeString'])
-                        b.Metadata['TargetSizeString'] = '< unknown >'
-                    if (!b.Metadata['SourceSizeString'])
-                        b.Metadata['SourceSizeString'] = '< unknown >'
-                }
-
-                if (APP_DATA.plugins.primary['backup-list-preprocess'])
-                    APP_DATA.plugins.primary['backup-list-preprocess'](data);
-
-                //Fill with jQuery template
-                $.tmpl($('#backup-item-template'), data).prependTo($('#main-list-container'));
-
-
-                // Post processing of data
-                for(var n in data) {
-                    var id = data[n].ID;
-
-                    $('#backup-details-run-' + id).click(function() {
-                        APP_DATA.runBackup(id);
-                    });
-
-                    $('#backup-details-restore-' + id).click(function() { 
-                        APP_DATA.restoreBackup(id);
-                    });
-
-                    $('#backup-details-edit-' + id).click(function() {
-                        APP_DATA.editBackup(id);
-                    });
-
-                    $('#backup-details-delete-' + id).click(function() {
-                        APP_DATA.deleteBackup(id);
-                    });
-
-                }
-                
-                if (APP_DATA.plugins.primary['backup-list-postrocess'])
-                    APP_DATA.plugins.primary['backup-list-postrocess']($('#main-list-container'), $('#main-list-container > div.main-backup-entry'), data);
-
-            }
-
-            if (callback)
-                callback(PRIVATE_DATA.backup_list);
-        })
-        .fail(function(data, status) {
-            if (errorhandler)
-                errorhandler(data, status);
-        });
-    };
-
-    PRIVATE_DATA.refresh_server_settings();
-    PRIVATE_DATA.refresh_backup_list();
     var serverWithCallback = function(data, callback, errorhandler, refreshMethod) {
         if (typeof(data) == typeof(''))
             data = { action: data };
@@ -303,6 +213,159 @@ $(document).ready(function() {
             if (errorhandler)
                 errorhandler(data, false, data.statusText);
         });
+    };
+
+    PRIVATE_DATA.server_state = {
+        polling: false,
+        eventId: -1,
+        state: null,
+        failed: false,
+        dataEventId: -1,
+
+        retryTimer: null,
+        retryCountDownTimer: null
+    };
+
+    PRIVATE_DATA.long_poll_for_status = function() {
+        var state = PRIVATE_DATA.server_state;
+        if (state.polling)
+            return;
+
+        if (state.retryTimer != null) {
+            $(document).trigger('server-state-connecting');
+            clearInterval(state.retryTimer);
+            state.retryTimer = null;
+        }
+
+        state.polling = true;
+
+        var req = { action: 'get-current-state', longpoll: true, lastEventId: state.eventId };
+        var timeout = 60000;
+        if (state.failed || state.eventId == -1) {
+            req.longpoll = false;
+            timeout = 5000
+        }
+
+        req.duration = parseInt((timeout-1000) / 1000) + 's';
+
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            type: 'GET',
+            timeout: timeout,
+            dataType: 'json',
+            data: req
+        })
+        .done(function(data) {
+            state.polling = false;
+            state.state = data;
+            state.eventId = data.LastEventID;
+            var oldDataId = state.dataEventId;
+            state.dataEventId = data.LastDataUpdateID;
+
+            if (state.failed) {
+                state.failed = false;
+                $(document).trigger('server-state-restored');
+            }
+            $(document).trigger('server-state-updated', data);
+            if (oldDataId != state.dataEventId)
+                $(document).trigger('server-state-data-updated', data);
+
+            PRIVATE_DATA.long_poll_for_status();
+        })
+        .fail(function(data) {
+            state.polling = false;
+            if (!state.failed) {
+                state.failed = true;
+                $(document).trigger('server-state-lost');
+            }
+
+            state.retryStartTime = new Date();
+            var updateTimer = function() {
+                var n = new Date() - state.retryStartTime;
+                var left = Math.max(0, 15000 - n);
+                $(document).trigger('server-state-countdown', {millisecondsLeft: left});
+                if (left <= 0)
+                    PRIVATE_DATA.long_poll_for_status();
+            }
+
+            state.retryTimer = setInterval(updateTimer, 500);
+        });
+
+    };
+
+    PRIVATE_DATA.refresh_server_settings = function(callback, errorhandler) {
+        serverWithCallback(
+            'system-info', 
+            callback,
+            errorhandler,
+            function(data, success) {
+                if (success && data != null)
+                    PRIVATE_DATA.server_config = data;
+            }
+        );
+    };
+
+    PRIVATE_DATA.refresh_backup_list = function(callback, errorhandler) {
+        serverWithCallback(
+            'list-backups', 
+            callback,
+            errorhandler,
+            function(data, success) {
+                if (success && data != null) {
+                    PRIVATE_DATA.backup_list = data;
+
+                    // Clear existing stuff
+                    $('#main-list-container > div.main-backup-entry').remove();
+
+                    if ($('#backup-item-template').length > 0 && data.length > 0) {
+
+                        // Pre-processing of data
+                        for(var n in data) {
+                            var b = data[n];
+                            b.Metadata = b.Metadata || {};
+
+                            if (!b.Metadata['TargetSizeString'])
+                                b.Metadata['TargetSizeString'] = '< unknown >'
+                            if (!b.Metadata['SourceSizeString'])
+                                b.Metadata['SourceSizeString'] = '< unknown >'
+                        }
+
+                        if (APP_DATA.plugins.primary['backup-list-preprocess'])
+                            APP_DATA.plugins.primary['backup-list-preprocess'](data);
+
+                        //Fill with jQuery template
+                        $.tmpl($('#backup-item-template'), data).prependTo($('#main-list-container'));
+
+
+                        // Post processing of data
+                        for(var n in data) {
+                            var id = data[n].ID;
+
+                            $('#backup-details-run-' + id).click(function() {
+                                APP_DATA.runBackup(id);
+                            });
+
+                            $('#backup-details-restore-' + id).click(function() { 
+                                APP_DATA.restoreBackup(id);
+                            });
+
+                            $('#backup-details-edit-' + id).click(function() {
+                                APP_DATA.editBackup(id);
+                            });
+
+                            $('#backup-details-delete-' + id).click(function() {
+                                APP_DATA.deleteBackup(id);
+                            });
+
+                        }
+                        
+                        if (APP_DATA.plugins.primary['backup-list-postrocess'])
+                            APP_DATA.plugins.primary['backup-list-postrocess']($('#main-list-container'), $('#main-list-container > div.main-backup-entry'), data);
+
+                    }
+                }
+            }
+        );
     };
 
 
@@ -460,5 +523,61 @@ $(document).ready(function() {
     // Hack the tabs into the dialog title
     $('#edit-dialog').parent().find('.ui-dialog-titlebar').after($('#edit-dialog').find('.ui-tabs-nav'));
     $('#edit-dialog').parent().addClass('ui-tabs');
+
+    $(document).on('server-state-updated', function() {
+        $('#loading-dialog').dialog("close");
+    });
+
+    $(document).on('server-state-lost', function() {
+        $('#connection-lost-dialog').dialog('open');
+        $('#connection-lost-dialog-text').text('Server connection lost...');
+        var button = $('#connection-lost-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button').first();
+        button.attr("disabled",false).removeClass( 'ui-button-disabled ui-state-disabled' );
+
+    });
+
+    $(document).on('server-state-restored', function() {
+        $('#connection-lost-dialog').dialog('close');
+    });
+
+    $(document).on('server-state-countdown', function(e, f) {
+        var s = parseInt(f.millisecondsLeft / 1000) + 1;
+        $('#connection-lost-dialog-text').html('Server connection lost, <br/>retry in ' + s + ' seconds');
+        var button = $('#connection-lost-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button').first();
+        button.attr("disabled",false).removeClass( 'ui-button-disabled ui-state-disabled' );
+    });
+
+    $(document).on('server-state-connecting', function(e) {
+         $('#connection-lost-dialog-text').text('Retrying...');
+        var button = $('#connection-lost-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button').first();
+        button.attr("disabled",true).addClass( 'ui-button-disabled ui-state-disabled' );
+    });
+
+    $('#connection-lost-dialog').dialog({
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: false,
+        buttons: [
+            { 
+                text: 'Retry now', 
+                disabled: true, 
+                click: function(event, ui) {
+                    PRIVATE_DATA.long_poll_for_status();
+                }
+            }
+        ]
+    });
+
+    $('#connection-lost-dialog').parent().find('.ui-dialog-titlebar-close').remove().first().remove();
+
+    $('#connection-lost-dialog').on('dialogbeforeclose', function( event, ui ) {
+        return !PRIVATE_DATA.server_state.failed;
+    });
+
+
+    PRIVATE_DATA.long_poll_for_status();
+    PRIVATE_DATA.refresh_server_settings();
+    PRIVATE_DATA.refresh_backup_list();
+
 
 });
