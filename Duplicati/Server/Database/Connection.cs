@@ -316,7 +316,7 @@ namespace Duplicati.Server.Database
                 {
                     OverwriteAndUpdateDb(
                         tr,
-                        update ? @"DELETE FROM ""Backup"" WHERE ""ID"" = ?" : null,
+                        null,
                         new object[] { item.ID },
                         new IBackup[] { item },
                         update ?
@@ -392,7 +392,7 @@ namespace Duplicati.Server.Database
                 bool update = item.ID >= 0;
                 OverwriteAndUpdateDb(
                     tr,
-                    update ? @"DELETE FROM ""Schedule"" WHERE ""ID"" = ?" : null,
+                    null,
                     new object[] { item.ID },
                     new ISchedule[] { item },
                     update ?
