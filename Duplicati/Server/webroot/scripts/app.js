@@ -223,7 +223,7 @@ $(document).ready(function() {
         dataEventId: -1,
 
         retryTimer: null,
-        retryCountDownTimer: null
+        pauseUpdateTimer: null
     };
 
     PRIVATE_DATA.long_poll_for_status = function() {
@@ -260,7 +260,10 @@ $(document).ready(function() {
             state.state = data;
             state.eventId = data.LastEventID;
             var oldDataId = state.dataEventId;
+            var oldState = state.programState;
+
             state.dataEventId = data.LastDataUpdateID;
+            state.programState = data.ProgramState;
 
             if (state.failed) {
                 state.failed = false;
@@ -269,6 +272,35 @@ $(document).ready(function() {
             $(document).trigger('server-state-updated', data);
             if (oldDataId != state.dataEventId)
                 $(document).trigger('server-state-data-updated', data);
+            
+            if (oldState != state.programState) {
+                if (state.pauseUpdateTimer != null) {
+                    clearInterval(state.pauseUpdateTimer);
+                    state.pauseUpdateTimer = null;
+                }
+
+                $(document).trigger('server-state-changed', state.programState);
+
+                if (state.programState == 'Running')
+                    $(document).trigger('server-state-running');
+                else if (state.programState == 'Paused') {
+                    $(document).trigger('server-state-paused');
+                    var estimatedEnd = Date.parse(data.EstimatedPauseEnd);
+                    if (estimatedEnd != 0) {
+                        estimatedEnd = new Date(estimatedEnd);
+                        var updateTimer = function() {
+                            var left = Math.max(0, estimatedEnd - new Date());
+                            $(document).trigger('server-state-pause-countdown', {millisecondsLeft: left});
+                        }
+
+                        setInterval(updateTimer, 500);
+                        updateTimer();
+                    }
+                }
+
+
+
+            }
 
             PRIVATE_DATA.long_poll_for_status();
         })
@@ -395,8 +427,7 @@ $(document).ready(function() {
         serverWithCallback(
             { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}, 
             callback, 
-            errorhandler, 
-            function() { PRIVATE_DATA.refresh_backup_list(); }
+            errorhandler
         );
     };
 
@@ -404,8 +435,7 @@ $(document).ready(function() {
         serverWithCallback(
             { action: 'update-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}, 
             callback, 
-            errorhandler, 
-            function() { PRIVATE_DATA.refresh_backup_list(); }
+            errorhandler
         );
     };
 
@@ -418,8 +448,7 @@ $(document).ready(function() {
         serverWithCallback(
             { action: 'delete-backup', id: id }, 
             callback, 
-            errorhandler, 
-            function() { PRIVATE_DATA.refresh_backup_list(); }
+            errorhandler
         );
     };
 
@@ -455,13 +484,20 @@ $(document).ready(function() {
         serverWithCallback(
             { action: 'send-command', command: 'run-backup', id: id }, 
             function() {}, 
-            function(d,s,m) { alert('Failed to start backup: ' + m); }, 
-            function() { PRIVATE_DATA.refresh_backup_list(); }
+            function(d,s,m) { alert('Failed to start backup: ' + m); }
         );
     };
 
     APP_DATA.restoreBackup = function(id) {
-        
+        alert('Not implemented');
+    };
+
+    APP_DATA.pauseServer = function(duration) {
+        serverWithCallback({action: 'send-command', command: 'pause', duration: duration});
+    };
+
+    APP_DATA.resumeServer = function() {
+        serverWithCallback({action: 'send-command', command: 'resume'});
     };
 
     $('#main-settings').click(function() {
@@ -553,6 +589,25 @@ $(document).ready(function() {
         button.attr("disabled",true).addClass( 'ui-button-disabled ui-state-disabled' );
     });
 
+    $(document).on('server-state-running', function() {
+        $('#main-control').removeClass('main-icon-pause').addClass('main-icon-running');
+    });
+
+    $(document).on('server-state-paused', function() {
+        $('#main-control').removeClass('main-icon-running').addClass('main-icon-pause');
+    });
+
+    $(document).on('server-state-pause-countdown', function(e, f) {
+        var s = parseInt(f.millisecondsLeft / 1000) + 1;
+    });
+
+    $('#main-control').click(function() {
+        if ($('#main-control').hasClass('main-icon-pause'))
+            APP_DATA.resumeServer();
+        else
+            APP_DATA.pauseServer();
+    });
+
     $('#connection-lost-dialog').dialog({
         modal: true,
         autoOpen: false,
@@ -574,6 +629,10 @@ $(document).ready(function() {
         return !PRIVATE_DATA.server_state.failed;
     });
 
+
+    $(document).on('server-state-data-updated', function() {
+        PRIVATE_DATA.refresh_backup_list();
+    });
 
     PRIVATE_DATA.long_poll_for_status();
     PRIVATE_DATA.refresh_server_settings();

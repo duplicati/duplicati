@@ -186,6 +186,13 @@
     background-image: url('../images/pause.png');
 }
 
+.main-icon-running {
+    width: 28px;
+    height: 28px;
+    background-repeat: no-repeat;
+    background-image: url('../images/play.png');
+}
+
 .main-icon-settings {
     width: 28px;
     height: 28px;

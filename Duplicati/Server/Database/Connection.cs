@@ -371,6 +371,8 @@ namespace Duplicati.Server.Database
                     }
                     
                     tr.Commit();
+                    System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+                    Program.StatusEventNotifyer.SignalNewEvent();
                 }
             }
         }
@@ -382,6 +384,8 @@ namespace Duplicati.Server.Database
                 {
                     AddOrUpdateSchedule(item, tr);
                     tr.Commit();
+                    System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+                    Program.StatusEventNotifyer.SignalNewEvent();
                 }
         }
         
