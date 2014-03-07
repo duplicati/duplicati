@@ -97,7 +97,7 @@ $(document).ready(function() {
                 }
 
                 for(var k in values) {
-                    if (k.substr(0, 2) == '--') {
+                    if (k.length > 2 && k.substr(0, 2) == '--') {
                         var opt = validOptionsDict[k.substr(2)];
 
                         if (!opt) {
