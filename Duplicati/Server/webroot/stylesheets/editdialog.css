@@ -132,7 +132,9 @@
 .source-folder-close-icon {
     width: 16px;
     height: 16px;
-    background-image: url('../images/clock.png');
+    background-position: -80px -128px;
+    background-image: url(green-theme/images/ui-icons_365724_256x240.png);
+    background-repeat: no-repeat;
     position: absolute;
     top: 5px;
     right: 5px;
