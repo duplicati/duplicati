@@ -784,6 +784,13 @@ $(document).ready(function() {
         for(var d in data['Backup'])
             if (typeof(data['Backup'][d]) == typeof({}))
                 APP_UTIL.fill_form($('#edit-dialog-form'), data['Backup'][d], EDIT_BACKUP.fill_form_map, d);
+
+        var opttext = '';
+        for(var k in data['Backup']['Settings'])
+            if (EDIT_BACKUP.fill_form_map[k] === undefined && k.indexOf('--') == 0)
+                opttext += k.substr(2) + '=' + (data['Backup']['Settings'][k] || '') + '\n';
+
+        $('#backup-options').val(opttext);
     });
 
     /*
