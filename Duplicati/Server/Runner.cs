@@ -263,6 +263,22 @@ namespace Duplicati.Server
             }
         }
         
+        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastBackupDate"] = r.LastBackupDate.ToUniversalTime().ToString();
+                backup.Metadata["BackupListCount"] = r.BackupListCount.ToString();
+                backup.Metadata["TotalQuotaSpace"] = r.TotalQuotaSpace.ToString();
+                backup.Metadata["FreeQuotaSpace"] = r.FreeQuotaSpace.ToString();
+                backup.Metadata["AssignedQuotaSpace"] = r.AssignedQuotaSpace.ToString();
+                
+                backup.Metadata["TargetFilesSize"] = r.KnownFileSize.ToString();
+                backup.Metadata["TargetFilesCount"] = r.KnownFileCount.ToString();
+                backup.Metadata["TargetSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.KnownFileSize);
+            }
+        }        
+        
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
         {
             if (o is Duplicati.Library.Interface.IBasicResults)
@@ -274,15 +290,7 @@ namespace Duplicati.Server
             if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
             {
                 var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
-                backup.Metadata["LastBackupDate"] = r.LastBackupDate.ToUniversalTime().ToString();
-                backup.Metadata["BackupListCount"] = r.BackupListCount.ToString();
-                backup.Metadata["TotalQuotaSpace"] = r.TotalQuotaSpace.ToString();
-                backup.Metadata["FreeQuotaSpace"] = r.FreeQuotaSpace.ToString();
-                backup.Metadata["AssignedQuotaSpace"] = r.AssignedQuotaSpace.ToString();
-                
-                backup.Metadata["TargetFilesSize"] = r.KnownFileSize.ToString();
-                backup.Metadata["TargetFilesCount"] = r.KnownFileCount.ToString();
-                backup.Metadata["TargetSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.KnownFileSize);
+                UpdateMetadata(backup, r);
             }
             
             if (o is Duplicati.Library.Interface.IBackupResults)
@@ -291,6 +299,8 @@ namespace Duplicati.Server
                 backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
                 backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
+                if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
+                    UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
             
             Program.DataConnection.SetMetadata(backup.Metadata, backup.ID, null);
