@@ -15,14 +15,6 @@ namespace Duplicati.Server.Serialization
         }
     }
 
-    public class ProgressEventDataCreator : CustomCreationConverter<Interface.IProgressEventData>
-    {
-        public override Interface.IProgressEventData Create(Type objectType)
-        {
-            return new Implementations.ProgressEventData();
-        }
-    }
-
     public class SettingsCreator : CustomCreationConverter<Interface.ISetting>
     {
         public override Interface.ISetting Create(Type objectType)

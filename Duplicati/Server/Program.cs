@@ -86,11 +86,11 @@ namespace Duplicati.Server
         /// The status event signaler, used to controll long polling of status updates
         /// </summary>
         public static EventPollNotify StatusEventNotifyer = new EventPollNotify();
-
+        
         /// <summary>
-        /// The progress event signaler, used to control long polling of current backup progress
+        /// A delegate method for creating a copy of the current progress state
         /// </summary>
-        public static EventPollNotify ProgressEventNotifyer = new EventPollNotify();
+        public static Func<Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
 
         /// <summary>
         /// An event ID that increases whenever the database is updated
@@ -356,7 +356,6 @@ namespace Duplicati.Server
             finally
             {
                 StatusEventNotifyer.SignalNewEvent();
-                ProgressEventNotifyer.SignalNewEvent();
 
                 if (Scheduler != null)
                     Scheduler.Terminate(true);

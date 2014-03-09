@@ -26,9 +26,103 @@ namespace Duplicati.Server
     {
         private class MessageSink : Duplicati.Library.Main.IMessageSink
         {
+            private class ProgressState : Server.Serialization.Interface.IProgressEventData
+            {
+                private readonly long m_backupID;
+                public long LastEventID { get; set; }
+                
+                internal Duplicati.Library.Main.BackendActionType m_backendAction;
+                internal string m_backendPath;
+                internal long m_backendFileSize;
+                internal long m_backendFileProgress;
+                internal long m_backendSpeed;
+                
+                internal string m_currentFilename;
+                internal long m_currentFilesize;
+                internal long m_currentFileoffset;
+                
+                internal Duplicati.Library.Main.OperationPhase m_phase;
+                internal float m_overallProgress;
+                internal long m_processedFileCount;
+                internal long m_processedFileSize;
+                internal long m_totalFileCount;
+                internal long m_totalFileSize;
+                internal bool m_stillCounting;
+                
+                public ProgressState(long backupId)
+                {
+                    m_backupID = backupId;
+                }
+                
+                internal ProgressState Clone()
+                {
+                    return (ProgressState)this.MemberwiseClone();
+                }
+
+                #region IProgressEventData implementation
+                public long BackupID { get { return m_backupID; } }
+                public string BackendAction { get { return m_backendAction.ToString(); } }
+                public string BackendPath { get { return m_backendPath; } }
+                public long BackendFileSize { get { return m_backendFileSize; } }
+                public long BackendFileProgress { get { return m_backendFileProgress; } }
+                public long BackendSpeed { get { return m_backendSpeed; } }
+                public string CurrentFilename { get { return m_currentFilename; } }
+                public long CurrentFilesize { get { return m_currentFilesize; } }
+                public long CurrentFileoffset { get { return m_currentFileoffset; } }
+                public string Phase { get { return  m_phase.ToString(); } }
+                public float OverallProgress { get { return m_overallProgress; } }
+                public long ProcessedFileCount { get { return m_processedFileCount; } }
+                public long ProcessedFileSize { get { return m_processedFileSize; } }
+                public long TotalFileCount { get { return m_totalFileCount; } }
+                public long TotalFileSize { get { return m_totalFileSize; } }
+                public bool StillCounting { get { return m_stillCounting; } }
+                #endregion
+            }
+                        
+            private ProgressState m_state;
+            private Duplicati.Library.Main.IBackendProgress m_backendProgress;
+            private Duplicati.Library.Main.IOperationProgress m_operationProgress;
+            private object m_lock = new object();
+            
+            public MessageSink(long backupId)
+            {
+                m_state = new ProgressState(backupId);
+            }
+            
+            public Server.Serialization.Interface.IProgressEventData Copy()
+            {
+                lock(m_lock)
+                {
+                    if (m_backendProgress != null)
+                        m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed);
+                    if (m_operationProgress != null)
+                    {
+                        m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset);
+                        m_operationProgress.UpdateOverall(out m_state.m_phase, out m_state.m_overallProgress, out m_state.m_processedFileCount, out m_state.m_processedFileSize, out m_state.m_totalFileCount, out m_state.m_totalFileSize, out m_state.m_stillCounting);
+                    }
+                        
+                    return m_state.Clone();
+                }
+            }
+            
             #region IMessageSink implementation
             public void BackendEvent(Duplicati.Library.Main.BackendActionType action, Duplicati.Library.Main.BackendEventType type, string path, long size)
             {
+                lock(m_lock)
+                {
+                    m_state.m_backendAction = action;
+                    m_state.m_backendPath = path;
+                    if (type == Duplicati.Library.Main.BackendEventType.Started)
+                        m_state.m_backendFileSize = size;
+                    else if (type == Duplicati.Library.Main.BackendEventType.Progress)
+                        m_state.m_backendFileProgress = size;
+                    else
+                    {
+                        m_state.m_backendFileSize = 0;
+                        m_state.m_backendFileProgress = 0;
+                        m_state.m_backendSpeed = 0;
+                    }
+                }
             }
             public void VerboseEvent(string message, object[] args)
             {
@@ -52,12 +146,16 @@ namespace Duplicati.Server
             {
                 set
                 {
+                    lock(m_lock)
+                        m_backendProgress = value;
                 }
             }
             public Duplicati.Library.Main.IOperationProgress OperationProgress
             {
                 set
-                {
+                {                    
+                    lock(m_lock)
+                        m_operationProgress = value;
                 }
             }
             #endregion
@@ -89,15 +187,17 @@ namespace Duplicati.Server
         {
             Duplicati.Server.Serialization.Interface.IBackup backup = null;
             
+            
             try
             {
                 backup = Program.DataConnection.GetBackup(item.Item1);
                 if (backup == null)
                     throw new Exception(string.Format("No backup with ID: {0}", item.Item1));
                 
-                Program.ProgressEventNotifyer.SignalNewEvent();            
                 var options = ApplyOptions(backup, item.Item2, GetCommonOptions(backup, item.Item2));
-                var sink = new MessageSink();
+                var sink = new MessageSink(backup.ID);
+                Program.GenerateProgressState = () => sink.Copy();
+                Program.StatusEventNotifyer.SignalNewEvent();            
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {

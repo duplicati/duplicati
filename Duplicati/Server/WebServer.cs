@@ -535,12 +535,15 @@ namespace Duplicati.Server
             {
                 bool isError;
                 long id = 0;
-                if (LongPollCheck(request, response, bw, Program.ProgressEventNotifyer, ref id, out isError) || !isError)
+                if (Program.GenerateProgressState == null)
                 {
-                    //TODO: Don't block if the backup is completed when entering the wait state
-                    /*var ev = Program.Runner.LastEvent;
+                    ReportError(response, bw, "No active backup");
+                }
+                else
+                {
+                    var ev = Program.GenerateProgressState();
                     ev.LastEventID = id;
-                    OutputObject(bw, ev);*/
+                    OutputObject(bw, ev);
                 }
             }
 
