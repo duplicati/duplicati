@@ -259,13 +259,42 @@ namespace Duplicati.Server
             catch (Exception ex)
             {
                 Program.DataConnection.LogError(item.Item1, string.Format("Failed while executing \"{0}\" with id: {1}", item.Item2, item.Item1), ex);
-                    
+                //TODO: Update metadata with the error here
             }
         }
         
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
         {
-            //TODO: Read the quota and other stuff here
+            if (o is Duplicati.Library.Interface.IBasicResults)
+            {
+                var r = (Duplicati.Library.Interface.IBasicResults)o;
+                backup.Metadata["LastDuration"] = r.Duration.ToString();
+            }
+            
+            if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
+            {
+                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
+                backup.Metadata["LastBackupDate"] = r.LastBackupDate.ToUniversalTime().ToString();
+                backup.Metadata["BackupListCount"] = r.BackupListCount.ToString();
+                backup.Metadata["TotalQuotaSpace"] = r.TotalQuotaSpace.ToString();
+                backup.Metadata["FreeQuotaSpace"] = r.FreeQuotaSpace.ToString();
+                backup.Metadata["AssignedQuotaSpace"] = r.AssignedQuotaSpace.ToString();
+                
+                backup.Metadata["TargetFilesSize"] = r.KnownFileSize.ToString();
+                backup.Metadata["TargetFilesCount"] = r.KnownFileCount.ToString();
+                backup.Metadata["TargetSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.KnownFileSize);
+            }
+            
+            if (o is Duplicati.Library.Interface.IBackupResults)
+            {
+                var r = (Duplicati.Library.Interface.IBackupResults)o;
+                backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
+                backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
+                backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
+            }
+            
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
         
         private static bool TestIfOptionApplies(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, string filter)
@@ -276,10 +305,13 @@ namespace Duplicati.Server
         
         private static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
         {
+            options["backup-name"] = backup.Name;
+            options["dbpath"] = backup.DBPath;
+            
             foreach(var o in backup.Settings)
                 if (TestIfOptionApplies(backup, mode, o.Filter))
                     options[o.Name] = o.Value;
-        
+                    
             return options;
         }
         
