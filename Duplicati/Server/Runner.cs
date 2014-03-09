@@ -293,6 +293,8 @@ namespace Duplicati.Server
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
             }
             
+            Program.DataConnection.SetMetadata(backup.Metadata, backup.ID, null);
+            
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();
         }
