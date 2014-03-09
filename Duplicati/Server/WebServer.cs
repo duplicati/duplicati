@@ -339,7 +339,19 @@ namespace Duplicati.Server
 
             private void ListBackups (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
-                OutputObject(bw, Program.DataConnection.Backups);
+                var schedules = Program.DataConnection.Schedules;
+                var backups = Program.DataConnection.Backups;
+                
+                var all = from n in backups
+                select new AddOrUpdateBackupData() {
+                    Backup = (Database.Backup)n,
+                    Schedule = 
+                        (from x in schedules
+                            where x.Tags != null && x.Tags.Contains("ID=" + n.ID)
+                            select (Database.Schedule)x).FirstOrDefault()
+                };
+                
+                OutputObject(bw, all.ToArray());
             }
 
             private void ListTags(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
