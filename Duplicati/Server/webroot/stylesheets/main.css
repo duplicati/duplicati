@@ -225,6 +225,7 @@
     display: block;
     padding: 6px 12px 6px 12px;    
     display: block;
+    position: relative;
 }
 
 .in-progress {
@@ -246,8 +247,25 @@
     vertical-align: top;
     padding-top: 4px;
     white-space: nowrap;
+    position: relative;
 }
 
+.backup-progress-indeterminate {
+    background-image: url('green-theme/images/animated-overlay.gif');
+}
+
+.backup-progress-overall {
+    border-radius: 3px;
+    display: block;
+    height: 100%;
+    width: 20%;
+    background-color: green;
+    display: block;
+    position: absolute;
+    top: 0px;
+    left: 0;
+
+}
 .backup-details {
     float: left;
     width: 300px;
@@ -259,6 +277,7 @@
     padding-bottom: 20px;
     min-width: 250px;
     white-space: nowrap;
+    position: relative;
 }
 
 #edit-dialog {

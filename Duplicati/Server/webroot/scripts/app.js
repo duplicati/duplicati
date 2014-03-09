@@ -223,7 +223,94 @@ $(document).ready(function() {
         dataEventId: -1,
 
         retryTimer: null,
-        pauseUpdateTimer: null
+        pauseUpdateTimer: null,
+        activeTask: null,
+        scheduled: []
+    };
+
+    PRIVATE_DATA.progress_state_text = {
+        'Backup_Begin': 'Starting ...',
+        'Backup_PreBackupVerify': 'Verifying backend data ...',
+        'Backup_PostBackupTest': 'Verifying remote data ...',
+        'Backup_PreviousBackupFinalize': 'Completing previous backup ...',
+        'Backup_ProcessingFiles': null,
+        'Backup_Finalize': 'Completing backup ...',
+        'Backup_WaitForUpload': 'Waiting for upload ...',
+        'Backup_Delete': 'Deleting unwanted files ...',
+        'Backup_Compact': 'Compacting remote data ...',
+        'Backup_VerificationUpload': 'Verifying upload ...',
+        'Backup_PostBackupVerify': 'Verifying backend data ...',
+        'Backup_Complete': 'Finished!',
+        'Restore_Begin': 'Starting ...',
+        'Restore_RecreateDatabase': 'Rebuilding local database ...',
+        'Restore_PreRestoreVerify': 'Verifying remote data ...',
+        'Restore_CreateFileList': 'Building list of files to restore ...',
+        'Restore_CreateTargetFolders': 'Creating target folders ...',
+        'Restore_ScanForExistingFiles': 'Scanning existing files ...',
+        'Restore_ScanForLocalBlocks': 'Scanning for local blocks ...',
+        'Restore_PatchWithLocalBlocks': 'Patching files with local blocks ...',
+        'Restore_DownloadingRemoteFiles': 'Downloading files ...',
+        'Restore_PostRestoreVerify': 'Verifying restored files ...',
+        'Restore_Complete': 'Finished!',
+        'Error': 'Error!'
+    };
+
+    PRIVATE_DATA.update_progress_and_schedules = function() {
+        var scheduledMap = {};
+        var backupMap = {};
+        var state = PRIVATE_DATA.server_state;
+        var current = state.activeTask == null ? false : 'backup-' + state.activeTask;
+
+        for(var n in state.scheduled)
+            scheduledMap['backup-' + state.scheduled[n]] = n + 1;
+
+        for(var n in PRIVATE_DATA.backup_list)
+            backupMap['backup-' + PRIVATE_DATA.backup_list[n].Backup.ID] = PRIVATE_DATA.backup_list[n];
+
+        $('#main-list').find('.main-backup-entry').each(function(i, e) {
+            var el = $(e);
+            if (scheduledMap[e.id]) {
+                el.find('.backup-progress-overall').css('width', '0px');
+                el.find('.main-progress-text').removeClass('in-progress').text('#' + parseInt(scheduledMap[e.id]) + ' in queue');
+                el.find('.backup-state-icon').addClass('main-icon-hourglass').removeClass('main-icon-clock');
+            } else if (e.id == current) {
+                var txt = 'Running ...';
+                var pg = 0;
+                if (PRIVATE_DATA.server_progress.lastEvent != null) {
+                    var filesleft = PRIVATE_DATA.server_progress.lastEvent.TotalFileCount - PRIVATE_DATA.server_progress.lastEvent.ProcessedFileCount;
+                    var sizeleft = PRIVATE_DATA.server_progress.lastEvent.TotalFileSize - PRIVATE_DATA.server_progress.lastEvent.ProcessedFileSize;
+                    pg = PRIVATE_DATA.server_progress.lastEvent.ProcessedFileSize / PRIVATE_DATA.server_progress.lastEvent.TotalFileSize;
+
+                    if (PRIVATE_DATA.server_progress.lastEvent.Phase == 'Backup_ProcessingFiles') {
+                        el.find('.backup-progress-overall').removeClass('backup-progress-indeterminate');
+                        txt = filesleft + ' files remaining';
+                        
+                        if (PRIVATE_DATA.server_progress.lastEvent.ProcessedFileCount == 0)
+                            pg = 0;
+
+                        if (PRIVATE_DATA.server_progress.lastEvent.StillCounting)
+                            txt = "~" + txt;
+                    } else {
+                        pg = 1;
+                        el.find('.backup-progress-overall').addClass('backup-progress-indeterminate');
+                        txt = PRIVATE_DATA.progress_state_text[PRIVATE_DATA.server_progress.lastEvent.Phase] || txt;
+                    }
+                }
+
+
+                el.find('.backup-progress-overall').css('width', parseInt(pg*100) + '%');
+                el.find('.main-progress-text').addClass('in-progress').text(txt);
+                el.find('.backup-state-icon').removeClass('main-icon-hourglass main-icon-clock');
+            } else if (backupMap[e.id] && backupMap[e.id].Schedule) {
+                el.find('.backup-progress-overall').css('width', '0px');
+                el.find('.main-progress-text').removeClass('in-progress').text(new Date(Date.parse(backupMap[e.id].Schedule.Time)).toLocaleString());
+                el.find('.backup-state-icon').removeClass('main-icon-hourglass').addClass('main-icon-clock');
+            } else {
+                el.find('.backup-progress-overall').css('width', '0px');
+                el.find('.main-progress-text').removeClass('in-progress').text('');
+                el.find('.backup-state-icon').removeClass('main-icon-hourglass main-icon-clock');
+            }
+        });
     };
 
     PRIVATE_DATA.long_poll_for_status = function() {
@@ -240,7 +327,7 @@ $(document).ready(function() {
         state.polling = true;
 
         var req = { action: 'get-current-state', longpoll: true, lastEventId: state.eventId };
-        var timeout = 60000;
+        var timeout = 240000;
         if (state.failed || state.eventId == -1) {
             req.longpoll = false;
             timeout = 5000
@@ -264,11 +351,21 @@ $(document).ready(function() {
 
             state.dataEventId = data.LastDataUpdateID;
             state.programState = data.ProgramState;
+            state.scheduled = data.SchedulerQueueIds || [];
 
             if (state.failed) {
                 state.failed = false;
                 $(document).trigger('server-state-restored');
             }
+
+            //If there is an active backup, (re)start the progress monitor
+            if (data.ActiveScheduleId != null && parseInt(data.ActiveScheduleId) > 0) {
+                state.activeTask = parseInt(data.ActiveScheduleId);
+                PRIVATE_DATA.long_poll_for_progress();
+            } else {
+                state.activeTask = null;
+            }
+
             $(document).trigger('server-state-updated', data);
             if (oldDataId != state.dataEventId)
                 $(document).trigger('server-state-data-updated', data);
@@ -297,11 +394,9 @@ $(document).ready(function() {
                         updateTimer();
                     }
                 }
-
-
-
             }
 
+            PRIVATE_DATA.update_progress_and_schedules();
             PRIVATE_DATA.long_poll_for_status();
         })
         .fail(function(data) {
@@ -321,6 +416,67 @@ $(document).ready(function() {
             }
 
             state.retryTimer = setInterval(updateTimer, 500);
+        });
+    };
+
+    PRIVATE_DATA.server_progress = {
+        polling: false,
+        eventId: -1,
+        throttleTimer: null,
+        lastEvent: null,
+        updateFreq: 2000
+    };
+
+    PRIVATE_DATA.long_poll_for_progress = function() {
+        var state = PRIVATE_DATA.server_progress;
+        if (state.polling)
+            return;
+
+        if (state.throttleTimer != null) {
+            clearTimeout(state.throttleTimer);
+            state.throttleTimer = null;
+        }
+
+        state.polling = true;
+
+        var req = { action: 'get-progress-state', longpoll: true, lastEventId: state.eventId };
+        var timeout = 30000;
+        if (true) { // state.failed || state.eventId == -1) {
+            req.longpoll = false;
+            timeout = 5000
+        }
+
+        req.duration = parseInt((timeout-1000) / 1000) + 's';
+        state.requestStart = new Date();
+
+        $.ajax({
+            url: APP_CONFIG.server_url,
+            type: 'GET',
+            timeout: timeout,
+            dataType: 'json',
+            data: req
+        })
+        .done(function(data) {
+            state.polling = false;
+            state.eventId = data.LastEventID;
+            state.lastEvent = data;
+            PRIVATE_DATA.update_progress_and_schedules();
+
+            var timeSinceLast = new Date() - state.requestStart;
+            if (timeSinceLast < state.updateFreq) {
+                state.throttleTimer = setTimeout(function(){
+                    if (PRIVATE_DATA.server_state.activeTask != null)
+                        PRIVATE_DATA.long_poll_for_progress();
+
+                }, Math.max(500, state.updateFreq - timeSinceLast));
+            } else {
+                if (PRIVATE_DATA.server_state.activeTask != null)
+                    PRIVATE_DATA.long_poll_for_progress();
+            }
+        })
+        .fail(function(data, a, b, c, d) {
+            state.polling = false;
+            // We will be restarted on the next status update
         });
 
     };
@@ -353,7 +509,7 @@ $(document).ready(function() {
 
                         // Pre-processing of data
                         for(var n in data) {
-                            var b = data[n];
+                            var b = data[n].Backup;
                             b.Metadata = b.Metadata || {};
 
                             if (!b.Metadata['TargetSizeString'])
@@ -371,7 +527,7 @@ $(document).ready(function() {
 
                         // Post processing of data
                         for(var n in data) {
-                            var id = data[n].ID;
+                            var id = data[n].Backup.ID;
 
                             $('#backup-details-run-' + id).click(function() {
                                 APP_DATA.runBackup(id);
@@ -396,6 +552,8 @@ $(document).ready(function() {
 
                     }
                 }
+
+                PRIVATE_DATA.update_progress_and_schedules();
             }
         );
     };

@@ -29,28 +29,29 @@
 
 
     <script id="backup-item-template" type="text/x-jquery-tmpl">
-            <div id="backup-${ID}" class="main-backup-entry">
+            <div id="backup-${Backup.ID}" class="main-backup-entry">
                 <div class="backup-details">
-                    <div class="caption-text">${Name}</div>
+                    <div class="caption-text">${Backup.Name}</div>
                     <ul class="hint-text">
                         <li class="hint-text-caption">Source</li>
-                        <li class="source-size">${Metadata.SourceSizeString}</li>
+                        <li class="source-size">${Backup.Metadata.SourceSizeString}</li>
                     </ul>
                     <ul class="hint-text">
                         <li class="hint-text-caption">Backup</li>
-                        <li class="target-size">${Metadata.TargetSizeString}</li>
+                        <li class="target-size">${Backup.Metadata.TargetSizeString}</li>
                     </ul>
                     <ul class="action-links">
-                        <li class="first" id="backup-details-run-${ID}">Backup</li>
-                        <li id="backup-details-restore-${ID}">Restore</li>
-                        <li id="backup-details-edit-${ID}">Edit</li>
-                        <li class="last" id="backup-details-delete-${ID}">Delete</li>
+                        <li class="first" id="backup-details-run-${Backup.ID}">Backup</li>
+                        <li id="backup-details-restore-${Backup.ID}">Restore</li>
+                        <li id="backup-details-edit-${Backup.ID}">Edit</li>
+                        <li class="last" id="backup-details-delete-${Backup.ID}">Delete</li>
                     </ul>
                 </div>
                 <div class="backup-progress">
                     <div class="progress-area">
-                    <div class="${ProgressIconClass}"></div>
-                    <div class="in-progress main-progress-text">${ProgressText}</div>
+                    <div class="backup-state-icon"></div>
+                    <div class="backup-progress-overall"></div>
+                    <div class="main-progress-text"></div>
                     </div>
                 </div>
             </div>
