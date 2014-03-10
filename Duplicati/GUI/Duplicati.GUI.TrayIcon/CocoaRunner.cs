@@ -110,13 +110,14 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly string ICON_RUNNING = System.IO.Path.Combine(ICON_PATH, "normal-running.png");
         private static readonly string ICON_ERROR = System.IO.Path.Combine(ICON_PATH, "normal-error.png");
         
-        private NSAutoreleasePool POOL;
         private NSStatusItem m_statusItem;
         private Dictionary<TrayIcons, NSImage> m_images = new Dictionary<TrayIcons, NSImage>();
-        
+
+        // We need to keep the items around, otherwise the GC will destroy them and crash the app
+        private List<IMenuItem> keeper = new List<IMenuItem>();
+
         public override void Init (string[] args)
         {
-            POOL = new NSAutoreleasePool();
             NSApplication.Init();
             NSApplication.Main(args);
         }
@@ -125,6 +126,8 @@ namespace Duplicati.GUI.TrayIcon
         {
             m_appDelegate = caller;
             m_statusItem = NSStatusBar.SystemStatusBar.CreateStatusItem(32);
+            m_statusItem.HighlightMode = true;
+            
             SetMenu(BuildMenu());
             RegisterStatusUpdateCallback();
             OnStatusUpdated(Program.Connection.Status);
@@ -185,10 +188,11 @@ namespace Duplicati.GUI.TrayIcon
         {
             NSApplication.SharedApplication.Terminate(m_appDelegate);
         }
-
-        protected override void SetMenu (System.Collections.Generic.IEnumerable<IMenuItem> items)
+        
+        protected override void SetMenu(System.Collections.Generic.IEnumerable<IMenuItem> items)
         {
             m_statusItem.Menu = new NSMenu();
+            keeper.AddRange(items);
             foreach(var itm in items)
                 m_statusItem.Menu.AddItem(((MenuItemWrapper)itm).MenuItem);
         }
