@@ -9,7 +9,7 @@
     <ProjectTypeGuids>{948B3504-5B70-4649-8FE4-BDE1FB46EC69};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Exe</OutputType>
     <RootNamespace>TestMonoMac</RootNamespace>
-    <AssemblyName>DuplicatiMacTrayIcon</AssemblyName>
+    <AssemblyName>Duplicati.GUI.MacTrayIcon</AssemblyName>
     <SuppressXamMacUpsell>True</SuppressXamMacUpsell>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -22,7 +22,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <EnableCodeSigning>false</EnableCodeSigning>
-    <CreatePackage>false</CreatePackage>
+    <CreatePackage>true</CreatePackage>
     <EnablePackageSigning>false</EnablePackageSigning>
     <IncludeMonoRuntime>false</IncludeMonoRuntime>
     <UseSGen>false</UseSGen>
