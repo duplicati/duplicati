@@ -287,6 +287,8 @@ $(document).ready(function() {
                         
                         if (PRIVATE_DATA.server_progress.lastEvent.ProcessedFileCount == 0)
                             pg = 0;
+                        else if (pg == 1)
+                            pg = 0.95;
 
                         if (PRIVATE_DATA.server_progress.lastEvent.StillCounting)
                             txt = "~" + txt;
