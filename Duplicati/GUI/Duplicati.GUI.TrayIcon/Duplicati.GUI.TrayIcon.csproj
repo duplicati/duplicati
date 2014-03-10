@@ -73,18 +73,14 @@
     </Reference>
     <Reference Include="gdk-sharp">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gdk-sharp.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="gtk-sharp">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="MonoMac">
       <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
     </Reference>
-    <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <Private>False</Private>
-    </Reference>
+    <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
@@ -152,6 +148,26 @@
     </None>
     <None Include="OSX app help\Info.plist" />
     <None Include="OSX app help\MainMenu.xib" />
+    <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
+    <EmbeddedResource Include="Resources\SettingsMenuIcon.png" />
+    <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
+    <EmbeddedResource Include="Resources\WizardMenuIcon.png" />
+    <EmbeddedResource Include="Resources\Clock05.png" />
+    <EmbeddedResource Include="Resources\Clock15.png" />
+    <EmbeddedResource Include="Resources\Clock30.png" />
+    <EmbeddedResource Include="Resources\Clock60.png" />
+    <EmbeddedResource Include="Resources\Delay.png" />
+    <EmbeddedResource Include="Resources\Throttle.png" />
+    <EmbeddedResource Include="Resources\Stop.png" />
+    <EmbeddedResource Include="Resources\TrayNormal.ico" />
+    <EmbeddedResource Include="Resources\TrayNormalError.ico" />
+    <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
+    <EmbeddedResource Include="Resources\TrayNormalWarning.ico" />
+    <EmbeddedResource Include="Resources\TrayWorking.ico" />
+    <EmbeddedResource Include="Resources\TrayWorkingPause.ico" />
+    <EmbeddedResource Include="Resources\Pause.png" />
+    <EmbeddedResource Include="Resources\Play.png" />
+    <Compile Include="ImageLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -165,10 +181,6 @@
     <ProjectReference Include="..\..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
@@ -222,6 +234,10 @@
       <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
       <Name>Duplicati.CommandLine.Decrypter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
+      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
@@ -244,63 +260,6 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\CloseMenuIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\SettingsMenuIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\StatusMenuIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\WizardMenuIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Clock05.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Clock15.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Clock30.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Clock60.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Delay.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Throttle.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Stop.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TrayNormal.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TrayNormalError.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TrayNormalPause.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TrayNormalWarning.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TrayWorking.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\TrayWorkingPause.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Pause.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Play.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

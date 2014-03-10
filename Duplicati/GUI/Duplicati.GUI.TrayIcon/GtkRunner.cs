@@ -55,16 +55,16 @@ namespace Duplicati.GUI.TrayIcon
                         _icons[icon] = null;
                         break;
                     case MenuIcons.Pause:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Pause);
+                        _icons[icon] = ImageToGtk(ImageLoader.Pause);
                         break;
                     case MenuIcons.Quit:
-                        _icons[icon] = ImageToGtk(Properties.Resources.CloseMenuIcon);
+                        _icons[icon] = ImageToGtk(ImageLoader.CloseMenuIcon);
                         break;
                     case MenuIcons.Resume:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Play);
+                        _icons[icon] = ImageToGtk(ImageLoader.Play);
                         break;
                     case MenuIcons.Status:
-                        _icons[icon] = ImageToGtk(Properties.Resources.StatusMenuIcon);
+                        _icons[icon] = ImageToGtk(ImageLoader.StatusMenuIcon);
                         break;
                     default:
                         _icons[icon] = null;
@@ -221,23 +221,23 @@ namespace Duplicati.GUI.TrayIcon
                 switch(icon)
                 {
                 case TrayIcons.Paused:
-                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormalPause.ToBitmap());
+                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormalPause.ToBitmap());
                     break;
                 case TrayIcons.Running:
-                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayWorking.ToBitmap());
+                    _images[icon] = ImageToPixbuf(ImageLoader.TrayWorking.ToBitmap());
                     break;
                 case TrayIcons.IdleError:
-                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormalError.ToBitmap());
+                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormalError.ToBitmap());
                     break;
                 case TrayIcons.RunningError:
-                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayWorking.ToBitmap());
+                    _images[icon] = ImageToPixbuf(ImageLoader.TrayWorking.ToBitmap());
                     break;
                 case TrayIcons.PausedError:
-                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormalPause.ToBitmap());
+                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormalPause.ToBitmap());
                     break;
                 case TrayIcons.Idle:
                 default:
-                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormal.ToBitmap());
+                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormal.ToBitmap());
                     break;
                 }
             }

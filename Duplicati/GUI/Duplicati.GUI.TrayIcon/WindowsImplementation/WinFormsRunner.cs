@@ -64,13 +64,13 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 switch(icon)
                 {
                 case MenuIcons.Pause:
-                    return Properties.Resources.Pause;
+                    return ImageLoader.Pause;
                 case MenuIcons.Quit:
-                    return Properties.Resources.CloseMenuIcon;
+                    return ImageLoader.CloseMenuIcon;
                 case MenuIcons.Resume:
-                    return Properties.Resources.Play;
+                    return ImageLoader.Play;
                 case MenuIcons.Status:
-                    return Properties.Resources.StatusMenuIcon;
+                    return ImageLoader.StatusMenuIcon;
                 case MenuIcons.None:
                 default:
                     return null;
@@ -167,23 +167,23 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 switch (value)
                 {
                     case TrayIcons.IdleError:
-                        m_trayIcon.Icon = Properties.Resources.TrayNormalError;
+                        m_trayIcon.Icon = ImageLoader.TrayNormalError;
                         break;
                     case TrayIcons.Paused:
-                        m_trayIcon.Icon = Properties.Resources.TrayNormalPause;
+                        m_trayIcon.Icon = ImageLoader.TrayNormalPause;
                         break;
                     case TrayIcons.PausedError:
-                        m_trayIcon.Icon = Properties.Resources.TrayNormalPause;
+                        m_trayIcon.Icon = ImageLoader.TrayNormalPause;
                         break;
                     case TrayIcons.Running:
-                        m_trayIcon.Icon = Properties.Resources.TrayWorking;
+                        m_trayIcon.Icon = ImageLoader.TrayWorking;
                         break;
                     case TrayIcons.RunningError:
-                        m_trayIcon.Icon = Properties.Resources.TrayWorking;
+                        m_trayIcon.Icon = ImageLoader.TrayWorking;
                         break;
                     case TrayIcons.Idle:
                     default:
-                        m_trayIcon.Icon = Properties.Resources.TrayNormal;
+                        m_trayIcon.Icon = ImageLoader.TrayNormal;
                         break;
                 }
             }
