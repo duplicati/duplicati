@@ -137,15 +137,6 @@
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
     <Compile Include="GtkRunner.cs" />
-    <None Include="OSX Icons\normal-error.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="OSX Icons\normal-pause.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="OSX Icons\normal-running.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="OSX app help\Info.plist" />
     <None Include="OSX app help\MainMenu.xib" />
     <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
@@ -168,6 +159,18 @@
     <EmbeddedResource Include="Resources\Pause.png" />
     <EmbeddedResource Include="Resources\Play.png" />
     <Compile Include="ImageLoader.cs" />
+    <EmbeddedResource Include="OSX Icons\normal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OSX Icons\normal-error.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OSX Icons\normal-pause.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OSX Icons\normal-running.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -262,9 +265,4 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Content Include="OSX Icons\normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 </Project>
