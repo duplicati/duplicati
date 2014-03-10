@@ -31,6 +31,12 @@ namespace Duplicati.GUI.TrayIcon
             
             CocoaRunner._instance.AwakeFromNib(this);
         }
+        
+        public override NSApplicationTerminateReply ApplicationShouldTerminate(NSApplication sender)
+        {
+            CocoaRunner._instance.DoTerminate(this);
+            return NSApplicationTerminateReply.Now;
+        }
     }
     
     public class CocoaRunner : TrayIconBase
@@ -103,18 +109,19 @@ namespace Duplicati.GUI.TrayIcon
             #endregion
         }
         
-        private static readonly string ICON_PATH = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "OSX Icons");
+        private static readonly System.Reflection.Assembly ASSEMBLY = System.Reflection.Assembly.GetExecutingAssembly();
+        private static readonly string ICON_PATH = ASSEMBLY.GetName().Name + ".OSX_Icons.";
         
-        private static readonly string ICON_NORMAL = System.IO.Path.Combine(ICON_PATH, "normal.png");
-        private static readonly string ICON_PAUSED = System.IO.Path.Combine(ICON_PATH, "normal-pause.png");
-        private static readonly string ICON_RUNNING = System.IO.Path.Combine(ICON_PATH, "normal-running.png");
-        private static readonly string ICON_ERROR = System.IO.Path.Combine(ICON_PATH, "normal-error.png");
+        private static readonly string ICON_NORMAL = ICON_PATH + "normal.png";
+        private static readonly string ICON_PAUSED = ICON_PATH + "normal-pause.png";
+        private static readonly string ICON_RUNNING = ICON_PATH + "normal-running.png";
+        private static readonly string ICON_ERROR = ICON_PATH + "normal-error.png";
         
         private NSStatusItem m_statusItem;
         private Dictionary<TrayIcons, NSImage> m_images = new Dictionary<TrayIcons, NSImage>();
 
         // We need to keep the items around, otherwise the GC will destroy them and crash the app
-        private List<IMenuItem> keeper = new List<IMenuItem>();
+        private List<IMenuItem> m_keeper = new List<IMenuItem>();
 
         public override void Init (string[] args)
         {
@@ -135,6 +142,17 @@ namespace Duplicati.GUI.TrayIcon
             base.Init(null);
         }
         
+        public void DoTerminate(AppDelegate caller)
+        {
+            if (m_statusItem != null)
+            {
+                NSStatusBar.SystemStatusBar.RemoveStatusItem(m_statusItem);
+                m_statusItem = null;
+                m_keeper.Clear();
+                m_images.Clear();
+            }
+        }
+        
         private NSImage GetIcon(TrayIcons icon)
         {
             if (!m_images.ContainsKey(icon))
@@ -142,23 +160,23 @@ namespace Duplicati.GUI.TrayIcon
                 switch(icon)
                 {
                 case TrayIcons.IdleError:
-                    m_images[icon] = new NSImage(ICON_ERROR);
+                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_ERROR));
                     break;
                 case TrayIcons.Paused:
-                    m_images[icon] = new NSImage(ICON_PAUSED);
+                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));
                     break;
                 case TrayIcons.PausedError:
-                    m_images[icon] = new NSImage(ICON_PAUSED);
+                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));
                     break;
                 case TrayIcons.Running:
-                    m_images[icon] = new NSImage(ICON_RUNNING);
+                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_RUNNING));
                     break;
                 case TrayIcons.RunningError:
-                    m_images[icon] = new NSImage(ICON_RUNNING);
+                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_RUNNING));
                     break;
                 case TrayIcons.Idle:
                 default:
-                    m_images[icon] = new NSImage(ICON_NORMAL);
+                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_NORMAL));
                     break;
                 }
             }
@@ -192,7 +210,7 @@ namespace Duplicati.GUI.TrayIcon
         protected override void SetMenu(System.Collections.Generic.IEnumerable<IMenuItem> items)
         {
             m_statusItem.Menu = new NSMenu();
-            keeper.AddRange(items);
+            m_keeper.AddRange(items);
             foreach(var itm in items)
                 m_statusItem.Menu.AddItem(((MenuItemWrapper)itm).MenuItem);
         }
