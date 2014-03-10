@@ -546,8 +546,6 @@ namespace Duplicati.Server
 
             private void GetProgressState(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
-                bool isError;
-                long id = 0;
                 if (Program.GenerateProgressState == null)
                 {
                     ReportError(response, bw, "No active backup");
@@ -555,7 +553,6 @@ namespace Duplicati.Server
                 else
                 {
                     var ev = Program.GenerateProgressState();
-                    ev.LastEventID = id;
                     OutputObject(bw, ev);
                 }
             }

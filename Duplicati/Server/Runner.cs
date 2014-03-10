@@ -29,7 +29,6 @@ namespace Duplicati.Server
             private class ProgressState : Server.Serialization.Interface.IProgressEventData
             {
                 private readonly long m_backupID;
-                public long LastEventID { get; set; }
                 
                 internal Duplicati.Library.Main.BackendActionType m_backendAction;
                 internal string m_backendPath;

@@ -363,7 +363,7 @@ $(document).ready(function() {
             //If there is an active backup, (re)start the progress monitor
             if (data.ActiveScheduleId != null && parseInt(data.ActiveScheduleId) > 0) {
                 state.activeTask = parseInt(data.ActiveScheduleId);
-                PRIVATE_DATA.long_poll_for_progress();
+                PRIVATE_DATA.poll_for_progress();
             } else {
                 state.activeTask = null;
             }
@@ -429,7 +429,7 @@ $(document).ready(function() {
         updateFreq: 2000
     };
 
-    PRIVATE_DATA.long_poll_for_progress = function() {
+    PRIVATE_DATA.poll_for_progress = function() {
         var state = PRIVATE_DATA.server_progress;
         if (state.polling)
             return;
@@ -441,20 +441,13 @@ $(document).ready(function() {
 
         state.polling = true;
 
-        var req = { action: 'get-progress-state', longpoll: true, lastEventId: state.eventId };
-        var timeout = 30000;
-        if (true) { // state.failed || state.eventId == -1) {
-            req.longpoll = false;
-            timeout = 5000
-        }
-
-        req.duration = parseInt((timeout-1000) / 1000) + 's';
+        var req = { action: 'get-progress-state', longpoll: false };
         state.requestStart = new Date();
 
         $.ajax({
             url: APP_CONFIG.server_url,
             type: 'GET',
-            timeout: timeout,
+            timeout: 5000,
             dataType: 'json',
             data: req
         })
@@ -468,12 +461,12 @@ $(document).ready(function() {
             if (timeSinceLast < state.updateFreq) {
                 state.throttleTimer = setTimeout(function(){
                     if (PRIVATE_DATA.server_state.activeTask != null)
-                        PRIVATE_DATA.long_poll_for_progress();
+                        PRIVATE_DATA.poll_for_progress();
 
                 }, Math.max(500, state.updateFreq - timeSinceLast));
             } else {
                 if (PRIVATE_DATA.server_state.activeTask != null)
-                    PRIVATE_DATA.long_poll_for_progress();
+                    PRIVATE_DATA.poll_for_progress();
             }
         })
         .fail(function(data, a, b, c, d) {
