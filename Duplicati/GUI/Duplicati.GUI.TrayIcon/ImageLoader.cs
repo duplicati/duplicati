@@ -31,7 +31,8 @@ namespace Duplicati.GUI.TrayIcon
     
     public static class ImageLoader
     {
-        private static readonly string PREFIX = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + ".";
+        private static readonly System.Reflection.Assembly ASSEMBLY = System.Reflection.Assembly.GetExecutingAssembly();
+        private static readonly string PREFIX = ASSEMBLY.GetName().Name + ".";
         private static readonly Dictionary<string, Bitmap> BITMAPS = new Dictionary<string, Bitmap>();
         private static readonly Dictionary<string, Icon> ICONS = new Dictionary<string, Icon>();
         private static readonly object LOCK = new object();
@@ -44,7 +45,7 @@ namespace Duplicati.GUI.TrayIcon
                 
             lock(LOCK)
                 if (!BITMAPS.TryGetValue(filename, out bmp))
-                    return BITMAPS[filename] = (Bitmap)Image.FromStream(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(PREFIX + filename)); 
+                    return BITMAPS[filename] = (Bitmap)Image.FromStream(ASSEMBLY.GetManifestResourceStream(PREFIX + filename)); 
             
             return BITMAPS[filename];
         }
@@ -57,7 +58,7 @@ namespace Duplicati.GUI.TrayIcon
                 
             lock(LOCK)
                 if (!ICONS.TryGetValue(filename, out ico))
-                    return ICONS[filename] = new Icon(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(PREFIX + filename));
+                    return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename));
             
             return ICONS[filename];
         }
