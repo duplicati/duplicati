@@ -64,6 +64,11 @@ namespace Duplicati.Server
         /// The currently scheduled items
         /// </summary>
         private ISchedule[] m_schedule;
+        
+        /// <summary>
+        /// List of update tasks, used to set the timestamp on the schedule once completed
+        /// </summary>
+        private Dictionary<Tuple<long, Server.Serialization.DuplicatiOperation>, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
 
         /// <summary>
         /// Constructs a new scheduler
@@ -75,9 +80,11 @@ namespace Duplicati.Server
         {
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
+            m_worker.CompletedWork += OnCompleted;
             m_schedule = new ISchedule[0];
             m_terminate = false;
             m_event = new AutoResetEvent(false);
+            m_updateTasks = new Dictionary<Tuple<long, Server.Serialization.DuplicatiOperation>, Tuple<ISchedule, DateTime, DateTime>>();
             m_thread.IsBackground = true;
             m_thread.Start();
         }
@@ -160,6 +167,24 @@ namespace Duplicati.Server
             return res;
         }
         
+        private void OnCompleted(object sender, EventArgs e)
+        {
+            Tuple<ISchedule, DateTime, DateTime> t = null;
+            lock(m_lock)
+            {
+                if (m_updateTasks.TryGetValue(m_worker.CurrentTask, out t))
+                    m_updateTasks.Remove(m_worker.CurrentTask);
+            }
+            
+            if (t != null)
+            {
+                t.Item1.Time = t.Item2;
+                t.Item1.LastRun = t.Item3;
+                Program.DataConnection.AddOrUpdateSchedule(t.Item1);
+            }
+            
+        }
+                
         /// <summary>
         /// The actual scheduling procedure
         /// </summary>
@@ -193,8 +218,9 @@ namespace Duplicati.Server
                         //If time is exceeded, run it now
                         if (start <= DateTime.Now)
                         {
+                            var jobsToRun = new List<Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>>();
                             //TODO: Cache this to avoid frequent lookups
-                            foreach(var id in Program.DataConnection.GetBackupIDsForTags(sc.Tags))
+                            foreach(var id in Program.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct())
                             {
                                 //See if it is already queued
                                 var tmplst = from n in m_worker.CurrentTasks
@@ -206,7 +232,7 @@ namespace Duplicati.Server
                             
                                 //If it is not already in queue, put it there
                                 if (!tmplst.Any(x => x == id))
-                                    m_worker.AddTask(new Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>(id, Duplicati.Server.Serialization.DuplicatiOperation.Backup));
+                                    jobsToRun.Add(new Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>(id, Duplicati.Server.Serialization.DuplicatiOperation.Backup));
                             }
 
                             //Caluclate next time, by adding the interval to the start until we have
@@ -223,9 +249,20 @@ namespace Duplicati.Server
                                     //TODO: Report this somehow
                                     continue;
                                 }
-
+                            
+                             Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation> lastJob = jobsToRun.LastOrDefault();
+                            if (lastJob != null)
+                                lock(m_lock)
+                                    m_updateTasks[lastJob] = new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
+                            
+                            foreach(var job in jobsToRun)
+                                m_worker.AddTask(job);
+                            
                             if (start < DateTime.Now)
+                            {
+                                //TODO: Report this somehow
                                 continue;
+                            }
                         }
 
                         scheduled[sc.ID] = start;
