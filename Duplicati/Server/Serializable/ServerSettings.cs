@@ -99,6 +99,17 @@ namespace Duplicati.Server.Serializable
         }
     
         /// <summary>
+        /// Gets all supported options
+        /// </summary>
+        public static Duplicati.Library.Interface.ICommandLineArgument[] Options
+        { 
+            get
+            {
+                return new Duplicati.Library.Main.Options(new System.Collections.Generic.Dictionary<string, string>()).SupportedCommands.ToArray();
+            }
+        }
+        
+        /// <summary>
         /// The backend modules known by the server
         /// </summary>
         public static IDynamicModule[] BackendModules

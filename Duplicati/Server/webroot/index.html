@@ -57,6 +57,21 @@
             </div>
     </script>
 
+    <script id="backup-option-template" type="text/x-jquery-tmpl">
+        <div class="backup-option ${Deprecated}">
+                <div>
+                    <a id="${Name}" class="action-link backup-option-name backup-option-link">${Name}</a> : <div class="backup-option-short">${ShortDescription}</div>
+                </div>
+                <div class="backup-option-summary">
+                    <div class="backup-option-type">Type: ${Type}</div>,
+                    <div class="backup-option-default">Default value: ${DefaultValue}</div>
+                </div>
+                <div class="backup-option-long">${LongDescription}</div>
+            </table>
+        </div>
+    </script>
+
+
 </head>
 <body>
 
@@ -323,7 +338,8 @@
 
                 <div class="clearfix"></div>
 
-                <div class="edit-dialog-label">Options</div>
+                <div class="edit-dialog-label" id="backup-options-link"><a class="action-link">Options<div class="ui-icon ui-icon-info"></div></a></div>
+                
                 <textarea id="backup-options" rows="4" name="backup-options"></textarea>
 
             </div>
@@ -355,12 +371,14 @@
                 <input type="password" name="server-password" id="server-password" class="text ui-widget-content ui-corner-all" />
             </div>
 
-            <div class="edit-dialog-label" id="server-options-label">Options</div>
+            <div class="edit-dialog-label" id="server-options-label"><a class="action-link">Options<div class="ui-icon ui-icon-info"></div></a></div>
             <textarea id="server-options" name="server-options"></textarea>
 
             <div id="edit-dialog-extensions"></div>
         </form>
     </div>
+
+    <div id="backup-options-dialog" class="modal-dialog" title="Avaliable options"></div>
 
 </body>
 </html>

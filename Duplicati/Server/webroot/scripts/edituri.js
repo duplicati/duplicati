@@ -447,4 +447,26 @@ $(document).ready(function() {
             } }
         ]
      });
+
+    $('#server-options-label').click(function() {
+        $('#backup-options-dialog').dialog('open');
+
+            var k = $('#backend-type').val();
+            var m = BACKEND_STATE.module_lookup[k];
+            
+            if (m && m.Options) {
+            $('#backup-options-dialog').trigger('configure', { Options: m.Options, callback: function(id) {
+                $('#backup-options-dialog').dialog('close');
+
+                var txt = $('#server-options').val();
+                if (txt.length > 0 && !txt.lastIndexOf('\n') != txt.length - 1)
+                    txt += '\n';
+
+                txt += id + '=';
+                $('#server-options').val('').val(txt);
+                $('#server-options').focus();
+
+            }});
+        }
+    });
 });

@@ -216,3 +216,25 @@
 #source-folder-paths.file-drag-target {
     background-color: #00ff00;
 }
+
+#backup-options-link div.ui-icon-info, #server-options-label div.ui-icon-info {
+    display: inline-block;
+}
+
+.backup-option-name {
+    font-weight: bold;
+    color: darkgreen;
+}
+
+.backup-option-short, .backup-option-type, .backup-option-default {
+    display: inline;
+}
+
+.backup-option-summary, .backup-option-long {
+    margin-left: 5px;
+}
+
+.backup-option-long {
+    margin-top: 5px;
+    margin-bottom: 10px;
+}

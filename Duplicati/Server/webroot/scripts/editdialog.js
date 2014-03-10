@@ -797,6 +797,50 @@ $(document).ready(function() {
         EDIT_STATE.dataModified = false;        
     });
 
+    $('#backup-options-dialog').dialog({
+        minWidth: 320, 
+        width: $('body').width > 600 ? 320 : 600, 
+        minHeight: 480, 
+        height: 500, 
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Close', disabled: false, click: function(event, ui) {
+                $('#backup-options-dialog').dialog('close');
+            }}
+        ]
+    });
+
+    $('#backup-options-link').click(function() {
+        APP_DATA.getServerConfig(function(data) {
+            $('#backup-options-dialog').dialog('open');
+            $('#backup-options-dialog').trigger('configure', { Options: data.Options, callback: function(id) {
+                $('#backup-options-dialog').dialog('close');
+
+                var txt = $('#backup-options').val();
+                if (txt.length > 0 && !txt.lastIndexOf('\n') != txt.length - 1)
+                    txt += '\n';
+
+                txt += id + '=';
+                $('#backup-options').val('').val(txt);
+                $('#backup-options').focus();
+
+            }});
+        }, function() {
+        });
+    });
+
+    $('#backup-options-dialog').on('configure', function(e, data) {
+        $('#backup-options-dialog').empty();
+
+        //Fill with jQuery template
+        $.tmpl($('#backup-option-template'), data.Options).prependTo($('#backup-options-dialog'));
+        $('#backup-options-dialog').find('.backup-option-link').click(function(e) {
+            data.callback(e.target.id);
+        });
+    });
+
     /*
 
     Too bad, we can drop files and folders, 

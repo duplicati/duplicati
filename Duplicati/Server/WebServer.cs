@@ -325,6 +325,7 @@ namespace Duplicati.Server
                         Version = System.Environment.OSVersion.Version.ToString(),
                         VersionString = System.Environment.OSVersion.VersionString
                     },
+                    Options = Serializable.ServerSettings.Options,
                     CompressionModules =  Serializable.ServerSettings.CompressionModules,
                     EncryptionModules = Serializable.ServerSettings.EncryptionModules,
                     BackendModules = Serializable.ServerSettings.BackendModules,
