@@ -567,6 +567,12 @@
   <data name="BackendtestsamplesLong" xml:space="preserve">
     <value>After a backup is completed, some files are selected for verification on the remote backend. Use this option to change how many. If this value is set to 0 or the option --{0} is set, no remote files are verified</value>
   </data>
+  <data name="FullremoteverificationShort" xml:space="preserve">
+    <value>Activates in-depth verification of files</value>
+  </data>
+  <data name="FullremoteverificationLong" xml:space="preserve">
+    <value>After a backup is completed, some files are selected for verification on the remote backend. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified</value>
+  </data>
   <data name="FilereadbuffersizeShort" xml:space="preserve">
     <value>Size of the file read buffer</value>
   </data>

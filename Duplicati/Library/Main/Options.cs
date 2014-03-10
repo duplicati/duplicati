@@ -219,7 +219,8 @@ namespace Duplicati.Library.Main
                     "usn-policy",
                     "symlink-policy",
                     "exclude-files-attributes",
-                    "compression-extension-file"
+                    "compression-extension-file",
+                    "full-remote-verification"
                 };
             }
         }
@@ -446,6 +447,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, string.Format(Strings.Options.BackendtestsamplesLong, "no-backend-verification"), "1"),
+                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullremoteverificationShort, string.Format(Strings.Options.FullremoteverificationLong, "no-backend-verification"), "false"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
                     new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
@@ -1494,6 +1496,15 @@ namespace Duplicati.Library.Main
             get { return m_options.ContainsKey("delete-all-but-n") || m_options.ContainsKey("delete-all-but-n-full"); }
         }
 
+        
+        /// <summary>
+        /// Gets a flag indicating if the remote verification is deep
+        /// </summary>
+        public bool FullRemoteVerification
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-remote-verification"); }
+        }
+        
         /// <summary>
         /// The block hash algorithm to use
         /// </summary>

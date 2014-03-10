@@ -111,6 +111,10 @@ namespace Duplicati.Library.Main
             /// that has no entry in the database
             /// </summary>
             public bool NotTrackedInDb;
+            /// <summary>
+            /// A flag that indicates that the download is only checked for the hash and the file is not decrypted or returned
+            /// </summary>            
+            public bool VerifyHashOnly;
 
             /// <summary>
             /// The event that is signaled once the operation is complete or has failed
@@ -635,31 +639,34 @@ namespace Duplicati.Library.Main
                     else
                     	item.Hash = nh;
                 }
-
-                // Decrypt before returning
-                if (!m_options.NoEncryption)
+                
+                if (!item.VerifyHashOnly)
                 {
-                    try
+                    // Decrypt before returning
+                    if (!m_options.NoEncryption)
                     {
-                        using(var tmpfile2 = tmpfile)
-                        { 
-                        	tmpfile = new Library.Utility.TempFile();
-                            lock(m_encryptionLock)
-                        	    m_encryption.Decrypt(tmpfile2, tmpfile);
+                        try
+                        {
+                            using(var tmpfile2 = tmpfile)
+                            { 
+                            	tmpfile = new Library.Utility.TempFile();
+                                lock(m_encryptionLock)
+                            	    m_encryption.Decrypt(tmpfile2, tmpfile);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            //If we fail here, make sure that we throw a crypto exception
+                            if (ex is System.Security.Cryptography.CryptographicException)
+                                throw;
+                            else
+                                throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        //If we fail here, make sure that we throw a crypto exception
-                        if (ex is System.Security.Cryptography.CryptographicException)
-                            throw;
-                        else
-                            throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
-                    }
+    
+                    item.Result = tmpfile;
+                    tmpfile = null;
                 }
-
-                item.Result = tmpfile;
-                tmpfile = null;
             }
             catch
             {
@@ -846,6 +853,27 @@ namespace Duplicati.Library.Main
             else
                 throw new InvalidOperationException("GetAsync called after backend is shut down");
         }
+        
+        public void GetForTesting(string remotename, long size, string hash)
+        {
+            if (m_lastException != null)
+                throw m_lastException;
+            
+            if (hash == null)
+                throw new InvalidOperationException("Cannot test a file without the hash");
+
+            var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
+            req.VerifyHashOnly = true;
+            if (m_queue.Enqueue(req))
+            {
+                req.WaitForComplete();
+                if (req.Exception != null)
+                    throw req.Exception;
+            }
+
+            if (m_lastException != null)
+                throw m_lastException;
+        }        
 
         public IList<Library.Interface.IFileEntry> List()
 		{

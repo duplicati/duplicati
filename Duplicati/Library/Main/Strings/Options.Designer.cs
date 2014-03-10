@@ -604,6 +604,12 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
+        internal static string FilereadbuffersizeLong {
+            get {
+                return ResourceManager.GetString("FilereadbuffersizeLong", resourceCulture);
+            }
+        }
+        
         internal static string SmallfilesizeShort {
             get {
                 return ResourceManager.GetString("SmallfilesizeShort", resourceCulture);
@@ -730,9 +736,9 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
-        internal static string FilereadbuffersizeLong {
+        internal static string FullremoteverificationLong {
             get {
-                return ResourceManager.GetString("FilereadbuffersizeLong", resourceCulture);
+                return ResourceManager.GetString("FullremoteverificationLong", resourceCulture);
             }
         }
         
@@ -757,6 +763,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string AutocleanupShort {
             get {
                 return ResourceManager.GetString("AutocleanupShort", resourceCulture);
+            }
+        }
+        
+        internal static string FullremoteverificationShort {
+            get {
+                return ResourceManager.GetString("FullremoteverificationShort", resourceCulture);
             }
         }
         
