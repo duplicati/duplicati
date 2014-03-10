@@ -45,10 +45,10 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 switch (value)
                 {
                     case  WindowIcons.LogWindow:
-                        base.Icon = Properties.Resources.TrayNormal;
+                        base.Icon = ImageLoader.TrayNormal;
                         break;
                     default:
-                        base.Icon = Properties.Resources.TrayNormal;
+                        base.Icon = ImageLoader.TrayNormal;
                         break;
                 }
             }
