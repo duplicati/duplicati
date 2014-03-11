@@ -439,6 +439,9 @@ namespace Duplicati.Server.Database
                     tr.Commit();
                 }
             }
+            
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
         
         public void DeleteBackup(IBackup backup)
@@ -453,6 +456,9 @@ namespace Duplicati.Server.Database
             
             lock(m_lock)
                 DeleteFromDb("Schedule", ID);
+            
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
         
         public void DeleteSchedule(ISchedule schedule)
