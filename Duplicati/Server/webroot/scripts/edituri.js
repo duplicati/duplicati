@@ -264,7 +264,7 @@ $(document).ready(function() {
             var opttext = '';
             for(var k in values) {
                 if (map[k] === undefined && k.indexOf('--') == 0) {
-                    opttext += k.substr(2) + '=' + decodeURIComponent(values[k] || '') + '\n';
+                    opttext += k + '=' + decodeURIComponent(values[k] || '') + '\n';
                 }
             }
 
@@ -458,11 +458,19 @@ $(document).ready(function() {
             $('#backup-options-dialog').trigger('configure', { Options: m.Options, callback: function(id) {
                 $('#backup-options-dialog').dialog('close');
 
-                var txt = $('#server-options').val();
-                if (txt.length > 0 && !txt.lastIndexOf('\n') != txt.length - 1)
+                var txt = $('#server-options').val().trim();
+                if (txt.length > 0)
                     txt += '\n';
 
-                txt += id + '=';
+                var defaultvalue = '';
+                for(var o in m.Options)
+                    if (m.Options[o].Name == id) {
+                        defaultvalue = m.Options[o].DefaultValue;
+                        break;
+                    }
+
+
+                txt += '--' + id + '=' + defaultvalue;
                 $('#server-options').val('').val(txt);
                 $('#server-options').focus();
 

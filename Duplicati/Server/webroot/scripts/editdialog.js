@@ -790,7 +790,7 @@ $(document).ready(function() {
         var opttext = '';
         for(var k in data['Backup']['Settings'])
             if (EDIT_BACKUP.fill_form_map[k] === undefined && k.indexOf('--') == 0)
-                opttext += k.substr(2) + '=' + (data['Backup']['Settings'][k] || '') + '\n';
+                opttext += k + '=' + (data['Backup']['Settings'][k] || '') + '\n';
 
         $('#backup-options').val(opttext);
 
@@ -818,11 +818,19 @@ $(document).ready(function() {
             $('#backup-options-dialog').trigger('configure', { Options: data.Options, callback: function(id) {
                 $('#backup-options-dialog').dialog('close');
 
-                var txt = $('#backup-options').val();
-                if (txt.length > 0 && !txt.lastIndexOf('\n') != txt.length - 1)
+                var txt = $('#backup-options').val().trim();
+                if (txt.length > 0)
                     txt += '\n';
 
-                txt += id + '=';
+                var defaultvalue = '';
+                for(var o in data.Options)
+                    if (data.Options[o].Name == id) {
+                        defaultvalue = data.Options[o].DefaultValue;
+                        break;
+                    }
+
+
+                txt += '--' + id + '=' + defaultvalue;
                 $('#backup-options').val('').val(txt);
                 $('#backup-options').focus();
 
