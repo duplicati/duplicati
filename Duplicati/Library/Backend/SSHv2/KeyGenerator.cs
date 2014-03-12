@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using System.Text;
+using System.Linq;
 
 namespace Duplicati.Library.Backend
 {
@@ -79,8 +81,12 @@ namespace Duplicati.Library.Backend
                 foreach(var b in data)
                 {
                     ms.WriteByte(0x02);
-                    EncodeDERLength(ms, (uint)b.Length);
-                    ms.Write(b, 0, b.Length);
+                    var isNegative = (b[0] & 0x80) != 0;
+                    
+                    EncodeDERLength(ms, (uint)(b.Length + (isNegative ? 1 : 0)));
+                    if (isNegative)
+                        ms.WriteByte(0);
+                    ms.Write(b, 0, b.Length);                    
                 }
             
                 payload = ms.ToArray();
@@ -101,11 +107,38 @@ namespace Duplicati.Library.Backend
             {
                 foreach(var n in data)
                 {
-                    EncodePEMLength(ms, (uint)n.Length);
+                    var isNegative = (n[0] & 0x80) != 0;
+                    EncodePEMLength(ms, (uint)(n.Length + (isNegative ? 1 : 0)));
+                    if (isNegative)
+                        ms.WriteByte(0);
                     ms.Write(n, 0, n.Length);
                 }
                 return ms.ToArray();
             }
+        }
+        
+        private static IDictionary<string, string> OutputKey(byte[] private_key, byte[] public_key, string pem_template, string key_name, string username)
+        {
+            var res = new Dictionary<string, string>();
+            
+            var b64_raw = Convert.ToBase64String(private_key);
+            var sb = new StringBuilder();
+            for(var i = 0; i < b64_raw.Length; i += 80)
+            {
+                sb.Append(b64_raw.Substring(i, Math.Min(80, b64_raw.Length - i)));
+                sb.Append("\n");
+            }
+            
+            var b64 = sb.ToString().Trim();
+            var pem = string.Format(pem_template, b64);
+            var uri = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.Uri.UrlEncode(pem);
+            var pub = key_name + " " + Convert.ToBase64String(public_key) + " " + username;
+
+            res["privkey"] = b64_raw;
+            res["privkeyfile"] = pem;
+            res["privkeyuri"] = uri;
+            res["pubkey"] = pub;
+            return res;
         }
         
         #region IWebModule implementation
@@ -144,15 +177,7 @@ namespace Duplicati.Library.Backend
                     key.Modulus 
                 };
                 
-                byte[] privkey = EncodeDER(privateEntries);
-                byte[] pubkey = EncodePEM(publicEntries);
-
-                var res = new Dictionary<string, string>();
-                res["privkey"] = Convert.ToBase64String(privkey);
-                res["privkeyfile"] = string.Format(KEY_TEMPLATE_RSA, Convert.ToBase64String(privkey));
-                res["privkeyuri"] = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.Uri.UrlEncode(string.Format(KEY_TEMPLATE_RSA, Convert.ToBase64String(privkey)));
-                res["pubkey"] = PUB_KEY_FORMAT_RSA + " " + Convert.ToBase64String(pubkey) + " " + username;
-                return res;
+                return OutputKey(EncodeDER(privateEntries), EncodePEM(publicEntries), KEY_TEMPLATE_RSA, PUB_KEY_FORMAT_RSA, username);
             }
             else if (KEYTYPE_DSA.Equals(keytype, StringComparison.InvariantCultureIgnoreCase))
             {
@@ -164,7 +189,7 @@ namespace Duplicati.Library.Backend
                     dsa.KeySize = DEFAULT_KEYLEN;
                 
                 var key = dsa.ExportParameters(true);
-
+                
                 var privateEntries = new byte[][] { new byte[] { 0x0 }, key.P, key.Q, key.G, key.Y, key.X };
                 var publicEntries = new byte[][] {
                     System.Text.Encoding.ASCII.GetBytes(PUB_KEY_FORMAT_DSA),
@@ -174,15 +199,7 @@ namespace Duplicati.Library.Backend
                     key.Y
                 };
                 
-                byte[] privkey = EncodeDER(privateEntries);
-                byte[] pubkey = EncodePEM(publicEntries);
-
-                var res = new Dictionary<string, string>();
-                res["privkey"] = Convert.ToBase64String(privkey);
-                res["privkeyfile"] = string.Format(KEY_TEMPLATE_DSA, Convert.ToBase64String(privkey));
-                res["privkeyuri"] = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.Uri.UrlEncode(string.Format(KEY_TEMPLATE_DSA, Convert.ToBase64String(privkey)));
-                res["pubkey"] = PUB_KEY_FORMAT_DSA + " " + Convert.ToBase64String(pubkey) + " " + username;
-                return res;
+                return OutputKey(EncodeDER(privateEntries), EncodePEM(publicEntries), KEY_TEMPLATE_DSA, PUB_KEY_FORMAT_DSA, username);
             }
             else
             {
