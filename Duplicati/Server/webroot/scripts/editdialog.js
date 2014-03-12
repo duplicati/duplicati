@@ -849,6 +849,15 @@ $(document).ready(function() {
         });
     });
 
+    var setStateModified = function() {
+        if (EDIT_STATE != null)
+            EDIT_STATE.dataModified = true;
+    };
+
+    $('#edit-dialog-form').find('input').change(setStateModified);
+    $('#edit-dialog-form').find('option').change(setStateModified);
+    $('#edit-dialog-form').find('textarea').change(setStateModified);
+
     /*
 
     Too bad, we can drop files and folders, 
