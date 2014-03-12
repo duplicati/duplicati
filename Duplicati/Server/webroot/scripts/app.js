@@ -520,24 +520,40 @@ $(document).ready(function() {
                         $.tmpl($('#backup-item-template'), data).prependTo($('#main-list-container'));
 
 
+                        var decodeid = function(e) {
+                            var p = e.target.id.split('-');
+                            return parseInt(p[p.length - 1]);
+                        };
+
                         // Post processing of data
                         for(var n in data) {
                             var id = data[n].Backup.ID;
 
-                            $('#backup-details-run-' + id).click(function() {
+                            $('#backup-details-run-' + id).click(function(e) {
+                                var id = decodeid(e);
                                 APP_DATA.runBackup(id);
                             });
 
-                            $('#backup-details-restore-' + id).click(function() { 
+                            $('#backup-details-restore-' + id).click(function(e) { 
+                                var id = decodeid(e);
                                 APP_DATA.restoreBackup(id);
                             });
 
-                            $('#backup-details-edit-' + id).click(function() {
+                            $('#backup-details-edit-' + id).click(function(e) {
+                                var id = decodeid(e);
                                 APP_DATA.editBackup(id);
                             });
 
-                            $('#backup-details-delete-' + id).click(function() {
-                                APP_DATA.deleteBackup(id);
+                            $('#backup-details-delete-' + id).click(function(e) {
+                                var id = decodeid(e);
+                                var name = null;
+
+                                for(var x in PRIVATE_DATA.backup_list)
+                                    if (PRIVATE_DATA.backup_list[x].Backup.ID == id)
+                                        name = PRIVATE_DATA.backup_list[x].Backup.Name;
+
+                                if (name && confirm('Really delete ' + name))
+                                    APP_DATA.deleteBackup(id);
                             });
 
                         }
