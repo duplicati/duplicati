@@ -44,7 +44,7 @@ namespace Duplicati.Server.Serializable
             }
         
             /// <summary>
-            /// Constructor for backend interface
+            /// Constructor for compression module interface
             /// </summary>
             public DynamicModule(Duplicati.Library.Interface.ICompression module)
             {
@@ -56,7 +56,7 @@ namespace Duplicati.Server.Serializable
             }
 
             /// <summary>
-            /// Constructor for backend interface
+            /// Constructor for encryption module interface
             /// </summary>
             public DynamicModule(Duplicati.Library.Interface.IEncryption module)
             {
@@ -68,7 +68,7 @@ namespace Duplicati.Server.Serializable
             }
 
             /// <summary>
-            /// Constructor for backend interface
+            /// Constructor for generic module interface
             /// </summary>
             public DynamicModule(Duplicati.Library.Interface.IGenericModule module)
             {
@@ -79,6 +79,17 @@ namespace Duplicati.Server.Serializable
                     this.Options = module.SupportedCommands.ToArray();
             }
 
+            /// <summary>
+            /// Constructor for webmodule interface
+            /// </summary>
+            public DynamicModule(Duplicati.Library.Interface.IWebModule module)
+            {
+                this.Key = module.Key;
+                this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
+            }
             /// <summary>
             /// The module key
             /// </summary>
@@ -164,6 +175,19 @@ namespace Duplicati.Server.Serializable
             }
         } 
         
+        /// <summary>
+        /// The generic modules known by the server
+        /// </summary>
+        public static IDynamicModule[] WebModules
+        { 
+            get
+            { 
+                return 
+                    (from n in Library.DynamicLoader.WebLoader.Modules
+                     select new DynamicModule(n))
+                    .ToArray(); 
+            }
+        }         
         /// <summary>
         /// The filters that are applied to all backups
         /// </summary>
