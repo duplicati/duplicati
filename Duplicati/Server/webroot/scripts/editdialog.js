@@ -560,8 +560,10 @@ $(document).ready(function() {
     });
 
     $('#edit-dialog').on( "dialogopen", function( event, ui ) {
-        $('#edit-dialog-form').each(function(i, e) { e.reset(); });
-            
+        $('#edit-dialog-form').each(function(i, e) { e.reset(); });        
+        $('#source-folder-paths').find('.source-folder').remove();
+        removeSourceFolder();
+
         EDIT_STATE = {
             passwordShown: false,
             dataModified: false,
@@ -668,7 +670,8 @@ $(document).ready(function() {
 
     var removeSourceFolder = function(el) {
         var container = $('#source-folder-paths');
-        container.each(function(i, e) { e.removeChild(el) });
+        if (el)
+            container.each(function(i, e) { e.removeChild(el) });
 
         if (container.find('.source-folder').length == 0) {
             container.addClass('empty');
