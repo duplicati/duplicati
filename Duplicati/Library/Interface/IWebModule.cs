@@ -45,9 +45,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Execute the specified command with the given options.
         /// </summary>
-        /// <param name="command">The command to execute</param>
         /// <param name="options">The options to use</param>
-        IDictionary<string, string> Execute(string command, IDictionary<string, string> options);
+        /// <returns>A list of output values</returns>
+        IDictionary<string, string> Execute(IDictionary<string, string> options);
         
     }
 }
