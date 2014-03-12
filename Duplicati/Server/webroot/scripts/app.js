@@ -725,10 +725,6 @@ $(document).ready(function() {
         ]
     });    
 
-    // Hack the tabs into the dialog title
-    $('#edit-dialog').parent().find('.ui-dialog-titlebar').after($('#edit-dialog').find('.ui-tabs-nav'));
-    $('#edit-dialog').parent().addClass('ui-tabs');
-
     $(document).on('server-state-updated', function() {
         $('#loading-dialog').dialog("close");
     });
