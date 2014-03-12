@@ -59,6 +59,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DynamicLoader.resx</DependentUpon>
     </Compile>
+    <Compile Include="WebLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
