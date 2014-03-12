@@ -332,7 +332,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        private static string UrlEncode(string value, System.Text.Encoding encoding = null) 
+        public static string UrlEncode(string value, System.Text.Encoding encoding = null) 
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -387,7 +387,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The decoded URL</returns>
         /// <param name="url">The URL fragment to decode</param>
         /// <param name="encoding">The encoding to use</param>
-        private static string UrlDecode(string value, System.Text.Encoding encoding = null)
+        public static string UrlDecode(string value, System.Text.Encoding encoding = null)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
