@@ -29,7 +29,7 @@ APP_UTIL = {
 
     parseOptionStrings: function(val, dict, validateCallback) {
         dict = dict || {};
-        var lines = val.replace('\r', '\n').split('\n');
+        var lines = (val || '').replace('\r', '\n').split('\n');
         for(var i in lines) {
             var line = lines[i].trim();
             if (line != '' && line[0] != '#') {
