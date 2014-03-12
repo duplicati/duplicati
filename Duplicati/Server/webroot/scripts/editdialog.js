@@ -561,7 +561,8 @@ $(document).ready(function() {
     });
 
     $('#edit-dialog').on( "dialogopen", function( event, ui ) {
-        
+        $('#edit-dialog-form').each(function(i, e) { e.reset(); });
+            
         EDIT_STATE = {
             passwordShown: false,
             dataModified: false,

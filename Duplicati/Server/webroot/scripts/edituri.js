@@ -301,6 +301,7 @@ $(document).ready(function() {
 
     $('#connection-uri-dialog').on( "dialogopen", function( event, ui ) {
         BACKEND_STATE = {};
+        $('#edit-uri-form').each(function(i, e) { e.reset(); });
 
         APP_DATA.getServerConfig(function(serverdata) {
             var drop = $('#backend-type');
