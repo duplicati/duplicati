@@ -319,6 +319,10 @@ $(document).ready(function() {
             },
             'encryption-method': function(dict, key, el, cfgel) {
                 dict['Backup']['Settings']['encryption-module'] = $(el).val();
+                if ($(el).val().trim() == '')
+                   dict['Backup']['Settings']['--no-encryption'] = true;
+               else
+                    dict['Backup']['Settings']['--no-encryption'] = undefined;
             },
             'next-run-time': function(dict, key, el, cfgel) {
                 if (!dict['Schedule'])
