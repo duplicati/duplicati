@@ -1039,7 +1039,11 @@ namespace Duplicati.Server
                         
                         OutputObject(bw, new { 
                             Status = "OK", 
-                            Result = m.Execute(input.Where(x => !x.Name.Equals("command", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Name, x => x.Value))
+                            Result = m.Execute(input.Where(x => 
+                                    !x.Name.Equals("command", StringComparison.InvariantCultureIgnoreCase)
+                                    &&
+                                    !x.Name.Equals("action", StringComparison.InvariantCultureIgnoreCase)
+                                ).ToDictionary(x => x.Name, x => x.Value))
                         });
                         return;
                 }
