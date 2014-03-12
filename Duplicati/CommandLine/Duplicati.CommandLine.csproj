@@ -105,10 +105,6 @@
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
@@ -128,6 +124,22 @@
     <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
+    </ProjectReference>
+    <ProjectReference Include="BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+      <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
+      <Name>Duplicati.CommandLine.BackendTool</Name>
+    </ProjectReference>
+    <ProjectReference Include="BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+      <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
+      <Name>Duplicati.CommandLine.BackendTester</Name>
+    </ProjectReference>
+    <ProjectReference Include="Decrypter\Duplicati.CommandLine.Decrypter.csproj">
+      <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
+      <Name>Duplicati.CommandLine.Decrypter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
+      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
