@@ -277,10 +277,14 @@ namespace Duplicati.Server
                                 response.Status = System.Net.HttpStatusCode.InternalServerError;
                                 response.Reason = ex.Message;
                                 response.ContentType = "text/plain";
-                                bw.WriteLine("Internal error");
+                                
+                                OutputObject(bw, new {
+                                    Message = ex.Message,
+                                    Type = ex.GetType().Name,
 #if DEBUG
-                                bw.Write("Stacktrace: " + ex.ToString());
+                                    Stacktrace = ex.ToString()
 #endif
+                                });
                                 bw.Flush();
                             }
                         }
