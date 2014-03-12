@@ -55,6 +55,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SSHv2Backend.resx</DependentUpon>
     </Compile>
+    <Compile Include="KeyGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">

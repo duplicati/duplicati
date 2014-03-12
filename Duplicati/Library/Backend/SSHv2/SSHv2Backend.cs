@@ -29,6 +29,7 @@ namespace Duplicati.Library.Backend
     public class SSHv2 : IBackend, IStreamingBackend
     {
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
+        public const string KEYFILE_URI = "sshkey://";
 
         Dictionary<string, string> m_options;
 
@@ -215,10 +216,29 @@ namespace Duplicati.Library.Backend
 
         public static Renci.SshNet.PrivateKeyFile ValidateKeyFile(string filename, string password)
         {
-            if (String.IsNullOrEmpty(password))
-                return new Renci.SshNet.PrivateKeyFile(filename);
+            if (filename.StartsWith(KEYFILE_URI, StringComparison.InvariantCultureIgnoreCase))
+            {
+                using(var ms = new System.IO.MemoryStream())
+                using(var sr = new System.IO.StreamWriter(ms))
+                {
+                    sr.Write(Duplicati.Library.Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
+                    sr.Flush();
+                    
+                    ms.Position = 0;
+                    
+                    if (String.IsNullOrEmpty(password))
+                        return new Renci.SshNet.PrivateKeyFile(ms);
+                    else
+                        return new Renci.SshNet.PrivateKeyFile(ms, password);
+                }
+            }
             else
-                return new Renci.SshNet.PrivateKeyFile(filename, password);
+            {
+                if (String.IsNullOrEmpty(password))
+                    return new Renci.SshNet.PrivateKeyFile(filename);
+                else
+                    return new Renci.SshNet.PrivateKeyFile(filename, password);
+            }
         }
         
         #endregion
