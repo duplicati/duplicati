@@ -737,7 +737,7 @@ namespace Duplicati.Server
                             }
                             
                             if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
-                                return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1));
+                                return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/") + 1));
                             else
                                 return new KeyValuePair<string, string>(x, x);
                             
