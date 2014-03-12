@@ -241,6 +241,10 @@
       <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
       <Name>Duplicati.Library.Backend.GoogleDocs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
