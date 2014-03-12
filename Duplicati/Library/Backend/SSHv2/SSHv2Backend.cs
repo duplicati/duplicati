@@ -64,7 +64,7 @@ namespace Duplicati.Library.Backend
 
             m_path = uri.Path;
 
-            if (!m_path.EndsWith("/"))
+            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/"))
                 m_path += "/";
 
             m_server = uri.Host;
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend
 
             foreach (Renci.SshNet.Sftp.SftpFile ls in CreateConnection(true).ListDirectory(path))
                 if (ls.Name.ToString() != "." && ls.Name.ToString() != "..")
-                    files.Add(new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime));
+                    files.Add(new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory });
 
             return files;
         }
