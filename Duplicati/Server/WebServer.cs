@@ -233,6 +233,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("delete-backup", DeleteBackup);
                 SUPPORTED_METHODS.Add("validate-path", ValidatePath);
                 SUPPORTED_METHODS.Add("list-tags", ListTags);
+                SUPPORTED_METHODS.Add("test-backend", TestBackend);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -302,6 +303,28 @@ namespace Duplicati.Server
                 Serializer.SerializeJson(b, o);
             }
 
+            private void TestBackend(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                if (input["url"] == null || input["url"].Value == null)
+                {
+                    ReportError(response, bw, "The path parameter was not set");
+                    return;
+                }
+                
+                try
+                {
+                    using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(input["url"].Value, new Dictionary<string, string>()))
+                        b.Test();
+                    
+                    OutputObject(bw, new { Status = "OK" });
+                }
+                catch (Exception ex)
+                {
+                    ReportError(response, bw, ex.Message);
+                }
+            }
+
             private void ListSystemInfo(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 OutputObject(bw, new
@@ -329,7 +352,8 @@ namespace Duplicati.Server
                     CompressionModules =  Serializable.ServerSettings.CompressionModules,
                     EncryptionModules = Serializable.ServerSettings.EncryptionModules,
                     BackendModules = Serializable.ServerSettings.BackendModules,
-                    GenericModules = Serializable.ServerSettings.GenericModules
+                    GenericModules = Serializable.ServerSettings.GenericModules,
+                    WebModules = Serializable.ServerSettings.WebModules
                 });
             }
 
@@ -932,70 +956,92 @@ namespace Duplicati.Server
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
 
                 string command = input["command"].Value ?? "";
+                string module = input["module"].Value ?? "";
                 long id;
-
-                switch (command.ToLowerInvariant())
+                
+                if (string.IsNullOrWhiteSpace(module))
                 {
-                    case "pause":
-                        if (input.Contains("duration") && !string.IsNullOrWhiteSpace(input["duration"].Value))
-                        {
-                            TimeSpan ts;
-                            try { ts = Library.Utility.Timeparser.ParseTimeSpan(input["duration"].Value); }
-                            catch (Exception ex)
+                    switch (command.ToLowerInvariant())
+                    {
+                        case "pause":
+                            if (input.Contains("duration") && !string.IsNullOrWhiteSpace(input["duration"].Value))
                             {
-                                ReportError(response, bw, ex.Message);
-                                return;
+                                TimeSpan ts;
+                                try
+                                {
+                                    ts = Library.Utility.Timeparser.ParseTimeSpan(input["duration"].Value);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ReportError(response, bw, ex.Message);
+                                    return;
+                                }
+                                if (ts.TotalMilliseconds > 0)
+                                    Program.LiveControl.Pause(ts);
+                                else
+                                    Program.LiveControl.Pause();
                             }
-                            if (ts.TotalMilliseconds > 0)
-                                Program.LiveControl.Pause(ts);
                             else
-                                Program.LiveControl.Pause();
-                        }
-                        else
-                        {
-                            Program.LiveControl.Pause();
-                        }
-
-                        break;
-                    case "resume":
-                        Program.LiveControl.Resume();
-                        break;
-
-                    case "stop":
-                        break;
-
-                    case "abort":
-                        break;
-
-                    case "run":
-                    case "run-backup":
-                        {
-                            Duplicati.Server.Serialization.Interface.IBackup backup = null;
-                            if (long.TryParse(input["id"].Value, out id))
-                                backup = Program.DataConnection.GetBackup(id);
-
-                            if (backup == null)
                             {
-                                ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
-                                return;
+                                Program.LiveControl.Pause();
                             }
-
-                            Program.WorkThread.AddTask(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.Backup));
-                        }
-                        break;
-                    case "clear-warning":
-                        Program.HasWarning = false;
-                        break;
-                    case "clear-error":
-                        Program.HasError = false;
-                        break;
+    
+                            break;
+                        case "resume":
+                            Program.LiveControl.Resume();
+                            break;
+    
+                        case "stop":
+                            break;
+    
+                        case "abort":
+                            break;
+    
+                        case "run":
+                        case "run-backup":
+                            {
+                                Duplicati.Server.Serialization.Interface.IBackup backup = null;
+                                if (long.TryParse(input["id"].Value, out id))
+                                    backup = Program.DataConnection.GetBackup(id);
+    
+                                if (backup == null)
+                                {
+                                    ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
+                                    return;
+                                }
+    
+                                Program.WorkThread.AddTask(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.Backup));
+                            }
+                            break;
+                        case "clear-warning":
+                            Program.HasWarning = false;
+                            break;
+                        case "clear-error":
+                            Program.HasError = false;
+                            break;
+                        
+                        default:
+                            ReportError(response, bw, string.Format("Unsupported command {0}", command));
+                            return;
+                    }
                     
-                    default:
-                        ReportError(response, bw, string.Format("Unsupported command {0}", command));
-                        break;
+                    OutputObject(bw, new { Status = "OK" });
+                }
+                else
+                {
+                    var m = Duplicati.Library.DynamicLoader.WebLoader.Modules.Where(x => x.Key.Equals(module, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                    if (m == null)
+                    {
+                        ReportError(response, bw, string.Format("Unsupported module {0}", command));
+                        return;
+                    }
+                    
+                    OutputObject(bw, new { 
+                        Status = "OK", 
+                        Result = m.Execute(command.ToLowerInvariant(), input.ToDictionary(x => x.Name, x => x.Value))
+                    });
                 }
 
-                OutputObject(bw, new { Status = "OK" });
             }
         }
     }
