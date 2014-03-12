@@ -242,6 +242,14 @@ namespace Duplicati.Library.Backend
         }
         
         #endregion
+        
+        internal SftpClient Client
+        {
+            get
+            {
+                return CreateConnection(false);
+            }
+        }
     }
 }
 
