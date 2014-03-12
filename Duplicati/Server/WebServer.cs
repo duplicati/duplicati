@@ -234,6 +234,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("validate-path", ValidatePath);
                 SUPPORTED_METHODS.Add("list-tags", ListTags);
                 SUPPORTED_METHODS.Add("test-backend", TestBackend);
+                SUPPORTED_METHODS.Add("list-remote-folder", ListRemoteFolder);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -306,13 +307,34 @@ namespace Duplicati.Server
             {
                 Serializer.SerializeJson(b, o);
             }
+            
+            private void ListRemoteFolder(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                if (input["url"] == null || input["url"].Value == null)
+                {
+                    ReportError(response, bw, "The url parameter was not set");
+                    return;
+                }
+                
+                try
+                {
+                    using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(input["url"].Value, new Dictionary<string, string>()))
+                        OutputObject(bw, new { Status = "OK", Folders = b.List() });
+                    
+                }
+                catch (Exception ex)
+                {
+                    ReportError(response, bw, ex.Message);
+                }
+            }
 
             private void TestBackend(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
                 if (input["url"] == null || input["url"].Value == null)
                 {
-                    ReportError(response, bw, "The path parameter was not set");
+                    ReportError(response, bw, "The url parameter was not set");
                     return;
                 }
                 
