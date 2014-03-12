@@ -56,6 +56,9 @@
       <DependentUpon>SSHv2Backend.resx</DependentUpon>
     </Compile>
     <Compile Include="KeyGenerator.cs" />
+    <Compile Include="Strings\KeyGenerator.Designer.cs">
+      <DependentUpon>KeyGenerator.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -74,6 +77,10 @@
     <EmbeddedResource Include="Strings\SSHv2Backend.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SSHv2Backend.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\KeyGenerator.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>KeyGenerator.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

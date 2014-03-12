@@ -25,7 +25,6 @@ namespace Duplicati.Library.Backend
 {
     public class KeyGenerator : IWebModule
     {
-        private const string GENERATE_COMMAND = "generate-keys";
         private const string KEY_TYPE_NAME = "key-type";
         private const string KEY_USERNAME = "key-username";
         private const string KEY_KEYLEN = "key-bits";
@@ -34,6 +33,13 @@ namespace Duplicati.Library.Backend
         private const string KEY_TEMPLATE_RSA = "-----BEGIN RSA PRIVATE KEY-----\n{0}\n-----END RSA PRIVATE KEY----- \n";
         private const string PUB_KEY_FORMAT_DSA = "ssh-dss";
         private const string PUB_KEY_FORMAT_RSA = "ssh-rsa";
+        
+        private const string KEYTYPE_DSA = "dsa";
+        private const string KEYTYPE_RSA = "rsa";
+        
+        private readonly string DEFAULT_USERNAME = "backup-user@" + System.Environment.MachineName;
+        private const string DEFAULT_KEYTYPE = KEYTYPE_DSA;        
+        private const int DEFAULT_KEYLEN = 1024;
         
         private static void EncodePEMLength(System.IO.Stream s, uint length)
         {
@@ -103,18 +109,15 @@ namespace Duplicati.Library.Backend
         }
         
         #region IWebModule implementation
-        public IDictionary<string, string> Execute(string command, IDictionary<string, string> options)
-        {
-            if (!GENERATE_COMMAND.Equals(command, StringComparison.InvariantCultureIgnoreCase))
-                throw new Exception(string.Format("Invalid command: {0}", command));
-            
+        public IDictionary<string, string> Execute(IDictionary<string, string> options)
+        {            
             string keytype;
             if (!options.TryGetValue(KEY_TYPE_NAME, out keytype))
-                keytype = "dsa";
+                keytype = DEFAULT_KEYTYPE;
 
             string username;
             if (!options.TryGetValue(KEY_USERNAME, out username))
-                username = "someone@example.com";
+                username = DEFAULT_USERNAME;
 
             string keylen_s;
             if (!options.TryGetValue(KEY_KEYLEN, out keylen_s))
@@ -122,15 +125,15 @@ namespace Duplicati.Library.Backend
 
             int keylen;
             if (!int.TryParse(keylen_s, out keylen))
-                keylen = 0;
+                keylen = DEFAULT_KEYLEN;
 
-            if ("rsa".Equals(keytype, StringComparison.InvariantCultureIgnoreCase))
+            if (KEYTYPE_RSA.Equals(keytype, StringComparison.InvariantCultureIgnoreCase))
             {
                 var rsa = RSACryptoServiceProvider.Create();
                 if (keylen > 0)
                     rsa.KeySize = keylen;
                 else
-                    rsa.KeySize = 1024;
+                    rsa.KeySize = DEFAULT_KEYLEN;
                 
                 var key = rsa.ExportParameters(true);
                 
@@ -151,14 +154,15 @@ namespace Duplicati.Library.Backend
                 res["pubkey"] = PUB_KEY_FORMAT_RSA + " " + Convert.ToBase64String(pubkey) + " " + username;
                 return res;
             }
-            else if ("dsa".Equals(keytype, StringComparison.InvariantCultureIgnoreCase))
+            else if (KEYTYPE_DSA.Equals(keytype, StringComparison.InvariantCultureIgnoreCase))
             {
             
                 var dsa = DSACryptoServiceProvider.Create();
                 if (keylen > 0)
                     dsa.KeySize = keylen;
                 else
-                    dsa.KeySize = 1024;
+                    dsa.KeySize = DEFAULT_KEYLEN;
+                
                 var key = dsa.ExportParameters(true);
 
                 var privateEntries = new byte[][] { new byte[] { 0x0 }, key.P, key.Q, key.G, key.Y, key.X };
@@ -187,14 +191,16 @@ namespace Duplicati.Library.Backend
         }
         public string Key { get { return "ssh-keygen"; } }
         
-        public string DisplayName { get { return "SSH Keygenerator"; } }
-        public string Description { get { return "Module for generating SSH private/public keys"; } }
+        public string DisplayName { get { return Strings.KeyGenerator.DisplayName; } }
+        public string Description { get { return Strings.KeyGenerator.Description; } }
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(GENERATE_COMMAND)
+                    new CommandLineArgument(KEY_KEYLEN, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyLenShort, Strings.KeyGenerator.KeyLenLong, DEFAULT_KEYLEN.ToString(), null, new string[] {"1024", "2048"}),
+                    new CommandLineArgument(KEY_TYPE_NAME, CommandLineArgument.ArgumentType.Enumeration, Strings.KeyGenerator.KeyTypeShort, Strings.KeyGenerator.KeyTypeLong, DEFAULT_KEYTYPE, null, new string[] {KEYTYPE_DSA, KEYTYPE_RSA}),
+                    new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyUsernameShort, Strings.KeyGenerator.KeyUsernameLong, DEFAULT_USERNAME),
                 });
             }
         }
