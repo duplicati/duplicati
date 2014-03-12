@@ -541,21 +541,20 @@ $(document).ready(function() {
         $('#connection-uri-dialog').dialog('open');
     });
 
-    $('#edit-dialog').on( "tabsbeforeactivate", function( event, ui ) {
-    });
-
     var dlg_buttons = $('#edit-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button');
 
     $('#edit-dialog').on( "tabsactivate", function( event, ui ) {
 
-        if (ui.newPanel[0].id == 'edit-tab-general')
+        var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
+
+        if (ui.newPanel.attr('id') == tabs.first().attr('aria-controls'))
             $(dlg_buttons[0]).button('option', 'disabled', true);
-        else if (ui.oldPanel[0].id == 'edit-tab-general')
+        else if (ui.oldPanel.attr('id') == tabs.first().attr('aria-controls'))
             $(dlg_buttons[0]).button('option', 'disabled', false);
 
-        if (ui.newPanel[0].id == 'edit-tab-options')
+        if (ui.newPanel.attr('id') == tabs.last().attr('aria-controls'))
             $(dlg_buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Save'});
-        else if (ui.oldPanel[0].id == 'edit-tab-options')
+        else if (ui.oldPanel.attr('id') == tabs.last().attr('aria-controls'))
             $(dlg_buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Next'});
 
     });
