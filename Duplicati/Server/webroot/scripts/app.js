@@ -669,6 +669,8 @@ $(document).ready(function() {
         serverWithCallback({action: 'send-command', command: 'resume'});
     };
 
+    APP_DATA.callServer = serverWithCallback;
+
     $('#main-settings').click(function() {
         var pos = $('#main-settings').position();
         var barheight = $('#main-topbar').outerHeight();
