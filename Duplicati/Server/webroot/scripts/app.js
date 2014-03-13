@@ -159,6 +159,9 @@ $(document).ready(function() {
     $('#main-list-container > div.main-backup-entry').remove();
     $('#loading-dialog').dialog({modal: true}).show();
 
+    jQuery.timeago.settings.allowFuture = true;
+    jQuery.timeago.settings.allowPast = true;
+
     // Register a global function for password strength
     $.passwordStrength = function(password, callback) {
         if (callback == null)
@@ -274,6 +277,7 @@ $(document).ready(function() {
                 el.find('.backup-progress-overall').css('width', '0px');
                 el.find('.main-progress-text').removeClass('in-progress').text('#' + parseInt(scheduledMap[e.id]) + ' in queue');
                 el.find('.backup-state-icon').addClass('main-icon-hourglass').removeClass('main-icon-clock');
+                el.find('.main-progress-text').attr('title', '').data('timeago', null);
             } else if (e.id == current) {
                 var txt = 'Running ...';
                 var pg = 0;
@@ -304,14 +308,18 @@ $(document).ready(function() {
                 el.find('.backup-progress-overall').css('width', parseInt(pg*100) + '%');
                 el.find('.main-progress-text').addClass('in-progress').text(txt);
                 el.find('.backup-state-icon').removeClass('main-icon-hourglass main-icon-clock');
+                el.find('.main-progress-text').attr('title', '').data('timeago', null);
             } else if (backupMap[e.id] && backupMap[e.id].Schedule) {
+                var targetDate = new Date(Date.parse(backupMap[e.id].Schedule.Time));
                 el.find('.backup-progress-overall').css('width', '0px');
-                el.find('.main-progress-text').removeClass('in-progress').text(new Date(Date.parse(backupMap[e.id].Schedule.Time)).toLocaleString());
+                el.find('.main-progress-text').removeClass('in-progress').text(targetDate.toLocaleString(targetDate));
                 el.find('.backup-state-icon').removeClass('main-icon-hourglass').addClass('main-icon-clock');
+                el.find('.main-progress-text').attr('title', targetDate.toISOString()).timeago();
             } else {
                 el.find('.backup-progress-overall').css('width', '0px');
                 el.find('.main-progress-text').removeClass('in-progress').text('');
                 el.find('.backup-state-icon').removeClass('main-icon-hourglass main-icon-clock');
+                el.find('.main-progress-text').attr('title', '').data('timeago', null);
             }
         });
     };
