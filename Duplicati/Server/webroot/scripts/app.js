@@ -262,7 +262,7 @@ $(document).ready(function() {
         var current = state.activeTask == null ? false : 'backup-' + state.activeTask;
 
         for(var n in state.scheduled)
-            scheduledMap['backup-' + state.scheduled[n]] = n + 1;
+            scheduledMap['backup-' + state.scheduled[n]] = parseInt(n) + 1;
 
         for(var n in PRIVATE_DATA.backup_list)
             backupMap['backup-' + PRIVATE_DATA.backup_list[n].Backup.ID] = PRIVATE_DATA.backup_list[n];
