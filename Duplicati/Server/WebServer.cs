@@ -1037,7 +1037,20 @@ namespace Duplicati.Server
                                 return;
                             }
 
-                            Program.WorkThread.AddTask(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.Backup));
+                            var t = Program.WorkThread.CurrentTask;
+                            if (t != null && t.Item1 == id)
+                            {
+                                // Already running
+                            }
+                            else if (Program.WorkThread.CurrentTasks.Where(x => x.Item1 == id).Any())
+                            {
+                                // Already in queue
+                            }
+                            else
+                            {
+                                Program.WorkThread.AddTask(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.Backup));
+                                Program.StatusEventNotifyer.SignalNewEvent();
+                            }
                         }
                         OutputObject(bw, new { Status = "OK" });
                         return;
