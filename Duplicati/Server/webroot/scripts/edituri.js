@@ -195,7 +195,7 @@ $(document).ready(function() {
 
             res.querystring.replace(EDIT_URI.QUERY_REGEXP, function(str, key, val) {
                 if (key)
-                    res['--' + key] = val;
+                    res['--' + key] = decodeURIComponent(val);
             });
 
             var scheme = res['backend-type'];
