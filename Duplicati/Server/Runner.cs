@@ -314,15 +314,41 @@ namespace Duplicati.Server
             return true;
         }
         
+        private static void DisableModule(string module, Dictionary<string, string> options)
+        {
+            string disabledModules;
+            string enabledModules;
+            
+            if (options.TryGetValue("enable-module", out enabledModules))
+            {
+                var emods = (enabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                options["enable-module"] = string.Join(",", emods.Where(x => module.Equals(x, StringComparison.InvariantCultureIgnoreCase)));
+            }
+            
+            options.TryGetValue("disable-module", out disabledModules);
+            var mods = (disabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.InvariantCultureIgnoreCase));
+        }
+        
         private static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
             
+            // Apply normal options
             foreach(var o in backup.Settings)
-                if (TestIfOptionApplies(backup, mode, o.Filter))
+                if (!o.Name.StartsWith("--") && TestIfOptionApplies(backup, mode, o.Filter))
                     options[o.Name] = o.Value;
-                    
+
+            // Apply override options
+            foreach(var o in backup.Settings)
+                if (o.Name.StartsWith("--") && TestIfOptionApplies(backup, mode, o.Filter))
+                    options[o.Name.Substring(2)] = o.Value;
+            
+            
+            // The server hangs if the module is enabled as there is no console attached
+            DisableModule("console-password-input", options);
+            
             return options;
         }
         
