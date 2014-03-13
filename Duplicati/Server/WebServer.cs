@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using HttpServer.MVC;
 using HttpServer.HttpModules;
 using System.IO;
 using Duplicati.Server.Serialization;

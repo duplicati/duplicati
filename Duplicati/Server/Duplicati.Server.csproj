@@ -23,6 +23,7 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
+    <Commandlineparameters>--webservice-port=8201,8202</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -42,12 +43,6 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HttpServer">
-      <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
-    </Reference>
-    <Reference Include="HttpServer.MVC">
-      <HintPath>..\..\thirdparty\HttpServer\HttpServer.MVC.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -60,6 +55,9 @@
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="HttpServer">
+      <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
