@@ -238,7 +238,7 @@ $(document).ready(function() {
         'Backup_WaitForUpload': 'Waiting for upload ...',
         'Backup_Delete': 'Deleting unwanted files ...',
         'Backup_Compact': 'Compacting remote data ...',
-        'Backup_VerificationUpload': 'Verifying upload ...',
+        'Backup_VerificationUpload': 'Uploadind verification file ...',
         'Backup_PostBackupVerify': 'Verifying backend data ...',
         'Backup_Complete': 'Finished!',
         'Restore_Begin': 'Starting ...',
