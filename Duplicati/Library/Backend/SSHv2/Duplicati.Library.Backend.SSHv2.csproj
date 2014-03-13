@@ -59,6 +59,10 @@
     <Compile Include="Strings\KeyGenerator.Designer.cs">
       <DependentUpon>KeyGenerator.resx</DependentUpon>
     </Compile>
+    <Compile Include="KeyUploader.cs" />
+    <Compile Include="Strings\KeyUploader.Designer.cs">
+      <DependentUpon>KeyUploader.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -81,6 +85,10 @@
     <EmbeddedResource Include="Strings\KeyGenerator.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>KeyGenerator.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\KeyUploader.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>KeyUploader.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
