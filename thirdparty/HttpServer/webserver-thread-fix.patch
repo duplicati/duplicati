@@ -1,0 +1,92 @@
+diff -urN webserver-clean/HttpServer/HttpForm.cs webserver-modified/HttpServer/HttpForm.cs
+--- webserver-clean/HttpServer/HttpForm.cs	2014-01-10 12:08:32.000000000 +0100
++++ webserver-modified/HttpServer/HttpForm.cs	2014-01-18 23:32:04.000000000 +0100
+@@ -10,6 +10,9 @@
+ 		public static readonly HttpForm EmptyForm = new HttpForm("EmptyForm", true);
+ 
+ 		private readonly Dictionary<string, HttpFile> _files = new Dictionary<string, HttpFile>();
++        
++        // A lock to prevent concurrent access to the _files dict
++        private object _lock = new object();
+ 
+ 		/// <summary>Initializes a form container with the specified name</summary>
+ 		public HttpForm() : base("form")
+@@ -45,7 +48,8 @@
+ 			if(_files.ContainsKey(file.Name))
+ 				throw new ArgumentException("File named '" + file.Name + "' already exists!");
+ 
+-			_files.Add(file.Name, file);
++            lock(_lock)
++			    _files.Add(file.Name, file);
+ 		}
+ 
+ 		/// <summary>
+@@ -72,16 +76,19 @@
+ 		/// <exception cref="ArgumentNullException">If name is null or empty</exception>
+ 		/// <exception cref="InvalidOperationException">If the instance is HttpForm.EmptyForm which cannot be modified</exception>
+ 		public HttpFile GetFile(string name)
+-		{
+-			if (_ignoreChanges)
+-				throw new InvalidOperationException("Cannot retrieve files from instance HttpForm.EmptyForm.");
+-			if(string.IsNullOrEmpty(name))
+-				throw new ArgumentNullException("name");
++        {
++            if (_ignoreChanges)
++                throw new InvalidOperationException("Cannot retrieve files from instance HttpForm.EmptyForm.");
++            if (string.IsNullOrEmpty(name))
++                throw new ArgumentNullException("name");
+ 
+-			if(!_files.ContainsKey(name))
+-				return null;
++            lock(_lock)
++            {
++                if (!_files.ContainsKey(name))
++                    return null;
+ 				
+-			return _files[name];
++                return _files[name];
++            }
+ 		}
+ 
+         /// <summary>
+@@ -95,10 +102,13 @@
+                 if (_files.Count == 0)
+                     return EmptyFileCollection;
+ 
+-                List<HttpFile> files = new List<HttpFile>();
+-                foreach (HttpFile file in _files.Values)
+-                    files.Add(file);
+-                return files.AsReadOnly();
++                lock(_lock)
++                {
++                    List<HttpFile> files = new List<HttpFile>();
++                    foreach(HttpFile file in _files.Values)
++                        files.Add(file);
++                    return files.AsReadOnly();
++                }
+             }
+         }
+ 
+@@ -106,13 +116,16 @@
+ 
+ 		/// <summary>Disposes all held HttpFile's and resets values</summary>
+ 		public override void Clear()
+-		{
+-			base.Clear();
++        {
++            base.Clear();
+ 
+-			foreach (KeyValuePair<string, HttpFile> pair in _files)
+-				pair.Value.Dispose();
++            lock(_lock)
++            {
++                foreach(KeyValuePair<string, HttpFile> pair in _files)
++                    pair.Value.Dispose();
+ 
+-			_files.Clear();
++                _files.Clear();
++            }
+ 		}
+ 	}
+ }
+
