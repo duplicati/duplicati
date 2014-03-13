@@ -618,16 +618,7 @@ $(document).ready(function() {
         }
     });
 
-    $(dlg_buttons[1]).click(function(event, ui) {
-        var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
-        if (event.curPage == tabs.size() - 1) {
-            // Saving, validate first 
-
-            for(var n in tabs) {
-                if (!EDIT_BACKUP.validate_tab(n)) {
-                    return;
-                }
-            }
+    var readFormData = function(validateOptions) {
 
             var obj = {
                 'Schedule': {},
@@ -648,10 +639,26 @@ $(document).ready(function() {
                 //TODO: Add validation
                 return true;
             })) {
-                //TODO: Add validation
-                return;
+                return null;
             }
 
+            return obj
+        };
+
+    $(dlg_buttons[1]).click(function(event, ui) {
+        var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
+        if (event.curPage == tabs.size() - 1) {
+            // Saving, validate first 
+
+            for(var n in tabs) {
+                if (!EDIT_BACKUP.validate_tab(n)) {
+                    return;
+                }
+            }
+
+            var obj = readFormData(true);
+            if (obj == null)
+                return;
             //Fixup, change settings dict into array
 
             var set = obj.Backup.Settings;
@@ -822,7 +829,43 @@ $(document).ready(function() {
     $('#backup-options-link').click(function() {
         APP_DATA.getServerConfig(function(data) {
             $('#backup-options-dialog').dialog('open');
-            $('#backup-options-dialog').trigger('configure', { Options: data.Options, callback: function(id) {
+
+            var baseOpts = data.Options;
+
+            var obj = readFormData(false);
+            var compressionModule = '';
+            var encryptionModule = '';
+
+            for (var i in data.Options)
+                if (data.Options[i].Name == 'compression-module')
+                    compressionModule = data.Options[i].DefaultValue;
+                else if (data.Options[i].Name == 'encryption-module')
+                    encryptionModule = data.Options[i].DefaultValue;
+
+            if (obj != null && obj.Backup != null && obj.Backup.Settings != null) {
+                if (obj.Backup.Settings['compression-module'] != null && obj.Backup.Settings['compression-module'] != '')
+                    compressionModule = obj.Backup.Settings['compression-module'];
+                if (obj.Backup.Settings['encryption-module'] != null && obj.Backup.Settings['encryption-module'] != '')
+                    encryptionModule = obj.Backup.Settings['encryption-module'];
+            }
+
+            for(var n in data.CompressionModules)
+                if (data.CompressionModules[n].Key == compressionModule) {
+                    baseOpts = baseOpts.concat(data.CompressionModules[n].Options);
+                    break;
+                }
+
+            for(var n in data.EncryptionModules)
+                if (data.EncryptionModules[n].Key == encryptionModule) {
+                    baseOpts = baseOpts.concat(data.EncryptionModules[n].Options);
+                    break;
+                }
+
+            for(var n in data.GenericModules)
+                baseOpts = baseOpts.concat(data.GenericModules[n].Options);
+
+
+            $('#backup-options-dialog').trigger('configure', { Options: baseOpts, callback: function(id) {
                 $('#backup-options-dialog').dialog('close');
 
                 var txt = $('#backup-options').val().trim();
@@ -849,10 +892,27 @@ $(document).ready(function() {
     $('#backup-options-dialog').on('configure', function(e, data) {
         $('#backup-options-dialog').empty();
 
+        var s = data.Options.sort(function(a, b){
+            if (a == null)
+                return -1;
+            if (b == null)
+                return 1;
+            if (a == null && b == null)
+                return 0;
+            
+            if(a.Name < b.Name) return -1;
+            if(a.Name > b.Name) return 1;
+            return 0;
+        });
+
         //Fill with jQuery template
-        $.tmpl($('#backup-option-template'), data.Options).prependTo($('#backup-options-dialog'));
+        $.tmpl($('#backup-option-template'), s).prependTo($('#backup-options-dialog'));
         $('#backup-options-dialog').find('.backup-option-link').click(function(e) {
             data.callback(e.target.id);
+        });
+
+        $('#backup-options-dialog').find('.backup-option-long').each(function(i, e) {
+            $(e).html(nl2br($(e).html()));
         });
     });
 
@@ -865,6 +925,12 @@ $(document).ready(function() {
     $('#edit-dialog-form').find('option').change(setStateModified);
     $('#edit-dialog-form').find('textarea').change(setStateModified);
 
+    $('#use-scheduled-run').change(function() {
+        if ($('#use-scheduled-run').is(':checked'))
+            $('#use-scheduled-run-details').show();
+        else
+            $('#use-scheduled-run-details').hide();
+    });
     /*
 
     Too bad, we can drop files and folders, 

@@ -272,51 +272,53 @@
             <div id="edit-tab-schedule">
                 <input id="use-scheduled-run" type="checkbox" />
                 <div>Run regularly at the specified times</div>
-                <div class="hint-line-last">If a date was missed, the job will run as soon as possible.</div>
 
-                <div class="clearfix"></div>
+                <div id="use-scheduled-run-details">
+                    <div class="hint-line-last">If a date was missed, the job will run as soon as possible.</div>
 
-                <div class="edit-dialog-label">Next time</div>
-                <div class="input-wrapper">
-                    <input type="time" id="next-run-time" name="next-run-time"/>
-                    <input type="date" id="next-run-date" name="next-run-date" />
+                    <div class="clearfix"></div>
+
+                    <div class="edit-dialog-label">Next time</div>
+                    <div class="input-wrapper">
+                        <input type="time" id="next-run-time" name="next-run-time"/>
+                        <input type="date" id="next-run-date" name="next-run-date" />
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    <div class="edit-dialog-label">Run again every</div>
+                    <div class="input-wrapper">
+                        <input type="number" id="repeat-run-number" name="repeat-run-number"/>
+                        <select id="repeat-run-multiplier" name="repeat-run-multiplier">
+                            <option value="h">hours</option>
+                            <option value="D">days</option>
+                            <option value="W">weeks</option>
+                            <option value="M">months</option>
+                            <option value="Y">years</option>
+                            <option value="">custom</option>
+                        </select>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    <div class="edit-dialog-label">Allowed days</div>
+                    <div class="input-wrapper">
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-mon" name="allow-day-mon" />
+                        <div class="days-label">Mon</div>
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-tue" name="allow-day-tue" />
+                        <div class="days-label">Tue</div>
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-wed" name="allow-day-wed" />
+                        <div class="days-label">Wed</div>
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-thu" name="allow-day-thu" />
+                        <div class="days-label">Thu</div>
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-fri" name="allow-day-fri" />
+                        <div class="days-label">Fri</div>
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-sat" name="allow-day-sat" />
+                        <div class="days-label">Sat</div>
+                        <input type="checkbox" class="simple-checkbox" id="allow-day-sun" name="allow-day-sun" />
+                        <div class="days-label">Sun</div>
+                    </div>
                 </div>
-
-                <div class="clearfix"></div>
-
-                <div class="edit-dialog-label">Run again every</div>
-                <div class="input-wrapper">
-                    <input type="number" id="repeat-run-number" name="repeat-run-number"/>
-                    <select id="repeat-run-multiplier" name="repeat-run-multiplier">
-                        <option value="h">hours</option>
-                        <option value="D">days</option>
-                        <option value="W">weeks</option>
-                        <option value="M">months</option>
-                        <option value="Y">years</option>
-                        <option value="">custom</option>
-                    </select>
-                </div>
-
-                <div class="clearfix"></div>
-
-                <div class="edit-dialog-label">Allowed days</div>
-                <div class="input-wrapper">
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-mon" name="allow-day-mon" />
-                    <div class="days-label">Mon</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-tue" name="allow-day-tue" />
-                    <div class="days-label">Tue</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-wed" name="allow-day-wed" />
-                    <div class="days-label">Wed</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-thu" name="allow-day-thu" />
-                    <div class="days-label">Thu</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-fri" name="allow-day-fri" />
-                    <div class="days-label">Fri</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-sat" name="allow-day-sat" />
-                    <div class="days-label">Sat</div>
-                    <input type="checkbox" class="simple-checkbox" id="allow-day-sun" name="allow-day-sun" />
-                    <div class="days-label">Sun</div>
-                </div>
-
             </div>
 
             <div id="edit-tab-options">
