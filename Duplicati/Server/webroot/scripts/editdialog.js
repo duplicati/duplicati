@@ -506,41 +506,6 @@ $(document).ready(function() {
         updatePasswordIndicator();
     });
 
-    $('#source-folder-browser').jstree({
-        'json': {
-            'ajax': {
-                'url': APP_CONFIG.server_url,
-                'data': function(n) {
-                    return {
-                        'action': 'get-folder-contents',
-                        'onlyfolders': true,
-                        'path': n === -1 ? "/" : n.data('id')
-                    };
-                },
-                'success': function(data, status, xhr) {
-                    for(var i = 0; i < data.length; i++) {
-                        var o = data[i];
-                        o.title = o.text;
-                        o.children = !o.leaf;
-                        o.data = { id: o.id, display: o.text };
-                        delete o.text;
-                        delete o.leaf;
-                    }
-                    return data;
-                }
-            },
-            'progressive_render' : true,
-        },
-        'plugins' : [ 'themes', 'json', 'ui', 'dnd', 'wholerow' ],
-        'core': { 
-            'check_callback': function(method, item, parent, position) { 
-                // We never allow drops in the tree itself
-                return false; 
-            }
-        },
-        'dnd': { copy: false },
-    });
-
     $('#edit-connection-uri-link').click(function() {
         $('#connection-uri-dialog').dialog('open');
     });
@@ -728,23 +693,35 @@ $(document).ready(function() {
         return true;
     };
 
+    var browsePath =  function() {
+        $.browseForFolder({
+            title: 'Select folder to back up',
+            callback: function(path, disp) { 
+                disp = (disp || path).split('/');
+                addSourceFolder(path, disp[disp.length - 1]);
+            }
+        });
+    };
+
+    $('#source-folder-path-browse').click(browsePath);
+
     $('#source-folder-path-add').click(function() {
-        var txt = $('#source-folder-path-text').val();
-        var disp = txt.split('/');
-        if (addSourceFolder(txt, disp[disp.length - 1])) {
-            $('#source-folder-path-text').val('');
-            $('#source-folder-path-text').focus();
+        if ($('#source-folder-path-text').val() == '') {
+            browsePath();
+        } else {
+            var path = $('#source-folder-path-text').val();
+            var disp = path.split('/');
+            if (addSourceFolder(path, disp[disp.length - 1])) {
+                $('#source-folder-path-text').val('');
+                $('#source-folder-path-text').focus();
+            }
         }
+
     });
 
     $('#source-folder-path-text').keypress(function(e) {
         if (e.which == 13)
             $('#source-folder-path-add').click();
-    });
-
-    $('#source-folder-browser').bind("dblclick.jstree", function (event) {
-       var node = $(event.target).closest("li");
-        addSourceFolder(node.data('id'), node.data('display'));
     });
 
     // Register a drop target for folder nodes
@@ -899,7 +876,7 @@ $(document).ready(function() {
                 return 1;
             if (a == null && b == null)
                 return 0;
-            
+
             if(a.Name < b.Name) return -1;
             if(a.Name > b.Name) return 1;
             return 0;

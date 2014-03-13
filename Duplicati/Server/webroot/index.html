@@ -23,6 +23,7 @@
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/editdialog.js"></script>
     <script type="text/javascript" src="scripts/edituri.js"></script>
+    <script type="text/javascript" src="scripts/folderbrowser.js"></script>
     <script type="text/javascript" src="scripts/plugins.js"></script>
     <script type="text/javascript" src="scripts/customized.js"></script>
     <script type="text/javascript" src="scripts/hideShowPassword.min.js"></script>
@@ -240,22 +241,19 @@
             </div>
 
             <div id="edit-tab-sourcedata">
+                <div id="source-folder-paths" class="empty">
+                <div id="source-folder-droptarget"></div>
+                    <div id="source-folder-paths-hint" class="hint-text">Click the &quot;Add&quot; button to add folders</div>
+                </div>
+
+                <div class="clearfix"></div>
+
                 <input id="source-folder-list" name="source-folder-list" type="hidden" />
                 <div id="source-folder-entry">
                     <input id="source-folder-path-text" type="text" />
                     <div id="source-folder-path-add" class="button">Add</div>
                 </div>
 
-                <div class="clearfix"></div>
-
-                <div id="source-folder-paths" class="empty">
-                <div id="source-folder-droptarget"></div>
-                    <div id="source-folder-paths-hint" class="hint-text">To add files and folders, drag and drop them here. <br/>(Double click also works)</div>
-                    <!-- <div class="source-folder">/opt/local/data</div> -->
-                </div>
-
-                <div id="source-folder-browser">
-                </div>
 
             </div>
 
@@ -381,6 +379,8 @@
     </div>
 
     <div id="backup-options-dialog" class="modal-dialog" title="Avaliable options"></div>
+
+    <div id="folder-browse-dialog" class="modal-dialog" title="Choose folder"></div>
 
 </body>
 </html>
