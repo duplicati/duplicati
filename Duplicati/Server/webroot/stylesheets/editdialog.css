@@ -16,7 +16,8 @@
  }
 
  .edit-dialog-label {
-    min-width: 250px;
+    min-width: 200px;
+    line-height: 26px;
     clear: both;
     float: left;
  }
@@ -28,11 +29,11 @@
 }
 
 .edit-dialog input, .edit-dialog select {
-    width: 250px;
+    width: 330px;
 }
 
 .edit-dialog textarea {
-    width: 248px;
+    width: 330px;
 }
 
 .input-hint {
@@ -176,7 +177,7 @@
 }
 
 #next-run-time, #next-run-date, #repeat-run-number, #repeat-run-multiplier, #dblock-size-number, #dblock-size-multiplier {
-    width: 120px;
+    width: 165px;
 }
 
  input.simple-checkbox {
