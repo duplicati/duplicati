@@ -241,3 +241,13 @@
     margin-top: 5px;
     margin-bottom: 10px;
 }
+
+input.server-path-file {
+    width: 275px;
+}
+
+input.browse-button {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    width: auto;
+}

@@ -157,7 +157,8 @@ $(document).ready(function() {
             if (cfg['server-port'])
                 url += ':' + cfg['server-port'];
 
-            url += '/' + cfg['server-path'];
+            if (cfg['server-path'] != '')
+                url += '/' + cfg['server-path'];
 
             var opts = [];
 
@@ -318,6 +319,9 @@ $(document).ready(function() {
             BACKEND_STATE.orig_uri = $('#backup-uri').val();
             BACKEND_STATE.orig_cfg = EDIT_URI.decode_uri(BACKEND_STATE.orig_uri);
             var scheme = BACKEND_STATE.orig_cfg['backend-type'];
+
+            if (scheme == null && (BACKEND_STATE.orig_uri.indexOf('://') < 0 || BACKEND_STATE.orig_uri.indexOf('file://') == 0))
+                scheme = 'file';
 
             if (scheme && APP_DATA.plugins.backend[scheme] && APP_DATA.plugins.backend[scheme].decode_uri) {
                 BACKEND_STATE.orig_cfg = APP_DATA.plugins.backend[scheme].decode_uri(BACKEND_STATE.orig_uri);

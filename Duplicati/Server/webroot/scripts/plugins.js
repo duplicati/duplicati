@@ -7,11 +7,98 @@ $(document).ready(function() {
         hideserverandport: true,
         optionalauth: true,
         serverpathlabel: 'Path or UNC',
+
+        btnel: null,
+
+        fill_form_map: {
+            'server-path': false,
+            'server-name': function(dict, key, el, cfgel) {
+                var p = [];
+                if (dict['server-name'] && dict['server-name'] != '')
+                    p.push(dict['server-name']);
+                if (dict['server-path'] && dict['server-path'] != '')
+                    p.push(dict['server-path']);
+
+                var sep = '/';
+                if (this.serverconfig)
+                    sep = this.serverconfig.DirectorySeparator;
+
+                p = p.join(sep);
+                if (p.indexOf('file://') == 0)
+                    p = p.substr('file://'.length);
+
+                $('#server-path').val(p);
+            }
+        },
+
+        fill_dict_map: {
+            'server-name': false,
+            'server-path': function(dict, key, el, cfgel) {
+                var p =  $(el).val();
+                if (p.indexOf('file://') == 0)
+                    p = p.substr('file://'.length);
+                dict['server-name'] = p;
+                dict['server-path'] = '';
+            }
+        },
+
+        decode_uri: function(url) {
+            var dict = EDIT_URI.decode_uri(url);
+            if (dict == null || dict['backend-type'] == null) {
+                
+                dict = dict || {};
+
+                var p = url;
+                if (p.indexOf('file://') == 0)
+                    p = p.substr('file://'.length);
+
+                if (p.indexOf('?') > 0) {
+                    var q = p.substr(p.indexOf('?') + 1);
+                    p = p.substr(0, p.length - q.length - 1);
+                    q.replace(EDIT_URI.QUERY_REGEXP, function(str, key, val) {
+                        if (key)
+                            dict['--' + key] = decodeURIComponent(val);
+                    });
+                }
+
+                $.extend(true, dict, {
+                    'source_uri': url,
+                    'backend-type': 'file',
+                    'server-path': p
+                });
+            }
+
+            return dict;
+        },
+
         setup: function(dlg, div) {
-            //$('#server-path').watermark('/my/data');
-            //div.text('Awesome plugin stuff');
+            $('#server-path').addClass('server-path-file');
+            $('#server-path').watermark('mybackup');
+
+            this.btnel = $('<input type="button" value="..." class="browse-button" />').css('width', 'auto').button();
+            this.btnel.insertAfter($('#server-path'));
+            this.btnel.click(function() {
+                $.browseForFolder({
+                    title: 'Select target folder',
+                    callback: function(path, display) {
+                        $('#server-path').val(path);
+                    }
+                });
+            });
+
+            if (this.serverconfig == null) {
+                APP_DATA.getServerConfig(function(data) {
+                    this.serverconfig = data;
+                });
+            }
         },
         cleanup: function(dlg, div) {
+            $('#server-path').removeClass('server-path-file');
+            if (this.btnel != null) {
+                this.btnel.remove();
+                this.btnel = null;
+            }
+
         }
     }
 
