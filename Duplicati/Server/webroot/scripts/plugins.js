@@ -75,7 +75,7 @@ $(document).ready(function() {
             $('#server-path').addClass('server-path-file');
             $('#server-path').watermark('mybackup');
 
-            this.btnel = $('<input type="button" value="..." class="browse-button" />').css('width', 'auto').button();
+            this.btnel = $('<input type="button" value="..." class="browse-button" />').css('width', 'auto');
             this.btnel.insertAfter($('#server-path'));
             this.btnel.click(function() {
                 $.browseForFolder({
