@@ -8,6 +8,49 @@ $(document).ready(function() {
     var searchTree = null;
     var searchdata = {};
 
+    var performRestore = function(tasks) {
+        var dlg = $('<div></div>').attr('title', 'Restoring files ...');
+        dlg.dialog({
+            autoOpen: true,
+            modal: true,
+            closeOnEscape: false
+        });
+
+        var pg = $('<div></div>');
+        pg.progressbar({ value: false });
+        var pgtxt = $('<div></div>');
+        pgtxt.text('Starting ....');
+
+        dlg.append(pg);
+        dlg.append(pgtxt);
+
+        var processTask = function() {
+            if (tasks.length == 0) {
+                curpage = Math.min(2, curpage+1);
+                updatePageNav();
+                dlg.dialog('close');
+                dlg.remove();
+                return;
+            }
+
+            var task = tasks.pop();
+            task['action'] = 'restore-files';
+
+            APP_DATA.callServer(task, function() {
+                processTask();
+            },
+            function(d, s, m) {
+                alert('Error: ' + m);
+                dlg.dialog('close');
+                dlg.remove();
+            });
+
+        }
+
+        setTimeout(processTask, 50000);
+        //processTask();
+    };
+
     $('#restore-dialog').dialog({
         minWidth: 320, 
         width: $('body').width > 600 ? 320 : 600, 
@@ -26,9 +69,23 @@ $(document).ready(function() {
                 if (curpage == 2) {
                      $('#restore-dialog').dialog('close');
                 } else if (curpage == 1) {
-                    alert('Run restore ...');
-                    curpage = Math.min(2, curpage+1);
-                    updatePageNav();
+
+                    var tasks = [];
+
+                    for(var n in includes) {
+                        var t = {
+                            time: n,
+                            id: backupId,
+                            paths: []
+                        }
+                        for(var p in includes[n])
+                            t.paths.push(p);
+
+                        if (t.paths.length > 0)
+                            tasks.push(t);
+                    }
+
+                    performRestore(tasks);
                 } else {
                     var els = 0;
                     for(var t in includes)
@@ -126,7 +183,7 @@ $(document).ready(function() {
             var node = searchTree.jstree().get_node(el);
             if (!node)
                 return;
-            
+
             if (node.original.isTime) {
                 var path = node.original.filepath;
                 var time = node.original.time;
