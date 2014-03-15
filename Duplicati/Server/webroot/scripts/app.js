@@ -720,12 +720,12 @@ $(document).ready(function() {
         autoOpen: false,
         closeOnEscape: true,
         buttons: [
-            { text: 'Previous', disabled: true, click: function(event, ui) {
+            { text: '< Previous', disabled: true, click: function(event, ui) {
                 var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
                 cur = Math.max(cur-1, 0);
                 $('#edit-dialog').tabs( "option", "active", cur);
             }},
-            { text: 'Next', click: function(event, ui) {
+            { text: 'Next >', click: function(event, ui) {
                 var cur = parseInt($('#edit-dialog').tabs( "option", "active"));
                 var max = $('#edit-dialog').parent().find('[role=tablist] > li').size() - 1;
 
