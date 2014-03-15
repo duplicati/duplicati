@@ -17,14 +17,17 @@ $(document).ready(function() {
                         return { 
                             'action': 'get-folder-contents',
                             'onlyfolders': true,
-                            'path': node.id === '#' ? '/' : node.id
+                            'path': node.id === '#' ? '/' : node.original.filepath
                         };
                     },
                     'success': function(data, status, xhr) {
                         for(var i = 0; i < data.length; i++) {
                             var o = data[i];
-                            o.children = !o.leaf;                            
+                            o.children = !o.leaf;
+                            o.filepath = o.id;
+
                             //o.icon = o.iconCls;
+                            delete o.id;
                             delete o.iconCls;
                             delete o.leaf;
                         }
@@ -58,7 +61,7 @@ $(document).ready(function() {
                 { text: 'OK', disabled: true, click: function(event, ui) {
                     var node = self.selected_node;
                     if (node != null) {
-                        config.callback(node.id, node.text);
+                        config.callback(node.original.filepath, node.text);
                         self.rootel.dialog('close');
                     }
                 }}
@@ -72,8 +75,8 @@ $(document).ready(function() {
         });
 
         self.treeel.bind("dblclick.jstree", function (event) {
-            var node = $(event.target).closest("li");
-            config.callback(node.id, node.text);
+            var node = self.treeel.jstree().get_node($(event.target).closest("li"));
+            config.callback(node.original.filepath, node.text);
             self.rootel.dialog('close');
         });
 
