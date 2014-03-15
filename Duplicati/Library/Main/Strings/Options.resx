@@ -192,6 +192,12 @@
   <data name="AllversionsShort" xml:space="preserve">
     <value>Show all versions</value>
   </data>
+  <data name="ListprefixonlyLong" xml:space="preserve">
+    <value>When searching for files, all matching files are returned. Use this option to return only the largest common prefix path.</value>
+  </data>
+  <data name="ListprefixonlyShort" xml:space="preserve">
+    <value>Show largest prefix</value>
+  </data>
   <data name="RetrydelayLong" xml:space="preserve">
     <value>After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions.</value>
   </data>

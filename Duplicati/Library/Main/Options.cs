@@ -370,6 +370,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.TimeShort, Strings.Options.TimeLong, "now"),
                     new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
                     new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
+                    new CommandLineArgument("list-prefix-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListprefixonlyShort, Strings.Options.ListprefixonlyLong, "false"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
                     new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
@@ -594,6 +595,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if all versions are listed
         /// </summary>
         public bool AllVersions { get { return GetBool("all-versions"); } }
+
+        /// <summary>
+        /// A value indicating if only the largest common prefix is returned
+        /// </summary>
+        public bool ListPrefixOnly { get { return GetBool("list-prefix-only"); } }
 
         /// <summary>
         /// A value indicating if file time checks are skipped

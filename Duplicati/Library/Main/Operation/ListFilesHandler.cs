@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.SetResult(
                             filesets.Sets.Select(x => new ListResultFileset(x.Version, x.Time, x.FileCount, x.FileSizes)).ToArray(),
                             parsedfilter.Type == Library.Utility.FilterType.Empty ? null :
-                                    (from n in filesets.SelectFiles(filter)
+                                (from n in m_options.ListPrefixOnly ? filesets.GetLargestPrefix(filter) : filesets.SelectFiles(filter)
                                         select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
                                     .ToArray()
                         );

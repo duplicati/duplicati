@@ -58,6 +58,12 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
+        internal static string ListprefixonlyShort {
+            get {
+                return ResourceManager.GetString("ListprefixonlyShort", resourceCulture);
+            }
+        }
+        
         internal static string SmallfilemaxcountLong {
             get {
                 return ResourceManager.GetString("SmallfilemaxcountLong", resourceCulture);
@@ -415,6 +421,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string ControlfilesShort {
             get {
                 return ResourceManager.GetString("ControlfilesShort", resourceCulture);
+            }
+        }
+        
+        internal static string ListprefixonlyLong {
+            get {
+                return ResourceManager.GetString("ListprefixonlyLong", resourceCulture);
             }
         }
         

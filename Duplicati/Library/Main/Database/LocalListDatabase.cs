@@ -47,6 +47,7 @@ namespace Duplicati.Library.Main.Database
         {
             IEnumerable<IFileset> Sets { get; }
             IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
+            IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter);
             void TakeFirst ();
         }
         
@@ -90,6 +91,7 @@ namespace Duplicati.Library.Main.Database
                 private System.Data.IDataReader m_reader;
                 public string Path { get; private set; }
                 public bool More { get; private set; }
+                
                 public Fileversion(System.Data.IDataReader reader) 
                 { 
                     m_reader = reader; 
@@ -110,6 +112,60 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
             }
+            
+            private class FileversionFixed : IFileversion
+            {
+                public string Path { get; internal set; }
+                public IEnumerable<long> Sizes { get { return new long[0]; } }
+            }
+            
+            public IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter)
+            {
+                using(var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
+                using(var cmd = m_connection.CreateCommand())                
+                {
+                    //First we trim the filelist to exclude filenames not found in any of the filesets
+                    cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));
+                    
+                    // Then we recursively find the largest prefix
+                    cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", tmpnames.Tablename);
+                    var v0 = cmd.ExecuteScalar();
+                    string maxpath = "";
+                    if (v0 != null)
+                        maxpath = v0.ToString();
+    
+                    cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", tmpnames.Tablename);
+                    var filecount = Convert.ToInt64(cmd.ExecuteScalar());
+                    long foundfiles = -1;
+    
+                    //TODO: Handle FS case-sensitive?
+                    cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}"" WHERE SUBSTR(""Path"", 1, ?) = ?", tmpnames.Tablename);
+                    cmd.AddParameter();
+                    cmd.AddParameter();
+    
+                    while (filecount != foundfiles && maxpath.Length > 0)
+                    {
+                        var mp = Library.Utility.Utility.AppendDirSeparator(maxpath);
+                        cmd.SetParameterValue(0, mp.Length);
+                        cmd.SetParameterValue(1, mp);
+                        foundfiles = Convert.ToInt64(cmd.ExecuteScalar());
+    
+                        if (filecount != foundfiles)
+                        {
+                            var oldlen = maxpath.Length;
+                            maxpath = System.IO.Path.GetDirectoryName(maxpath);
+                            if (maxpath.Length == oldlen)
+                                maxpath = "";
+                        }
+                    }
+    
+                    return 
+                        new IFileversion[] {
+                            new FileversionFixed() { Path = maxpath == "" ? "" : Library.Utility.Utility.AppendDirSeparator(maxpath) }
+                        };
+                }
+    
+            }            
             
             public IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter)
             {
