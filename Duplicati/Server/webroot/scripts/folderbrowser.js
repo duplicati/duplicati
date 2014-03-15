@@ -10,35 +10,34 @@ $(document).ready(function() {
         self.rootel.attr('title', config.title);
 
         self.treeel.jstree({
-            'json': {
-                'ajax': {
+            'core': { 
+                'data': {
                     'url': APP_CONFIG.server_url,
-                    'data': function(n) {
-                        return {
+                    'data' : function (node) {
+                        return { 
                             'action': 'get-folder-contents',
                             'onlyfolders': true,
-                            'path': n === -1 ? "/" : n.data('id')
+                            'path': node.id === '#' ? '/' : node.id
                         };
                     },
                     'success': function(data, status, xhr) {
                         for(var i = 0; i < data.length; i++) {
                             var o = data[i];
-                            o.title = o.text;
-                            o.children = !o.leaf;
-                            o.data = { id: o.id, display: o.text };
-                            delete o.text;
+                            o.children = !o.leaf;                            
+                            //o.icon = o.iconCls;
+                            delete o.iconCls;
                             delete o.leaf;
                         }
+                        xhr.getResponseHeader_orig = xhr.getResponseHeader;
+                        xhr.getResponseHeader = function(arg) {
+                            if (arg == 'Content-Type')
+                                return 'text/json';
+                            else
+                                return xhr.getResponseHeader_orig(arg);
+                        };
                         return data;
-                    }
-                },
-                'progressive_render' : true,
-            },
-            'plugins' : [ 'themes', 'json', 'ui', 'dnd', 'wholerow' ],
-            'core': { 
-                'check_callback': function(method, item, parent, position) { 
-                    // We never allow drops in the tree itself
-                    return false; 
+                    },
+                    'dataType': 'json',
                 }
             },
             'dnd': { copy: false },
@@ -59,7 +58,7 @@ $(document).ready(function() {
                 { text: 'OK', disabled: true, click: function(event, ui) {
                     var node = self.selected_node;
                     if (node != null) {
-                        config.callback(node.data('id'), node.data('display'));
+                        config.callback(node.id, node.text);
                         self.rootel.dialog('close');
                     }
                 }}
@@ -74,7 +73,7 @@ $(document).ready(function() {
 
         self.treeel.bind("dblclick.jstree", function (event) {
             var node = $(event.target).closest("li");
-            config.callback(node.data('id'), node.data('display'));
+            config.callback(node.id, node.text);
             self.rootel.dialog('close');
         });
 
