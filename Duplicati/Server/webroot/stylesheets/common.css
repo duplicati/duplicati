@@ -117,3 +117,15 @@ body {
 .password-mismatch {
     color: #ff0000;
 }
+
+a.jstree-anchor > i.icon-file.jstree-icon {
+    background-image: url('/images/generic-file.png');
+    background-position: 0px 0px;
+}
+
+a.jstree-anchor > i.icon-clock.jstree-icon {
+    background-image: url('/images/clock.png');
+    background-position: 0px 0px;
+}
+
+a.jstree-anchor > i.icon-file.jstree-icon.icon-file-log { background-image: url('/control.cgi?action=get-system-icon&ext=log'); }

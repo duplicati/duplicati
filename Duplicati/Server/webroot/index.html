@@ -10,6 +10,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/jstree/style.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/main.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/editdialog.css" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/restoredialog.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/customized.css" />
 
     <script type="text/javascript" src="scripts/jquery-2.0.3.min.js"></script>
@@ -23,6 +24,7 @@
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/editdialog.js"></script>
     <script type="text/javascript" src="scripts/edituri.js"></script>
+    <script type="text/javascript" src="scripts/restoredialog.js"></script>
     <script type="text/javascript" src="scripts/folderbrowser.js"></script>
     <script type="text/javascript" src="scripts/plugins.js"></script>
     <script type="text/javascript" src="scripts/customized.js"></script>
@@ -377,6 +379,44 @@
             <div id="edit-dialog-extensions"></div>
         </form>
     </div>
+
+    <div id="restore-dialog" class="modal-dialog restore-dialog" title="Restore files &amp; folders">
+        <form id="restore-form">
+            <div id="restore-files-page">
+                <div id="restore-hint-source" class="hint-text">Double-click files and folders that you want to restore</div>
+
+                <input type="search" id="restore-search" />
+                <select id="restore-version">
+                    <option value="0">Latest</option>
+                </select>
+
+                <div id="restore-files-tree"></div>
+            </div>
+
+            <div id="restore-path-page">
+                <div id="restore-hint-target" class="hint-text">Where do you want to restore the files to?</div>
+                <div><input id="restore-overwrite-target-original" type="radio" name="restore-target" value="original" />Original location</div>
+                <div><input id="restore-overwrite-target-other" type="radio" name="restore-target" value="other" />Pick a new location</div>
+
+                <div id="restore-target-path-area">
+                    <input type="text" id="restore-target-path" /><input type="button" id="restore-target-path-browse" class="browse-button" value="..." />
+                </div>
+
+                <div id="restore-hint-overwrite" class="hint-text">How do you want to handle existing files?</div>
+                <div><input id="restore-overwrite-overwrite" type="radio" name="restore-overwrite" value="overwrite" />Overwrite</div>
+                <div><input id="restore-overwrite-keep" type="radio" name="restore-overwrite" value="keep" />Keep existing files and restore with a timestamp</div>
+            </div>
+
+            <div id="restore-complete-page">
+                <div class="hint-text">Your files and folders have been restored succesfully</div>
+                <div class="hint-text">Did we help save your files? If so, please consider supporting Duplicati with a donation.</div>
+                <div id="restore-hint-paypal" class="hint-text">Paypal</div>
+                <div id="restore-hint-bitcoin" class="hint-text">Bitcoin</div>
+
+            </div>
+        </form>
+    </div>
+
 
     <div id="backup-options-dialog" class="modal-dialog" title="Avaliable options"></div>
 

@@ -1,0 +1,35 @@
+#restore-dialog {
+    overflow: hidden;
+}
+
+#restore-files-tree {
+    overflow: auto;
+    position: absolute;
+    top: 58px;
+    bottom: 16px;
+    left: 16px;
+    right: 8px;
+}
+
+#restore-search {
+    width: 320px;
+}
+
+#restore-version {
+    float: right;
+}
+
+a.jstree-anchor.restore-included {
+    color: green;
+}
+
+a.jstree-anchor.restore-included-full {
+    color: yellow;
+}
+
+.search-match {
+    display: inline;
+    font-weight: bold;
+    color: black;
+}
+

@@ -555,13 +555,9 @@ $(document).ready(function() {
 
                             $('#backup-details-delete-' + id).click(function(e) {
                                 var id = decodeid(e);
-                                var name = null;
+                                var name = APP_DATA.getBackupName(id);
 
-                                for(var x in PRIVATE_DATA.backup_list)
-                                    if (PRIVATE_DATA.backup_list[x].Backup.ID == id)
-                                        name = PRIVATE_DATA.backup_list[x].Backup.Name;
-
-                                if (name && confirm('Really delete ' + name))
+                                if (name && confirm('Really delete ' + name + '?'))
                                     APP_DATA.deleteBackup(id);
                             });
 
@@ -578,6 +574,13 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.getBackupName = function(id) {
+        if (PRIVATE_DATA.backup_list)
+            for(var n in PRIVATE_DATA.backup_list)
+                if (PRIVATE_DATA.backup_list[n].Backup.ID == id)
+                    return PRIVATE_DATA.backup_list[n].Backup.Name;
+        return null;
+    };
 
     APP_DATA.getServerConfig = function(callback, errorhandler) {
         if (PRIVATE_DATA.server_config == null) {
@@ -667,7 +670,8 @@ $(document).ready(function() {
     };
 
     APP_DATA.restoreBackup = function(id) {
-        alert('Not implemented');
+        $('#restore-dialog').dialog('open');
+        $('#restore-dialog').trigger('setup-data', id);
     };
 
     APP_DATA.pauseServer = function(duration) {
