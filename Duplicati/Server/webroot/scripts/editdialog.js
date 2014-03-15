@@ -517,14 +517,14 @@ $(document).ready(function() {
         var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
 
         if (ui.newPanel.attr('id') == tabs.first().attr('aria-controls'))
-            $(dlg_buttons[0]).button('option', 'disabled', true);
+            dlg_buttons.first().button('option', 'disabled', true);
         else if (ui.oldPanel.attr('id') == tabs.first().attr('aria-controls'))
-            $(dlg_buttons[0]).button('option', 'disabled', false);
+            dlg_buttons.first().button('option', 'disabled', false);
 
         if (ui.newPanel.attr('id') == tabs.last().attr('aria-controls'))
-            $(dlg_buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Save'});
+            dlg_buttons.last().button('option', 'label', 'Save');
         else if (ui.oldPanel.attr('id') == tabs.last().attr('aria-controls'))
-            $(dlg_buttons[1]).find('span').each(function(ix, el) {el.innerText = 'Next'});
+            dlg_buttons.last().button('option', 'label', 'Next >');
 
     });
 
@@ -610,7 +610,7 @@ $(document).ready(function() {
             return obj
         };
 
-    $(dlg_buttons[1]).click(function(event, ui) {
+    dlg_buttons.last().click(function(event, ui) {
         var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
         if (event.curPage == tabs.size() - 1) {
             // Saving, validate first 
