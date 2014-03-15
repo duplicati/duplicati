@@ -234,6 +234,8 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("list-tags", ListTags);
                 SUPPORTED_METHODS.Add("test-backend", TestBackend);
                 SUPPORTED_METHODS.Add("list-remote-folder", ListRemoteFolder);
+                SUPPORTED_METHODS.Add("list-backup-sets", ListBackupSets);
+                SUPPORTED_METHODS.Add("search-backup-files", SearchBackupFiles);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -306,6 +308,82 @@ namespace Duplicati.Server
             {
                 Serializer.SerializeJson(b, o);
             }
+
+            private void ListBackupSets(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                long id;
+                if (!long.TryParse(input["id"].Value, out id))
+                {
+                    ReportError(response, bw, "Invalid or missing backup id");
+                    return;
+                }
+                var bk = Program.DataConnection.GetBackup(id);
+                if (bk == null)
+                {
+                    ReportError(response, bw, "Invalid or missing backup id");
+                    return;
+                }
+                
+                var r = Runner.Run(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.List)) as Duplicati.Library.Interface.IListResults;
+                
+                OutputObject(bw, r.Filesets);
+            }
+            
+            private void SearchBackupFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                long id;
+                string filter = input["filter"].Value;
+                string time = input["time"].Value;
+                bool allversion = Duplicati.Library.Utility.Utility.ParseBool(input["all-versions"].Value, false);
+                
+                
+                
+                if (!long.TryParse(input["id"].Value, out id))
+                {
+                    ReportError(response, bw, "Invalid or missing backup id");
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(filter))
+                {
+                    ReportError(response, bw, "Invalid or missing filter");
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(time) && !allversion)
+                {
+                    ReportError(response, bw, "Invalid or missing time");
+                    return;
+                }
+                var bk = Program.DataConnection.GetBackup(id);
+                if (bk == null)
+                {
+                    ReportError(response, bw, "Invalid or missing backup id");
+                    return;
+                }
+                
+                var opts = new Dictionary<string, string>();
+                if (allversion)
+                    opts["all-versions"] = "true";
+                else
+                    opts["time"] = time;
+                
+                if (!string.IsNullOrWhiteSpace(input["prefix-only"].Value))
+                    opts["list-prefix-only"] = input["prefix-only"].Value;
+                
+                var r = Runner.Run(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.List), filter, opts) as Duplicati.Library.Interface.IListResults;
+                
+                var result = new Dictionary<string, object>();
+                
+                foreach(HttpServer.HttpInputItem n in input)
+                    result[n.Name] = n.Value;
+                
+                result["Filesets"] = r.Filesets;
+                result["Files"] = r.Files;
+                
+                OutputObject(bw, result);
+            }
+            
             
             private void ListRemoteFolder(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
