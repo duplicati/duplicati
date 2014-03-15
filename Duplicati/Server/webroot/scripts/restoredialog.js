@@ -94,7 +94,9 @@ $(document).ready(function() {
 
         lst.each(function(i, e) {
             var node = tree.jstree().get_node($(e));
-            var path = node.id;
+            if (!node)
+                return;
+            var path = node.original.filepath;
             var time = node.original.time;
 
             var full = includes[time][path];
@@ -115,7 +117,24 @@ $(document).ready(function() {
                 $(e).find('a').first().removeClass('restore-included-full restore-included');
             }
         });
-    };        
+    };
+
+    var recolor_search = function(tree) {
+        var nodes = $(tree).find("i.icon-clock");
+        nodes.each(function(i, e) {
+            var el = $(e).parent();
+            var node = searchTree.jstree().get_node(el);
+            if (!node)
+                return;
+            
+            if (node.original.isTime) {
+                var path = node.original.filepath;
+                var time = node.original.time;
+                if (includes[time][path])
+                    el.addClass('restore-included-full');
+            }
+        });
+    };    
 
     var inSearch = false;
     var doSearch = function(search) {
@@ -141,7 +160,7 @@ $(document).ready(function() {
                 return {
                     text: disp,
                     children: [],
-                    id: path, 
+                    filepath: path, 
                     isFolder: isFolder,
                     state: {opened: true }
                 };
@@ -182,7 +201,8 @@ $(document).ready(function() {
                     for(var x in data.Filesets)
                         cur.push({
                             isTime: true,
-                            filepath: lastEntry.id,
+                            time: data.Filesets[x].Time,
+                            filepath: lastEntry.filepath,
                             text: $.timeago(data.Filesets[x].Time),
                             icon: 'icon-clock'
                         });
@@ -199,7 +219,7 @@ $(document).ready(function() {
                     while(r.children.length == 1 && r.children[0].isFolder) {
                         var c = r.children[0];
                         r.text = r.text + dirSep + c.text;
-                        r.id = r.text;
+                        r.filepath = r.text;
                         r.children = c.children;
                     }
 
@@ -213,7 +233,7 @@ $(document).ready(function() {
             callback(roots);
 
             colorize(searchTree, search);
-            //recolor(searchTree);    
+            recolor_search(searchTree);    
 
             inSearch = false;
         }
@@ -260,8 +280,7 @@ $(document).ready(function() {
         });
 
         searchTree.bind('open_node.jstree', function (event, node) {
-            var nodes = $(event.target).find("li");
-            //recolor(searchTree, time, nodes);
+            recolor_search(searchTree);
         });
 
 
@@ -302,8 +321,8 @@ $(document).ready(function() {
                 'id': backupId,
                 'time': time,
                 'prefix-only': node.id === '#',
-                'filter': node.id === '#' ? '*' : '[' + node.id + '[^\\' + dirSep + ']+\\' + dirSep + '?]',
-                'Prefix': node.id === '#' ? '' : node.id
+                'filter': node.id === '#' ? '*' : '[' + node.original.filepath + '[^\\' + dirSep + ']+\\' + dirSep + '?]',
+                'Prefix': node.id === '#' ? '' : node.original.filepath
             },
             'dataType': 'json'
         })
@@ -327,7 +346,7 @@ $(document).ready(function() {
 
                 nodes.push({
                     text: disp,
-                    id: o.Path,
+                    filepath: o.Path,
                     time: time,
                     children: isFolder,
                     state: state,
@@ -371,7 +390,7 @@ $(document).ready(function() {
 
             treeel.bind('dblclick.jstree', function (event) {
                 var node = treeel.jstree().get_node($(event.target).closest("li"));
-                var path = node.id;
+                var path = node.original.filepath;
                 var time = node.original.time;
                 if (!includes[time])
                     includes[time] = {};
@@ -393,11 +412,14 @@ $(document).ready(function() {
         for(var t in treeels)
             if (t != time)
                 treeels[t].hide();
-            else
+            else {
                 treeels[t].show();
+                recolor(treeels[t], time);
+            }
 
         if (searchTree != null)
             searchTree.hide();
+
     };
 
     $('#restore-dialog').on('setup-data', function(e, id) {
