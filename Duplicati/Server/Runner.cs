@@ -182,10 +182,9 @@ namespace Duplicati.Server
             return t;
         }
     
-        public static void Run(Tuple<long, Server.Serialization.DuplicatiOperation> item)
+        public static Duplicati.Library.Interface.IBasicResults Run(Tuple<long, Server.Serialization.DuplicatiOperation> item, params object[] args)
         {
             Duplicati.Server.Serialization.Interface.IBackup backup = null;
-            
             
             try
             {
@@ -197,6 +196,17 @@ namespace Duplicati.Server
                 var sink = new MessageSink(backup.ID);
                 Program.GenerateProgressState = () => sink.Copy();
                 Program.StatusEventNotifyer.SignalNewEvent();            
+                
+                if (args != null && args.Length > 0)
+                {
+                    var arg = (IDictionary<string, string>)args.Where(x => x != null && typeof(IDictionary<string, string>).IsAssignableFrom(x.GetType())).FirstOrDefault();
+                    if (arg != null)
+                    {
+                        args = args.Where(x => x != arg).ToArray();
+                        foreach(var k in arg.Keys)
+                            options[k] = arg[k];
+                    }
+                }
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
@@ -213,45 +223,47 @@ namespace Duplicati.Server
                                 
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
-                            }
-                            break;
-                            
+                                return r;
+                            }                            
                         case DuplicatiOperation.List:
                             {
-                                //TODO: Need to pass arguments
-                                var r = controller.List();
+                                string filter = null;
+                                if (args != null && args.Length > 0)
+                                    filter = args[0] as string;
+                                
+                                var r = controller.List(filter);
                                 UpdateMetadata(backup, r);
+                                return r;
                             }
-                            break;
                         case DuplicatiOperation.Repair:
                             {
                                 var r = controller.Repair();
                                 UpdateMetadata(backup, r);
+                                return r;
                             }
-                            break;
                         case DuplicatiOperation.Remove:
                             {
                                 var r = controller.Delete();
                                 UpdateMetadata(backup, r);
+                                return r;
                             }
-                            break;
                         case DuplicatiOperation.Restore:
                             {
                                 //TODO: Need to pass arguments
                                 var r = controller.Restore(new string[] { "*" });
                                 UpdateMetadata(backup, r);
+                                return r;
                             }
-                            break;
                         case DuplicatiOperation.Verify:
                             {
                                 //TODO: Need to pass arguments
                                 var r = controller.Test();
                                 UpdateMetadata(backup, r);
+                                return r;
                             }
-                            break;
                         default:
                             //TODO: Log this
-                            return;
+                            return null;
                     }
                 }
             }
@@ -259,6 +271,7 @@ namespace Duplicati.Server
             {
                 Program.DataConnection.LogError(item.Item1, string.Format("Failed while executing \"{0}\" with id: {1}", item.Item2, item.Item1), ex);
                 //TODO: Update metadata with the error here
+                return null;
             }
         }
         
