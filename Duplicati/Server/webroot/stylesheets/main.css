@@ -273,7 +273,6 @@
 
 .backup-progress {
     float: left;
-    padding-top: 20px;
     padding-bottom: 20px;
     min-width: 250px;
     white-space: nowrap;
