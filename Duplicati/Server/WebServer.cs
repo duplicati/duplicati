@@ -350,7 +350,12 @@ namespace Duplicati.Server
                 }
                 
                 var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(input["prefix-only"].Value, false);
-                var time = allversion ? new DateTime() : Duplicati.Library.Utility.Utility.DeserializeDateTime(timestring);
+                var time = new DateTime();
+                if (!allversion)
+                {
+                    if (!DateTime.TryParse(timestring, out time))
+                        time = Duplicati.Library.Utility.Utility.DeserializeDateTime(timestring);
+                }
                                 
                 var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, time)) as Duplicati.Library.Interface.IListResults;
                 

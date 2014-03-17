@@ -240,7 +240,7 @@ namespace Duplicati.Server
             return t;
         }
     
-        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, params object[] args)
+        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data)
         {
             Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
             
@@ -251,16 +251,9 @@ namespace Duplicati.Server
                 Program.GenerateProgressState = () => sink.Copy();
                 Program.StatusEventNotifyer.SignalNewEvent();            
                 
-                if (args != null && args.Length > 0)
-                {
-                    var arg = (IDictionary<string, string>)args.Where(x => x != null && typeof(IDictionary<string, string>).IsAssignableFrom(x.GetType())).FirstOrDefault();
-                    if (arg != null)
-                    {
-                        args = args.Where(x => x != arg).ToArray();
-                        foreach(var k in arg.Keys)
-                            options[k] = arg[k];
-                    }
-                }
+                if (data.ExtraOptions != null)
+                    foreach(var k in data.ExtraOptions)
+                        options[k.Key] = k.Value;
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
@@ -281,10 +274,7 @@ namespace Duplicati.Server
                             }                            
                         case DuplicatiOperation.List:
                             {
-                                string filter = null;
-                                if (args != null && args.Length > 0)
-                                    filter = args[0] as string;
-                                
+                                string filter = data.FilterString;                                
                                 var r = controller.List(filter);
                                 UpdateMetadata(backup, r);
                                 return r;
