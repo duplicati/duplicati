@@ -264,11 +264,11 @@ $(document).ready(function() {
         var scheduledMap = {};
         var backupMap = {};
         var state = PRIVATE_DATA.server_state;
-        var current = state.activeTask == null ? false : 'backup-' + state.activeTask;
+        var current = state.activeTask == null ? false : 'backup-' + state.activeTask.Item2;
 
         for(var n in state.scheduled)
-            if (scheduledMap['backup-' + state.scheduled[n]] == null)
-                scheduledMap['backup-' + state.scheduled[n]] = parseInt(n) + 1;
+            if (scheduledMap['backup-' + state.scheduled[n].Item2] == null)
+                scheduledMap['backup-' + state.scheduled[n].Item2] = parseInt(n) + 1;
 
         for(var n in PRIVATE_DATA.backup_list)
             backupMap['backup-' + PRIVATE_DATA.backup_list[n].Backup.ID] = PRIVATE_DATA.backup_list[n];
@@ -372,8 +372,8 @@ $(document).ready(function() {
             }
 
             //If there is an active backup, (re)start the progress monitor
-            if (data.ActiveScheduleId != null && parseInt(data.ActiveScheduleId) > 0) {
-                state.activeTask = parseInt(data.ActiveScheduleId);
+            if (data.ActiveTask != null) {
+                state.activeTask = data.ActiveTask;
                 PRIVATE_DATA.poll_for_progress();
             } else {
                 state.activeTask = null;
@@ -467,6 +467,8 @@ $(document).ready(function() {
             state.eventId = data.LastEventID;
             state.lastEvent = data;
             PRIVATE_DATA.update_progress_and_schedules();
+
+            $(document).trigger('server-progress-updated', data);            
 
             var timeSinceLast = new Date() - state.requestStart;
             if (timeSinceLast < state.updateFreq) {

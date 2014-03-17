@@ -24,11 +24,67 @@ namespace Duplicati.Server
 {
     public static class Runner
     {
+        public interface IRunnerData : Duplicati.Server.Serialization.Interface.IQueuedTask
+        {
+            Duplicati.Server.Serialization.DuplicatiOperation Operation { get; }
+            Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
+            IDictionary<string, string> ExtraOptions { get; }
+            string FilterString { get; }
+        }
+        
+        private class RunnerData : IRunnerData
+        {
+            private static long RunnerTaskID = 1;
+            
+            public Duplicati.Server.Serialization.DuplicatiOperation Operation { get; internal set; }
+            public Duplicati.Server.Serialization.Interface.IBackup Backup { get; internal set; }
+            public IDictionary<string, string> ExtraOptions { get; internal set; }
+            public string FilterString { get; internal set; }
+            
+            public string BackupID { get { return Backup.ID; } }
+            public long TaskID { get { return m_taskID; } }
+            
+            private readonly long m_taskID;
+            
+            public RunnerData()
+            {
+                m_taskID = System.Threading.Interlocked.Increment(ref RunnerTaskID);
+            }
+        }
+        
+        public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string filterString = null)
+        {
+            return new RunnerData() {
+                Operation = operation,
+                Backup = backup,
+                ExtraOptions = extraOptions,
+                FilterString = filterString
+            };
+        }
+        
+        public static IRunnerData CreateListTask(Duplicati.Server.Serialization.Interface.IBackup backup, string filter, bool onlyPrefix, bool allVersions, DateTime time)
+        {
+            var dict = new Dictionary<string, string>();
+            if (onlyPrefix)
+                dict["list-prefix-only"] = "true";
+            if (allVersions)
+                dict["all-versions"] = "true";
+            if (time.Ticks > 0)
+                dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+            
+            return CreateTask(
+                DuplicatiOperation.List,
+                backup,
+                dict,
+                filter);            
+        }
+        
         private class MessageSink : Duplicati.Library.Main.IMessageSink
         {
             private class ProgressState : Server.Serialization.Interface.IProgressEventData
             {
-                private readonly long m_backupID;
+                private readonly string m_backupID;
+                private readonly long m_taskID;
                 
                 internal Duplicati.Library.Main.BackendActionType m_backendAction;
                 internal string m_backendPath;
@@ -48,9 +104,10 @@ namespace Duplicati.Server
                 internal long m_totalFileSize;
                 internal bool m_stillCounting;
                 
-                public ProgressState(long backupId)
+                public ProgressState(long taskId, string backupId)
                 {
                     m_backupID = backupId;
+                    m_taskID = taskId;
                 }
                 
                 internal ProgressState Clone()
@@ -59,7 +116,8 @@ namespace Duplicati.Server
                 }
 
                 #region IProgressEventData implementation
-                public long BackupID { get { return m_backupID; } }
+                public string BackupID { get { return m_backupID; } }
+                public long TaskID { get { return m_taskID; } }
                 public string BackendAction { get { return m_backendAction.ToString(); } }
                 public string BackendPath { get { return m_backendPath; } }
                 public long BackendFileSize { get { return m_backendFileSize; } }
@@ -83,9 +141,9 @@ namespace Duplicati.Server
             private Duplicati.Library.Main.IOperationProgress m_operationProgress;
             private object m_lock = new object();
             
-            public MessageSink(long backupId)
+            public MessageSink(long taskId, string backupId)
             {
-                m_state = new ProgressState(backupId);
+                m_state = new ProgressState(taskId, backupId);
             }
             
             public Server.Serialization.Interface.IProgressEventData Copy()
@@ -160,7 +218,7 @@ namespace Duplicati.Server
             #endregion
         }
         
-        private static string DecodeSource(string n, long backupId)
+        private static string DecodeSource(string n, string backupId)
         {
             if (string.IsNullOrWhiteSpace(n))
                 return null;
@@ -182,18 +240,14 @@ namespace Duplicati.Server
             return t;
         }
     
-        public static Duplicati.Library.Interface.IBasicResults Run(Tuple<long, Server.Serialization.DuplicatiOperation> item, params object[] args)
+        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, params object[] args)
         {
-            Duplicati.Server.Serialization.Interface.IBackup backup = null;
+            Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
             
             try
-            {
-                backup = Program.DataConnection.GetBackup(item.Item1);
-                if (backup == null)
-                    throw new Exception(string.Format("No backup with ID: {0}", item.Item1));
-                
-                var options = ApplyOptions(backup, item.Item2, GetCommonOptions(backup, item.Item2));
-                var sink = new MessageSink(backup.ID);
+            {                
+                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+                var sink = new MessageSink(data.TaskID, backup.ID);
                 Program.GenerateProgressState = () => sink.Copy();
                 Program.StatusEventNotifyer.SignalNewEvent();            
                 
@@ -210,11 +264,11 @@ namespace Duplicati.Server
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
-                    switch (item.Item2)
+                    switch (data.Operation)
                     {
                         case DuplicatiOperation.Backup:
                             {
-                                var filter = ApplyFilter(backup, item.Item2, GetCommonFilter(backup, item.Item2));
+                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
                                 var sources = 
                                         (from n in backup.Sources
                                         let p = DecodeSource(n, backup.ID)
@@ -256,7 +310,6 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Verify:
                             {
-                                //TODO: Need to pass arguments
                                 var r = controller.Test();
                                 UpdateMetadata(backup, r);
                                 return r;
@@ -269,7 +322,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
-                Program.DataConnection.LogError(item.Item1, string.Format("Failed while executing \"{0}\" with id: {1}", item.Item2, item.Item1), ex);
+                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
                 //TODO: Update metadata with the error here
                 return null;
             }
@@ -315,7 +368,8 @@ namespace Duplicati.Server
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
             
-            Program.DataConnection.SetMetadata(backup.Metadata, backup.ID, null);
+            if (!backup.IsTemporary)
+                Program.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
             
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();

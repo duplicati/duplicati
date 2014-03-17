@@ -34,27 +34,21 @@ namespace Duplicati.Server.Serializable
             get { return EnumConverter.Convert<LiveControlState>(Program.LiveControl.State); }
         }
 
-        public RunnerState ActiveBackupState
-        {
-            get { /*return Program.Runner.CurrentState;*/ return RunnerState.Stopped; }
-        }
-
-        public long ActiveScheduleId
+        public Tuple<long, string> ActiveTask
         {
             get 
             { 
                 var t = Program.WorkThread.CurrentTask;
-                if (t == null || t.Item2 != DuplicatiOperation.Backup)
-                    return -1;
+                if (t == null || t.Backup == null)
+                    return null;
                 else
-                    return t.Item1;
-
+                    return new Tuple<long, string>(t.TaskID, t.Backup.ID);
             }
         }
 
-        public IList<long> SchedulerQueueIds
+        public IList<Tuple<long, string>> SchedulerQueueIds
         {
-            get { return (from n in Program.Scheduler.WorkerQueue where n.Item2 == DuplicatiOperation.Backup select n.Item1).ToList(); }
+            get { return (from n in Program.Scheduler.WorkerQueue where n.Backup != null select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList(); }
         }
         
         public bool HasWarning { get { return Program.HasWarning; } }
@@ -64,7 +58,7 @@ namespace Duplicati.Server.Serializable
         {
             get
             {
-                if (this.ActiveScheduleId < 0)
+                if (this.ActiveTask != null)
                 {
                     if (this.ProgramState == LiveControlState.Paused)
                         return SuggestedStatusIcon.Paused;

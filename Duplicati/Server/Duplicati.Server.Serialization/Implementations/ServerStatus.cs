@@ -7,10 +7,9 @@ namespace Duplicati.Server.Serialization.Implementations
 {
     internal class ServerStatus : Interface.IServerStatus
     {
-        public RunnerState ActiveBackupState { get; set; }
-        public long ActiveScheduleId { get; set; }
+        public Tuple<long, string> ActiveTask { get; set; }
         public LiveControlState ProgramState { get; set; }
-        public IList<long> SchedulerQueueIds { get; set; }
+        public IList<Tuple<long, string>> SchedulerQueueIds { get; set; }
         public bool HasError { get; set; }
         public bool HasWarning { get; set; }
         public SuggestedStatusIcon SuggestedStatusIcon { get; set; }

@@ -7,7 +7,8 @@ namespace Duplicati.Server.Serialization.Interface
 {
     public interface IProgressEventData
     {
-        long BackupID { get; }
+        string BackupID { get; }
+        long TaskID { get; }
         
         string BackendAction  { get; }
         string BackendPath { get; }

@@ -55,7 +55,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the working thread
         /// </summary>
-        public static Duplicati.Library.Utility.WorkerThread<Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>> WorkThread;
+        public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread;
 
         /// <summary>
         /// The path to the file that contains the current database
@@ -328,7 +328,7 @@ namespace Duplicati.Server
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
                 LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
-                Program.WorkThread = new Duplicati.Library.Utility.WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>>((x) => { Runner.Run(x); }, LiveControl.State == LiveControls.LiveControlState.Paused);
+                Program.WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) => { Runner.Run(x); }, LiveControl.State == LiveControls.LiveControlState.Paused);
                 Program.Scheduler = new Scheduler(WorkThread);
 
                 Program.WorkThread.StartingWork += new EventHandler(SignalNewEvent);

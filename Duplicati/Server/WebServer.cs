@@ -312,20 +312,15 @@ namespace Duplicati.Server
             private void ListBackupSets(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-                long id;
-                if (!long.TryParse(input["id"].Value, out id))
-                {
-                    ReportError(response, bw, "Invalid or missing backup id");
-                    return;
-                }
-                var bk = Program.DataConnection.GetBackup(id);
+                var bk = Program.DataConnection.GetBackup(input["id"].Value);
                 if (bk == null)
                 {
                     ReportError(response, bw, "Invalid or missing backup id");
                     return;
                 }
                 
-                var r = Runner.Run(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.List)) as Duplicati.Library.Interface.IListResults;
+                
+                var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk) ) as Duplicati.Library.Interface.IListResults;
                 
                 OutputObject(bw, r.Filesets);
             }
@@ -333,45 +328,31 @@ namespace Duplicati.Server
             private void SearchBackupFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-                long id;
                 string filter = input["filter"].Value;
-                string time = input["time"].Value;
+                string timestring = input["time"].Value;
                 bool allversion = Duplicati.Library.Utility.Utility.ParseBool(input["all-versions"].Value, false);
                 
-                
-                
-                if (!long.TryParse(input["id"].Value, out id))
-                {
-                    ReportError(response, bw, "Invalid or missing backup id");
-                    return;
-                }
                 if (string.IsNullOrWhiteSpace(filter))
                 {
                     ReportError(response, bw, "Invalid or missing filter");
                     return;
                 }
-                if (string.IsNullOrWhiteSpace(time) && !allversion)
+                if (string.IsNullOrWhiteSpace(timestring) && !allversion)
                 {
                     ReportError(response, bw, "Invalid or missing time");
                     return;
                 }
-                var bk = Program.DataConnection.GetBackup(id);
+                var bk = Program.DataConnection.GetBackup(input["id"].Value);
                 if (bk == null)
                 {
                     ReportError(response, bw, "Invalid or missing backup id");
                     return;
                 }
                 
-                var opts = new Dictionary<string, string>();
-                if (allversion)
-                    opts["all-versions"] = "true";
-                else
-                    opts["time"] = time;
-                
-                if (!string.IsNullOrWhiteSpace(input["prefix-only"].Value))
-                    opts["list-prefix-only"] = input["prefix-only"].Value;
-                
-                var r = Runner.Run(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.List), filter, opts) as Duplicati.Library.Interface.IListResults;
+                var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(input["prefix-only"].Value, false);
+                var time = allversion ? new DateTime() : Duplicati.Library.Utility.Utility.DeserializeDateTime(timestring);
+                                
+                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, time)) as Duplicati.Library.Interface.IListResults;
                 
                 var result = new Dictionary<string, object>();
                 
@@ -815,48 +796,42 @@ namespace Duplicati.Server
             private void GetBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-                long id;
-                if (!long.TryParse(input["id"].Value, out id))
+                var bk = Program.DataConnection.GetBackup(input["id"].Value);
+                if (bk == null)
                     ReportError(response, bw, "Invalid or missing backup id");
                 else
                 {
-                    var bk = Program.DataConnection.GetBackup(id);
-                    if (bk == null)
-                        ReportError(response, bw, "Invalid or missing backup id");
-                    else
+                    var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
+                    var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
+                    var sourcenames = bk.Sources.Distinct().Select(x => {
+                        var sp = SpecialFolders.TranslateToDisplayString(x);
+                        if (sp != null)
+                            return new KeyValuePair<string, string>(x, sp);
+                        
+                        try {
+                            var n = System.IO.Path.GetFileName(x);
+                            if (!string.IsNullOrWhiteSpace(n))
+                                return new KeyValuePair<string, string>(x, System.IO.Path.GetFileName(n));
+                        } catch {
+                        }
+                        
+                        if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
+                            return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/") + 1));
+                        else
+                            return new KeyValuePair<string, string>(x, x);
+                        
+                    }).ToDictionary(x => x.Key, x => x.Value);
+                    
+                    
+                    OutputObject(bw, new
                     {
-                        var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + id });
-                        var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
-                        var sourcenames = bk.Sources.Distinct().Select(x => {
-                            var sp = SpecialFolders.TranslateToDisplayString(x);
-                            if (sp != null)
-                                return new KeyValuePair<string, string>(x, sp);
-                            
-                            try {
-                                var n = System.IO.Path.GetFileName(x);
-                                if (!string.IsNullOrWhiteSpace(n))
-                                    return new KeyValuePair<string, string>(x, System.IO.Path.GetFileName(n));
-                            } catch {
-                            }
-                            
-                            if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
-                                return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/") + 1));
-                            else
-                                return new KeyValuePair<string, string>(x, x);
-                            
-                        }).ToDictionary(x => x.Key, x => x.Value);
-                        
-                        
-                        OutputObject(bw, new
-                        {
-                            success = true,
-                            data = new {
-                                Schedule = schedule,
-                                Backup = bk,
-                                DisplayNames = sourcenames
-                            }
-                        });
-                    }
+                        success = true,
+                        data = new {
+                            Schedule = schedule,
+                            Backup = bk,
+                            DisplayNames = sourcenames
+                        }
+                    });
                 }
             }
 
@@ -879,32 +854,44 @@ namespace Duplicati.Server
                         return;
                     }
                     
-                    if (data.Backup.ID <= 0)
+                    if (data.Backup.ID == null)
                     {
                         ReportError(response, bw, "Invalid or missing backup id");
                         return;
                     }                    
                     
-                    lock(Program.DataConnection.m_lock)
+                    if (data.Backup.IsTemporary)
                     {
                         var backup = Program.DataConnection.GetBackup(data.Backup.ID);
-                        if (backup == null)
+                        if (backup.IsTemporary)
+                            throw new InvalidDataException("External is temporary but internal is not?");
+                        
+                        Program.DataConnection.UpdateTemporaryBackup(backup);
+                        OutputObject(bw, new { status = "OK" });
+                    }
+                    else
+                    {                    
+                        lock(Program.DataConnection.m_lock)
                         {
-                            ReportError(response, bw, "Invalid or missing backup id");
-                            return;
-                        }
+                            var backup = Program.DataConnection.GetBackup(data.Backup.ID);
+                            if (backup == null)
+                            {
+                                ReportError(response, bw, "Invalid or missing backup id");
+                                return;
+                            }
+        
+                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase) && x.ID != data.Backup.ID).Any())
+                            {
+                                ReportError(response, bw, "There already exists a backup with the name: " + data.Backup.Name);
+                                return;
+                            }
+                            
+                            Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
     
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase) && x.ID != data.Backup.ID).Any())
-                        {
-                            ReportError(response, bw, "There already exists a backup with the name: " + data.Backup.Name);
-                            return;
                         }
                         
-                        Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
-
+                        OutputObject(bw, new { status = "OK" });
                     }
-                    
-                    OutputObject(bw, new { status = "OK" });
                 }
                 catch (Exception ex)
                 {
@@ -924,7 +911,7 @@ namespace Duplicati.Server
 
             private void AddBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
-                string str = request.Form["data"].Value;
+                var str = request.Form["data"].Value;
                 if (string.IsNullOrWhiteSpace(str))
                 {
                     ReportError(response, bw, "Missing backup object");
@@ -941,20 +928,29 @@ namespace Duplicati.Server
                         return;
                     }
                         
-                    data.Backup.ID = -1;
+                    data.Backup.ID = null;
                     
-                    lock(Program.DataConnection.m_lock)
+                    if (Duplicati.Library.Utility.Utility.ParseBool(request.Form["temporary"].Value, false))
                     {
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                        Program.DataConnection.RegisterTemporaryBackup(data.Backup);
+                        
+                        OutputObject(bw, new { status = "OK", ID = data.Backup.ID });
+                    }
+                    else
+                    {
+                        lock(Program.DataConnection.m_lock)
                         {
-                            ReportError(response, bw, "There already exists a backup with the name: " + data.Backup.Name);
-                            return;
+                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                            {
+                                ReportError(response, bw, "There already exists a backup with the name: " + data.Backup.Name);
+                                return;
+                            }
+                            
+                            Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
                         }
                         
-                        Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
+                        OutputObject(bw, new { status = "OK", ID = data.Backup.ID });
                     }
-                    
-                    OutputObject(bw, new { status = "OK" });
                 }
                 catch (Exception ex)
                 {
@@ -968,16 +964,7 @@ namespace Duplicati.Server
             private void DeleteBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-
-                long id;
-                if (!long.TryParse(input["id"].Value, out id))
-                {
-                    ReportError(response, bw, "Invalid or missing backup id");
-                    return;
-                }
-
-
-                var backup = Program.DataConnection.GetBackup(id);
+                var backup = Program.DataConnection.GetBackup(input["id"].Value);
                 if (backup == null)
                 {
                     ReportError(response, bw, "Invalid or missing backup id");
@@ -990,7 +977,8 @@ namespace Duplicati.Server
                     {
                         //TODO: It's not safe to access the values like this, 
                         //because the runner thread might interfere
-                        if (Program.WorkThread.CurrentTask.Item1 == id)
+                        var nt = Program.WorkThread.CurrentTask;
+                        if (backup.Equals(nt == null ? null : nt.Backup))
                         {
                             bool force;
                             if (!bool.TryParse(input["force"].Value, out force))
@@ -1011,7 +999,7 @@ namespace Duplicati.Server
                                     if (Program.WorkThread.Active)
                                     {
                                         var t = Program.WorkThread.CurrentTask;
-                                        if (t != null && t.Item1 == id)
+                                        if (backup.Equals(t == null ? null : t.Backup))
                                             System.Threading.Thread.Sleep(1000);
                                         else
                                             break;
@@ -1026,7 +1014,7 @@ namespace Duplicati.Server
                             if (Program.WorkThread.Active)
                             {
                                 var t = Program.WorkThread.CurrentTask;
-                                if (t == null && t.Item1 == id)
+                                if (backup.Equals(t == null ? null : t.Backup))
                                 {
                                     if (hasPaused)
                                         Program.LiveControl.Resume();
@@ -1104,10 +1092,8 @@ namespace Duplicati.Server
                     case "run":
                     case "run-backup":
                         {
-                            Duplicati.Server.Serialization.Interface.IBackup backup = null;
-                            if (long.TryParse(input["id"].Value, out id))
-                                backup = Program.DataConnection.GetBackup(id);
-
+                            
+                            var backup = Program.DataConnection.GetBackup(input["id"].Value);
                             if (backup == null)
                             {
                                 ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
@@ -1115,17 +1101,18 @@ namespace Duplicati.Server
                             }
 
                             var t = Program.WorkThread.CurrentTask;
-                            if (t != null && t.Item1 == id)
+                            var bt = t == null ? null : t.Backup;
+                            if (backup.Equals(t == null ? null : t.Backup))
                             {
                                 // Already running
                             }
-                            else if (Program.WorkThread.CurrentTasks.Where(x => x.Item1 == id).Any())
+                            else if (Program.WorkThread.CurrentTasks.Where(x => backup.Equals(x == null ? null : x.Backup)).Any())
                             {
                                 // Already in queue
                             }
                             else
                             {
-                                Program.WorkThread.AddTask(new Tuple<long, DuplicatiOperation>(id, DuplicatiOperation.Backup));
+                                Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup));
                                 Program.StatusEventNotifyer.SignalNewEvent();
                             }
                         }

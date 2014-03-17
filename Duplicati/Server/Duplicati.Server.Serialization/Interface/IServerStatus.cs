@@ -5,10 +5,9 @@ namespace Duplicati.Server.Serialization.Interface
 {
     public interface IServerStatus
     {
-        RunnerState ActiveBackupState { get; }
-        long ActiveScheduleId { get; }
+        Tuple<long, string> ActiveTask { get; }
         LiveControlState ProgramState { get; }
-        System.Collections.Generic.IList<long> SchedulerQueueIds { get; }
+        System.Collections.Generic.IList<Tuple<long,string>> SchedulerQueueIds { get; }
         bool HasWarning { get; }
         bool HasError { get; }
         SuggestedStatusIcon SuggestedStatusIcon { get; }

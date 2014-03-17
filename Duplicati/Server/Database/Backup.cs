@@ -26,12 +26,12 @@ namespace Duplicati.Server.Database
     
         public Backup()
         {
-            this.ID = -2;
+            this.ID = null;
         }
         
         internal void LoadChildren(Connection con)
         {
-            if (this.ID < 0)
+            if (this.IsTemporary)
             {
                 this.Sources = new string[0];
                 this.Settings = new ISetting[0];
@@ -40,17 +40,18 @@ namespace Duplicati.Server.Database
             }
             else
             {
-                this.Sources = con.GetSources(this.ID);
-                this.Settings = con.GetSettings(this.ID);
-                this.Filters = con.GetFilters(this.ID);
-                this.Metadata = con.GetMetadata(this.ID);
+                var id = long.Parse(this.ID);
+                this.Sources = con.GetSources(id);
+                this.Settings = con.GetSettings(id);
+                this.Filters = con.GetFilters(id);
+                this.Metadata = con.GetMetadata(id);
             }
         }
     
         /// <summary>
         /// The backup ID
         /// </summary>
-        public long ID { get; set; }
+        public string ID { get; set; }
         /// <summary>
         /// The backup name
         /// </summary>
@@ -87,6 +88,12 @@ namespace Duplicati.Server.Database
         /// The backup metadata
         /// </summary>
         public IDictionary<string, string> Metadata { get; set; }        
+        
+        /// <summary>
+        /// Gets a value indicating if this instance is not persisted to the database
+        /// </summary>        
+        public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-") > 0; } }
+
     }
 }
 

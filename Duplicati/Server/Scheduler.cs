@@ -45,7 +45,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The worker thread that is invoked to do work
         /// </summary>
-        private WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>> m_worker;
+        private WorkerThread<Runner.IRunnerData> m_worker;
         /// <summary>
         /// The wait event
         /// </summary>
@@ -68,7 +68,7 @@ namespace Duplicati.Server
         /// <summary>
         /// List of update tasks, used to set the timestamp on the schedule once completed
         /// </summary>
-        private Dictionary<Tuple<long, Server.Serialization.DuplicatiOperation>, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
+        private Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
 
         /// <summary>
         /// Constructs a new scheduler
@@ -76,7 +76,7 @@ namespace Duplicati.Server
         /// <param name="connection">The database connection</param>
         /// <param name="worker">The worker thread</param>
         /// <param name="datalock">The database lock object</param>
-        public Scheduler(WorkerThread<Tuple<long, Server.Serialization.DuplicatiOperation>> worker)
+        public Scheduler(WorkerThread<Server.Runner.IRunnerData> worker)
         {
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
@@ -84,7 +84,7 @@ namespace Duplicati.Server
             m_schedule = new ISchedule[0];
             m_terminate = false;
             m_event = new AutoResetEvent(false);
-            m_updateTasks = new Dictionary<Tuple<long, Server.Serialization.DuplicatiOperation>, Tuple<ISchedule, DateTime, DateTime>>();
+            m_updateTasks = new Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>>();
             m_thread.IsBackground = true;
             m_thread.Start();
         }
@@ -113,7 +113,7 @@ namespace Duplicati.Server
         /// <summary>
         /// A snapshot copy of the current worker queue, that is items that are scheduled, but waiting for execution
         /// </summary>
-        public List<Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>> WorkerQueue
+        public List<Runner.IRunnerData> WorkerQueue
         {
             get
             {
@@ -218,21 +218,25 @@ namespace Duplicati.Server
                         //If time is exceeded, run it now
                         if (start <= DateTime.Now)
                         {
-                            var jobsToRun = new List<Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>>();
+                            var jobsToRun = new List<Server.Runner.IRunnerData>();
                             //TODO: Cache this to avoid frequent lookups
-                            foreach(var id in Program.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct())
+                            foreach(var id in Program.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct().Select(x => x.ToString()))
                             {
                                 //See if it is already queued
                                 var tmplst = from n in m_worker.CurrentTasks
-                                                                     where n.Item2 == Duplicati.Server.Serialization.DuplicatiOperation.Backup
-                                                                     select n.Item1;
+                                        where n.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup
+                                         select n.Backup;
                                 var tastTemp = m_worker.CurrentTask;
-                                if (tastTemp != null && tastTemp.Item2 == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
-                                    tmplst.Union(new long[] { tastTemp.Item1 });
+                                if (tastTemp != null && tastTemp.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
+                                    tmplst.Union(new [] { tastTemp.Backup });
                             
                                 //If it is not already in queue, put it there
-                                if (!tmplst.Any(x => x == id))
-                                    jobsToRun.Add(new Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation>(id, Duplicati.Server.Serialization.DuplicatiOperation.Backup));
+                                if (!tmplst.Any(x => x.ID == id))
+                                {
+                                    var entry = Program.DataConnection.GetBackup(id);
+                                    if (entry != null)
+                                        jobsToRun.Add(Server.Runner.CreateTask(Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                }
                             }
 
                             //Caluclate next time, by adding the interval to the start until we have
@@ -250,8 +254,8 @@ namespace Duplicati.Server
                                     continue;
                                 }
                             
-                             Tuple<long, Duplicati.Server.Serialization.DuplicatiOperation> lastJob = jobsToRun.LastOrDefault();
-                            if (lastJob != null)
+                            Server.Runner.IRunnerData lastJob = jobsToRun.LastOrDefault();
+                            if (lastJob != null && lastJob != null)
                                 lock(m_lock)
                                     m_updateTasks[lastJob] = new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
                             

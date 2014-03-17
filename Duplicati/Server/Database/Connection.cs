@@ -30,6 +30,7 @@ namespace Duplicati.Server.Database
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int APP_SETTINGS_ID = -2;
+        private Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
         
         public event EventHandler DataChanged;
         
@@ -43,12 +44,15 @@ namespace Duplicati.Server.Database
             
             this.ApplicationSettings = new ApplicationSettings(this);
         }
-        
-        internal void LogError(long backupid, string message, Exception ex)
+                
+        internal void LogError(string backupid, string message, Exception ex)
         {
             lock(m_lock)
             {
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[0]).Value = backupid;
+                long id;
+                if (!long.TryParse(backupid, out id))
+                    id = -1;
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[0]).Value = id;
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[1]).Value = message;
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[2]).Value = ex == null ? null : ex.ToString();
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[3]).Value = NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
@@ -56,6 +60,47 @@ namespace Duplicati.Server.Database
             }
         }
         
+        public string RegisterTemporaryBackup(IBackup backup)
+        {
+            lock(m_lock)
+            {
+                if (backup == null)
+                    throw new ArgumentNullException("backup");
+                if (backup.ID != null)
+                    throw new ArgumentException("Backup is already active, cannot make temporary");
+                
+                backup.ID = Guid.NewGuid().ToString("D");
+                m_temporaryBackups.Add(backup.ID, (Backup)backup);
+                return backup.ID;
+            }
+        }
+        
+        public void UnregisterTemporaryBackup(IBackup backup)
+        {
+            lock(m_lock)
+                m_temporaryBackups.Remove(backup.ID);
+        }
+
+        public void UpdateTemporaryBackup(IBackup backup)
+        {
+            lock(m_lock)
+                if (m_temporaryBackups.Remove(backup.ID))
+                    m_temporaryBackups.Add(backup.ID, (Backup)backup);
+        }
+
+        public IBackup GetTemporaryBackup(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return null;
+            
+            lock(m_lock)
+            {
+                Backup b;
+                m_temporaryBackups.TryGetValue(id, out b);
+                return b;
+            }
+        }
+
         public ApplicationSettings ApplicationSettings { get; private set; }
         
         internal IDictionary<string, string> GetMetadata(long id)
@@ -207,14 +252,26 @@ namespace Duplicati.Server.Database
                     return Read(cmd, (rd) => ConvertToInt64(rd.GetValue(0))).ToArray();
                 }
         }
-        
+
+        internal IBackup GetBackup(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentNullException("id");
+            
+            long lid;
+            if (long.TryParse(id, out lid))
+                return GetBackup(lid);
+            else
+                return GetTemporaryBackup(id);
+        }
+
         internal IBackup GetBackup(long id)
         {
             lock(m_lock)
             {
                 var bk = ReadFromDb(
                     (rd) => new Backup() {
-                        ID = ConvertToInt64(rd.GetValue(0)),
+                        ID = ConvertToInt64(rd.GetValue(0)).ToString(),
                         Name = ConvertToString(rd.GetValue(1)),
                         Tags = (ConvertToString(rd.GetValue(2)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                         TargetURL = ConvertToString(rd.GetValue(3)),
@@ -291,7 +348,7 @@ namespace Duplicati.Server.Database
         {
             lock(m_lock)
             {
-                bool update = item.ID >= 0;
+                bool update = item.ID != null;
                 if (!update && item.DBPath == null)
                 {
                     var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
@@ -317,7 +374,7 @@ namespace Duplicati.Server.Database
                     OverwriteAndUpdateDb(
                         tr,
                         null,
-                        new object[] { item.ID },
+                        new object[] { long.Parse(item.ID) },
                         new IBackup[] { item },
                         update ?
                             @"UPDATE ""Backup"" SET ""Name""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
@@ -334,17 +391,18 @@ namespace Duplicati.Server.Database
                         {
                             cmd.Transaction = tr;
                             cmd.CommandText = @"SELECT last_insert_rowid();";
-                            item.ID = ConvertToInt64(cmd.ExecuteScalar());
+                            item.ID = ConvertToInt64(cmd.ExecuteScalar()).ToString();
                         }
                         
-                    SetSources(item.Sources, item.ID, tr);
-                    SetSettings(item.Settings, item.ID, tr);
-                    SetFilters(item.Filters, item.ID, tr);
-                    SetMetadata(item.Metadata, item.ID, tr);
+                    var id = long.Parse(item.ID);
+                    SetSources(item.Sources, id, tr);
+                    SetSettings(item.Settings, id, tr);
+                    SetFilters(item.Filters, id, tr);
+                    SetMetadata(item.Metadata, id, tr);
                     
                     if (updateSchedule)
                     {
-                        var tags = new string[] { "ID=" + item.ID.ToString() }; 
+                        var tags = new string[] { "ID=" + item.ID }; 
                         var existing = GetScheduleIDsFromTags(tags);
                         if (schedule == null && existing.Any())
                             DeleteFromDb("Schedule", existing.First(), tr);
@@ -446,7 +504,10 @@ namespace Duplicati.Server.Database
         
         public void DeleteBackup(IBackup backup)
         {
-            DeleteBackup(backup.ID);
+            if (backup.IsTemporary)
+                UnregisterTemporaryBackup(backup);
+            else
+                DeleteBackup(long.Parse(backup.ID));
         }
         
         public void DeleteSchedule(long ID)
@@ -474,7 +535,7 @@ namespace Duplicati.Server.Database
                 {
                     var lst = ReadFromDb(
                         (rd) => (IBackup)new Backup() {
-                            ID = ConvertToInt64(rd.GetValue(0)),
+                            ID = ConvertToInt64(rd.GetValue(0)).ToString(),
                             Name = ConvertToString(rd.GetValue(1)),
                             Tags = (ConvertToString(rd.GetValue(2)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                             TargetURL = ConvertToString(rd.GetValue(3)),
@@ -484,7 +545,7 @@ namespace Duplicati.Server.Database
                         .ToArray();
                         
                     foreach(var n in lst)
-                        n.Metadata = GetMetadata(n.ID);
+                        n.Metadata = GetMetadata(long.Parse(n.ID));
                         
                     return lst;
                 }

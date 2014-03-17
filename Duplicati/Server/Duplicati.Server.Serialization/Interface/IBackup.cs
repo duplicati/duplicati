@@ -28,7 +28,7 @@ namespace Duplicati.Server.Serialization.Interface
         /// <summary>
         /// The backup ID
         /// </summary>
-        long ID { get; set; }
+        string ID { get; set; }
         /// <summary>
         /// The backup name
         /// </summary>
@@ -65,6 +65,11 @@ namespace Duplicati.Server.Serialization.Interface
         /// The backup metadata
         /// </summary>
         IDictionary<string, string> Metadata { get; set; }
+        
+        /// <summary>
+        /// Gets a value indicating if this instance is not persisted to the database
+        /// </summary>
+        bool IsTemporary { get; }
     }
 }
 
