@@ -147,6 +147,8 @@ $(document).ready(function() {
 
     $('#main-appname').text(APP_CONFIG.branded_name);
 
+    window.document.title = APP_CONFIG.branded_name;
+
     if ((APP_CONFIG.branded_subtitle || '').length > 0) {
         var subdiv = $('<div id="main-appname-subtitle">');
         subdiv.text(APP_CONFIG.branded_subtitle);
@@ -491,8 +493,10 @@ $(document).ready(function() {
             callback,
             errorhandler,
             function(data, success) {
-                if (success && data != null)
+                if (success && data != null) {
                     PRIVATE_DATA.server_config = data;
+                    window.document.title = APP_CONFIG.branded_name + ' - ' + data.MachineName;
+                }
             }
         );
     };
