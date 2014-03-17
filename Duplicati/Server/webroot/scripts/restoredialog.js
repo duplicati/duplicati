@@ -385,6 +385,7 @@ $(document).ready(function() {
         })
         .done(function(data, status, xhr) {
             var nodes = [];
+            data.Files = data.Files || [];
             for(var i = 0; i < data.Files.length; i++) {
                 var o = data.Files[i];
                 var disp = o.Path.substr(data.Prefix.length);
