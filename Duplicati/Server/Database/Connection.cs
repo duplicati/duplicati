@@ -143,7 +143,7 @@ namespace Duplicati.Server.Database
                         @"DELETE FROM ""Option"" WHERE ""BackupID"" = ?", new object[] { id },
                         values,
                         @"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (?, ?, ?, ?)",
-                        (f) => new object[] { id, f.Filter ?? "", f.Name, f.Value }
+                        (f) => new object[] { id, f.Filter ?? "", f.Name, f.Value ?? "" }
                     );            
                     
                     if (tr != null)
