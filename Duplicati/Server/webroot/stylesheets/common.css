@@ -6,13 +6,13 @@ body {
     border: 0px none;
     margin: 0px;
     padding: 0px;
-    font-family: Arial;
+    font-family: 'Source Sans Pro', sans-serif;
     min-width: 320px;
     font-size: 75%;
 }
 
 .ui-widget {
-    font-family: Arial;
+    font-family: 'Source Sans Pro', sans-serif;
 }
 
 .action-link, .action-links li {
