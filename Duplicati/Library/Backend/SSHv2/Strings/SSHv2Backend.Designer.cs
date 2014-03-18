@@ -52,15 +52,9 @@ namespace Duplicati.Library.Backend.Strings {
             }
         }
         
-        internal static string DisplayName {
+        internal static string DescriptionSshkeyLong {
             get {
-                return ResourceManager.GetString("DisplayName", resourceCulture);
-            }
-        }
-        
-        internal static string DescriptionTransferTimeoutShort {
-            get {
-                return ResourceManager.GetString("DescriptionTransferTimeoutShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionSshkeyLong", resourceCulture);
             }
         }
         
@@ -82,12 +76,6 @@ namespace Duplicati.Library.Backend.Strings {
             }
         }
         
-        internal static string DescriptionSSHOptionsLong {
-            get {
-                return ResourceManager.GetString("DescriptionSSHOptionsLong", resourceCulture);
-            }
-        }
-        
         internal static string FolderNotFoundManagedError {
             get {
                 return ResourceManager.GetString("FolderNotFoundManagedError", resourceCulture);
@@ -100,15 +88,9 @@ namespace Duplicati.Library.Backend.Strings {
             }
         }
         
-        internal static string DescriptionDebugToConsoleShort {
+        internal static string DescriptionSshkeyShort {
             get {
-                return ResourceManager.GetString("DescriptionDebugToConsoleShort", resourceCulture);
-            }
-        }
-        
-        internal static string DescriptionTransferTimeoutLong {
-            get {
-                return ResourceManager.GetString("DescriptionTransferTimeoutLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionSshkeyShort", resourceCulture);
             }
         }
         
@@ -118,21 +100,15 @@ namespace Duplicati.Library.Backend.Strings {
             }
         }
         
-        internal static string DescriptionDebugToConsoleLong {
+        internal static string DisplayName {
             get {
-                return ResourceManager.GetString("DescriptionDebugToConsoleLong", resourceCulture);
+                return ResourceManager.GetString("DisplayName", resourceCulture);
             }
         }
         
         internal static string DescriptionSshkeyfileShort {
             get {
                 return ResourceManager.GetString("DescriptionSshkeyfileShort", resourceCulture);
-            }
-        }
-        
-        internal static string DescriptionSSHOptionsShort {
-            get {
-                return ResourceManager.GetString("DescriptionSSHOptionsShort", resourceCulture);
             }
         }
     }

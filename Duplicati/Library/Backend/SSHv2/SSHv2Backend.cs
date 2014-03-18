@@ -29,6 +29,7 @@ namespace Duplicati.Library.Backend
     public class SSHv2 : IBackend, IStreamingBackend
     {
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
+        public const string SSH_KEYFILE_INLINE = "ssh-key";
         public const string KEYFILE_URI = "sshkey://";
 
         Dictionary<string, string> m_options;
@@ -127,6 +128,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
+                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, string.Format(Strings.SSHv2Backend.DescriptionSshkeyLong, KEYFILE_URI)),
                 });
 
             }
@@ -177,9 +179,11 @@ namespace Duplicati.Library.Backend
 
             string keyfile;
             m_options.TryGetValue(SSH_KEYFILE_OPTION, out keyfile);
+            if (string.IsNullOrWhiteSpace(keyfile))
+                m_options.TryGetValue(SSH_KEYFILE_INLINE, out keyfile);
 
-            if ((keyfile ?? "").Trim().Length > 0)
-                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(m_options[SSH_KEYFILE_OPTION], m_password));
+            if (!string.IsNullOrWhiteSpace(keyfile))
+                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyfile, m_password));
             else
                 con = new SftpClient(m_server, m_port, m_username, m_password);
 
