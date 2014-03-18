@@ -140,6 +140,15 @@ namespace Duplicati.Library.Snapshots
                 return FileCreate(path);
         }
 
+        public System.IO.Stream FileOpenReadWrite(string path)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.File.Open(path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.Read); }
+                catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), Alphaleonis.Win32.Filesystem.FileMode.OpenOrCreate, Alphaleonis.Win32.Filesystem.FileAccess.ReadWrite, Alphaleonis.Win32.Filesystem.FileShare.Read);
+        }
+
         public System.IO.Stream FileCreate(string path)
         {
             if (!IsPathTooLong(path))
@@ -181,6 +190,24 @@ namespace Duplicati.Library.Snapshots
                 catch (System.IO.PathTooLongException) { }
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetDirectoryName(PrefixWithUNC(path)));
+        }
+
+        public string PathGetExtension(string path)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.Path.GetExtension(path); }
+                catch (System.IO.PathTooLongException) { }
+            
+            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetExtension(PrefixWithUNC(path)));
+        }
+        
+        public string PathChangeExtension(string path, string extension)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.Path.ChangeExtension(path, extension); }
+                catch (System.IO.PathTooLongException) { }
+            
+            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)

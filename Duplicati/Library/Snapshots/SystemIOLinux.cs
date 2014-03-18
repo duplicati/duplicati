@@ -63,6 +63,11 @@ namespace Duplicati.Library.Snapshots
             return File.OpenWrite(path);
         }
 
+        public Stream FileOpenReadWrite(string path)
+        {
+            return File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+        }
+
         public Stream FileCreate(string path)
         {
             return File.Create(path);
@@ -77,9 +82,20 @@ namespace Duplicati.Library.Snapshots
         {
             UnixSupport.File.CreateSymlink(symlinkfile, target);
         }
+        
         public string PathGetDirectoryName(string path)
         {
             return Path.GetDirectoryName(path);
+        }
+
+        public string PathGetExtension(string path)
+        {
+            return Path.GetExtension(path);
+        }
+        
+        public string PathChangeExtension(string path, string extension)
+        {
+            return Path.ChangeExtension(path, extension);
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)

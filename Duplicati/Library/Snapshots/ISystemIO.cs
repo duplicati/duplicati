@@ -38,10 +38,13 @@ namespace Duplicati.Library.Snapshots
         long FileLength(string path);
         Stream FileOpenRead(string path);
         Stream FileOpenWrite(string path);
+        Stream FileOpenReadWrite(string path);
         Stream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
         void CreateSymlink(string symlinkfile, string target, bool asDir);
         string PathGetDirectoryName(string path);
+        string PathGetExtension(string path);
+        string PathChangeExtension(string path, string extension);        
     }
 }
 

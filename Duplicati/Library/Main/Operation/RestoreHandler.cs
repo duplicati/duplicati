@@ -13,6 +13,7 @@ namespace Duplicati.Library.Main.Operation
         private Options m_options;
         private byte[] m_blockbuffer;
         private RestoreResults m_result;
+        private static readonly Snapshots.ISystemIO m_systemIO = Duplicati.Library.Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
 
         public RestoreHandler(string backendurl, Options options, RestoreResults result)
         {
@@ -81,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
             // If we have both target paths and a filter, combine into a single filter
             filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
 			
-            if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
+            if (!m_options.NoLocalDb && m_systemIO.FileExists(m_options.Dbpath))
             {
                 using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
                 {
@@ -187,16 +188,16 @@ namespace Duplicati.Library.Main.Operation
                     {
                         try
                         {   
-                            var folderpath = System.IO.Path.GetDirectoryName(targetpath);
-                            if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+                            var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                            if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
                             {
                                 result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
-                                System.IO.Directory.CreateDirectory(folderpath);
+                                m_systemIO.DirectoryCreate(folderpath);
                             }
                             
                             // TODO: Much faster if we iterate the volume and checks what blocks are used,
                             // because the compressors usually like sequential reading
-                            using(var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                            using(var file = m_systemIO.FileOpenReadWrite(targetpath))
                                 foreach(var targetblock in restorelist.Blocks)
                                 {
                                     file.Position = targetblock.Offset;
@@ -335,7 +336,7 @@ namespace Duplicati.Library.Main.Operation
                             
                             string key;
                             long size;
-                            using (var fs = System.IO.File.OpenRead(file.Path))
+                            using (var fs = m_systemIO.FileOpenRead(file.Path))
                             {
                                 size = fs.Length;
                                 key = Convert.ToBase64String(filehasher.ComputeHash(fs));
@@ -385,20 +386,20 @@ namespace Duplicati.Library.Main.Operation
                     
                 	try
                 	{
-        				if (System.IO.File.Exists(sourcepath))
+        				if (m_systemIO.FileExists(sourcepath))
         				{
-	    					var folderpath = System.IO.Path.GetDirectoryName(targetpath);
-	    					if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+	    					var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+	    					if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
 	    					{
 	                            result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
-	    						System.IO.Directory.CreateDirectory(folderpath);
+	    						m_systemIO.DirectoryCreate(folderpath);
 	    					}
         				
-	                		using(var targetstream = options.Dryrun ? null : System.IO.File.Open(targetpath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+	                		using(var targetstream = options.Dryrun ? null : m_systemIO.FileCreate(targetpath))
 	                		{
 	                			try
 	                			{
-		                    		using(var sourcestream = System.IO.File.Open(sourcepath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+		                    		using(var sourcestream = m_systemIO.FileOpenRead(sourcepath))
 		                    		{
 		    			                foreach(var block in entry.Blocks)
 		    			                {
@@ -474,14 +475,14 @@ namespace Duplicati.Library.Main.Operation
                     var patched = false;
                     try
                     {
-    					var folderpath = System.IO.Path.GetDirectoryName(targetpath);
-    					if (!options.Dryrun && !System.IO.Directory.Exists(folderpath))
+    					var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+    					if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
     					{
                             result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
-    						System.IO.Directory.CreateDirectory(folderpath);
+    						m_systemIO.DirectoryCreate(folderpath);
     					}
                     
-                        using (var file = options.Dryrun ? null : System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                        using (var file = options.Dryrun ? null : m_systemIO.FileOpenReadWrite(targetpath))
                         using (var block = new Blockprocessor(file, blockbuffer))
                             foreach (var targetblock in restorelist.Blocks)
                             {
@@ -492,8 +493,8 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     try
                                     {
-                                        if (System.IO.File.Exists(source.Path))
-                                            using (var sourcefile = System.IO.File.Open(source.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                                        if (m_systemIO.FileExists(source.Path))
+                                            using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
                                             {
                                                 sourcefile.Position = source.Offset;
                                                 var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
@@ -575,7 +576,7 @@ namespace Duplicati.Library.Main.Operation
 		{
 			// This part is not protected by try/catch as we need the target folder to exist
 			if (!string.IsNullOrEmpty(options.Restorepath))
-                if (!System.IO.Directory.Exists(options.Restorepath))
+                if (!m_systemIO.DirectoryExists(options.Restorepath))
                 {
                     if (options.Verbose)
                         result.AddVerboseMessage("Creating folder: {0}", options.Restorepath);
@@ -583,14 +584,14 @@ namespace Duplicati.Library.Main.Operation
                 	if (options.Dryrun)
                 		result.AddDryrunMessage(string.Format("Would create folder: {0}", options.Restorepath));
                 	else
-                    	System.IO.Directory.CreateDirectory(options.Restorepath);
+                    	m_systemIO.DirectoryCreate(options.Restorepath);
                 }
         
             foreach (var folder in database.GetTargetFolders())
             {
                 try
                 {
-                    if (!System.IO.Directory.Exists(folder))
+                    if (!m_systemIO.DirectoryExists(folder))
                     {
                     	result.FoldersRestored++;
                     	
@@ -600,7 +601,7 @@ namespace Duplicati.Library.Main.Operation
                     	if (options.Dryrun)
                     		result.AddDryrunMessage(string.Format("Would create folder: {0}", folder));
                     	else
-                        	System.IO.Directory.CreateDirectory(folder);
+                        	m_systemIO.DirectoryCreate(folder);
                     }
                 }
                 catch (Exception ex)
@@ -632,14 +633,14 @@ namespace Duplicati.Library.Main.Operation
                     var targetpath = restorelist.TargetPath;
                     var targetfileid = restorelist.TargetFileID;
                     var targetfilehash = restorelist.TargetHash;
-                    if (System.IO.File.Exists(targetpath))
+                    if (m_systemIO.FileExists(targetpath))
                     {
                         try
                         {
                             if (rename)
                                 filehasher.Initialize();
 
-                            using(var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                            using(var file = m_systemIO.FileOpenReadWrite(targetpath))
                             using(var block = new Blockprocessor(file, blockbuffer))
                                 foreach(var targetblock in restorelist.Blocks)
                                 {
@@ -694,15 +695,15 @@ namespace Duplicati.Library.Main.Operation
                     if (rename)
                     {
                         //Select a new filename
-                        var ext = System.IO.Path.GetExtension(targetpath) ?? "";
+                        var ext = m_systemIO.PathGetExtension(targetpath) ?? "";
                         if (!string.IsNullOrEmpty(ext) && !ext.StartsWith("."))
                             ext = "." + ext;
                         
                         // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = System.IO.Path.ChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd");
+                        var newname = m_systemIO.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd");
                         var tr = newname + ext;
                         var c = 0;
-                        while (System.IO.File.Exists(tr) && c < 1000)
+                        while (m_systemIO.FileExists(tr) && c < 1000)
                         {
                             try
                             {
@@ -711,7 +712,7 @@ namespace Duplicati.Library.Main.Operation
                                 filehasher.Initialize();
                                 
                                 string key;
-                                using(var file = System.IO.File.Open(tr, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                using(var file = m_systemIO.FileOpenReadWrite(tr))
                                     key = Convert.ToBase64String(filehasher.ComputeHash(file));
                                     
                                 if (key == targetfilehash)
