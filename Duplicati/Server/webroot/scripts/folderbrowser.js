@@ -8,6 +8,7 @@ $(document).ready(function() {
         self.rootel.append(self.treeel);
 
         self.rootel.attr('title', config.title);
+        self.resolvePath = config.resolvePath;
 
         self.treeel.jstree({
             'core': { 
@@ -61,7 +62,11 @@ $(document).ready(function() {
                 { text: 'OK', disabled: true, click: function(event, ui) {
                     var node = self.selected_node;
                     if (node != null) {
-                        config.callback(node.original.filepath, node.text);
+                        var path = node.original.filepath;
+                        if (self.resolvePath && node.original.resolvedpath)
+                            path = node.original.resolvedpath;
+
+                        config.callback(path, node.text);
                         self.rootel.dialog('close');
                     }
                 }}
@@ -76,7 +81,11 @@ $(document).ready(function() {
 
         self.treeel.bind("dblclick.jstree", function (event) {
             var node = self.treeel.jstree().get_node($(event.target).closest("li"));
-            config.callback(node.original.filepath, node.text);
+            var path = node.original.filepath;
+            if (self.resolvePath && node.original.resolvedpath)
+                path = node.original.resolvedpath;
+
+            config.callback(path, node.text);
             self.rootel.dialog('close');
         });
 

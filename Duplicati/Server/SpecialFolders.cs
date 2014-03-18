@@ -66,7 +66,8 @@ namespace Duplicati.Server
                         id = id,
                         text = display,
                         leaf = true,
-                        iconCls = "x-tree-icon-special"
+                        iconCls = "x-tree-icon-special",
+                        resolvedpath = folder
                     });
                     
                     PathMap[id] = folder;

@@ -34,6 +34,10 @@ namespace Duplicati.Server.Serializable
         /// True if the element is a leaf node
         /// </summary>
         public bool leaf { get; set; }
+        /// <summary>
+        /// Gets or sets the current path, if the item is a symbolic path
+        /// </summary>
+        public string resolvedpath { get; set; }
 
         /// <summary>
         /// Constructs a new TreeNode
