@@ -1,5 +1,3 @@
-//TODO: These can be fetched from the server data, but requires some string parsing to get right
-
 $(document).ready(function() {
 
     APP_DATA.plugins.backend['file'] = {
@@ -134,12 +132,15 @@ $(document).ready(function() {
 
 
     APP_DATA.plugins.backend['s3'] = {
+
+        //TODO: These can be fetched from the server data, but requires some string parsing to get right
         PLUGIN_S3_HOSTS: {
             'Amazon S3': 's3.amazonaws.com',
             'Hosteurope': 'cs.hosteurope.de',
             'Dunkel': 'dcs.dunkel.de',
             'DreamHost': 'objects.dreamhost.com'
         },
+        
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
         PLUGIN_S3_LOCATIONS: {
             '(default)': '',
@@ -152,6 +153,7 @@ $(document).ready(function() {
             'Asia Pacific (Tokyo)': 'ap-northeast-1',
             'South America (Sao Paulo)': 'sa-east-1'
         },
+
         PLUGIN_S3_SERVER_LOCATIONS: {
             'EU': 's3-eu-west-1.amazonaws.com',
             'eu-west-1': 's3-eu-west-1.amazonaws.com',
@@ -163,6 +165,7 @@ $(document).ready(function() {
             'ap-northeast-1': 's3-ap-northeast-1.amazonaws.com',
             'sa-east-1': 's3-sa-east-1.amazonaws.com'
         },
+
         PLUGIN_S3_LINK: 'https://portal.aws.amazon.com/gp/aws/developer/registration/index.html',
 
         hasssl: true,
