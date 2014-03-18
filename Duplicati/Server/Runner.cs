@@ -79,10 +79,14 @@ namespace Duplicati.Server
                 new string[] { filter });
         }
 
-        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time)
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite)
         {
             var dict = new Dictionary<string, string>();
             dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+            if (!string.IsNullOrWhiteSpace(restoreTarget))
+                dict["restore-path"] = restoreTarget;
+            if (overwrite)
+                dict["overwrite"] = "true";
             
             return CreateTask(
                 DuplicatiOperation.Restore,
@@ -251,7 +255,7 @@ namespace Duplicati.Server
             return t;
         }
     
-        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data)
+        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool throwEx = false)
         {
             Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
             
@@ -323,6 +327,10 @@ namespace Duplicati.Server
             {
                 Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
                 //TODO: Update metadata with the error here
+                
+                if (throwEx)
+                    throw;
+                
                 return null;
             }
         }

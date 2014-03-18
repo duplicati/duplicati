@@ -236,6 +236,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("list-remote-folder", ListRemoteFolder);
                 SUPPORTED_METHODS.Add("list-backup-sets", ListBackupSets);
                 SUPPORTED_METHODS.Add("search-backup-files", SearchBackupFiles);
+                SUPPORTED_METHODS.Add("restore-files", RestoreFiles);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -277,7 +278,7 @@ namespace Duplicati.Server
                             if (!response.HeadersSent)
                             {
                                 response.Status = System.Net.HttpStatusCode.InternalServerError;
-                                response.Reason = ex.Message;
+                                response.Reason = "Error";
                                 response.ContentType = "text/plain";
                                 
                                 OutputObject(bw, new {
@@ -309,6 +310,21 @@ namespace Duplicati.Server
                 Serializer.SerializeJson(b, o);
             }
 
+            private void RestoreFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                var bk = Program.DataConnection.GetBackup(input["id"].Value);
+                var filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
+                var restoreTarget = input["restore-path"].Value;
+                var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
+                var task = Runner.CreateRestoreTask(bk, filters, time, restoreTarget, overwrite);
+                Program.WorkThread.AddTask(task);
+                
+                OutputObject(bw, new { TaskID = task.TaskID });
+                
+            }
+            
             private void ListBackupSets(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
@@ -320,7 +336,7 @@ namespace Duplicati.Server
                 }
                 
                 
-                var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk) ) as Duplicati.Library.Interface.IListResults;
+                var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk), true) as Duplicati.Library.Interface.IListResults;
                 
                 OutputObject(bw, r.Filesets);
             }
