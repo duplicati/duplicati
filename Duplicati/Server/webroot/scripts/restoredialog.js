@@ -132,6 +132,9 @@ $(document).ready(function() {
                 } else if (curpage == 1) {
 
                     var restorePath = null;
+
+                    var overwrite = $('#restore-overwrite-overwrite').is(':checked');
+
                     if ($('#restore-overwrite-target-other').is(':checked'))
                         restorePath = $('#restore-target-path').val();
 
@@ -141,11 +144,15 @@ $(document).ready(function() {
                             time: n,
                             id: backupId,
                             'restore-path': restorePath,
-                            'overwrite': $('#restore-overwrite-overwrite').is(':checked'),
+                            'overwrite': overwrite,
                             paths: []
                         }
-                        for(var p in includes[n])
-                            t.paths.push(p);
+                        for(var p in includes[n]) {
+                            if (p.lastIndexOf(dirSep) == p.length -1)
+                                t.paths.push(p + '*');
+                            else
+                                t.paths.push(p);
+                        }
 
                         if (t.paths.length > 0)
                         {
@@ -529,12 +536,16 @@ $(document).ready(function() {
                 if (includes[time][path]) {
                     delete includes[time][path];
 
-                    e.find('a').first().removeClass('restore-included-full');
-                    recolor(treeel, time, e.parents('li'));
+                    //e.find('a').first().removeClass('restore-included-full');
+                    //recolor(treeel, time, e.parents('li'));
+                    //recolor(treeel, time, e.find('li'));
+                    recolor(treeel, time);
                 } else {
                     includes[time][path] = true;
-                    e.find('a').first().addClass('restore-included-full');
-                    recolor(treeel, time, e.parents('li'));
+                    //e.find('a').first().addClass('restore-included-full');
+                    //recolor(treeel, time, e.parents('li'));
+                    //recolor(treeel, time, e.find('li'));
+                    recolor(treeel, time);
                 }
             });
         }
@@ -560,9 +571,10 @@ $(document).ready(function() {
         searchdata = { };
         $('#restore-files-tree').empty();
         $('#restore-form').each(function(i, e) { e.reset(); });
-        $('#restore-overwrite-overwrite').attr('checked', true);
-        $('#restore-overwrite-target-original').attr('checked', true);
-        
+        $('#restore-overwrite-overwrite').each(function(i, e) { e.checked = true; });
+        $('#restore-overwrite-target-original').each(function(i, e) { e.checked = true; });
+
+
         curpage = 0; 
         updatePageNav();    
 
@@ -637,19 +649,19 @@ $(document).ready(function() {
         $('#restore-search').val('');
         setupFullTree($('#restore-version').val());
     });
-
-    $('#restore-overwrite-overwrite').attr('checked', true);
-    $('#restore-overwrite-target-original').attr('checked', true);
     
-    $('#restore-target-path').keypress(function() { $('#restore-overwrite-target-other').attr('checked', true); });
-    $('#restore-target-path').change(function() { $('#restore-overwrite-target-other').attr('checked', true); });
+    $('#restore-target-path').keypress(function() { $('#restore-overwrite-target-other').each(function(i,e) { e.checked = true; }); });
+    $('#restore-target-path').change(function() { $('#restore-overwrite-target-other').each(function(i,e) { e.checked = true; }); });
+
+    $('#restore-overwrite-target-other').click(function() { $('#restore-target-path-browse').trigger('click'); } );
 
     $('#restore-target-path-browse').click(function(e) {
         $.browseForFolder({
             title: 'Select restore folder',
+            resolvePath: true,
             callback: function(path, display) {
                 $('#restore-target-path').val(path);
-                $('#restore-overwrite-target-other').attr('checked', true);
+                $('#restore-overwrite-target-other').each(function(i, e) { e.checked = true; });
             }
         });
     });
