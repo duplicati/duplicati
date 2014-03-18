@@ -147,7 +147,7 @@ namespace Duplicati.Library.Utility
             if (dbversion > versions.Count)
                 throw new Exception(string.Format(Strings.DatabaseUpgrader.InvalidVersionError, dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
 
-            if (versions.Count > 0)
+            if (versions.Count > dbversion)
             {
                 string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss") + ".sqlite");
 
