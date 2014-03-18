@@ -205,7 +205,7 @@ namespace Duplicati.Server
                     {
                         DateTime start;
                         if (!scheduled.TryGetValue(sc.ID, out start))
-                            start = new DateTime(Math.Max(sc.Time.Ticks, sc.LastRun.Ticks));
+                            start = new DateTime(Math.Max(sc.Time.Ticks, sc.LastRun.Ticks), DateTimeKind.Utc);
 
                         try
                         {
