@@ -33,3 +33,22 @@ a.jstree-anchor.restore-included-full {
     color: black;
 }
 
+#restore-hint-paypal, #restore-hint-bitcoin {
+    background-color: #9b9b9b;
+    color: black;
+    padding: 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin: 20px;
+    cursor: pointer;
+}
+
+#restore-complete-page > .hint-text {
+    margin: 20px;    
+}
+
+#restore-hint-paypal > a, #restore-hint-bitcoin > a {
+    color: black;
+    text-decoration: none;
+}
+

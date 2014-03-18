@@ -3,6 +3,7 @@ $(document).ready(function() {
     var curpage = 0;
     var backupId = 0;
     var dirSep = '/';
+    var pathSep = ':';
     var treeels = { };
     var includes = { };
     var searchTree = null;
@@ -16,28 +17,89 @@ $(document).ready(function() {
             closeOnEscape: false
         });
 
+        dlg.parent().find('.ui-dialog-titlebar-close').remove().first().remove();
+
         var pg = $('<div></div>');
         pg.progressbar({ value: false });
         var pgtxt = $('<div></div>');
-        pgtxt.text('Starting ....');
+        pgtxt.text('Sending jobs to server ...');
 
         dlg.append(pg);
         dlg.append(pgtxt);
 
-        var processTask = function() {
-            if (tasks.length == 0) {
-                curpage = Math.min(2, curpage+1);
-                updatePageNav();
-                dlg.dialog('close');
-                dlg.remove();
+        var onAllRestoresCompleted = function() {
+            $(document).off('server-progress-updated', serverProgressUpdateMethod);
+            $(document).off('server-state-updated', serverStateUpdateMethod);
+
+            curpage = Math.min(2, curpage+1);
+            updatePageNav();
+            dlg.dialog('close');
+            dlg.remove();
+        };
+
+        var currentProgressTask = null;
+        var remainingTasks = tasks.length;
+
+        var serverProgressUpdateMethod = function(e, data) {
+            if (currentProgressTask == null)
+                pgtxt.text('Waiting for restore to begin ...');
+            else {
+                if (tasks.length == 1)
+                    pgtxt.text('Restoring files ...');
+                else
+                    pgtxt.text('Restoring files (' + (tasks.length - remainingTasks) + ' of ' + tasks.length + ')');
+            }
+
+        };
+
+        var serverStateUpdateMethod = function(e, data) {
+            var activeTaskId = -1;
+            var queuedTasks = [];
+
+            if (data.ActiveTask != null)
+                activeTaskId = data.ActiveTask.Item1;
+
+            if (data.SchedulerQueueIds != null)
+                for(var n in data.SchedulerQueueIds)
+                    queuedTasks.push(data.SchedulerQueueIds[n].Item1);
+
+            var remaining = 0;
+            for(var n in tasks) {
+
+                if (tasks[n].taskId == activeTaskId) {
+                    currentProgressTask = tasks[n];
+                    remaining++;
+                    continue;
+                }
+
+                for(var i in queuedTasks)
+                    if (queuedTasks[i] == tasks[n].taskId) {
+                        remaining++;
+                        continue;
+                    }
+            }
+
+            if (remaining == 0)
+                onAllRestoresCompleted();
+        };
+
+        var curTask = 0;
+        var registerTasks = function() {
+            if (curTask == tasks.length) {
+                pgtxt.text('Waiting for restore to begin ...');
+                $(document).on('server-progress-updated', serverProgressUpdateMethod);
+                $(document).on('server-state-updated', serverStateUpdateMethod);
                 return;
             }
 
-            var task = tasks.pop();
+            var task = tasks[curTask];
             task['action'] = 'restore-files';
+            task['HTTP_METHOD'] = 'POST';
+            curTask++;
 
-            APP_DATA.callServer(task, function() {
-                processTask();
+            APP_DATA.callServer(task, function(data) {
+                task['taskId'] = data.TaskID;
+                registerTasks();
             },
             function(d, s, m) {
                 alert('Error: ' + m);
@@ -47,8 +109,7 @@ $(document).ready(function() {
 
         }
 
-        setTimeout(processTask, 50000);
-        //processTask();
+        registerTasks();
     };
 
     $('#restore-dialog').dialog({
@@ -70,19 +131,27 @@ $(document).ready(function() {
                      $('#restore-dialog').dialog('close');
                 } else if (curpage == 1) {
 
-                    var tasks = [];
+                    var restorePath = null;
+                    if ($('#restore-overwrite-target-other').is(':checked'))
+                        restorePath = $('#restore-target-path').val();
 
+                    var tasks = [];
                     for(var n in includes) {
                         var t = {
                             time: n,
                             id: backupId,
+                            'restore-path': restorePath,
+                            'overwrite': $('#restore-overwrite-overwrite').is(':checked'),
                             paths: []
                         }
                         for(var p in includes[n])
                             t.paths.push(p);
 
                         if (t.paths.length > 0)
+                        {
+                            t.paths = t.paths.join(pathSep);
                             tasks.push(t);
+                        }
                     }
 
                     performRestore(tasks);
@@ -111,11 +180,13 @@ $(document).ready(function() {
             $('#restore-files-page').show();
             $('#restore-path-page').hide();
             $('#restore-complete-page').hide();
+            dlg_buttons.first().show();
             dlg_buttons.last().button('option', 'label', 'Next >');
         } else if (curpage == 1) {
             $('#restore-files-page').hide();
             $('#restore-path-page').show();
             $('#restore-complete-page').hide();
+            dlg_buttons.first().show();
             dlg_buttons.last().button('option', 'label', 'Restore');
         } else {
             $('#restore-files-page').hide();
@@ -163,6 +234,8 @@ $(document).ready(function() {
                 for(var n in includes[time])
                     if (n.indexOf(path) == 0) {
                         partial = true;
+                    } else if (path.indexOf(n) == 0) {
+                        full = true;
                         break;
                     }
 
@@ -207,7 +280,6 @@ $(document).ready(function() {
 
         for(var t in treeels)
             treeels[t].hide();
-
 
         var processData = function (callback, data) {
 
@@ -488,6 +560,9 @@ $(document).ready(function() {
         searchdata = { };
         $('#restore-files-tree').empty();
         $('#restore-form').each(function(i, e) { e.reset(); });
+        $('#restore-overwrite-overwrite').attr('checked', true);
+        $('#restore-overwrite-target-original').attr('checked', true);
+        
         curpage = 0; 
         updatePageNav();    
 
@@ -495,6 +570,7 @@ $(document).ready(function() {
         APP_DATA.getServerConfig(function(serverdata) {
 
             dirSep = serverdata.DirectorySeparator;
+            pathSep = serverdata.PathSeparator;
 
             APP_DATA.callServer({ 'action': 'list-backup-sets', id: id }, function(data, success, message) {
                     $('#restore-version').empty();
@@ -511,7 +587,7 @@ $(document).ready(function() {
                     $('#restore-version').trigger('change');
 
                 }, function(data, success, message) {
-                    alert('Failed to get list of backup times');
+                    alert('Failed to get list of backup times:\n' + message);
                     $('#restore-dialog').dialog('close');
                 });
         }, function() {
@@ -564,6 +640,9 @@ $(document).ready(function() {
 
     $('#restore-overwrite-overwrite').attr('checked', true);
     $('#restore-overwrite-target-original').attr('checked', true);
+    
+    $('#restore-target-path').keypress(function() { $('#restore-overwrite-target-other').attr('checked', true); });
+    $('#restore-target-path').change(function() { $('#restore-overwrite-target-other').attr('checked', true); });
 
     $('#restore-target-path-browse').click(function(e) {
         $.browseForFolder({
