@@ -212,11 +212,15 @@ $(document).ready(function() {
                 callback(data, true, null);
         })
         .fail(function(data, status) {
+            var msg = data.statusText;
+            if (data && data.responseJSON && data.responseJSON.Message)
+                msg = data.responseJSON.Message;
+
             if (refreshMethod)
-                refreshMethod(data, false, data.statusText);
+                refreshMethod(data, false, msg);
 
             if (errorhandler)
-                errorhandler(data, false, data.statusText);
+                errorhandler(data, false, msg);
         });
     };
 
