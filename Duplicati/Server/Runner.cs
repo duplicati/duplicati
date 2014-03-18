@@ -29,7 +29,7 @@ namespace Duplicati.Server
             Duplicati.Server.Serialization.DuplicatiOperation Operation { get; }
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
-            string FilterString { get; }
+            string[] FilterStrings { get; }
         }
         
         private class RunnerData : IRunnerData
@@ -39,7 +39,7 @@ namespace Duplicati.Server
             public Duplicati.Server.Serialization.DuplicatiOperation Operation { get; internal set; }
             public Duplicati.Server.Serialization.Interface.IBackup Backup { get; internal set; }
             public IDictionary<string, string> ExtraOptions { get; internal set; }
-            public string FilterString { get; internal set; }
+            public string[] FilterStrings { get; internal set; }
             
             public string BackupID { get { return Backup.ID; } }
             public long TaskID { get { return m_taskID; } }
@@ -52,13 +52,13 @@ namespace Duplicati.Server
             }
         }
         
-        public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string filterString = null)
+        public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null)
         {
             return new RunnerData() {
                 Operation = operation,
                 Backup = backup,
                 ExtraOptions = extraOptions,
-                FilterString = filterString
+                FilterStrings = filterStrings
             };
         }
         
@@ -76,9 +76,20 @@ namespace Duplicati.Server
                 DuplicatiOperation.List,
                 backup,
                 dict,
-                filter);            
+                new string[] { filter });
         }
-        
+
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time)
+        {
+            var dict = new Dictionary<string, string>();
+            dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+            
+            return CreateTask(
+                DuplicatiOperation.Restore,
+                backup,
+                dict,
+                filters);            
+        }        
         private class MessageSink : Duplicati.Library.Main.IMessageSink
         {
             private class ProgressState : Server.Serialization.Interface.IProgressEventData
@@ -274,8 +285,7 @@ namespace Duplicati.Server
                             }                            
                         case DuplicatiOperation.List:
                             {
-                                string filter = data.FilterString;                                
-                                var r = controller.List(filter);
+                                var r = controller.List(data.FilterStrings);
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
@@ -293,8 +303,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Restore:
                             {
-                                //TODO: Need to pass arguments
-                                var r = controller.Restore(new string[] { "*" });
+                                var r = controller.Restore(data.FilterStrings);
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
