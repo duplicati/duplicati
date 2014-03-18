@@ -181,7 +181,7 @@ namespace Duplicati.Library.Backend
             if ((keyfile ?? "").Trim().Length > 0)
                 con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(m_options[SSH_KEYFILE_OPTION], m_password));
             else
-                con = new SftpClient(m_server, m_username, m_password);
+                con = new SftpClient(m_server, m_port, m_username, m_password);
 
             con.Connect();
 
