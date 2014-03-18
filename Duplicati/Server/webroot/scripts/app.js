@@ -455,6 +455,25 @@ $(document).ready(function() {
         var req = { action: 'get-progress-state', longpoll: false };
         state.requestStart = new Date();
 
+        var restart_poll = function() {
+            if (state.throttleTimer != null) {
+                clearTimeout(state.throttleTimer);
+                state.throttleTimer = null;
+            }
+
+            var timeSinceLast = new Date() - state.requestStart;
+            if (timeSinceLast < state.updateFreq) {
+                state.throttleTimer = setTimeout(function(){
+                    if (PRIVATE_DATA.server_state.activeTask != null)
+                        PRIVATE_DATA.poll_for_progress();
+
+                }, Math.max(500, state.updateFreq - timeSinceLast));
+            } else {
+                if (PRIVATE_DATA.server_state.activeTask != null)
+                    PRIVATE_DATA.poll_for_progress();
+            }
+        };
+
         $.ajax({
             url: APP_CONFIG.server_url,
             type: 'GET',
@@ -470,21 +489,16 @@ $(document).ready(function() {
 
             $(document).trigger('server-progress-updated', data);            
 
-            var timeSinceLast = new Date() - state.requestStart;
-            if (timeSinceLast < state.updateFreq) {
-                state.throttleTimer = setTimeout(function(){
-                    if (PRIVATE_DATA.server_state.activeTask != null)
-                        PRIVATE_DATA.poll_for_progress();
-
-                }, Math.max(500, state.updateFreq - timeSinceLast));
-            } else {
-                if (PRIVATE_DATA.server_state.activeTask != null)
-                    PRIVATE_DATA.poll_for_progress();
-            }
+            restart_poll();
         })
         .fail(function(data, a, b, c, d) {
             state.polling = false;
-            // We will be restarted on the next status update
+            if (PRIVATE_DATA.server_state.failed) {
+                // We will be restarted on re-connect
+            } else {
+                // Bad poll request, just retry
+                restart_poll();
+            }
         });
 
     };
