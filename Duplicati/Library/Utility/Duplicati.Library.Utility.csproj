@@ -107,10 +107,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-    <None Include="Strings\DatabaseUpgrader.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\FilenameFilter.resx">
@@ -145,6 +141,10 @@
     <EmbeddedResource Include="Strings\Uri.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Uri.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
