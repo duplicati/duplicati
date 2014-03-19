@@ -7,6 +7,8 @@
 
 $(document).ready(function() {
 
+    var isWindows = false;
+
     EDIT_BACKUP = {
         validate_tab: function(tab) {
             var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
@@ -298,7 +300,11 @@ $(document).ready(function() {
             'source-folder-list': function(dict, key, el, cfgel) { 
                 var sources = [];
                 $('#source-folder-paths').find('.source-folder').each(function(i,el) {
-                    sources.push($(el).data('id'));
+                    var p = $(el).data('id');
+                    if (isWindows && p.indexOf('/') == 0)
+                        p = p.substr(1);
+
+                    sources.push(p);
                 });
 
                 dict['Backup']['Sources'] = sources;
@@ -541,6 +547,8 @@ $(document).ready(function() {
         };
 
         APP_DATA.getServerConfig(function(serverdata) {
+            isWindows = serverdata.DirectorySeparator != '/';
+
             if (serverdata['EncryptionModules'] == null || serverdata['EncryptionModules'].length == 0) {
                 $('#encryption-area').hide();
             } else {
@@ -662,6 +670,9 @@ $(document).ready(function() {
 
         if (path == null || path.trim() == '')
             return false;
+
+        if (path.indexOf('/') != 0 && path.indexOf('%') != 0)
+            path = '/' + path;
 
         var exists = false;
         container.find('.source-folder').each(function(i,el) {
