@@ -713,6 +713,7 @@ $(document).ready(function() {
             var disp = path.split('/');
             if (addSourceFolder(path, disp[disp.length - 1])) {
                 $('#source-folder-path-text').val('');
+                $('#source-folder-path-text').trigger('change');
                 $('#source-folder-path-text').focus();
             }
         }
@@ -722,6 +723,21 @@ $(document).ready(function() {
     $('#source-folder-path-text').keypress(function(e) {
         if (e.which == 13)
             $('#source-folder-path-add').click();
+        else
+            $('#source-folder-path-text').trigger('change');
+
+    });
+
+    $('#source-folder-path-text').keyup(function(e) {
+        $('#source-folder-path-text').trigger('change');
+
+    });
+
+    $('#source-folder-path-text').change(function(e, data) {
+        if ($('#source-folder-path-text').val().trim() == '')
+            $('#source-folder-path-add').button('option', 'label', 'Browse');
+        else
+            $('#source-folder-path-add').button('option', 'label', 'Add');
     });
 
     // Register a drop target for folder nodes
