@@ -572,11 +572,26 @@ $(document).ready(function() {
             m[t] = {};
             var tr = trees[t].jstree();
 
-            trees[t].find('.jstree-clicked').each(function(i, e) {
-                var p = tr.get_node(e).original.filepath;
-                if (p)
-                    m[t][p] = 1;
+            var roots = trees[t].children('ul').children('li');
+            var follow = [];
+
+            roots.each(function(i,e) {
+                follow.push(tr.get_node(e));
             });
+
+            while(follow.length > 0) {
+                var n = follow.pop();
+                if (n.state.selected && n.original.filepath) {
+                    m[t][n.original.filepath] = 1;
+                } else {
+                    //TODO: This traverses the entire tree,
+                    // we could choose only those with indeterminate,
+                    // but that state only exists in the DOM which is
+                    // removed when collapsed
+                    for(var c in n.children)
+                        follow.push(tr.get_node(n.children[c]));
+                }
+            }
         }
 
         return m;
