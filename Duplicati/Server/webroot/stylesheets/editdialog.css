@@ -155,6 +155,7 @@
 #source-folder-path-text {
     /*max-width: 205px;*/
     width: 70%;
+    margin-top: 6px;
 }
 
 #source-folder-path-add {
