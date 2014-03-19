@@ -19,14 +19,6 @@
     float: right;
 }
 
-a.jstree-anchor.restore-included {
-    color: green;
-}
-
-a.jstree-anchor.restore-included-full {
-    color: yellow;
-}
-
 .search-match {
     display: inline;
     font-weight: bold;
@@ -50,5 +42,10 @@ a.jstree-anchor.restore-included-full {
 #restore-hint-paypal > a, #restore-hint-bitcoin > a {
     color: black;
     text-decoration: none;
+}
+
+a.restore-current-time {
+    font-weight: bold !important;
+    color: black !important;
 }
 
