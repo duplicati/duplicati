@@ -62,7 +62,7 @@ namespace Duplicati.Server
             };
         }
         
-        public static IRunnerData CreateListTask(Duplicati.Server.Serialization.Interface.IBackup backup, string filter, bool onlyPrefix, bool allVersions, DateTime time)
+        public static IRunnerData CreateListTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, bool onlyPrefix, bool allVersions, DateTime time)
         {
             var dict = new Dictionary<string, string>();
             if (onlyPrefix)
@@ -76,7 +76,7 @@ namespace Duplicati.Server
                 DuplicatiOperation.List,
                 backup,
                 dict,
-                new string[] { filter });
+                filters);
         }
 
         public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite)

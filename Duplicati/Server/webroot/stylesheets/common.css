@@ -69,16 +69,20 @@ body {
 .large-loader-icon {
     width: 66px;
     height: 66px;
-    background-repeat: no-repeat;
     margin: auto;
-    background-image: url('../images/ajax-loader-big.gif');
+    background: url('../images/ajax-loader-66.gif') center center no-repeat;
+}
+
+.medium-loader-icon {
+    width: 32px;
+    height: 32px;
+    background: url("../images/ajax-loader-32.gif") center center no-repeat;
 }
 
 .small-loader-icon {
-    width: 32px;
-    height: 32px;
-    background-repeat: no-repeat;
-    background-image: url('../images/ajax-loader-small.gif');
+    width: 16px;
+    height: 16px;
+    background: url("../images/ajax-loader-16.gif") center center no-repeat;
 }
 
 .button-area {

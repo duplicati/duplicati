@@ -49,3 +49,8 @@ a.restore-current-time {
     color: black !important;
 }
 
+#restore-search-loader {
+    display: inline-block;
+    margin-left: 10px;
+}
+

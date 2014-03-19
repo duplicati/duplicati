@@ -4,10 +4,11 @@ $(document).ready(function() {
     var backupId = 0;
     var dirSep = '/';
     var pathSep = ':';
-    var treeels = { };
-    var searchTree = null;
-    var searchIncludes = {};
+    var trees = { };
     var searchdata = {};
+    var nodedata = {};
+    var missingfiles = null;
+    var missingfiles_search = null;
 
     var performRestore = function(tasks) {
         var dlg = $('<div></div>').attr('title', 'Restoring files ...');
@@ -217,204 +218,290 @@ $(document).ready(function() {
     $('#restore-path-page').hide();
     $('#restore-complete-page').hide();
 
-    var colorize = function(tree, term) {
-        $(tree).find('a.jstree-anchor').each(function(i, e) {
+    var colorize = function(tree, term, entry) {
+        var tr = tree.jstree();
+        $(entry || tree).find('a.jstree-anchor').each(function(i, e) {
             var s = $(e);
-            var o = s.children();
-            if (!s.first().hasClass('jstree-disabled')) {
-                o.find('div.search-match').remove();
-                o = s.children();
-                s.html(replace_insensitive(s.text(), term, '<div class="search-match">$1</div>'));
+            var node = tr.get_node(s);
+            if (node.text) {
+                s.children('.search-match').remove();
+                var o = s.children();
+                s.html(replace_insensitive(node.text, term, '<div class="search-match">$1</div>'));
                 s.prepend(o);
             }
         });
     };
 
-    var highlightCurrentTimes = function(e) {
-        if (searchTree == null)
-            return;
-
-        var tr = searchTree.jstree();
-        var time = $('#restore-version').val();
-
-        var nodes = (e || searchTree).find('.icon-clock').closest('li').parent();
-        nodes.each(function(i, e) {
-            var times = $(e).find('.icon-clock').closest('li');
-            var found = false;
-            times.each(function(i, e) {
-                var node = tr.get_node(e);
-                var a = $(e).find('a');
-                if (node.original.time == time) {
-                    a.addClass('restore-current-time');
-                    found = true;
-                } else {
-                    a.removeClass('restore-current-time ');
-                }
-            });
+    var getRootPrefixes = function(tree) {
+        var roots = tree.children('ul').children('li');
+        var prefixes = [];
+        roots.each(function(i, e) {
+            var node = tr.get_node(e);
+            prefixes.push(node.original.filepath);
         });
 
-    }
+        return prefixes;
+    };
 
+    var getRootNode = function(tree, path) {
+        var roots = tree.children('ul').children('li');
+        var tr = tree.jstree();
+        var root = null;
+
+        roots.each(function(i, e) {
+            var node = tr.get_node(e);
+            if (node && path.indexOf(node.original.filepath) == 0)
+                root = e;
+        });
+
+        return root;
+    };
+
+    var expandNodes = function(tree, path, callback) {
+        var root = getRootNode(tree, path);
+
+        if (root != null) {
+            var tr = tree.jstree();
+            var node = tr.get_node(root);
+            var prefix = node.original.filepath;
+            if (prefix.lastIndexOf(dirSep) != prefix.length - 1)
+                prefix += dirSep;
+            var remainder = path.substr(prefix.length);
+            var parts = remainder.split(dirSep);
+            var rebuilt = prefix;
+            for(var i in parts) {
+                var p = parts[i];
+                if (p == '')
+                    continue;
+
+                var selfprefix = rebuilt;
+                rebuilt += p;
+                if (parseInt(i) != parts.length - 1)
+                    rebuilt += dirSep;
+
+                var next = null;
+
+                if ((node.children === undefined || (node.children !== false && node.children.length == 0)) && callback)
+                    callback(node, selfprefix, p);
+
+                for(var j in node.children) {
+                    var c = tr.get_node(node.children[j]);
+                    if (c.original.filepath == rebuilt) {
+                        tr.open_node(node);
+                        next = c;
+                        break;
+                    }
+                }
+
+                if (next == null)
+                    return {
+                        path: rebuilt,
+                        node: node
+                    }
+
+                node = next;
+            }
+
+        }
+
+        return null;
+    };
+
+    var prepareFolderData = function(data, time) {
+        var tree = trees[time];
+        var roots = getRootPrefixes(tree);
+
+        if (!nodedata[time])
+            nodedata[time] = {};
+
+        var nd = nodedata[time];
+
+        for(var n in data) {
+            var p = data[n].Path;
+            var root = null;
+            for(var r in roots)
+                if (p.indexOf(roots[r]) == 0) {
+                    root = roots[r];
+                    break;
+                }
+
+            if (root == null)
+                continue;
+
+
+
+
+            //createNodeFromData;
+        }
+    };
+
+    var loadSearchIntermediates = function(missing, files, time, search) {
+        var filter = [];
+        for(var n in missing)
+            filter.push(n + '*');
+
+        filter = filter.join(pathSep);
+
+        $.ajax({
+            'url': APP_CONFIG.server_url,
+            'data': {
+                'action': 'search-backup-files',
+                'id': backupId,
+                'time': time,
+                'prefix-only': 'false',
+                'filter': filter
+            },
+            'dataType': 'json'
+        })
+        .done(function(data, status, xhr) {
+
+            var tree = trees[time];
+
+            for(var f in files)
+                expandNodes(tree, files[f].Path, function(node, p, path) {
+                    var c = [];
+
+                    if (p.lastIndexOf(dirSep) != p.length - 1)
+                        p += dirSep;
+
+                    for(var f in data.Files) {
+                        var rp = data.Files[f].Path;
+                        if (rp != p && rp.indexOf(p) == 0) {
+                            var np = rp.substr(p.length);
+                            var lix = np.lastIndexOf(dirSep);
+                            if (lix == np.length - 1)
+                                lix = np.substr(0, np.length - 1).lastIndexOf(dirSep);
+                            if (lix < 0)
+                                c.push(createNodeFromData(rp, p, time));
+                        }
+
+                    }
+
+                    if (c.length > 0)
+                        node.children = c;
+                });
+
+            inSearch = false;
+            $('#restore-search-loader').hide();
+            colorize(tree, search);
+        })
+        .fail(function() {
+            $('#restore-search-loader').hide();
+            inSearch = false;
+            alert('Search failed ...');
+        });
+    };
+
+    var expandAndLoad = function(tree) {
+        if (missingfiles == null)
+            return;
+
+        var missing = {};
+        var mf = [];
+        var anymissing = false;
+
+        for(var f in missingfiles) {
+            var p = expandNodes(tree, missingfiles[f]);
+            if (p) {
+                missing[p.path] = p.node;
+                mf.push(missingfiles[f]);
+                anymissing = true;
+            }
+        }
+
+        if (missingfiles_search)
+            colorize(tree, missingfiles_search);
+        if (!anymissing) {
+            inSearch = false;
+            $('#restore-search-loader').hide();
+            missingfiles = null;
+            missingfiles_search = null;
+        } else {
+            missingfiles = mf;
+            var tr = tree.jstree();
+            for(var m in missing)
+                tr.open_node(missing[m]);
+        }
+    };
 
     var inSearch = false;
-    var doSearch = function(search) {
-
+    var doSearch = function(time, search) {
         if (inSearch)
             return;
 
+        $('#restore-search-loader').show();
         inSearch = true;
-        if (searchTree != null) {
-            searchTree.remove();
-            searchTree = null;
-        }
+        var tree = trees[time];
+        var tr = tree.jstree();
+        colorize(tree, search);
 
-        for(var t in treeels)
-            treeels[t].hide();
-
-        var processData = function (callback, data) {
-
-            var roots = [];
-
-            var createNode = function(disp, path, isFolder) {
-                return {
-                    text: disp,
-                    children: [],
-                    filepath: path, 
-                    isFolder: isFolder,
-                    state: { opened: true }
-                };
-            };
-
-            var appendNode = function(path, sizes) {
-                var isFolder = path.lastIndexOf(dirSep) == path.length - 1;
-                var parts = path.split(dirSep);
-                var cur = roots;
-                var rebuilt = '';
-                var lastEntry = null;
-
-                for(var i in parts) {
-                    var found = false;
-                    if (parts[i] == '')
-                        continue;
-
-                    rebuilt += '/' + parts[i];
-
-                    for(var j in cur) {
-                        if (cur[j].text == parts[i]) {
-                            found = true;
-                            cur = cur[j].children;
-                        }
-                    }
-
-                    if (!found) {
-                        lastEntry = createNode(parts[i], rebuilt, true);
-                        cur.push(lastEntry);
-                        cur = lastEntry.children;
-                    }
-                }
-
-                if (!isFolder && lastEntry != null) {
-                    lastEntry.isFolder = false;
-                    lastEntry.state.opened = false;
-                    lastEntry.icon = 'icon-file icon-file-' + lastEntry.text.substr(lastEntry.text.lastIndexOf('.')+1);
-                    for(var x in data.Filesets)
-                        if (sizes[x] != -1) {
-                            cur.push({
-                                isTime: true,
-                                time: data.Filesets[x].Time,
-                                filepath: lastEntry.filepath,
-                                text: $.timeago(data.Filesets[x].Time) + ' (' + $.formatSizeString(sizes[x]) + ')',
-                                icon: 'icon-clock',
-                                state: { disabled: true }
-                            });
-                        }
-                }
-            };
-
-            for(var n in data.Files)
-                appendNode(data.Files[n].Path, data.Files[n].Sizes);
-
-            var packNodes = function() {
-                for(var rx in roots) {
-                    var r = roots[rx];
-                    
-                    while(r.children.length == 1 && r.children[0].isFolder) {
-                        var c = r.children[0];
-                        r.text = r.text + dirSep + c.text;
-                        r.filepath = r.text;
-                        r.children = c.children;
-                    }
-
-                    if (dirSep == '/' && !r.text.substr(0, 1) != dirSep)
-                        r.text = dirSep + r.text;
-                }
-            };
-
-            packNodes();
-
-            callback(roots);
-            colorize(searchTree, search);
-            highlightCurrentTimes();
-
-            searchTree.on('open_node.jstree', function(e, data) {
-
-                var node = searchTree.find('#' + data.node.id);
-                var icons = node.find('.icon-clock').closest('ul');
-
-                // Remove checkboxes from time entries
-                icons.addClass('jstree-no-checkboxes');
-
-                // Make the row un-selectable
-                icons.find('div.jstree-wholerow').remove();
-
-                highlightCurrentTimes(node);
-                colorize(node, search);
-            });
-
-            inSearch = false;
-        }
-
-        var loadData = function(callback) {
-            for(var k in searchdata)
-                if (search.indexOf(k) == 0) {
-                    var els = [];
-                    for(var n in searchdata[k].Files)
-                        if (searchdata[k].Files[n].Path.toLowerCase().indexOf(search.toLowerCase()) >= 0)
-                            els.push(searchdata[k].Files[n]);
-
-                    processData(callback, {Files: els, Filesets: searchdata[k].Filesets});
+        if (searchdata[time]) {
+            var t = searchdata[time];
+            for(var p in t) {
+                if (search.indexOf(p) == 0) {
+                    colorize(tree, search);
+                    inSearch = false;
                     return;
                 }
-
-            APP_DATA.callServer({
-                    action: 'search-backup-files',
-                    id: backupId,
-                    filter: '*' + search + '*',
-                    'all-versions': true
-                },
-                function(data) {
-                    processData(callback, data);
-                    searchdata[search] = data;
-                },
-                function(data, success, message) {
-                    alert('Search failed: ' + message);
-                    inSearch = false;
-                }
-            );
+            }
         }
 
-        searchTree = $('<div></div>');
-        $('#restore-files-tree').append(searchTree);
-        searchTree.jstree({
-            'plugins' : [ 'wholerow', 'checkbox' ],
-            'core': {
-                'data': function(node, callback) {
-                    if (node.id === '#')
-                        loadData(callback);
-                }
-            }
-        });
+        $.ajax({
+            'url': APP_CONFIG.server_url,
+            'data': {
+                'action': 'search-backup-files',
+                'id': backupId,
+                'time': time,
+                'prefix-only': 'false',
+                'filter': '*' + search + '*'
+            },
+            'dataType': 'json'
+        })
+        .done(function(data, status, xhr) {
+            
+            if (!searchdata[time])
+                searchdata[time] = {};
 
+            searchdata[time][search] = data;
+
+            missingfiles = [];
+            missingfiles_search = search;
+            for(var f in data.Files)
+                missingfiles.push(data.Files[f].Path);
+
+            expandAndLoad(tree, search);
+
+        })
+        .fail(function() {
+            $('#restore-search-loader').hide();
+            inSearch = false;
+            alert('Search failed ...');
+        });
+    };
+
+    var createNodeFromData = function(path, prefix, time) {
+        var disp = path.substr(prefix.length);
+        var isFolder = disp.lastIndexOf(dirSep) == disp.length - 1;
+        var icon = null;
+        var state = null;
+        if (isFolder)
+            disp = disp.substr(0, disp.length - 1);
+        else
+            icon = 'icon-file icon-file-' + disp.substr(disp.lastIndexOf('.')+1);
+
+        if (prefix == '') {
+            disp = APP_DATA.getBackupName(backupId) || disp;
+            //state = {opened: true};
+        }
+
+        return {
+            text: disp,
+            filepath: path,
+            time: time,
+            children: isFolder,
+            state: state,
+            icon: icon
+        };
     };
 
     var loadNodes = function(node, callback, time) {
@@ -435,116 +522,78 @@ $(document).ready(function() {
             data.Files = data.Files || [];
             for(var i = 0; i < data.Files.length; i++) {
                 var o = data.Files[i];
-                var disp = o.Path.substr(data.Prefix.length);
-                var isFolder = disp.lastIndexOf(dirSep) == disp.length - 1;
-                var icon = null;
-                var state = null;
-                if (isFolder)
-                    disp = disp.substr(0, disp.length - 1);
-                else
-                    icon = 'icon-file icon-file-' + disp.substr(disp.lastIndexOf('.')+1);
-
-                if (data.Prefix == '') {
-                    disp = APP_DATA.getBackupName(backupId) || disp;
-                    //state = {opened: true};
-                }
-
-                nodes.push({
-                    text: disp,
-                    filepath: o.Path,
-                    time: time,
-                    children: isFolder,
-                    state: state,
-                    icon: icon
-                });
+                nodes.push(createNodeFromData(data.Files[i].Path, data.Prefix, time));
             }
 
             callback(nodes, data);
+            expandAndLoad(trees[time]);
         });
     };
 
-    var setupFullTree = function(time) {
+    var setupTree = function(time) {
+        var treeel = trees[time];
 
-        var treeel = treeels[time];
-
-        if (!treeels[time]) {
+        if (!trees[time]) {
             var treeel = $('<div></div>');
-            treeels[time] = treeel;
+            trees[time] = treeel;
             $('#restore-files-tree').append(treeel);
 
             treeel.jstree({
                 'core': {
-                    'data': function(node, callback) { 
-                        loadNodes(node, function(nodes, data) { 
-                            callback(nodes);
-                            if (data.Prefix == '')
-                                treeel.jstree("open_node", treeel.find('li').first());
-                        }, 
-                        time); 
+                    'data': function(node, callback) {
+                        if (nodedata[node.id]) {
+                            callback(nodedata[node.id]);
+                        } else {
+                            loadNodes(node, function(nodes, data) { 
+                                callback(nodes);
+                                if (data.Prefix == '')
+                                    treeel.jstree("open_node", treeel.find('li').first());
+                            }, 
+                            time); 
+                        }
                     }
                 },
                 'plugins' : [ 'wholerow', "checkbox" ]
             });
-
-            treeel.on('deselect_node.jstree', function(e, data) {
-                var path = treeel.jstree().get_node(data.node).original.filepath;
-                if (searchIncludes[time])
-                    for (var f in searchIncludes[time])
-                        if (f.indexOf(path) == 0)
-                            delete searchIncludes[time][f];
-            });
         }
 
-        for(var t in treeels)
+        for(var t in trees)
             if (t != time)
-                treeels[t].hide();
+                trees[t].hide();
             else {
-                treeels[t].show();
+                trees[t].show();
             }
-
-        if (searchTree != null)
-            searchTree.hide();
-
     };
 
     var buildIncludeMap = function() {
         var m = {};
 
-        for(var t in treeels) {
+        for(var t in trees) {
             m[t] = {};
-            var tr = treeels[t].jstree();
+            var tr = trees[t].jstree();
 
-            treeels[t].find('.jstree-clicked').each(function(i, e) {
+            trees[t].find('.jstree-clicked').each(function(i, e) {
                 var p = tr.get_node(e).original.filepath;
                 if (p)
                     m[t][p] = 1;
             });
         }
 
-        for(var t in searchIncludes) {
-            if (!m[t])
-                m[t] = {};
-
-            for (var f in searchIncludes[t])
-                m[t][f] = 1;
-        }
+        return m;
     };
 
     $('#restore-dialog').on('setup-data', function(e, id) {
         backupId = id;
-        treeels = { };
-        searchIncludes = { };
-        searchTree = null;
+        trees = { };
         searchdata = { };
         $('#restore-files-tree').empty();
+        $('#restore-search-loader').hide();
         $('#restore-form').each(function(i, e) { e.reset(); });
         $('#restore-overwrite-overwrite').each(function(i, e) { e.checked = true; });
         $('#restore-overwrite-target-original').each(function(i, e) { e.checked = true; });
 
-
         curpage = 0; 
-        updatePageNav();    
-
+        updatePageNav();
 
         APP_DATA.getServerConfig(function(serverdata) {
 
@@ -577,11 +626,12 @@ $(document).ready(function() {
     });
 
     var doQuickSearch = function(search) {
-        if (searchTree != null && searchTree.css('display') == 'block') {
-            var search = $('#restore-search').val();
-            for(var k in searchdata) {
+        var search = $('#restore-search').val();
+        var time = $('#restore-version').val();
+        if (searchdata[time]) {
+            for(var k in searchdata[time]) {
                 if (search.indexOf(k) == 0) {
-                    doSearch(search);
+                    colorize(trees[time], search);
                     return true;
                 }
             }
@@ -592,30 +642,29 @@ $(document).ready(function() {
 
     $('#restore-search').keypress(function(e) {
         if (e.which == 13 && $('#restore-search').val().trim() != '')
-            doSearch($('#restore-search').val());
-        else
-            doQuickSearch($('#restore-search').val());
+            doSearch($('#restore-version').val(), $('#restore-search').val());
+        else if ($('#restore-search').val().trim() != '')
+            colorize(trees[$('#restore-version').val()], $('#restore-search').val());
     });
 
-    $('#restore-search').keydown(function(e) {
-        doQuickSearch($('#restore-search').val());
+    $('#restore-search').keyup(function(e) {
+        colorize(trees[$('#restore-version').val()], $('#restore-search').val());
     });
 
     $('#restore-search').change(function(e) {
-        if ($('#restore-search').val() == '')
-            $('#restore-version').trigger('change');
+        colorize(trees[$('#restore-version').val()], $('#restore-search').val());
     });
 
     $('#restore-search').on('search', function(e) {
         if ($('#restore-search').val() == '')
-            $('#restore-version').trigger('change');
+            colorize(trees[$('#restore-version').val()], $('#restore-search').val());
         else
-            doSearch($('#restore-search').val());
+            doSearch($('#restore-search').val(), $('#restore-search').val());
     });
 
     $('#restore-version').change(function() {
         $('#restore-search').val('');
-        setupFullTree($('#restore-version').val());
+        setupTree($('#restore-version').val());
     });
     
     $('#restore-target-path').keypress(function() { $('#restore-overwrite-target-other').each(function(i,e) { e.checked = true; }); });

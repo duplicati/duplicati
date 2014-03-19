@@ -344,15 +344,17 @@ namespace Duplicati.Server
             private void SearchBackupFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-                string filter = input["filter"].Value;
-                string timestring = input["time"].Value;
-                bool allversion = Duplicati.Library.Utility.Utility.ParseBool(input["all-versions"].Value, false);
                 
-                if (string.IsNullOrWhiteSpace(filter))
+                if (string.IsNullOrWhiteSpace(input["filter"].Value))
                 {
                     ReportError(response, bw, "Invalid or missing filter");
                     return;
                 }
+                
+                var filter = input["filter"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                var timestring = input["time"].Value;
+                var allversion = Duplicati.Library.Utility.Utility.ParseBool(input["all-versions"].Value, false);
+                
                 if (string.IsNullOrWhiteSpace(timestring) && !allversion)
                 {
                     ReportError(response, bw, "Invalid or missing time");
