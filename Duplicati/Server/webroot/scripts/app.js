@@ -188,6 +188,19 @@ $(document).ready(function() {
         }
     };
 
+    var formatSizes = ['TB', 'GB', 'MB', 'KB'];
+    $.formatSizeString = function(val) {
+        val = parseInt(val || 0);
+        var max = formatSizes.length;
+        for(var i = 0; i < formatSizes.length; i++) {
+            var m = Math.pow(1024, max - i);
+            if (val > m)
+                return (val / m).toFixed(2) + ' ' + formatSizes[i];
+        }
+
+        return val + ' ' + bytes;
+    };
+
     var serverWithCallback = function(data, callback, errorhandler, refreshMethod) {
         if (typeof(data) == typeof(''))
             data = { action: data };
