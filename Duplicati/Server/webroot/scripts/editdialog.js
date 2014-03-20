@@ -142,7 +142,13 @@ $(document).ready(function() {
                 $('#source-folder-paths').find('.source-folder').remove();
                 for(var n in sources) {
                     var p = sources[n];
-                    addSourceFolder(sources[n], lookup[p] || p);
+                    var rp = p;
+                    if (isWindows) {
+                        rp = replace_all(rp, '\\', '/');
+                        if (rp.indexOf('%') != 0)
+                            rp = '/' + rp;
+                    }
+                    addSourceFolder(rp, lookup[p] || p);
                 }
             },
             'Tags': function(dict, key, val, cfgel) {
@@ -302,8 +308,11 @@ $(document).ready(function() {
                 var sources = [];
                 $('#source-folder-paths').find('.source-folder').each(function(i,el) {
                     var p = $(el).data('id');
-                    if (isWindows && p.indexOf('/') == 0)
-                        p = p.substr(1);
+                    if (isWindows) {
+                        if (p.indexOf('/') == 0)
+                            p = p.substr(1);
+                        p = replace_all(p, '/', '\\');
+                    }
 
                     sources.push(p);
                 });
@@ -694,6 +703,9 @@ $(document).ready(function() {
         container.append(div);
 
         $(div).data('id', path);
+
+        if (path.indexOf('/') == 0 && isWindows)
+            path = path.substr(1);
 
         APP_DATA.validatePath(path, function(path, success) {
             if (success) 

@@ -43,6 +43,10 @@ function preg_quote( str ) {
     return (str+'').replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
 }
 
-function replace_insensitive(str, pattern, replacement) {
+function replace_all_insensitive(str, pattern, replacement) {
   return str.replace( new RegExp( "(" + preg_quote(pattern) + ")" , 'gi' ), replacement );
 };
+
+function replace_all(str, pattern, replacement) {
+  return str.replace( new RegExp( "(" + preg_quote(pattern) + ")" , 'g' ), replacement );  
+}

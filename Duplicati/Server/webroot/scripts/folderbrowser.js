@@ -1,6 +1,33 @@
 $(document).ready(function() {
+    var isWindows = null;
+
     $.browseForFolder = function(config) {
         var self = {};
+
+        var select_node = function(node) {
+            if (node != null) {
+                var path = node.original.filepath;
+                if (self.resolvePath && node.original.resolvedpath)
+                    path = node.original.resolvedpath;
+
+                if (self.resolvePath && isWindows) {
+                    if (path.substr(0,1) == '/') 
+                        path = path.substr(1);
+
+                    path = replace_all(path, '/', '\\');
+                }
+
+
+                config.callback(path, node.text);
+                self.rootel.dialog('close');
+            }
+        }
+
+        if (isWindows == null) {
+            APP_DATA.getServerConfig(function(data) {
+                isWindows = data.DirectorySeperator = '/';
+            });
+        }
 
         self.rootel = $('<div class="modal-dialog folder-browser-dialog"></div>')
         self.treeel = $('<div></div>');
@@ -60,15 +87,7 @@ $(document).ready(function() {
                     self.rootel.dialog('close');
                 }},
                 { text: 'OK', disabled: true, click: function(event, ui) {
-                    var node = self.selected_node;
-                    if (node != null) {
-                        var path = node.original.filepath;
-                        if (self.resolvePath && node.original.resolvedpath)
-                            path = node.original.resolvedpath;
-
-                        config.callback(path, node.text);
-                        self.rootel.dialog('close');
-                    }
+                    select_node(self.selected_node);
                 }}
             ]
         });
@@ -81,12 +100,7 @@ $(document).ready(function() {
 
         self.treeel.bind("dblclick.jstree", function (event) {
             var node = self.treeel.jstree().get_node($(event.target).closest("li"));
-            var path = node.original.filepath;
-            if (self.resolvePath && node.original.resolvedpath)
-                path = node.original.resolvedpath;
-
-            config.callback(path, node.text);
-            self.rootel.dialog('close');
+            select_node(node);
         });
 
         self.treeel.bind('select_node.jstree', function (event, data) {
