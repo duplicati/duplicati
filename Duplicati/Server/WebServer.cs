@@ -1134,11 +1134,14 @@ namespace Duplicati.Server
 
                             var t = Program.WorkThread.CurrentTask;
                             var bt = t == null ? null : t.Backup;
-                            if (backup.Equals(t == null ? null : t.Backup))
+                            if (bt != null && backup.ID == bt.ID)
                             {
                                 // Already running
                             }
-                            else if (Program.WorkThread.CurrentTasks.Where(x => backup.Equals(x == null ? null : x.Backup)).Any())
+                            else if (Program.WorkThread.CurrentTasks.Where(x => { 
+                                var bn = x == null ? null : x.Backup;
+                                return bn == null || bn.ID == backup.ID;
+                                }).Any())
                             {
                                 // Already in queue
                             }
