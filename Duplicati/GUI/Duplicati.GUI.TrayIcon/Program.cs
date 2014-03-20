@@ -24,6 +24,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static string GetDefaultToolKit()
         {
+#if __MonoCS__
             if (Duplicati.Library.Utility.Utility.IsClientOSX && SupportsCocoaStatusIcon)
             {
                 //Determine if we are running in an app bundle, otherwise we cannot run Cocoa
@@ -36,7 +37,9 @@ namespace Duplicati.GUI.TrayIcon
                 if (System.IO.File.Exists(plist))
                     return TOOLKIT_COCOA;
             }
-            
+#endif
+
+#if __MonoCS__ || __WindowsGTK__            
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
             {
                 if (SupportsAppIndicator)
@@ -45,6 +48,7 @@ namespace Duplicati.GUI.TrayIcon
                     return TOOLKIT_GTK;
             }
             else
+#endif
             {
                 //Windows users expect a WinForms element
                 return TOOLKIT_WINDOWS_FORMS;
@@ -67,12 +71,14 @@ namespace Duplicati.GUI.TrayIcon
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_WINDOWS_FORMS;
+#if __MonoCS__ || __WindowsGTK__                
                 else if (TOOLKIT_GTK.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_GTK;
                 else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
                 else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
+#endif
                 else
                     toolkit = DEFAULT_TOOLKIT;
             }
@@ -108,22 +114,26 @@ namespace Duplicati.GUI.TrayIcon
         {
             if (toolkit == TOOLKIT_WINDOWS_FORMS)
                 return GetWinformsInstance();
+#if __MonoCS__ || __WindowsGTK__
             else if (toolkit == TOOLKIT_GTK)
                 return GetGtkInstance();
             else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
                 return GetAppIndicatorInstance();
             else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
+#endif
             else 
                 throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
         }
         
         //We keep these in functions to avoid attempting to load the instance,
         // because the required assemblies may not exist on the machine 
-        private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
         private static TrayIconBase GetWinformsInstance() { return new Windows.WinFormsRunner(); }
+#if __MonoCS__ || __WindowsGTK__
+        private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); }
+#endif
         
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
@@ -133,7 +143,11 @@ namespace Duplicati.GUI.TrayIcon
         // to load the required types
         private static bool TryGetGtk()
         {
+#if __MonoCS__ || __WindowsGTK__
             return typeof(Gtk.StatusIcon) != null && typeof(Gdk.Image) != null;
+#else
+            return false;
+#endif
         }
 
         private static bool TryGetWinforms()
@@ -143,12 +157,20 @@ namespace Duplicati.GUI.TrayIcon
 
         private static bool TryGetAppIndicator()
         {
+#if __MonoCS__ || __WindowsGTK__
             return typeof(AppIndicator.ApplicationIndicator) != null;
+#else
+            return false;
+#endif
         }
         
         private static bool TryGetMonoMac()
         {
+#if __MonoCS__
             return typeof(MonoMac.AppKit.NSStatusItem) != null;
+#else
+            return false;
+#endif
         }
   
         //The functions below here, simply wrap the call to the above functions,
@@ -204,7 +226,15 @@ namespace Duplicati.GUI.TrayIcon
             {
                 return new Duplicati.Library.Interface.ICommandLineArgument[]
                 {
-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, new string[] {TOOLKIT_WINDOWS_FORMS, TOOLKIT_GTK, TOOLKIT_GTK_APP_INDICATOR, TOOLKIT_COCOA}),
+                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, new string[] {
+                        TOOLKIT_WINDOWS_FORMS, 
+#if __MonoCS__ || __WindowsGTK__
+                        TOOLKIT_GTK, TOOLKIT_GTK_APP_INDICATOR, 
+#endif
+#if __MonoCS__
+                        TOOLKIT_COCOA
+#endif
+                    }),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                 };
