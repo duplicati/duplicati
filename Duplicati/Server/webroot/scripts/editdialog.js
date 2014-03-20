@@ -151,6 +151,7 @@ $(document).ready(function() {
             },
             'Schedule': function(dict, key, val, cfgel) {
                 $('#use-scheduled-run').attr('checked', val != null)
+                $('#use-scheduled-run').trigger('change');
             },
             'Repeat': function(dict, key, val, cfgel) {
                 $('#use-scheduled-run').attr('checked', val != '');
@@ -328,7 +329,7 @@ $(document).ready(function() {
                 if ($(el).val().trim() == '')
                    dict['Backup']['Settings']['--no-encryption'] = true;
                else
-                    dict['Backup']['Settings']['--no-encryption'] = undefined;
+                    delete dict['Backup']['Settings']['--no-encryption'];
             },
             'next-run-time': function(dict, key, el, cfgel) {
                 if (!dict['Schedule'])
