@@ -58,7 +58,7 @@ namespace Duplicati.Server.Serializable
         {
             get
             {
-                if (this.ActiveTask != null)
+                if (this.ActiveTask == null)
                 {
                     if (this.ProgramState == LiveControlState.Paused)
                         return SuggestedStatusIcon.Paused;
