@@ -226,7 +226,7 @@ $(document).ready(function() {
             if (node.text) {
                 s.children('.search-match').remove();
                 var o = s.children();
-                s.html(replace_insensitive(node.text, term, '<div class="search-match">$1</div>'));
+                s.html(replace_all_insensitive(node.text, term, '<div class="search-match">$1</div>'));
                 s.prepend(o);
             }
         });
