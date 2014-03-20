@@ -200,6 +200,10 @@
       <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
       <Name>Duplicati.CommandLine.BackendTool</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Snapshots\Duplicati.Library.Snapshots.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
+      <Name>Duplicati.Library.Snapshots</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\DuplicatiRunner.resx">
