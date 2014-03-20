@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
 
 
 namespace Duplicati.Library.Snapshots
@@ -181,6 +182,28 @@ namespace Duplicati.Library.Snapshots
 
             if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
+        }
+
+        public IEnumerable<string> EnumerateFileSystemEntries(string path)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.Directory.EnumerateFileSystemEntries(path); }
+                catch (System.IO.PathTooLongException) { }
+
+            var r = Alphaleonis.Win32.Filesystem.Directory.GetFileSystemEntries(PrefixWithUNC(path));
+            for (var i = 0; i < r.Length; i++)
+                r[i] = StripUNCPrefix(r[i]);
+
+            return r;
+        }
+
+        public string PathGetFileName(string path)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.Path.GetFileName(path); }
+                catch (System.IO.PathTooLongException) { }
+
+            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetFileName(PrefixWithUNC(path)));
         }
 
         public string PathGetDirectoryName(string path)

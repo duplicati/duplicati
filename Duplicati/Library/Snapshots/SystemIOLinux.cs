@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -86,6 +87,16 @@ namespace Duplicati.Library.Snapshots
         public string PathGetDirectoryName(string path)
         {
             return Path.GetDirectoryName(path);
+        }
+
+        public IEnumerable<string> EnumerateFileSystemEntries(string path)
+        {
+            return Directory.EnumerateFileSystemEntries(path);
+        }
+
+        public string PathGetFileName(string path)
+        {
+            return Path.GetFileName(path);
         }
 
         public string PathGetExtension(string path)

@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -43,8 +44,10 @@ namespace Duplicati.Library.Snapshots
         FileAttributes GetFileAttributes(string path);
         void CreateSymlink(string symlinkfile, string target, bool asDir);
         string PathGetDirectoryName(string path);
+        string PathGetFileName(string path);
         string PathGetExtension(string path);
-        string PathChangeExtension(string path, string extension);        
+        string PathChangeExtension(string path, string extension);
+        IEnumerable<string> EnumerateFileSystemEntries(string path);
     }
 }
 
