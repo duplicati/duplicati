@@ -233,28 +233,6 @@ namespace Duplicati.Server
             #endregion
         }
         
-        private static string DecodeSource(string n, string backupId)
-        {
-            if (string.IsNullOrWhiteSpace(n))
-                return null;
-            
-            var t = n;
-            if (n.StartsWith("%") && n.EndsWith("%"))
-            {
-                t = SpecialFolders.TranslateToPath(n);
-                if (t == null)
-                    t = System.Environment.ExpandEnvironmentVariables(n);
-            }
-            
-            if (string.IsNullOrWhiteSpace(t) || (t.StartsWith("%") && t.EndsWith("%")))
-            {
-                Program.DataConnection.LogError(backupId, string.Format("Skipping source \"{0}\"", n), null);
-                return null;
-            }
-            
-            return t;
-        }
-    
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool throwEx = false)
         {
             Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
@@ -279,7 +257,7 @@ namespace Duplicati.Server
                                 var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
                                 var sources = 
                                         (from n in backup.Sources
-                                        let p = DecodeSource(n, backup.ID)
+                                        let p = SpecialFolders.ExpandEnvironmentVariables(n)
                                         where !string.IsNullOrWhiteSpace(p)
                                         select p).ToArray();
                                 

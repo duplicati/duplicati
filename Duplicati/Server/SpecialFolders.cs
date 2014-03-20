@@ -27,6 +27,13 @@ namespace Duplicati.Server
         private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         private static readonly Dictionary<string, string> DisplayMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         
+        public static string ExpandEnvironmentVariables(string path)
+        {
+            foreach(var n in Nodes)
+                path = path.Replace(n.id, n.resolvedpath);
+            return System.Environment.ExpandEnvironmentVariables(path);
+        }
+        
         public static string TranslateToPath(string str) 
         {
             string res;

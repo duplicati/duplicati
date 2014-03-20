@@ -507,25 +507,12 @@ namespace Duplicati.Server
                     return;
                 }
                 
-                string path = input["path"].Value;
-                
-                if (path.StartsWith("%") && path.EndsWith("%"))
-                {
-                    if (SpecialFolders.Nodes.Any(x => x.id == path))
-                        OutputObject(bw, null);
-                }
-                
-                if (!path.StartsWith("/"))
-                {
-                    ReportError(response, bw, "The path parameter must start with a forward-slash");
-                    return;
-                }
-                
                 try
                 {
+                    string path = SpecialFolders.ExpandEnvironmentVariables(input["path"].Value);                
                     if (System.IO.Path.IsPathRooted(path) && System.IO.Directory.Exists(path))
                     {
-                        OutputObject(bw, null);
+                        OutputObject(bw, new { Status = "OK" });
                         return;
                     }
                 }
@@ -535,6 +522,64 @@ namespace Duplicati.Server
                 
                 ReportError(response, bw, "File or folder not found");
                 return;
+            }
+
+            private static IEnumerable<Serializable.TreeNode> ListFolderAsNodes(string entrypath, bool skipFiles)
+            {
+                //Helper function for finding out if a folder has sub elements
+                Func<string, bool> hasSubElements = (p) => skipFiles ? Directory.EnumerateDirectories(p).Any() : Directory.EnumerateFileSystemEntries(p).Any();
+
+                //Helper function for dealing with exceptions when accessing off-limits folders
+                Func<string, bool> isEmptyFolder = (p) =>
+                {
+                    try { return !hasSubElements(p); }
+                    catch { }
+                    return true;
+                };
+
+                //Helper function for dealing with exceptions when accessing off-limits folders
+                Func<string, bool> canAccess = (p) =>
+                {
+                    try { hasSubElements(p); return true; }
+                    catch { }
+                    return false;
+                }; 
+                
+                var systemIO = Library.Utility.Utility.IsClientLinux
+                    ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux() 
+                    : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
+
+                foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(Library.Utility.Utility.IsClientLinux ? entrypath : entrypath.Substring(1).Replace('/', '\\')))
+                {
+                    Serializable.TreeNode tn = null;
+                    try
+                    {
+                        var attr = systemIO.GetFileAttributes(s);
+                        var isSymlink = (attr & FileAttributes.ReparsePoint) != 0;
+                        var isFolder = (attr & FileAttributes.Directory) != 0;
+                        var isFile = !isFolder;
+                        var isHidden = (attr & FileAttributes.Hidden) != 0;
+
+                        var accesible = isFile || canAccess(s);
+                        var isLeaf = isFile || !accesible || isEmptyFolder(s);
+
+                        var rawid = isFolder ? Library.Utility.Utility.AppendDirSeparator(s) : s;
+                        if (!skipFiles || isFolder)
+                            tn = new Serializable.TreeNode()
+                            {
+                                id = Library.Utility.Utility.IsClientLinux ? rawid : "/" + rawid.Replace('\\', '/'),
+                                text = systemIO.PathGetFileName(s),
+                                iconCls = isFolder ? (accesible ? "x-tree-icon-parent" : "x-tree-icon-locked") : "x-tree-icon-leaf",
+                                leaf = isLeaf
+                            };
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+
+                    if (tn != null)
+                        yield return tn;
+                }
             }
 
             private void GetFolderContents(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -576,48 +621,7 @@ namespace Duplicati.Server
                     }
                     else
                     {
-                        //Helper function for finding out if a folder has sub elements
-                        Func<string, bool> hasSubElements = (p) => skipFiles ? Directory.EnumerateDirectories(p).Any() : Directory.EnumerateFileSystemEntries(p).Any();
-
-                        //Helper function for dealing with exceptions when accessing off-limits folders
-                        Func<string, bool> isEmptyFolder = (p) =>
-                        {
-                            try { return !hasSubElements(p); }
-                            catch { }
-                            return true;
-                        };
-
-                        //Helper function for dealing with exceptions when accessing off-limits folders
-                        Func<string, bool> canAccess = (p) =>
-                        {
-                            try { hasSubElements(p); return true; }
-                            catch { }
-                            return false;
-                        };
-
-                        res = 
-                            from s in System.IO.Directory.EnumerateFileSystemEntries(Library.Utility.Utility.IsClientLinux ? path : path.Substring(1).Replace('/', '\\'))
-                                  
-                            let attr = System.IO.File.GetAttributes(s)
-                            let isSymlink = (attr & FileAttributes.ReparsePoint) != 0
-                            let isFolder = (attr & FileAttributes.Directory) != 0
-                            let isFile = !isFolder
-                            let isHidden = (attr & FileAttributes.Hidden) != 0
-
-                            let accesible = isFile || canAccess(s)
-                            let isLeaf = isFile || !accesible || isEmptyFolder(s) 
-
-                            let rawid = isFolder ? Library.Utility.Utility.AppendDirSeparator(s) : s
-
-                            where !skipFiles || isFolder
-                                  
-                            select new Serializable.TreeNode()
-                            {
-                                id = Library.Utility.Utility.IsClientLinux ? rawid : "/" + rawid.Replace('\\', '/'),
-                                text = System.IO.Path.GetFileName(s),
-                                iconCls = isFolder ? (accesible ? "x-tree-icon-parent" : "x-tree-icon-locked") : "x-tree-icon-leaf",
-                                leaf = isLeaf
-                            };
+                        res = ListFolderAsNodes(path, skipFiles);                        
                     }
 
                     if (path.Equals("/")) 
@@ -821,17 +825,25 @@ namespace Duplicati.Server
                     ReportError(response, bw, "Invalid or missing backup id");
                 else
                 {
+                    var systemIO = Library.Utility.Utility.IsClientLinux
+                        ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux()
+                        : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
+
                     var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
                     var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
                     var sourcenames = bk.Sources.Distinct().Select(x => {
                         var sp = SpecialFolders.TranslateToDisplayString(x);
                         if (sp != null)
                             return new KeyValuePair<string, string>(x, sp);
-                        
+
+                        x = SpecialFolders.ExpandEnvironmentVariables(x);
                         try {
-                            var n = System.IO.Path.GetFileName(x);
+                            var nx = x;
+                            if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                nx = nx.Substring(0, nx.Length - 1);
+                            var n = systemIO.PathGetFileName(nx);
                             if (!string.IsNullOrWhiteSpace(n))
-                                return new KeyValuePair<string, string>(x, System.IO.Path.GetFileName(n));
+                                return new KeyValuePair<string, string>(x, n);
                         } catch {
                         }
                         
