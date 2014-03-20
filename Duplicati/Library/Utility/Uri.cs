@@ -138,10 +138,14 @@ namespace Duplicati.Library.Utility
             var m = URL_PARSER.Match(url);
             if (!m.Success || m.Length != url.Length)
             {
-                if (url.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
+                var path = url;
+                if (path.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase))
+                    path = path.Substring("file://".Length);
+
+                if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
                     try 
                     {
-                        var fp = System.IO.Path.GetFullPath(url);
+                        var fp = System.IO.Path.GetFullPath(path);
                         this.Scheme = "file";
                         this.Host = null;
                         this.Path = fp;
@@ -154,7 +158,7 @@ namespace Duplicati.Library.Utility
                     catch
                     {
                     }
-                throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), url);
+                throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), "url");
             }
                 
 			this.Scheme = m.Groups["scheme"].Value;
