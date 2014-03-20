@@ -374,7 +374,7 @@ namespace Duplicati.Server.Database
                     OverwriteAndUpdateDb(
                         tr,
                         null,
-                        new object[] { long.Parse(item.ID) },
+                        new object[] { long.Parse(item.ID ?? "-1") },
                         new IBackup[] { item },
                         update ?
                             @"UPDATE ""Backup"" SET ""Name""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
