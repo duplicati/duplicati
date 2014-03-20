@@ -32,6 +32,7 @@
     <script type="text/javascript" src="scripts/customized.js"></script>
     <script type="text/javascript" src="scripts/hideShowPassword.min.js"></script>
     <script type="text/javascript" src="scripts/jquery.timeago.js"></script>
+    <!-- <script type="text/javascript" src="scripts/plugins.nbi.js"></script> -->
 
 
     <script id="backup-item-template" type="text/x-jquery-tmpl">
@@ -392,12 +393,13 @@
     <div id="restore-dialog" class="modal-dialog restore-dialog" title="Restore files &amp; folders">
         <form id="restore-form">
             <div id="restore-files-page">
-                <div id="restore-hint-source" class="hint-text">Double-click files and folders that you want to restore</div>
+                <div id="restore-search-section">
+                    <input type="search" id="restore-search" /><div id="restore-search-loader" class="small-loader-icon"></div>
 
-                <input type="search" id="restore-search" />
-                <select id="restore-version">
-                    <option value="0">Latest</option>
-                </select>
+                    <select id="restore-version">
+                        <option value="0">Latest</option>
+                    </select>
+                </div>
 
                 <div id="restore-files-tree"></div>
             </div>
