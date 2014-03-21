@@ -459,11 +459,12 @@ namespace Duplicati.Server
                 }
                 
                 var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(input["prefix-only"].Value, false);
+                var foldercontents = Duplicati.Library.Utility.Utility.ParseBool(input["folder-contents"].Value, false);
                 var time = new DateTime();
                 if (!allversion)
                     time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
                                 
-                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, time)) as Duplicati.Library.Interface.IListResults;
+                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, foldercontents, time), true) as Duplicati.Library.Interface.IListResults;
                 
                 var result = new Dictionary<string, object>();
                 
@@ -727,7 +728,7 @@ namespace Duplicati.Server
                 {
                     ReportError(response, bw, "Failed to process the path: " + ex.Message);
                 }
-            }
+            }       
 
             private bool LongPollCheck(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, BodyWriter bw, EventPollNotify poller, ref long id, out bool isError)
             {

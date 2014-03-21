@@ -198,6 +198,12 @@
   <data name="ListprefixonlyShort" xml:space="preserve">
     <value>Show largest prefix</value>
   </data>
+  <data name="ListfoldercontentsLong" xml:space="preserve">
+    <value>When searching for files, all matching files are returned. Use this option to return only the entries found in the folder specified as filter.</value>
+  </data>
+  <data name="ListfoldercontentsShort" xml:space="preserve">
+    <value>Show folder contents</value>
+  </data>
   <data name="RetrydelayLong" xml:space="preserve">
     <value>After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions.</value>
   </data>

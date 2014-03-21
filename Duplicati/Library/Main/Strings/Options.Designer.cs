@@ -154,9 +154,9 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
-        internal static string BlockhashlookupsizeShort {
+        internal static string ListfoldercontentsLong {
             get {
-                return ResourceManager.GetString("BlockhashlookupsizeShort", resourceCulture);
+                return ResourceManager.GetString("ListfoldercontentsLong", resourceCulture);
             }
         }
         
@@ -604,9 +604,9 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
-        internal static string FilehashlookupsizeLong {
+        internal static string BlockhashlookupsizeShort {
             get {
-                return ResourceManager.GetString("FilehashlookupsizeLong", resourceCulture);
+                return ResourceManager.GetString("BlockhashlookupsizeShort", resourceCulture);
             }
         }
         
@@ -727,6 +727,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string RestorepathLong {
             get {
                 return ResourceManager.GetString("RestorepathLong", resourceCulture);
+            }
+        }
+        
+        internal static string UploadverificationfileShort {
+            get {
+                return ResourceManager.GetString("UploadverificationfileShort", resourceCulture);
             }
         }
         
@@ -916,9 +922,9 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
-        internal static string UploadverificationfileShort {
+        internal static string FilehashlookupsizeLong {
             get {
-                return ResourceManager.GetString("UploadverificationfileShort", resourceCulture);
+                return ResourceManager.GetString("FilehashlookupsizeLong", resourceCulture);
             }
         }
         
@@ -973,6 +979,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string NoautocompactShort {
             get {
                 return ResourceManager.GetString("NoautocompactShort", resourceCulture);
+            }
+        }
+        
+        internal static string ListfoldercontentsShort {
+            get {
+                return ResourceManager.GetString("ListfoldercontentsShort", resourceCulture);
             }
         }
         

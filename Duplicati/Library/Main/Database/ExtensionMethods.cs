@@ -18,10 +18,12 @@ namespace Duplicati.Library.Main.Database
             self.Parameters.Add(self.CreateParameter());
         }
 
-        public static void AddParameter<T>(this System.Data.IDbCommand self, T value)
+        public static void AddParameter<T>(this System.Data.IDbCommand self, T value, string name = null)
         {
             var p = self.CreateParameter();
             p.Value = value;
+            if (!string.IsNullOrEmpty(name))
+                p.ParameterName = name;
             self.Parameters.Add(p);
         }
 
