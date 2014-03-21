@@ -38,12 +38,12 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         IEnumerable<Database.LocalListDatabase.IFileversion> files;
-                        if (parsedfilter.Type == Duplicati.Library.Utility.FilterType.Empty)
-                            files = null;
-                        else if (m_options.ListFolderContents)
+                        if (m_options.ListFolderContents)
                             files = filesets.SelectFolderContents(filter);
                         else if (m_options.ListPrefixOnly)
                             files = filesets.GetLargestPrefix(filter);
+                        else if (parsedfilter.Type == Duplicati.Library.Utility.FilterType.Empty)
+                            files = null;
                         else
                             files = filesets.SelectFiles(filter);
                         

@@ -194,11 +194,15 @@ namespace Duplicati.Library.Main.Database
                 var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 try
                 {
-                    if (filter as Library.Utility.FilterExpression == null || filter.Empty || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
+                    string pathprefix;
+                    if (filter == null || filter.Empty)
+                        pathprefix = "";
+                    else if (filter as Library.Utility.FilterExpression == null || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
                         throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", "filter");
+                    else
+                        pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
                     
-                    var pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
-                    if (pathprefix.Length > 0)
+                    if (pathprefix.Length > 0 || Duplicati.Library.Utility.Utility.IsClientLinux)
                         pathprefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(pathprefix);
                     
                     using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(pathprefix + "*", true), null))
