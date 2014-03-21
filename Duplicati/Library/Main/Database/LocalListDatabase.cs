@@ -168,72 +168,111 @@ namespace Duplicati.Library.Main.Database
     
             }
             
+            private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
+            {
+                if (!string.IsNullOrEmpty(prefix))
+                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(prefix);
+                
+                var ppl = prefix.Length;
+                using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Path"" FROM ""{0}"" ", table)))
+                    while (rd.Read())
+                    {
+                        var s = rd.GetString(0);
+                        if (!s.StartsWith(prefix))
+                            continue;
+                        
+                        s = s.Substring(ppl);
+                        var ix = s.IndexOf(System.IO.Path.DirectorySeparatorChar);
+                        if (ix > 0 && ix != s.Length - 1)
+                            s = s.Substring(0, ix + 1);
+                        yield return prefix + s;
+                    }
+            }
+            
             public IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter)
             {
-                if (filter as Library.Utility.FilterExpression == null || filter.Empty || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
-                    throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", "filter");
-                
-                var pathprefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(((Library.Utility.FilterExpression)filter).GetSimpleList().First());
-                
-                using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(pathprefix + "*", true), null))
-                using(var cmd = m_connection.CreateCommand())
+                var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                try
                 {
-                    //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));  
-                
-                    //Then we select the matching results
-                    var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
-                    var cartesianPathFileset = string.Format(@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{0}"" A, (" + filesets + @") B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC", tmpnames.Tablename, m_tablename);
+                    if (filter as Library.Utility.FilterExpression == null || filter.Empty || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
+                        throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", "filter");
                     
-                    // If we had instr support this would look better:
-                    /*var distinctPaths = @"SELECT DISTINCT :1 || " +
-                        @"CASE(INSTR(SUBSTR(""Path"", :2), ""/"")) " +
-                        @"WHEN 0 THEN SUBSTR(""Path"", :2) " +
-                        @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), ""/"")) " +
-                        @"END AS ""Path"", ""FilesetID"" " +
-                        @" FROM (" + cartesianPathFileset + @")";*/
+                    var pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
+                    if (pathprefix.Length > 0)
+                        pathprefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(pathprefix);
                     
-                    //Instead we can emulate with LIKE and CASE
-                    var distinctPaths = @"SELECT DISTINCT :1 || " +
-                        @"CASE LIKE(""%/%/%"", SUBSTR(path, :2)) " +
-                        @"WHEN 1 THEN """" " + //Skip subfolder items
-                        @"ELSE  " +
-                        @"    CASE LIKE(""%/"", SUBSTR(path, :2)) " +
-                        @"    WHEN 1 THEN SUBSTR(path, :2) " + //Include folders
-                        @"    ELSE " +
-                        @"        CASE NOT LIKE(""%/%"", SUBSTR(path, :2)) " +
-                        @"        WHEN 1 THEN SUBSTR(path, :2) " + //Include files
-                        @"        ELSE """" " +
-                        @"        END " +
-                        @"    END " +
-                        @"END " +
-                        @" AS ""Path"", ""FilesetID"" " +
-                        @" FROM (" + cartesianPathFileset + @")";
+                    using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(pathprefix + "*", true), null))
+                    using(var cmd = m_connection.CreateCommand())
+                    {
+                        //First we trim the filelist to exclude filenames not found in any of the filesets
+                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));  
                     
-                    var filesWithSizes = @"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" ";
-                    var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + distinctPaths + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
-                    
-                    cmd.AddParameter(pathprefix, "1");                    
-                    cmd.AddParameter(pathprefix.Length + 1, "2");
-                    
-                    using(var rd = cmd.ExecuteReader(query))
-                        if(rd.Read())
+                        // If we had instr support this would work:
+                        /*var distinctPaths = @"SELECT DISTINCT :1 || " +
+                            @"CASE(INSTR(SUBSTR(""Path"", :2), ""/"")) " +
+                            @"WHEN 0 THEN SUBSTR(""Path"", :2) " +
+                            @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), ""/"")) " +
+                            @"END AS ""Path"", ""FilesetID"" " +
+                            @" FROM (" + cartesianPathFileset + @")";*/
+                        
+                        // Instead we manually iterate the paths
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", tbname));
+                        
+                        using(var c2 = m_connection.CreateCommand())
                         {
-                            bool more;
-                            do
+                            c2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", tbname);
+                            c2.AddParameter();
+                        
+                            foreach(var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
                             {
-                                var f = new Fileversion(rd);
-                                if (!(string.IsNullOrWhiteSpace(f.Path) || f.Path == pathprefix)) {
-                                    yield return f;
-                                    more = f.More;
-                                }
-                                else
-                                {
-                                    more = rd.Read();
-                                }
-                                
-                            } while(more);
+                                c2.SetParameterValue(0, n);
+                                c2.ExecuteNonQuery();
+                            }
                         }
+                        
+                        //Then we select the matching results
+                        var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
+                        var cartesianPathFileset = string.Format(@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{0}"" A, (" + filesets + @") B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC", tbname, m_tablename);
+                                                
+                        var filesWithSizes = @"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" ";
+                        var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
+                        
+                        cmd.AddParameter(pathprefix, "1");                    
+                        cmd.AddParameter(pathprefix.Length + 1, "2");
+                        
+                        var anyResults = false;
+                        using(var rd = cmd.ExecuteReader(query))
+                            if (rd.Read())
+                            {
+                                bool more;
+                                do
+                                {
+                                    var f = new Fileversion(rd);
+                                    if (!(string.IsNullOrWhiteSpace(f.Path) || f.Path == pathprefix))
+                                    {
+                                        anyResults = true;
+                                        yield return f;
+                                        more = f.More;
+                                    }
+                                    else
+                                    {
+                                        more = rd.Read();
+                                    }
+                                    
+                                } while(more);
+                            }
+                    }                    
+                }
+                finally
+                {
+                    try
+                    {
+                        using(var c = m_connection.CreateCommand())
+                            c.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", tbname));
+                    }
+                    catch
+                    {
+                    }
                 }
             }
             
