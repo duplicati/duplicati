@@ -60,6 +60,13 @@ namespace Duplicati.Server.Database
             }
         }
         
+        internal void ExecuteWithCommand(Action<System.Data.IDbCommand> f)
+        {
+            lock(m_lock)
+                using(var cmd = m_connection.CreateCommand())
+                    f(cmd);
+        }
+        
         public string RegisterTemporaryBackup(IBackup backup)
         {
             lock(m_lock)
