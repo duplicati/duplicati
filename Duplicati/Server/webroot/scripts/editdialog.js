@@ -284,8 +284,12 @@ $(document).ready(function() {
             'allow-day-sat': false,
 
             'allow-day-sun': function(dict, key, el, cfgel) { 
-                if (!dict['Schedule'])
+                if (!$('#use-scheduled-run').is(':checked'))
                     return;
+
+                 if (!dict['Schedule'])
+                    dict['Schedule'] = {};
+
 
                 // Collect all days 
                 var days = [];
@@ -311,6 +315,8 @@ $(document).ready(function() {
             'use-scheduled-run': function(dict, key, el, cfgel) { 
                 if (!$(el).is(':checked')) {
                     dict['Schedule'] = null;
+                } else if(!dict['Schedule']) {
+                    dict['Schedule'] = {};
                 }
             },
             'backup-uri': function(dict, key, el, cfgel) { 
@@ -330,8 +336,11 @@ $(document).ready(function() {
                     delete dict['Backup']['Settings']['--no-encryption'];
             },
             'next-run-time': function(dict, key, el, cfgel) {
-                if (!dict['Schedule'])
+                if (!$('#use-scheduled-run').is(':checked'))
                     return;
+                
+                 if (!dict['Schedule'])
+                    dict['Schedule'] = {};
 
                 var t = Date.parse($('#next-run-date').val());
                 if (t != NaN) {
@@ -349,8 +358,11 @@ $(document).ready(function() {
                 dict['Backup']['Settings']['dblock-size'] = $(el).val() + $('#dblock-size-multiplier').val();
             },
             'repeat-run-number': function(dict, key, el, cfgel) {
-                if (!dict['Schedule'])
+                if (!$('#use-scheduled-run').is(':checked'))
                     return;
+                
+                 if (!dict['Schedule'])
+                    dict['Schedule'] = {};
 
                 var m = $('#repeat-run-multiplier').val();
                 if (m == 'custom')
@@ -926,9 +938,50 @@ $(document).ready(function() {
     $('#edit-dialog-form').find('textarea').change(setStateModified);
 
     $('#use-scheduled-run').change(function() {
-        if ($('#use-scheduled-run').is(':checked'))
+        if ($('#use-scheduled-run').is(':checked')) {
             $('#use-scheduled-run-details').show();
-        else
+
+                var dt = new Date();
+                dt.setHours(dt.getHours() + 1);
+                dt.setMinutes(0);
+                dt.setSeconds(0);
+
+                if ($('#next-run-time').val() == '') {
+                    var h = dt.getHours() + '';
+                    var m = dt.getMinutes() + '';
+                    if (h.length == 1)
+                        h = '0' + h;
+                    if (m.length == 1)
+                        m = '0' + m;
+                    $('#next-run-time').val(h + ':' + m);
+                }
+
+                if ($('#next-run-date').val() == '') {
+                    var y = dt.getFullYear();
+                    var d = dt.getDate() + '';
+                    var m = (dt.getMonth() + 1) + '';
+                    if (d.length == 1)
+                        d = '0' + d;
+                    if (m.length == 1)
+                        m = '0' + m;
+                    $('#next-run-date').val(y + '-' + m + '-' + d);
+                }
+
+                if ($('#repeat-run-number').val() == '' || $('#repeat-run-number').val() == undefined) {
+                    $('#repeat-run-number').val('1');
+                    $('#repeat-run-multiplier').val('D');
+
+                    $('#allow-day-mon').attr('checked', true);
+                    $('#allow-day-tue').attr('checked', true);
+                    $('#allow-day-wed').attr('checked', true);
+                    $('#allow-day-thu').attr('checked', true);
+                    $('#allow-day-fri').attr('checked', true);
+                    $('#allow-day-sat').attr('checked', true);
+                    $('#allow-day-sun').attr('checked', true);
+                }
+
+        } else {
             $('#use-scheduled-run-details').hide();
+        }
     });
 });
