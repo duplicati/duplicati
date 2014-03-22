@@ -82,9 +82,21 @@ namespace Duplicati.GUI.TrayIcon
                 else
                     toolkit = DEFAULT_TOOLKIT;
             }
-            
-            
-            using (var hosted = Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) ? null : new HostedInstanceKeeper(_args))
+
+            HostedInstanceKeeper hosted = null;
+            if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
+            {
+                try
+                {
+                    hosted = new HostedInstanceKeeper(_args);
+                }
+                catch (Server.SingleInstance.MultipleInstanceException)
+                {
+                    return;
+                }
+            }
+
+            using (hosted)
             {
                 string url;
                 if (!options.TryGetValue(HOSTURL_OPTION, out url))
@@ -104,6 +116,8 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     using(var tk = RunTrayIcon(toolkit))
                     {
+                        if (hosted != null && Server.Program.Instance != null)
+                            Server.Program.Instance.SecondInstanceDetected += new Server.SingleInstance.SecondInstanceDelegate(x => { tk.ShowUrlInWindow(url); });
                         tk.Init(_args);
                     }
                 }

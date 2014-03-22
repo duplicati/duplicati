@@ -31,6 +31,40 @@ namespace Duplicati.Server
     public class SingleInstance : IDisposable
     {
         /// <summary>
+        /// An exception that can be thrown to indicate a second instance was running
+        /// </summary>
+        [Serializable]
+        public class MultipleInstanceException : Exception
+        {
+            /// <summary>
+            /// Constructs the new exception
+            /// </summary>
+            public MultipleInstanceException()
+                : base()
+            {
+            }
+
+            /// <summary>
+            /// Constructs the new exception
+            /// </summary>
+            /// <param name="message">The message</param>
+            public MultipleInstanceException(string message)
+                : base(message)
+            {
+            }
+
+            /// <summary>
+            /// Constructs the new exception
+            /// </summary>
+            /// <param name="message">The message</param>
+            /// <param name="innerException">The inner exception</param>
+            public MultipleInstanceException(string message, Exception innerException)
+                : base(message, innerException)
+            {
+            }
+        }
+
+        /// <summary>
         /// The folder where control files are placed
         /// </summary>
         private const string CONTROL_DIR = "control_dir";

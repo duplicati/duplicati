@@ -33,6 +33,11 @@ namespace Duplicati.Server
         public static string DATAFOLDER { get { return Library.Utility.Utility.AppendDirSeparator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
 
         /// <summary>
+        /// The single instance
+        /// </summary>
+        public static SingleInstance Instance = null;
+
+        /// <summary>
         /// A flag indicating if database encryption is in use
         /// </summary>
         public static bool UseDatabaseEncryption;
@@ -199,13 +204,6 @@ namespace Duplicati.Server
                 foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                     if (s.Equals(commandlineOptions["log-level"].Trim(), StringComparison.InvariantCultureIgnoreCase))
                         Duplicati.Library.Logging.Log.LogLevel = (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
-
-            if (commandlineOptions.ContainsKey("log-file"))
-            {
-                if (System.IO.File.Exists(commandlineOptions["log-file"]))
-                    System.IO.File.Delete(commandlineOptions["log-file"]);
-                Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(commandlineOptions["log-file"]);
-            }
             
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
@@ -229,14 +227,12 @@ namespace Duplicati.Server
 #endif
             }
 
-            SingleInstance instance = null;
-
             try
             {
                 try
                 {
                     //This will also create Program.DATAFOLDER if it does not exist
-                    instance = new SingleInstance(ApplicationName, Program.DATAFOLDER);
+                    Instance = new SingleInstance(ApplicationName, Program.DATAFOLDER);
                 }
                 catch (Exception ex)
                 {
@@ -251,7 +247,7 @@ namespace Duplicati.Server
                     }
                 }
 
-                if (!instance.IsFirstInstance)
+                if (!Instance.IsFirstInstance)
                 {
                     if (writeConsole)
                     {
@@ -260,10 +256,16 @@ namespace Duplicati.Server
                     }
                     else
                     {
-                        throw new Exception(Strings.Program.AnotherInstanceDetected);
+                        throw new SingleInstance.MultipleInstanceException(Strings.Program.AnotherInstanceDetected);
                     }
                 }
 
+                if (commandlineOptions.ContainsKey("log-file"))
+                {
+                    if (System.IO.File.Exists(commandlineOptions["log-file"]))
+                        System.IO.File.Delete(commandlineOptions["log-file"]);
+                    Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(commandlineOptions["log-file"]);
+                }
 
                 Version sqliteVersion = new Version((string)Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
@@ -345,6 +347,14 @@ namespace Duplicati.Server
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
             }
+            catch (SingleInstance.MultipleInstanceException mex)
+            {
+                System.Diagnostics.Trace.WriteLine(string.Format(Strings.Program.SeriousError, mex.ToString()));
+                if (writeConsole)
+                    Console.WriteLine(Strings.Program.SeriousError, mex.ToString());
+                else
+                    throw mex;
+            }
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine(string.Format(Strings.Program.SeriousError, ex.ToString()));
@@ -361,8 +371,8 @@ namespace Duplicati.Server
                     Scheduler.Terminate(true);
                 if (WorkThread != null)
                     WorkThread.Terminate(true);
-                if (instance != null)
-                    instance.Dispose();
+                if (Instance != null)
+                    Instance.Dispose();
 
 #if DEBUG
                 //Flush the file
