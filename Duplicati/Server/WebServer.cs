@@ -28,6 +28,11 @@ namespace Duplicati.Server
         /// The webserver listening port
         /// </summary>
         public readonly int Port;
+        
+        /// <summary>
+        /// A string that is sent out instead of password values
+        /// </summary>
+        public const string PASSWORD_PLACEHOLDER = "**********";
 
         /// <summary>
         /// Sets up the webserver and starts it
@@ -520,6 +525,7 @@ namespace Duplicati.Server
                 OutputObject(bw, new
                 {
                     APIVersion = 1,
+                    PasswordPlaceholder = PASSWORD_PLACEHOLDER,
                     ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                     ServerVersionName = License.VersionNumbers.Version,
                     ServerTime = DateTime.Now,
@@ -940,6 +946,7 @@ namespace Duplicati.Server
                         
                     }).ToDictionary(x => x.Key, x => x.Value);
                     
+                    //TODO: Filter out the password in both settings and the target url
                     
                     OutputObject(bw, new
                     {
@@ -1004,6 +1011,7 @@ namespace Duplicati.Server
                                 return;
                             }
                             
+                            //TODO: Merge in real passwords where the placeholder is found
                             Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
     
                         }

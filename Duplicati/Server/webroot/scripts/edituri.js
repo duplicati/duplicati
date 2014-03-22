@@ -166,7 +166,7 @@ $(document).ready(function() {
                 opts.push('auth-username=' + encodeURIComponent(cfg['--auth-username']));
 
             if (cfg['--auth-password'] && cfg['--auth-password'] != '')
-                opts.push('auth-password=**********');
+                opts.push('auth-password=' + encodeURIComponent(cfg['--auth-password']));
 
             for(var k in cfg)
                 if (k.substr(0, 2) == '--' && k != '--auth-password' && k != '--auth-username' && k != '--use-ssl' && cfg[k] !== false && cfg[k] != '')

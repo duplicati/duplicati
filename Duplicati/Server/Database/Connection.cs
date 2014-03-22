@@ -195,7 +195,11 @@ namespace Duplicati.Server.Database
                         @"DELETE FROM ""Option"" WHERE ""BackupID"" = ?", new object[] { id },
                         values,
                         @"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (?, ?, ?, ?)",
-                        (f) => new object[] { id, f.Filter ?? "", f.Name, f.Value ?? "" }
+                        (f) => {
+                            if (WebServer.PASSWORD_PLACEHOLDER.Equals(f.Value))
+                                throw new Exception("Attempted to save a property with the placeholder password");
+                            return new object[] { id, f.Filter ?? "", f.Name, f.Value ?? "" };
+                        }
                     );            
                     
                     if (tr != null)
@@ -386,11 +390,17 @@ namespace Duplicati.Server.Database
                         update ?
                             @"UPDATE ""Backup"" SET ""Name""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
                             @"INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
-                        (n) => new object[] {
-                            n.Name,
-                            string.Join(",", n.Tags),
-                            n.TargetURL,
-                            update ? (object)item.ID : (object)n.DBPath
+                        (n) => {
+                        
+                            if (n.TargetURL.IndexOf(WebServer.PASSWORD_PLACEHOLDER) >= 0)
+                                throw new Exception("Attempted to save a backup with the password placeholder");
+                        
+                            return new object[] {
+                                n.Name,
+                                string.Join(",", n.Tags),
+                                n.TargetURL,
+                                update ? (object)item.ID : (object)n.DBPath 
+                            };
                         });
                         
                     if (!update)
