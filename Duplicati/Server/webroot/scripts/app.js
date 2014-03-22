@@ -822,11 +822,11 @@ $(document).ready(function() {
     });
 
     $(document).on('server-state-running', function() {
-        $('#main-control').removeClass('main-icon-pause').addClass('main-icon-running');
+        $('#main-control').removeClass('main-icon-run').addClass('main-icon-pause');
     });
 
     $(document).on('server-state-paused', function() {
-        $('#main-control').removeClass('main-icon-running').addClass('main-icon-pause');
+        $('#main-control').removeClass('main-icon-pause').addClass('main-icon-run');
     });
 
     $(document).on('server-state-pause-countdown', function(e, f) {
@@ -834,7 +834,7 @@ $(document).ready(function() {
     });
 
     $('#main-control').click(function() {
-        if ($('#main-control').hasClass('main-icon-pause'))
+        if ($('#main-control').hasClass('main-icon-run'))
             APP_DATA.resumeServer();
         else
             APP_DATA.pauseServer();
