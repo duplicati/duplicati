@@ -50,7 +50,6 @@ namespace Duplicati.Server
 
             // If we are in hosted mode with no specified port, 
             // then try different ports
-            Exception e = null;
             foreach(var p in ports)
                 try
                 {
@@ -61,10 +60,11 @@ namespace Duplicati.Server
                     var server = CreateServer(options);
                     server.Start(System.Net.IPAddress.Any, p);
                     m_server = server;
+                    m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
                     this.Port = p;
                     return;
                 }
-                catch (System.Net.Sockets.SocketException ex)
+                catch (System.Net.Sockets.SocketException)
                 {
                 }
                 
@@ -641,10 +641,10 @@ namespace Duplicati.Server
                     try
                     {
                         var attr = systemIO.GetFileAttributes(s);
-                        var isSymlink = (attr & FileAttributes.ReparsePoint) != 0;
+                        //var isSymlink = (attr & FileAttributes.ReparsePoint) != 0;
                         var isFolder = (attr & FileAttributes.Directory) != 0;
                         var isFile = !isFolder;
-                        var isHidden = (attr & FileAttributes.Hidden) != 0;
+                        //var isHidden = (attr & FileAttributes.Hidden) != 0;
 
                         var accesible = isFile || canAccess(s);
                         var isLeaf = isFile || !accesible || isEmptyFolder(s);
@@ -659,7 +659,7 @@ namespace Duplicati.Server
                                 leaf = isLeaf
                             };
                     }
-                    catch (Exception ex)
+                    catch
                     {
                     }
 
