@@ -31,22 +31,38 @@ namespace Duplicati.Library.Main.Operation
                     m_result.SetDatabase(db);
                     using(var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
-                        if (simpleList && parsedfilter.Type != Library.Utility.FilterType.Empty)
-                            filesets.TakeFirst();
-                            
+                        if (parsedfilter.Type != Library.Utility.FilterType.Empty)
+                        {
+                            if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
+                                filesets.TakeFirst();
+                        }
+
+                        IEnumerable<Database.LocalListDatabase.IFileversion> files;
+                        if (m_options.ListFolderContents)
+                            files = filesets.SelectFolderContents(filter);
+                        else if (m_options.ListPrefixOnly)
+                            files = filesets.GetLargestPrefix(filter);
+                        else if (parsedfilter.Type == Duplicati.Library.Utility.FilterType.Empty)
+                            files = null;
+                        else
+                            files = filesets.SelectFiles(filter);
+                        
                         m_result.SetResult(
                             filesets.Sets.Select(x => new ListResultFileset(x.Version, x.Time, x.FileCount, x.FileSizes)).ToArray(),
-                            parsedfilter.Type == Library.Utility.FilterType.Empty ? null :
-                                (from n in m_options.ListPrefixOnly ? filesets.GetLargestPrefix(filter) : filesets.SelectFiles(filter)
-                                        select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
-                                    .ToArray()
+                            files == null ? null :
+                                (from n in files
+                                 select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
+                                 .ToArray()
                         );
+                        
 
                         return;
                     }
                 }
                               
 			m_result.AddMessage("No local database, accessing remote store");
+            
+            //TODO: Add prefix and foldercontents
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())

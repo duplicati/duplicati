@@ -237,6 +237,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("list-backup-sets", ListBackupSets);
                 SUPPORTED_METHODS.Add("search-backup-files", SearchBackupFiles);
                 SUPPORTED_METHODS.Add("restore-files", RestoreFiles);
+                SUPPORTED_METHODS.Add("read-log", ReadLogData);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -309,11 +310,101 @@ namespace Duplicati.Server
             {
                 Serializer.SerializeJson(b, o);
             }
+            
+            private List<Dictionary<string, object>> DumpTable(System.Data.IDbCommand cmd, string tablename, string pagingfield, string offset_str, string pagesize_str)
+            {
+                var result = new List<Dictionary<string, object>>();
+                
+                long pagesize;
+                if (!long.TryParse(pagesize_str, out pagesize))
+                    pagesize = 100;
+                
+                pagesize = Math.Max(10, Math.Min(500, pagesize));
+                
+                cmd.CommandText = "SELECT * FROM \"" + tablename + "\"";
+                long offset = 0;
+                if (!string.IsNullOrWhiteSpace(offset_str) && long.TryParse(offset_str, out offset) && !string.IsNullOrEmpty(pagingfield))
+                {
+                    var p = cmd.CreateParameter();
+                    p.Value = offset;
+                    cmd.Parameters.Add(p);
+                    
+                    cmd.CommandText += " WHERE \"" + pagingfield + "\" < ?";
+                }
+                
+                if (!string.IsNullOrEmpty(pagingfield))
+                    cmd.CommandText += " ORDER BY \"" + pagingfield + "\" DESC";
+                cmd.CommandText += " LIMIT " + pagesize.ToString();
+                
+                using(var rd = cmd.ExecuteReader())
+                {
+                    var names = new List<string>();
+                    for(var i = 0; i < rd.FieldCount; i++)
+                        names.Add(rd.GetName(i));
+                    
+                    while (rd.Read())
+                    {
+                        var dict = new Dictionary<string, object>();
+                        for(int i = 0; i < names.Count; i++)
+                            dict[names[i]] = rd.GetValue(i);
+                        
+                        result.Add(dict);                                    
+                    }
+                }
+                
+                return result;
+            }
 
+            private void ReadLogData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                var backupid = input["id"].Value;
+                
+                if (string.IsNullOrWhiteSpace(backupid))
+                {
+                    List<Dictionary<string, object>> res = null;
+                    Program.DataConnection.ExecuteWithCommand(x =>
+                    {
+                        res = DumpTable(x, "ErrorLog", "Timestamp", input["offset"].Value, input["pagesize"].Value);
+                    });
+                    
+                    OutputObject(bw, res);
+                }
+                else
+                {
+                    var backup = Program.DataConnection.GetBackup(backupid);
+                    if (backup == null)
+                    {
+                        ReportError(response, bw, "Invalid or missing backup id");
+                        return;
+                    }
+                    
+                    using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType))
+                    {
+                        con.ConnectionString = "Data Source=" + backup.DBPath;
+                        con.Open();
+                        
+                        using(var cmd = con.CreateCommand())
+                        {
+                            if (Duplicati.Library.Utility.Utility.ParseBool(input["remotelog"].Value, false))
+                                OutputObject(bw, DumpTable(cmd, "RemoteOperation", "ID", input["offset"].Value, input["pagesize"].Value));
+                            else
+                                OutputObject(bw, DumpTable(cmd, "LogData", "ID", input["offset"].Value, input["pagesize"].Value));
+                        }
+                    }
+                }
+            }
+            
             private void RestoreFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
                 var bk = Program.DataConnection.GetBackup(input["id"].Value);
+                if (bk == null)
+                {
+                    ReportError(response, bw, "Invalid or missing backup id");
+                    return;
+                }
+
                 var filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
                 var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
                 var restoreTarget = input["restore-path"].Value;
@@ -344,14 +435,8 @@ namespace Duplicati.Server
             private void SearchBackupFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-                
-                if (string.IsNullOrWhiteSpace(input["filter"].Value))
-                {
-                    ReportError(response, bw, "Invalid or missing filter");
-                    return;
-                }
-                
-                var filter = input["filter"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                                
+                var filter = (input["filter"].Value ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
                 var timestring = input["time"].Value;
                 var allversion = Duplicati.Library.Utility.Utility.ParseBool(input["all-versions"].Value, false);
                 
@@ -368,11 +453,12 @@ namespace Duplicati.Server
                 }
                 
                 var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(input["prefix-only"].Value, false);
+                var foldercontents = Duplicati.Library.Utility.Utility.ParseBool(input["folder-contents"].Value, false);
                 var time = new DateTime();
                 if (!allversion)
                     time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
                                 
-                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, time)) as Duplicati.Library.Interface.IListResults;
+                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, foldercontents, time), true) as Duplicati.Library.Interface.IListResults;
                 
                 var result = new Dictionary<string, object>();
                 
@@ -636,7 +722,7 @@ namespace Duplicati.Server
                 {
                     ReportError(response, bw, "Failed to process the path: " + ex.Message);
                 }
-            }
+            }       
 
             private bool LongPollCheck(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, BodyWriter bw, EventPollNotify poller, ref long id, out bool isError)
             {

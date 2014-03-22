@@ -512,7 +512,8 @@ $(document).ready(function() {
                 'id': backupId,
                 'time': time,
                 'prefix-only': node.id === '#',
-                'filter': node.id === '#' ? '*' : '[' + node.original.filepath + '[^\\' + dirSep + ']+\\' + dirSep + '?]',
+                'folder-contents': node.id !== '#',
+                'filter': node.id === '#' ? '*' : node.original.filepath,
                 'Prefix': node.id === '#' ? '' : node.original.filepath
             },
             'dataType': 'json'
