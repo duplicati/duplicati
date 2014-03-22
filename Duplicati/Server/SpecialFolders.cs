@@ -72,7 +72,7 @@ namespace Duplicati.Server
                     lst.Add(new Serializable.TreeNode() {
                         id = id,
                         text = display,
-                        leaf = true,
+                        leaf = false,
                         iconCls = "x-tree-icon-special",
                         resolvedpath = folder
                     });

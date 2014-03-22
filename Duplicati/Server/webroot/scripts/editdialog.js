@@ -7,7 +7,7 @@
 
 $(document).ready(function() {
 
-    var isWindows = false;
+    var dirSep = '/';
 
     EDIT_BACKUP = {
         validate_tab: function(tab) {
@@ -143,11 +143,6 @@ $(document).ready(function() {
                 for(var n in sources) {
                     var p = sources[n];
                     var rp = p;
-                    if (isWindows) {
-                        rp = replace_all(rp, '\\', '/');
-                        if (rp.indexOf('%') != 0)
-                            rp = '/' + rp;
-                    }
                     addSourceFolder(rp, lookup[p] || p);
                 }
             },
@@ -308,12 +303,6 @@ $(document).ready(function() {
                 var sources = [];
                 $('#source-folder-paths').find('.source-folder').each(function(i,el) {
                     var p = $(el).data('id');
-                    if (isWindows) {
-                        if (p.indexOf('/') == 0)
-                            p = p.substr(1);
-                        p = replace_all(p, '/', '\\');
-                    }
-
                     sources.push(p);
                 });
 
@@ -557,7 +546,7 @@ $(document).ready(function() {
         };
 
         APP_DATA.getServerConfig(function(serverdata) {
-            isWindows = serverdata.DirectorySeparator != '/';
+            dirSep = serverdata.DirectorySeparator;
 
             if (serverdata['EncryptionModules'] == null || serverdata['EncryptionModules'].length == 0) {
                 $('#encryption-area').hide();
@@ -681,9 +670,6 @@ $(document).ready(function() {
         if (path == null || path.trim() == '')
             return false;
 
-        if (path.indexOf('/') != 0 && path.indexOf('%') != 0)
-            path = '/' + path;
-
         var exists = false;
         container.find('.source-folder').each(function(i,el) {
             exists |= $(el).data('id') == path;
@@ -704,9 +690,6 @@ $(document).ready(function() {
 
         $(div).data('id', path);
 
-        if (path.indexOf('/') == 0 && isWindows)
-            path = path.substr(1);
-
         APP_DATA.validatePath(path, function(path, success) {
             if (success) 
                 div.addClass('path-valid');
@@ -721,7 +704,7 @@ $(document).ready(function() {
         $.browseForFolder({
             title: 'Select folder to back up',
             callback: function(path, disp) { 
-                disp = (disp || path).split('/');
+                disp = (disp || path).split(dirSep);
                 addSourceFolder(path, disp[disp.length - 1]);
             }
         });
@@ -734,7 +717,7 @@ $(document).ready(function() {
             browsePath();
         } else {
             var path = $('#source-folder-path-text').val();
-            var disp = path.split('/');
+            var disp = path.split(dirSep);
             if (addSourceFolder(path, disp[disp.length - 1])) {
                 $('#source-folder-path-text').val('');
                 $('#source-folder-path-text').trigger('change');

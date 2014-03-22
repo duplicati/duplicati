@@ -1,6 +1,4 @@
 $(document).ready(function() {
-    var isWindows = null;
-
     $.browseForFolder = function(config) {
         var self = {};
 
@@ -10,23 +8,9 @@ $(document).ready(function() {
                 if (self.resolvePath && node.original.resolvedpath)
                     path = node.original.resolvedpath;
 
-                if (self.resolvePath && isWindows) {
-                    if (path.substr(0,1) == '/') 
-                        path = path.substr(1);
-
-                    path = replace_all(path, '/', '\\');
-                }
-
-
                 config.callback(path, node.text);
                 self.rootel.dialog('close');
             }
-        }
-
-        if (isWindows == null) {
-            APP_DATA.getServerConfig(function(data) {
-                isWindows = data.DirectorySeperator = '/';
-            });
         }
 
         self.rootel = $('<div class="modal-dialog folder-browser-dialog"></div>')

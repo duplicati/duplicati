@@ -677,7 +677,7 @@ namespace Duplicati.Server
             private void GetFolderContents(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-                if(input["path"] == null || input["path"].Value == null)
+                if (input["path"] == null || input["path"].Value == null)
                 {
                     ReportError(response, bw, "The path parameter was not set");
                     return;
@@ -685,8 +685,28 @@ namespace Duplicati.Server
 
                 bool skipFiles = Library.Utility.Utility.ParseBool(input["onlyfolders"].Value, false);
 
-                string path = input["path"].Value;
-                if (!path.StartsWith("/"))
+                var path = input["path"].Value;
+                string specialpath = null;
+                string specialtoken = null;
+                
+                if (path.StartsWith("%"))
+                {
+                    var ix = path.IndexOf("%", 1);
+                    if (ix > 0)
+                    {
+                        var tk = path.Substring(0, ix + 1);
+                        var node = SpecialFolders.Nodes.Where(x => x.id.Equals(tk, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                        if (node != null)
+                        {
+                            specialpath = node.resolvedpath;
+                            specialtoken = node.id;
+                        }
+                    }
+                }
+                
+                path = SpecialFolders.ExpandEnvironmentVariables(path);
+                
+                if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/"))
                 {
                     ReportError(response, bw, "The path parameter must start with a forward-slash");
                     return;
@@ -694,19 +714,18 @@ namespace Duplicati.Server
 
                 try
                 {
-                    if (!path.EndsWith("/"))
-                        path += '/';
+                    path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
 
                     IEnumerable<Serializable.TreeNode> res;
 
-                    if (!Library.Utility.Utility.IsClientLinux && path.Equals("/"))
+                    if (!Library.Utility.Utility.IsClientLinux && (path.Equals("/") || path.Equals("")))
                     {
                         res = 
                             from di in System.IO.DriveInfo.GetDrives()
                             where di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable
                             select new Serializable.TreeNode()
                             {
-                                id = "/" + di.RootDirectory.FullName.Replace('\\', '/'),
+                                id = di.RootDirectory.FullName.Replace('\\', '/'),
                                 text = di.RootDirectory.FullName.Replace('\\', ' ') + "(" + di.DriveType + ")",
                                 iconCls = "x-tree-icon-drive"
                             };
@@ -716,12 +735,24 @@ namespace Duplicati.Server
                         res = ListFolderAsNodes(path, skipFiles);                        
                     }
 
-                    if (path.Equals("/")) 
+                    if ((path.Equals("/") || path.Equals("")) && specialtoken == null) 
                     {
                         // Prepend special folders
                         res = SpecialFolders.Nodes.Union(res);
                     }
-
+                    
+                    if (specialtoken != null)
+                    {
+                        res = from n in res
+                            select new Serializable.TreeNode() {
+                            id = specialtoken + n.id.Substring(specialpath.Length),
+                            text = n.text,
+                            iconCls = n.iconCls,
+                            leaf = n.leaf,
+                            resolvedpath = n.id
+                            };
+                    }
+                    
                     OutputObject(bw, res);
                 }
                 catch (Exception ex)
