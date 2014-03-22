@@ -733,6 +733,13 @@ $(document).ready(function() {
             right: ($(document).outerWidth() - (pos.left + buttonwidth)) + 'px'
         });
         $('#main-control-menu').toggle();
+        if ($('#main-control-menu').is(':visible'))
+            $('#click-intercept').show();
+    });
+
+    $('#click-intercept').click(function() {
+        $('#click-intercept').hide();
+        $('#main-control-menu').hide();
     });
 
     $('#main-donate').click(function() {
@@ -855,5 +862,21 @@ $(document).ready(function() {
     PRIVATE_DATA.refresh_server_settings();
     PRIVATE_DATA.refresh_backup_list();
 
+    $('#main-control-menu').menu();
+    $('#main-control-menu').removeClass('ui-widget-content');
+    $('#main-control-menu-pause-submenu').removeClass('ui-widget-content');
+    $('#main-control-menu-settings').hide().next().hide();
+    $('#main-control-menu-throttle').hide();
+    $('#main-control-menu-about').hide().prev().hide();
+
+    $('#main-control-menu-pause-submenu-5m').click(function() { APP_DATA.pauseServer('5m'); });
+    $('#main-control-menu-pause-submenu-10m').click(function() { APP_DATA.pauseServer('10m'); });
+    $('#main-control-menu-pause-submenu-15m').click(function() { APP_DATA.pauseServer('15m'); });
+    $('#main-control-menu-pause-submenu-30m').click(function() { APP_DATA.pauseServer('30m'); });
+    $('#main-control-menu-pause-submenu-1h').click(function() { APP_DATA.pauseServer('1h'); });
+
+    $('#main-control-menu-log').click(function() { $.showAppLog(); });
+
+    $('#main-control-menu').find('li').click(function() {  $('#click-intercept').trigger('click'); });
 
 });

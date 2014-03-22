@@ -13,6 +13,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/main.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/editdialog.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/restoredialog.css" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/logwindow.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/customized.css" />
 
     <script type="text/javascript" src="scripts/jquery-2.0.3.min.js"></script>
@@ -28,6 +29,7 @@
     <script type="text/javascript" src="scripts/edituri.js"></script>
     <script type="text/javascript" src="scripts/restoredialog.js"></script>
     <script type="text/javascript" src="scripts/folderbrowser.js"></script>
+    <script type="text/javascript" src="scripts/logwindow.js"></script>
     <script type="text/javascript" src="scripts/plugins.js"></script>
     <script type="text/javascript" src="scripts/customized.js"></script>
     <script type="text/javascript" src="scripts/hideShowPassword.min.js"></script>
@@ -77,33 +79,44 @@
         </div>
     </script>
 
+    <script id="log-data-template" type="text/x-jquery-tmpl">
+        <div class="log-entry">
+            <div class="log-backupid">${BackupID}</div>
+            <div class="log-timestamp" title="${Timestamp*1000}">${Timestamp*1000}</div>
+            <div class="log-message">${Message}</div>
+            <div class="log-exception">${Exception}</div>
+        </div>
+    </script>
 
 </head>
 <body>
+    <div id="click-intercept"></div>
 
     <div id="main-topbar">
         <div id="main-appname">DUPLICATI</div>
 
         <ul class="main-shortcuts">
-            <li id="main-donate" class="main-icon-donate"></li>
+            <li id="main-donate" class="main-icon-donate" style="display: none"></li>
             <li id="main-control" class="main-icon-pause"></li>
             <li id="main-settings" class="main-icon-settings"></li>
         </ul>
 
         <ul id="main-control-menu" class="menu">
-            <li>Settings..</li>
+            <li id="main-control-menu-settings"><a>Settings...</a></li>
             <li>-</li>
-            <li>Pause ...</li>
-            <ul>
-                <li>Pause 5 minutes</li>
-                <li>Pause 10 minutes</li>
-                <li>Pause 15 minutes</li>
-                <li>Pause 30 minutes</li>
-                <li>Pause 1 hour</li>
-            </ul>
-            <li>Throttle ...</li>
+            <li><a>Pause ...</a>
+                <ul id="main-control-menu-pause-submenu" class="menu">
+                    <li id="main-control-menu-pause-submenu-5m"><a>Pause 5 minutes</a></li>
+                    <li id="main-control-menu-pause-submenu-10m"><a>Pause 10 minutes</a></li>
+                    <li id="main-control-menu-pause-submenu-15m"><a>Pause 15 minutes</a></li>
+                    <li id="main-control-menu-pause-submenu-30"><a>Pause 30 minutes</a></li>
+                    <li id="main-control-menu-pause-submenu-1h"><a>Pause 1 hour</a></li>
+                </ul>
+            </li>
+            <li id="main-control-menu-throttle"><a>Throttle ...</a></li>
+            <li id="main-control-menu-log"><a>Log ...</a></li>
             <li>-</li>
-            <li>About ...</li>
+            <li id="main-control-menu-about"><a>About ...</a></li>
         </ul>
     </div>
 
@@ -432,6 +445,23 @@
     <div id="backup-options-dialog" class="modal-dialog" title="Avaliable options"></div>
 
     <div id="folder-browse-dialog" class="modal-dialog" title="Choose folder"></div>
+
+    <div id="log-dialog" class="modal-dialog" title="Log data">
+        
+    </div>
+
+    <div id="backup-log-dialog" class="modal-dialog" title="Log data">
+        <ul>
+            <li><a href="#backup-log-tab-general">General</a></li>
+            <li><a href="#backup-log-tab-remote">Remote</a></li>
+        </ul>
+
+        <div id="backup-log-tab-general">
+        </div>
+
+        <div id="backup-log-tab-remote">
+        </div>
+    </div>
 
 </body>
 </html>

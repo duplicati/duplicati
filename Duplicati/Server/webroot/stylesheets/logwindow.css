@@ -1,0 +1,19 @@
+/*
+ * CSS config for the log window
+ */
+
+.log-backupid, .log-exception {
+    display: none;
+}
+
+.log-message, .log-timestamp {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.expanded div.log-exception {
+    display: block;
+    background-color: #ffffff;
+    padding-left: 5px;
+    padding-right: 5px;
+}
