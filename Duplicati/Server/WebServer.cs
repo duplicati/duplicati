@@ -1173,7 +1173,6 @@ namespace Duplicati.Server
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
 
                 string command = input["command"].Value ?? "";
-                long id;
                 
                 switch (command.ToLowerInvariant())
                 {
