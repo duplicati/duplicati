@@ -164,6 +164,8 @@ $(document).ready(function() {
     jQuery.timeago.settings.allowFuture = true;
     jQuery.timeago.settings.allowPast = true;
 
+    $.noty.defaults.layout = 'bottomCenter';
+
     // Register a global function for password strength
     $.passwordStrength = function(password, callback) {
         if (callback == null)
@@ -408,19 +410,25 @@ $(document).ready(function() {
 
                 $(document).trigger('server-state-changed', state.programState);
 
-                if (state.programState == 'Running')
+                if (state.programState == 'Running') {
                     $(document).trigger('server-state-running');
-                else if (state.programState == 'Paused') {
+                } else if (state.programState == 'Paused') {
                     $(document).trigger('server-state-paused');
+
                     var estimatedEnd = Date.parse(data.EstimatedPauseEnd);
-                    if (estimatedEnd != 0) {
+                    if (estimatedEnd > 0) {
                         estimatedEnd = new Date(estimatedEnd);
                         var updateTimer = function() {
                             var left = Math.max(0, estimatedEnd - new Date());
                             $(document).trigger('server-state-pause-countdown', {millisecondsLeft: left});
+                            if (left == 0) {
+                                clearInterval(state.pauseUpdateTimer);
+                                state.pauseUpdateTimer = null;
+                            }
+
                         }
 
-                        setInterval(updateTimer, 500);
+                        state.pauseUpdateTimer = setInterval(updateTimer, 500);
                         updateTimer();
                     }
                 }
@@ -878,5 +886,68 @@ $(document).ready(function() {
     $('#main-control-menu-log').click(function() { $.showAppLog(); });
 
     $('#main-control-menu').find('li').click(function() {  $('#click-intercept').trigger('click'); });
+
+    var pausenoty = {
+        n: null,
+        prevstate: null
+    };
+
+    $(document).on('server-state-changed', function(e, state) {
+        if (pausenoty.prevstate != state && pausenoty.prevstate != null) {
+            if (pausenoty.n != null)
+                pausenoty.n.close();
+
+            if (state == 'Running') {
+                pausenoty.n = noty({
+                    text: 'Server is now resumed',
+                    timeout: 5000
+                });
+            } else {
+                pausenoty.n = noty({
+                    text: 'Server is paused',
+                    buttons: [{
+                        text: 'Resume',
+                        onClick: function() {
+                            APP_DATA.resumeServer();
+                        }
+                    }]
+                });
+            }
+        }
+
+        pausenoty.prevstate = state;
+    });
+
+    $(document).on('server-state-pause-countdown', function(e, data) {
+        if (pausenoty.prevstate != 'Paused' || pausenoty.n == null) {
+            if (pausenoty.n != null)
+                pausenoty.n.close();
+            pausenoty.n = noty({
+                text: 'Server is paused',
+                buttons: [{
+                    text: 'Resume',
+                    onClick: function() {
+                        APP_DATA.resumeServer();
+                    }
+                }]
+            });
+        }
+        var seconds = parseInt(data.millisecondsLeft / 1000);
+        var hours = parseInt(seconds / 3600);
+        seconds -= (hours * 3600);
+        var minutes = parseInt(seconds / 60)
+        seconds -= (minutes * 60);
+        seconds = seconds + '';
+        if (seconds.length == 1)
+            seconds = '0' + seconds;
+
+        var timestr = '';
+        if (hours > 0)
+            timestr += hours + 'h ';
+
+        timestr += minutes + ':' + seconds;
+
+        pausenoty.n.setText('Server is paused, resuming in ' + timestr);
+    });
 
 });
