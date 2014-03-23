@@ -235,7 +235,7 @@ namespace Duplicati.Server
             #endregion
         }
         
-        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool throwEx = false)
+        public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
             Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
             
@@ -243,8 +243,11 @@ namespace Duplicati.Server
             {                
                 var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
                 var sink = new MessageSink(data.TaskID, backup.ID);
-                Program.GenerateProgressState = () => sink.Copy();
-                Program.StatusEventNotifyer.SignalNewEvent();            
+                if (fromQueue) 
+                {
+                    Program.GenerateProgressState = () => sink.Copy();
+                    Program.StatusEventNotifyer.SignalNewEvent();            
+                }
                 
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
@@ -308,7 +311,7 @@ namespace Duplicati.Server
                 Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
                 //TODO: Update metadata with the error here
                 
-                if (throwEx)
+                if (!fromQueue)
                     throw;
                 
                 return null;

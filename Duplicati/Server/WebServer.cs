@@ -432,7 +432,7 @@ namespace Duplicati.Server
                 }
                 
                 
-                var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk), true) as Duplicati.Library.Interface.IListResults;
+                var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk), false) as Duplicati.Library.Interface.IListResults;
                 
                 OutputObject(bw, r.Filesets);
             }
@@ -463,7 +463,7 @@ namespace Duplicati.Server
                 if (!allversion)
                     time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
                                 
-                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, foldercontents, time), true) as Duplicati.Library.Interface.IListResults;
+                var r = Runner.Run(Runner.CreateListTask(bk, filter, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
                 
                 var result = new Dictionary<string, object>();
                 
