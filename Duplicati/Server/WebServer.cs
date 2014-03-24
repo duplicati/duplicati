@@ -281,20 +281,29 @@ namespace Duplicati.Server
                         }
                         catch (Exception ex)
                         {
-                            if (!response.HeadersSent)
+                            try
                             {
-                                response.Status = System.Net.HttpStatusCode.InternalServerError;
-                                response.Reason = "Error";
-                                response.ContentType = "text/plain";
-                                
-                                OutputObject(bw, new {
-                                    Message = ex.Message,
-                                    Type = ex.GetType().Name,
+                                if (!response.HeadersSent)
+                                {
+                                    response.Status = System.Net.HttpStatusCode.InternalServerError;
+                                    response.Reason = "Error";
+                                    response.ContentType = "text/plain";
+
+                                    OutputObject(bw, new
+                                    {
+                                        Message = ex.Message,
+                                        Type = ex.GetType().Name,
 #if DEBUG
-                                    Stacktrace = ex.ToString()
+                                        Stacktrace = ex.ToString()
 #endif
-                                });
-                                bw.Flush();
+                                    });
+                                    bw.Flush();
+                                }
+                            }
+                            catch (Exception flex)
+                            {
+                                Program.DataConnection.LogError("", "Handling outer ex", ex);
+                                Program.DataConnection.LogError("", "Gaver inner ex", flex);
                             }
                         }
                     }
