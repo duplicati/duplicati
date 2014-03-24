@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         var oldlen = maxpath.Length;
                         maxpath = System.IO.Path.GetDirectoryName(maxpath);
-                        if (maxpath.Length == oldlen)
+                        if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
                             maxpath = "";
                     }
                 }
