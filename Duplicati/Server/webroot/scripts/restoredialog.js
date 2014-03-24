@@ -372,7 +372,7 @@ $(document).ready(function() {
                             if (lix == np.length - 1)
                                 lix = np.substr(0, np.length - 1).lastIndexOf(dirSep);
                             if (lix < 0)
-                                c.push(createNodeFromData(rp, p, time));
+                                c.push(createNodeFromData(rp, p, time, false));
                         }
 
                     }
@@ -479,7 +479,7 @@ $(document).ready(function() {
         });
     };
 
-    var createNodeFromData = function(path, prefix, time) {
+    var createNodeFromData = function(path, prefix, time, rootnode) {
         var disp = path.substr(prefix.length);
         var isFolder = disp.lastIndexOf(dirSep) == disp.length - 1;
         var icon = null;
@@ -489,7 +489,7 @@ $(document).ready(function() {
         else
             icon = 'icon-file icon-file-' + disp.substr(disp.lastIndexOf('.')+1);
 
-        if (prefix == '') {
+        if (rootnode) {
             disp = APP_DATA.getBackupName(backupId) || disp;
             //state = {opened: true};
         }
@@ -521,10 +521,8 @@ $(document).ready(function() {
         .done(function(data, status, xhr) {
             var nodes = [];
             data.Files = data.Files || [];
-            for(var i = 0; i < data.Files.length; i++) {
-                var o = data.Files[i];
-                nodes.push(createNodeFromData(data.Files[i].Path, data.Prefix, time));
-            }
+            for(var i = 0; i < data.Files.length; i++)
+                nodes.push(createNodeFromData(data.Files[i].Path, data.Prefix, time, node.id === '#'));
 
             callback(nodes, data);
             expandAndLoad(trees[time]);
