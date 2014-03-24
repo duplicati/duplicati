@@ -650,7 +650,7 @@ namespace Duplicati.Server
                     ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux() 
                     : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
 
-                foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(Library.Utility.Utility.IsClientLinux ? entrypath : entrypath.Substring(1).Replace('/', '\\')))
+                foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(entrypath))
                 {
                     Serializable.TreeNode tn = null;
                     try
@@ -668,7 +668,7 @@ namespace Duplicati.Server
                         if (!skipFiles || isFolder)
                             tn = new Serializable.TreeNode()
                             {
-                                id = Library.Utility.Utility.IsClientLinux ? rawid : "/" + rawid.Replace('\\', '/'),
+                                id = rawid,
                                 text = systemIO.PathGetFileName(s),
                                 iconCls = isFolder ? (accesible ? "x-tree-icon-parent" : "x-tree-icon-locked") : "x-tree-icon-leaf",
                                 leaf = isLeaf
@@ -723,7 +723,8 @@ namespace Duplicati.Server
 
                 try
                 {
-                    path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
+                    if (path != "" && path != "/")
+                        path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
 
                     IEnumerable<Serializable.TreeNode> res;
 
@@ -734,7 +735,7 @@ namespace Duplicati.Server
                             where di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable
                             select new Serializable.TreeNode()
                             {
-                                id = di.RootDirectory.FullName.Replace('\\', '/'),
+                                id = di.RootDirectory.FullName,
                                 text = di.RootDirectory.FullName.Replace('\\', ' ') + "(" + di.DriveType + ")",
                                 iconCls = "x-tree-icon-drive"
                             };
