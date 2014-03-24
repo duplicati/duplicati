@@ -3,7 +3,7 @@ $(document).ready(function() {
         var self = {};
 
         var select_node = function(node) {
-            if (node != null) {
+            if (node != null && node.original != null && node.original.filepath != null) {
                 var path = node.original.filepath;
                 if (self.resolvePath && node.original.resolvedpath)
                     path = node.original.resolvedpath;
@@ -21,38 +21,72 @@ $(document).ready(function() {
         self.rootel.attr('title', config.title);
         self.resolvePath = config.resolvePath;
 
+        self.loadData = function(path, callback) {
+            $.ajax({
+                'url': APP_CONFIG.server_url,
+                'data': { 
+                    'action': 'get-folder-contents',
+                    'onlyfolders': true,
+                    'path': path
+                },
+                'dataType': 'json'
+            }).done(function(data, status, xhr) {
+                for(var i = 0; i < data.length; i++) {
+                    var o = data[i];
+                    o.children = !o.leaf;
+                    o.filepath = o.id;
+
+                    //o.icon = o.iconCls;
+                    delete o.id;
+                    delete o.iconCls;
+                    delete o.leaf;
+                }
+
+                if (path == "/") {
+                    var usernode = {
+                        text: 'User data',
+                        leaf: false,
+                        state: {opened: true},
+                        children: []
+                    };
+
+                    var systemnode = {
+                        text: 'Computer',
+                        leaf: false,
+                        state: {opened: true},
+                        children: []
+                    };
+
+                    var roots = [
+                        usernode,
+                        systemnode
+                    ];
+
+                    for(var i = 0; i < data.length; i++) {
+                        if (data[i].filepath.indexOf('%') == 0)
+                            usernode.children.push(data[i]);
+                        else
+                            systemnode.children.push(data[i]);
+                    }
+
+                    data = roots;             
+                }
+
+
+                callback(data)
+            }).fail(function() {
+                callback(null);
+            });
+        };
+
         self.treeel.jstree({
             'core': { 
-                'data': {
-                    'url': APP_CONFIG.server_url,
-                    'data' : function (node) {
-                        return { 
-                            'action': 'get-folder-contents',
-                            'onlyfolders': true,
-                            'path': node.id === '#' ? '/' : node.original.filepath
-                        };
-                    },
-                    'success': function(data, status, xhr) {
-                        for(var i = 0; i < data.length; i++) {
-                            var o = data[i];
-                            o.children = !o.leaf;
-                            o.filepath = o.id;
-
-                            //o.icon = o.iconCls;
-                            delete o.id;
-                            delete o.iconCls;
-                            delete o.leaf;
-                        }
-                        xhr.getResponseHeader_orig = xhr.getResponseHeader;
-                        xhr.getResponseHeader = function(arg) {
-                            if (arg == 'Content-Type')
-                                return 'text/json';
-                            else
-                                return xhr.getResponseHeader_orig(arg);
-                        };
-                        return data;
-                    },
-                    'dataType': 'json',
+                'data': function(node, callback){
+                    if (node.id === '#') {
+                        self.loadData('/', callback);
+                    } else {
+                        self.loadData(node.original.filepath, callback);
+                    }
                 }
             },
             'dnd': { copy: false },
@@ -88,7 +122,10 @@ $(document).ready(function() {
         });
 
         self.treeel.bind('select_node.jstree', function (event, data) {
-            self.selected_node = data.node;
+            if (data.node.original.filepath)
+                self.selected_node = data.node;
+            else
+                self.selected_node = null;
             self.dlg_buttons.last().button('option', 'disabled', self.selected_node == null);
         });
 
