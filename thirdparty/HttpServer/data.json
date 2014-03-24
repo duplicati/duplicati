@@ -1,0 +1,7 @@
+{
+    "name": "C# WebServer",
+    "description": "A complete and free implementation of the OpenPGP standard",
+    "link": "http://webserver.codeplex.com/",
+    "license": "Apache 2.0",
+    "notes": "Patched to fix a crash"
+}

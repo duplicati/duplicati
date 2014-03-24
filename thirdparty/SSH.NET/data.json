@@ -1,0 +1,7 @@
+{
+    "name": "SSH Client for .Net",
+    "description": "A .Net library for conecting with the SSH protocol",
+    "link": "http://sshnet.codeplex.com",
+    "license": "New BSD",
+    "notes": ""
+}

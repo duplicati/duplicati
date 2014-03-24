@@ -1,0 +1,7 @@
+{
+    "name": "GData for .NET",
+    "description": ".NET library for the Google Data API",
+    "link": "http://code.google.com/p/google-gdata/",
+    "license": "Apache 2.0",
+    "notes": ""
+}
