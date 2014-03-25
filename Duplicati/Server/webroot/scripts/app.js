@@ -727,6 +727,49 @@ $(document).ready(function() {
         serverWithCallback({action: 'send-command', command: 'resume'});
     };
 
+    APP_DATA.hasLoadedAbout = false;
+
+    APP_DATA.showAbout = function() {
+
+        var licenses = {
+            'MIT': 'http://www.linfo.org/mitlicense.html',
+            'Apache': 'https://www.apache.org/licenses/LICENSE-2.0.html',
+            'Apache 2': 'https://www.apache.org/licenses/LICENSE-2.0.html',
+            'Apache 2.0': 'https://www.apache.org/licenses/LICENSE-2.0.html',
+            'Public Domain': 'https://creativecommons.org/licenses/publicdomain/',
+            'GPL': 'https://www.gnu.org/copyleft/gpl.html',
+            'LGPL': 'https://www.gnu.org/copyleft/lgpl.html',
+            'MS-PL': 'http://opensource.org/licenses/MS-PL',
+            'Microsoft Public': 'http://opensource.org/licenses/MS-PL',
+            'New BSD': 'http://opensource.org/licenses/BSD-3-Clause'
+        };
+
+        if (!APP_DATA.hasLoadedAbout) {
+            serverWithCallback('get-license-data', 
+                function(data) {
+                    var d = [];
+                    for(var n in data) {
+                        try { 
+                            var r = JSON.parse(data[n].Jsondata);
+                            if (r != null) {
+                                r.licenselink = r.licenselink || licenses[r.license] || '#';
+                                d.push(r);
+                            }
+                        } catch (e) {}
+                    }
+
+                    $('#about-dialog-thirdparty-list').empty();
+                    $('#about-dialog-thirdparty-list').append($.tmpl($('#about-dialog-template'), d));
+                    APP_DATA.hasLoadedAbout = true;
+                    APP_DATA.showAbout();
+                }, function(msg) {
+                    alert('Failed to load data: ' + msg);
+                });
+        } else {
+            $('#about-dialog').dialog('open');
+        }
+    };
+
     APP_DATA.callServer = serverWithCallback;
 
     $('#main-settings').click(function() {
@@ -875,7 +918,8 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu').removeClass('ui-widget-content');
     $('#main-control-menu-settings').hide().next().hide();
     $('#main-control-menu-throttle').hide();
-    $('#main-control-menu-about').hide().prev().hide();
+    
+    $('#main-control-menu-about').click(function() { APP_DATA.showAbout(); })
 
     $('#main-control-menu-pause-submenu-5m').click(function() { APP_DATA.pauseServer('5m'); });
     $('#main-control-menu-pause-submenu-10m').click(function() { APP_DATA.pauseServer('10m'); });
@@ -948,6 +992,21 @@ $(document).ready(function() {
         timestr += minutes + ':' + seconds;
 
         pausenoty.n.setText('Server is paused, resuming in ' + timestr);
-    });
+    });    
+
+    $("#about-dialog").dialog({ 
+        minWidth: 320, 
+        width: $('body').width > 600 ? 320 : 600, 
+        minHeight: 480, 
+        height: 500, 
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Close', disabled: false, click: function(event, ui) {
+                $('#about-dialog').dialog('close');
+            }}
+        ]
+    });    
 
 });

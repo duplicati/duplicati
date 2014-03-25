@@ -36,6 +36,10 @@ namespace Duplicati.License
         /// The regular expression used to find license files
         /// </summary>
         private static System.Text.RegularExpressions.Regex LICENSE_FILENAME = new System.Text.RegularExpressions.Regex("license.txt", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        /// <summary>
+        /// The regular expression used to find licensedata files
+        /// </summary>
+        private static System.Text.RegularExpressions.Regex LICENSEDATA_FILENAME = new System.Text.RegularExpressions.Regex("licensedata.json", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         
         /// <summary>
         /// Reads all license files in the given base folder
@@ -54,15 +58,18 @@ namespace Duplicati.License
                 string name = System.IO.Path.GetFileName(folder);
                 string urlfile = null;
                 string licensefile = null;
+                string jsonfile = null;
 
                 foreach (string file in System.IO.Directory.GetFiles(folder))
                     if (URL_FILENAME.IsMatch(System.IO.Path.GetFileName(file)))
                         urlfile = file;
                     else if (LICENSE_FILENAME.IsMatch(System.IO.Path.GetFileName(file)))
                         licensefile = file;
+                    else if (LICENSEDATA_FILENAME.IsMatch(System.IO.Path.GetFileName(file)))
+                        jsonfile = file;
 
                 if (licensefile != null)
-                    res.Add(new LicenseEntry(name, urlfile, licensefile));
+                    res.Add(new LicenseEntry(name, urlfile, licensefile, jsonfile));
             }
 
             return res;

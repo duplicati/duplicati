@@ -298,3 +298,26 @@
     display: none;
     z-index: 9999;    
 }
+
+#about-dialog-thirdparty {
+    margin-bottom: 10px;
+    margin-top: 10px;    
+}
+
+.about-library-entry {
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.about-library-name {
+    font-weight: bold;
+}
+
+.about-library-name, .about-library-description, .about-library-license {
+    display: inline;
+}
+
+.about-library-notes {
+    display: none;
+}
+

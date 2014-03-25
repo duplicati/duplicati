@@ -243,6 +243,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("search-backup-files", SearchBackupFiles);
                 SUPPORTED_METHODS.Add("restore-files", RestoreFiles);
                 SUPPORTED_METHODS.Add("read-log", ReadLogData);
+                SUPPORTED_METHODS.Add("get-license-data", GetLicenseData);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -368,7 +369,12 @@ namespace Duplicati.Server
                 
                 return result;
             }
-
+            
+            private void GetLicenseData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                OutputObject(bw, License.LicenseReader.ReadLicenses(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "licenses")));
+            }
+            
             private void ReadLogData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;

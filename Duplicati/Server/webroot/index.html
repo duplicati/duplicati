@@ -92,6 +92,15 @@
         </div>
     </script>
 
+    <script id="about-dialog-template" type="text/x-jquery-tmpl">
+        <li class="about-library-entry">
+            <div class="about-library-name"><a href="${link}" target="blank">${name}</a></div>
+            <div class="about-library-description">${description}.</div>
+            <div class="about-library-license"> <a href="${licenselink}">${license} licensed.</a></div>
+            <div class="about-library-notes"></div>
+        </li>
+    </script>
+
 </head>
 <body>
     <div id="click-intercept"></div>
@@ -388,6 +397,18 @@
 
         <div id="backup-log-tab-remote">
         </div>
+    </div>
+
+    <div id="about-dialog" class="modal-dialog" title="About">
+        <div id="about-dialog-general">Duplicati was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. Duplicati can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. Duplicati is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.</div>
+
+        <div id="about-dialog-thirdparty">
+        Duplicati is using the following third party libraries:
+        <ul id="about-dialog-thirdparty-list">
+            <li>Loading ...</li>
+        </ul>
+        </div>
+
     </div>
 
 </body>

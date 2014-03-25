@@ -63,18 +63,12 @@
     <Content Include="..\..\thirdparty\LitJSON\download.txt">
       <Link>licenses\LitJSON\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
     </Content>
     <Content Include="..\..\thirdparty\LitJSON\license.txt">
       <Link>licenses\LitJSON\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MD4\Homepage.txt">
-      <Link>licenses\MD4\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MD4\License.txt">
-      <Link>licenses\MD4\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
     </Content>
     <Content Include="..\..\thirdparty\SharpCompress\download.txt">
       <Link>licenses\SharpCompress\download.txt</Link>
@@ -82,10 +76,6 @@
     </Content>
     <Content Include="..\..\thirdparty\SharpCompress\License.txt">
       <Link>licenses\SharpCompress\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpCompress\Upgrade-readme.txt">
-      <Link>licenses\SharpCompress\Upgrade-readme.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SQLite\Homepage.txt">
@@ -122,6 +112,99 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>licenses\Json.NET\License.txt</Link>
     </Content>
+    <Content Include="..\..\thirdparty\alphavss\licensedata.json">
+      <Link>licenses\alphavss\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\licensedata.json">
+      <Link>licenses\AWSSDK\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\download.txt">
+      <Link>licenses\AWSSDK\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\license.txt">
+      <Link>licenses\AWSSDK\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\DnsLite\licensedata.json">
+      <Link>licenses\DnsLite\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\DnsLite\download.txt">
+      <Link>licenses\DnsLite\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gdata\licensedata.json">
+      <Link>licenses\gdata\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gdata\download.txt">
+      <Link>licenses\gdata\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gdata\license.txt">
+      <Link>licenses\gdata\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\licensedata.json">
+      <Link>licenses\gpg\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\HttpServer\licensedata.json">
+      <Link>licenses\HttpServer\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\HttpServer\Homepage.txt">
+      <Link>licenses\HttpServer\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\HttpServer\license.txt">
+      <Link>licenses\HttpServer\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\licensedata.json">
+      <Link>licenses\Json.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\LitJSON\licensedata.json">
+      <Link>licenses\LitJSON\licensedata.json</Link>
+      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ManagedLZMA\licensedata.json">
+      <Link>licenses\ManagedLZMA\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ManagedLZMA\download.txt">
+      <Link>licenses\ManagedLZMA\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ManagedLZMA\license.txt">
+      <Link>licenses\ManagedLZMA\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MonoMac\licensedata.json">
+      <Link>licenses\MonoMac\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MonoMac\download.txt">
+      <Link>licenses\MonoMac\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MonoMac\license.txt">
+      <Link>licenses\MonoMac\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SQLite\licensedata.json">
+      <Link>licenses\SQLite\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SSH.NET\licensedata.json">
+      <Link>licenses\SSH.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -136,5 +219,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
+    <None Include="..\..\thirdparty\SharpCompress\licensedata.json">
+      <Link>licenses\SharpCompress\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="licenses\AWSSDK\" />
+    <Folder Include="licenses\DnsLite\" />
+    <Folder Include="licenses\gdata\" />
+    <Folder Include="licenses\HttpServer\" />
+    <Folder Include="licenses\ManagedLZMA\" />
+    <Folder Include="licenses\MonoMac\" />
   </ItemGroup>
 </Project>

@@ -40,6 +40,10 @@ namespace Duplicati.License
         /// The license for the component
         /// </summary>
         public string License;
+        /// <summary>
+        /// The json data
+        /// </summary>
+        public string Jsondata;
 
         /// <summary>
         /// Constructs a new license entry
@@ -47,7 +51,7 @@ namespace Duplicati.License
         /// <param name="title">The component title</param>
         /// <param name="urlfile">The homepage of the component</param>
         /// <param name="licensefile">The license for the component</param>
-        public LicenseEntry(string title, string urlfile, string licensefile)
+        public LicenseEntry(string title, string urlfile, string licensefile, string jsonfile)
         {
             Title = title;
             if (!string.IsNullOrEmpty(urlfile) && System.IO.File.Exists(urlfile))
@@ -57,6 +61,8 @@ namespace Duplicati.License
                 License = License.Replace("\n", "\r\n").Replace("\r", "\r\n");
             if (Environment.NewLine != "\r\n")
                 License = License.Replace("\r\n", Environment.NewLine);
+            if (jsonfile != null)
+                Jsondata = System.IO.File.ReadAllText(jsonfile);
 
         }
 
