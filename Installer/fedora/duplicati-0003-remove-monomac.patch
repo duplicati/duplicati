@@ -149,10 +149,6 @@ index fa61756..bee32ea 100644
    </ItemGroup>
  </Project>
 \ No newline at end of file
-diff --git a/thirdparty/MonoMac/MonoMac.dll b/thirdparty/MonoMac/MonoMac.dll
-deleted file mode 100755
-index 9bc3d89..0000000
-Binary files a/thirdparty/MonoMac/MonoMac.dll and /dev/null differ
 diff --git a/thirdparty/MonoMac/download.txt b/thirdparty/MonoMac/download.txt
 deleted file mode 100644
 index aefbe60..0000000
