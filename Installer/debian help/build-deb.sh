@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Clean the package a bit
-UNWANTED_FILES="sqlite3.dll win-tools sqlite-3.6.12.so StartDuplicati.sh"
+UNWANTED_FILES="sqlite3.dll win-tools"
 
 #Validate input
 SHOW_USAGE_ERROR=
@@ -63,9 +63,6 @@ else
 	OUTPUT="output/$OUTPUT"
 fi
 
-OUTPUT_RPM="duplicati-$VERSION_FILENAME-1.noarch.rpm"
-OUTPUT_SLP="duplicati-$VERSION_FILENAME.slp"
-OUTPUT_LSB="lsb-duplicati-$VERSION_FILENAME-1.noarch.rpm"
 OUTPUT_TGZ="duplicati-$VERSION_FILENAME.tgz"
 
 OUTPUT_DIR=`dirname "$OUTPUT"`
@@ -81,18 +78,6 @@ fi
 
 if [ -d "$ROOT_DIR" ]; then
 	rm -rf "$ROOT_DIR"
-fi
-
-if [ -f "$OUTPUT_RPM" ]; then
-	rm "$OUTPUT_RPM"
-fi
-
-if [ -f "$OUTPUT_SLP" ]; then
-	rm "$OUTPUT_SLP"
-fi
-
-if [ -f "$OUTPUT_LSB" ]; then
-	rm "$OUTPUT_LSB"
 fi
 
 if [ -f "$OUTPUT_TGZ" ]; then
@@ -252,9 +237,6 @@ fi
 # Convert to other package formats as well
 cd "$OUTPUT_DIR"
 DEB_NAME=`basename "$OUTPUT"`
-alien --scripts --to-rpm --keep-version "$DEB_NAME"
-alien --scripts --to-slp --keep-version "$DEB_NAME"
-alien --scripts --to-lsb --keep-version "$DEB_NAME"
 alien --scripts --to-tgz --keep-version "$DEB_NAME"
 # alien --scripts --to-pkg --keep-version "$OUTPUT"
 cd "$PWD"
