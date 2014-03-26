@@ -80,7 +80,6 @@ rm thirdparty/SQLite/Bin/sqlite3.dll
 rm thirdparty/SQLite/win32/System.Data.SQLite.dll
 rm thirdparty/SQLite/win64/System.Data.SQLite.dll
 rm thirdparty/MonoMac/MonoMac.dll
-rm thirdparty/SQLite/Bin/sqlite-3.6.12.so
 rm thirdparty/gpg/gpg2.exe
 rm thirdparty/gpg/gpg/gpg.exe
 rm thirdparty/gpg/iconv.dll
