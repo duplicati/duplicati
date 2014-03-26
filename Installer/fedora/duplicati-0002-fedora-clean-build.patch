@@ -1,8 +1,8 @@
 diff --git a/Duplicati/CommandLine/Duplicati.CommandLine.csproj b/Duplicati/CommandLine/Duplicati.CommandLine.csproj
-index 13927c3..c461615 100644
+index a563054..7902b3a 100644
 --- a/Duplicati/CommandLine/Duplicati.CommandLine.csproj
 +++ b/Duplicati/CommandLine/Duplicati.CommandLine.csproj
-@@ -137,42 +137,6 @@
+@@ -147,38 +147,6 @@
    </ItemGroup>
    <ItemGroup>
      <None Include="app.config" />
@@ -38,59 +38,37 @@ index 13927c3..c461615 100644
 -      <Link>win-tools\zlib1.dll</Link>
 -      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 -    </Content>
--    <Content Include="..\..\thirdparty\Putty\pscp.exe">
--      <Link>win-tools\pscp.exe</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
      <EmbeddedResource Include="help.txt" />
      <Content Include="TrayWarning.ico" />
    </ItemGroup>
-@@ -191,4 +155,4 @@
-   <Target Name="AfterBuild">
-   </Target>
-   -->
--</Project>
-\ No newline at end of file
-+</Project>
 diff --git a/Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj b/Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
-index c142e42..17423f7 100644
+index 86708b6..0741bc3 100644
 --- a/Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
 +++ b/Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
-@@ -101,30 +101,6 @@
-   <ItemGroup>
-     <None Include="app.config" />
-     <None Include="Duplicati.snk" />
--    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2003.x64.dll">
--      <Link>alphavss\AlphaVSS.Win2003.x64.dll</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
--    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2003.x86.dll">
--      <Link>alphavss\AlphaVSS.Win2003.x86.dll</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
--    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2008.x64.dll">
--      <Link>alphavss\AlphaVSS.Win2008.x64.dll</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
--    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2008.x86.dll">
--      <Link>alphavss\AlphaVSS.Win2008.x86.dll</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
--    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.WinXP.x64.dll">
--      <Link>alphavss\AlphaVSS.WinXP.x64.dll</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
--    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.WinXP.x86.dll">
--      <Link>alphavss\AlphaVSS.WinXP.x86.dll</Link>
--      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
--    </Content>
-     <Content Include="lvm-scripts\create-lvm-snapshot.sh">
+@@ -112,26 +112,6 @@
+     <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
      </Content>
-@@ -161,4 +137,4 @@
-   <Target Name="AfterBuild">
-   </Target>
-   -->
--</Project>
-\ No newline at end of file
-+</Project>
+-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.51.x86.dll">
+-      <Link>alphavss\AlphaVSS.51.x86.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.52.x64.dll">
+-      <Link>alphavss\AlphaVSS.52.x64.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.52.x86.dll">
+-      <Link>alphavss\AlphaVSS.52.x86.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.60.x64.dll">
+-      <Link>alphavss\AlphaVSS.60.x64.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.60.x86.dll">
+-      <Link>alphavss\AlphaVSS.60.x86.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+   </ItemGroup>
+   <ItemGroup>
+     <EmbeddedResource Include="Strings\LinuxSnapshot.resx">
