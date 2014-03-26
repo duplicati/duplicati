@@ -47,7 +47,7 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Google.GData.AccessControl">
-      <HintPath>..\..\..\..\thirdparty\gdata\Google.GData.AccessControl.DLL</HintPath>
+      <HintPath>..\..\..\..\thirdparty\gdata\Google.GData.AccessControl.dll</HintPath>
     </Reference>
     <Reference Include="Google.GData.Client">
       <HintPath>..\..\..\..\thirdparty\gdata\Google.GData.Client.dll</HintPath>
