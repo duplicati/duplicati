@@ -59,9 +59,11 @@ backups for specific purposes.
 %setup -q -n %{namer}-%{gitdate}
 #dos2unix Duplicati/CommandLine/Duplicati.CommandLine.csproj
 #dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
-#dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
-#dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
-#dos2unix Duplicati.sln
+dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
+dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
+dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
+dos2unix Duplicati/License/Duplicati.License.csproj
+dos2unix Duplicati.sln
 #%patch0 -p1
 %patch2 -p1
 %patch3 -p1
@@ -93,17 +95,8 @@ rm thirdparty/gpg/zlib1.dll
 #rm thirdparty/alphavss/Bin/AlphaVSS.Common.dll
 #thirdparty/UnixSupport/UnixSupport.dll
 
-rm thirdparty/alphavss/platform/AlphaVSS.WinXP.x86.dll
-rm thirdparty/alphavss/platform/AlphaVSS.WinXP.x64.dll
-rm thirdparty/alphavss/platform/AlphaVSS.Win2008.x86.dll
-rm thirdparty/alphavss/platform/AlphaVSS.Win2008.x64.dll
-rm thirdparty/alphavss/platform/AlphaVSS.Win2003.x86.dll
-rm thirdparty/alphavss/platform/AlphaVSS.Win2003.x64.dll
-rm thirdparty/TaskScheduler/Microsoft.Win32.TaskScheduler.dll
+rm -rf thirdparty/alphavss/platform
 rm thirdparty/Signer/Signer.exe
-rm thirdparty/Putty/psftp.exe
-rm thirdparty/Putty/pscp.exe
-rm thirdparty/LightDataModel/DataClassFileBuilder.exe
 
 # platform settings:
 ln -sf /usr/lib/mono/gtk-sharp-2.0/gtk-sharp.dll \
@@ -125,13 +118,8 @@ find -type f -name "*dll" -or -name "*DLL" -or -name "*exe"
 
 %build
 
-# repasar qué hacemos con esto:
-#xbuild ./thirdparty/ObjectListView/ObjectListView2010.sln 
-
 xbuild /property:Configuration=Release Duplicati.sln
-#xbuild /property:Configuration=Release Duplicati\ Scheduler.sln
-
-xbuild BuildTools/LocalizationTool/LocalizationTool.sln
+# xbuild BuildTools/LocalizationTool/LocalizationTool.sln
 
 # update l10n
 
@@ -143,6 +131,7 @@ install -d %{buildroot}%{_libdir}/%{namer}/
 install -d %{buildroot}%{_datadir}/pixmaps/
 install -p -D -m 755 Installer/debian\ help/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p -D -m 755 Installer/debian\ help/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
+install -p -D -m 755 Installer/debian\ help/duplicati-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
 install -p  -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.* %{buildroot}%{_libdir}/%{namer}/
 install -p  Installer/debian\ help/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 
@@ -159,6 +148,7 @@ mv Duplicati/Library/Snapshots/lvm-scripts/remove-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/create-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/find-volume.sh Tools/
 mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
+mv Installer/linux\ help/linux-readme.txt .
 
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor || :
@@ -175,13 +165,18 @@ mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 
 
 %files
-%doc releasenotes.txt changelog.txt Duplicati/license.txt Tools Installer/linux\ help/linux-readme.txt
+%doc releasenotes.txt changelog.txt Duplicati/license.txt Tools linux-readme.txt
 %{_bindir}/*
 %{_datadir}/*/*
 %{_libdir}/*
 
 
 %changelog
+* Wed March 26 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
+- Updated patch files
+- Fixed minor build issues
+
+
 * Wed May 29 2013 Ismael Olea <ismael@olea.org> - 2.0.0-0.20130529.git
 - removed MacOSX support and deps
 - first compiler building spec
