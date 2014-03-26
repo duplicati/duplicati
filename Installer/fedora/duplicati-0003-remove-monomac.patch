@@ -399,16 +399,3 @@ index 358750c..0000000
 -    "notes": "Also released under MIT X11"
 -}
 \ No newline at end of file
-diff --git a/Duplicati/Server/webroot/index.html b/Duplicati/Server/webroot/index.html
-index 0c914c1..c3a75c4 100644
---- a/Duplicati/Server/webroot/index.html
-+++ b/Duplicati/Server/webroot/index.html
-@@ -38,7 +38,7 @@
-     <script type="text/javascript" src="scripts/hideShowPassword.min.js"></script>
-     <script type="text/javascript" src="scripts/jquery.timeago.js"></script>
-     <script type="text/javascript" src="scripts/jquery.noty.packaged.min.js"></script>
--    <!-- <script type="text/javascript" src="scripts/plugins.nbi.js"></script> -->
-+    <script type="text/javascript" src="scripts/plugins.nbi.js"></script>
- 
- 
-     <script id="backup-item-template" type="text/x-jquery-tmpl">
