@@ -34,6 +34,7 @@ Patch3:	%{namer}-0003-remove-monomac.patch
 
 BuildRequires:  mono-devel gnome-sharp-devel
 BuildRequires:  desktop-file-utils
+BuildRequires:  dos2unix
 
 Requires:	desktop-file-utils
 Requires:	bash
@@ -56,6 +57,11 @@ backups for specific purposes.
 
 %prep
 %setup -q -n %{namer}-%{gitdate}
+dos2unix Duplicati/CommandLine/Duplicati.CommandLine.csproj
+dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
+dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
+dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
+dos2unix Duplicati.sln
 #%patch0 -p1
 %patch2 -p1
 %patch3 -p1
