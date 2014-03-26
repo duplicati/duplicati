@@ -58,6 +58,9 @@
     <Reference Include="Google.GData.Extensions">
       <HintPath>..\..\..\..\thirdparty\gdata\Google.GData.Extensions.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GoogleDocs.cs" />

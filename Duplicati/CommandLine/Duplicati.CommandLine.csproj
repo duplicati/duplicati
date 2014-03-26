@@ -42,6 +42,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Help.cs" />
