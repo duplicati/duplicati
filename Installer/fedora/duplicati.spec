@@ -38,7 +38,7 @@ BuildRequires:  dos2unix
 
 Requires:	desktop-file-utils
 Requires:	bash
-Requires:	mono(System), mono(System.Web), mono(System.Windows.Forms)
+Requires:	mono(System), mono(System.Web)
 Requires:	sqlite
 
 Conflicts:	duplicati < 2.0.0
