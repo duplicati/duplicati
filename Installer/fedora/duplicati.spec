@@ -172,7 +172,7 @@ mv Installer/linux\ help/linux-readme.txt .
 
 
 %changelog
-* Wed March 26 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
+* Wed Mar 26 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
 - Updated patch files
 - Fixed minor build issues
 
