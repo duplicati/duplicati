@@ -59,6 +59,7 @@ backups for specific purposes.
 %prep
 %setup -q -n %{namer}-%{gitdate}
 dos2unix Duplicati/CommandLine/Duplicati.CommandLine.csproj
+dos2unix Duplicati/Library/Utility/Duplicati.Library.Utility.csproj
 dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
@@ -183,7 +184,7 @@ mv Installer/linux\ help/linux-readme.txt .
 
 
 %changelog
-* Wed Mar 27 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
+* Thu Mar 27 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
 - Moved to /usr/lib
 - Fixed minor build issues
 
