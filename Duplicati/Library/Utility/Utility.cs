@@ -686,7 +686,32 @@ namespace Duplicati.Library.Utility
             }
 
             return data;
-        }        
+        }
+        
+        public static bool Which(string appname)
+        {
+            if (!IsClientLinux)
+                return false;
+    
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("which", appname);
+                psi.RedirectStandardOutput = true;
+                psi.UseShellExecute = false;
+        
+                var pi = System.Diagnostics.Process.Start(psi);
+                pi.WaitForExit(5000);
+                if (pi.HasExited)
+                    return pi.ExitCode == 0;
+                else
+                    return false;
+            }
+            catch
+            {
+            }
+            
+            return false;
+        }
 
         private static string UNAME;
 

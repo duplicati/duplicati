@@ -89,12 +89,48 @@ namespace Duplicati.GUI.TrayIcon
         public virtual IBrowserWindow ShowUrlInWindow(string url)
         {
             //Fallback is to just show the window in a browser
-            if (Duplicati.Library.Utility.Utility.IsClientLinux)
-                try { System.Diagnostics.Process.Start("open", "\"" + Program.Connection.StatusWindowURL + "\""); }
-                catch { }
+            if (Duplicati.Library.Utility.Utility.IsClientOSX)
+            {
+                try
+                {
+                    var cmd = string.IsNullOrWhiteSpace(Program.BrowserCommand) ? "open" : Program.BrowserCommand;
+                    System.Diagnostics.Process.Start(cmd, "\"" + url + "\"");
+                }
+                catch
+                {
+                }
+            }
+            else if (Duplicati.Library.Utility.Utility.IsClientLinux)
+            {
+                try
+                {
+                    var apps = new string[] {Program.BrowserCommand, "xdg-open", "chromium-browser", "google-chrome", "firefox", "mozilla", "konqueror", "netscape", "opera", "epiphany" };
+                    foreach(var n in apps)
+                        if (!string.IsNullOrWhiteSpace(n) && Duplicati.Library.Utility.Utility.Which(n))
+                        {
+                            System.Diagnostics.Process.Start(n, "\"" + url + "\"");
+                            return null;
+                        }
+                    
+                    Console.WriteLine("No suitable browser found, try installing \"xdg-open\"");
+                }
+                catch
+                {
+                }
+            }
             else
-                try { System.Diagnostics.Process.Start("\"" + Program.Connection.StatusWindowURL + "\""); }
-                catch { }
+            {
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(Program.BrowserCommand))
+                        System.Diagnostics.Process.Start(Program.BrowserCommand, "\"" + url + "\"");
+                    else
+                        System.Diagnostics.Process.Start("\"" + url + "\"");
+                }
+                catch
+                {
+                }
+            }
 
             return null;
         }

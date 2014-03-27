@@ -18,9 +18,15 @@ namespace Duplicati.GUI.TrayIcon
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
+        
+        private const string BROWSER_COMMAND_OPTION = "browser-command";
 
         private static readonly string DEFAULT_TOOLKIT = GetDefaultToolKit();
         private const string DEFAULT_HOSTURL = "http://localhost:8080";
+        
+        private static string _browser_command = null;
+        public static string BrowserCommand { get { return _browser_command; } }
+        
         
         private static string GetDefaultToolKit()
         {
@@ -64,6 +70,8 @@ namespace Duplicati.GUI.TrayIcon
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
                      
+            options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
+            
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
                 toolkit = DEFAULT_TOOLKIT;
@@ -251,6 +259,7 @@ namespace Duplicati.GUI.TrayIcon
                     }),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
+                    new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),
                 };
             }
         }
