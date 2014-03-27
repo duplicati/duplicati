@@ -9,7 +9,7 @@
 
 %global debug_package %{nil}
 
-%global gitdate 20140326
+%global gitdate 20140327
 #%global gitcommit 18dba966f35f222a6b4bd054b2431a7abe4651de
 #%global gitver HEAD
 %global alphatag git
@@ -18,6 +18,7 @@
 Name:	%{namer}2
 Version:	2.0.0
 Release:	0.%{gitdate}%{?alphatag}%{?dist}
+BuildArch:  noarch
 
 Summary:	Backup client for encrypted online backups
 License:	LGPLv2+
@@ -57,8 +58,8 @@ backups for specific purposes.
 
 %prep
 %setup -q -n %{namer}-%{gitdate}
-#dos2unix Duplicati/CommandLine/Duplicati.CommandLine.csproj
-#dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
+dos2unix Duplicati/CommandLine/Duplicati.CommandLine.csproj
+dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
@@ -124,22 +125,33 @@ xbuild /property:Configuration=Release Duplicati.sln
 
 #./make.sh
 
+
+
 %install
 
-install -d %{buildroot}%{_libdir}/%{namer}/
+# Mono binaries are installed in /usr/lib, not /usr/lib64, even on x86_64:
+# https://fedoraproject.org/wiki/Packaging:Mono
+
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -d %{buildroot}%{_datadir}/pixmaps/
 install -p -D -m 755 Installer/debian\ help/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p -D -m 755 Installer/debian\ help/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
 install -p -D -m 755 Installer/debian\ help/duplicati-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
-install -p  -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.* %{buildroot}%{_libdir}/%{namer}/
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
+#install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p  Installer/debian\ help/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
+
+cp -r Duplicati/Server/webroot %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
+chmod -R 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
 
 desktop-file-install Installer/debian\ help/%{namer}.desktop 
 
 # thirdparty dependencies
 
 find thirdparty/ -type f -\( -name "*DLL" -or -name "*dll" -\) \
-	-exec install -p -m 755 {} %{buildroot}%{_libdir}/%{namer}/ \;
+	-exec install -p -m 755 {} %{buildroot}%{_exec_prefix}/lib/%{namer}/ \;
 
 mv Tools/Verification/DuplicatiVerify.py Tools/
 rmdir Tools/Verification/
@@ -167,10 +179,14 @@ mv Installer/linux\ help/linux-readme.txt .
 %doc releasenotes.txt changelog.txt Duplicati/license.txt Tools linux-readme.txt
 %{_bindir}/*
 %{_datadir}/*/*
-%{_libdir}/*
+%{_exec_prefix}/lib/*
 
 
 %changelog
+* Wed Mar 27 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
+- Moved to /usr/lib
+- Fixed minor build issues
+
 * Wed Mar 26 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
 - Updated patch files
 - Fixed minor build issues
