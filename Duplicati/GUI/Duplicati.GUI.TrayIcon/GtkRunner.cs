@@ -179,6 +179,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             m_trayIcon.Visible = true;
             m_trayIcon.PopupMenu += HandleTrayIconPopupMenu;
+            m_trayIcon.Activate += HandleTrayIconActivate;
             Application.Run();
         }
         
@@ -189,10 +190,16 @@ namespace Duplicati.GUI.TrayIcon
 
         private void HandleTrayIconPopupMenu (object o, Gtk.PopupMenuArgs args)
         {
+            // TODO: Does not work on Fedora
             m_popupMenu.ShowAll();
             m_popupMenu.Popup(null, null, null, 0u, 0u);
         }
-        
+
+        private void HandleTrayIconActivate (object o, EventArgs args)
+        {
+            base.ShowStatusWindow();
+        }
+
         public static Gdk.Pixbuf ImageToPixbuf(System.Drawing.Image image)
         {
             using (var stream = new System.IO.MemoryStream()) 
