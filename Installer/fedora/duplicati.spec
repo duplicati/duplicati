@@ -41,6 +41,8 @@ Requires:	desktop-file-utils
 Requires:	bash
 Requires:	mono(System), mono(System.Web)
 Requires:	sqlite
+Requires:   mono(appindicator-sharp)
+Requires:   libappindicator
 
 Conflicts:	duplicati < 2.0.0
 
