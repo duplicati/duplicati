@@ -32,6 +32,7 @@ if [ -e "./oem.css" ]; then
     cp ./oem.css $DIRNAME/Duplicati/Server/webroot/stylesheets/
 fi
 
+echo "Building tar ball"
 GIT_DIR=$DIRNAME/.git git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > $DIRNAME.tar.bz2
 
