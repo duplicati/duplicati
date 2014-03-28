@@ -9,7 +9,7 @@
 
 %global debug_package %{nil}
 
-%global gitdate 20140327
+%global gitdate 20140328
 #%global gitcommit 18dba966f35f222a6b4bd054b2431a7abe4651de
 #%global gitver HEAD
 %global alphatag git
