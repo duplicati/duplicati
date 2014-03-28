@@ -33,13 +33,13 @@ namespace Duplicati.GUI.TrayIcon
             m_themeFolder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
             m_themeFolder = System.IO.Path.Combine(m_themeFolder, "dark");
             
-            m_appIndicator = new ApplicationIndicator("duplicati", "duplicati-logo", Category.ApplicationStatus, m_themeFolder);
+            m_appIndicator = new ApplicationIndicator("duplicati", "normal", Category.ApplicationStatus, m_themeFolder);
         }
         
         protected override void Run(string[] args)
         {
             m_appIndicator.Menu.ShowAll(); 
-            m_appIndicator.Status = Status.Attention;
+            m_appIndicator.Status = Status.Active;
             Gtk.Application.Run();
         }
         
@@ -56,9 +56,29 @@ namespace Duplicati.GUI.TrayIcon
             {
                 switch(value)
                 {
+                case TrayIcons.Paused:
+                    m_appIndicator.IconName = "normal-pause";
+                    m_appIndicator.IconDesc = "Paused";
+                    break;
+                case TrayIcons.Running:
+                    m_appIndicator.IconName = "normal-running";
+                    m_appIndicator.IconDesc = "Running";
+                    break;
+                case TrayIcons.IdleError:
+                    m_appIndicator.IconName = "normal-error";
+                    m_appIndicator.IconDesc = "Error";
+                    break;
+                case TrayIcons.RunningError:
+                    m_appIndicator.IconName = "normal-running";
+                    break;
+                case TrayIcons.PausedError:
+                    m_appIndicator.IconName = "normal-pause";
+                    m_appIndicator.IconDesc = "Paused";
+                    break;
                 case TrayIcons.Idle:
                 default:
-                    m_appIndicator.IconName = "duplicati-logo";
+                    m_appIndicator.IconName = "normal";
+                    m_appIndicator.IconDesc = "Ready";
                     break;
                 }
             }
