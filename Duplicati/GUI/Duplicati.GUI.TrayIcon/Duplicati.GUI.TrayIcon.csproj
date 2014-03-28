@@ -131,9 +131,6 @@
     <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
     <Compile Include="AppIndicatorRunner.cs" />
     <Compile Include="CocoaRunner.cs" />
-    <None Include="SVGIcons\dark\duplicati-logo.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
     <Compile Include="GtkRunner.cs" />
@@ -269,4 +266,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Content Include="SVGIcons\dark\duplicati-logo.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
