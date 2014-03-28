@@ -180,28 +180,7 @@ namespace Duplicati.GUI.TrayIcon
         private static bool TryGetAppIndicator()
         {
 #if __MonoCS__ || __WindowsGTK__
-            if (typeof(AppIndicator.ApplicationIndicator) != null)
-            {
-                try 
-                {
-                    var n = new AppIndicator.ApplicationIndicator(IntPtr.Zero);
-                }
-                catch (DllNotFoundException)
-                {
-                    return false;
-                }
-                catch
-                {
-                }
-                
-                // If we get here then type is loading, 
-                // and it found the libraries needed
-                return true;
-            } 
-            else
-            {
-                return false;
-            }
+            return typeof(AppIndicator.ApplicationIndicator) != null;
 #else
             return false;
 #endif
