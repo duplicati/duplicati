@@ -22,6 +22,14 @@ rm -rf $DIRNAME
 git clone ${REF:+--reference $REF} \
          https://code.google.com/p/duplicati/ $DIRNAME
 
+if [ -e "./oem.js" ]; then
+    cp ./oem.js $DIRNAME/Server/webroot/scripts/
+fi
+
+if [ -e "./oem.css" ]; then
+    cp ./oem.css $DIRNAME/Server/webroot/stylesheets/
+fi
+
 GIT_DIR=$DIRNAME/.git git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > $DIRNAME.tar.bz2
 
