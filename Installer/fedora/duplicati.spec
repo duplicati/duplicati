@@ -137,6 +137,8 @@ xbuild /property:Configuration=Release Duplicati.sln
 
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -d %{buildroot}%{_datadir}/pixmaps/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
 install -p -D -m 755 Installer/debian\ help/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p -D -m 755 Installer/debian\ help/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
 install -p -D -m 755 Installer/debian\ help/duplicati-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
@@ -145,6 +147,7 @@ install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe %{build
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 #install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p  Installer/debian\ help/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
+install -p -D -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_bindir}/%{namer}/SVGIcons/dark/
 
 cp -r Duplicati/Server/webroot %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
 chmod -R 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
