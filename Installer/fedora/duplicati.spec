@@ -149,9 +149,6 @@ chmod -R 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
 
 desktop-file-install Installer/debian\ help/%{namer}.desktop 
 
-# remove the app-indicator file, it is supposed to be on the system, if it is supported
-rm %{buildroot}%{_exec_prefix}/lib/%{namer}/appindicator-sharp.dll
-
 # thirdparty dependencies
 
 find thirdparty/ -type f -\( -name "*DLL" -or -name "*dll" -\) \
@@ -164,6 +161,9 @@ mv Duplicati/Library/Snapshots/lvm-scripts/create-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/find-volume.sh Tools/
 mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 mv Installer/linux\ help/linux-readme.txt .
+
+# remove the app-indicator file, it is supposed to be on the system, if it is supported
+rm %{buildroot}%{_exec_prefix}/lib/%{namer}/appindicator-sharp.dll
 
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor || :
