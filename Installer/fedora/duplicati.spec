@@ -9,7 +9,7 @@
 
 %global debug_package %{nil}
 
-%global gitdate 20140328
+%global gitdate 20140330
 #%global gitcommit 18dba966f35f222a6b4bd054b2431a7abe4651de
 #%global gitver HEAD
 %global alphatag git
@@ -138,6 +138,7 @@ install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -d %{buildroot}%{_datadir}/pixmaps/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
 install -p -D -m 755 Installer/debian\ help/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p -D -m 755 Installer/debian\ help/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
 install -p -D -m 755 Installer/debian\ help/duplicati-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
@@ -146,7 +147,8 @@ install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe %{build
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 #install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p  Installer/debian\ help/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
-install -p -D -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_bindir}/%{namer}/SVGIcons/dark/
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/light/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
 
 cp -r Duplicati/Server/webroot %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
 chmod -R 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
