@@ -65,7 +65,6 @@ dos2unix Duplicati/Library/Utility/Duplicati.Library.Utility.csproj
 dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
-dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
 dos2unix Duplicati/License/Duplicati.License.csproj
 dos2unix Duplicati.sln
 #%patch0 -p1
