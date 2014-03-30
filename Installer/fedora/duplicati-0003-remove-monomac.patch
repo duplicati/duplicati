@@ -29,10 +29,10 @@ index e79581e..7a20176 100644
 --- a/Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
 +++ b/Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
 @@ -130,7 +130,6 @@
-     <Compile Include="WindowsImplementation\CallbackShim.cs" />
-     <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
-     <Compile Include="AppIndicatorRunner.cs" />
--    <Compile Include="CocoaRunner.cs" />
+    <Compile Include="WindowsImplementation\CallbackShim.cs" />
+    <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
+    <Compile Include="AppIndicatorRunner.cs" />
+-   <Compile Include="CocoaRunner.cs" />
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
     <Compile Include="GtkRunner.cs" />
