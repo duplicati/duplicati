@@ -7,7 +7,7 @@ Package: duplicati
 Installed-Size: 17965
 Architecture: all
 Version: 1.3.0.990
-Depends: mono-runtime (>= 2.6), libmono2.0-cil, libmono-winforms2.0-cil, expect, libsqlite3-0 (>= 3.6.12), make
+Depends: mono-runtime (>= 2.8), libmono2.0-cil, libsqlite3-0 (>= 3.6.12), libappindicator0.1-cil
 Description: Backup client for encrypted online backups
  Duplicati is a free backup client that securely stores encrypted, incremental, 
  compressed backups on cloud storage services and remote file servers. It 

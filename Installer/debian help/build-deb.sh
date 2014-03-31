@@ -142,7 +142,8 @@ gzip --quiet --best "$ROOT_DIR/usr/share/doc/duplicati/changelog.Debian"
 # Make sym link to install launcher scripts in /usr/bin
 # We install these before calculating the size
 cp "duplicati-launcher.sh" "$ROOT_DIR/usr/bin/duplicati"
-cp "duplicati-commandline-launcher.sh" "$ROOT_DIR/usr/bin/duplicati-commandline"
+cp "duplicati-commandline-launcher.sh" "$ROOT_DIR/usr/bin/duplicati-cli"
+cp "duplicati-server-launcher.sh" "$ROOT_DIR/usr/bin/duplicati-server"
 cp "duplicati.desktop" "$ROOT_DIR/usr/share/applications/"
 cp "duplicati.xpm" "$ROOT_DIR/usr/share/pixmaps/"
 cp "duplicati.png" "$ROOT_DIR/usr/share/pixmaps/"
@@ -205,9 +206,10 @@ done
 # Restore IFS, in case we need it later
 IFS=$OLD_IFS
 
-# Make sure the actual entry points are executalbe
+# Make sure the actual entry points are executable
 chmod +x "$ROOT_DIR/usr/bin/duplicati"
-chmod +x "$ROOT_DIR/usr/bin/duplicati-commandline"
+chmod +x "$ROOT_DIR/usr/bin/duplicati-cli"
+chmod +x "$ROOT_DIR/usr/bin/duplicati-server"
 
 # Build MD5 sums
 cd "$ROOT_DIR"
