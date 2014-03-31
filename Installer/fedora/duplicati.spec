@@ -134,11 +134,12 @@ xbuild /property:Configuration=Release Duplicati.sln
 # Mono binaries are installed in /usr/lib, not /usr/lib64, even on x86_64:
 # https://fedoraproject.org/wiki/Packaging:Mono
 
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -d %{buildroot}%{_datadir}/pixmaps/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses
 install -p -D -m 755 Installer/debian\ help/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p -D -m 755 Installer/debian\ help/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
 install -p -D -m 755 Installer/debian\ help/duplicati-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
@@ -146,12 +147,15 @@ install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll %{build
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 #install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/default_compressed_extensions.txt %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p  Installer/debian\ help/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/light/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
 
 cp -r Duplicati/Server/webroot %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
-chmod -R 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
+chmod -R 655 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
+cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses
+chmod -R 655 %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses
 
 desktop-file-install Installer/debian\ help/%{namer}.desktop 
 
