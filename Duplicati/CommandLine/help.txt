@@ -130,8 +130,8 @@ Usage: compact <storage-URL> [<options>]
     The maximum allowed number of small files.
   --small-file-size=<int>
     Files smaller than this size are considered to be small and will be compacted with other small files as soon as there are <small-file-max-count> of them. --small-file-size=20 means 20% of <dblock-size>. 
-  --threshold=<percent_value>	
-	  The amount of old data that a dblock file can contain before it is considered to be replaced.
+  --threshold=<percent_value> 
+    The amount of old data that a dblock file can contain before it is considered to be replaced.
 	
 	
 
