@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main.Operation
                             m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
                         }
                         
-                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, null);
+                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, m_result);
     		                		                        	
                         using(new Logging.Timer("BackupMainOperation"))
                         {
