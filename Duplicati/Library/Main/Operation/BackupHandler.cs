@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation
                 catch (Exception ex)
                 {
                     if (m_logWriter != null)
-                        m_logWriter.AddWarning(string.Format("Failed to process path: ", path), ex);
+                        m_logWriter.AddWarning(string.Format("Failed to process path: {0}", path), ex);
                     return false;
                 }            
             
