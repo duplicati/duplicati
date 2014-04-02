@@ -69,7 +69,30 @@ namespace Duplicati.GUI.TrayIcon
         {
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
-                     
+
+            foreach (string s in args)
+                if (
+                    s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
+                    s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
+                    s.Equals("usage", StringComparison.InvariantCultureIgnoreCase) ||
+                    s.Equals("/usage", StringComparison.InvariantCultureIgnoreCase))
+                    options["help"] = "";
+
+            if (options.ContainsKey("help"))
+            {
+                Console.WriteLine(Strings.Program.HelpDisplayDialog);
+
+                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                    Console.WriteLine(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription);
+
+                Console.WriteLine(Strings.Program.ServerHelpDisplay);
+
+                foreach (Library.Interface.ICommandLineArgument arg in Duplicati.Server.Program.SupportedCommands)
+                    Console.WriteLine(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription);
+
+                return;
+            }            
+            
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
             
             string toolkit;

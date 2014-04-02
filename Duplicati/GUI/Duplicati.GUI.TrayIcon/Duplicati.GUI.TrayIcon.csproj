@@ -168,6 +168,14 @@
     <EmbeddedResource Include="OSX Icons\normal-running.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Program.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Program.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Include="Strings\Program.Designer.cs">
+      <DependentUpon>Program.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

@@ -509,7 +509,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets a list of all supported commandline options
         /// </summary>
-        private static Library.Interface.ICommandLineArgument[] SupportedCommands
+        public static Library.Interface.ICommandLineArgument[] SupportedCommands
         {
             get
             {
