@@ -585,6 +585,10 @@ namespace Duplicati.Library.Main.Operation
         
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
+            // If we lost the connection, there is no point in keeping on processing
+            if (m_backend.HasDied)
+                throw m_backend.LastException;
+            
             try
             {
                 m_result.OperationProgressUpdater.StartFile(path, -1);            
