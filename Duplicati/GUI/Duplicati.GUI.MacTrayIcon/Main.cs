@@ -9,8 +9,7 @@ namespace TestMonoMac
         static void Main (string [] args)
         {
             Duplicati.GUI.TrayIcon.Program.Main(args);
-        }
-        
+        }        
     }
 }	
 

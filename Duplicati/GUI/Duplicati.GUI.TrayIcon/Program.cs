@@ -30,8 +30,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static string GetDefaultToolKit()
         {
-#if __MonoCS__
-            if (Duplicati.Library.Utility.Utility.IsClientOSX && SupportsCocoaStatusIcon)
+            if (SupportsCocoaStatusIcon)
             {
                 //Determine if we are running in an app bundle, otherwise we cannot run Cocoa
                 //The Duplicat.GUI.TrayIcon project, does not create the app bundle,
@@ -43,7 +42,6 @@ namespace Duplicati.GUI.TrayIcon
                 if (System.IO.File.Exists(plist))
                     return TOOLKIT_COCOA;
             }
-#endif
 
 #if __MonoCS__ || __WindowsGTK__            
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
@@ -177,7 +175,10 @@ namespace Duplicati.GUI.TrayIcon
 #if __MonoCS__ || __WindowsGTK__
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
-        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); }
+        private static TrayIconBase GetCocoaRunnerInstance() 
+        { 
+            return Activator.CreateInstance(Type.GetType("Duplicati.GUI.MacTrayIcon.CocoaRunner, Duplicati.GUI.MacTrayIcon")) as TrayIconBase;
+        }
 #endif
         
         //The functions below simply load the requested type,
@@ -211,11 +212,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static bool TryGetMonoMac()
         {
-#if __MonoCS__
-            return typeof(MonoMac.AppKit.NSStatusItem) != null;
-#else
-            return false;
-#endif
+            return Type.GetType("Duplicati.GUI.MacTrayIcon.CocoaRunner, Duplicati.GUI.MacTrayIcon")  != null;
         }
   
         //The functions below here, simply wrap the call to the above functions,
@@ -269,17 +266,19 @@ namespace Duplicati.GUI.TrayIcon
         {
             get
             {
+                var toolkits = new List<string>();
+                if (SupportsWinForms)
+                    toolkits.Add(TOOLKIT_WINDOWS_FORMS);
+                if (SupportsGtk)
+                    toolkits.Add(TOOLKIT_GTK);
+                if (SupportsAppIndicator)
+                    toolkits.Add(TOOLKIT_GTK_APP_INDICATOR);
+                if (SupportsCocoaStatusIcon)
+                    toolkits.Add(TOOLKIT_COCOA);
+                
                 return new Duplicati.Library.Interface.ICommandLineArgument[]
                 {
-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, new string[] {
-                        TOOLKIT_WINDOWS_FORMS, 
-#if __MonoCS__ || __WindowsGTK__
-                        TOOLKIT_GTK, TOOLKIT_GTK_APP_INDICATOR, 
-#endif
-#if __MonoCS__
-                        TOOLKIT_COCOA
-#endif
-                    }),
+                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),

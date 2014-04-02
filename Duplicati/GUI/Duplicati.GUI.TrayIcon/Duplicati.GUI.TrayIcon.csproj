@@ -77,9 +77,6 @@
     <Reference Include="gtk-sharp">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMac">
-      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
-    </Reference>
     <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
   </ItemGroup>
   <ItemGroup>
@@ -130,12 +127,8 @@
     <Compile Include="WindowsImplementation\CallbackShim.cs" />
     <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
     <Compile Include="AppIndicatorRunner.cs" />
-    <Compile Include="CocoaRunner.cs" />
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
-    <Compile Include="GtkRunner.cs" />
-    <None Include="OSX app help\Info.plist" />
-    <None Include="OSX app help\MainMenu.xib" />
     <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
     <EmbeddedResource Include="Resources\SettingsMenuIcon.png" />
     <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
@@ -156,18 +149,6 @@
     <EmbeddedResource Include="Resources\Pause.png" />
     <EmbeddedResource Include="Resources\Play.png" />
     <Compile Include="ImageLoader.cs" />
-    <EmbeddedResource Include="OSX Icons\normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OSX Icons\normal-error.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OSX Icons\normal-pause.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OSX Icons\normal-running.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\Program.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -176,6 +157,7 @@
     <Compile Include="Strings\Program.Designer.cs">
       <DependentUpon>Program.resx</DependentUpon>
     </Compile>
+    <Compile Include="GtkRunner.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

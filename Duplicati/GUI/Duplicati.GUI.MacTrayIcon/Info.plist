@@ -9,7 +9,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.6</string>
+	<string>10.8</string>
 	<key>LSUIElement</key>
 	<string>TRUE</string>
 	<key>NSMainNibFile</key>
@@ -20,5 +20,9 @@
 	<string>public.app-category.utilities</string>
 	<key>CFBundleDisplayName</key>
 	<string>Duplicati</string>
+	<key>CFBundleIconFile</key>
+	<string>Duplicati</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.0</string>
 </dict>
 </plist>
