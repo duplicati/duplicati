@@ -287,7 +287,7 @@ namespace Duplicati.Server
 
                 try
                 {
-                    DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati.sqlite");
+                    DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati-server.sqlite");
                     if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
                         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
 
