@@ -84,15 +84,19 @@ namespace Duplicati.Library.Main.Operation
             private FileAttributes m_attributeFilter;
             private Duplicati.Library.Utility.IFilter m_filter;
             private Options.SymlinkStrategy m_symlinkPolicy;
+            private Options.HardlinkStrategy m_hardlinkPolicy;
             private ILogWriter m_logWriter;
+            private Dictionary<string, string> m_hardlinkmap;
             
-            public FilterHandler(Snapshots.ISnapshotService snapshot,FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, ILogWriter logWriter)
+            public FilterHandler(Snapshots.ISnapshotService snapshot,FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, ILogWriter logWriter)
             {
                 m_snapshot = snapshot;
                 m_attributeFilter = attributeFilter;
                 m_filter = filter;
                 m_symlinkPolicy = symlinkPolicy;
+                m_hardlinkPolicy = hardlinkPolicy;
                 m_logWriter = logWriter;
+                m_hardlinkmap = new Dictionary<string, string>();
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -111,7 +115,44 @@ namespace Duplicati.Library.Main.Operation
                     if (m_logWriter != null)
                         m_logWriter.AddWarning(string.Format("Failed to process path: {0}", path), ex);
                     return false;
-                }            
+                }
+                
+                if (m_hardlinkPolicy != Options.HardlinkStrategy.All)
+                {
+                    try
+                    {
+                        var id = m_snapshot.HardlinkTargetID(path);
+                        if (id != null)
+                        {
+                            if (m_hardlinkPolicy == Options.HardlinkStrategy.None)
+                            {
+                                if (m_logWriter != null)
+                                    m_logWriter.AddVerboseMessage("Excluding hardlink: {0} ({1})", path, id);
+                                return false;
+                            }
+                            else if (m_hardlinkPolicy == Options.HardlinkStrategy.First)
+                            {
+                                string prevPath;
+                                if (m_hardlinkmap.TryGetValue(id, out prevPath))
+                                {
+                                    if (m_logWriter != null)
+                                        m_logWriter.AddVerboseMessage("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
+                                    return false;
+                                }
+                                else
+                                {
+                                    m_hardlinkmap.Add(id, path);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (m_logWriter != null)
+                            m_logWriter.AddWarning(string.Format("Failed to process path: {0}", path), ex);
+                        return false;
+                    }                    
+                }
             
                 if ((m_attributeFilter & attributes) != 0)
                 {
@@ -174,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, null).AttributeFilter))
+            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).AttributeFilter))
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -345,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
                             m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
                         }
                         
-                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, m_result);
+                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, m_result);
     		                		                        	
                         using(new Logging.Timer("BackupMainOperation"))
                         {

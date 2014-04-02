@@ -82,5 +82,12 @@ namespace Duplicati.Library.Snapshots
         /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
         /// <param name="file">The file or folder to examine</param>
         bool IsBlockDevice(string file);
+        
+        /// <summary>
+        /// Gets a unique hardlink target ID
+        /// </summary>
+        /// <returns>The hardlink ID</returns>
+        /// <param name="file">The file or folder to examine</param>
+        string HardlinkTargetID(string path);
     }
 }

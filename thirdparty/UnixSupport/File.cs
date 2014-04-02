@@ -230,6 +230,33 @@ namespace UnixSupport
         {
             return new FileInfo(Mono.Unix.UnixFileInfo.GetFileSystemEntry(path));
         }
+        
+        /// <summary>
+        /// Gets the number of hard links for a file
+        /// </summary>
+        /// <returns>The hardlink count</returns>
+        /// <param name="path">The full path to look up</param>
+        public static long GetHardlinkCount(string path)
+        {
+            var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
+            if (fse.IsRegularFile || fse.IsDirectory)
+                return fse.LinkCount;
+            else
+                return 0;
+        }
+
+        /// <summary>
+        /// Gets a unique ID for the path inode target,
+        /// which is the device ID and inode ID
+        /// joined with a &quot;:&quot;
+        /// </summary>
+        /// <returns>The inode target ID.</returns>
+        /// <param name="path">The full path to look up</param>
+        public static string GetInodeTargetID(string path)
+        {
+            var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
+            return fse.Device + ":" + fse.Inode;
+        }
 	}
 }
 

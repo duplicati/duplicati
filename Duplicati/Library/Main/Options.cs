@@ -111,6 +111,27 @@ namespace Duplicati.Library.Main
             /// </summary>
             Ignore
         }
+
+        /// <summary>
+        /// The possible settings for the hardlink strategy
+        /// </summary>
+        public enum HardlinkStrategy
+        {
+            /// <summary>
+            /// Process only the first hardlink
+            /// </summary>
+            First,
+            
+            /// <summary>
+            /// Process all hardlinks
+            /// </summary>
+            All,
+
+            /// <summary>
+            /// Ignore all hardlinks
+            /// </summary>
+            None
+        }
         
         /// <summary>
         /// The possible settings for index file usage
@@ -218,6 +239,7 @@ namespace Duplicati.Library.Main
                     "vss-use-mapping",
                     "usn-policy",
                     "symlink-policy",
+                    "hardlink-policy",
                     "exclude-files-attributes",
                     "compression-extension-file",
                     "full-remote-verification"
@@ -425,7 +447,8 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
 
-                    new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
+                    new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), Enum.GetName(typeof(SymlinkStrategy), SymlinkStrategy.Store), null, Enum.GetNames(typeof(SymlinkStrategy))),
+                    new CommandLineArgument("hardlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.HardlinkpolicyShort, string.Format(Strings.Options.HardlinkpolicyLong, "first", "all", "none"), Enum.GetName(typeof(HardlinkStrategy), HardlinkStrategy.All), null, Enum.GetNames(typeof(HardlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, string.Format(Strings.Options.CompressionextensionfileLong, DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
@@ -1002,19 +1025,38 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the snapshot strategy to use
+        /// Gets the symlink strategy to use
         /// </summary>
         public SymlinkStrategy SymlinkPolicy
         {
             get
             {
-                string strategy;
-                if (!m_options.TryGetValue("symlink-policy", out strategy))
-                    strategy = "";
+                string policy;
+                if (!m_options.TryGetValue("symlink-policy", out policy))
+                    policy = "";
 
                 SymlinkStrategy r;
-                if (!Enum.TryParse(strategy, true, out r))
+                if (!Enum.TryParse(policy, true, out r))
                     r = SymlinkStrategy.Store;
+
+                return r;
+            }
+        }
+
+        /// <summary>
+        /// Gets the hardlink strategy to use
+        /// </summary>
+        public HardlinkStrategy HardlinkPolicy
+        {
+            get
+            {
+                string policy;
+                if (!m_options.TryGetValue("hardlink-policy", out policy))
+                    policy = "";
+
+                HardlinkStrategy r;
+                if (!Enum.TryParse(policy, true, out r))
+                    r = HardlinkStrategy.All;
 
                 return r;
             }

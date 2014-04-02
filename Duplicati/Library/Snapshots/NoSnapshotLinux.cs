@@ -85,7 +85,21 @@ namespace Duplicati.Library.Snapshots
                 default:
                     return true;
             }
-        }    
+        }
+        
+        /// <summary>
+        /// Gets a unique hardlink target ID
+        /// </summary>
+        /// <returns>The hardlink ID</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public override string HardlinkTargetID(string path)
+        {
+            path = path.EndsWith(DIR_SEP) ? path.Substring(0, path.Length - 1) : path;
+            if (UnixSupport.File.GetHardlinkCount(path) <= 1)
+                return null;
+            
+            return UnixSupport.File.GetInodeTargetID(path);
+        }
     }
 }
 

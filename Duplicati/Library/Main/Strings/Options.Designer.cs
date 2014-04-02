@@ -826,6 +826,12 @@ namespace Duplicati.Library.Main.Strings {
             }
         }
         
+        internal static string HardlinkpolicyLong {
+            get {
+                return ResourceManager.GetString("HardlinkpolicyLong", resourceCulture);
+            }
+        }
+        
         internal static string DisableStreamingLong {
             get {
                 return ResourceManager.GetString("DisableStreamingLong", resourceCulture);
@@ -979,6 +985,12 @@ namespace Duplicati.Library.Main.Strings {
         internal static string NoautocompactShort {
             get {
                 return ResourceManager.GetString("NoautocompactShort", resourceCulture);
+            }
+        }
+        
+        internal static string HardlinkpolicyShort {
+            get {
+                return ResourceManager.GetString("HardlinkpolicyShort", resourceCulture);
             }
         }
         

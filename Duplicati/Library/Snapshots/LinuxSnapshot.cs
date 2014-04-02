@@ -484,6 +484,22 @@ namespace Duplicati.Library.Snapshots
                     return true;
             }
         }    
+
+        /// <summary>
+        /// Gets a unique hardlink target ID
+        /// </summary>
+        /// <returns>The hardlink ID</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public string HardlinkTargetID(string path)
+        {
+            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path);
+            local = local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local;
+            
+            if (UnixSupport.File.GetHardlinkCount(local) <= 1)
+                return null;
+            
+            return UnixSupport.File.GetInodeTargetID(local);
+        }
         #endregion
 
         #region IDisposable Members
