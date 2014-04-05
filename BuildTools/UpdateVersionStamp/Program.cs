@@ -92,8 +92,11 @@ namespace UpdateVersionStamp
             {
                 var re = FILEMAP[Path.GetFileName(p.File)];
                 var txt = File.ReadAllText(p.File);
-                var m = re.Match(txt).Groups["version"];
-                txt = txt.Substring(0, m.Index) + nv + txt.Substring(m.Index + m.Length);
+                //var m = re.Match(txt).Groups["version"];
+                txt = re.Replace(txt, (m) => {
+                    var t = m.Groups["version"];
+                    return m.Value.Replace(t.Value, nv);
+                });
                 File.WriteAllText(p.File, txt);
             }
 
