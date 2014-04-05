@@ -39,18 +39,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Duplicati.wxs" />
-    <Compile Include="incBinFiles.wxs" />
+    <Compile Include="binfiles.wxs" />
     <Compile Include="Shortcuts.wxs" />
-    <Compile Include="incLocFiles.da-DK.wxs" />
-    <Compile Include="incLocFiles.fr-FR.wxs" />
-    <Compile Include="incLocFiles.pt-BR.wxs" />
-	<Compile Include="incLocFiles.de-DE.wxs" />
-	<Compile Include="incLocFiles.es-ES.wxs" />
-	<Compile Include="incLocFiles.it-IT.wxs" />
-	<Compile Include="incLocFiles.zh-CN.wxs" />
-	<Compile Include="incLocFiles.ru-RU.wxs" />
-	<Compile Include="incLocFiles.zh-HK.wxs" />
-	<Compile Include="incLocFiles.cs-CZ.wxs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources" />

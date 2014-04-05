@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <entry name="Duplicati.GUI.TrayIcon.exe" key="FILE_DUPLICATI_MAIN_EXE" />
+  <entry name="Duplicati.Server.exe" key="FILE_DUPLICATI_SERVER_EXE" />
+  <entry name="Duplicati.CommandLine.exe" key="FILE_DUPLICATI_CLI_EXE" />
+</root>

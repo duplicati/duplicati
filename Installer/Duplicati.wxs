@@ -96,7 +96,7 @@
       <ComponentRef Id="StartupMenuItem"/>
     </Feature>
 
-    <Feature Id="LanguageFeature" Title="Duplicati translations" Level="1" Description="Installs user interface translations for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+    <!-- <Feature Id="LanguageFeature" Title="Duplicati translations" Level="1" Description="Installs user interface translations for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
       <Feature Id="da_DK_LanguageFeature" Title="Danish translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Danish (da-DK)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
         <ComponentGroupRef Id="DUPLICATI_LANG_da_DK" />
       </Feature>
@@ -127,18 +127,13 @@
       <Feature Id="cs_CZ_LanguageFeature" Title="Czech translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Czech (cs-CZ)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
         <ComponentGroupRef Id="DUPLICATI_LANG_cs_CZ" />
       </Feature>
-    </Feature>
+    </Feature> -->
 
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <CustomAction Id="LaunchApplication" FileKey="FILE_DUPLICATI_MAIN_EXE" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
     
-    <!-- TODO: Figure out why this does not work...
-    <Property Id="WixShellExecTarget" Value="[#comp_DUPLICATIBIN_5]" />
-    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" /> 
-    -->
-
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
 

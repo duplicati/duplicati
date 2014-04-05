@@ -8,11 +8,6 @@
 			</dependentAssembly>
 
 			<dependentAssembly>
-				<assemblyIdentity name="Duplicati.Winforms.Controls"	publicKeyToken="8bfe994a39631a7b" />
-				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="1.0.1.410" />
-			</dependentAssembly>
-
-			<dependentAssembly>
 				<assemblyIdentity name="Duplicati.Library.Interface"	publicKeyToken="8bfe994a39631a7b" />
 				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="1.0.1.410" />
 			</dependentAssembly>
@@ -20,7 +15,4 @@
 		</assemblyBinding>
 	</runtime>
 	
-	<startup>
-		<supportedRuntime version="v2.0.50727"/>
-	</startup>
 </configuration>
