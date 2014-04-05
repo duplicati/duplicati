@@ -14,3 +14,5 @@ Duplicati/Localization/*.updated.csv
 Duplicati/Localization/report.*.xml
 Installer/incLocFiles.*.wxs
 Duplicati/Server/webroot/extjs-*
+Installer/binfiles.wxs
+Installer/generated-keys.xml
