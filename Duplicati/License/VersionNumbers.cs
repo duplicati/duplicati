@@ -44,7 +44,7 @@ namespace Duplicati.License
             else
                 tag = " - " + tag;
             
-            TAG = tag; 
+            TAG = tag.Trim(); 
         }
         
         public static string Version
