@@ -263,7 +263,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression(string filter, bool result = true)
-            : this(new string[] { filter }, result)
+            : this(Expand(filter), result)
         {
         }
     
@@ -292,6 +292,14 @@ namespace Duplicati.Library.Utility
                 this.Type = FilterType.Empty;
             else
                 this.Type = (FilterType)m_filters.Max((a) => a.Type);
+        }
+        
+        private static IEnumerable<string> Expand(string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter) || filter.Length < 2 || (filter.StartsWith("[") && filter.EndsWith("]")))
+                return new string[] { filter };
+            else
+                return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
         }
         
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
