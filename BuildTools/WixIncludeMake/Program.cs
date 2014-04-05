@@ -12,7 +12,6 @@ namespace WixIncludeMake
 		private const string DB_FILE = "generated-keys.xml";
 		private const string USER_FILE = "fixed-keys.xml";
 		private static readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
-		private static readonly string basedir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 		
 		public static readonly XNamespace XWIX = "http://schemas.microsoft.com/wix/2006/wi";
 		
@@ -270,7 +269,6 @@ namespace WixIncludeMake
 					return new XElement(XWIX + "ComponentGroup",
 	                    new XAttribute("Id", this.ComponentID),
                     	from x in this.Subfolders
-	                    where x != this
 					    select new XElement(XWIX + "ComponentRef",
 					    	new XAttribute("Id", "comp_" + x.ID)
 					    )
@@ -289,8 +287,8 @@ namespace WixIncludeMake
 		
 		private class Options
 		{
-			public string dbfilename = System.IO.Path.Combine(basedir, DB_FILE);
-			public string userfilename = System.IO.Path.Combine(basedir, USER_FILE);
+			public string dbfilename = System.IO.Path.Combine(Environment.CurrentDirectory, DB_FILE);
+			public string userfilename = System.IO.Path.Combine(Environment.CurrentDirectory, USER_FILE);
 			public string sourcefolder = System.IO.Path.GetFullPath(Environment.CurrentDirectory);
 			public string outputfile = System.IO.Path.GetFullPath("binfiles.wxs");
 			public string ignorefilter = null;
@@ -302,8 +300,9 @@ namespace WixIncludeMake
 			{
 				sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder.Replace("/", DIR_SEP)));
 				outputfile = System.IO.Path.GetFullPath(outputfile.Replace("/", DIR_SEP));
+                fileprefix = fileprefix.Replace("/", "\\");
                 if (ignorefilter != null)
-                    ignorefilter =ignorefilter.Replace("/", DIR_SEP);
+                    ignorefilter = ignorefilter.Replace("/", DIR_SEP);
 			}
 		}
 		
