@@ -25,6 +25,28 @@ namespace Duplicati.License
 {
     public static class VersionNumbers
     {
+        public static readonly string TAG;
+        
+        static VersionNumbers()
+        {
+            string tag = "";
+            try
+            {
+                using (var rd = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(VersionNumbers), "VersionTag.txt")))
+                    tag = rd.ReadToEnd();
+            }
+            catch
+            {
+            }
+            
+            if (string.IsNullOrWhiteSpace(tag))
+                tag = "";
+            else
+                tag = " - " + tag;
+            
+            TAG = tag; 
+        }
+        
         public static string Version
         {
             get
@@ -34,8 +56,7 @@ namespace Duplicati.License
 #else
                 string debug = "";
 #endif
-
-                return VersionNumber + debug;
+                return VersionNumber + TAG + debug;
             }
         }
 

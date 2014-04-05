@@ -232,4 +232,7 @@
     <Folder Include="licenses\ManagedLZMA\" />
     <Folder Include="licenses\MonoMac\" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="VersionTag.txt" />
+  </ItemGroup>
 </Project>
