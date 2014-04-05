@@ -81,7 +81,7 @@ namespace UpdateVersionStamp
                 opt.version = new Version(
                     maxv.Major,
                     maxv.Minor,
-                    maxv.Build + 1,
+                    maxv.Build,
                     maxv.Revision).ToString();
             }
             
