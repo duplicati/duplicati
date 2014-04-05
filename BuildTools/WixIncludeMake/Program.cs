@@ -12,7 +12,7 @@ namespace WixIncludeMake
 		private const string DB_FILE = "generated-keys.xml";
 		private const string USER_FILE = "fixed-keys.xml";
 		private static readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
-		private static readonly string basedir = System.IO.Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
+		private static readonly string basedir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 		
 		public static readonly XNamespace XWIX = "http://schemas.microsoft.com/wix/2006/wi";
 		
@@ -300,9 +300,10 @@ namespace WixIncludeMake
 			
 			public void Fixup()
 			{
-				sourcefolder = System.IO.Path.GetFullPath(sourcefolder);
-				outputfile = System.IO.Path.GetFullPath(outputfile);
-				sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(sourcefolder);
+				sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder.Replace("/", DIR_SEP)));
+				outputfile = System.IO.Path.GetFullPath(outputfile.Replace("/", DIR_SEP));
+                if (ignorefilter != null)
+                    ignorefilter =ignorefilter.Replace("/", DIR_SEP);
 			}
 		}
 		
@@ -312,25 +313,17 @@ namespace WixIncludeMake
 			Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 			Options opt = new Options();
 			
-			
 			foreach(FieldInfo fi in opt.GetType().GetFields())
 				if (options.ContainsKey(fi.Name))
 					fi.SetValue(opt, options[fi.Name]);
 			
 			opt.Fixup();			
 			
-			Duplicati.Library.Utility.FilenameFilter filter = null;
+            Duplicati.Library.Utility.IFilter filter = null;
 			if (!string.IsNullOrEmpty(opt.ignorefilter))
-				filter = new Duplicati.Library.Utility.FilenameFilter(
-					new List<Duplicati.Library.Utility.IFilenameFilter>(
-						new Duplicati.Library.Utility.IFilenameFilter[] {
-							new Duplicati.Library.Utility.RegularExpressionFilter(false, opt.ignorefilter)
-						}
-					)
-				);
+                filter = new Duplicati.Library.Utility.FilterExpression(opt.ignorefilter, false);
 			
-			
-			var paths = Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(opt.sourcefolder, filter).ConvertAll(x => x.Substring(opt.sourcefolder.Length));
+            var paths = Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(opt.sourcefolder, filter).Select(x => x.Substring(opt.sourcefolder.Length));
 
 			//A bit backwards, but we have flattend the file list, and now we re-construct the tree,
 			// but we do not care much about performance here

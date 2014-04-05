@@ -18,7 +18,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <DebugSymbols>true</DebugSymbols>
-    <Commandlineparameters>--sourcefolder=../Duplicati/GUI/bin/Release --fileprefix=bin/Release/ --ignorefilter=(.*/\.svn/)|(.*\.config)</Commandlineparameters>
+    <Commandlineparameters>--sourcefolder=../Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release --fileprefix=bin/Release/ --ignorefilter=*.dll.config:*.mdb:*.log:*.sqlite:*/tempdir:*/control_dir/:*/SVGIcons/:*/lvm-scripts/</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
