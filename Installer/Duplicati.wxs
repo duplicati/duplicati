@@ -132,7 +132,7 @@
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="FILE_DUPLICATI_MAIN_EXE" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    <CustomAction Id="LaunchApplication" FileKey="file_FILE_DUPLICATI_MAIN_EXE" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
     
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
