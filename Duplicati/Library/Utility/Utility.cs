@@ -509,7 +509,7 @@ namespace Duplicati.Library.Utility
             // we need to detect the encoding (at least that it's not UTF8).
             // So we read the first 4096 bytes and try to decode them as UTF8. 
             byte[] buffer = new byte[4096];
-            using(System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open))
+            using(System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 file.Read(buffer, 0, 4096);
 
             Encoding enc = Encoding.UTF8;
