@@ -36,11 +36,11 @@ namespace Duplicati.Library.Main.Database
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
         	path = System.IO.Path.GetFullPath(path);
-            var c = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType);
+            var c = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
             if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
 
-            Library.Utility.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
             
             return c;
         }

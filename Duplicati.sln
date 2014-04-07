@@ -55,6 +55,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Backe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDocs", "Duplicati\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj", "{42C91180-11EB-4590-82EA-80FE9D4DEBEC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,12 @@ Global
 		{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Release|Any CPU.ActiveCfg = Release|Any CPU

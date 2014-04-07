@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
                         Type sqlite = null;
                         string sqliteversion = "";
 
-                        try { sqlite = Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType; }
+                        try { sqlite = Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType; }
                         catch { }
                         
                         if (sqlite != null)

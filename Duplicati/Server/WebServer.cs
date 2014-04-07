@@ -399,7 +399,7 @@ namespace Duplicati.Server
                         return;
                     }
                     
-                    using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType))
+                    using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
                     {
                         con.ConnectionString = "Data Source=" + backup.DBPath;
                         con.Open();

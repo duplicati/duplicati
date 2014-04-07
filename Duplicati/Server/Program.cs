@@ -267,7 +267,7 @@ namespace Duplicati.Server
                     Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(commandlineOptions["log-file"]);
                 }
 
-                Version sqliteVersion = new Version((string)Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
+                Version sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
                 {
                     if (writeConsole)
@@ -283,7 +283,7 @@ namespace Duplicati.Server
                 }
 
                 //Create the connection instance
-                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType);
+                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
 
                 try
                 {
@@ -302,7 +302,7 @@ namespace Duplicati.Server
                     //Attempt to open the database, handling any encryption present
                     OpenDatabase(con);
 
-                    Duplicati.Library.Utility.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Server.Database.Connection));
+                    Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Server.Database.Connection));
                 }
                 catch (Exception ex)
                 {

@@ -141,6 +141,10 @@
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
       <Name>Duplicati.Library.Snapshots</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
+      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
+      <Name>Duplicati.Library.SQLiteHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

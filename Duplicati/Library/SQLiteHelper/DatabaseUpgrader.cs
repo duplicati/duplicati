@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data;
 
-namespace Duplicati.Library.Utility
+namespace Duplicati.Library.SQLiteHelper
 {
     /// <summary>
     /// This class will read embedded files from the given folder.
