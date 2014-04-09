@@ -199,6 +199,13 @@ namespace Duplicati.GUI.TrayIcon
         {
             base.ShowStatusWindow();
         }
+        
+        protected override void UpdateUIState(System.Action action)
+        {
+            Gtk.Application.Invoke((sender, arg) => {
+                action();
+            });
+        }
 
         public static Gdk.Pixbuf ImageToPixbuf(System.Drawing.Image image)
         {

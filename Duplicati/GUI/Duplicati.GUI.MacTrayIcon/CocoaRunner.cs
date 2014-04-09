@@ -190,6 +190,13 @@ namespace Duplicati.GUI.MacTrayIcon
         protected override void Run (string[] args)
         {
         }
+        
+        protected override void UpdateUIState(Action action)
+        {
+            m_appDelegate.BeginInvokeOnMainThread(() => { 
+                action();
+            });
+        }
 
         protected override Duplicati.GUI.TrayIcon.TrayIcons Icon 
         {

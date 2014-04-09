@@ -135,6 +135,11 @@ namespace Duplicati.GUI.TrayIcon.Windows
             m_trayIcon.Click += new EventHandler(m_trayIcon_Click);
             base.Init(args);
         }
+        
+        protected override void UpdateUIState(Action action)
+        {
+            m_handleProvider.Invoke(action);
+        }
 
         private void m_trayIcon_Click(object sender, EventArgs e)
         {

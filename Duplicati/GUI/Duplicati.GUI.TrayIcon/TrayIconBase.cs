@@ -71,7 +71,11 @@ namespace Duplicati.GUI.TrayIcon
         }
         
         protected abstract void Run(string[] args);
-            
+        
+        protected virtual void UpdateUIState(Action action)
+        {
+            action();
+        }
         
         protected abstract TrayIcons Icon { set; }
         
@@ -192,43 +196,44 @@ namespace Duplicati.GUI.TrayIcon
         
         protected void OnStatusUpdated(IServerStatus status)
         {
-            switch(status.SuggestedStatusIcon)
-            {
-                case SuggestedStatusIcon.Active:
-                    Icon = TrayIcons.Running;
-                    break;
-                case SuggestedStatusIcon.ActivePaused:
-                    Icon = TrayIcons.Paused;
-                    break;
-                case SuggestedStatusIcon.ReadyError:
-                    Icon = TrayIcons.IdleError;
-                    break;
-                case SuggestedStatusIcon.ReadyWarning:
-                    Icon = TrayIcons.IdleError;
-                    break;
-                case SuggestedStatusIcon.Paused:
-                    Icon = TrayIcons.Paused;
-                    break;
-                case SuggestedStatusIcon.Ready:
-                default:    
-                    Icon = TrayIcons.Idle;
-                    break;
-                
-            }
-
-            if (status.ProgramState == LiveControlState.Running)
-            {
-                m_pauseMenu.Icon = MenuIcons.Pause;
-                m_pauseMenu.Text = "Pause";
-                m_stateIsPaused = false;
-            }
-            else
-            {
-                m_pauseMenu.Icon = MenuIcons.Resume;
-                m_pauseMenu.Text = "Resume";
-                m_stateIsPaused = true;
-            }
-            
+            this.UpdateUIState(() => {
+                switch(status.SuggestedStatusIcon)
+                {
+                    case SuggestedStatusIcon.Active:
+                        Icon = TrayIcons.Running;
+                        break;
+                    case SuggestedStatusIcon.ActivePaused:
+                        Icon = TrayIcons.Paused;
+                        break;
+                    case SuggestedStatusIcon.ReadyError:
+                        Icon = TrayIcons.IdleError;
+                        break;
+                    case SuggestedStatusIcon.ReadyWarning:
+                        Icon = TrayIcons.IdleError;
+                        break;
+                    case SuggestedStatusIcon.Paused:
+                        Icon = TrayIcons.Paused;
+                        break;
+                    case SuggestedStatusIcon.Ready:
+                    default:    
+                        Icon = TrayIcons.Idle;
+                        break;
+                    
+                }
+    
+                if (status.ProgramState == LiveControlState.Running)
+                {
+                    m_pauseMenu.Icon = MenuIcons.Pause;
+                    m_pauseMenu.Text = "Pause";
+                    m_stateIsPaused = false;
+                }
+                else
+                {
+                    m_pauseMenu.Icon = MenuIcons.Resume;
+                    m_pauseMenu.Text = "Resume";
+                    m_stateIsPaused = true;
+                }
+            });
         }
 
         #region IDisposable implementation
