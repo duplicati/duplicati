@@ -55,10 +55,6 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="atk-sharp">
-      <HintPath>BuildSupport\atk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -79,6 +75,7 @@
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
     </Reference>
     <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
@@ -232,6 +229,38 @@
     <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
       <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
+      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
+      <Name>Duplicati.Library.SQLiteHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj">
+      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
+      <Name>Duplicati.Library.Main</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
+      <Name>Duplicati.Library.Modules.Builtin</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Snapshots\Duplicati.Library.Snapshots.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
+      <Name>Duplicati.Library.Snapshots</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj">
+      <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
+      <Name>Duplicati.License</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

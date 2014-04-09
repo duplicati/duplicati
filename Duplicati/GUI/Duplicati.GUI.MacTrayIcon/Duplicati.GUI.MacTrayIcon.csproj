@@ -163,6 +163,10 @@
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
       <Name>Duplicati.CommandLine</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
+      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
+      <Name>Duplicati.Library.SQLiteHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="SQLite\" />
