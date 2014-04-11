@@ -42,7 +42,7 @@
     <script type="text/javascript" src="scripts/customized.js"></script>
 
 
-    <script id="backup-item-template" type="text/x-jquery-tmpl">
+    <script id="backup-item-template-old" type="text/x-jquery-tmpl">
             <div id="backup-${Backup.ID}" class="main-backup-entry">
                 <div class="backup-details">
                     <div class="caption-text">${Backup.Name}</div>
@@ -71,6 +71,50 @@
             </div>
     </script>
 
+    <script id="backup-item-template" type="text/x-jquery-tmpl">
+        <div id="backup-${Backup.ID}" class="main-backup-entry">
+
+            <div id="backup-control-${Backup.ID}" class="main-backup-control">
+            </div>    
+
+            <ul id="backup-context-menu-${Backup.ID}" class="context-popup-menu menu" style="display: none">
+                <li id="backup-details-run-${Backup.ID}"><a>Backup Now</a></li>
+                <li id="backup-details-restore-${Backup.ID}"><a>Restore</a></li>
+                <li>-</li>
+                <li id="backup-details-edit-${Backup.ID}"><a>Edit</a></li>
+                <li id="backup-details-copy-${Backup.ID}"><a>Copy</a></li>
+                <li id="backup-details-delete-${Backup.ID}"><a>Delete</a></li>
+                <li>-</li>
+                <li id="backup-details-show-log-${Backup.ID}"><a>Show log</a></li>
+                <li id="backup-details-verify-${Backup.ID}"><a>Verify</a></li>
+                <li>-</li>
+                <li id="backup-details-delete-local-${Backup.ID}"><a>Delete local data</a></li>
+                <li id="backup-details-delete-remote-${Backup.ID}"><a>Delete remote data</a></li>
+                <li id="backup-details-repair-${Backup.ID}"><a>Repair</a></li>
+                <li>-</li>
+                <li id="backup-details-send-report-${Backup.ID}"><a>Send bug report</a></li>
+            </ul>        
+
+            <div class="caption-text">${Backup.Name}</div>
+            <ul class="hint-text last-run-time">
+                <li class="hint-text-caption">Last successful run:</li>
+                <li class="source-size">${Backup.Metadata.LastBackupDate}</li>
+            </ul>
+            <ul class="hint-text next-run-time" style="display: none">
+                <li class="hint-text-caption">Next run:</li>
+                <li class="source-size"></li>
+            </ul>
+
+            <ul class="hint-text last-run-source-size">
+                <li class="hint-text-caption">Source:</li>
+                <li class="source-size">${Backup.Metadata.SourceSizeString}</li>
+            </ul>
+            <ul class="hint-text last-run-target-size">
+                <li class="hint-text-caption">Backup:</li>
+                <li class="target-size">${Backup.Metadata.TargetSizeString}</li>
+            </ul>
+        </div>
+    </script>
     <script id="backup-option-template" type="text/x-jquery-tmpl">
         <div class="backup-option ${Deprecated}">
             <div>
@@ -134,15 +178,33 @@
         </ul>
     </div>
 
-    <div id="main-bottombar">
-        <!-- <a href="http://www.duplicati.com" target="_blank">Version 2.0.1 is available</a> -->
+    <div class="main-status-area-outer">
+        <div id="main-status-area">
+            <div id="main-status-area-text">
+            My Important Backup
+            </div>
+            <div id="main-status-area-progress-outer">
+                <div id="main-status-area-progress-bar" class="">
+                </div>
+                <div id="main-status-area-progress-text">
+                Processing 123456 files ...
+                </div>
+            </div>
+
+            <div id="main-status-area-cancel-button">
+            </div>
+        </div>
     </div>
 
     <div id="main-list">
         <div id="main-list-container">
             <div id="main-newbackup">
-                <div class="main-icon-plus"></div>
-                <div class="main-button-add-text">Add new backup</div>
+                <div class="main-backup-control main-icon-plus"></div>
+                <div class="caption-text">Add new backup</div>
+
+                <ul class="hint-text">
+                    <li class="hint-text-caption">Click on the icon to add a new backup job</li>
+                </ul>
             </div>
         </div>
     </div>

@@ -203,6 +203,17 @@ $(document).ready(function() {
         return val + ' ' + bytes;
     };
 
+    pwz = function(i, c) {
+        i += '';
+        while(i.length < c)
+            i = '0' + i;
+        return i;
+    }
+
+    $.toDisplayDateAndTime = function(dt) {
+        return pwz(dt.getFullYear(), 4) + '-' + pwz(dt.getMonth() + 1, 2) + '-' + pwz(dt.getDate(), 2) + ' ' + pwz(dt.getHours(), 2) + ':' + pwz(dt.getMinutes(), 2);
+    };
+
     var serverWithCallback = function(data, callback, errorhandler, refreshMethod) {
         if (typeof(data) == typeof(''))
             data = { action: data };
@@ -284,6 +295,97 @@ $(document).ready(function() {
         var backupMap = {};
         var state = PRIVATE_DATA.server_state;
         var current = state.activeTask == null ? false : 'backup-' + state.activeTask.Item2;
+
+        if (state.activeTask == null) {
+            $('#main-status-area-cancel-button').hide();
+            $('#main-status-area-progress-outer').hide();
+
+            //TODO: state.scheduled is just the current queue, we need to find the next based on "Time"
+
+
+            if (PRIVATE_DATA.backup_list == null || PRIVATE_DATA.backup_list.length == 0) {
+                $('#main-status-area-text').text('No scheduled backups waiting');
+            } else {
+                var bk = null;
+                var mindate = null;
+                for(var n in PRIVATE_DATA.backup_list) {
+                    if (PRIVATE_DATA.backup_list[n].Schedule == null || PRIVATE_DATA.backup_list[n].Schedule.Time == null)
+                        continue;
+
+                    var selfdate = new Date(PRIVATE_DATA.backup_list[n].Schedule.Time);
+                    if (mindate == null || selfdate < mindate) {
+                        bk = PRIVATE_DATA.backup_list[n].Backup;
+                        mindate = selfdate;
+                    }
+                }
+
+                if (bk == null) {
+                    $('#main-status-area-text').text('No scheduled backups waiting');
+                } else {
+                    $('#main-status-area-text').text('Waiting to start "' + bk.Name + '" at ' + $.toDisplayDateAndTime(mindate));
+                }
+            }
+        } else {
+            $('#main-status-area-cancel-button').show();
+            $('#main-status-area-progress-outer').show();
+
+            var id = state.activeTask.Item2;
+            var bk = null;
+
+            for(var n in PRIVATE_DATA.backup_list)
+                if (PRIVATE_DATA.backup_list[n].Backup.ID == id) {
+                    bk = PRIVATE_DATA.backup_list[n].Backup;
+                    break;
+                }
+
+            if (bk == null)
+                $('#main-status-area-text').text('Unknown backup');
+            else
+                $('#main-status-area-text').text(bk.Name);
+
+            var txt = 'Running ...';
+            var pg = -1;
+            if (PRIVATE_DATA.server_progress.lastEvent != null) {
+
+                if (PRIVATE_DATA.server_progress.lastEvent.Phase == 'Backup_ProcessingFiles') {
+
+                    if (PRIVATE_DATA.server_progress.lastEvent.StillCounting) {
+                        txt = 'Counting (' + PRIVATE_DATA.server_progress.lastEvent.TotalFileCount + ' files found, ' + $.formatSizeString(PRIVATE_DATA.server_progress.lastEvent.TotalFileSize) + ')';
+                        pg = 0;
+                    } else {
+                        var filesleft = PRIVATE_DATA.server_progress.lastEvent.TotalFileCount - PRIVATE_DATA.server_progress.lastEvent. ProcessedFileCount;
+                        var sizeleft = PRIVATE_DATA.server_progress.lastEvent.TotalFileSize - PRIVATE_DATA.server_progress.lastEvent.ProcessedFileSize;
+                        pg = PRIVATE_DATA.server_progress.lastEvent.ProcessedFileSize / PRIVATE_DATA.server_progress.lastEvent.TotalFileSize;
+
+                        if (PRIVATE_DATA.server_progress.lastEvent.ProcessedFileCount == 0)
+                            pg = 0;
+                        else if (pg == 1)
+                            pg = 0.95;
+
+                        txt = filesleft + ' files (' + $.formatSizeString(sizeleft) + ') to go';
+                    }
+                } else {
+                    txt = PRIVATE_DATA.progress_state_text[PRIVATE_DATA.server_progress.lastEvent.Phase] || txt;
+                    if (PRIVATE_DATA.server_progress.lastEvent.Phase == 'Backup_WaitForUpload')
+                        pg = 1;
+
+                }
+
+                if (pg == -1) {
+                    $('#main-status-area-progress-outer').addClass('backup-progress-indeterminate');
+                    $('#main-status-area-progress-bar').css('width', '0%');
+                } else {
+                    $('#main-status-area-progress-outer').removeClass('backup-progress-indeterminate');
+                    $('#main-status-area-progress-bar').css('width', parseInt(pg*100) + '%');
+                }
+                $('#main-status-area-progress-text').text(txt);
+
+            }
+
+
+        }
+
+        return;
 
         for(var n in state.scheduled)
             if (scheduledMap['backup-' + state.scheduled[n].Item2] == null)
@@ -575,7 +677,7 @@ $(document).ready(function() {
 
 
                         var decodeid = function(e) {
-                            var p = e.target.id.split('-');
+                            var p = e.delegateTarget.id.split('-');
                             return parseInt(p[p.length - 1]);
                         };
 
@@ -605,6 +707,16 @@ $(document).ready(function() {
                                 if (name && confirm('Really delete ' + name + '?'))
                                     APP_DATA.deleteBackup(id);
                             });
+
+                            $('#backup-control-' + id).click(function(e) {
+                                var id = decodeid(e);
+                                $('#backup-context-menu-' + id).toggle();
+                                if ($('#backup-context-menu-' + id).is(':visible'))
+                                    $('#click-intercept').show();
+                            });  
+
+                            $('#backup-context-menu-' + id).menu().removeClass('ui-widget-content');
+                            $('#backup-context-menu-' + id).find('li').click(function() {  $('#click-intercept').trigger('click'); });
 
                         }
                         
@@ -790,7 +902,7 @@ $(document).ready(function() {
 
     $('#click-intercept').click(function() {
         $('#click-intercept').hide();
-        $('#main-control-menu').hide();
+        $('.menu').hide();
     });
 
     $('#main-donate').click(function() {
