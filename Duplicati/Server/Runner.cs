@@ -309,7 +309,7 @@ namespace Duplicati.Server
             catch (Exception ex)
             {
                 Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
-                //TODO: Update metadata with the error here
+                UpdateMetadataError(data.Backup, ex);
                 
                 if (!fromQueue)
                     throw;
@@ -318,11 +318,17 @@ namespace Duplicati.Server
             }
         }
         
+        private static void UpdateMetadataError(Duplicati.Server.Serialization.Interface.IBackup backup, Exception ex)
+        {
+            backup.Metadata["LastErrorDate"] = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
+            backup.Metadata["LastErrorMessage"] = ex.Message;
+        }
+        
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
         {
             if (r != null)
             {
-                backup.Metadata["LastBackupDate"] = r.LastBackupDate.ToUniversalTime().ToString();
+                backup.Metadata["LastBackupDate"] = Library.Utility.Utility.SerializeDateTime(r.LastBackupDate.ToUniversalTime());
                 backup.Metadata["BackupListCount"] = r.BackupListCount.ToString();
                 backup.Metadata["TotalQuotaSpace"] = r.TotalQuotaSpace.ToString();
                 backup.Metadata["FreeQuotaSpace"] = r.FreeQuotaSpace.ToString();
@@ -340,6 +346,8 @@ namespace Duplicati.Server
             {
                 var r = (Duplicati.Library.Interface.IBasicResults)o;
                 backup.Metadata["LastDuration"] = r.Duration.ToString();
+                backup.Metadata["LastStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
+                backup.Metadata["LastFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
             }
             
             if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
@@ -354,6 +362,9 @@ namespace Duplicati.Server
                 backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
                 backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
+                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
+                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                 
                 if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
