@@ -42,35 +42,6 @@
     <script type="text/javascript" src="scripts/customized.js"></script>
 
 
-    <script id="backup-item-template-old" type="text/x-jquery-tmpl">
-            <div id="backup-${Backup.ID}" class="main-backup-entry">
-                <div class="backup-details">
-                    <div class="caption-text">${Backup.Name}</div>
-                    <ul class="hint-text">
-                        <li class="hint-text-caption">Source</li>
-                        <li class="source-size">${Backup.Metadata.SourceSizeString}</li>
-                    </ul>
-                    <ul class="hint-text">
-                        <li class="hint-text-caption">Backup</li>
-                        <li class="target-size">${Backup.Metadata.TargetSizeString}</li>
-                    </ul>
-                    <ul class="action-links">
-                        <li class="first" id="backup-details-run-${Backup.ID}">Backup</li>
-                        <li id="backup-details-restore-${Backup.ID}">Restore</li>
-                        <li id="backup-details-edit-${Backup.ID}">Edit</li>
-                        <li class="last" id="backup-details-delete-${Backup.ID}">Delete</li>
-                    </ul>
-                </div>
-                <div class="backup-progress">
-                    <div class="progress-area">
-                    <div class="backup-state-icon"></div>
-                    <div class="backup-progress-overall"></div>
-                    <div class="main-progress-text"></div>
-                    </div>
-                </div>
-            </div>
-    </script>
-
     <script id="backup-item-template" type="text/x-jquery-tmpl">
         <div id="backup-${Backup.ID}" class="main-backup-entry">
 
@@ -98,11 +69,11 @@
             <div class="caption-text">${Backup.Name}</div>
             <ul class="hint-text last-run-time">
                 <li class="hint-text-caption">Last successful run:</li>
-                <li class="source-size">${Backup.Metadata.LastBackupDate}</li>
+                <li class="backup-last-run" alt="${Backup.Metadata.LastBackupStarted}">${$.timeago($.parseDate(Backup.Metadata.LastBackupStarted))}</li>
             </ul>
             <ul class="hint-text next-run-time" style="display: none">
                 <li class="hint-text-caption">Next run:</li>
-                <li class="source-size"></li>
+                <li class="backup-next-run"></li>
             </ul>
 
             <ul class="hint-text last-run-source-size">

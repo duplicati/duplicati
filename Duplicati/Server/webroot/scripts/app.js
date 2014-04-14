@@ -214,6 +214,23 @@ $(document).ready(function() {
         return pwz(dt.getFullYear(), 4) + '-' + pwz(dt.getMonth() + 1, 2) + '-' + pwz(dt.getDate(), 2) + ' ' + pwz(dt.getHours(), 2) + ':' + pwz(dt.getMinutes(), 2);
     };
 
+    $.parseDate = function(dt) {
+        if (typeof(dt) == typeof('')) {
+            var msec = Date.parse(dt);
+            if (isNaN(msec)) {
+                if (dt.length == 16 && dt[8] == 'T' && dt[15] == 'Z') {
+                    dt = dt.substr(0, 4) + '-' + dt.substr(4, 2) + '-' + dt.substr(6, 2) + 'T' +
+                              dt.substr(9, 2) + ':' + dt.substr(11, 2) + ':' + dt.substr(13, 2) + 'Z';
+                }
+                return new Date(dt);
+            } else {
+                return new Date(msec);
+            }
+        }
+        else
+            return new Date(dt);
+    };
+
     var serverWithCallback = function(data, callback, errorhandler, refreshMethod) {
         if (typeof(data) == typeof(''))
             data = { action: data };
@@ -381,68 +398,32 @@ $(document).ready(function() {
                 $('#main-status-area-progress-text').text(txt);
 
             }
-
-
         }
 
-        return;
-
-        for(var n in state.scheduled)
-            if (scheduledMap['backup-' + state.scheduled[n].Item2] == null)
-                scheduledMap['backup-' + state.scheduled[n].Item2] = parseInt(n) + 1;
+        if (state.scheduled != null)
+            for(var n in state.scheduled)
+                if (scheduledMap['backup-' + state.scheduled[n].Item2] == null)
+                    scheduledMap['backup-' + state.scheduled[n].Item2] = parseInt(n) + 1;
 
         for(var n in PRIVATE_DATA.backup_list)
             backupMap['backup-' + PRIVATE_DATA.backup_list[n].Backup.ID] = PRIVATE_DATA.backup_list[n];
 
         $('#main-list').find('.main-backup-entry').each(function(i, e) {
             var el = $(e);
+
+            // Scheduled items
             if (scheduledMap[e.id]) {
-                el.find('.backup-progress-overall').css('width', '0px');
-                el.find('.main-progress-text').removeClass('in-progress').text('#' + parseInt(scheduledMap[e.id]) + ' in queue');
-                el.find('.backup-state-icon').addClass('main-icon-hourglass').removeClass('main-icon-clock');
-                el.find('.main-progress-text').attr('title', '').data('timeago', null);
+                el.find('.backup-next-run').text('#' + parseInt(scheduledMap[e.id]) + ' in queue');
+                el.find('.next-run-time').show();
             } else if (e.id == current) {
-                var txt = 'Running ...';
-                var pg = 0;
-                if (PRIVATE_DATA.server_progress.lastEvent != null) {
-                    var filesleft = PRIVATE_DATA.server_progress.lastEvent.TotalFileCount - PRIVATE_DATA.server_progress.lastEvent.ProcessedFileCount;
-                    var sizeleft = PRIVATE_DATA.server_progress.lastEvent.TotalFileSize - PRIVATE_DATA.server_progress.lastEvent.ProcessedFileSize;
-                    pg = PRIVATE_DATA.server_progress.lastEvent.ProcessedFileSize / PRIVATE_DATA.server_progress.lastEvent.TotalFileSize;
-
-                    if (PRIVATE_DATA.server_progress.lastEvent.Phase == 'Backup_ProcessingFiles') {
-                        el.find('.backup-progress-overall').removeClass('backup-progress-indeterminate');
-                        txt = filesleft + ' files remaining';
-                        
-                        if (PRIVATE_DATA.server_progress.lastEvent.ProcessedFileCount == 0)
-                            pg = 0;
-                        else if (pg == 1)
-                            pg = 0.95;
-
-                        if (PRIVATE_DATA.server_progress.lastEvent.StillCounting)
-                            txt = "~" + txt;
-                    } else {
-                        pg = 1;
-                        el.find('.backup-progress-overall').addClass('backup-progress-indeterminate');
-                        txt = PRIVATE_DATA.progress_state_text[PRIVATE_DATA.server_progress.lastEvent.Phase] || txt;
-                    }
-                }
-
-
-                el.find('.backup-progress-overall').css('width', parseInt(pg*100) + '%');
-                el.find('.main-progress-text').addClass('in-progress').text(txt);
-                el.find('.backup-state-icon').removeClass('main-icon-hourglass main-icon-clock');
-                el.find('.main-progress-text').attr('title', '').data('timeago', null);
+                el.find('.backup-next-run').text('Running now');
+                el.find('.next-run-time').show();
             } else if (backupMap[e.id] && backupMap[e.id].Schedule) {
-                var targetDate = new Date(Date.parse(backupMap[e.id].Schedule.Time));
-                el.find('.backup-progress-overall').css('width', '0px');
-                el.find('.main-progress-text').removeClass('in-progress').text(targetDate.toLocaleString(targetDate));
-                el.find('.backup-state-icon').removeClass('main-icon-hourglass').addClass('main-icon-clock');
-                el.find('.main-progress-text').attr('title', targetDate.toISOString()).timeago();
+                var targetDate = $.parseDate(backupMap[e.id].Schedule.Time);
+                el.find('.backup-next-run').text($.toDisplayDateAndTime(targetDate));
+                el.find('.next-run-time').show();
             } else {
-                el.find('.backup-progress-overall').css('width', '0px');
-                el.find('.main-progress-text').removeClass('in-progress').text('');
-                el.find('.backup-state-icon').removeClass('main-icon-hourglass main-icon-clock');
-                el.find('.main-progress-text').attr('title', '').data('timeago', null);
+                el.find('.next-run-time').hide();
             }
         });
     };
@@ -1119,6 +1100,12 @@ $(document).ready(function() {
                 $('#about-dialog').dialog('close');
             }}
         ]
-    });    
+    });
+
+    setInterval(function() {
+        $('#main-list').find('.backup-last-run').each(function(i, e) {
+          $(e).text($.timeago($.parseDate($(e).attr('alt'))));
+        })
+    }, 60*1000);
 
 });
