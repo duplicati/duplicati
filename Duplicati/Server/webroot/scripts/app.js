@@ -640,22 +640,14 @@ $(document).ready(function() {
                     if ($('#backup-item-template').length > 0 && data.length > 0) {
 
                         // Pre-processing of data
-                        for(var n in data) {
-                            var b = data[n].Backup;
-                            b.Metadata = b.Metadata || {};
-
-                            if (!b.Metadata['TargetSizeString'])
-                                b.Metadata['TargetSizeString'] = '< unknown >'
-                            if (!b.Metadata['SourceSizeString'])
-                                b.Metadata['SourceSizeString'] = '< unknown >'
-                        }
+                        for(var n in data)
+                            data[n].Backup.Metadata = data[n].Backup.Metadata || {};
 
                         if (APP_DATA.plugins.primary['backup-list-preprocess'])
                             APP_DATA.plugins.primary['backup-list-preprocess'](data);
 
                         //Fill with jQuery template
                         $.tmpl($('#backup-item-template'), data).prependTo($('#main-list-container'));
-
 
                         var decodeid = function(e) {
                             var p = e.delegateTarget.id.split('-');
@@ -666,44 +658,15 @@ $(document).ready(function() {
                         for(var n in data) {
                             var id = data[n].Backup.ID;
 
-                            $('#backup-details-run-' + id).click(function(e) {
-                                var id = decodeid(e);
-                                APP_DATA.runBackup(id);
-                            });
-
-                            $('#backup-details-restore-' + id).click(function(e) { 
-                                var id = decodeid(e);
-                                APP_DATA.restoreBackup(id);
-                            });
-
-                            $('#backup-details-edit-' + id).click(function(e) {
-                                var id = decodeid(e);
-                                APP_DATA.editBackup(id);
-                            });
-
-                            $('#backup-details-delete-' + id).click(function(e) {
-                                var id = decodeid(e);
-                                var name = APP_DATA.getBackupName(id);
-
-                                if (name && confirm('Really delete ' + name + '?'))
-                                    APP_DATA.deleteBackup(id);
-                            });
-
+                            // Setup context menu trigger
                             $('#backup-control-' + id).click(function(e) {
                                 var id = decodeid(e);
-                                $('#backup-context-menu-' + id).toggle();
-                                if ($('#backup-context-menu-' + id).is(':visible'))
-                                    $('#click-intercept').show();
-                            });  
-
-                            $('#backup-context-menu-' + id).menu().removeClass('ui-widget-content');
-                            $('#backup-context-menu-' + id).find('li').click(function() {  $('#click-intercept').trigger('click'); });
-
+                                APP_DATA.showContextMenu(id, $('#backup-control-' + id));
+                            });
                         }
                         
                         if (APP_DATA.plugins.primary['backup-list-postrocess'])
                             APP_DATA.plugins.primary['backup-list-postrocess']($('#main-list-container'), $('#main-list-container > div.main-backup-entry'), data);
-
                     }
                 }
 
@@ -865,20 +828,40 @@ $(document).ready(function() {
 
     APP_DATA.callServer = serverWithCallback;
 
-    $('#main-settings').click(function() {
-        var pos = $('#main-settings').position();
-        var barheight = $('#main-topbar').outerHeight();
-        var menuwidth = $('#main-control-menu').outerWidth();
-        var buttonwidth = $('#main-settings').outerWidth();
+    $.showPopupMenu = function(menu, anchor, offset) {
+        var pos = anchor.offset();
+        var menuwidth = menu.outerWidth();
+        var menuheight = menu.outerHeight();
 
-        $('#main-control-menu').css({
-            position: 'absolute',
-            top: barheight + 'px',
-            right: ($(document).outerWidth() - (pos.left + buttonwidth)) + 'px'
-        });
-        $('#main-control-menu').toggle();
-        if ($('#main-control-menu').is(':visible'))
+        offset = offset || {};
+        offset.x = offset.x || 0;
+        offset.y = offset.y || 0;
+
+        menu.toggle();
+
+        var left = pos.left + offset.x;
+        var top = pos.top + offset.y;
+        if (left + menuwidth > $(document).outerWidth())
+            left -= menuwidth;
+        if (top + menuheight > $(document).outerHeight())
+            top -= menuheight;
+
+        if (menu.is(':visible')) {
+            menu.css({
+                position: 'absolute',
+                top: top + 'px',
+                left: left + 'px'
+            });
             $('#click-intercept').show();
+        }
+    };
+
+    $('#main-settings').click(function() {
+        var pos = $('#main-settings').offset();
+        var buttonwidth = $('#main-settings').outerWidth();        
+        $.showPopupMenu($('#main-control-menu'), $('#main-settings'), {y: $('#main-topbar').outerHeight() - pos.top });
+
+        $('#main-control-menu').css({ left: undefined, right: ($(document).outerWidth() - (pos.left + buttonwidth)) + 'px' });
     });
 
     $('#click-intercept').click(function() {
@@ -1107,5 +1090,34 @@ $(document).ready(function() {
           $(e).text($.timeago($.parseDate($(e).attr('alt'))));
         })
     }, 60*1000);
+
+
+    APP_DATA.contextMenuId = null;
+    APP_DATA.showContextMenu = function(id, anchor) {
+        APP_DATA.contextMenuId = id;
+        $.showPopupMenu($('#backup-context-menu'), anchor, {x: $(anchor).outerWidth() + 10});
+    };
+
+    $('#backup-details-run').click(function(e) {
+        APP_DATA.runBackup(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-restore').click(function(e) { 
+        APP_DATA.restoreBackup(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-edit').click(function(e) {
+        APP_DATA.editBackup(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-delete').click(function(e) {
+        var name = APP_DATA.getBackupName(APP_DATA.contextMenuId);
+
+        if (name && confirm('Really delete ' + name + '?'))
+            APP_DATA.deleteBackup(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-context-menu').menu().removeClass('ui-widget-content');
+    $('#backup-context-menu').find('li').click(function() {  $('#click-intercept').trigger('click'); });
 
 });
