@@ -137,20 +137,21 @@ namespace Duplicati.Server
         /// <summary>
         /// Returns the next valid date, given the start and the interval
         /// </summary>
-        /// <param name="start">The starting time</param>
+        /// <param name="basetime">The base time</param>
+        /// <param name="firstdata">The first allowed date</param>
         /// <param name="repetition">The repetition interval</param>
         /// <param name="allowedDays">The days the backup is allowed to run</param>
         /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
-        public static DateTime GetNextValidTime(DateTime start, string repetition, DayOfWeek[] allowedDays)
+        public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition, DayOfWeek[] allowedDays)
         {
-            DateTime res = start;
+            DateTime res = basetime;
 
             int i = 50000;
 
-            while (!IsDateAllowed(res, allowedDays) && i-- > 0)
+            while ((!IsDateAllowed(res, allowedDays)|| res < firstdate) && i-- > 0)
                 res = Timeparser.ParseTimeInterval(repetition, res);
 
-            if (!IsDateAllowed(res, allowedDays))
+            if (!IsDateAllowed(res, allowedDays) || res < firstdate)
             {
                 StringBuilder sb = new StringBuilder();
                 if (allowedDays != null)
@@ -161,9 +162,9 @@ namespace Duplicati.Server
                         sb.Append(w.ToString());
                     }
 
-                throw new Exception(string.Format(Strings.Scheduler.InvalidTimeSetupError, start, repetition, sb.ToString()));
+                throw new Exception(string.Format(Strings.Scheduler.InvalidTimeSetupError, basetime, repetition, sb.ToString()));
             }
-
+            
             return res;
         }
         
@@ -204,15 +205,20 @@ namespace Duplicati.Server
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {
                         DateTime start;
+                        DateTime last = new DateTime(0, DateTimeKind.Utc);
                         if (!scheduled.TryGetValue(sc.ID, out start))
-                            start = new DateTime(Math.Max(sc.Time.Ticks, sc.LastRun.Ticks), DateTimeKind.Utc);
-
+                        {
+                            start = new DateTime(sc.Time.Ticks, DateTimeKind.Utc);
+                            last = sc.LastRun;
+                        }
+                        
                         try
                         {
-                            start = GetNextValidTime(start, sc.Repeat, sc.AllowedDays);
+                            start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Program.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
                         }
 
                         //If time is exceeded, run it now
@@ -246,11 +252,11 @@ namespace Duplicati.Server
                             while (start <= DateTime.Now && i-- > 0)
                                 try
                                 {
-                                    start = GetNextValidTime(Timeparser.ParseTimeInterval(sc.Repeat, start), sc.Repeat, sc.AllowedDays);
+                                    start = GetNextValidTime(start, start.AddSeconds(1), sc.Repeat, sc.AllowedDays);
                                 }
-                                catch
+                                catch(Exception ex)
                                 {
-                                    //TODO: Report this somehow
+                                    Program.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
                                     continue;
                                 }
                             
