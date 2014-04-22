@@ -814,6 +814,8 @@ $(document).ready(function() {
                         } catch (e) {}
                     }
 
+                    $('#about-dialog-current-version').text(PRIVATE_DATA.server_config.ServerVersionName);
+
                     $('#about-dialog-thirdparty-list').empty();
                     $('#about-dialog-thirdparty-list').append($.tmpl($('#about-dialog-template'), d));
                     APP_DATA.hasLoadedAbout = true;

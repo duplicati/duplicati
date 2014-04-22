@@ -378,4 +378,7 @@ div.main-icon-plus {
     width: 30%;
 }
 
+#about-dialog-current-version {
+    display: inline;
+}
 
