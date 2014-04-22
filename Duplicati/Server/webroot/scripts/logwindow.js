@@ -13,7 +13,7 @@ $(document).ready(function() {
             $('#log-dialog').data('log', data);
         }
 
-        var datacalback = function(data) {
+        var datacallback = function(data) {
             $.tmpl($('#log-data-template'), data).appendTo($('#log-dialog'));
             $('#log-dialog').find('.log-exception').each(function(i, e) {
                 $(e).html(nl2br($(e).html()));
@@ -33,7 +33,7 @@ $(document).ready(function() {
 
         if (data.first == null) {
             $('#log-dialog').empty();
-            APP_DATA.callServer({'action': 'read-log', 'pagesize': 100}, datacalback);
+            APP_DATA.callServer({'action': 'read-log', 'pagesize': 100}, datacallback);
         };
 
     };
