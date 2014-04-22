@@ -60,11 +60,11 @@ namespace Duplicati.Library.Main.Operation
                 
                 using(var cm = DynamicLoader.CompressionLoader.GetModule(module, m_targetpath, m_options.RawOptions))
                 {
-                    using(var cs = cm.CreateFile("log-database.sqlite", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.Now))
+                    using(var cs = cm.CreateFile("log-database.sqlite", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow))
                     using(var fs = System.IO.File.Open(tmp, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
                         Library.Utility.Utility.CopyStream(fs, cs);
                         
-                    using(var cs = new System.IO.StreamWriter(cm.CreateFile("system-info.txt", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.Now)))
+                    using(var cs = new System.IO.StreamWriter(cm.CreateFile("system-info.txt", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow)))
                     {
                         cs.WriteLine("Duplicati: {0} ({1})", System.Reflection.Assembly.GetEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
                         cs.WriteLine("OS: {0}", Environment.OSVersion);

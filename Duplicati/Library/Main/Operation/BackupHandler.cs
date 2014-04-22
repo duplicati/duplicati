@@ -1052,7 +1052,7 @@ namespace Duplicati.Library.Main.Operation
                 finally { m_indexvolume = null; }
             }
 
-            m_result.EndTime = DateTime.Now;
+            m_result.EndTime = DateTime.UtcNow;
         }
     }
 }

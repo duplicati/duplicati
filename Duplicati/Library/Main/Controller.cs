@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main
     				
                     method(result);
                     
-                    result.EndTime = DateTime.Now;
+                    result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
     
     				OnOperationComplete(result);

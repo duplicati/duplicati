@@ -449,7 +449,7 @@ namespace Duplicati.Library.Main
         
         public BasicResults() 
         { 
-            this.BeginTime = DateTime.Now; 
+            this.BeginTime = DateTime.UtcNow; 
             this.m_parent = null;
             m_messages = new Library.Utility.FileBackedStringList();
             m_warnings = new Library.Utility.FileBackedStringList();
@@ -464,7 +464,7 @@ namespace Duplicati.Library.Main
 
         public BasicResults(BasicResults p)
         { 
-            this.BeginTime = DateTime.Now; 
+            this.BeginTime = DateTime.UtcNow; 
             this.m_parent = p;
         }
         

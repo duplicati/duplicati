@@ -363,7 +363,7 @@ namespace Duplicati.Library.Main.Operation
             }
             
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
-            result.EndTime = DateTime.Now;
+            result.EndTime = DateTime.UtcNow;
         }
 
         private static void ApplyMetadata(string path, LocalRestoreDatabase database)
