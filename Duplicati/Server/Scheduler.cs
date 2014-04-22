@@ -222,7 +222,7 @@ namespace Duplicati.Server
                         }
 
                         //If time is exceeded, run it now
-                        if (start <= DateTime.Now)
+                        if (start <= DateTime.UtcNow)
                         {
                             var jobsToRun = new List<Server.Runner.IRunnerData>();
                             //TODO: Cache this to avoid frequent lookups
@@ -249,7 +249,7 @@ namespace Duplicati.Server
                             // passed the current date and time
                             //TODO: Make this more efficient
                             int i = 50000;
-                            while (start <= DateTime.Now && i-- > 0)
+                            while (start <= DateTime.UtcNow && i-- > 0)
                                 try
                                 {
                                     start = GetNextValidTime(start, start.AddSeconds(1), sc.Repeat, sc.AllowedDays);
@@ -268,7 +268,7 @@ namespace Duplicati.Server
                             foreach(var job in jobsToRun)
                                 m_worker.AddTask(job);
                             
-                            if (start < DateTime.Now)
+                            if (start < DateTime.UtcNow)
                             {
                                 //TODO: Report this somehow
                                 continue;
@@ -302,7 +302,7 @@ namespace Duplicati.Server
                 if (scheduled.Count > 0)
                 {
                     //When is the next run scheduled?
-                    TimeSpan nextrun = scheduled.Min((x) => x.Value) - DateTime.Now;
+                    TimeSpan nextrun = scheduled.Min((x) => x.Value) - DateTime.UtcNow;
                     if (nextrun.TotalMilliseconds < 0)
                         continue;
 
