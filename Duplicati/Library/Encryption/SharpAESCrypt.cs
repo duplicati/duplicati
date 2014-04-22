@@ -1037,8 +1037,8 @@ namespace SharpAESCrypt
 
                 if (Extension_InsertTimeStamp)
                 {
-                    m_extensions.Add(new KeyValuePair<string, byte[]>("CREATED-DATE", System.Text.Encoding.UTF8.GetBytes(DateTime.Now.ToString("yyyy-MM-dd"))));
-                    m_extensions.Add(new KeyValuePair<string, byte[]>("CREATED-TIME", System.Text.Encoding.UTF8.GetBytes(DateTime.Now.ToUniversalTime().ToString("hh-mm-ss"))));
+                    m_extensions.Add(new KeyValuePair<string, byte[]>("CREATED-DATE", System.Text.Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd"))));
+                    m_extensions.Add(new KeyValuePair<string, byte[]>("CREATED-TIME", System.Text.Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("hh-mm-ss"))));
                 }
 
                 if (Extension_InsertPlaceholder)
