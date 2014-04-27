@@ -367,7 +367,7 @@ Duplicati can send email notifications.
   --send-mail-body=<body>
     The content of the email message. This should contain "%RESULT%".
   --send-mail-url=<smtp-url>
-    An URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587"
+    An URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587" or "smtp://smtp.example.com:25"
   --send-mail-username=<username>
     Required username to authenticate with SMTP server.
   --send-mail-password=<password>
