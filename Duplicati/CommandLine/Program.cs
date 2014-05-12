@@ -129,7 +129,9 @@ namespace Duplicati.CommandLine
                         return 200;
                     }
                 
-                if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")))
+                // Probe for "help" to avoid extra processing
+                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.InvariantCultureIgnoreCase));
+                if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
                 {
                     string filename;
                     if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
@@ -155,19 +157,26 @@ namespace Duplicati.CommandLine
                 }
                 else
                     command = "help";
+                
+                // Update probe for help
+                isHelp = string.Equals(command, "help", StringComparison.InvariantCultureIgnoreCase);
 
-                if (!options.ContainsKey("passphrase"))
-                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
-                        options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
-
-                if (!options.ContainsKey("auth-password"))
-                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
-                        options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
-
-                if (!options.ContainsKey("auth-username"))
-                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
-                        options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
-
+                // Skip the env read if the command is help, otherwise we may report weirdness
+                if (!isHelp)
+                {
+                    if (!options.ContainsKey("passphrase"))
+                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
+                            options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
+    
+                    if (!options.ContainsKey("auth-password"))
+                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
+                            options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
+    
+                    if (!options.ContainsKey("auth-username"))
+                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
+                            options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
+                }
+                
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["help"] = Commands.Help;                
                 knownCommands["find"] = Commands.List;
@@ -185,7 +194,7 @@ namespace Duplicati.CommandLine
                 knownCommands["verify"] = Commands.Test;
                 knownCommands["test-filters"] = Commands.TestFilters;
 
-                if (verbose)
+                if (!isHelp && verbose)
                 {
                     Console.WriteLine("Input command: {0}", command);
                     
