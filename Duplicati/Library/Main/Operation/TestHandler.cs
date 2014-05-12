@@ -172,6 +172,7 @@ namespace Duplicati.Library.Main.Operation
                     {   
                         backend.GetForTesting(f.Name, f.Size, f.Hash);
                         db.UpdateVerificationCount(f.Name);
+                        m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
                     catch (Exception ex)
                     {
