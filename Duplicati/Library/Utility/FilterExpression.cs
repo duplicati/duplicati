@@ -296,7 +296,10 @@ namespace Duplicati.Library.Utility
         
         private static IEnumerable<string> Expand(string filter)
         {
-            if (string.IsNullOrWhiteSpace(filter) || filter.Length < 2 || (filter.StartsWith("[") && filter.EndsWith("]")))
+            if (string.IsNullOrWhiteSpace(filter))
+                return null;
+            
+            if (filter.Length < 2 || (filter.StartsWith("[") && filter.EndsWith("]")))
                 return new string[] { filter };
             else
                 return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);

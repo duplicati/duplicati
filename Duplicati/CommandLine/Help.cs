@@ -65,13 +65,22 @@ namespace Duplicati.CommandLine
                 System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
                 System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
             }
-            catch { }
+            catch
+            {
+            }
 
             if (string.IsNullOrWhiteSpace(topic))
                 topic = "help";
 
-            if (string.Equals("help", topic, StringComparison.InvariantCultureIgnoreCase) && options.Count == 1)
-                topic = new List<string>(options.Keys)[0];
+            if (string.Equals("help", topic, StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (options.Count == 1)
+                    topic = new List<string>(options.Keys)[0];
+                else if (System.Environment.CommandLine.IndexOf("--exclude", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    topic = "exclude";
+                else if (System.Environment.CommandLine.IndexOf("--include", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    topic = "include";
+            }
 
 
             if (_document.ContainsKey(topic))
