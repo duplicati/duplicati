@@ -4,25 +4,15 @@ OUTPUT_ARGS=/property:OutputPath=bin/Release
 SOURCE_DIR=../../.
 PACKAGE_DIR=./pkg
 PKG_TARGET=$(PACKAGE_DIR)/usr/lib/duplicati
-LOCALIZATION_TOOL=mono $(SOURCE_DIR)/Duplicati/Localization/LocalizationTool.exe
+LOCALIZATION_TOOL=mono $(SOURCE_DIR)/Duplicati/Localization/bin/Release/LocalizationTool.exe
 
 all: package
 
 build:
 	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/Duplicati.sln"
-	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/BuildTools/LocalizationTool/LocalizationTool.sln"
+	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 
-translations: build
-	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/BuildTools/LocalizationTool/LocalizationTool.sln"
-	for lang_file in `find "$(SOURCE_DIR)/Duplicati/Localization" -type f -name report.\*.csv`; do \
-		ccode=`basename "$$lang_file"`; \
-		ccode=$${ccode%%.csv}; \
-		ccode=$${ccode##report.}; \
-		$(LOCALIZATION_TOOL) import $$ccode "$(SOURCE_DIR)/Duplicati/Localization/$$lang_file"; \
-	done
-	$(LOCALIZATION_TOOL) build
-
-package:
+package: build
 	if [ -e "$(PACKAGE_DIR)" ]; then \
 		rm -rf "$(PACKAGE_DIR)"; \
 	fi
@@ -37,11 +27,6 @@ package:
 	mkdir "$(PACKAGE_DIR)/usr/share/doc/duplicati"	
 	cp -R "$(SOURCE_DIR)/Duplicati/GUI/bin/Release" "$(PACKAGE_DIR)/usr/lib/duplicati"
 
-	cp "$(SOURCE_DIR)/Duplicati/Library/Backend/SSH/bin/Release/"*.dll "$(PKG_TARGET)"
-	cp "$(SOURCE_DIR)/Duplicati/Library/Backend/TahoeLAFS/bin/Release/"*.dll "$(PKG_TARGET)"
-
-	cp -R "$(SOURCE_DIR)/Duplicati/Localization/compiled/"* "$(PKG_TARGET)"
-
 	rm -rf "$(PKG_TARGET)/alphavss"
 	rm -rf "$(PKG_TARGET)/SQLite"
 	rm -rf "$(PKG_TARGET)/win-tools"
@@ -49,8 +34,10 @@ package:
 	rm -rf "$(PKG_TARGET)/AlphaFS.dll"
 	rm -rf "$(PKG_TARGET)/AlphaVSS.Common.dll"
 
+	cp "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/bin/duplicati/"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-commandline-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-commandline"
+	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-commandline-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-cli"
+	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-server-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-server"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati.desktop" "$(PACKAGE_DIR)/usr/share/applications/"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati.xpm" "$(PACKAGE_DIR)/usr/share/pixmaps/"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati.png" "$(PACKAGE_DIR)/usr/share/pixmaps/"
