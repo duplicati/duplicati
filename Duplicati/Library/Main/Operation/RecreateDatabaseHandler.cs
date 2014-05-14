@@ -199,7 +199,7 @@ namespace Duplicati.Library.Main.Operation
                                 
                                     //If there are blocklists in the index file, update the blocklists
                                     foreach(var b in svr.BlockLists)
-                                        restoredb.UpdateBlockset(b.Hash, b.Blocklist, hashsize, tr);
+                                        restoredb.UpdateBlockset(b.Hash, b.Blocklist, tr);
                                 }
                             }
                         }
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Main.Operation
                             
                             // Grab all known blocklists from the volume
                             foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
-                                restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), hashsize, tr);
+                                restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
     
                             // Update tables so we know if we are done
                             restoredb.FindMissingBlocklistHashes(hashsize, tr);

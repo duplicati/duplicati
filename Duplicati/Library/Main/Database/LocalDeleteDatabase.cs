@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main.Database
 					{
 						var hash = reader.GetValue(0).ToString();
 						var size = Convert.ToInt64(reader.GetValue(1));
-						m_lookup.Add(hash, size);
+						m_lookup.Add(hash, size, size);
 					}
 				}
 				
@@ -315,7 +315,7 @@ namespace Duplicati.Library.Main.Database
 				if (m_lookup != null)
 				{
 					long nsize;
-					if(m_lookup.TryGet(hash, out nsize) && nsize == size)
+					if(m_lookup.TryGet(hash, size, out nsize) && nsize == size)
                         return true;
                     else
                         return false;

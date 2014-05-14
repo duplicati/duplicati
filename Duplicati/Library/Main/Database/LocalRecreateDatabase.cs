@@ -194,14 +194,15 @@ namespace Duplicati.Library.Main.Database
                 // Insert all known blocks into block table with volumeid = -1
                 cmd.ExecuteNonQuery(insertBlocksCommand);
                     
-                // Update the cache with new wblocks
+                // Update the cache with new blocks
                 if (m_blockHashLookup != null)
                 {
-                    using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = -1 "))
+                    using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = -1 "))
                         while(rd.Read())
                         {
                             var hash = rd.GetValue(0).ToString();
-                            m_blockHashLookup.Add(hash, -1);
+                            var size = Convert.ToInt64(rd.GetValue(1));
+                            m_blockHashLookup.Add(hash, size, -1);
                         }
                 }                
                                                 
@@ -310,7 +311,7 @@ namespace Duplicati.Library.Main.Database
                                 
             if (m_metadataLookup != null)
             {
-                if (m_metadataLookup.TryGet(metahash, out metadataid))
+                if (m_metadataLookup.TryGet(metahash, metahashsize, out metadataid))
                     return metadataid;
                 else
                     metadataid = -1;
@@ -332,7 +333,7 @@ namespace Duplicati.Library.Main.Database
             metadataid = Convert.ToInt64(m_insertMetadatasetCommand.ExecuteScalar());
             
             if (m_metadataLookup != null)
-                m_metadataLookup.Add(metahash, metadataid);
+                m_metadataLookup.Add(metahash, metahashsize, metadataid);
                 
             return metadataid;
         }
@@ -342,7 +343,7 @@ namespace Duplicati.Library.Main.Database
             var blocksetid = -1L;
             if (m_fileHashLookup != null)
             {
-                if (m_fileHashLookup.TryGet(fullhash, out blocksetid))
+                if (m_fileHashLookup.TryGet(fullhash, size, out blocksetid))
                     return blocksetid;
                 else
                     blocksetid = -1;
@@ -363,7 +364,7 @@ namespace Duplicati.Library.Main.Database
             blocksetid = Convert.ToInt64(m_insertBlocksetCommand.ExecuteScalar());
 
             if (m_fileHashLookup != null)
-                m_fileHashLookup.Add(fullhash, blocksetid);
+                m_fileHashLookup.Add(fullhash, size, blocksetid);
         
             if (blocklisthashes != null)
             {
@@ -389,7 +390,7 @@ namespace Duplicati.Library.Main.Database
             var currentVolumeId = -2L;
             if (m_blockHashLookup != null)
             {
-                if (!m_blockHashLookup.TryGet(hash, out currentVolumeId))
+                if (!m_blockHashLookup.TryGet(hash, size, out currentVolumeId))
                     currentVolumeId = -2;
             }
             else
@@ -415,7 +416,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertBlockCommand.ExecuteNonQuery();
                 
                 if (m_blockHashLookup != null)
-                    m_blockHashLookup.Add(hash, volumeID);
+                    m_blockHashLookup.Add(hash, size, volumeID);
             }
             else if (currentVolumeId == -1)
             {
@@ -429,7 +430,7 @@ namespace Duplicati.Library.Main.Database
                     throw new Exception(string.Format("Failed to update table, found {0} entries for key {1} with size {2}", c ,hash, size));
                     
                 if (m_blockHashLookup != null)
-                    m_blockHashLookup.Add(hash, volumeID);
+                    m_blockHashLookup.Add(hash, size, volumeID);
             }
             else
             {
@@ -442,12 +443,12 @@ namespace Duplicati.Library.Main.Database
             
         }
         
-        public void UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, long hashsize, System.Data.IDbTransaction transaction)
+        public void UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
         {
             if (m_blockListHashLookup != null)
             {
                 bool b;
-                if (m_blockListHashLookup.TryGet(hash, out b))
+                if (m_blockListHashLookup.TryGet(hash, -1, out b))
                     return;
             }
             else
@@ -460,7 +461,7 @@ namespace Duplicati.Library.Main.Database
             }
             
             if (m_blockListHashLookup != null)
-                m_blockListHashLookup.Add(hash, false);
+                m_blockListHashLookup.Add(hash, -1, false);
         
             m_insertBlockset.Transaction = transaction;                
             m_insertBlockset.SetParameterValue(0, hash);

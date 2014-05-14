@@ -49,13 +49,13 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="hash">The hash to add</param>
         /// <param name="value">The value assocated with the hash</param>
-        public void Add(string hash, T value)
+        public void Add(string hash, long size, T value)
         {
             var key = DecodeBase64Hash(hash) % m_entries;
             var lst = m_lookup[key];
             if (lst == null)
                 lst = m_lookup[key] = new SortedList<string, T>(1);
-            lst.Add(hash, value);
+            lst.Add(hash + ':' + size.ToString(), value);
         }
         
         /// <summary>
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main
         /// <returns><c>true</c>, if the value was found, <c>false</c> otherwise.</returns>
         /// <param name="hash">The hash to look for.</param>
         /// <param name="value">The value associated with the hash</param>
-        public bool TryGet(string hash, out T value)
+        public bool TryGet(string hash, long size, out T value)
         {
             var key = DecodeBase64Hash(hash) % m_entries;
             var lst = m_lookup[key];
@@ -75,7 +75,7 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                return lst.TryGetValue(hash, out value);
+                return lst.TryGetValue(hash + ':' + size.ToString(), out value);
             }
         }
         
