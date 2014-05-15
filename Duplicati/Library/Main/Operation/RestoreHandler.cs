@@ -136,10 +136,16 @@ namespace Duplicati.Library.Main.Operation
                                 //UpdateMissingBlocksTable(key);
                             }
 
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                return;
+
                             CreateDirectoryStructure(database, m_options, m_result);
 
                             //If we are patching an existing target folder, do not touch stuff that is already updated
                             ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result);
+
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                return;
 
 #if DEBUG
                             if (!m_options.NoLocalBlocks)
@@ -147,6 +153,9 @@ namespace Duplicati.Library.Main.Operation
                             // If other local files already have the blocks we want, we use them instead of downloading
                             ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result);
                             
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                return;
+                        
                             //Update files with data
                             PatchWithBlocklist(database, rd, m_options, m_result, m_blockbuffer);
                         };
@@ -289,6 +298,12 @@ namespace Duplicati.Library.Main.Operation
                         ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
                     }
 
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                {
+                    backend.WaitForComplete(database, null);
+                    return;
+                }
+
                 // If other local files already have the blocks we want, we use them instead of downloading
                 if (m_options.PatchWithLocalBlocks)
                 {
@@ -297,6 +312,12 @@ namespace Duplicati.Library.Main.Operation
                         ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
                 }
 
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                {
+                    backend.WaitForComplete(database, null);
+                    return;
+                }
+                
                 // Fill BLOCKS with remote sources
                 var volumes = database.GetMissingVolumes().ToList();
 
@@ -310,6 +331,12 @@ namespace Duplicati.Library.Main.Operation
 				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
 					try
 					{
+                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        {
+                            backend.WaitForComplete(database, null);
+                            return;
+                        }
+                    
 						using(var tmpfile = blockvolume.TempFile)
 						using(var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
 							PatchWithBlocklist(database, blocks, m_options, result, m_blockbuffer);
@@ -318,11 +345,16 @@ namespace Duplicati.Library.Main.Operation
 					{
                         brokenFiles.Add(blockvolume.Name);
                         result.AddError(string.Format("Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message), ex);
+                        if (ex is System.Threading.ThreadAbortException)
+                            throw;
 					}
                 
                 // Reset the filehasher if it was used to verify existing files
                 filehasher.Initialize();
 					
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                    return;
+                
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
                 
                 var fileErrors = 0L;
@@ -332,6 +364,12 @@ namespace Duplicati.Library.Main.Operation
                     {
                         try
                         {
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(database, null);
+                                return;
+                            }
+                            
                             result.AddVerboseMessage("Testing restored file integrity: {0}", file.Path);
                             
                             string key;
@@ -351,6 +389,8 @@ namespace Duplicati.Library.Main.Operation
                         {
                             fileErrors++;
                             result.AddWarning(ex.Message, ex);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
                         }
                     }
                     
@@ -403,6 +443,9 @@ namespace Duplicati.Library.Main.Operation
 		                    		{
 		    			                foreach(var block in entry.Blocks)
 		    			                {
+                                            if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                                return;
+                                            
 			    			                if (sourcestream.Length > block.Offset)
 				                    		{
 				                    			sourcestream.Position = block.Offset;
@@ -430,11 +473,17 @@ namespace Duplicati.Library.Main.Operation
 	                			catch (Exception ex)
 	                			{
 	                                result.AddWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
+                                    if (ex is System.Threading.ThreadAbortException)
+                                        throw;
 	                			}
 	                		}
                             
                             if (updateCount++ % 20 == 0)
+                            {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                                if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    return;
+                            }
                             
 	                	}
                         else
@@ -445,6 +494,8 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         result.AddWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
+                        if (ex is System.Threading.ThreadAbortException)
+                            throw;
                     }
                     
                     if (patched)
@@ -475,6 +526,9 @@ namespace Duplicati.Library.Main.Operation
                     var patched = false;
                     try
                     {
+                        if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                            return;
+                        
     					var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
     					if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
     					{
@@ -493,6 +547,9 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     try
                                     {
+                                        if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                            return;
+                                        
                                         if (m_systemIO.FileExists(source.Path))
                                             using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
                                             {
@@ -516,6 +573,8 @@ namespace Duplicati.Library.Main.Operation
                                     catch (Exception ex)
                                     {
                                         result.AddWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message), ex);
+                                        if (ex is System.Threading.ThreadAbortException)
+                                            throw;
                                     }
                                 }
                             }
@@ -591,6 +650,9 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
+                    if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                        return;
+                    
                     if (!m_systemIO.DirectoryExists(folder))
                     {
                     	result.FoldersRestored++;
@@ -637,6 +699,9 @@ namespace Duplicati.Library.Main.Operation
                     {
                         try
                         {
+                            if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                return;
+                            
                             if (rename)
                                 filehasher.Initialize();
 
@@ -679,11 +744,17 @@ namespace Duplicati.Library.Main.Operation
                             }
                             
                             if (updateCount++ % 20 == 0)
+                            {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                                if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    return;
+                            }
                         }
                         catch (Exception ex)
                         {
                             result.AddWarning(string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
                         }                        
                     }
                     else

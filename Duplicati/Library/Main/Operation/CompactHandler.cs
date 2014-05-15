@@ -66,62 +66,68 @@ namespace Duplicati.Library.Main.Operation
 		}
 		
 		internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
-		{
-			var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
-			report.ReportCompactData(m_result);
+        {
+            var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
+            report.ReportCompactData(m_result);
 			
-			if (report.ShouldReclaim || report.ShouldCompact)
-			{
-				using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
-				{
-					if (!hasVerifiedBackend && !m_options.NoBackendverification)
-						FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
+            if (report.ShouldReclaim || report.ShouldCompact)
+            {
+                using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+                {
+                    if (!hasVerifiedBackend && !m_options.NoBackendverification)
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
 		
-					BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
-					newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
+                    BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
+                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
 	
-					IndexVolumeWriter newvolindex = null;
-					if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-					{
-						newvolindex = new IndexVolumeWriter(m_options);
-						newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+                    IndexVolumeWriter newvolindex = null;
+                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                    {
+                        newvolindex = new IndexVolumeWriter(m_options);
+                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
                         db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
-						newvolindex.StartVolume(newvol.RemoteFilename);
-					}
+                        newvolindex.StartVolume(newvol.RemoteFilename);
+                    }
 					
-					long blocksInVolume = 0;
-					long discardedBlocks = 0;
-					long discardedSize = 0;
-					byte[] buffer = new byte[m_options.Blocksize];
-					var remoteList = db.GetRemoteVolumes().ToArray();
+                    long blocksInVolume = 0;
+                    long discardedBlocks = 0;
+                    long discardedSize = 0;
+                    byte[] buffer = new byte[m_options.Blocksize];
+                    var remoteList = db.GetRemoteVolumes().ToArray();
 					
-					//These are for bookkeeping
-					var uploadedVolumes = new List<KeyValuePair<string, long>>();
-					var deletedVolumes = new List<KeyValuePair<string, long>>();
-					var downloadedVolumes = new List<KeyValuePair<string, long>>();
+                    //These are for bookkeeping
+                    var uploadedVolumes = new List<KeyValuePair<string, long>>();
+                    var deletedVolumes = new List<KeyValuePair<string, long>>();
+                    var downloadedVolumes = new List<KeyValuePair<string, long>>();
 					
-					//We start by deleting unused volumes to save space before uploading new stuff
-					var fullyDeleteable = (from v in remoteList
-							where report.DeleteableVolumes.Contains(v.Name)
-							select (IRemoteVolume)v).ToList();
-					deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable, transaction));
+                    //We start by deleting unused volumes to save space before uploading new stuff
+                    var fullyDeleteable = (from v in remoteList
+                                           where report.DeleteableVolumes.Contains(v.Name)
+                                           select (IRemoteVolume)v).ToList();
+                    deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable, transaction));
 
-					// This list is used to pick up unused volumes,
-					// so they can be deleted once the upload of the
-					// required fragments is complete
-					var deleteableVolumes = new List<IRemoteVolume>();
+                    // This list is used to pick up unused volumes,
+                    // so they can be deleted once the upload of the
+                    // required fragments is complete
+                    var deleteableVolumes = new List<IRemoteVolume>();
 
-					if (report.ShouldCompact)
-					{
-						var volumesToDownload = (from v in remoteList
-									   where report.CompactableVolumes.Contains(v.Name) 
-									   select (IRemoteVolume)v).ToList();
+                    if (report.ShouldCompact)
+                    {
+                        var volumesToDownload = (from v in remoteList
+                                                 where report.CompactableVolumes.Contains(v.Name)
+                                                 select (IRemoteVolume)v).ToList();
 						
-						using(var q = db.CreateBlockQueryHelper(m_options, transaction))
-						{
-							foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
-							using (var tmpfile = entry.TempFile)
-							{
+                        using(var q = db.CreateBlockQueryHelper(m_options, transaction))
+                        {
+                            foreach(var entry in new AsyncDownloader(volumesToDownload, backend))
+                            using(var tmpfile = entry.TempFile)
+                            {
+                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                {
+                                    backend.WaitForComplete(db, transaction);
+                                    return false;
+                                }
+                                    
 								downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
 								var inst = VolumeBase.ParseFilename(entry.Name);
 								using(var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))

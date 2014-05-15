@@ -124,6 +124,12 @@ namespace Duplicati.Library.Main.Operation
                     foreach(var n in tp.ExtraVolumes)
                         try
                         {
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(db, null);
+                                return;
+                            }    
+                        
                             if (!m_options.Dryrun)
                             {
                                 db.RegisterRemoteVolume(n.File.Name, n.FileType, RemoteVolumeState.Deleting);								
@@ -135,6 +141,8 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             m_result.AddError(string.Format("Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message), ex);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
                         }
 							
                     foreach(var n in tp.MissingVolumes)
@@ -142,7 +150,13 @@ namespace Duplicati.Library.Main.Operation
                         IDisposable newEntry = null;
                         
                         try
-                        {                            
+                        {  
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(db, null);
+                                return;
+                            }    
+                            
                             if (n.Type == RemoteVolumeType.Files)
                             {
                                 var filesetId = db.GetFilesetIdFromRemotename(n.Name);
@@ -291,6 +305,9 @@ namespace Duplicati.Library.Main.Operation
                                 finally { newEntry = null; }
                                 
                             m_result.AddError(string.Format("Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message), ex);
+                            
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
                         }
                     }
                 }

@@ -73,6 +73,12 @@ namespace Duplicati.Library.Main.Operation
                     var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
                     try
                     {
+                        if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                        {
+                            backend.WaitForComplete(db, null);
+                            return;
+                        }    
+                        
                         using(var tf = vol.TempFile)
                         {
                             if (parsedInfo.FileType == RemoteVolumeType.Files)
@@ -161,6 +167,8 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                         m_results.AddError(string.Format("Failed to process file {0}", vol.Name), ex);
+                        if (ex is System.Threading.ThreadAbortException)
+                            throw;
                     }
                 }
             }
@@ -170,6 +178,9 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {   
+                        if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                            return;
+                        
                         backend.GetForTesting(f.Name, f.Size, f.Hash);
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
@@ -178,6 +189,8 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                         m_results.AddError(string.Format("Failed to process file {0}", f.Name), ex);
+                        if (ex is System.Threading.ThreadAbortException)
+                            throw;
                     }
                 }
             }

@@ -75,6 +75,12 @@ namespace Duplicati.Library.Main.Operation
                 var count = 0L;
                 foreach(var f in db.DropFilesetsFromTable(toDelete, transaction))
                 {
+                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                    {
+                        backend.WaitForComplete(db, transaction);
+                        return;
+                    }    
+                    
                     count++;
                     if (!m_options.Dryrun)
                         backend.Delete(f.Key, f.Value);

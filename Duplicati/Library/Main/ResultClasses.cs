@@ -164,7 +164,23 @@ namespace Duplicati.Library.Main
         IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }   
     }
     
-    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions
+    public interface ITaskControl
+    {
+        void Pause();
+        void Resume();
+        void Stop();
+        void Abort();
+    }
+    
+    internal enum TaskControlState
+    {
+        Run,
+        Pause,
+        Stop,
+        Abort
+    }
+    
+    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl
     {
         protected class DbMessage
         {
@@ -185,6 +201,9 @@ namespace Duplicati.Library.Main
         protected System.Threading.Thread m_callerThread;
         protected readonly object m_lock = new object();
         protected Queue<DbMessage> m_dbqueue;
+                
+        private TaskControlState m_controlState = TaskControlState.Run;
+        private System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
         
         private bool m_verboseOutput;
         private bool m_verboseErrors;
@@ -482,7 +501,90 @@ namespace Duplicati.Library.Main
         
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
         
+        public event Action<TaskControlState> StateChangedEvent;
         
+        /// <summary>
+        /// Request that this task pauses.
+        /// </summary>
+        public void Pause()
+        {
+            lock(m_lock)
+                if (m_controlState == TaskControlState.Run)
+                {
+                    m_pauseEvent.Reset();
+                    m_controlState = TaskControlState.Pause;
+                }
+            
+            if (StateChangedEvent != null)
+                StateChangedEvent(m_controlState);
+        }
+        
+        /// <summary>
+        /// Request that this task resumes.
+        /// </summary>
+        public void Resume()
+        {
+            lock(m_lock)
+                if (m_controlState == TaskControlState.Pause)
+                {
+                    m_pauseEvent.Set();
+                    m_controlState = TaskControlState.Run;
+                }
+            
+            if (StateChangedEvent != null)
+                StateChangedEvent(m_controlState);
+        }
+        
+        /// <summary>
+        /// Request that this task stops.
+        /// </summary>
+        public void Stop() 
+        {
+            lock(m_lock)
+                if (m_controlState != TaskControlState.Abort)
+                {
+                    m_controlState = TaskControlState.Stop;
+                    m_pauseEvent.Set();
+                }
+            
+            if (StateChangedEvent != null)
+                StateChangedEvent(m_controlState);
+        }
+        
+        /// <summary>
+        /// Request that this task aborts.
+        /// </summary>
+        public void Abort()
+        {
+            lock(m_lock)
+            {
+                m_controlState = TaskControlState.Abort;
+                m_pauseEvent.Set();
+            }
+            
+            if (StateChangedEvent != null)
+                StateChangedEvent(m_controlState);
+        }
+        
+        /// <summary>
+        /// Helper method that the current running task can call to obtain the current state
+        /// </summary>
+        public TaskControlState TaskControlRendevouz()
+        {
+            // If we are paused, go into pause mode
+            m_pauseEvent.WaitOne();
+            
+            // If we are aborted, throw exception
+            if (m_controlState == TaskControlState.Abort)
+                System.Threading.Thread.CurrentThread.Abort();
+            
+            return m_controlState;
+        }
+        
+        /// <summary>
+        /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.
+        /// </summary>
+        /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.</returns>
         public override string ToString()
         {
             return Library.Utility.Utility.PrintSerializeObject(this).ToString();

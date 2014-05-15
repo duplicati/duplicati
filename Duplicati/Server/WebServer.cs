@@ -1254,12 +1254,35 @@ namespace Duplicati.Server
                         return;
 
                     case "stop":
-                        OutputObject(bw, new { Status = "OK" });
-                        return;
-
                     case "abort":
-                        OutputObject(bw, new { Status = "OK" });
-                        return;
+                        {
+                            var task = Program.WorkThread.CurrentTask;
+                            var tasks = Program.WorkThread.CurrentTasks;
+                            long taskid;
+                            if (!input.Contains("taskid") || !long.TryParse(input["taskid"].Value ?? "", out taskid))
+                            {
+                                ReportError(response, bw, "Invalid or missing taskid");
+                                return;
+                            }
+
+                            if (task != null)
+                                tasks.Insert(0, task);
+                        
+                            task = tasks.Where(x => x.TaskID == taskid).FirstOrDefault();
+                            if (tasks == null)
+                            {
+                                ReportError(response, bw, "No such task");
+                                return;
+                            }
+                            
+                            if (string.Equals(command, "abort", StringComparison.InvariantCultureIgnoreCase))
+                                task.Abort();
+                            else
+                                task.Stop();
+                                                    
+                            OutputObject(bw, new { Status = "OK" });
+                            return;
+                        }
 
                     case "run":
                     case "run-backup":
@@ -1295,10 +1318,12 @@ namespace Duplicati.Server
                         return;
                     case "clear-warning":
                         Program.HasWarning = false;
+                        Program.StatusEventNotifyer.SignalNewEvent();
                         OutputObject(bw, new { Status = "OK" });
                         return;
                     case "clear-error":
                         Program.HasError = false;
+                        Program.StatusEventNotifyer.SignalNewEvent();
                         OutputObject(bw, new { Status = "OK" });
                         return;
                     
@@ -1322,6 +1347,7 @@ namespace Duplicati.Server
                         return;
                 }
             }
+            
         }
     }
 }

@@ -43,6 +43,16 @@ namespace Duplicati.Library.Main
         /// A flag indicating if logging has been set, used to dispose the logging
         /// </summary>
         private bool m_hasSetLogging = false;
+        
+        /// <summary>
+        /// The current executing task
+        /// </summary>
+        private ITaskControl m_currentTask = null;
+        
+        /// <summary>
+        /// The thread running the current task
+        /// </summary>
+        private System.Threading.Thread m_currentTaskThread = null;
 
         /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
@@ -50,7 +60,7 @@ namespace Duplicati.Library.Main
         /// <param name="isRunning">Flag indicating execution state</param>
         private void OperationRunning(bool isRunning)
         {          
-            if (m_options!=null && !m_options.AllowSleep && !Duplicati.Library.Utility.Utility.IsClientLinux)
+            if (m_options != null && !m_options.AllowSleep && !Duplicati.Library.Utility.Utility.IsClientLinux)
                 try
                 {
                     Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
@@ -232,42 +242,49 @@ namespace Duplicati.Library.Main
         }
         
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions
+            where T : ISetCommonOptions, ITaskControl
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, method);
         }
                 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions
-		{
-			try
-			{
+            where T : ISetCommonOptions, ITaskControl
+        {
+            try
+            {
+                m_currentTask = result;
+                m_currentTaskThread = System.Threading.Thread.CurrentThread;
                 using(new Logging.Timer(string.Format("Running {0} took", result.MainOperation)))
                 {
                     SetupCommonOptions(result, ref paths);
-    				OperationRunning(true);
+                    OperationRunning(true);
     				
                     method(result);
                     
                     result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
     
-    				OnOperationComplete(result);
-    				return result;
+                    OnOperationComplete(result);
+                    return result;
                 }
-			}
-			catch(Exception ex)
-			{
+            }
+            catch (Exception ex)
+            {
                 Logging.Log.WriteMessage("Terminated with error: " + ex.Message, Duplicati.Library.Logging.LogMessageType.Error, ex);
                                 
-				OnOperationComplete(ex);
+                OnOperationComplete(ex);
                 
                 try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
                 catch { }
                 
-				throw;
-			}
+                throw;
+            }
+            finally
+            {
+                m_currentTask = null;
+                m_currentTaskThread = null;
+            }
 		}
 		
 		private void OnOperationComplete(object result)
@@ -540,7 +557,39 @@ namespace Duplicati.Library.Main
 
             return null;
         }
+        
+        public void Pause()
+        {
+            var ct = m_currentTask;
+            if (ct != null)
+                ct.Pause();
+        }
+
+        public void Resume()
+        {
+            var ct = m_currentTask;
+            if (ct != null)
+                ct.Resume();
+        }
+
+        public void Stop()
+        {
+            var ct = m_currentTask;
+            if (ct != null)
+                ct.Stop();
+        }
+
+        public void Abort()
+        {
+            var ct = m_currentTask;
+            if (ct != null)
+                ct.Abort();
             
+            var t = m_currentTaskThread;
+            if (t != null)
+                t.Abort();
+        }
+
         #region IDisposable Members
 
         public void Dispose()

@@ -126,13 +126,19 @@ namespace Duplicati.Library.Main.Operation
                                 return (Library.Interface.ListChangesElementType)(-1);
                         }
                     };
-    
+                    
+                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        return;
+                        
                     using(var tmpfile = backend.Get(baseFile.File.Name, baseFile.File.Size, null))
                     using(var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach(var f in rd.Files)
                             if (Library.Utility.FilterExpression.Matches(filter, f.Path))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
                                 
+                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        return;
+                    
                     using(var tmpfile = backend.Get(compareFile.File.Name, compareFile.File.Size, null))
                     using(var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach(var f in rd.Files)

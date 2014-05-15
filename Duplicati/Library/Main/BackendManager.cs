@@ -345,6 +345,7 @@ namespace Duplicati.Library.Main
         private string m_backendurl;
         private IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
+        private BasicResults m_taskControl;
 		private DatabaseCollector m_db;
                 
         public string BackendUrl { get { return m_backendurl; } }
@@ -357,6 +358,7 @@ namespace Duplicati.Library.Main
             m_options = options;
             m_backendurl = backendurl;
             m_statwriter = statwriter;
+            m_taskControl = statwriter as BasicResults;
             m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
@@ -370,6 +372,11 @@ namespace Duplicati.Library.Main
                 	throw new Exception(string.Format("Encryption method not supported: ", m_options.EncryptionModule));
             }
 
+            if (m_taskControl != null)
+                m_taskControl.StateChangedEvent += (state) => { 
+                    if (state == TaskControlState.Abort)
+                        m_thread.Abort();
+                };
             m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
             m_thread.Name = "Backend Async Worker";
@@ -392,6 +399,9 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
+                            if (m_taskControl != null)
+                                m_taskControl.TaskControlRendevouz();
+                            
                             if (m_options.NoConnectionReuse && m_backend != null)
                             {
                                 m_backend.Dispose();
@@ -437,6 +447,16 @@ namespace Duplicati.Library.Main
                             retries++;
                             lastException = ex;
                             m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
+                            
+                            // If the thread is aborted, we exit here
+                            if (ex is System.Threading.ThreadAbortException)
+                            {
+                                m_queue.SetCompleted();
+                                item.Exception = ex;
+                                item.SignalComplete();
+                                throw;
+                            }
+                            
                             m_statwriter.SendEvent(item.BackendActionType, retries < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
 							bool recovered = false;
@@ -552,6 +572,11 @@ namespace Duplicati.Library.Main
         
         private void HandleProgress(long pg)
         {
+            // TODO: Should we pause here as well?
+            // It might give annoying timeouts for transfers
+            if (m_taskControl != null)
+                m_taskControl.TaskControlRendevouz();
+
             m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
         }
 

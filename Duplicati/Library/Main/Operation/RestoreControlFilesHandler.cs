@@ -44,6 +44,12 @@ namespace Duplicati.Library.Main.Operation
 	                foreach(var fileversion in filteredList)
 	                    try
 	                    {
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(db, null);
+                                return;
+                            }    
+                        
                             var file = fileversion.Value.File;
 	                        long size;
 	                        string hash;
@@ -72,6 +78,8 @@ namespace Duplicati.Library.Main.Operation
 	                    catch(Exception ex)
 	                    {
 	                        lastEx = ex;
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
 	                    }
 	
 	                if (lastEx != null)

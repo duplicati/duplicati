@@ -338,10 +338,6 @@ namespace Duplicati.Server
                 Program.WorkThread.WorkQueueChanged += new EventHandler(SignalNewEvent);
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
 
-                LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
-                LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
-                LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
-
                 Program.WebServer = new Server.WebServer(commandlineOptions);
 
                 ServerStartedEvent.Set();
@@ -416,11 +412,21 @@ namespace Duplicati.Server
             switch (LiveControl.State)
             {
                 case LiveControls.LiveControlState.Paused:
-                    WorkThread.Pause();
-                    break;
+                    {
+                        WorkThread.Pause();
+                        var t = WorkThread.CurrentTask;
+                        if (t != null)
+                            t.Pause();
+                        break;
+                    }
                 case LiveControls.LiveControlState.Running:
-                    WorkThread.Resume();
-                    break;
+                    {
+                        WorkThread.Resume();
+                        var t = WorkThread.CurrentTask;
+                        if (t != null)
+                            t.Resume();
+                        break;
+                    }
             }
 
             StatusEventNotifyer.SignalNewEvent();

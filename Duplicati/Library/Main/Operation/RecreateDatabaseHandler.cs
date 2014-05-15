@@ -119,6 +119,12 @@ namespace Duplicati.Library.Main.Operation
                     foreach(var entry in new AsyncDownloader(filelistWork, backend))
                         try
                         {
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(restoredb, null);
+                                return;
+                            }    
+                        
                             using(var tmpfile = entry.TempFile)
                             {
                                 if (entry.Hash != null && entry.Size > 0)
@@ -160,6 +166,8 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             m_result.AddWarning(string.Format("Failed to process file: {0}", entry.Name), ex);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
                         }
                 
                     using(new Logging.Timer("CommitUpdateFilesetFromRemote"))
@@ -177,6 +185,12 @@ namespace Duplicati.Library.Main.Operation
                     foreach(var sf in new AsyncDownloader(indexfiles.ToList(), backend))
                         try
                         {
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(restoredb, null);
+                                return;
+                            }    
+                        
                             using(var tmpfile = sf.TempFile)
                             {
                                 if (sf.Hash != null && sf.Size > 0)
@@ -207,6 +221,8 @@ namespace Duplicati.Library.Main.Operation
                         {
                             //Not fatal
                             m_result.AddWarning(string.Format("Failed to process index file: {0}", sf.Name), ex);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
                         }
 
                     using(new Logging.Timer("CommitRecreatedDb"))
@@ -230,6 +246,12 @@ namespace Duplicati.Library.Main.Operation
                         using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
                         using (var tr = restoredb.BeginTransaction())
                         {
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(restoredb, null);
+                                return;
+                            }    
+                            
                         	var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
                             
                             // Update the block table so we know about the block/volume map

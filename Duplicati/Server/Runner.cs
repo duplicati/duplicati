@@ -30,6 +30,10 @@ namespace Duplicati.Server
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
             string[] FilterStrings { get; }
+            void Stop();
+            void Abort();
+            void Pause();
+            void Resume();
         }
         
         private class RunnerData : IRunnerData
@@ -43,6 +47,36 @@ namespace Duplicati.Server
             
             public string BackupID { get { return Backup.ID; } }
             public long TaskID { get { return m_taskID; } }
+            
+            internal Duplicati.Library.Main.Controller Controller { get; set; }
+            
+            public void Stop()
+            {
+                var c = Controller;
+                if (c != null)
+                    c.Stop();
+            }
+
+            public void Abort()
+            {
+                var c = Controller;
+                if (c != null)
+                    c.Abort();
+            }
+
+            public void Pause()
+            {
+                var c = Controller;
+                if (c != null)
+                    c.Pause();
+            }
+
+            public void Resume()
+            {
+                var c = Controller;
+                if (c != null)
+                    c.Resume();
+            }
             
             private readonly long m_taskID;
             
@@ -243,7 +277,7 @@ namespace Duplicati.Server
             {                
                 var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
                 var sink = new MessageSink(data.TaskID, backup.ID);
-                if (fromQueue) 
+                if (fromQueue)
                 {
                     Program.GenerateProgressState = () => sink.Copy();
                     Program.StatusEventNotifyer.SignalNewEvent();            
@@ -255,13 +289,15 @@ namespace Duplicati.Server
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
+                    ((RunnerData)data).Controller = controller;
+                    
                     switch (data.Operation)
                     {
                         case DuplicatiOperation.Backup:
                             {
                                 var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
                                 var sources = 
-                                        (from n in backup.Sources
+                                    (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
                                         where !string.IsNullOrWhiteSpace(p)
                                         select p).ToArray();
@@ -315,6 +351,10 @@ namespace Duplicati.Server
                     throw;
                 
                 return null;
+            }
+            finally
+            {
+                ((RunnerData)data).Controller = null;
             }
         }
         

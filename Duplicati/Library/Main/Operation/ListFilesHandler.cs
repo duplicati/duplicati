@@ -86,6 +86,9 @@ namespace Duplicati.Library.Main.Operation
                 filteredList.RemoveAt(0);
                 Dictionary<string, List<long>> res; 
                                 
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                    return;
+                
                 using (var tmpfile = backend.Get(firstEntry.File.Name, firstEntry.File.Size, null))
                 using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
                     if (simpleList)
@@ -122,6 +125,9 @@ namespace Duplicati.Library.Main.Operation
                     using(var tmpfile = backend.Get(flentry.Value.File.Name, -1, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
+                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            return;
+                        
                         foreach(var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path) select n)
                         {
                             List<long> lst;

@@ -397,6 +397,12 @@ namespace Duplicati.Library.Main.Operation
                                 
                                 foreach(var p in m_options.ChangedFilelist)
                                 {
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    {
+                                        m_result.AddMessage("Stopping backup operation on request");
+                                        break;
+                                    }
+                                    
                                     FileAttributes fa = new FileAttributes();
                                     try
                                     {
@@ -425,7 +431,15 @@ namespace Duplicati.Library.Main.Operation
                             else
                             {                                    
                                 foreach(var path in m_snapshot.EnumerateFilesAndFolders(filterhandler.AttributeFilter))
+                                {
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    {
+                                        m_result.AddMessage("Stopping backup operation on request");
+                                        break;
+                                    }
+                                    
                                     this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
+                                }
                                 
                             }
                             
@@ -786,6 +800,9 @@ namespace Duplicati.Library.Main.Operation
                                 filesize += size;
 
                                 m_result.OperationProgressUpdater.UpdateFileProgress(filesize);
+                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    return false;
+                                
                                 remaining -= size;
                                 offset += size;
                                 
