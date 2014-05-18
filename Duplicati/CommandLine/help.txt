@@ -82,7 +82,8 @@ Usage: find <storage-URL> ["<filename>"] [<options>]
     Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed. 
   --exclude=<string>
     Removes matching files from the list of files in a backup. This is applied before the search is executed. 
-
+  --all-versions=<boolean>
+    Searches in all backup sets, instead of just searching the latest
 
 
 # =============================================================================
