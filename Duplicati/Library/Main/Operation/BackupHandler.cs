@@ -511,7 +511,7 @@ namespace Duplicati.Library.Main.Operation
                             m_result.AddedFiles + m_result.ModifiedFiles + m_result.DeletedFiles +
                             m_result.AddedFolders + m_result.ModifiedFolders + m_result.DeletedFolders +
                             m_result.AddedSymlinks + m_result.ModifiedSymlinks + m_result.DeletedSymlinks;
-                            
+                        
                         //Changes in the filelist triggers a filelist upload
                         if (m_options.UploadUnchangedBackups || changeCount > 0)
                         {
@@ -548,20 +548,23 @@ namespace Duplicati.Library.Main.Operation
                         using(new Logging.Timer("Async backend wait"))
                             m_backend.WaitForComplete(m_database, m_transaction);
                             
-                        if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
+                        if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
                         {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
-                            m_result.DeleteResults = new DeleteResults(m_result);
-                            using(var db = new LocalDeleteDatabase(m_database))
-                                new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
-                            
-                        }
-                        else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
-                        {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
-                            m_result.CompactResults = new CompactResults(m_result);
-                            using(var db = new LocalDeleteDatabase(m_database))
-                                new CompactHandler(m_backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, m_transaction);
+                            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
+                            {
+                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
+                                m_result.DeleteResults = new DeleteResults(m_result);
+                                using(var db = new LocalDeleteDatabase(m_database))
+                                    new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
+                                
+                            }
+                            else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
+                            {
+                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
+                                m_result.CompactResults = new CompactResults(m_result);
+                                using(var db = new LocalDeleteDatabase(m_database))
+                                    new CompactHandler(m_backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, m_transaction);
+                            }
                         }
     		            
                         if (m_options.UploadVerificationFile)
@@ -583,7 +586,7 @@ namespace Duplicati.Library.Main.Operation
                             m_transaction = null;
                             m_database.Vacuum();
                             
-                            if (!m_options.NoBackendverification)
+                            if (m_result.TaskControlRendevouz() != TaskControlState.Stop && !m_options.NoBackendverification)
                             {
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
                                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))

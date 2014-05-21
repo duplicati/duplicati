@@ -783,6 +783,14 @@ $(document).ready(function() {
         serverWithCallback({action: 'send-command', command: 'resume'});
     };
 
+    APP_DATA.stopTask = function(taskId, force) {
+        serverWithCallback(
+            { action: 'send-command', command: force ? 'abort' : 'stop', taskid: taskId }, 
+            function() {}, 
+            function(d,s,m) { alert('Failed to send stop command: ' + m); }
+        );
+    }
+
     APP_DATA.hasLoadedAbout = false;
 
     APP_DATA.showAbout = function() {
@@ -1093,6 +1101,13 @@ $(document).ready(function() {
         })
     }, 60*1000);
 
+    APP_DATA.getCurrentBackupId = function() {
+        return PRIVATE_DATA.server_state.activeTask == null ? null : PRIVATE_DATA.server_state.activeTask.Item2;
+    };
+
+    APP_DATA.getCurrentTaskId = function() {
+        return PRIVATE_DATA.server_state.activeTask == null ? null : PRIVATE_DATA.server_state.activeTask.Item1;
+    };
 
     APP_DATA.contextMenuId = null;
     APP_DATA.showContextMenu = function(id, anchor) {
@@ -1121,5 +1136,67 @@ $(document).ready(function() {
 
     $('#backup-context-menu').menu().removeClass('ui-widget-content');
     $('#backup-context-menu').find('li').click(function() {  $('#click-intercept').trigger('click'); });
+
+
+    var cancelnoty = {
+        n: null,
+        taskId: null,
+        onRequest: function() {
+            var current = APP_DATA.getCurrentTaskId();
+            
+            if (current == null)
+                return;
+
+            // Seems too harsh to use the double-stop = force logic
+            /*if (this.cancel_task_id == current) {
+                APP_DATA.stopTask(current, true);
+            } else*/ {
+                APP_DATA.stopTask(current, false);
+                if (this.cancel_task_id != current) {
+                    this.cancel_task_id = current;
+
+                    if (this.n != null) {
+                        this.n.close();
+                        this.n = null;
+                    }
+
+                    this.n = noty({
+                            text: 'Task stopped, waiting for task to clean up',
+                            buttons: [{
+                                text: 'Force stop',
+                                onClick: function() {
+                                    APP_DATA.stopTask(current, true);
+                                }
+                            }]
+                        });
+                }
+            }            
+        },
+        onUpdate: function() {
+            if (this.n == null)
+                return;
+
+            var current = APP_DATA.getCurrentTaskId();
+            if (current != this.cancel_task_id) {
+                this.n.close();
+                this.n = null;
+                this.cancel_task_id = null;
+            }
+
+        }
+    };
+
+
+    $(document).on('server-state-updated', function(e, data) {
+        cancelnoty.onUpdate();
+    });
+
+    $(document).on('server-progress-updated', function(e, data) {
+        cancelnoty.onUpdate();
+    });
+
+    $('#main-status-area-cancel-button').click(function() {
+        cancelnoty.onRequest();
+    });
 
 });

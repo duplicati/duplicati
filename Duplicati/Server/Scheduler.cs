@@ -86,6 +86,7 @@ namespace Duplicati.Server
             m_event = new AutoResetEvent(false);
             m_updateTasks = new Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>>();
             m_thread.IsBackground = true;
+            m_thread.Name = "TaskScheduler";
             m_thread.Start();
         }
 

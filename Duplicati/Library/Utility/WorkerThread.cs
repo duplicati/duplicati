@@ -117,6 +117,7 @@ namespace Duplicati.Library.Utility
 
             m_thread = new Thread(new ThreadStart(Runner));
             m_thread.IsBackground = true;
+            m_thread.Name = "WorkerThread<" + typeof(Tx).Name + ">";
             m_thread.Start();
         }
 
@@ -239,36 +240,36 @@ namespace Duplicati.Library.Utility
             {
                 m_currentTask = null;
 
-                lock (m_lock)
+                lock(m_lock)
                     if (m_state == WorkerThread<Tx>.RunState.Run && m_tasks.Count > 0)
                         m_currentTask = m_tasks.Dequeue();
 
                 if (m_currentTask == null && !m_terminate)
-                    if (m_state == WorkerThread<Tx>.RunState.Run)
-                        m_event.WaitOne(); //Sleep until signaled
+                if (m_state == WorkerThread<Tx>.RunState.Run)
+                    m_event.WaitOne(); //Sleep until signaled
                     else
+                {
+                    if (WorkerStateChanged != null)
+                        WorkerStateChanged(this, m_state);
+
+                    //Sleep for brief periods, until signaled
+                    while (!m_terminate && m_state != WorkerThread<Tx>.RunState.Run)
+                        m_event.WaitOne(1000 * 60 * 5, false);
+
+                    //If we were not terminated, we are now ready to run
+                    if (!m_terminate)
                     {
+                        m_state = WorkerThread<Tx>.RunState.Run;
                         if (WorkerStateChanged != null)
                             WorkerStateChanged(this, m_state);
-
-                        //Sleep for brief periods, until signaled
-                        while (!m_terminate && m_state != WorkerThread<Tx>.RunState.Run)
-                            m_event.WaitOne(1000 * 60 * 5, false);
-
-                        //If we were not terminated, we are now ready to run
-                        if (!m_terminate)
-                        {
-                            m_state = WorkerThread<Tx>.RunState.Run;
-                            if (WorkerStateChanged != null)
-                                WorkerStateChanged(this, m_state);
-                        }
                     }
+                }
 
                 if (m_terminate)
                     return;
 
                 if (m_currentTask == null && m_state == WorkerThread<Tx>.RunState.Run)
-                    lock (m_lock)
+                    lock(m_lock)
                         if (m_tasks.Count > 0)
                             m_currentTask = m_tasks.Dequeue();
 
@@ -278,9 +279,19 @@ namespace Duplicati.Library.Utility
                 if (StartingWork != null)
                     StartingWork(this, null);
 
-                m_active = true;
-                m_delegate(m_currentTask);
-                m_active = false;
+                try
+                {
+                    m_active = true;
+                    m_delegate(m_currentTask);
+                }
+                catch (System.Threading.ThreadAbortException tex)
+                {
+                    System.Threading.Thread.ResetAbort();
+                }
+                finally
+                {
+                    m_active = false;
+                }
 
                 if (CompletedWork != null)
                     CompletedWork(this, null);

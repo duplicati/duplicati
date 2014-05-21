@@ -1269,7 +1269,7 @@ namespace Duplicati.Server
                                 tasks.Insert(0, task);
                         
                             task = tasks.Where(x => x.TaskID == taskid).FirstOrDefault();
-                            if (tasks == null)
+                            if (task == null)
                             {
                                 ReportError(response, bw, "No such task");
                                 return;
