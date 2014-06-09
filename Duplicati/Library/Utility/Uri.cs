@@ -336,7 +336,18 @@ namespace Duplicati.Library.Utility
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlEncode(string value, System.Text.Encoding encoding = null) 
+        public static string UrlPathEncode(string value, System.Text.Encoding encoding = null)
+        {
+            return UrlEncode(value, encoding, "%20");
+        }
+        
+        /// <summary>
+        /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
+        /// </summary>
+        /// <returns>The encoded URL</returns>
+        /// <param name="value">The URL fragment to encode</param>
+        /// <param name="encoding">The encoding to use</param>
+        public static string UrlEncode(string value, System.Text.Encoding encoding = null, string spacevalue = "+") 
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -350,7 +361,7 @@ namespace Duplicati.Library.Utility
             
             return RE_ESCAPECHAR.Replace(value, (m) => {
                 if (m.Value == " ")
-                    return "+";
+                    return spacevalue;
                     
                 inbuf[0] = m.Value[0];
                 
