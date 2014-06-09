@@ -28,6 +28,7 @@ namespace Duplicati.CommandLine.BackendTool
     {
         static int Main(string[] _args)
         {
+            bool debugoutput = false;
             try
             {
                 List<string> args = new List<string>(_args);
@@ -41,8 +42,9 @@ namespace Duplicati.CommandLine.BackendTool
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
-
                 
+                debugoutput = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "debug-output");
+
                 string command = null;
                 if (args.Count >= 2)
                 {
@@ -142,6 +144,8 @@ namespace Duplicati.CommandLine.BackendTool
             catch (Exception ex)
             {
                 Console.WriteLine("Command failed: " + ex.Message);
+                if (debugoutput)
+                    Console.WriteLine(ex.ToString());
                 return 100;
             }
         }
