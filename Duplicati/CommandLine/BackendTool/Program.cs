@@ -58,6 +58,8 @@ namespace Duplicati.CommandLine.BackendTool
                         command = "delete";
                     else if (args[0].Equals("create-folder", StringComparison.InvariantCultureIgnoreCase))
                         command = "create";
+                    else if (args[0].Equals("createfolder", StringComparison.InvariantCultureIgnoreCase))
+                        command = "create";
                 }
 
 
