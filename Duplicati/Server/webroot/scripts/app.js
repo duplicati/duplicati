@@ -770,9 +770,24 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.isBackupActive = function(id, callback) {
+        serverWithCallback(
+            { action: 'send-command', command: 'is-backup-active', id: id }, 
+            function(data) { callback(data.Active); }, 
+            function(d,s,m) { alert('Failed to query backup: ' + m); }
+        );
+    };
+
     APP_DATA.restoreBackup = function(id) {
-        $('#restore-dialog').dialog('open');
-        $('#restore-dialog').trigger('setup-data', id);
+        APP_DATA.isBackupActive(id, function(active) {
+            if (active) {
+                alert('Cannot start restore while the backup is active.');
+            } else {
+                $('#restore-dialog').dialog('open');
+                $('#restore-dialog').trigger('setup-data', id);
+            }
+        });
+
     };
 
     APP_DATA.pauseServer = function(duration) {
@@ -790,6 +805,30 @@ $(document).ready(function() {
             function(d,s,m) { alert('Failed to send stop command: ' + m); }
         );
     }
+
+    APP_DATA.runVerify = function(id) {
+        serverWithCallback(
+            { action: 'send-command', command: 'run-verify', id: id }, 
+            function() {}, 
+            function(d,s,m) { alert('Failed to start verification: ' + m); }
+        );
+    };
+
+    APP_DATA.runRepair = function(id) {
+        serverWithCallback(
+            { action: 'send-command', command: 'run-repair', id: id }, 
+            function() {}, 
+            function(d,s,m) { alert('Failed to start repair: ' + m); }
+        );
+    };
+
+    APP_DATA.createReport = function(id) {
+        serverWithCallback(
+            { action: 'send-command', command: 'create-report', id: id }, 
+            function() {}, 
+            function(d,s,m) { alert('Failed to create bug report: ' + m); }
+        );
+    };
 
     APP_DATA.hasLoadedAbout = false;
 
@@ -892,7 +931,7 @@ $(document).ready(function() {
     });
 
     $('#edit-dialog').tabs({ active: 0 });
-    $("#edit-dialog").dialog({ 
+    $('#edit-dialog').dialog({ 
         minWidth: 320, 
         width: $('body').width > 600 ? 320 : 600, 
         minHeight: 480, 
@@ -1132,6 +1171,35 @@ $(document).ready(function() {
 
         if (name && confirm('Really delete ' + name + '?'))
             APP_DATA.deleteBackup(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-show-log').click(function(e) {
+        $.showBackupLog(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-verify').click(function(e) {
+        APP_DATA.runVerify(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-send-report').click(function(e) {
+        alert('Method is missing a method for retrieving the report after it has been generated');
+        APP_DATA.createReport(APP_DATA.contextMenuId);        
+    });
+
+    $('#backup-details-repair').click(function(e) {
+        APP_DATA.runRepair(APP_DATA.contextMenuId);        
+    });
+
+    $('#backup-details-copy').click(function(e) {
+        alert('Function is not implemented yet');
+    });
+
+    $('#backup-details-delete-local').click(function(e) {
+        alert('Function is not implemented yet');
+    });
+
+    $('#backup-details-delete-remote').click(function(e) {
+        alert('Function is not implemented yet');
     });
 
     $('#backup-context-menu').menu().removeClass('ui-widget-content');

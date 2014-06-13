@@ -2,18 +2,33 @@
  * CSS config for the log window
  */
 
-.log-backupid, .log-exception {
+#log-dialog .log-backupid, #log-dialog .log-exception,
+#backup-log-tab-general .log-backupid, #backup-log-tab-general .log-exception, #backup-log-tab-general .log-message,
+#backup-log-tab-remote .log-operationid, #backup-log-tab-remote .log-data
+{
     display: none;
 }
 
-.log-message, .log-timestamp {
+#log-dialog .log-message, #log-dialog .log-timestamp,
+#backup-log-tab-general .log-timestamp, #backup-log-tab-general .log-type,
+#backup-log-tab-remote .log-timestamp, #backup-log-tab-remote .log-type, #backup-log-tab-remote .log-path
+{
     display: inline-block;
     cursor: pointer;
 }
 
-.expanded div.log-exception {
+#log-dialog .expanded div.log-exception,
+#backup-log-tab-general .expanded div.log-exception, #backup-log-tab-general .expanded div.log-message,
+#backup-log-tab-remote .expanded div.log-data
+{
     display: block;
     background-color: #ffffff;
     padding-left: 5px;
     padding-right: 5px;
 }
+
+
+
+
+
+

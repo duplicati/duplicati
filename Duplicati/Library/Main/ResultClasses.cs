@@ -729,6 +729,7 @@ namespace Duplicati.Library.Main
     internal class CreateLogDatabaseResults : BasicResults, Library.Interface.ICreateLogDatabaseResults
     {
         public override OperationMode MainOperation { get { return OperationMode.CreateLogDb; } }
+        public string TargetPath { get; internal set; }
     }   
     
     internal class RestoreControlFilesResults : BasicResults, Library.Interface.IRestoreControlFilesResults

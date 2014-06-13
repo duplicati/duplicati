@@ -143,6 +143,7 @@ namespace Duplicati.Library.Interface
     
     public interface ICreateLogDatabaseResults : IBasicResults
     {
+        string TargetPath { get; }
     }
     
     public interface IRestoreControlFilesResults : IBasicResults

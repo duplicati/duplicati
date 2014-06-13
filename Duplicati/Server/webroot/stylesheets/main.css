@@ -278,6 +278,14 @@ div.main-icon-plus {
     border: 0px none;
 }
 
+#backup-log-dialog {
+    padding: 0px;
+    border: 0px none;
+    width: 100%;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
 .ui-dialog-titlebar {
     border-bottom-right-radius: 0px;
     border-bottom-left-radius: 0px;

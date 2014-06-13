@@ -407,9 +407,21 @@ namespace Duplicati.Server
                         using(var cmd = con.CreateCommand())
                         {
                             if (Duplicati.Library.Utility.Utility.ParseBool(input["remotelog"].Value, false))
-                                OutputObject(bw, DumpTable(cmd, "RemoteOperation", "ID", input["offset"].Value, input["pagesize"].Value));
+                            {
+                                var dt = DumpTable(cmd, "RemoteOperation", "ID", input["offset"].Value, input["pagesize"].Value);
+
+                                // Unwrap raw data to a string
+                                foreach(var n in dt)
+                                    try { n["Data"] = System.Text.Encoding.UTF8.GetString((byte[])n["Data"]); }
+                                    catch { }
+
+                                OutputObject(bw, dt);
+                            }
                             else
-                                OutputObject(bw, DumpTable(cmd, "LogData", "ID", input["offset"].Value, input["pagesize"].Value));
+                            {
+                                var dt = DumpTable(cmd, "LogData", "ID", input["offset"].Value, input["pagesize"].Value);
+                                OutputObject(bw, dt);
+                            }
                         }
                     }
                 }
@@ -1284,6 +1296,38 @@ namespace Duplicati.Server
                             return;
                         }
 
+                    case "is-backup-active":
+                        {
+                            var backup = Program.DataConnection.GetBackup(input["id"].Value);
+                            if (backup == null)
+                            {
+                                ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
+                                return;
+                            }
+
+                            var t = Program.WorkThread.CurrentTask;
+                            var bt = t == null ? null : t.Backup;
+                            if (bt != null && backup.ID == bt.ID)
+                            {
+                                OutputObject(bw, new { Status = "OK", Active = true });
+                                return;
+                            }
+                            else if (Program.WorkThread.CurrentTasks.Where(x =>
+                            { 
+                                var bn = x == null ? null : x.Backup;
+                                return bn == null || bn.ID == backup.ID;
+                            }).Any())
+                            {
+                                OutputObject(bw, new { Status = "OK", Active = true });
+                                return;
+                            }
+                            else
+                            {
+                                OutputObject(bw, new { Status = "OK", Active = false });
+                                return;
+                            }
+                        }
+
                     case "run":
                     case "run-backup":
                         {
@@ -1316,6 +1360,51 @@ namespace Duplicati.Server
                         }
                         OutputObject(bw, new { Status = "OK" });
                         return;
+
+                    case "run-verify":
+                        {
+                            var backup = Program.DataConnection.GetBackup(input["id"].Value);
+                            if (backup == null)
+                            {
+                                ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
+                                return;
+                            }
+
+                            Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Verify, backup));
+                            Program.StatusEventNotifyer.SignalNewEvent();
+                        }
+                        OutputObject(bw, new { Status = "OK" });
+                        return;
+
+                    case "run-repair":
+                        {
+                            var backup = Program.DataConnection.GetBackup(input["id"].Value);
+                            if (backup == null)
+                            {
+                                ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
+                                return;
+                            }
+
+                            Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Repair, backup));
+                            Program.StatusEventNotifyer.SignalNewEvent();
+                        }
+                        OutputObject(bw, new { Status = "OK" });
+                        return;
+                    case "create-report":
+                        {
+                            var backup = Program.DataConnection.GetBackup(input["id"].Value);
+                            if (backup == null)
+                            {
+                                ReportError(response, bw, string.Format("No backup found for id: {0}", input["id"].Value));
+                                return;
+                            }
+
+                            Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup));
+                            Program.StatusEventNotifyer.SignalNewEvent();
+                        }
+                        OutputObject(bw, new { Status = "OK" });
+                        return;
+
                     case "clear-warning":
                         Program.HasWarning = false;
                         Program.StatusEventNotifyer.SignalNewEvent();

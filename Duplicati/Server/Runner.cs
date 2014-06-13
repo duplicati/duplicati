@@ -336,6 +336,16 @@ namespace Duplicati.Server
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
+
+                        case DuplicatiOperation.CreateReport:
+                            {
+                                using(var tf = new Duplicati.Library.Utility.TempFile())
+                                {
+                                    var r = controller.CreateLogDatabase(tf);
+                                    tf.Protected = true;
+                                    return r;
+                                }
+                            }
                         default:
                             //TODO: Log this
                             return null;

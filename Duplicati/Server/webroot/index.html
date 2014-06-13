@@ -90,6 +90,26 @@
         </div>
     </script>
 
+    <script id="log-backup-general-template" type="text/x-jquery-tmpl">
+        <div class="log-entry">
+            <div class="log-operationid">${BackupID}</div>
+            <div class="log-timestamp" title="${Timestamp*1000}">${Timestamp*1000}</div>
+            <div class="log-type">${Type}</div>
+            <div class="log-message">${Message}</div>
+            <div class="log-exception">${Exception}</div>
+        </div>
+    </script>
+
+    <script id="log-backup-remote-template" type="text/x-jquery-tmpl">
+        <div class="log-entry">
+            <div class="log-operationid">${OperationID}</div>
+            <div class="log-timestamp" title="${Timestamp*1000}">${Timestamp*1000}</div>
+            <div class="log-type">${Operation}</div>
+            <div class="log-path">${Path}</div>
+            <div class="log-data">${Data}</div>
+        </div>
+    </script>
+
     <script id="about-dialog-template" type="text/x-jquery-tmpl">
         <li class="about-library-entry">
             <div class="about-library-name"><a href="${link}" target="blank">${name}</a></div>
@@ -146,7 +166,7 @@
         <li id="backup-details-delete-remote"><a>Delete remote data</a></li>
         <li id="backup-details-repair"><a>Repair</a></li>
         <li>-</li>
-        <li id="backup-details-send-report"><a>Send bug report</a></li>
+        <li id="backup-details-send-report"><a>Create bug report</a></li>
     </ul>        
 
     <div class="main-status-area-outer">
