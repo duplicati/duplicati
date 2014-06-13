@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -47,7 +48,7 @@ namespace Duplicati.Library.Main.Database
             if (Logging.Log.LogLevel != Duplicati.Library.Logging.LogMessageType.Profiling)
                 return self.ExecuteNonQuery();
                 
-            using(new Logging.Timer("ExecuteNonQuery: " + self.CommandText))
+            using(new Logging.Timer(LC.L("ExecuteNonQuery: {0}", self.CommandText)))
                 return self.ExecuteNonQuery();
         }
 
@@ -65,8 +66,8 @@ namespace Duplicati.Library.Main.Database
 
             if (Logging.Log.LogLevel != Duplicati.Library.Logging.LogMessageType.Profiling)
                 return self.ExecuteScalar();
-                
-            using(new Logging.Timer("ExecuteScalar: " + self.CommandText))
+
+            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
                 return self.ExecuteScalar();
         }
 
@@ -85,7 +86,7 @@ namespace Duplicati.Library.Main.Database
             if (Logging.Log.LogLevel != Duplicati.Library.Logging.LogMessageType.Profiling)
                 return self.ExecuteReader();
                 
-            using(new Logging.Timer("ExecuteReader: " + self.CommandText))
+            using(new Logging.Timer(LC.L("ExecuteReader: {0}", self.CommandText)))
                 return self.ExecuteReader();
         }
 
@@ -113,7 +114,7 @@ namespace Duplicati.Library.Main.Database
                         Console.WriteLine();
                         n++;
                     }
-                    Console.WriteLine("{0} records", n);
+                    Console.WriteLine(LC.L("{0} records", n));
                 }
             }
         }

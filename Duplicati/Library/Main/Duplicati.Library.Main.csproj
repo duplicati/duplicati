@@ -145,6 +145,10 @@
       <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
       <Name>Duplicati.Library.SQLiteHelper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
