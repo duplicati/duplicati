@@ -4,12 +4,12 @@
 
 			<dependentAssembly>
 				<assemblyIdentity name="Duplicati.Library.Utility"	publicKeyToken="8bfe994a39631a7b" />
-				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="1.0.1.410" />
+				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="2.0.0.7" />
 			</dependentAssembly>
 
 			<dependentAssembly>
 				<assemblyIdentity name="Duplicati.Library.Interface"	publicKeyToken="8bfe994a39631a7b" />
-				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="1.0.1.410" />
+				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="2.0.0.7" />
 			</dependentAssembly>
 
 		</assemblyBinding>
