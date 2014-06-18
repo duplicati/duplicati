@@ -4,11 +4,15 @@ $(document).ready(function() {
     var backupId = 0;
     var dirSep = '/';
     var pathSep = ':';
-    var trees = { };
+    var trees = {};
     var searchdata = {};
     var nodedata = {};
-    var missingfiles = null;
-    var missingfiles_search = null;
+
+    var manualIncludes = {};
+    var searchTrees = {};
+    var commonPrefix = [];
+
+    var includeMap = null;
 
     var performRestore = function(tasks) {
         var dlg = $('<div></div>').attr('title', 'Restoring files ...');
@@ -139,10 +143,8 @@ $(document).ready(function() {
                     if ($('#restore-overwrite-target-other').is(':checked'))
                         restorePath = $('#restore-target-path').val();
 
-                    var includes = buildIncludeMap();
-
                     var tasks = [];
-                    for(var n in includes) {
+                    for(var n in includeMap) {
                         var t = {
                             time: n,
                             id: backupId,
@@ -150,7 +152,7 @@ $(document).ready(function() {
                             'overwrite': overwrite,
                             paths: []
                         }
-                        for(var p in includes[n]) {
+                        for(var p in includeMap[n]) {
                             if (p.lastIndexOf(dirSep) == p.length -1)
                                 t.paths.push(p + '*');
                             else
@@ -167,10 +169,10 @@ $(document).ready(function() {
                     performRestore(tasks);
                 } else {
                     var els = 0;
-                    var includes = buildIncludeMap();
+                    includeMap = buildIncludeMap();
 
-                    for(var t in includes)
-                        for(var i in includes[t])
+                    for(var t in includeMap)
+                        for(var i in includeMap[t])
                             els++;
 
                     if (els == 0) {
@@ -392,37 +394,59 @@ $(document).ready(function() {
         });
     };
 
-    var expandAndLoad = function(tree) {
-        if (missingfiles == null)
-            return;
 
-        var missing = {};
-        var mf = [];
-        var anymissing = false;
+    var buildSearchNodes = function(time, data, search) {
+        var rootpath = commonPrefix[time];
+        if (rootpath != '' && rootpath[rootpath.length - 1] != dirSep)
+            rootpath += dirSep;
+        var rootnode = createNodeFromData(commonPrefix[time], commonPrefix[time], time, true);
+        rootnode.state = rootnode.state || {};
+        rootnode.state.opened = true;
 
-        for(var f in missingfiles) {
-            var p = expandNodes(tree, missingfiles[f]);
-            if (p) {
-                missing[p.path] = p.node;
-                mf.push(missingfiles[f]);
-                anymissing = true;
+
+        for(var i = 0; i < data.Files.length; i++) {
+            var n = rootnode;
+            var p = rootpath;
+            var sp = data.Files[i].Path;
+
+            if (search && sp.toLowerCase().indexOf(search.toLowerCase()) < 0)
+                continue;
+
+            var isDir = sp.substr(sp.length - 1) == dirSep;
+            if (isDir)
+                sp = sp.substr(0, sp.length - 1);
+
+            var items = sp.substr(rootpath.length).split(dirSep);
+
+            for(var j = 0; j < items.length; j++) {
+                p += items[j] + (!isDir && j == items.length - 1 ? '' : dirSep);
+                
+                var e = null;
+                for(var x in n.children)
+                    if (n.children[x].filepath == p) {
+                        e = n.children[x];
+                        break;
+                    }
+
+                if (e == null) {
+                    e = createNodeFromData(p, commonPrefix[time], time, false);
+                    
+                    if (j != items.length - 1) {
+                        e.state = e.state || {};
+                        e.state.opened = true;
+                    }
+
+                    if (n.children === false || n.children === true)
+                        n.children = [];
+                    n.children.push(e);
+
+                }
+                n = e;
             }
         }
 
-        if (missingfiles_search)
-            colorize(tree, missingfiles_search);
-        if (!anymissing) {
-            inSearch = false;
-            $('#restore-search-loader').hide();
-            missingfiles = null;
-            missingfiles_search = null;
-        } else {
-            missingfiles = mf;
-            var tr = tree.jstree();
-            for(var m in missing)
-                tr.open_node(missing[m]);
-        }
-    };
+        return [rootnode];
+    }
 
     var inSearch = false;
     var doSearch = function(time, search) {
@@ -431,19 +455,55 @@ $(document).ready(function() {
 
         $('#restore-search-loader').show();
         inSearch = true;
+
+        var stree = searchTrees[time];
         var tree = trees[time];
-        var tr = tree.jstree();
-        colorize(tree, search);
+
+        var buildSearchTree = function(nodes) {
+            var streeel = $('<div></div>');
+            searchTrees[time] = streeel;
+            $('#restore-files-tree').append(streeel);
+
+            var te = streeel.jstree({
+                'plugins' : [ 'checkbox' ],
+                'core': { 'data' : nodes }
+            });
+
+            colorize(streeel, search);
+            streeel.show();
+        };
 
         if (searchdata[time]) {
             var t = searchdata[time];
             for(var p in t) {
                 if (search.indexOf(p) == 0) {
                     colorize(tree, search);
+                    if (stree) {
+                        colorize(stree, search);
+                        tree.hide();
+                        stree.show();
+                    } else {
+                        buildSearchTree(buildSearchNodes(time, t[p], search));
+                        tree.hide();
+                    }
+                    $('#restore-search-loader').hide();
                     inSearch = false;
                     return;
                 }
             }
+        }
+
+        if (tree) {
+            colorize(tree, search);
+            tree.hide();
+        }
+        if (stree)
+            colorize(stree, search);
+
+
+        if (stree) {
+            stree.remove();
+            delete searchTrees[time];
         }
 
         $.ajax({
@@ -462,14 +522,15 @@ $(document).ready(function() {
             if (!searchdata[time])
                 searchdata[time] = {};
 
+            if (!manualIncludes[time])
+                manualIncludes[time] = [];
+
             searchdata[time][search] = data;
 
-            missingfiles = [];
-            missingfiles_search = search;
-            for(var f in data.Files)
-                missingfiles.push(data.Files[f].Path);
+            $('#restore-search-loader').hide();
+            inSearch = false;
 
-            expandAndLoad(tree, search);
+            buildSearchTree(buildSearchNodes(time, data));
 
         })
         .fail(function() {
@@ -525,7 +586,9 @@ $(document).ready(function() {
                 nodes.push(createNodeFromData(data.Files[i].Path, data.Prefix, time, node.id === '#'));
 
             callback(nodes, data);
-            expandAndLoad(trees[time]);
+
+            if (node.id === '#')
+                commonPrefix[time] = data.Files[0].Path;
         });
     };
 
@@ -542,17 +605,19 @@ $(document).ready(function() {
                     'data': function(node, callback) {
                         if (nodedata[node.id]) {
                             callback(nodedata[node.id]);
+                            colorize(treeel, $('#restore-search').val());
                         } else {
                             loadNodes(node, function(nodes, data) { 
                                 callback(nodes);
                                 if (data.Prefix == '')
                                     treeel.jstree("open_node", treeel.find('li').first());
+                                colorize(treeel, $('#restore-search').val());
                             }, 
                             time); 
                         }
                     }
                 },
-                'plugins' : [ 'wholerow', "checkbox" ]
+                'plugins' : [ 'checkbox' ]
             });
         }
 
@@ -565,13 +630,21 @@ $(document).ready(function() {
     };
 
     var buildIncludeMap = function() {
+        var time = $('#restore-version').val();
         var m = {};
+        //strees = strees || trees;
+        var strees = [ trees[time] ];
+        var partialfolders = false;
+        if (searchTrees[time] && searchTrees[time].is(':visible')) {
+            partialfolders = true;
+            strees = [ searchTrees[time] ];
+        }
 
-        for(var t in trees) {
+        for(var t in strees) {
             m[t] = {};
-            var tr = trees[t].jstree();
+            var tr = strees[t].jstree();
 
-            var roots = trees[t].children('ul').children('li');
+            var roots = strees[t].children('ul').children('li');
             var follow = [];
 
             roots.each(function(i,e) {
@@ -581,7 +654,20 @@ $(document).ready(function() {
             while(follow.length > 0) {
                 var n = follow.pop();
                 if (n.state.selected && n.original.filepath) {
-                    m[t][n.original.filepath] = 1;
+                    // If we have partial folder matches, 
+                    // we only include the leaves
+                    if (partialfolders) {
+                        if (!n.children || n.children.length == 0) {
+                            m[t][n.original.filepath] = 1;
+                        } else {
+                            // Non-leaf node, recurse it
+                            for(var c in n.children)
+                                follow.push(tr.get_node(n.children[c]));                            
+                        }
+
+                    } else {
+                        m[t][n.original.filepath] = 1;
+                    }
                 } else {
                     //TODO: This traverses the entire tree,
                     // we could choose only those with indeterminate,
@@ -611,6 +697,7 @@ $(document).ready(function() {
 
         APP_DATA.getServerConfig(function(serverdata) {
 
+            // TODO: Should be the backup data versions, not the host OS
             dirSep = serverdata.DirectorySeparator;
             pathSep = serverdata.PathSeparator;
 
@@ -655,25 +742,42 @@ $(document).ready(function() {
     };
 
     $('#restore-search').keypress(function(e) {
+        var time = $('#restore-version').val();
         if (e.which == 13 && $('#restore-search').val().trim() != '')
-            doSearch($('#restore-version').val(), $('#restore-search').val());
-        else if ($('#restore-search').val().trim() != '')
-            colorize(trees[$('#restore-version').val()], $('#restore-search').val());
+            doSearch(time, $('#restore-search').val());
+        else if ($('#restore-search').val().trim() != '') {
+            colorize(trees[time], $('#restore-search').val());
+            if (searchTrees[time])
+                colorize(searchTrees[time], $('#restore-search').val());
+
+        }
     });
 
     $('#restore-search').keyup(function(e) {
-        colorize(trees[$('#restore-version').val()], $('#restore-search').val());
+        var time = $('#restore-version').val();
+        colorize(trees[time], $('#restore-search').val());
+        if (searchTrees[time])
+            colorize(searchTrees[time], $('#restore-search').val());
     });
 
     $('#restore-search').change(function(e) {
-        colorize(trees[$('#restore-version').val()], $('#restore-search').val());
+        var time = $('#restore-version').val();
+        colorize(trees[time], $('#restore-search').val());
+        if (searchTrees[time])
+            colorize(searchTrees[time], $('#restore-search').val());
     });
 
     $('#restore-search').on('search', function(e) {
-        if ($('#restore-search').val() == '')
-            colorize(trees[$('#restore-version').val()], $('#restore-search').val());
-        else
-            doSearch($('#restore-search').val(), $('#restore-search').val());
+        var time = $('#restore-version').val();
+        if ($('#restore-search').val() == '') {
+            trees[time].show();
+            if (searchTrees[time]) {
+                searchTrees[time].remove();
+                delete searchTrees[time];
+            }
+            colorize(trees[time], $('#restore-search').val());
+        } else
+            doSearch(time, $('#restore-search').val());
     });
 
     $('#restore-version').change(function() {
