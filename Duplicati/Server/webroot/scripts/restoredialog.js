@@ -16,10 +16,27 @@ $(document).ready(function() {
 
     var performRestore = function(tasks) {
         var dlg = $('<div></div>').attr('title', 'Restoring files ...');
+        var cancelling = false;
+        var currentProgressTask = null;
+        var remainingTasks = tasks.length;
+
         dlg.dialog({
             autoOpen: true,
             modal: true,
-            closeOnEscape: false
+            closeOnEscape: false,
+            buttons: [
+                { text: 'Cancel', click: function(event, ui) {
+                    if (confirm('Stop the restore?')) {
+                        cancelling = true;
+                        if (currentProgressTask != null)
+                            APP_DATA.stopTask(currentProgressTask.taskId, true);
+
+                        updatePageNav();
+                        dlg.dialog('close');
+                        dlg.remove();
+                    }
+                }}
+            ]
         });
 
         dlg.parent().find('.ui-dialog-titlebar-close').remove().first().remove();
@@ -42,9 +59,6 @@ $(document).ready(function() {
             dlg.remove();
         };
 
-        var currentProgressTask = null;
-        var remainingTasks = tasks.length;
-
         var serverProgressUpdateMethod = function(e, data) {
             if (currentProgressTask == null)
                 pgtxt.text('Waiting for restore to begin ...');
@@ -60,6 +74,9 @@ $(document).ready(function() {
         var serverStateUpdateMethod = function(e, data) {
             var activeTaskId = -1;
             var queuedTasks = [];
+
+            if (cancelling)
+                return;
 
             if (data.ActiveTask != null)
                 activeTaskId = data.ActiveTask.Item1;
@@ -234,167 +251,6 @@ $(document).ready(function() {
         });
     };
 
-    var getRootPrefixes = function(tree) {
-        var roots = tree.children('ul').children('li');
-        var prefixes = [];
-        roots.each(function(i, e) {
-            var node = tr.get_node(e);
-            prefixes.push(node.original.filepath);
-        });
-
-        return prefixes;
-    };
-
-    var getRootNode = function(tree, path) {
-        var roots = tree.children('ul').children('li');
-        var tr = tree.jstree();
-        var root = null;
-
-        roots.each(function(i, e) {
-            var node = tr.get_node(e);
-            if (node && path.indexOf(node.original.filepath) == 0)
-                root = e;
-        });
-
-        return root;
-    };
-
-    var expandNodes = function(tree, path, callback) {
-        var root = getRootNode(tree, path);
-
-        if (root != null) {
-            var tr = tree.jstree();
-            var node = tr.get_node(root);
-            var prefix = node.original.filepath;
-            if (prefix.lastIndexOf(dirSep) != prefix.length - 1)
-                prefix += dirSep;
-            var remainder = path.substr(prefix.length);
-            var parts = remainder.split(dirSep);
-            var rebuilt = prefix;
-            for(var i in parts) {
-                var p = parts[i];
-                if (p == '')
-                    continue;
-
-                var selfprefix = rebuilt;
-                rebuilt += p;
-                if (parseInt(i) != parts.length - 1)
-                    rebuilt += dirSep;
-
-                var next = null;
-
-                if ((node.children === undefined || (node.children !== false && node.children.length == 0)) && callback)
-                    callback(node, selfprefix, p);
-
-                for(var j in node.children) {
-                    var c = tr.get_node(node.children[j]);
-                    if (c.original.filepath == rebuilt) {
-                        tr.open_node(node);
-                        next = c;
-                        break;
-                    }
-                }
-
-                if (next == null)
-                    return {
-                        path: rebuilt,
-                        node: node
-                    }
-
-                node = next;
-            }
-
-        }
-
-        return null;
-    };
-
-    var prepareFolderData = function(data, time) {
-        var tree = trees[time];
-        var roots = getRootPrefixes(tree);
-
-        if (!nodedata[time])
-            nodedata[time] = {};
-
-        var nd = nodedata[time];
-
-        for(var n in data) {
-            var p = data[n].Path;
-            var root = null;
-            for(var r in roots)
-                if (p.indexOf(roots[r]) == 0) {
-                    root = roots[r];
-                    break;
-                }
-
-            if (root == null)
-                continue;
-
-
-
-
-            //createNodeFromData;
-        }
-    };
-
-    var loadSearchIntermediates = function(missing, files, time, search) {
-        var filter = [];
-        for(var n in missing)
-            filter.push(n + '*');
-
-        filter = filter.join(pathSep);
-
-        $.ajax({
-            'url': APP_CONFIG.server_url,
-            'data': {
-                'action': 'search-backup-files',
-                'id': backupId,
-                'time': time,
-                'prefix-only': 'false',
-                'filter': filter
-            },
-            'dataType': 'json'
-        })
-        .done(function(data, status, xhr) {
-
-            var tree = trees[time];
-
-            for(var f in files)
-                expandNodes(tree, files[f].Path, function(node, p, path) {
-                    var c = [];
-
-                    if (p.lastIndexOf(dirSep) != p.length - 1)
-                        p += dirSep;
-
-                    for(var f in data.Files) {
-                        var rp = data.Files[f].Path;
-                        if (rp != p && rp.indexOf(p) == 0) {
-                            var np = rp.substr(p.length);
-                            var lix = np.lastIndexOf(dirSep);
-                            if (lix == np.length - 1)
-                                lix = np.substr(0, np.length - 1).lastIndexOf(dirSep);
-                            if (lix < 0)
-                                c.push(createNodeFromData(rp, p, time, false));
-                        }
-
-                    }
-
-                    if (c.length > 0)
-                        node.children = c;
-                });
-
-            inSearch = false;
-            $('#restore-search-loader').hide();
-            colorize(tree, search);
-        })
-        .fail(function() {
-            $('#restore-search-loader').hide();
-            inSearch = false;
-            alert('Search failed ...');
-        });
-    };
-
-
     var buildSearchNodes = function(time, data, search) {
         var rootpath = commonPrefix[time];
         if (rootpath != '' && rootpath[rootpath.length - 1] != dirSep)
@@ -478,7 +334,11 @@ $(document).ready(function() {
             for(var p in t) {
                 if (search.indexOf(p) == 0) {
                     colorize(tree, search);
-                    if (stree) {
+
+                    if (t[p].Files.length == 0) {
+                        alert('No results matched the query');
+                        tree.show();
+                    } else if (stree) {
                         colorize(stree, search);
                         tree.hide();
                         stree.show();
@@ -530,6 +390,12 @@ $(document).ready(function() {
             $('#restore-search-loader').hide();
             inSearch = false;
 
+            if (data.Files.length == 0) {
+                alert('No results matched the query');
+                tree.show();
+                return;
+            }
+
             buildSearchTree(buildSearchNodes(time, data));
 
         })
@@ -537,6 +403,7 @@ $(document).ready(function() {
             $('#restore-search-loader').hide();
             inSearch = false;
             alert('Search failed ...');
+            tree.show();
         });
     };
 
