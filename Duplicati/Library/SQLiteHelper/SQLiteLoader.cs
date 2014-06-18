@@ -61,7 +61,7 @@ namespace Duplicati.Library.SQLiteHelper
                     } else {
                         //On Mono, we try to find the Mono version of SQLite
                         
-                        //This secrect commandline variable can be used to support older installations
+                        //This secret commandline variable can be used to support older installations
                         if (System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE") == null)
                         {
                             try 
