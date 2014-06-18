@@ -1264,7 +1264,37 @@ $(document).ready(function() {
     });
 
     $('#main-status-area-cancel-button').click(function() {
-        cancelnoty.onRequest();
+        var dlg = $('<div></div>').attr('title', 'Warning');
+        dlg.dialog({
+            autoOpen: true,
+            width: $('body').width > 450 ? 430 : 600, 
+             modal: true,
+            closeOnEscape: true,
+            buttons: [
+                { text: 'Stop now', click: function(event, ui) {
+                    var current = APP_DATA.getCurrentTaskId();
+                    if (current != null)
+                        APP_DATA.stopTask(current, true);
+
+                    dlg.dialog('close');
+                    dlg.remove();
+                }},
+                { text: 'Stop after upload', click: function(event, ui) {
+                    cancelnoty.onRequest();
+                    dlg.dialog('close');
+                    dlg.remove();
+                }},
+                { text: 'Cancel', click: function(event, ui) {
+                    dlg.dialog('close');
+                    dlg.remove();
+                }}
+            ]
+        });
+
+        var pgtxt = $('<div></div>');
+        pgtxt.text('Stop the current task?');
+        dlg.append(pgtxt);
+
     });
 
 });
