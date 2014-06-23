@@ -156,10 +156,16 @@ namespace Duplicati.GUI.TrayIcon
                         // TODO: If we change to hosted browser this should be a callback
                         if (openui)
                         {
-                            tk.ShowUrlInWindow(Connection.StatusWindowURL);
+                            try 
+                            {
+                                tk.ShowUrlInWindow(Connection.StatusWindowURL);
 
-                            Duplicati.Server.Program.IsFirstRun = false;
-                            Duplicati.Server.Program.ServerPortChanged = false;
+                                Duplicati.Server.Program.IsFirstRun = false;
+                                Duplicati.Server.Program.ServerPortChanged = false;
+                            } 
+                            catch
+                            {
+                            }
                         }
                         tk.Init(_args);
                     }
