@@ -107,6 +107,22 @@ APP_UTIL = {
             }
         });
 
+        form.find('textarea').each(function(i, e) {
+            var key = e.id;
+            var m = map[e.id];
+
+            if (m !== false) {
+                if (m && typeof(m) == typeof(function() {})) {
+                    m(values, key, e, extra);
+                } else {
+                    if (m && typeof(m) == typeof(''))
+                        key = m;
+
+                    values[key] = $(e).val();
+                }
+            }
+        });
+
         form.find('input').each(function(i, e) { 
             var key = e.id;
             var m = map[e.id];
