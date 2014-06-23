@@ -427,6 +427,12 @@ $(document).ready(function() {
         $('#main-list').find('.main-backup-entry').each(function(i, e) {
             var el = $(e);
 
+            if (isNaN($.parseDate(backupMap[e.id].Backup.Metadata.LastBackupStarted))) {
+                el.find('.last-run-time').hide();
+            } else {
+                el.find('.last-run-time').show();
+            }
+
             // Scheduled items
             if (scheduledMap[e.id]) {
                 el.find('.backup-next-run').text('#' + parseInt(scheduledMap[e.id]) + ' in queue');
