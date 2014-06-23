@@ -6,7 +6,7 @@
 <title>Backup</title>
 
     <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
-    
+
     <link rel="stylesheet" type="text/css" href="stylesheets/green-theme/jquery-ui-1.10.3.min.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/common.css" />
     <link rel="stylesheet" type="text/css" href="stylesheets/jstree/style.css" />
@@ -46,7 +46,7 @@
         <div id="backup-${Backup.ID}" class="main-backup-entry">
 
             <div id="backup-control-${Backup.ID}" class="main-backup-control">
-            </div>    
+            </div>
 
             <div class="caption-text">${Backup.Name}</div>
             <ul class="hint-text last-run-time">
@@ -167,7 +167,7 @@
         <li id="backup-details-repair"><a>Repair</a></li>
         <li>-</li>
         <li id="backup-details-send-report"><a>Create bug report</a></li>
-    </ul>        
+    </ul>
 
     <div class="main-status-area-outer">
         <div id="main-status-area">
@@ -212,43 +212,65 @@
         <ul>
             <li><a href="#edit-tab-general">General</a></li>
             <li><a href="#edit-tab-sourcedata">Source Data</a></li>
-            <li><a href="#edit-tab-target">Target</a></li>
             <li><a href="#edit-tab-schedule">Schedule</a></li>
             <li><a href="#edit-tab-options">Options</a></li>
         </ul>
 
         <form id="edit-dialog-form">
             <div id="edit-tab-general">
-                <div class="edit-dialog-label">Name of backup</div>
-                <input type="text" name="backup-name" id="backup-name" class="ui-corner-all" />
+                <div class="input-block">
+                    <div class="edit-dialog-label">Name of backup</div>
+                    <input type="text" name="backup-name" id="backup-name" class="ui-corner-all" />
+                </div>
 
-                <div class="edit-dialog-label">Backup labels</div>
-                <input type="text" name="backup-labels" id="backup-labels" class="ui-corner-all" />
-        
-                <div id="encryption-area">
+                <div class="input-block">
+                    <div class="edit-dialog-label">Backup labels</div>
+                    <input type="text" name="backup-labels" id="backup-labels" class="ui-corner-all" />
+                </div>
+
+                <div class="input-block">
+                    <div class="edit-dialog-label">Connection URI</div>
                     <div class="input-hint">
-                        It is recommended to encrypt all backups that are stored on remote servers
+                        Where your backup is stored. Contains all that is required to connect to your storage.
+                    </div>
+                    <div class="field-group">
+                        <textarea type="text" name="backup-uri" id="backup-uri" value="" class="ui-corner-all" rows="2" ></textarea>
+                        <div  id="edit-connection-uri-link" class="action-link">Create connection URI</div>
+                    </div>
+                </div>
+
+                <div id="encryption-area">
+                    <div class="input-block">
+                        <div class="edit-dialog-label">Encryption method</div>
+                        <div class="input-hint">
+                            Recommended for remote servers
+                        </div>
+                        <div class="field-group">
+                            <select type="text" name="encryption-method" id="encryption-method" class="ui-corner-all">
+                                <option>AES 256 bit</option>
+                                <option>GNU Privacy Guard</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="edit-dialog-label">Encryption method</div>
-                    <select type="text" name="encryption-method" id="encryption-method" class="ui-corner-all">
-                        <option>AES 256 bit</option>
-                        <option>GNU Privacy Guard</option>
-                    </select>
-
                     <div id="encryption-password-area">
-                        <div class="edit-dialog-label">Encryption passphrase</div>
-                        <input type="password" name="encryption-password" id="encryption-password" value="" class="ui-corner-all" /><br/>
+                        <div class="input-block">
+                            <div class="edit-dialog-label">Encryption passphrase</div>
+                            <div id="backup-password-strength" class="input-hint" title="Time it takes to break this password">
+                                Strength: unknown
+                            </div>
+                            <div class="field-group">
+                                <input type="password" name="encryption-password" id="encryption-password" value="" class="ui-corner-all" />
+                            </div>
+                        </div>
 
-                        <div class="clearfix"></div>
-                        <div class="edit-dialog-label" id="repeat-password-label">Repeat passphrase</div>
-                        <div class="field-group">
-                            <input type="password" name="repeat-password" id="repeat-password" value="" class="ui-corner-all" /><br/>
-                            <div id="toggle-show-password" class="action-link action-link-input">Show passwords</div>
-                            <div id="generate-password" class="action-link action-link-input backup-password-generate">Generate password</div>
-                            <div class="clearfix"></div>
-
-                            <div id="backup-password-strength" class="backup-password-strength" title="Time it takes to break this password">Strength: unknown</div>
+                        <div class="input-block">
+                            <div class="edit-dialog-label" id="repeat-password-label">Repeat passphrase</div>
+                            <div class="field-group">
+                                <input type="password" name="repeat-password" id="repeat-password" value="" class="ui-corner-all" /><br/>
+                                <div id="toggle-show-password" class="action-link action-link-input">Show passwords</div>
+                                <div id="generate-password" class="action-link action-link-input backup-password-generate">Generate password</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -270,17 +292,6 @@
                 </div>
 
 
-            </div>
-
-            <div id="edit-tab-target">
-                <div class="input-hint">
-                The connection URI defines where your backup is stored. It contains everything that is required to connect to your storage.
-                </div>
-                <div class="edit-dialog-label">Connection URI</div>
-                <div class="field-group">
-                    <textarea type="text" name="backup-uri" id="backup-uri" value="" class="ui-corner-all" rows="4" ></textarea>
-                    <div  id="edit-connection-uri-link" class="action-link">Create connection URI</div>
-                </div>
             </div>
 
             <div id="edit-tab-schedule">
@@ -354,7 +365,7 @@
                 <div class="clearfix"></div>
 
                 <div class="edit-dialog-label" id="backup-options-link"><a class="action-link">Options<div class="ui-icon ui-icon-info"></div></a></div>
-                
+
                 <textarea id="backup-options" rows="4" name="backup-options"></textarea>
 
             </div>
@@ -437,7 +448,7 @@
     <div id="folder-browse-dialog" class="modal-dialog" title="Choose folder"></div>
 
     <div id="log-dialog" class="modal-dialog" title="Log data">
-        
+
     </div>
 
     <div id="backup-log-dialog" class="modal-dialog" title="Log data">

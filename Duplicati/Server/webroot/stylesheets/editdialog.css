@@ -23,7 +23,6 @@
  }
 
 .edit-dialog input, .edit-dialog textarea, .edit-dialog select {
-    float: left;
     background: none;
     border-color: #c0c0c0;
 }
@@ -33,13 +32,27 @@
 }
 
 .edit-dialog textarea {
+    max-width: 330px;
     width: 330px;
 }
 
 .input-hint {
-    padding-top: 20px;
-    padding-bottom: 8px;
-    clear:  both;
+    clear: left;
+    float: left;
+    font-size: 12px;
+    margin-top: -5px;
+    width: 180px;
+}
+
+.input-block {
+    clear: both;
+    margin-top: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+.edit-tab-general > .input-block:first-child {
+    margin-top: 0;
 }
 
 .field-group {
@@ -57,17 +70,16 @@
     float: right;
 }
 
-.backup-password-strength {
-    margin-top: 20px;
-    float: right;
-}
-
 .button-area {
     clear: both;
     position: absolute;
     bottom: 0px;
     right: 0px;
     float: right;
+}
+
+#encryption-area {
+    clear: both;
 }
 
 #backend-type {
@@ -163,7 +175,7 @@
     float: right;
 }
 
-#source-folder-droptarget { 
+#source-folder-droptarget {
     width: 100%;
     height: 100%;
     position: absolute;
@@ -173,6 +185,7 @@
 }
 
 #use-scheduled-run {
+    float: left;
     width: auto;
     margin-right: 10px;
 }
