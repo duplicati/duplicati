@@ -29,6 +29,9 @@ namespace Duplicati.Server.Database
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
             public const string UPLOAD_SPEED_LIMIT = "max-upload-speed";
             public const string THREAD_PRIORITY = "thread-priority";
+            public const string LAST_WEBSERVER_PORT = "last-webserver-port";
+            public const string IS_FIRST_RUN = "is-first-run";
+            public const string SERVER_PORT_CHANGED = "server-port-changed";
         }
         
         private Dictionary<string, string> m_values;
@@ -112,6 +115,54 @@ namespace Duplicati.Server.Database
             set
             {
                 m_values[CONST.UPLOAD_SPEED_LIMIT] = value;
+                SaveSettings();
+            }
+        }
+
+        public bool IsFirstRun
+        {
+            get
+            {
+                var tp = m_values[CONST.IS_FIRST_RUN];
+                if (string.IsNullOrEmpty(tp))
+                    return true;
+
+                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.IS_FIRST_RUN);
+            }
+            set
+            {
+                m_values[CONST.IS_FIRST_RUN] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public bool ServerPortChanged
+        {
+            get
+            {
+                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.SERVER_PORT_CHANGED);
+            }
+            set
+            {
+                m_values[CONST.SERVER_PORT_CHANGED] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public int LastWebserverPort
+        {
+            get
+            {
+                var tp = m_values[CONST.LAST_WEBSERVER_PORT];
+                int p;
+                if (string.IsNullOrEmpty(tp) || !int.TryParse(tp, out p))
+                    return -1;
+
+                return p;
+            }
+            set
+            {
+                m_values[CONST.LAST_WEBSERVER_PORT] = value.ToString();
                 SaveSettings();
             }
         }

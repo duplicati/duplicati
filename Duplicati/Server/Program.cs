@@ -114,6 +114,18 @@ namespace Duplicati.Server
             }
         }
 
+        public static bool IsFirstRun
+        {
+            get { return DataConnection.ApplicationSettings.IsFirstRun; }
+            set { DataConnection.ApplicationSettings.IsFirstRun = value; }
+        }
+
+        public static bool ServerPortChanged
+        {
+            get { return DataConnection.ApplicationSettings.ServerPortChanged; }
+            set { DataConnection.ApplicationSettings.ServerPortChanged = value; }
+        }
+
         /// <summary>
         /// The main entry point for the application.
         /// <param name="args">Commandline arguments</param>
@@ -339,6 +351,10 @@ namespace Duplicati.Server
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
 
                 Program.WebServer = new Server.WebServer(commandlineOptions);
+
+                if (Program.WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort)
+                    ServerPortChanged = true;
+                DataConnection.ApplicationSettings.LastWebserverPort = Program.WebServer.Port;
 
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();

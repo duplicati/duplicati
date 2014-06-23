@@ -113,6 +113,7 @@ namespace Duplicati.GUI.TrayIcon
             }
 
             HostedInstanceKeeper hosted = null;
+            bool openui = false;
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
                 try
@@ -123,6 +124,10 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     return;
                 }
+
+                // We have a hosted server, if this is the first run, 
+                // we should open the main page
+                openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
             }
 
             using (hosted)
@@ -147,6 +152,15 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         if (hosted != null && Server.Program.Instance != null)
                             Server.Program.Instance.SecondInstanceDetected += new Server.SingleInstance.SecondInstanceDelegate(x => { tk.ShowUrlInWindow(url); });
+                        
+                        // TODO: If we change to hosted browser this should be a callback
+                        if (openui)
+                        {
+                            tk.ShowUrlInWindow(Connection.StatusWindowURL);
+
+                            Duplicati.Server.Program.IsFirstRun = false;
+                            Duplicati.Server.Program.ServerPortChanged = false;
+                        }
                         tk.Init(_args);
                     }
                 }
