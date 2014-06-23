@@ -45,14 +45,72 @@ namespace Duplicati.Library.Utility
         /// Opens the given URL in a browser
         /// </summary>
         /// <param name="url">The url to open, must start with http:// or https://</param>
-        public static void OpenUrl(string url)
+        public static void OpenURL(string url, string browserprogram = null)
         {
+            if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+                throw new Exception("Malformed URL");
+
+            if (string.IsNullOrWhiteSpace(browserprogram))
+                browserprogram = SystemBrowser;
+
+            //Fallback is to just show the window in a browser
+            if (Utility.IsClientOSX)
+            {
+                try
+                {
+                    var cmd = string.IsNullOrWhiteSpace(browserprogram) ? "open" : browserprogram;
+                    System.Diagnostics.Process.Start(cmd, "\"" + url + "\"");
+                }
+                catch
+                {
+                    if (ErrorHandler != null)
+                        ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
+                }
+            }
+            else if (Utility.IsClientLinux)
+            {
+                try
+                {
+                    var apps = new string[] {browserprogram, "xdg-open", "chromium-browser", "google-chrome", "firefox", "mozilla", "konqueror", "netscape", "opera", "epiphany" };
+                    foreach(var n in apps)
+                        if (!string.IsNullOrWhiteSpace(n) && Duplicati.Library.Utility.Utility.Which(n))
+                        {
+                            System.Diagnostics.Process.Start(n, "\"" + url + "\"");
+                            return;
+                        }
+
+                    if (ErrorHandler != null)
+                        ErrorHandler("No suitable browser found, try installing \"xdg-open\"");
+
+                    Console.WriteLine("No suitable browser found, try installing \"xdg-open\"");
+                }
+                catch
+                {
+                    if (ErrorHandler != null)
+                        ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
+                }
+            }
+            else
+            {
+                OpenUrlWindows(url, browserprogram);
+            }
+        }
+
+        /// <summary>
+        /// Opens the given URL in a browser
+        /// </summary>
+        /// <param name="url">The url to open, must start with http:// or https://</param>
+        private static void OpenUrlWindows(string url, string browserprogram)
+        {
+            if (string.IsNullOrWhiteSpace(browserprogram))
+                browserprogram = SystemBrowser;
+
             try
             {
                 if (!url.StartsWith("http://") && !url.StartsWith("https://"))
                     throw new Exception("Malformed URL");
 
-                if (string.IsNullOrEmpty(SystemBrowser))
+                if (string.IsNullOrEmpty(browserprogram))
                 {
                     try
                     {
@@ -74,7 +132,7 @@ namespace Duplicati.Library.Utility
                 else
                 {
                     System.Diagnostics.Process process = new System.Diagnostics.Process();
-                    process.StartInfo.FileName = SystemBrowser;
+                    process.StartInfo.FileName = browserprogram;
                     process.StartInfo.Arguments = url;
                     process.StartInfo.UseShellExecute = true;
                     process.Start();
