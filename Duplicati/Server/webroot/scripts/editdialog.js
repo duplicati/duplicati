@@ -61,7 +61,7 @@ $(document).ready(function() {
         validate_form_map: {
             'edit-tab-general': function(tabindex) {
                 if ($('#backup-name').val().trim() == '') {
-                    $('#edit-dialog').tabs( "option", "active", tabindex);                
+                    $('#edit-dialog').tabs( "option", "active", tabindex);
                     $('#backup-name').focus();
                     alert('You must enter a name for the backup');
                     return false;
@@ -69,14 +69,14 @@ $(document).ready(function() {
 
                 if ($('#encryption-method').val() != '') {
                     if ($('#encryption-password').val().trim() == '') {
-                        $('#edit-dialog').tabs( "option", "active", tabindex);                
+                        $('#edit-dialog').tabs( "option", "active", tabindex);
                         $('#encryption-password').focus();
                         alert('You must enter a passphrase');
                         return false;
                     }
 
                     if (!EDIT_STATE.passwordShown && $('#repeat-password').hasClass('password-mismatch')) {
-                        $('#edit-dialog').tabs( "option", "active", tabindex);                
+                        $('#edit-dialog').tabs( "option", "active", tabindex);
                         $('#repeat-password').focus();
                         alert('The passwords do not match');
                         return false;
@@ -89,7 +89,7 @@ $(document).ready(function() {
             'edit-tab-sourcedata': function(tabindex) {
 
                 if ($('#source-folder-paths').find('.source-folder').length == 0) {
-                    $('#edit-dialog').tabs( "option", "active", tabindex);                
+                    $('#edit-dialog').tabs( "option", "active", tabindex);
                     $('#source-folder-paths').focus();
                     alert('You must select at least one source folder to back up');
                     return false;
@@ -100,7 +100,7 @@ $(document).ready(function() {
 
             'edit-tab-target': function(tabindex) {
                 if ($('#backup-uri').val().trim() == '') {
-                    $('#edit-dialog').tabs( "option", "active", tabindex);                
+                    $('#edit-dialog').tabs( "option", "active", tabindex);
                     $('#backup-uri').focus();
                     alert('You must enter a connection url for the backup');
                     return false;
@@ -113,7 +113,7 @@ $(document).ready(function() {
                 if ($('#use-scheduled-run').is(':checked')) {
                     var t = Date.parse($('#next-run-date').val() + 'T' + $('#next-run-time').val());
                     if (isNaN(t)) {
-                        $('#edit-dialog').tabs( "option", "active", tabindex);                
+                        $('#edit-dialog').tabs( "option", "active", tabindex);
                         $('#next-run-time').focus();
                         alert('You must enter a valid time');
                         return false;
@@ -148,7 +148,7 @@ $(document).ready(function() {
             },
             'Tags': function(dict, key, val, cfgel) {
                 var tags = val || [];
-                $('#backup-labels').val(tags.join(', '));
+                //$('#backup-labels').val(tags.join(', '));
             },
             'Schedule': function(dict, key, val, cfgel) {
                 $('#use-scheduled-run').attr('checked', val != null)
@@ -283,7 +283,7 @@ $(document).ready(function() {
             'allow-day-fri': false,
             'allow-day-sat': false,
 
-            'allow-day-sun': function(dict, key, el, cfgel) { 
+            'allow-day-sun': function(dict, key, el, cfgel) {
                 if (!$('#use-scheduled-run').is(':checked'))
                     return;
 
@@ -291,7 +291,7 @@ $(document).ready(function() {
                     dict['Schedule'] = {};
 
 
-                // Collect all days 
+                // Collect all days
                 var days = [];
                 var r = ['mon', 'tue', 'wed', 'thu','fri', 'sat', 'sun'];
                 for(var k in r)
@@ -300,10 +300,10 @@ $(document).ready(function() {
 
                 dict['Schedule']['AllowedDays']= days;
             },
-            'encryption-password': function(dict, key, el, cfgel) { 
+            'encryption-password': function(dict, key, el, cfgel) {
                 dict['Backup']['Settings']['passphrase'] = $(el).val();
-            }, 
-            'source-folder-list': function(dict, key, el, cfgel) { 
+            },
+            'source-folder-list': function(dict, key, el, cfgel) {
                 var sources = [];
                 $('#source-folder-paths').find('.source-folder').each(function(i,el) {
                     var p = $(el).data('id');
@@ -312,21 +312,21 @@ $(document).ready(function() {
 
                 dict['Backup']['Sources'] = sources;
             },
-            'use-scheduled-run': function(dict, key, el, cfgel) { 
+            'use-scheduled-run': function(dict, key, el, cfgel) {
                 if (!$(el).is(':checked')) {
                     dict['Schedule'] = null;
                 } else if(!dict['Schedule']) {
                     dict['Schedule'] = {};
                 }
             },
-            'backup-uri': function(dict, key, el, cfgel) { 
+            'backup-uri': function(dict, key, el, cfgel) {
                 dict['Backup']['TargetURL'] = $(el).val();
             },
             'backup-name':  function(dict, key, el, cfgel) {
                 dict['Backup']['Name'] = $(el).val();
             },
             'backup-labels': function(dict, key, el, cfgel) {
-                dict['Backup']['Tags'] = $(el).val().split(',');
+//                dict['Backup']['Tags'] = $(el).val().split(',');
             },
             'encryption-method': function(dict, key, el, cfgel) {
                 dict['Backup']['Settings']['encryption-module'] = $(el).val();
@@ -338,7 +338,7 @@ $(document).ready(function() {
             'next-run-time': function(dict, key, el, cfgel) {
                 if (!$('#use-scheduled-run').is(':checked'))
                     return;
-                
+
                  if (!dict['Schedule'])
                     dict['Schedule'] = {};
 
@@ -360,7 +360,7 @@ $(document).ready(function() {
             'repeat-run-number': function(dict, key, el, cfgel) {
                 if (!$('#use-scheduled-run').is(':checked'))
                     return;
-                
+
                  if (!dict['Schedule'])
                     dict['Schedule'] = {};
 
@@ -373,18 +373,18 @@ $(document).ready(function() {
         }
     };
 
-    $('#backup-name').watermark('Enter a name for your backup');
-    $('#backup-labels').watermark('work, docs, s3, movies, other');
-    $('#backup-uri').watermark('webdavs://example.com/mybackup?');
-    $('#encryption-password').watermark('Enter a secure passphrase');
-    $('#repeat-password').watermark('Repeat the passphrase');
+    $('#backup-name').watermark('Photos 2014');
+//    $('#backup-labels').watermark('work, docs, s3, movies, other');
+    $('#backup-uri').watermark('webdavs://user:pass@example.com:995/backup?option=true');
+    $('#encryption-password').watermark('Long and secret passphrase');
+    $('#repeat-password').watermark('Long and secret passphrase');
     $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
     $('#source-folder-path-text').watermark('Enter a path to back up');
 
     var updateState = function() { if (EDIT_STATE != null) EDIT_STATE.dataModified = true; };
 
     $('#backup-name').change(updateState);
-    $('#backup-labels').change(updateState);
+//    $('#backup-labels').change(updateState);
     $('#backup-uri').change(updateState);
     $('#encryption-password').change(updateState);
     $('#repeat-password').change(updateState);
@@ -397,36 +397,46 @@ $(document).ready(function() {
         return split(val).pop();
     }
 
-    $('#backup-labels').autocomplete({
-        minLength: 0,
+    // $('#backup-labels').autocomplete({
+    //     minLength: 0,
 
-        source: function(request, response) {
-            if (EDIT_STATE != null && EDIT_STATE.tags != null)
-                response( $.ui.autocomplete.filter(EDIT_STATE.tags, extractLast(request.term)));
-        },
+    //     source: function(request, response) {
+    //         if (EDIT_STATE != null && EDIT_STATE.tags != null)
+    //             response( $.ui.autocomplete.filter(EDIT_STATE.tags, extractLast(request.term)));
+    //     },
 
-        focus: function() {
-            return false;
-        },
+    //     focus: function() {
+    //         return false;
+    //     },
 
-        select: function( event, ui ) {
-            var terms = split( this.value );
-            terms.pop(); //remove current
-            terms.push(ui.item.value);
-            terms.push(''); //prepare for new
-            this.value = terms.join(', ');
-            return false;
-        }
-    });
+    //     select: function( event, ui ) {
+    //         var terms = split( this.value );
+    //         terms.pop(); //remove current
+    //         terms.push(ui.item.value);
+    //         terms.push(''); //prepare for new
+    //         this.value = terms.join(', ');
+    //         return false;
+    //     }
+    // });
 
     var updatePasswordIndicator = function() {
+
+        var strengthMap = {
+            0: "Useless",
+            1: "Very weak",
+            2: "Weak",
+            3: "Strong",
+            4: "Very strong"
+        };
+
         $.passwordStrength($('#encryption-password')[0].value, function(r) {
             var f = $('#backup-password-strength');
             if (r == null) {
                 f.text('Strength: Unknown');
                 r = {score: -1}
             } else {
-                f.text('Time to break password: ' +  r.crack_time_display);
+                console.log(r)
+                f.text('Strength: ' +  strengthMap[r.score]);
             }
 
             f.removeClass('password-strength-0');
@@ -466,17 +476,17 @@ $(document).ready(function() {
     $('#repeat-password').keyup(updatePasswordIndicator);
 
     $('#toggle-show-password').click(function() {
-        $('#encryption-password').togglePassword();    
+        $('#encryption-password').togglePassword();
     });
 
     $('#encryption-password').on('passwordShown', function () {
-        $('#toggle-show-password').text('Hide passwords')
+        $('#toggle-show-password').text('Hide')
         $('#repeat-password').showPassword();
         EDIT_STATE.passwordShown = true;
         //$('#repeat-password').hide();
         //$('#repeat-password-label').hide();
     }).on('passwordHidden', function () {
-        $('#toggle-show-password').text('Show passwords')        
+        $('#toggle-show-password').text('Show')
         $('#repeat-password').hidePassword();
         EDIT_STATE.passwordShown = false;
         //$('#repeat-password').show();
@@ -500,10 +510,10 @@ $(document).ready(function() {
         };
 
         var pwd = (
-            choose(specials, 2) + 
-            choose(lowercase, 2) + 
-            choose(uppercase, 2) + 
-            choose(numbers, 2) + 
+            choose(specials, 2) +
+            choose(lowercase, 2) +
+            choose(uppercase, 2) +
+            choose(numbers, 2) +
             choose(all, (Math.random()*5) + 5)
         ).split('');
 
@@ -519,11 +529,11 @@ $(document).ready(function() {
         $('#encryption-password')[0].value = pwd;
         $('#repeat-password')[0].value = pwd;
 
-        $('#encryption-password').showPassword(); 
+        $('#encryption-password').showPassword();
         updatePasswordIndicator();
     });
 
-    $('#edit-connection-uri-link').click(function() {
+    $('#backup-uri-label').click(function() {
         $('#connection-uri-dialog').dialog('open');
     });
 
@@ -546,7 +556,7 @@ $(document).ready(function() {
     });
 
     $('#edit-dialog').on( "dialogopen", function( event, ui ) {
-        $('#edit-dialog-form').each(function(i, e) { e.reset(); });        
+        $('#edit-dialog-form').each(function(i, e) { e.reset(); });
         $('#source-folder-paths').find('.source-folder').remove();
         removeSourceFolder();
 
@@ -576,7 +586,7 @@ $(document).ready(function() {
                   drop.append($("<option></option>").attr("value", encmodules[i].Key).text(encmodules[i].DisplayName));
             }
 
-            $('#encryption-method').change();            
+            $('#encryption-method').change();
         });
 
         APP_DATA.getLabels(function(labels) {
@@ -632,7 +642,7 @@ $(document).ready(function() {
     dlg_buttons.last().click(function(event, ui) {
         var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
         if (event.curPage == tabs.size() - 1) {
-            // Saving, validate first 
+            // Saving, validate first
 
             for(var n in tabs) {
                 if (!EDIT_BACKUP.validate_tab(n)) {
@@ -703,7 +713,7 @@ $(document).ready(function() {
         $(div).data('id', path);
 
         APP_DATA.validatePath(path, function(path, success) {
-            if (success) 
+            if (success)
                 div.addClass('path-valid');
             else
                 div.addClass('path-invalid');
@@ -715,7 +725,7 @@ $(document).ready(function() {
     var browsePath =  function() {
         $.browseForFolder({
             title: 'Select folder to back up',
-            callback: function(path, disp) { 
+            callback: function(path, disp) {
                 disp = (disp || path).split(dirSep);
                 addSourceFolder(path, disp[disp.length - 1]);
             }
@@ -761,7 +771,7 @@ $(document).ready(function() {
 
     // Register a drop target for folder nodes
     var inActualMove = false;
-    $('#source-folder-droptarget').jstree({ 
+    $('#source-folder-droptarget').jstree({
         'core': {
             'check_callback': function(method, item, parent, position) {
                 if (inActualMove)
@@ -778,13 +788,13 @@ $(document).ready(function() {
     var tree = $('#source-folder-droptarget').data('jstree');
     tree.tree_move_orig = tree.move_node;
     tree.move_node = function(obj, par, pos, callback, is_loaded) {
-        try { 
+        try {
             inActualMove = true;
-            this.tree_move_orig(obj, par, pos, callback, is_loaded); 
-        } finally { 
-            inActualMove = false; 
+            this.tree_move_orig(obj, par, pos, callback, is_loaded);
+        } finally {
+            inActualMove = false;
         }
-    }    
+    }
 
     $("#edit-dialog").on('setup-dialog', function(e, data) {
         if (data.Backup && data.Backup.ID && parseInt(data.Backup.ID) > 0) {
@@ -820,14 +830,14 @@ $(document).ready(function() {
 
         $('#backup-options').val(opttext);
 
-        EDIT_STATE.dataModified = false;        
+        EDIT_STATE.dataModified = false;
     });
 
     $('#backup-options-dialog').dialog({
-        minWidth: 320, 
-        width: $('body').width > 600 ? 320 : 600, 
-        minHeight: 480, 
-        height: 500, 
+        minWidth: 320,
+        width: $('body').width > 600 ? 320 : 600,
+        minHeight: 480,
+        height: 500,
         modal: true,
         autoOpen: false,
         closeOnEscape: true,
