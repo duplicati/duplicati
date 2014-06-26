@@ -59,6 +59,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,6 +140,12 @@ Global
 		{52826615-7964-47FE-B4B3-1B2DBDF605B9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{52826615-7964-47FE-B4B3-1B2DBDF605B9}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{52826615-7964-47FE-B4B3-1B2DBDF605B9}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{7E119745-1F62-43F0-936C-F312A1912C0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E119745-1F62-43F0-936C-F312A1912C0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E119745-1F62-43F0-936C-F312A1912C0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E119745-1F62-43F0-936C-F312A1912C0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E119745-1F62-43F0-936C-F312A1912C0B}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E119745-1F62-43F0-936C-F312A1912C0B}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{81765A64-3661-4E3E-B850-2F6F87A51F74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{81765A64-3661-4E3E-B850-2F6F87A51F74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81765A64-3661-4E3E-B850-2F6F87A51F74}.Release|Any CPU.ActiveCfg = Release|Any CPU

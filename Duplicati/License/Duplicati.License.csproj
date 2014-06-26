@@ -216,6 +216,7 @@
     <Compile Include="LicenseReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VersionNumbers.cs" />
+    <Compile Include="AutoUpdateSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
@@ -223,6 +224,7 @@
       <Link>licenses\SharpCompress\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="AutoUpdateSignKey.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="licenses\AWSSDK\" />
@@ -234,5 +236,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
+    <EmbeddedResource Include="AutoUpdateURL.txt" />
+    <EmbeddedResource Include="AutoUpdateAppName.txt" />
   </ItemGroup>
 </Project>

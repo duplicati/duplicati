@@ -58,12 +58,22 @@ namespace Duplicati.GUI.TrayIcon
                 return TOOLKIT_WINDOWS_FORMS;
             }
         }
-        
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static void Main(string[] _args)
+        public static int Main(string[] args)
+        {
+            var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
+                Duplicati.License.AutoUpdateSettings.URL,
+                Duplicati.License.AutoUpdateSettings.SignKey,
+                Duplicati.License.AutoUpdateSettings.AppName);
+
+            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+        }
+        
+        public static void RealMain(string[] _args)
         {
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);

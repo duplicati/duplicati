@@ -71,7 +71,21 @@ namespace Duplicati.CommandLine
 			}
 		}
     
-        static int Main(string[] args)
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        public static int Main(string[] args)
+        {
+            var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
+                Duplicati.License.AutoUpdateSettings.URL,
+                Duplicati.License.AutoUpdateSettings.SignKey,
+                Duplicati.License.AutoUpdateSettings.AppName);
+
+            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+        }
+
+        static int RealMain(string[] args)
         {
             bool verboseErrors = false;
             bool verbose = false;

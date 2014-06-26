@@ -1,0 +1,1 @@
+﻿http://www.duplicati.com/latests.json

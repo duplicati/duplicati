@@ -128,10 +128,19 @@ namespace Duplicati.Server
 
         /// <summary>
         /// The main entry point for the application.
-        /// <param name="args">Commandline arguments</param>
         /// </summary>
         [STAThread]
-        public static void Main(string[] args)
+        public static int Main(string[] args)
+        {
+            var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
+                Duplicati.License.AutoUpdateSettings.URL,
+                Duplicati.License.AutoUpdateSettings.SignKey,
+                Duplicati.License.AutoUpdateSettings.AppName);
+
+            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+        }
+
+        public static void RealMain(string[] args)
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
