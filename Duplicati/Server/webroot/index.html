@@ -219,32 +219,25 @@
         <form id="edit-dialog-form">
             <div id="edit-tab-general">
                 <div class="input-block">
-                    <div class="edit-dialog-label">Name of backup</div>
+                    <div class="edit-dialog-label">Name</div>
                     <input type="text" name="backup-name" id="backup-name" class="ui-corner-all" />
                 </div>
-
+<!--
                 <div class="input-block">
                     <div class="edit-dialog-label">Backup labels</div>
                     <input type="text" name="backup-labels" id="backup-labels" class="ui-corner-all" />
                 </div>
-
+ -->
                 <div class="input-block">
-                    <div class="edit-dialog-label">Connection URI</div>
-                    <div class="input-hint">
-                        Where your backup is stored. Contains all that is required to connect to your storage.
-                    </div>
+                    <div class="edit-dialog-label action-link" id="backup-uri-label">Backup to…</div>
                     <div class="field-group">
-                        <textarea type="text" name="backup-uri" id="backup-uri" value="" class="ui-corner-all" rows="2" ></textarea>
-                        <div  id="edit-connection-uri-link" class="action-link">Create connection URI</div>
+                        <textarea type="text" name="backup-uri" id="backup-uri" value="" class="ui-corner-all" rows="3"></textarea>
                     </div>
                 </div>
 
                 <div id="encryption-area">
                     <div class="input-block">
-                        <div class="edit-dialog-label">Encryption method</div>
-                        <div class="input-hint">
-                            Recommended for remote servers
-                        </div>
+                        <div class="edit-dialog-label">Encryption</div>
                         <div class="field-group">
                             <select type="text" name="encryption-method" id="encryption-method" class="ui-corner-all">
                                 <option>AES 256 bit</option>
@@ -255,10 +248,7 @@
 
                     <div id="encryption-password-area">
                         <div class="input-block">
-                            <div class="edit-dialog-label">Encryption passphrase</div>
-                            <div id="backup-password-strength" class="input-hint" title="Time it takes to break this password">
-                                Strength: unknown
-                            </div>
+                            <div class="edit-dialog-label">Passphrase</div>
                             <div class="field-group">
                                 <input type="password" name="encryption-password" id="encryption-password" value="" class="ui-corner-all" />
                             </div>
@@ -267,9 +257,12 @@
                         <div class="input-block">
                             <div class="edit-dialog-label" id="repeat-password-label">Repeat passphrase</div>
                             <div class="field-group">
-                                <input type="password" name="repeat-password" id="repeat-password" value="" class="ui-corner-all" /><br/>
-                                <div id="toggle-show-password" class="action-link action-link-input">Show passwords</div>
-                                <div id="generate-password" class="action-link action-link-input backup-password-generate">Generate password</div>
+                                <input type="password" name="repeat-password" id="repeat-password" value="" class="ui-corner-all" />
+                                <ul class="inline-links">
+                                    <li><div id="toggle-show-password" class="action-link">Show</div></li>
+                                    <li><div id="generate-password" class="action-link">Generate</div></li>
+                                    <li><div id="backup-password-strength" class="" title="Time it takes to break this password">Strength: unknown</div></li>
+                                </ul>
                             </div>
                         </div>
                     </div>

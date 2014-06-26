@@ -36,17 +36,9 @@
     width: 330px;
 }
 
-.input-hint {
-    clear: left;
-    float: left;
-    font-size: 12px;
-    margin-top: -5px;
-    width: 180px;
-}
-
 .input-block {
     clear: both;
-    margin-top: 5px;
+    margin-top: 10px;
     overflow: hidden;
     position: relative;
 }
@@ -59,23 +51,33 @@
     display: inline-block;
 }
 
-.action-link-input:before {
-    clear: both;
-}
-.action-link-input {
-    float: left;
-}
-
-.backup-password-generate {
-    float: right;
-}
-
 .button-area {
     clear: both;
     position: absolute;
     bottom: 0px;
     right: 0px;
     float: right;
+}
+
+.inline-links {
+    margin: 0;
+    padding: 0;
+}
+
+.inline-links > li {
+    border-left: 1px solid #7d7d7d;
+    display: inline-block;
+    margin: 0;
+    padding: 0 10px;
+}
+
+.inline-links > li:first-child {
+    border-left: none;
+    padding-left: 5px;
+}
+
+.field-group .inline-links {
+    margin-top: 5px;
 }
 
 #encryption-area {
