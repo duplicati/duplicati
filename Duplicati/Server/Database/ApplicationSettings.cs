@@ -32,6 +32,8 @@ namespace Duplicati.Server.Database
             public const string LAST_WEBSERVER_PORT = "last-webserver-port";
             public const string IS_FIRST_RUN = "is-first-run";
             public const string SERVER_PORT_CHANGED = "server-port-changed";
+            public const string SERVER_PASSPHRASE = "server-passphrase";
+            public const string SERVER_PASSPHRASE_SALT = "server-passphras-salt";
         }
         
         private Dictionary<string, string> m_values;
@@ -163,6 +165,51 @@ namespace Duplicati.Server.Database
             set
             {
                 m_values[CONST.LAST_WEBSERVER_PORT] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public string WebserverPassword
+        {
+            get 
+            {
+                return m_values[CONST.SERVER_PASSPHRASE];
+            }
+        }
+
+        public string WebserverPasswordSalt
+        {
+            get 
+            {
+                return m_values[CONST.SERVER_PASSPHRASE_SALT];
+            }
+        }
+
+        public void SetWebserverPassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                m_values[CONST.SERVER_PASSPHRASE] = "";
+                m_values[CONST.SERVER_PASSPHRASE_SALT] = "";
+                SaveSettings();
+            }
+            else
+            {
+                var prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
+                var buf = new byte[32];
+                prng.GetBytes(buf);
+                var salt = Convert.ToBase64String(buf);
+
+                var sha256 = System.Security.Cryptography.SHA256.Create();
+                var str = System.Text.Encoding.UTF8.GetBytes(password);
+
+                sha256.TransformBlock(str, 0, str.Length, str, 0);
+                sha256.TransformFinalBlock(buf, 0, buf.Length);
+                var pwd = Convert.ToBase64String(sha256.Hash);
+
+                m_values[CONST.SERVER_PASSPHRASE] = pwd;
+                m_values[CONST.SERVER_PASSPHRASE_SALT] = salt;
+
                 SaveSettings();
             }
         }

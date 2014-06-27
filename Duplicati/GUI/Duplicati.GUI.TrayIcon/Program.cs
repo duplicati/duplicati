@@ -124,6 +124,8 @@ namespace Duplicati.GUI.TrayIcon
 
             HostedInstanceKeeper hosted = null;
             bool openui = false;
+            string password = null;
+            bool saltedpassword = false;
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
                 try
@@ -138,6 +140,8 @@ namespace Duplicati.GUI.TrayIcon
                 // We have a hosted server, if this is the first run, 
                 // we should open the main page
                 openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
+                password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
+                saltedpassword = true;
             }
 
             using (hosted)
@@ -156,7 +160,14 @@ namespace Duplicati.GUI.TrayIcon
                     }
                 }
 
-                using (Connection = new HttpServerConnection(new Uri(url), null))
+                string pwd;
+                if (options.TryGetValue("webserver-password", out pwd))
+                {
+                    password = pwd;
+                    saltedpassword = false;
+                }
+
+                using (Connection = new HttpServerConnection(new Uri(url), password, saltedpassword))
                 {
                     using(var tk = RunTrayIcon(toolkit))
                     {

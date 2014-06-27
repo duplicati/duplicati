@@ -80,7 +80,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The webserver instance
         /// </summary>
-        public static WebServer WebServer;
+        public static WebServer.Server WebServer;
         
         /// <summary>
         /// An event that is set once the server is ready to respond to requests
@@ -95,7 +95,7 @@ namespace Duplicati.Server
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
         /// </summary>
-        public static Func<Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
+        public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
 
         /// <summary>
         /// An event ID that increases whenever the database is updated
@@ -344,6 +344,9 @@ namespace Duplicati.Server
 
                 DataConnection = new Duplicati.Server.Database.Connection(con);
 
+                if (commandlineOptions.ContainsKey("webserver-password"))
+                    Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webserver-password"]);
+
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
@@ -359,7 +362,7 @@ namespace Duplicati.Server
                 Program.WorkThread.WorkQueueChanged += new EventHandler(SignalNewEvent);
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
 
-                Program.WebServer = new Server.WebServer(commandlineOptions);
+                Program.WebServer = new WebServer.Server(commandlineOptions);
 
                 if (Program.WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort)
                     ServerPortChanged = true;
@@ -462,19 +465,19 @@ namespace Duplicati.Server
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static string LocalizeTaskType(Server.Serialization.DuplicatiOperation type)
+        public static string LocalizeTaskType(Duplicati.Server.Serialization.DuplicatiOperation type)
         {
             switch (type)
             {
-                case Server.Serialization.DuplicatiOperation.Backup:
+                case Duplicati.Server.Serialization.DuplicatiOperation.Backup:
                     return Strings.TaskType.FullBackup;
-                case Server.Serialization.DuplicatiOperation.List:
+                case Duplicati.Server.Serialization.DuplicatiOperation.List:
                     return Strings.TaskType.IncrementalBackup;
-                case Server.Serialization.DuplicatiOperation.Remove:
+                case Duplicati.Server.Serialization.DuplicatiOperation.Remove:
                     return Strings.TaskType.ListActualFiles;
-                case Server.Serialization.DuplicatiOperation.Verify:
+                case Duplicati.Server.Serialization.DuplicatiOperation.Verify:
                     return Strings.TaskType.ListBackupEntries;
-                case Server.Serialization.DuplicatiOperation.Restore:
+                case Duplicati.Server.Serialization.DuplicatiOperation.Restore:
                     return Strings.TaskType.ListBackups;
                 default:
                     return type.ToString();
@@ -549,7 +552,11 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
-                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_WEBROOT),
+                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_PORT.ToString()),
+                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
+                    new Duplicati.Library.Interface.CommandLineArgument("webserver-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                 };
             }
         }

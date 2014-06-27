@@ -169,4 +169,16 @@ Error message: {0}</value>
     <value>Unsupported version of SQLite detected ({0}), must be {1} or higher</value>
     <comment>An error message displayed when the wrong version of SQLite is detected</comment>
   </data>
+  <data name="WebserverWebrootDescription" xml:space="preserve">
+    <value>The path to the folder where the static files for the webserver is present. The folder must be located beneath the installation folder</value>
+  </data>
+  <data name="WebserverPortDescription" xml:space="preserve">
+    <value>The port the webserver listens on. Multiple values may be supplied with a comma in between.</value>
+  </data>
+  <data name="WebserverInterfaceDescription" xml:space="preserve">
+    <value>The interface the webserver listens on. The special values &quot;*&quot; and &quot;any&quot; means any interface. The special value &quot;loopback&quot; means the loopback adapter.</value>
+  </data>
+  <data name="WebserverPasswordDescription" xml:space="preserve">
+    <value>The password required to access the webserver. This option is saved so you do not need to set it on each run. Setting an empty value disables the password.</value>
+  </data>
 </root>

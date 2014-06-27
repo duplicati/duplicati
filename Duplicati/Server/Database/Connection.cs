@@ -196,7 +196,7 @@ namespace Duplicati.Server.Database
                         values,
                         @"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (?, ?, ?, ?)",
                         (f) => {
-                            if (WebServer.PASSWORD_PLACEHOLDER.Equals(f.Value))
+                            if (Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER.Equals(f.Value))
                                 throw new Exception("Attempted to save a property with the placeholder password");
                             return new object[] { id, f.Filter ?? "", f.Name, f.Value ?? "" };
                         }
@@ -392,7 +392,7 @@ namespace Duplicati.Server.Database
                             @"INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
                         (n) => {
                         
-                            if (n.TargetURL.IndexOf(WebServer.PASSWORD_PLACEHOLDER) >= 0)
+                        if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER) >= 0)
                                 throw new Exception("Attempted to save a backup with the password placeholder");
                         
                             return new object[] {
