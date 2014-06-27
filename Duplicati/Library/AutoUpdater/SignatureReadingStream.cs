@@ -68,7 +68,8 @@ namespace Duplicati.Library.AutoUpdater
                 hmac.TransformBlock(buf, 0, r, buf, 0);
             }
 
-            var hash = hmac.TransformFinalBlock(buf, 0, 0);
+            hmac.TransformFinalBlock(buf, 0, 0);
+            var hash = hmac.Hash;
             return key.VerifySignature(hash, signature);
         }
 
