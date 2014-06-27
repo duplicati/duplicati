@@ -13,29 +13,22 @@
 }
 
 #main-list {
-    position: absolute;
-    top: 46px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-    padding: 0px;
+    padding-top: 82px;
     overflow: auto;
-	margin: 0 auto;
-    padding-top: 30px;
 }
 
 #main-list-container {
-    max-width: 420px;
-    margin-left: auto;
-    margin-right: auto;
-    overflow: auto;
+    background-color: #f3f3f3;
+    overflow: hidden;
+    min-height: calc(100vh - 82px);
 }
 
 #main-appname {
-    padding: 10px 10px 10px 20px;
-    font-weight: bold;
-    font-size: 18pt;
     display: inline-block;
+    font-family: "Arial Black", "GillSans", Helvetica, Arial, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 46px;
     text-transform: uppercase;
 }
 
@@ -80,15 +73,13 @@
     padding-left: 8px;
     padding-right: 4px;
     cursor: pointer;
-    background-color: #3a5e30;    
+    background-color: #3a5e30;
     display: inline-block;
 }
 
 .main-backup-entry, #main-newbackup {
-    padding: 20px 20px 0px 20px;
+    margin-top: 20px;
     clear: both;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .main-backup-entry .action-links {
@@ -217,7 +208,7 @@ div.main-icon-plus {
     color: #8f968e;
     border-radius: 3px;
     display: block;
-    padding: 6px 12px 6px 12px;    
+    padding: 6px 12px 6px 12px;
     display: block;
     position: relative;
 }
@@ -298,12 +289,12 @@ div.main-icon-plus {
     bottom: 0;
     right: 0;
     display: none;
-    z-index: 9999;    
+    z-index: 9999;
 }
 
 #about-dialog-thirdparty {
     margin-bottom: 10px;
-    margin-top: 10px;    
+    margin-top: 10px;
 }
 
 .about-library-entry {
@@ -331,24 +322,21 @@ div.main-icon-plus {
     height: auto;
     z-index: 1;
     overflow: hidden;
+    background-color: #91AA8A;
 }
 
 #main-status-area {
-    max-width: 700px;
-    min-width: 300px;
+    font-size: 14px;
     margin-left: auto;
     margin-right: auto;
     height: 20px;
-    background-color: lightgreen;
-    padding: 8px;
-    color: black;
+    padding: 8px 0;
+    color: #f0f0f0;
 }
 
 #main-status-area-text {
-    margin-left: 10px;
     display: inline-block;
     min-width: 100px;
-    float: left;
 }
 
 #main-status-area-progress-text {
@@ -356,32 +344,36 @@ div.main-icon-plus {
     z-index: 1;
     margin-left: 5px;
     margin-right: 5px;
+    text-shadow:
+        -1px -1px 0 #f0f0f0,
+         1px -1px 0 #f0f0f0,
+        -1px  1px 0 #f0f0f0,
+         1px  1px 0 #f0f0f0;
 }
 
 #main-status-area-progress-outer {
-    border: 1px solid black;
-    background-color: white;
+    background-color: #f0f0f0;
     min-width: 180px;
     margin-left: 20px;
-    display: inline-block;
-    float: left;
+    float: right;
     position: relative;
-    color: black;
+    color: #3a5e30;
+    border-radius: 100px;
+    overflow: hidden;
 }
 
 #main-status-area-cancel-button {
-    float: right;
-    height: 20px;
-    width: 20px;
-    display: inline-block;
+    height: 19px;
+    width: 19px;
     float: right;
     background-image: url('../images/small-close.png');
     cursor: pointer;
 }
 
 #main-status-area-progress-bar {
+    border-radius: 100px;
     position: absolute;
-    background-color: lightgrey;
+    background-color: #ccc;
     height: 100%;
     width: 30%;
 }
