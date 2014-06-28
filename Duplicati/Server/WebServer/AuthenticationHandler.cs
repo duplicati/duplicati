@@ -122,7 +122,6 @@ namespace Duplicati.Server.WebServer
                         while (token.Length > 0 && token.EndsWith("="))
                             token = token.Substring(0, token.Length - 1);
 
-                        Console.WriteLine("Added token: {0}", token);
                         m_activeTokens.Add(token, expires);
                         response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
 
@@ -137,10 +136,7 @@ namespace Duplicati.Server.WebServer
                 return false;
 
             foreach(var k in (from n in m_activeTokens where DateTime.UtcNow > n.Value select n.Key).ToList())
-            {
-                Console.WriteLine("Removed token: {0}", k);
                 m_activeTokens.Remove(k);
-            }
 
 
             // If we have a valid token, proceeed
@@ -149,7 +145,6 @@ namespace Duplicati.Server.WebServer
                 DateTime expires;
                 if (m_activeTokens.TryGetValue(auth_token, out expires) && DateTime.UtcNow < expires)
                 {
-                    Console.WriteLine("Approved token: {0}", auth_token);
                     expires = DateTime.UtcNow.AddHours(1);
                     m_activeTokens[auth_token] = expires;
                     response.Cookies.Add(new ResponseCookie(AUTH_COOKIE_NAME, auth_token, expires));
