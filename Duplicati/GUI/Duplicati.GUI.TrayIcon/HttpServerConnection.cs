@@ -154,8 +154,8 @@ namespace Duplicati.GUI.TrayIcon
 
         private class SaltAndNonce
         {
-            public string Salt;
-            public string Nonce;
+            public string Salt = null;
+            public string Nonce = null;
         }
 
         private SaltAndNonce GetSaltAndNonce()

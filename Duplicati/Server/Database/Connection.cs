@@ -31,9 +31,7 @@ namespace Duplicati.Server.Database
         public const int ANY_BACKUP_ID = -1;
         public const int APP_SETTINGS_ID = -2;
         private Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
-        
-        public event EventHandler DataChanged;
-        
+
         public Connection(System.Data.IDbConnection connection)
         {
             m_connection = connection;
