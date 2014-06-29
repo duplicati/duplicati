@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -224,7 +222,6 @@
       <Link>licenses\SharpCompress\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="AutoUpdateSignKey.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="licenses\AWSSDK\" />
@@ -238,5 +235,6 @@
     <EmbeddedResource Include="VersionTag.txt" />
     <EmbeddedResource Include="AutoUpdateURL.txt" />
     <EmbeddedResource Include="AutoUpdateAppName.txt" />
+    <EmbeddedResource Include="AutoUpdateSignKey.txt" />
   </ItemGroup>
 </Project>

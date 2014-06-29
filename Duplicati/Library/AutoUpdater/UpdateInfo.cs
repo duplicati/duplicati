@@ -54,6 +54,11 @@ namespace Duplicati.Library.AutoUpdater
         public string MD5;
         public string[] RemoteURLS;
         public FileEntry[] Files;
+
+        public UpdateInfo Clone()
+        {
+            return (UpdateInfo)this.MemberwiseClone();
+        }
     }
 }
 

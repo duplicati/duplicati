@@ -23,7 +23,7 @@ namespace Duplicati.Library.AutoUpdater
 {
     public class UpdaterManager
     {
-        private System.Security.Cryptography.DSA m_key;
+        private System.Security.Cryptography.RSACryptoServiceProvider m_key;
         private string m_url;
         private string m_appname;
         private string m_installdir;
@@ -32,17 +32,8 @@ namespace Duplicati.Library.AutoUpdater
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string INSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
+        private const string RUN_UPDATED_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_LOAD_UPDATE";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
-
-        /// <summary>
-        /// The size of the HMAC key in bytes
-        /// </summary>
-        private const int HMAC_KEY_SIZE = 64;
-
-        /// <summary>
-        /// The size of the SHA256 output hash in bytes
-        /// </summary>
-        private const int SHA256_HASH_SIZE = 32;
 
         /// <summary>
         /// Gets the original directory that this application was installed into
@@ -60,7 +51,7 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public UpdaterManager(string url, System.Security.Cryptography.DSA key, string appname, string installdir = null)
+        public UpdaterManager(string url, System.Security.Cryptography.RSACryptoServiceProvider key, string appname, string installdir = null)
         {
             m_key = key;
             m_url = url;
@@ -321,17 +312,165 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        public void CreateUpdatePackage(string key, string folder, string outputfile)
+        public void CreateUpdatePackage(System.Security.Cryptography.RSACryptoServiceProvider key, string inputfolder, string outputfolder, string manifest = null)
         {
+            // Read the existing manifest
+
+            UpdateInfo remoteManifest;
+
+            var manifestpath = manifest ?? System.IO.Path.Combine(inputfolder, UPDATE_MANIFEST_FILENAME);
+
+            using(var s = System.IO.File.OpenRead(manifestpath))
+            using(var sr = new System.IO.StreamReader(s))
+            using(var jr = new Newtonsoft.Json.JsonTextReader(sr))
+                remoteManifest = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
+            
+            if (remoteManifest.Files == null)
+                remoteManifest.Files = new FileEntry[0];
+
+            if (remoteManifest.ReleaseTime.Ticks == 0)
+                remoteManifest.ReleaseTime = DateTime.UtcNow;
+
+            var ignoreFiles = (from n in remoteManifest.Files
+                                        where n.Ignore
+                                        select n).ToArray();
+
+            var ignoreMap = ignoreFiles.ToDictionary(k => k.Path, k => "", Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+
+            remoteManifest.MD5 = null;
+            remoteManifest.SHA256 = null;
+            remoteManifest.Files = null;
+            remoteManifest.UncompressedSize = 0;
+
+            var localManifest = remoteManifest.Clone();
+            localManifest.RemoteURLS = null;
+
+            inputfolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(inputfolder);
+            var baselen = inputfolder.Length;
+            var dirsep = System.IO.Path.DirectorySeparatorChar.ToString();
+
+            ignoreMap.Add(UPDATE_MANIFEST_FILENAME, "");
+
+            var md5 = System.Security.Cryptography.MD5.Create();
+            var sha256 = System.Security.Cryptography.SHA256.Create();
+
+            Func<string, string> computeMD5 = (path) =>
+            {
+                md5.Initialize();
+                using(var fs = System.IO.File.OpenRead(path))
+                    return Convert.ToBase64String(md5.ComputeHash(fs));
+            };
+
+            Func<string, string> computeSHA256 = (path) =>
+            {
+                sha256.Initialize();
+                using(var fs = System.IO.File.OpenRead(path))
+                    return Convert.ToBase64String(sha256.ComputeHash(fs));
+            };
+
+            // Build a zip
+            using (var archive_temp = new Duplicati.Library.Utility.TempFile())
+            {
+                using (var zipfile = new Duplicati.Library.Compression.FileArchiveZip(archive_temp, new Dictionary<string, string>()))
+                {
+                    Func<string, string, bool> addToArchive = (path, relpath) =>
+                    {
+                        if (ignoreMap.ContainsKey(relpath))
+                            return false;
+                    
+                        if (path.EndsWith(dirsep))
+                            return true;
+
+                        using (var source = System.IO.File.OpenRead(path))
+                        using (var target = zipfile.CreateFile(relpath, 
+                                           Duplicati.Library.Interface.CompressionHint.Compressible,
+                                           System.IO.File.GetLastAccessTimeUtc(path)))
+                        {
+                            source.CopyTo(target);
+                            remoteManifest.UncompressedSize += source.Length;
+                        }
+
+                        return true;
+                    };
+                        
+                    // Build the update manifest
+                    localManifest.Files =
+                (from fse in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(inputfolder)
+                                let relpath = fse.Substring(baselen)
+                                where addToArchive(fse, relpath)
+                                select new FileEntry() {
+                        Path = relpath,
+                        LastWriteTime = System.IO.File.GetLastAccessTimeUtc(fse),
+                        MD5 = fse.EndsWith(dirsep) ? null : computeMD5(fse),
+                        SHA256 = fse.EndsWith(dirsep) ? null : computeSHA256(fse)
+                    })
+                .Union(ignoreFiles).ToArray();
+
+                    // Write a signed manifest with the files
+                
+                        using (var ms = new System.IO.MemoryStream())
+                        using (var sw = new System.IO.StreamWriter(ms))
+                        {
+                            new Newtonsoft.Json.JsonSerializer().Serialize(sw, localManifest);
+                            sw.Flush();
+
+                            using (var ms2 = new System.IO.MemoryStream())
+                            {
+                                SignatureReadingStream.CreateSignedStream(ms, ms2, key);
+                                ms2.Position = 0;
+                                using (var sigfile = zipfile.CreateFile(UPDATE_MANIFEST_FILENAME, 
+                                    Duplicati.Library.Interface.CompressionHint.Compressible,
+                                    DateTime.UtcNow))
+                                    ms2.CopyTo(sigfile);
+
+                            }
+                        }
+                }
+
+                remoteManifest.CompressedSize = new System.IO.FileInfo(archive_temp).Length;
+                remoteManifest.MD5 = computeMD5(archive_temp);
+                remoteManifest.SHA256 = computeSHA256(archive_temp);
+
+                System.IO.File.Move(archive_temp, System.IO.Path.Combine(outputfolder, "package.zip"));
+
+            }
+
+            // Write a signed manifest for upload
+
+            using(var tf = new Duplicati.Library.Utility.TempFile())
+            {
+                using (var ms = new System.IO.MemoryStream())
+                using (var sw = new System.IO.StreamWriter(ms))
+                {
+                    new Newtonsoft.Json.JsonSerializer().Serialize(sw, remoteManifest);
+                    sw.Flush();
+
+                    using (var fs = System.IO.File.OpenWrite(tf))
+                        SignatureReadingStream.CreateSignedStream(ms, fs, key);
+                }
+
+                System.IO.File.Move(tf, System.IO.Path.Combine(outputfolder, UPDATE_MANIFEST_FILENAME));
+            }
+
         }
 
         private int RunMethod(System.Reflection.MethodInfo method, string[] args)
         {
-            var n = method.Invoke(null, new object[] { args });
-            if (method.ReturnType == typeof(int))
-                return (int)n;
+            try
+            {
+                var n = method.Invoke(null, new object[] { args });
+                if (method.ReturnType == typeof(int))
+                    return (int)n;
 
-            return 0;
+                return 0;
+            } 
+            catch (System.Reflection.TargetInvocationException tex)
+            {
+                if (tex.InnerException != null)
+                    throw tex.InnerException;
+                else
+                    throw;
+            }
         }
 
         public int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs)
@@ -340,30 +479,51 @@ namespace Duplicati.Library.AutoUpdater
             if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
                 return RunMethod(method, cmdargs);
             
-            // Check if there are updates
+            // Check if there are updates, otherwise use
             var best = FindInstalledVersions().OrderBy(x => x.Value.ReleaseTime).FirstOrDefault();
-            if (best.Key == null)
-                return RunMethod(method, cmdargs);
+            if (best.Key == null && !VerifyUnpackedFolder(best.Key, best.Value))
+                best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, null);
             
-            // Verify that the update is valid
-            if (!VerifyUnpackedFolder(best.Key, best.Value))
-                return RunMethod(method, cmdargs);
-
-            // Create the new domain
-            var domain = AppDomain.CreateDomain(
-                "UpdateDomain",
-                null,
-                best.Key,
-                "",
-                true
-            );
-
-            // TODO: Install a periodic update listener?
-            // TODO: How to notify the launched assembly?
-
-            // GO!
             Environment.SetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, m_appname), InstalledBaseDir);
-            return domain.ExecuteAssemblyByName(method.DeclaringType.Assembly.GetName().Name, cmdargs);
+
+            var folder = best.Key;
+
+            // Basic idea with the loop is that the running AppDomain can use 
+            // RUN_UPDATED_ENVNAME_TEMPLATE to signal that a new version is ready
+            // when the caller exits, the new update is executed
+            //
+            // This allows more or less seamless updates
+            //
+            // The client is responsible for checking for updates and starting the downloads
+            //
+
+            int result = 0;
+            while (!string.IsNullOrWhiteSpace(folder) && System.IO.Directory.Exists(folder))
+            {
+                var prevfolder = folder;
+                // Create the new domain
+                var domain = AppDomain.CreateDomain(
+                    "UpdateDomain",
+                    null,
+                    folder,
+                    "",
+                    true
+                );
+
+                result = domain.ExecuteAssemblyByName(method.DeclaringType.Assembly.GetName().Name, cmdargs);
+
+                AppDomain.Unload(domain);
+
+                folder = Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname));
+                if (!string.IsNullOrWhiteSpace(folder))
+                {
+                    Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname), null);
+                    if (!VerifyUnpackedFolder(folder))
+                        folder = prevfolder; //Go back and run the previous version
+                }
+            }
+
+            return result;
         }
     }
 }

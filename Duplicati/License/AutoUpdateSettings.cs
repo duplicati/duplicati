@@ -27,6 +27,9 @@ namespace Duplicati.License
         private const string UPDATE_URL = "AutoUpdateURL.txt";
         private const string UPDATE_KEY = "AutoUpdateSignKey.txt";
 
+        private const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
+
+
         static AutoUpdateSettings()
         {
             ReadResourceText(APP_NAME);
@@ -58,25 +61,40 @@ namespace Duplicati.License
             return result;
         }
 
-        public static string URL
+        public static string[] URLs
         {
-            get { return ReadResourceText(UPDATE_URL); }
+            get 
+            { 
+                if (UsesAlternateURLs)
+                    return Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName)).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                else
+                    return ReadResourceText(UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);; 
+            }
         }
+
+        public static bool UsesAlternateURLs
+        {
+            get 
+            {
+                return string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName)));
+            }
+        }
+
 
         public static string AppName
         {
             get { return ReadResourceText(APP_NAME); }
         }
 
-        public static System.Security.Cryptography.DSA SignKey
+        public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
         {
             get 
             { 
                 try
                 {
-                    var key = System.Security.Cryptography.DSA.Create();
+                    var key = System.Security.Cryptography.RSACryptoServiceProvider.Create();
                     key.FromXmlString(ReadResourceText(UPDATE_KEY)); 
-                    return key;
+                    return (System.Security.Cryptography.RSACryptoServiceProvider)key;
                 }
                 catch
                 {

@@ -22,41 +22,37 @@ namespace Duplicati.Library.AutoUpdater
     public class SignatureReadingStream : System.IO.Stream, IDisposable
     {
         /// <summary>
-        /// The size of the HMAC key in bytes
-        /// </summary>
-        private const int HMAC_KEY_SIZE = 64;
-
-        /// <summary>
         /// The size of the SHA256 output hash in bytes
         /// </summary>
         /// 
-        private const int SHA256_HASH_SIZE = 32;        
+        internal const int SIGNED_HASH_SIZE = 128;        
 
         /// <summary>
         /// The stream to read from
         /// </summary>
         private System.IO.Stream m_stream;
 
-        public SignatureReadingStream(System.IO.Stream stream, System.Security.Cryptography.DSA key)
+        protected SignatureReadingStream()
+        {
+        }
+
+        public SignatureReadingStream(System.IO.Stream stream, System.Security.Cryptography.RSACryptoServiceProvider key)
         {
             if (!VerifySignature(stream, key))
                 throw new System.IO.InvalidDataException("Unable to verify signature");
             m_stream = stream;
         }
 
-        private static bool VerifySignature(System.IO.Stream stream, System.Security.Cryptography.DSA key)
+        private static bool VerifySignature(System.IO.Stream stream, System.Security.Cryptography.RSACryptoServiceProvider key)
         {
-            stream.Position = stream.Length - (SHA256_HASH_SIZE + HMAC_KEY_SIZE);
-            var signature = new byte[SHA256_HASH_SIZE];
-            var hmackey = new byte[HMAC_KEY_SIZE];
+            stream.Position = stream.Length - SIGNED_HASH_SIZE;
+            var signature = new byte[SIGNED_HASH_SIZE];
             if (stream.Read(signature, 0, signature.Length) != signature.Length)
                 throw new System.IO.InvalidDataException("Unexpected end-of-stream while reading signature");
-            if (stream.Read(hmackey, 0, hmackey.Length) != hmackey.Length)
-                throw new System.IO.InvalidDataException("Unexpected end-of-stream while reading hmac key");
-            var hmac = new System.Security.Cryptography.HMACSHA256(hmackey);
-            hmac.Initialize();
+            var sha256 = System.Security.Cryptography.SHA256.Create();
+            sha256.Initialize();
 
-            var bytes = stream.Length - (signature.Length + hmackey.Length);
+            var bytes = stream.Length - (signature.Length);
             stream.Position = 0;
             var buf = new byte[8 * 1024];
             while (bytes > 0)
@@ -65,19 +61,52 @@ namespace Duplicati.Library.AutoUpdater
                 if (r == 0)
                     throw new Exception("Unexpected end-of-stream while reading content");
                 bytes -= r;
-                hmac.TransformBlock(buf, 0, r, buf, 0);
+                sha256.TransformBlock(buf, 0, r, buf, 0);
             }
 
-            hmac.TransformFinalBlock(buf, 0, 0);
-            var hash = hmac.Hash;
-            return key.VerifySignature(hash, signature);
+            sha256.TransformFinalBlock(buf, 0, 0);
+            var hash = sha256.Hash;
+            var OID = System.Security.Cryptography.CryptoConfig.MapNameToOID("SHA256");
+            return key.VerifyHash(hash, OID, signature);
+        }
+
+        public static void CreateSignedStream(System.IO.Stream datastream, System.IO.Stream signedstream, System.Security.Cryptography.RSACryptoServiceProvider key)
+        {
+            var sha256 = System.Security.Cryptography.SHA256.Create();
+
+            datastream.Position = 0;
+            signedstream.Position = SIGNED_HASH_SIZE;
+
+            var buf = new byte[8 * 1024];
+            var bytes = datastream.Length;
+            while (bytes > 0)
+            {
+                var r = datastream.Read(buf, 0, (int)Math.Min(bytes, buf.Length));
+                if (r == 0)
+                    throw new Exception("Unexpected end-of-stream while reading content");
+
+                signedstream.Write(buf, 0, r);
+
+                bytes -= r;
+                sha256.TransformBlock(buf, 0, r, buf, 0);
+            }
+
+            sha256.TransformFinalBlock(buf, 0, 0);
+            var hash = sha256.Hash;
+
+            var OID = System.Security.Cryptography.CryptoConfig.MapNameToOID("SHA256");
+            var signature = key.SignHash(hash, OID);
+
+            signedstream.Position = 0;
+            signedstream.Write(signature, 0, signature.Length);
         }
 
         #region implemented abstract members of Stream
 
         public override void Flush()
         {
-            m_stream.Flush();
+            try { m_stream.Flush(); }
+            catch { }
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -93,10 +122,10 @@ namespace Duplicati.Library.AutoUpdater
                 case System.IO.SeekOrigin.Current:
                     return Seek(m_stream.Position + offset, System.IO.SeekOrigin.Begin);
                 case System.IO.SeekOrigin.End:
-                    return m_stream.Seek(offset + (SHA256_HASH_SIZE + HMAC_KEY_SIZE), origin);
+                    return m_stream.Seek(offset + SIGNED_HASH_SIZE, origin);
                 case System.IO.SeekOrigin.Begin:
                 default:
-                    return m_stream.Seek(Math.Min(offset, m_stream.Length - (SHA256_HASH_SIZE + HMAC_KEY_SIZE)), origin);
+                    return m_stream.Seek(Math.Min(offset, m_stream.Length - SIGNED_HASH_SIZE), origin);
             }
         }
 
@@ -138,7 +167,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             get
             {
-                return m_stream.Length - (SHA256_HASH_SIZE + HMAC_KEY_SIZE);
+                return m_stream.Length - SIGNED_HASH_SIZE;
             }
         }
 
