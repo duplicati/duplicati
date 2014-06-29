@@ -1,0 +1,5 @@
+{
+    "Displayname": "Test update",
+    "ReleaseType": "Debug",
+    "RemoteURLS": ["http://s3/duplicati.zip"]
+}
