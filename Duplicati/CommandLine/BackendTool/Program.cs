@@ -33,7 +33,7 @@ namespace Duplicati.CommandLine.BackendTool
         public static int Main(string[] args)
         {
             var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
-                Duplicati.License.AutoUpdateSettings.URL,
+                Duplicati.License.AutoUpdateSettings.URLs,
                 Duplicati.License.AutoUpdateSettings.SignKey,
                 Duplicati.License.AutoUpdateSettings.AppName);
 

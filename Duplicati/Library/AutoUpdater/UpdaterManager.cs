@@ -24,7 +24,7 @@ namespace Duplicati.Library.AutoUpdater
     public class UpdaterManager
     {
         private System.Security.Cryptography.RSACryptoServiceProvider m_key;
-        private string m_url;
+        private string[] m_urls;
         private string m_appname;
         private string m_installdir;
 
@@ -51,10 +51,10 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public UpdaterManager(string url, System.Security.Cryptography.RSACryptoServiceProvider key, string appname, string installdir = null)
+        public UpdaterManager(string[] urls, System.Security.Cryptography.RSACryptoServiceProvider key, string appname, string installdir = null)
         {
             m_key = key;
-            m_url = url;
+            m_urls = urls;
             m_appname = appname;
             m_installdir = installdir;
             if (string.IsNullOrWhiteSpace(m_installdir))
@@ -99,26 +99,28 @@ namespace Duplicati.Library.AutoUpdater
 
         public IEnumerable<UpdateInfo> CheckForUpdate()
         {
-            try
+            foreach(var url in m_urls)
             {
-                using(var tmpfile = new Library.Utility.TempFile())
+                try
                 {
-                    System.Net.WebClient wc = new System.Net.WebClient();
-                    wc.DownloadFile(m_url, tmpfile);
+                    using(var tmpfile = new Library.Utility.TempFile())
+                    {
+                        System.Net.WebClient wc = new System.Net.WebClient();
+                        wc.DownloadFile(url, tmpfile);
 
-                    using(var fs = System.IO.File.OpenRead(tmpfile))
-                    using(var ss = new SignatureReadingStream(fs, m_key))
-                    using(var tr = new System.IO.StreamReader(ss))
-                    using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                        return new Newtonsoft.Json.JsonSerializer().Deserialize<IEnumerable<UpdateInfo>>(jr);
+                        using(var fs = System.IO.File.OpenRead(tmpfile))
+                        using(var ss = new SignatureReadingStream(fs, m_key))
+                        using(var tr = new System.IO.StreamReader(ss))
+                        using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                            return new Newtonsoft.Json.JsonSerializer().Deserialize<IEnumerable<UpdateInfo>>(jr);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (OnError != null)
+                        OnError(ex);
                 }
             }
-            catch(Exception ex)
-            {
-                if (OnError != null)
-                    OnError(ex);
-            }
-
 
             return new UpdateInfo[0];
         }
@@ -159,7 +161,7 @@ namespace Duplicati.Library.AutoUpdater
                     try
                     {
                         System.Net.WebClient wc = new System.Net.WebClient();
-                        wc.DownloadFile(m_url, tempfile);
+                        wc.DownloadFile(url, tempfile);
 
                         var sha256 = System.Security.Cryptography.SHA256.Create();
                         var md5 =  System.Security.Cryptography.MD5.Create();
@@ -507,7 +509,7 @@ namespace Duplicati.Library.AutoUpdater
                     null,
                     folder,
                     "",
-                    true
+                    false
                 );
 
                 result = domain.ExecuteAssemblyByName(method.DeclaringType.Assembly.GetName().Name, cmdargs);
