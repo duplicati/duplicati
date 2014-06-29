@@ -95,8 +95,13 @@ namespace Duplicati.Server.WebServer
                 {
                     if (input["password"] != null && !string.IsNullOrWhiteSpace(input["password"].Value))
                     {
-                        var nonce = request.Cookies[NONCE_COOKIE_NAME];
-                        if (nonce == null || string.IsNullOrWhiteSpace(nonce.Value) || !m_activeNonces.ContainsKey(nonce.Value))
+                        var nonce_el = request.Cookies[NONCE_COOKIE_NAME];
+                        var nonce = nonce_el == null || string.IsNullOrWhiteSpace(nonce_el.Value) ? "" : nonce_el.Value;
+                        var urldecoded = nonce == null ? "" : Duplicati.Library.Utility.Uri.UrlDecode(nonce);
+                        if (m_activeNonces.ContainsKey(urldecoded))
+                            nonce = urldecoded;
+
+                        if (!m_activeNonces.ContainsKey(nonce))
                         {
                             response.Status = System.Net.HttpStatusCode.Unauthorized;
                             response.Reason = "Unauthorized";
@@ -104,8 +109,8 @@ namespace Duplicati.Server.WebServer
                             return true;
                         }
 
-                        var pwd = m_activeNonces[nonce.Value].Item2;
-                        m_activeNonces.Remove(nonce.Value);
+                        var pwd = m_activeNonces[nonce].Item2;
+                        m_activeNonces.Remove(nonce);
 
                         if (pwd != input["password"].Value)
                         {
@@ -125,8 +130,14 @@ namespace Duplicati.Server.WebServer
                         m_activeTokens.Add(token, expires);
                         response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
 
-                        response.Status = System.Net.HttpStatusCode.OK;
-                        response.Reason = "OK";
+                        using(var bw = new BodyWriter(response))
+                        {
+                            bw.SetOK();
+                            bw.WriteJsonObject(new {
+                                Status = "OK"
+                            });
+                        }
+
                         return true;
                     }
                 }

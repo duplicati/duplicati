@@ -543,6 +543,9 @@ $(document).ready(function() {
             PRIVATE_DATA.long_poll_for_status();
         })
         .fail(function(data) {
+            if (data.status == 401)
+                window.location = '/login.html';
+
             state.polling = false;
             if (!state.failed) {
                 state.failed = true;
