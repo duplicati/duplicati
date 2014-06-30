@@ -17,7 +17,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <Commandlineparameters>--input=/Users/kenneth/Udvikler/duplicati-git/Tools/SQLIteTool/obj/Debug --keyfile=/Users/kenneth/Dropbox/Privat/Duplicati-updater.key --output=/Users/kenneth/Downloads/duplicati-package --manifest=/Users/kenneth/Udvikler/duplicati-git/Updates/debug.manifest</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>

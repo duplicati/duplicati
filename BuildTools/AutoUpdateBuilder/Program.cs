@@ -14,11 +14,13 @@ namespace AutoUpdateBuilder
             string outputfolder;
             string keyfile;
             string manifestfile;
+            string keyfilepassword;
 
             opts.TryGetValue("input", out inputfolder);
             opts.TryGetValue("output", out outputfolder);
             opts.TryGetValue("keyfile", out keyfile);
             opts.TryGetValue("manifest", out manifestfile);
+            opts.TryGetValue("keyfile-password", out keyfilepassword);
 
             if (string.IsNullOrWhiteSpace(inputfolder))
             {
@@ -44,14 +46,17 @@ namespace AutoUpdateBuilder
                 return 4;
             }
 
-            Console.WriteLine("Enter keyfile passphrase");
-            string pwd = "zA8A6ZY8ejqQT9gZ"; //Console.ReadLine().Trim();
+            if (string.IsNullOrWhiteSpace(keyfilepassword))
+            {
+                Console.WriteLine("Enter keyfile passphrase: ");
+                keyfilepassword = Console.ReadLine().Trim();
+            }
 
             if (!System.IO.File.Exists(keyfile))
             {
                 Console.WriteLine("Keyfile not found, creating new");
                 var newkey = System.Security.Cryptography.RSACryptoServiceProvider.Create().ToXmlString(true);
-                using (var enc = new Duplicati.Library.Encryption.AESEncryption(pwd, new Dictionary<string, string>()))
+                using (var enc = new Duplicati.Library.Encryption.AESEncryption(keyfilepassword, new Dictionary<string, string>()))
                 using (var fs = System.IO.File.OpenWrite(keyfile))
                 using (var ms = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(newkey)))
                     enc.Encrypt(ms, fs);
@@ -62,7 +67,7 @@ namespace AutoUpdateBuilder
 
             var privkey = (System.Security.Cryptography.RSACryptoServiceProvider)System.Security.Cryptography.RSACryptoServiceProvider.Create();
 
-            using(var enc = new Duplicati.Library.Encryption.AESEncryption(pwd, new Dictionary<string, string>()))
+            using(var enc = new Duplicati.Library.Encryption.AESEncryption(keyfilepassword, new Dictionary<string, string>()))
             using(var ms = new System.IO.MemoryStream())
             using(var fs = System.IO.File.OpenRead(keyfile))
             {
@@ -70,7 +75,7 @@ namespace AutoUpdateBuilder
                 ms.Position = 0;
 
                 using(var sr = new System.IO.StreamReader(ms))
-                     privkey.FromXmlString(sr.ReadToEnd());
+                    privkey.FromXmlString(sr.ReadToEnd());
             }
 
             if (Duplicati.License.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.License.AutoUpdateSettings.SignKey.ToXmlString(false))
@@ -116,4 +121,3 @@ namespace AutoUpdateBuilder
         }
     }
 }
-
