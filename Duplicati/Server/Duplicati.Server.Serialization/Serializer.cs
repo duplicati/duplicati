@@ -24,7 +24,7 @@ namespace Duplicati.Server.Serialization
             }.ToList();
         }
 
-        public static void SerializeJson(System.IO.StreamWriter sw, object o)
+        public static void SerializeJson(System.IO.TextWriter sw, object o)
         {
             Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(m_jsonSettings);
             using (var jsonWriter = new JsonTextWriter(sw))
