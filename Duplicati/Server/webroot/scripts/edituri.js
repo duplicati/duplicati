@@ -157,8 +157,13 @@ $(document).ready(function() {
             if (cfg['server-port'])
                 url += ':' + cfg['server-port'];
 
-            if (cfg['server-path'] != '')
-                url += '/' + cfg['server-path'];
+            if (cfg['server-path'] != '') 
+            {
+                if(url[url.length - 1] != '/')
+                    url += '/';
+
+                url += cfg['server-path'];
+            }
 
             var opts = [];
 
