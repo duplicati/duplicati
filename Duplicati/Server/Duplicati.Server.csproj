@@ -115,6 +115,7 @@
     <Compile Include="WebServer\ControlMethods\DeleteBackup.cs" />
     <Compile Include="WebServer\ControlMethods\AddOrUpdateBackup.cs" />
     <Compile Include="WebServer\ControlMethods\GetBackup.cs" />
+    <Compile Include="UpdatePollThread.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

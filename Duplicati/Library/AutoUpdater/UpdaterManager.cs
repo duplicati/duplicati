@@ -21,6 +21,13 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.AutoUpdater
 {
+    public enum AutoUpdateStrategy
+    {
+        BeforeRun,
+        DuringRun,
+        Never
+    }
+
     public class UpdaterManager
     {
         private System.Security.Cryptography.RSACryptoServiceProvider m_key;
@@ -28,12 +35,18 @@ namespace Duplicati.Library.AutoUpdater
         private string m_appname;
         private string m_installdir;
 
+        private KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
+
+        private UpdateInfo m_selfVersion;
+
         public event Action<Exception> OnError;
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string INSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
         private const string RUN_UPDATED_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_LOAD_UPDATE";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
+
+        public const string AUTO_UPDATE_OPTION = "auto-update-strategy";
 
         /// <summary>
         /// Gets the original directory that this application was installed into
@@ -75,6 +88,47 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
+        public bool HasUpdateInstalled
+        {
+            get
+            {
+                if (!m_hasUpdateInstalled.HasValue)
+                    m_hasUpdateInstalled = FindInstalledVersions().Where(x => x.Value.ReleaseTime > this.SelfVersion.ReleaseTime).FirstOrDefault();
+                return m_hasUpdateInstalled.Value.Value != null;
+            }
+        }
+
+        private UpdateInfo SelfVersion
+        {
+            get
+            {
+                if (m_selfVersion == null)
+                {
+                    try
+                    {
+                        m_selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location));
+                    }
+                    catch
+                    {
+                    }
+
+                    if (m_selfVersion == null)
+                        m_selfVersion = new UpdateInfo() {
+                            Displayname = "Current",
+                            ReleaseTime = new DateTime(0),
+                            ReleaseType = 
+#if DEBUG
+                                "Debug"
+#else
+                                "Nightly"                           
+#endif
+                        };
+                }
+
+                return m_selfVersion;
+            }
+        }
+
         private bool TestDirectoryIsWriteable(string path)
         {
             var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT));
@@ -97,7 +151,7 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        public IEnumerable<UpdateInfo> CheckForUpdate()
+        public UpdateInfo CheckForUpdate()
         {
             foreach(var url in m_urls)
             {
@@ -112,7 +166,14 @@ namespace Duplicati.Library.AutoUpdater
                         using(var ss = new SignatureReadingStream(fs, m_key))
                         using(var tr = new System.IO.StreamReader(ss))
                         using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                            return new Newtonsoft.Json.JsonSerializer().Deserialize<IEnumerable<UpdateInfo>>(jr);
+                        {
+                            var update = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
+                            if (update.ReleaseTime > SelfVersion.ReleaseTime)
+                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                                return null;
+
+                            return update;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -122,7 +183,30 @@ namespace Duplicati.Library.AutoUpdater
                 }
             }
 
-            return new UpdateInfo[0];
+            return null;
+        }
+
+        private UpdateInfo ReadInstalledManifest(string folder)
+        {
+            var manifest = System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
+            if (System.IO.File.Exists(manifest))
+            {
+                try
+                {
+                    using(var fs = System.IO.File.OpenRead(manifest))
+                    using(var ss = new SignatureReadingStream(fs, m_key))
+                    using(var tr = new System.IO.StreamReader(ss))
+                    using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                        return new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
+                }
+                catch (Exception ex)
+                {
+                    if (OnError != null)
+                        OnError(ex);
+                }
+            }
+
+            return null;
         }
 
         public IEnumerable<KeyValuePair<string, UpdateInfo>> FindInstalledVersions()
@@ -130,23 +214,9 @@ namespace Duplicati.Library.AutoUpdater
             var res = new List<KeyValuePair<string, UpdateInfo>>();
             foreach(var folder in System.IO.Directory.GetDirectories(m_installdir))
             {
-                var manifest = System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
-                if (System.IO.File.Exists(manifest))
-                {
-                    try
-                    {
-                        using(var fs = System.IO.File.OpenRead(manifest))
-                        using(var ss = new SignatureReadingStream(fs, m_key))
-                        using(var tr = new System.IO.StreamReader(ss))
-                        using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                            res.Add(new KeyValuePair<string, UpdateInfo>(folder, new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr)));
-                    }
-                    catch (Exception ex)
-                    {
-                        if (OnError != null)
-                            OnError(ex);
-                    }
-                }
+                var r = ReadInstalledManifest(folder);
+                if (r != null)
+                    res.Add(new KeyValuePair<string, UpdateInfo>(folder, r));
             }
 
             return res;
@@ -198,6 +268,7 @@ namespace Duplicati.Library.AutoUpdater
                             {
                                 var targetfolder = System.IO.Path.Combine(m_installdir, m_appname, version.ReleaseTime.ToString(DATETIME_FORMAT));
                                 System.IO.Directory.Move(tempfolder, targetfolder);
+                                m_hasUpdateInstalled = null;
                                 return true;
                             }
                             else
@@ -309,6 +380,17 @@ namespace Duplicati.Library.AutoUpdater
             {
                 if (OnError != null)
                     OnError(ex);
+            }
+
+            return false;
+        }
+
+        public bool SetRunUpdate()
+        {
+            if (HasUpdateInstalled)
+            {
+                Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname), m_hasUpdateInstalled.Value.Key);
+                return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname)));
             }
 
             return false;
@@ -475,11 +557,50 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs)
+        public int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.DuringRun)
         {
             // If we are not the primary domain, just execute
             if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
                 return RunMethod(method, cmdargs);
+
+            var options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(cmdargs), null);
+            string optstr;
+            AutoUpdateStrategy strategy;
+            if (!options.TryGetValue(AUTO_UPDATE_OPTION, out optstr) || !Enum.TryParse(optstr, out strategy))
+                strategy = defaultstrategy;
+
+
+            System.Threading.Thread backgroundChecker = null;
+            UpdateInfo updateDetected = null;
+            bool updateInstalled = false;
+
+            if (strategy == AutoUpdateStrategy.BeforeRun || strategy == AutoUpdateStrategy.DuringRun)
+            {
+                backgroundChecker = new System.Threading.Thread(() =>
+                {
+                    updateDetected = CheckForUpdate();
+                    if (updateDetected != null)
+                    {
+                        if (strategy == AutoUpdateStrategy.BeforeRun)
+                            Console.WriteLine("Update to {0} detected, installing...", updateDetected.Displayname);
+                        updateInstalled = DownloadAndUnpackUpdate(updateDetected);
+                    }
+                });
+
+                backgroundChecker.IsBackground = true;
+                backgroundChecker.Name = "BackgroundUpdateChecker";
+                backgroundChecker.Start();
+
+                if (strategy == AutoUpdateStrategy.BeforeRun)
+                {
+                    backgroundChecker.Join();
+                    if (updateInstalled)
+                        Console.WriteLine("Install succeeded, running updated version");
+                    else
+                        Console.WriteLine("Install or download failed, using current version");
+                    backgroundChecker = null;
+                }
+            }
             
             // Check if there are updates, otherwise use
             var best = FindInstalledVersions().OrderBy(x => x.Value.ReleaseTime).FirstOrDefault();
@@ -525,8 +646,23 @@ namespace Duplicati.Library.AutoUpdater
                 }
             }
 
+            if (backgroundChecker != null && updateDetected != null)
+            {
+                if (backgroundChecker.IsAlive)
+                {
+                    Console.WriteLine("Waiting for update \"{0}\" to complete", updateDetected.Displayname);
+                    backgroundChecker.Join();
+                }
+
+                if (updateInstalled)
+                    Console.WriteLine("Install succeeded, running updated version on next launch");
+                else
+                    Console.WriteLine("Install or download failed, using current version on next launch");
+            }
+
             return result;
         }
+
     }
 }
 

@@ -208,4 +208,10 @@
   <data name="QuietConsoleOptionShort" xml:space="preserve">
     <value>Disable console output</value>
   </data>
+  <data name="AutoUpdateOptionShort" xml:space="preserve">
+    <value>Controls updates</value>
+  </data>
+  <data name="AutoUpdateOptionLong" xml:space="preserve">
+    <value>Use this option to specify how updates are found. If an update is found, it is installed automatically.</value>
+  </data>
 </root>

@@ -292,7 +292,11 @@ namespace Duplicati.Server.WebServer
                 EncryptionModules = Serializable.ServerSettings.EncryptionModules,
                 BackendModules = Serializable.ServerSettings.BackendModules,
                 GenericModules = Serializable.ServerSettings.GenericModules,
-                WebModules = Serializable.ServerSettings.WebModules
+                WebModules = Serializable.ServerSettings.WebModules,
+                UsingAlternateUpdateURLs = License.AutoUpdateSettings.UsesAlternateURLs,
+                UpdatedVersion = Program.DataConnection.ApplicationSettings.UpdatedVersion,
+                UpdaterState = Program.UpdatePoller.ThreadState,
+                UpdateReady = Program.UpdateManager.HasUpdateInstalled
             });
         }
 
@@ -546,6 +550,21 @@ namespace Duplicati.Server.WebServer
 
             switch (command.ToLowerInvariant())
             {
+                case "check-update":
+                    Program.UpdatePoller.CheckNow();
+                    bw.WriteJsonObject(new { Status = "OK" });
+                    return;
+
+                case "install-update":
+                    Program.UpdatePoller.InstallUpdate();
+                    bw.WriteJsonObject(new { Status = "OK" });
+                    return;
+
+                case "activate-update":
+                    Program.UpdatePoller.ActivateUpdate();
+                    bw.WriteJsonObject(new { Status = "OK" });
+                    return;
+
                 case "pause":
                     if (input.Contains("duration") && !string.IsNullOrWhiteSpace(input["duration"].Value))
                     {

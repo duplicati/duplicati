@@ -34,10 +34,14 @@ namespace Duplicati.Server.Database
             public const string SERVER_PORT_CHANGED = "server-port-changed";
             public const string SERVER_PASSPHRASE = "server-passphrase";
             public const string SERVER_PASSPHRASE_SALT = "server-passphras-salt";
+            public const string UPDATE_CHECK_LAST = "last-update-check";
+            public const string UPDATE_CHECK_INTERVAL = "update-check-interval";
+            public const string UPDATE_CHECK_NEW_VERSION = "update-check-latest";
         }
         
         private Dictionary<string, string> m_values;
-    
+        private Library.AutoUpdater.UpdateInfo m_latestUpdate;
+
         internal ApplicationSettings(Connection con)
         {
             var settings = con.GetSettings(Connection.APP_SETTINGS_ID).ToDictionary(x => x.Name, x => x.Value);
@@ -70,7 +74,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.STARTUP_DELAY] = value;
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.STARTUP_DELAY] = value;
                 SaveSettings();
             }
         }
@@ -91,7 +96,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
             }
         }
         
@@ -103,7 +109,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.DOWNLOAD_SPEED_LIMIT] = value;
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.DOWNLOAD_SPEED_LIMIT] = value;
                 SaveSettings();
             }
         }
@@ -116,7 +123,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.UPLOAD_SPEED_LIMIT] = value;
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.UPLOAD_SPEED_LIMIT] = value;
                 SaveSettings();
             }
         }
@@ -133,7 +141,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.IS_FIRST_RUN] = value.ToString();
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.IS_FIRST_RUN] = value.ToString();
                 SaveSettings();
             }
         }
@@ -146,7 +155,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.SERVER_PORT_CHANGED] = value.ToString();
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.SERVER_PORT_CHANGED] = value.ToString();
                 SaveSettings();
             }
         }
@@ -164,7 +174,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                m_values[CONST.LAST_WEBSERVER_PORT] = value.ToString();
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.LAST_WEBSERVER_PORT] = value.ToString();
                 SaveSettings();
             }
         }
@@ -189,8 +200,11 @@ namespace Duplicati.Server.Database
         {
             if (string.IsNullOrWhiteSpace(password))
             {
-                m_values[CONST.SERVER_PASSPHRASE] = "";
-                m_values[CONST.SERVER_PASSPHRASE_SALT] = "";
+                lock(Program.DataConnection.m_lock)
+                {
+                    m_values[CONST.SERVER_PASSPHRASE] = "";
+                    m_values[CONST.SERVER_PASSPHRASE_SALT] = "";
+                }
                 SaveSettings();
             }
             else
@@ -207,8 +221,104 @@ namespace Duplicati.Server.Database
                 sha256.TransformFinalBlock(buf, 0, buf.Length);
                 var pwd = Convert.ToBase64String(sha256.Hash);
 
-                m_values[CONST.SERVER_PASSPHRASE] = pwd;
-                m_values[CONST.SERVER_PASSPHRASE_SALT] = salt;
+                lock(Program.DataConnection.m_lock)
+                {
+                    m_values[CONST.SERVER_PASSPHRASE] = pwd;
+                    m_values[CONST.SERVER_PASSPHRASE_SALT] = salt;
+                }
+
+                SaveSettings();
+            }
+        }
+
+        public DateTime LastUpdateCheck
+        {
+            get 
+            {
+                long t;
+                if (long.TryParse(m_values[CONST.UPDATE_CHECK_LAST], out t))
+                    return new DateTime(t, DateTimeKind.Utc);
+                else
+                    return new DateTime(0, DateTimeKind.Utc);
+            }
+            set
+            {
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.UPDATE_CHECK_LAST] = value.ToUniversalTime().Ticks.ToString();
+                SaveSettings();
+            }
+        }
+
+        public string UpdateCheckInterval
+        {
+            get
+            {
+                var tp = m_values[CONST.UPDATE_CHECK_INTERVAL];
+                if (string.IsNullOrWhiteSpace(tp))
+                    tp = "1W";
+
+                return tp;
+            }
+            set
+            {
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.UPDATE_CHECK_INTERVAL] = value;
+                SaveSettings();
+                Program.UpdatePoller.Reschedule();
+            }
+        }
+
+        public DateTime NextUpdateCheck
+        {
+            get
+            {
+                try
+                {
+                    return Duplicati.Library.Utility.Timeparser.ParseTimeInterval(UpdateCheckInterval, LastUpdateCheck);
+                }
+                catch
+                {
+                    return LastUpdateCheck.AddDays(7);
+                }
+            }
+        }
+
+        public Library.AutoUpdater.UpdateInfo UpdatedVersion
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(m_values[CONST.UPDATE_CHECK_NEW_VERSION]))
+                    return null;
+
+                try
+                {
+                    if (m_latestUpdate != null)
+                        return m_latestUpdate;
+
+                    using(var tr = new System.IO.StringReader(m_values[CONST.UPDATE_CHECK_NEW_VERSION]))
+                        return m_latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
+                }
+                catch
+                {
+                }
+
+                return null;
+            }
+            set
+            {
+                string result = null;
+                if (value != null)
+                {
+                    var sb = new System.Text.StringBuilder();
+                    using(var tw = new System.IO.StringWriter(sb))
+                        Server.Serialization.Serializer.SerializeJson(tw, value);
+
+                    result = sb.ToString();
+                }
+
+                m_latestUpdate = value;
+                lock(Program.DataConnection.m_lock)
+                    m_values[CONST.UPDATE_CHECK_NEW_VERSION] = result;
 
                 SaveSettings();
             }

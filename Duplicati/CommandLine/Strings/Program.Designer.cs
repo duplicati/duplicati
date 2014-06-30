@@ -70,6 +70,12 @@ namespace Duplicati.CommandLine.Strings {
             }
         }
         
+        internal static string AutoUpdateOptionShort {
+            get {
+                return ResourceManager.GetString("AutoUpdateOptionShort", resourceCulture);
+            }
+        }
+        
         internal static string GenericModulesHeader {
             get {
                 return ResourceManager.GetString("GenericModulesHeader", resourceCulture);
@@ -133,6 +139,12 @@ namespace Duplicati.CommandLine.Strings {
         internal static string InternalOptionUsedError {
             get {
                 return ResourceManager.GetString("InternalOptionUsedError", resourceCulture);
+            }
+        }
+        
+        internal static string AutoUpdateOptionLong {
+            get {
+                return ResourceManager.GetString("AutoUpdateOptionLong", resourceCulture);
             }
         }
         

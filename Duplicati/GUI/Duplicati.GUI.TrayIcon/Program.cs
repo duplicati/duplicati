@@ -70,7 +70,7 @@ namespace Duplicati.GUI.TrayIcon
                 Duplicati.License.AutoUpdateSettings.SignKey,
                 Duplicati.License.AutoUpdateSettings.AppName);
 
-            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
         
         public static void RealMain(string[] _args)

@@ -81,6 +81,16 @@ namespace Duplicati.Server
         /// The webserver instance
         /// </summary>
         public static WebServer.Server WebServer;
+
+        /// <summary>
+        /// The update manager instance
+        /// </summary>
+        public static Library.AutoUpdater.UpdaterManager UpdateManager;
+
+        /// <summary>
+        /// The update poll thread.
+        /// </summary>
+        public static UpdatePollThread UpdatePoller;
         
         /// <summary>
         /// An event that is set once the server is ready to respond to requests
@@ -344,10 +354,17 @@ namespace Duplicati.Server
 
                 DataConnection = new Duplicati.Server.Database.Connection(con);
 
-                if (commandlineOptions.ContainsKey("webserver-password"))
-                    Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webserver-password"]);
+                if (commandlineOptions.ContainsKey("webservice-password"))
+                    Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
+
+                UpdateManager = new Duplicati.Library.AutoUpdater.UpdaterManager(
+                    Duplicati.License.AutoUpdateSettings.URLs,
+                    Duplicati.License.AutoUpdateSettings.SignKey,
+                    Duplicati.License.AutoUpdateSettings.AppName);
+
+                UpdatePoller = new UpdatePollThread();
 
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
@@ -391,6 +408,8 @@ namespace Duplicati.Server
             {
                 StatusEventNotifyer.SignalNewEvent();
 
+                if (UpdatePoller != null)
+                    UpdatePoller.Terminate();
                 if (Scheduler != null)
                     Scheduler.Terminate(true);
                 if (WorkThread != null)
@@ -556,7 +575,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_WEBROOT),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_PORT.ToString()),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
-                    new Duplicati.Library.Interface.CommandLineArgument("webserver-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                 };
             }
         }

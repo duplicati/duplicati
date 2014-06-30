@@ -437,7 +437,8 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
                     new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypasses the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
                     new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Removes any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
-                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false")
+                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+                    new Library.Interface.CommandLineArgument(Duplicati.Library.AutoUpdater.UpdaterManager.AUTO_UPDATE_OPTION, Library.Interface.CommandLineArgument.ArgumentType.Enumeration, "Auto update method", "Set how updates are checked for and installed", Enum.GetName(typeof(Duplicati.Library.AutoUpdater.AutoUpdateStrategy), Duplicati.Library.AutoUpdater.AutoUpdateStrategy.DuringRun), Enum.GetNames(typeof(Duplicati.Library.AutoUpdater.AutoUpdateStrategy))),
                 });
 
             }
