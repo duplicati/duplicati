@@ -124,31 +124,33 @@
     <div id="click-intercept"></div>
 
     <div id="main-topbar">
-        <div id="main-appname">DUPLICATI</div>
+        <div class="content-wrap padded">
+            <div id="main-appname">Duplicati</div>
 
-        <ul class="main-shortcuts">
-            <li id="main-donate" class="main-icon-donate" style="display: none"></li>
-            <li id="main-control" class="main-icon-pause"></li>
-            <li id="main-settings" class="main-icon-settings"></li>
-        </ul>
+            <ul class="main-shortcuts">
+                <li id="main-donate" class="main-icon-donate" style="display: none"></li>
+                <li id="main-control" class="main-icon-pause"></li>
+                <li id="main-settings" class="main-icon-settings"></li>
+            </ul>
 
-        <ul id="main-control-menu" class="menu">
-            <li id="main-control-menu-settings"><a>Settings...</a></li>
-            <li>-</li>
-            <li><a>Pause ...</a>
-                <ul id="main-control-menu-pause-submenu" class="menu">
-                    <li id="main-control-menu-pause-submenu-5m"><a>Pause 5 minutes</a></li>
-                    <li id="main-control-menu-pause-submenu-10m"><a>Pause 10 minutes</a></li>
-                    <li id="main-control-menu-pause-submenu-15m"><a>Pause 15 minutes</a></li>
-                    <li id="main-control-menu-pause-submenu-30m"><a>Pause 30 minutes</a></li>
-                    <li id="main-control-menu-pause-submenu-1h"><a>Pause 1 hour</a></li>
-                </ul>
-            </li>
-            <li id="main-control-menu-throttle"><a>Throttle ...</a></li>
-            <li id="main-control-menu-log"><a>Log ...</a></li>
-            <li>-</li>
-            <li id="main-control-menu-about"><a>About ...</a></li>
-        </ul>
+            <ul id="main-control-menu" class="menu">
+                <li id="main-control-menu-settings"><a>Settings...</a></li>
+                <li>-</li>
+                <li><a>Pause ...</a>
+                    <ul id="main-control-menu-pause-submenu" class="menu">
+                        <li id="main-control-menu-pause-submenu-5m"><a>Pause 5 minutes</a></li>
+                        <li id="main-control-menu-pause-submenu-10m"><a>Pause 10 minutes</a></li>
+                        <li id="main-control-menu-pause-submenu-15m"><a>Pause 15 minutes</a></li>
+                        <li id="main-control-menu-pause-submenu-30m"><a>Pause 30 minutes</a></li>
+                        <li id="main-control-menu-pause-submenu-1h"><a>Pause 1 hour</a></li>
+                    </ul>
+                </li>
+                <li id="main-control-menu-throttle"><a>Throttle ...</a></li>
+                <li id="main-control-menu-log"><a>Log ...</a></li>
+                <li>-</li>
+                <li id="main-control-menu-about"><a>About ...</a></li>
+            </ul>
+        </div>
     </div>
 
     <ul id="backup-context-menu" class="context-popup-menu menu" style="display: none">
@@ -170,25 +172,25 @@
     </ul>
 
     <div class="main-status-area-outer">
-        <div id="main-status-area">
-            <div id="main-status-area-text">
-            My Important Backup
-            </div>
-            <div id="main-status-area-progress-outer">
-                <div id="main-status-area-progress-bar" class="">
+        <div class="content-wrap padded">
+            <div id="main-status-area">
+                <div id="main-status-area-text">
+                My Important Backup
                 </div>
-                <div id="main-status-area-progress-text">
-                Processing 123456 files ...
+                <div id="main-status-area-cancel-button"></div>
+                <div id="main-status-area-progress-outer">
+                    <div id="main-status-area-progress-bar" class="">
+                    </div>
+                    <div id="main-status-area-progress-text">
+                    Processing 123456 files ...
+                    </div>
                 </div>
-            </div>
-
-            <div id="main-status-area-cancel-button">
             </div>
         </div>
     </div>
 
     <div id="main-list">
-        <div id="main-list-container">
+        <div id="main-list-container" class="content-wrap padded">
             <div id="main-newbackup">
                 <div class="main-backup-control main-icon-plus"></div>
                 <div class="caption-text">Add new backup</div>

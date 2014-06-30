@@ -73,7 +73,7 @@ APP_UTIL = {
 
                 if (m && typeof(m) == typeof(function() {})) {
                     m(data, key, v, extra);
-                } else {                    
+                } else {
                     var n = form.find('#' + key);
                     if (n.attr('type') == 'checkbox') {
                         n.attr('checked', APP_UTIL.parseBoolOption(v));
@@ -123,7 +123,7 @@ APP_UTIL = {
             }
         });
 
-        form.find('input').each(function(i, e) { 
+        form.find('input').each(function(i, e) {
             var key = e.id;
             var m = map[e.id];
 
@@ -193,7 +193,7 @@ $(document).ready(function() {
         };
 
         try { onUpdate(zxcvbn(password)); }
-        catch (e) { 
+        catch (e) {
             // Not loaded, try this:
             $.getScript('/scripts/zxcvbn.js', function() {
                 try {
@@ -506,7 +506,7 @@ $(document).ready(function() {
             $(document).trigger('server-state-updated', data);
             if (oldDataId != state.dataEventId)
                 $(document).trigger('server-state-data-updated', data);
-            
+
             if (oldState != state.programState) {
                 if (state.pauseUpdateTimer != null) {
                     clearInterval(state.pauseUpdateTimer);
@@ -620,7 +620,7 @@ $(document).ready(function() {
             state.lastEvent = data;
             PRIVATE_DATA.update_progress_and_schedules();
 
-            $(document).trigger('server-progress-updated', data);            
+            $(document).trigger('server-progress-updated', data);
 
             restart_poll();
         })
@@ -638,7 +638,7 @@ $(document).ready(function() {
 
     PRIVATE_DATA.refresh_server_settings = function(callback, errorhandler) {
         serverWithCallback(
-            'system-info', 
+            'system-info',
             callback,
             errorhandler,
             function(data, success) {
@@ -652,7 +652,7 @@ $(document).ready(function() {
 
     PRIVATE_DATA.refresh_backup_list = function(callback, errorhandler) {
         serverWithCallback(
-            'list-backups', 
+            'list-backups',
             callback,
             errorhandler,
             function(data, success) {
@@ -689,7 +689,7 @@ $(document).ready(function() {
                                 APP_DATA.showContextMenu(id, $('#backup-control-' + id));
                             });
                         }
-                        
+
                         if (APP_DATA.plugins.primary['backup-list-postrocess'])
                             APP_DATA.plugins.primary['backup-list-postrocess']($('#main-list-container'), $('#main-list-container > div.main-backup-entry'), data);
                     }
@@ -716,32 +716,32 @@ $(document).ready(function() {
         }
     };
 
-    APP_DATA.validatePath = function(path, callback) { 
-        serverWithCallback({ action: 'validate-path', path: path }, callback, callback); 
+    APP_DATA.validatePath = function(path, callback) {
+        serverWithCallback({ action: 'validate-path', path: path }, callback, callback);
     };
-    APP_DATA.getLabels = function(callback) { 
-        serverWithCallback('list-tags', callback, callback); 
+    APP_DATA.getLabels = function(callback) {
+        serverWithCallback('list-tags', callback, callback);
     };
 
-    APP_DATA.getBackupDefaults = function(callback, errorhandler) { 
-        serverWithCallback('get-backup-defaults', callback, errorhandler); 
+    APP_DATA.getBackupDefaults = function(callback, errorhandler) {
+        serverWithCallback('get-backup-defaults', callback, errorhandler);
     };
-    APP_DATA.getBackupData = function(id, callback, errorhandler) { 
-        serverWithCallback({ action: 'get-backup', id: id}, callback, errorhandler); 
+    APP_DATA.getBackupData = function(id, callback, errorhandler) {
+        serverWithCallback({ action: 'get-backup', id: id}, callback, errorhandler);
     };
 
     APP_DATA.addBackup = function(cfg, callback, errorhandler) {
         serverWithCallback(
-            { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}, 
-            callback, 
+            { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)},
+            callback,
             errorhandler
         );
     };
 
     APP_DATA.updateBackup = function(cfg, callback, errorhandler) {
         serverWithCallback(
-            { action: 'update-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}, 
-            callback, 
+            { action: 'update-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)},
+            callback,
             errorhandler
         );
     };
@@ -753,8 +753,8 @@ $(document).ready(function() {
 
     APP_DATA.deleteBackup = function(id, callback, errorhandler) {
         serverWithCallback(
-            { action: 'delete-backup', id: id }, 
-            callback, 
+            { action: 'delete-backup', id: id },
+            callback,
             errorhandler
         );
     };
@@ -769,7 +769,7 @@ $(document).ready(function() {
                 $("#edit-dialog").css('width', '');
 
                 // Send data to the dialog
-                $("#edit-dialog").trigger('setup-dialog', data.data);  
+                $("#edit-dialog").trigger('setup-dialog', data.data);
             };
 
             var errorhandler = function() {
@@ -784,21 +784,21 @@ $(document).ready(function() {
         function() {
             alert('Failed to get server setup...')
         });
-        
+
     };
 
     APP_DATA.runBackup = function(id) {
         serverWithCallback(
-            { action: 'send-command', command: 'run-backup', id: id }, 
-            function() {}, 
+            { action: 'send-command', command: 'run-backup', id: id },
+            function() {},
             function(d,s,m) { alert('Failed to start backup: ' + m); }
         );
     };
 
     APP_DATA.isBackupActive = function(id, callback) {
         serverWithCallback(
-            { action: 'send-command', command: 'is-backup-active', id: id }, 
-            function(data) { callback(data.Active); }, 
+            { action: 'send-command', command: 'is-backup-active', id: id },
+            function(data) { callback(data.Active); },
             function(d,s,m) { alert('Failed to query backup: ' + m); }
         );
     };
@@ -825,32 +825,32 @@ $(document).ready(function() {
 
     APP_DATA.stopTask = function(taskId, force) {
         serverWithCallback(
-            { action: 'send-command', command: force ? 'abort' : 'stop', taskid: taskId }, 
-            function() {}, 
+            { action: 'send-command', command: force ? 'abort' : 'stop', taskid: taskId },
+            function() {},
             function(d,s,m) { alert('Failed to send stop command: ' + m); }
         );
     }
 
     APP_DATA.runVerify = function(id) {
         serverWithCallback(
-            { action: 'send-command', command: 'run-verify', id: id }, 
-            function() {}, 
+            { action: 'send-command', command: 'run-verify', id: id },
+            function() {},
             function(d,s,m) { alert('Failed to start verification: ' + m); }
         );
     };
 
     APP_DATA.runRepair = function(id) {
         serverWithCallback(
-            { action: 'send-command', command: 'run-repair', id: id }, 
-            function() {}, 
+            { action: 'send-command', command: 'run-repair', id: id },
+            function() {},
             function(d,s,m) { alert('Failed to start repair: ' + m); }
         );
     };
 
     APP_DATA.createReport = function(id) {
         serverWithCallback(
-            { action: 'send-command', command: 'create-report', id: id }, 
-            function() {}, 
+            { action: 'send-command', command: 'create-report', id: id },
+            function() {},
             function(d,s,m) { alert('Failed to create bug report: ' + m); }
         );
     };
@@ -873,11 +873,11 @@ $(document).ready(function() {
         };
 
         if (!APP_DATA.hasLoadedAbout) {
-            serverWithCallback('get-license-data', 
+            serverWithCallback('get-license-data',
                 function(data) {
                     var d = [];
                     for(var n in data) {
-                        try { 
+                        try {
                             var r = JSON.parse(data[n].Jsondata);
                             if (r != null) {
                                 r.licenselink = r.licenselink || licenses[r.license] || '#';
@@ -932,10 +932,10 @@ $(document).ready(function() {
 
     $('#main-settings').click(function() {
         var pos = $('#main-settings').offset();
-        var buttonwidth = $('#main-settings').outerWidth();        
+        var buttonwidth = $('#main-settings').outerWidth();
         $.showPopupMenu($('#main-control-menu'), $('#main-settings'), {y: $('#main-topbar').outerHeight() - pos.top });
 
-        $('#main-control-menu').css({ left: undefined, right: ($(document).outerWidth() - (pos.left + buttonwidth)) + 'px' });
+        $('#main-control-menu').css({ left: "", right: ($(document).outerWidth() - (pos.left + buttonwidth)) + 'px' });
     });
 
     $('#click-intercept').click(function() {
@@ -956,11 +956,11 @@ $(document).ready(function() {
     });
 
     $('#edit-dialog').tabs({ active: 0 });
-    $('#edit-dialog').dialog({ 
-        minWidth: 320, 
-        width: $('body').width > 600 ? 320 : 600, 
-        minHeight: 480, 
-        height: 500, 
+    $('#edit-dialog').dialog({
+        minWidth: 320,
+        width: $('body').width > 600 ? 320 : 600,
+        minHeight: 480,
+        height: 500,
         modal: true,
         autoOpen: false,
         closeOnEscape: true,
@@ -983,7 +983,7 @@ $(document).ready(function() {
                 $('#edit-dialog').tabs( "option", "active", cur);
             }}
         ]
-    });    
+    });
 
     $(document).on('server-state-updated', function() {
         $('#loading-dialog').dialog("close");
@@ -1038,9 +1038,9 @@ $(document).ready(function() {
         autoOpen: false,
         closeOnEscape: false,
         buttons: [
-            { 
-                text: 'Retry now', 
-                disabled: true, 
+            {
+                text: 'Retry now',
+                disabled: true,
                 click: function(event, ui) {
                     PRIVATE_DATA.long_poll_for_status();
                 }
@@ -1068,7 +1068,7 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu').removeClass('ui-widget-content');
     $('#main-control-menu-settings').hide().next().hide();
     $('#main-control-menu-throttle').hide();
-    
+
     $('#main-control-menu-about').click(function() { APP_DATA.showAbout(); })
 
     $('#main-control-menu-pause-submenu-5m').click(function() { APP_DATA.pauseServer('5m'); });
@@ -1142,13 +1142,13 @@ $(document).ready(function() {
         timestr += minutes + ':' + seconds;
 
         pausenoty.n.setText('Server is paused, resuming in ' + timestr);
-    });    
+    });
 
-    $("#about-dialog").dialog({ 
-        minWidth: 320, 
-        width: $('body').width > 600 ? 320 : 600, 
-        minHeight: 480, 
-        height: 500, 
+    $("#about-dialog").dialog({
+        minWidth: 320,
+        width: $('body').width > 600 ? 320 : 600,
+        minHeight: 480,
+        height: 500,
         modal: true,
         autoOpen: false,
         closeOnEscape: true,
@@ -1183,7 +1183,7 @@ $(document).ready(function() {
         APP_DATA.runBackup(APP_DATA.contextMenuId);
     });
 
-    $('#backup-details-restore').click(function(e) { 
+    $('#backup-details-restore').click(function(e) {
         APP_DATA.restoreBackup(APP_DATA.contextMenuId);
     });
 
@@ -1208,11 +1208,11 @@ $(document).ready(function() {
 
     $('#backup-details-send-report').click(function(e) {
         alert('Method is missing a method for retrieving the report after it has been generated');
-        APP_DATA.createReport(APP_DATA.contextMenuId);        
+        APP_DATA.createReport(APP_DATA.contextMenuId);
     });
 
     $('#backup-details-repair').click(function(e) {
-        APP_DATA.runRepair(APP_DATA.contextMenuId);        
+        APP_DATA.runRepair(APP_DATA.contextMenuId);
     });
 
     $('#backup-details-copy').click(function(e) {
@@ -1236,7 +1236,7 @@ $(document).ready(function() {
         taskId: null,
         onRequest: function() {
             var current = APP_DATA.getCurrentTaskId();
-            
+
             if (current == null)
                 return;
 
@@ -1263,7 +1263,7 @@ $(document).ready(function() {
                             }]
                         });
                 }
-            }            
+            }
         },
         onUpdate: function() {
             if (this.n == null)
@@ -1292,7 +1292,7 @@ $(document).ready(function() {
         var dlg = $('<div></div>').attr('title', 'Warning');
         dlg.dialog({
             autoOpen: true,
-            width: $('body').width > 450 ? 430 : 600, 
+            width: $('body').width > 450 ? 430 : 600,
              modal: true,
             closeOnEscape: true,
             buttons: [
