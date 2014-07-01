@@ -51,6 +51,9 @@ mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPD
 
 echo "${RELEASE_INC_VERSION}" > "Updates/debug_version.txt"
 
+mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/duplicati.zip"
+mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
+
 echo
 echo "Built DEBUG version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
 echo "    in folder: ${UPDATE_TARGET}"
