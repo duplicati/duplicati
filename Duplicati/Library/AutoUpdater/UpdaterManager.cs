@@ -23,8 +23,12 @@ namespace Duplicati.Library.AutoUpdater
 {
     public enum AutoUpdateStrategy
     {
-        BeforeRun,
-        DuringRun,
+        CheckBefore,
+        CheckDuring,
+        CheckAfter,
+        InstallBefore,
+        InstallDuring,
+        InstallAfter,
         Never
     }
 
@@ -557,7 +561,7 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.DuringRun)
+        public int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.InstallDuring)
         {
             // If we are not the primary domain, just execute
             if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
@@ -574,14 +578,77 @@ namespace Duplicati.Library.AutoUpdater
             UpdateInfo updateDetected = null;
             bool updateInstalled = false;
 
-            if (strategy == AutoUpdateStrategy.BeforeRun || strategy == AutoUpdateStrategy.DuringRun)
+            bool checkForUpdate;
+            bool downloadUpdate;
+            bool runAfter;
+            bool runDuring;
+            bool runBefore;
+
+
+            switch (strategy)
+            {
+                case AutoUpdateStrategy.CheckBefore:
+                case AutoUpdateStrategy.CheckDuring:
+                case AutoUpdateStrategy.CheckAfter:
+                    checkForUpdate = true;
+                    downloadUpdate = false;
+                    break;
+
+                case AutoUpdateStrategy.InstallBefore:
+                case AutoUpdateStrategy.InstallDuring:
+                case AutoUpdateStrategy.InstallAfter:
+                    checkForUpdate = true;
+                    downloadUpdate = true;
+                    break;
+
+                default:
+                    checkForUpdate = false;
+                    downloadUpdate = false;
+                    break;
+            }
+
+            switch (strategy)
+            {
+                case AutoUpdateStrategy.CheckBefore:
+                case AutoUpdateStrategy.InstallBefore:
+                    runBefore = true;
+                    runDuring = false;
+                    runAfter = false;
+                    break;
+
+                case AutoUpdateStrategy.CheckAfter:
+                case AutoUpdateStrategy.InstallAfter:
+                    runBefore = false;
+                    runDuring = false;
+                    runAfter = true;
+                    break;
+
+                case AutoUpdateStrategy.CheckDuring:
+                case AutoUpdateStrategy.InstallDuring:
+                    runBefore = false;
+                    runDuring = true;
+                    runAfter = false;
+                    break;
+
+                default:
+                    runBefore = false;
+                    runDuring = false;
+                    runAfter = false;
+                    break;
+            }
+
+            if (checkForUpdate)
             {
                 backgroundChecker = new System.Threading.Thread(() =>
                 {
+                    // Don't run "during" if the task is short
+                    if (runDuring)
+                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
+
                     updateDetected = CheckForUpdate();
-                    if (updateDetected != null)
+                    if (updateDetected != null && downloadUpdate)
                     {
-                        if (strategy == AutoUpdateStrategy.BeforeRun)
+                        if (!runDuring)
                             Console.WriteLine("Update to {0} detected, installing...", updateDetected.Displayname);
                         updateInstalled = DownloadAndUnpackUpdate(updateDetected);
                     }
@@ -589,15 +656,27 @@ namespace Duplicati.Library.AutoUpdater
 
                 backgroundChecker.IsBackground = true;
                 backgroundChecker.Name = "BackgroundUpdateChecker";
-                backgroundChecker.Start();
 
-                if (strategy == AutoUpdateStrategy.BeforeRun)
+                if (!runAfter)
+                    backgroundChecker.Start();
+
+                if (runBefore)
                 {
+                    Console.WriteLine("Checking for update ...");
                     backgroundChecker.Join();
-                    if (updateInstalled)
-                        Console.WriteLine("Install succeeded, running updated version");
-                    else
-                        Console.WriteLine("Install or download failed, using current version");
+
+                    if (downloadUpdate)
+                    {
+                        if (updateInstalled)
+                            Console.WriteLine("Install succeeded, running updated version");
+                        else
+                            Console.WriteLine("Install or download failed, using current version");
+                    }
+                    else if (updateDetected != null)
+                    {
+                        Console.WriteLine("Update \"{0}\" detected", updateDetected.Displayname);
+                    }
+
                     backgroundChecker = null;
                 }
             }
@@ -646,6 +725,14 @@ namespace Duplicati.Library.AutoUpdater
                 }
             }
 
+            if (backgroundChecker != null && runAfter)
+            {
+                Console.WriteLine("Checking for update ...");
+
+                backgroundChecker.Start();
+                backgroundChecker.Join();
+            }
+
             if (backgroundChecker != null && updateDetected != null)
             {
                 if (backgroundChecker.IsAlive)
@@ -654,10 +741,17 @@ namespace Duplicati.Library.AutoUpdater
                     backgroundChecker.Join();
                 }
 
-                if (updateInstalled)
-                    Console.WriteLine("Install succeeded, running updated version on next launch");
+                if (downloadUpdate)
+                {
+                    if (updateInstalled)
+                        Console.WriteLine("Install succeeded, running updated version on next launch");
+                    else
+                        Console.WriteLine("Install or download failed, using current version on next launch");
+                }
                 else
-                    Console.WriteLine("Install or download failed, using current version on next launch");
+                {
+                    Console.WriteLine("Update \"{0}\" detected", updateDetected.Displayname);
+                }
             }
 
             return result;
