@@ -22,6 +22,8 @@ namespace AutoUpdateBuilder
             opts.TryGetValue("manifest", out manifestfile);
             opts.TryGetValue("keyfile-password", out keyfilepassword);
 
+            var usedoptions = new string[] { "input", "output", "keyfile", "manifest", "keyfile-password" };
+
             if (string.IsNullOrWhiteSpace(inputfolder))
             {
                 Console.WriteLine("Missing input folder");
@@ -97,19 +99,22 @@ namespace AutoUpdateBuilder
 
 
             var isopts = new Dictionary<string, string>(opts, StringComparer.InvariantCultureIgnoreCase);
+            foreach (var usedopt in usedoptions)
+                isopts.Remove(usedopt);
+
             foreach (var k in updateInfo.GetType().GetFields())
                 if (isopts.ContainsKey(k.Name))
                 {
-                    try 
+                    try
                     {
                         //Console.WriteLine("Setting {0} to {1}", k.Name, isopts[k.Name]);
                         if (k.FieldType == typeof(string[]))
-                            k.SetValue(updateInfo, isopts[k.Name].Split(new char[] {';'}, StringSplitOptions.RemoveEmptyEntries));
-                        else if(k.FieldType == typeof(Version))
+                            k.SetValue(updateInfo, isopts[k.Name].Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+                        else if (k.FieldType == typeof(Version))
                             k.SetValue(updateInfo, new Version(isopts[k.Name]));
-                        else if(k.FieldType == typeof(int))
+                        else if (k.FieldType == typeof(int))
                             k.SetValue(updateInfo, int.Parse(isopts[k.Name]));
-                        else if(k.FieldType == typeof(long))
+                        else if (k.FieldType == typeof(long))
                             k.SetValue(updateInfo, long.Parse(isopts[k.Name]));
                         else
                             k.SetValue(updateInfo, isopts[k.Name]);
@@ -118,7 +123,12 @@ namespace AutoUpdateBuilder
                     {
                         Console.WriteLine("Failed setting {0} to {1}: {2}", k.Name, isopts[k.Name], ex.Message);
                     }
+
+                    isopts.Remove(k.Name);
                 }
+
+                foreach(var opt in isopts)
+                    Console.WriteLine("Warning! unused option: {0} = {1}", opt.Key, opt.Value);
 
             using (var tf = new Duplicati.Library.Utility.TempFile())
             {
