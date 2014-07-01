@@ -55,6 +55,19 @@ namespace Duplicati.GUI.TrayIcon
             Icon ico;
             if (ICONS.TryGetValue(filename, out ico))
                 return ico;
+
+            if (!filename.EndsWith(".ico", StringComparison.InvariantCultureIgnoreCase))
+                using(var ms = new System.IO.MemoryStream())
+                {
+                    Icon ic;
+                    using(var bmp = LoadImage(filename))
+                        ic = Icon.FromHandle(bmp.GetHicon());
+
+                    ms.Position = 0;
+                    lock(LOCK)
+                        if (!ICONS.TryGetValue(filename, out ico))
+                            return ICONS[filename] = ic;
+                }
                 
             lock(LOCK)
                 if (!ICONS.TryGetValue(filename, out ico))
@@ -63,12 +76,12 @@ namespace Duplicati.GUI.TrayIcon
             return ICONS[filename];
         }
 
-        public static Icon TrayNormal { get { return LoadIcon("Resources.TrayNormal.ico"); } }
-        public static Icon TrayNormalError { get { return LoadIcon("Resources.TrayNormalError.ico"); } }
-        public static Icon TrayNormalPause { get { return LoadIcon("Resources.TrayNormalPause.ico"); } }
-        public static Icon TrayNormalWarning { get { return LoadIcon("Resources.TrayNormalWarning.ico"); } }
-        public static Icon TrayWorking { get { return LoadIcon("Resources.TrayWorking.ico"); } }
-        public static Icon TrayWorkingPause { get { return LoadIcon("Resources.TrayWorkingPause.ico"); } }
+        public static Icon TrayNormal { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal.png" : "Resources.TrayNormal.ico"); } }
+        public static Icon TrayNormalError { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalError.ico"); } }
+        public static Icon TrayNormalPause { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-pause.png" : "Resources.TrayNormalPause.ico"); } }
+        public static Icon TrayNormalWarning { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalWarning.ico"); } }
+        public static Icon TrayWorking { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-running.png" : "Resources.TrayWorking.ico"); } }
+        public static Icon TrayWorkingPause { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-pause.png" : "Resources.TrayWorkingPause.ico"); } }
         
         public static Bitmap Pause { get { return LoadImage("Resources.Pause.png"); } }
         public static Bitmap Play { get { return LoadImage("Resources.Play.png"); } }

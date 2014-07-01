@@ -156,6 +156,18 @@
       <DependentUpon>Program.resx</DependentUpon>
     </Compile>
     <Compile Include="GtkRunner.cs" />
+    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal-error.png">
+      <Link>OSX Icons\normal-error.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal-pause.png">
+      <Link>OSX Icons\normal-pause.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal-running.png">
+      <Link>OSX Icons\normal-running.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal.png">
+      <Link>OSX Icons\normal.png</Link>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -296,6 +308,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="SVGIcons\light\" />
+    <Folder Include="OSX Icons\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="SVGIcons\light\normal-error.svg">
