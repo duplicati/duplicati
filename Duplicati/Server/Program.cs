@@ -364,6 +364,10 @@ namespace Duplicati.Server
                     Duplicati.License.AutoUpdateSettings.SignKey,
                     Duplicati.License.AutoUpdateSettings.AppName);
 
+                UpdateManager.OnError += (Exception obj) => {
+                    Program.DataConnection.LogError(null, "Error in updater", obj);
+                };
+
                 UpdatePoller = new UpdatePollThread();
 
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
