@@ -1,1 +1,1 @@
-﻿http://www.duplicati.com/latests.json
+http://updates.duplicati.com/debug/latest.manifest;http://alt.updates.duplicati.com/debug/latest.manifest
