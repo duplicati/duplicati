@@ -241,14 +241,21 @@ namespace Duplicati.Library.AutoUpdater
                         var md5 =  System.Security.Cryptography.MD5.Create();
 
                         using(var s = System.IO.File.OpenRead(tempfile))
+                        {
                             if (s.Length != version.CompressedSize)
                                 throw new Exception(string.Format("Invalid file size {0}, expected {1} for {2}", s.Length, version.CompressedSize, url));
-                            else if (Convert.ToBase64String(sha256.ComputeHash(s)) != version.SHA256)
+                            
+                            var sha256hash = Convert.ToBase64String(sha256.ComputeHash(s));
+                            if (sha256hash != version.SHA256)
                                 throw new Exception(string.Format("Damaged or corrupted file, sha256 mismatch for {0}", url));
+                        }
 
                         using(var s = System.IO.File.OpenRead(tempfile))
-                            if (Convert.ToBase64String(md5.ComputeHash(s)) != version.MD5)
+                        {
+                            var md5hash = Convert.ToBase64String(md5.ComputeHash(s));
+                            if (md5hash != version.MD5)
                                 throw new Exception(string.Format("Damaged or corrupted file, md5 mismatch for {0}", url));
+                        }
                         
                         using(var tempfolder = new Duplicati.Library.Utility.TempFolder())
                         using(var zip = new Duplicati.Library.Compression.FileArchiveZip(tempfile, new Dictionary<string, string>()))
@@ -270,8 +277,34 @@ namespace Duplicati.Library.AutoUpdater
 
                             if (VerifyUnpackedFolder(tempfolder, version))
                             {
-                                var targetfolder = System.IO.Path.Combine(m_installdir, m_appname, version.ReleaseTime.ToString(DATETIME_FORMAT));
-                                System.IO.Directory.Move(tempfolder, targetfolder);
+                                var targetfolder = System.IO.Path.Combine(m_installdir, version.ReleaseTime.ToString(DATETIME_FORMAT));
+                                if (System.IO.Directory.Exists(targetfolder))
+                                    System.IO.Directory.Delete(targetfolder, true);
+                                
+                                System.IO.Directory.CreateDirectory(targetfolder);
+
+                                var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
+                                var tempfolderlength = tempfolderpath.Length;
+
+                                // Would be nice, but does not work :(
+                                //System.IO.Directory.Move(tempfolder, targetfolder);
+
+                                foreach(var e in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(tempfolder))
+                                {
+                                    var relpath = e.Substring(tempfolderlength);
+                                    if (string.IsNullOrWhiteSpace(relpath))
+                                        continue;
+
+                                    var fullpath = System.IO.Path.Combine(targetfolder, relpath);
+                                    if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                        System.IO.Directory.CreateDirectory(fullpath);
+                                    else
+                                        System.IO.File.Copy(e, fullpath);
+                                }
+
+                                // Verification will kick in when we list the installed updates
+                                //VerifyUnpackedFolder(targetfolder, version);
+
                                 m_hasUpdateInstalled = null;
                                 return true;
                             }
@@ -340,6 +373,9 @@ namespace Duplicati.Library.AutoUpdater
                 foreach(var file in Library.Utility.Utility.EnumerateFileSystemEntries(folder))
                 {
                     var relpath = file.Substring(baselen);
+                    if (string.IsNullOrWhiteSpace(relpath))
+                        continue;
+
                     FileEntry fe;
                     if (!paths.TryGetValue(relpath, out fe))
                     {
@@ -373,10 +409,15 @@ namespace Duplicati.Library.AutoUpdater
                     }
                 }
 
-                if (paths.Count == 1)
-                    throw new Exception(string.Format("Folder {0} is missing: {1}", folder, paths.First().Key));
-                else if (paths.Count > 0)
-                    throw new Exception(string.Format("Folder {0} is missing {1} files", folder, paths.Count));
+                var filteredpaths = (from p in paths
+                        where !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/")
+                        select p.Key).ToList();
+
+
+                if (filteredpaths.Count == 1)
+                    throw new Exception(string.Format("Folder {0} is missing: {1}", folder, filteredpaths.First()));
+                else if (filteredpaths.Count > 0)
+                    throw new Exception(string.Format("Folder {0} is missing {1} files", folder, filteredpaths.Count));
 
                 return true;
             }
