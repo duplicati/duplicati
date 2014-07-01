@@ -96,15 +96,27 @@ namespace AutoUpdateBuilder
                 updateInfo = new Newtonsoft.Json.JsonSerializer().Deserialize<Duplicati.Library.AutoUpdater.UpdateInfo>(jr);
 
 
+            var isopts = new Dictionary<string, string>(opts, StringComparer.InvariantCultureIgnoreCase);
             foreach (var k in updateInfo.GetType().GetFields())
-                if (opts.ContainsKey(k.Name))
+                if (isopts.ContainsKey(k.Name))
                 {
                     try 
                     {
-                        k.SetValue(updateInfo, opts[k.Name]);
+                        //Console.WriteLine("Setting {0} to {1}", k.Name, isopts[k.Name]);
+                        if (k.FieldType == typeof(string[]))
+                            k.SetValue(updateInfo, isopts[k.Name].Split(new char[] {';'}, StringSplitOptions.RemoveEmptyEntries));
+                        else if(k.FieldType == typeof(Version))
+                            k.SetValue(updateInfo, new Version(isopts[k.Name]));
+                        else if(k.FieldType == typeof(int))
+                            k.SetValue(updateInfo, int.Parse(isopts[k.Name]));
+                        else if(k.FieldType == typeof(long))
+                            k.SetValue(updateInfo, long.Parse(isopts[k.Name]));
+                        else
+                            k.SetValue(updateInfo, isopts[k.Name]);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Console.WriteLine("Failed setting {0} to {1}: {2}", k.Name, isopts[k.Name], ex.Message);
                     }
                 }
 
