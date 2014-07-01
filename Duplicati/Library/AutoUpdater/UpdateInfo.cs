@@ -43,10 +43,10 @@ namespace Duplicati.Library.AutoUpdater
     public class UpdateInfo
     {
         public string Displayname;
+        public string Version;
         public DateTime ReleaseTime;
         public string ReleaseType;
-        public ReleaseType ReleaseTypeParsed;
-        public UpdateSeverity UpdateSeverity;
+        public string UpdateSeverity;
         public string ChangeInfo;
         public long CompressedSize;
         public long UncompressedSize;
