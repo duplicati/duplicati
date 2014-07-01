@@ -1120,7 +1120,7 @@ $(document).ready(function() {
             else if (!updaterState.installed)
                 $('#main-control-menu-updates > a').text('Install update');
             else if (updaterState.installed)
-                $('#main-control-menu-updates > a').text('Check for updates');
+                $('#main-control-menu-updates > a').text('Activate update');
             else
                 $('#main-control-menu-updates > a').text('Unknown state ...');
 
