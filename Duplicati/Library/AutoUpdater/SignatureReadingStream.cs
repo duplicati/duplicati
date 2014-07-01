@@ -41,11 +41,12 @@ namespace Duplicati.Library.AutoUpdater
             if (!VerifySignature(stream, key))
                 throw new System.IO.InvalidDataException("Unable to verify signature");
             m_stream = stream;
+            this.Position = 0;
         }
 
         private static bool VerifySignature(System.IO.Stream stream, System.Security.Cryptography.RSACryptoServiceProvider key)
         {
-            stream.Position = stream.Length - SIGNED_HASH_SIZE;
+            stream.Position = 0;
             var signature = new byte[SIGNED_HASH_SIZE];
             if (stream.Read(signature, 0, signature.Length) != signature.Length)
                 throw new System.IO.InvalidDataException("Unexpected end-of-stream while reading signature");
@@ -53,7 +54,6 @@ namespace Duplicati.Library.AutoUpdater
             sha256.Initialize();
 
             var bytes = stream.Length - (signature.Length);
-            stream.Position = 0;
             var buf = new byte[8 * 1024];
             while (bytes > 0)
             {
@@ -99,6 +99,10 @@ namespace Duplicati.Library.AutoUpdater
 
             signedstream.Position = 0;
             signedstream.Write(signature, 0, signature.Length);
+
+            signedstream.Position = 0;
+            if (!VerifySignature(signedstream, key))
+                throw new System.IO.InvalidDataException("Unable to verify signature");
         }
 
         #region implemented abstract members of Stream
@@ -111,7 +115,6 @@ namespace Duplicati.Library.AutoUpdater
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            count = (int)Math.Min(count, this.Length - m_stream.Position);
             return m_stream.Read(buffer, offset, count);
         }
 
@@ -120,12 +123,12 @@ namespace Duplicati.Library.AutoUpdater
             switch (origin)
             {
                 case System.IO.SeekOrigin.Current:
-                    return Seek(m_stream.Position + offset, System.IO.SeekOrigin.Begin);
+                    return Seek(offset + this.Position, System.IO.SeekOrigin.Begin);
                 case System.IO.SeekOrigin.End:
-                    return m_stream.Seek(offset + SIGNED_HASH_SIZE, origin);
+                    return Seek(this.Length - offset, System.IO.SeekOrigin.Begin);
                 case System.IO.SeekOrigin.Begin:
                 default:
-                    return m_stream.Seek(Math.Min(offset, m_stream.Length - SIGNED_HASH_SIZE), origin);
+                    return this.Position = offset;
             }
         }
 
@@ -175,11 +178,11 @@ namespace Duplicati.Library.AutoUpdater
         {
             get
             {
-                return m_stream.Position;
+                return m_stream.Position - SIGNED_HASH_SIZE;
             }
             set
             {
-                m_stream.Seek(value, System.IO.SeekOrigin.Begin);
+                m_stream.Position = value + SIGNED_HASH_SIZE;
             }
         }
 
