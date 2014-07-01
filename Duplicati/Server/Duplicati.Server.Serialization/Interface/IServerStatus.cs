@@ -14,5 +14,10 @@ namespace Duplicati.Server.Serialization.Interface
         DateTime EstimatedPauseEnd { get; }
         long LastEventID { get; }
         long LastDataUpdateID { get;  }
+
+        //Library.AutoUpdater.UpdateInfo UpdatedVersion { get; }
+        UpdatePollerStates UpdaterState { get; }
+        bool UpdateReady { get; }
+
     }
 }

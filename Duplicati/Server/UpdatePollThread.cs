@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Threading;
+using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
 {
@@ -25,13 +26,6 @@ namespace Duplicati.Server
     /// </summary>
     public class UpdatePollThread
     {
-        public enum UpdateStates
-        {
-            Waiting,
-            Checking,
-            Downloading
-        }
-
         private Thread m_thread;
         private volatile bool m_terminated = false;
         private volatile bool m_download = false;
@@ -39,12 +33,12 @@ namespace Duplicati.Server
         private object m_lock = new object();
         private AutoResetEvent m_waitSignal;
 
-        public UpdateStates ThreadState { get; private set; }
+        public UpdatePollerStates ThreadState { get; private set; }
         
         public UpdatePollThread()
         {
             m_waitSignal = new AutoResetEvent(false);
-            ThreadState = UpdateStates.Waiting;
+            ThreadState = UpdatePollerStates.Waiting;
             m_thread = new Thread(Run);
             m_thread.IsBackground = true;
             m_thread.Name = "UpdatePollThread";
@@ -102,7 +96,7 @@ namespace Duplicati.Server
                     lock(m_lock)
                         m_forceCheck = false;
 
-                    ThreadState = UpdateStates.Checking;
+                    ThreadState = UpdatePollerStates.Checking;
                     Program.StatusEventNotifyer.SignalNewEvent();
                      
                     DateTime started = DateTime.UtcNow;
@@ -131,7 +125,7 @@ namespace Duplicati.Server
                     var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
                     if (v != null)
                     {
-                        ThreadState = UpdateStates.Downloading;
+                        ThreadState = UpdatePollerStates.Downloading;
                         Program.StatusEventNotifyer.SignalNewEvent();
 
                         if (Program.UpdateManager.DownloadAndUnpackUpdate(v))
@@ -139,9 +133,9 @@ namespace Duplicati.Server
                     }
                 }
 
-                if (ThreadState != UpdateStates.Waiting)
+                if (ThreadState != UpdatePollerStates.Waiting)
                 {
-                    ThreadState = UpdateStates.Waiting;
+                    ThreadState = UpdatePollerStates.Waiting;
                     Program.StatusEventNotifyer.SignalNewEvent();
                 }
 

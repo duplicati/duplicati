@@ -34,6 +34,13 @@ namespace Duplicati.Server.Serializable
             get { return EnumConverter.Convert<LiveControlState>(Program.LiveControl.State); }
         }
 
+        public Library.AutoUpdater.UpdateInfo UpdatedVersion { get { return Program.DataConnection.ApplicationSettings.UpdatedVersion; } }
+
+        public UpdatePollerStates UpdaterState { get { return Program.UpdatePoller.ThreadState; } }
+
+        public bool UpdateReady { get { return Program.UpdateManager.HasUpdateInstalled; } }
+
+
         public Tuple<long, string> ActiveTask
         {
             get 
@@ -97,6 +104,8 @@ namespace Duplicati.Server.Serializable
         }
 
         public long LastDataUpdateID { get { return Program.LastDataUpdateID; } }
+
+
     }
 }
 

@@ -900,6 +900,31 @@ $(document).ready(function() {
         }
     };
 
+    APP_DATA.checkForUpdates = function() {
+        serverWithCallback(
+            { action: 'send-command', command: 'check-update' },
+            function() {},
+            function(d,s,m) { alert('Failed to check for updates: ' + m); }
+        );
+    };
+
+    APP_DATA.installUpdate = function() {
+        serverWithCallback(
+            { action: 'send-command', command: 'install-update' },
+            function() {},
+            function(d,s,m) { alert('Failed to install for update: ' + m); }
+        );
+    };
+
+    APP_DATA.activateUpdate = function() {
+        serverWithCallback(
+            { action: 'send-command', command: 'activate-update' },
+            function() {},
+            function(d,s,m) { alert('Failed to activate update: ' + m); }
+        );
+    };
+
+
     APP_DATA.callServer = serverWithCallback;
 
     $.showPopupMenu = function(menu, anchor, offset) {
@@ -1076,6 +1101,56 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu-15m').click(function() { APP_DATA.pauseServer('15m'); });
     $('#main-control-menu-pause-submenu-30m').click(function() { APP_DATA.pauseServer('30m'); });
     $('#main-control-menu-pause-submenu-1h').click(function() { APP_DATA.pauseServer('1h'); });
+
+    var updaterState = {
+        state: 'Waiting',
+        version: null,
+        installed: false
+    };
+
+    $(document).on('server-state-updated', function(eventargs, data) {
+        updaterState.state = data.UpdaterState;
+        updaterState.version = data.UpdatedVersion;
+        updaterState.installed = data.UpdateReady;
+
+        if (updaterState.state == 'Waiting') {
+
+            if (updaterState.version == null)
+                $('#main-control-menu-updates > a').text('Check for updates');
+            else if (!updaterState.installed)
+                $('#main-control-menu-updates > a').text('Install update');
+            else if (updaterState.installed)
+                $('#main-control-menu-updates > a').text('Check for updates');
+            else
+                $('#main-control-menu-updates > a').text('Unknown state ...');
+
+            $('#main-control-menu-updates').removeClass('ui-state-disabled')
+
+        } else if (updaterState.state == 'Checking') {
+            $('#main-control-menu-updates > a').text('Checking for update ...');
+            $('#main-control-menu-updates').addClass('ui-state-disabled');
+        } else if (updaterState.state == 'Downloading') {
+            $('#main-control-menu-updates > a').text('Downloading update ...');
+            $('#main-control-menu-updates').addClass('ui-state-disabled');
+        } else {
+            $('#main-control-menu-updates > a').text(updaterState.state);
+            $('#main-control-menu-updates').addClass('ui-state-disabled');
+        }
+    });
+
+    $('#main-control-menu-updates').click(function() {
+        if (updaterState.state != 'Waiting')
+            return;
+
+        if (updaterState.version == null) {
+            APP_DATA.checkForUpdates();
+        } else if (!updaterState.installed) {
+            APP_DATA.installUpdate();
+        } else if (updaterState.installed) {
+            if (confirm('Restart ' + APP_CONFIG.branded_name + ' and activate update?'))
+                APP_DATA.activateUpdate();
+        }
+    });
 
     $('#main-control-menu-log').click(function() { $.showAppLog(); });
 

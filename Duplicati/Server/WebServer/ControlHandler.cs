@@ -293,10 +293,7 @@ namespace Duplicati.Server.WebServer
                 BackendModules = Serializable.ServerSettings.BackendModules,
                 GenericModules = Serializable.ServerSettings.GenericModules,
                 WebModules = Serializable.ServerSettings.WebModules,
-                UsingAlternateUpdateURLs = License.AutoUpdateSettings.UsesAlternateURLs,
-                UpdatedVersion = Program.DataConnection.ApplicationSettings.UpdatedVersion,
-                UpdaterState = Program.UpdatePoller.ThreadState,
-                UpdateReady = Program.UpdateManager.HasUpdateInstalled
+                UsingAlternateUpdateURLs = License.AutoUpdateSettings.UsesAlternateURLs
             });
         }
 

@@ -58,6 +58,14 @@ namespace Duplicati.Server.Serialization
         ActivePaused
     }
 
+
+    public enum UpdatePollerStates
+    {
+        Waiting,
+        Checking,
+        Downloading
+    }
+
     public static class EnumConverter
     {
         public static T Convert<T>(Enum o)

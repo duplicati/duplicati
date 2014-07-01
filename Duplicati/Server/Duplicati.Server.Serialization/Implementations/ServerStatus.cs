@@ -16,5 +16,8 @@ namespace Duplicati.Server.Serialization.Implementations
         public DateTime EstimatedPauseEnd { get; set; }
         public long LastEventID { get; set; }
         public long LastDataUpdateID { get; set; }
+
+        public UpdatePollerStates UpdaterState { get; set; }
+        public bool UpdateReady { get; set; }
     }
 }
