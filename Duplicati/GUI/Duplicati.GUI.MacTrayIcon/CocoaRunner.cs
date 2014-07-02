@@ -125,10 +125,20 @@ namespace Duplicati.GUI.MacTrayIcon
         // We need to keep the items around, otherwise the GC will destroy them and crash the app
         private List<Duplicati.GUI.TrayIcon.IMenuItem> m_keeper = new List<Duplicati.GUI.TrayIcon.IMenuItem>();
 
-        public override void Init (string[] args)
+        private class TerminateException : Exception
+        {
+        }
+
+        public override void Init(string[] args)
         {
             NSApplication.Init();
-            NSApplication.Main(args);
+            try
+            {
+                NSApplication.Main(args);
+            }
+            catch (TerminateException)
+            {
+            }
         }
         
         public void AwakeFromNib(AppDelegate caller)
@@ -213,7 +223,11 @@ namespace Duplicati.GUI.MacTrayIcon
 
         protected override void Exit ()
         {
-            NSApplication.SharedApplication.Terminate(m_appDelegate);
+            //NSApplication.SharedApplication.Terminate(m_appDelegate);
+
+            // Not the nicest way, but cannot figure out 
+            // how to stop the message loop without killing the application otherwise
+            throw new TerminateException();
         }
         
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)

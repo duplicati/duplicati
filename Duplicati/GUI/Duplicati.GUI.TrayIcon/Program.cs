@@ -66,13 +66,7 @@ namespace Duplicati.GUI.TrayIcon
         public static int Main(string[] args)
         {
             Duplicati.Library.AutoUpdater.UpdaterManager.RequiresRespawn = true;
-
-            var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
-                Duplicati.License.AutoUpdateSettings.URLs,
-                Duplicati.License.AutoUpdateSettings.SignKey,
-                Duplicati.License.AutoUpdateSettings.AppName);
-
-            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
+            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
         
         public static void RealMain(string[] _args)

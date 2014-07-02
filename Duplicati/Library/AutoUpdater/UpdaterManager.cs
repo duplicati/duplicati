@@ -32,26 +32,33 @@ namespace Duplicati.Library.AutoUpdater
         Never
     }
 
-    public class UpdaterManager
+    public static class UpdaterManager
     {
-        private System.Security.Cryptography.RSACryptoServiceProvider m_key;
-        private string[] m_urls;
-        private string m_appname;
-        private string m_installdir;
+        private static readonly System.Security.Cryptography.RSACryptoServiceProvider SIGN_KEY = AutoUpdateSettings.SignKey;
+        private static readonly string[] MANIFEST_URLS = AutoUpdateSettings.URLs;
+        private static readonly string APPNAME = AutoUpdateSettings.AppName;
+
+        private static readonly string INSTALLDIR;
+
+        private static readonly string INSTALLED_BASE_DIR = string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) ?
+                                                        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location)
+                                                        : System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME));
 
         public static bool RequiresRespawn { get; set; }
 
-        private KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
+        private static KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
 
-        private UpdateInfo m_selfVersion;
+        private static readonly UpdateInfo SelfVersion;
 
-        public event Action<Exception> OnError;
+        public static event Action<Exception> OnError;
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string INSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
         private const string RUN_UPDATED_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_LOAD_UPDATE";
         private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
+        private const string README_FILE = "README.txt";
+        private const string CURRENT_FILE = "current";
 
         public const string AUTO_UPDATE_OPTION = "auto-update-strategy";
 
@@ -59,43 +66,59 @@ namespace Duplicati.Library.AutoUpdater
         /// Gets the original directory that this application was installed into
         /// </summary>
         /// <value>The original directory that this application was installed into</value>
-        public string InstalledBaseDir
+        public static string InstalledBaseDir { get { return INSTALLED_BASE_DIR; } }
+
+        static UpdaterManager()
         {
-            get
-            {
-                var s = System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, m_appname));
-                if (string.IsNullOrWhiteSpace(s))
-                    return System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-                else
-                    return s;
-            }
-        }
+            string installdir = null;
+            var attempts = new string[] {
+                System.IO.Path.Combine(InstalledBaseDir, "updates"),
+                System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), APPNAME, "updates"),
+                System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"),
+                System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"),
+            };
+
+            foreach(var p in attempts)
+                if (TestDirectoryIsWriteable(p))
+                {
+                    installdir = p;
+                    break;
+                }
             
-        public UpdaterManager(string[] urls, System.Security.Cryptography.RSACryptoServiceProvider key, string appname, string installdir = null)
-        {
-            m_key = key;
-            m_urls = urls;
-            m_appname = appname;
-            m_installdir = installdir;
-            if (string.IsNullOrWhiteSpace(m_installdir))
+            INSTALLDIR = installdir;
+
+            if (INSTALLDIR != null)
             {
-                var attempts = new string[] {
-                    System.IO.Path.Combine(InstalledBaseDir, "updates"),
-                    System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), m_appname, "updates"),
-                    System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), m_appname, "updates"),
-                    System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), m_appname, "updates"),
+                if (!System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, README_FILE)))
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, README_FILE), AutoUpdateSettings.UpdateFolderReadme);
+            }
+
+            UpdateInfo selfVersion = null;
+            try
+            {
+                selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location));
+            }
+            catch
+            {
+            }
+
+            if (selfVersion == null)
+                selfVersion = new UpdateInfo() {
+                    Displayname = "Current",
+                    Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    ReleaseTime = new DateTime(0),
+                    ReleaseType = 
+#if DEBUG
+                        "Debug"
+#else
+                        "Nightly"                           
+#endif
                 };
 
-                foreach(var p in attempts)
-                    if (TestDirectoryIsWriteable(p))
-                    {
-                        m_installdir = p;
-                        break;
-                    }
-            }
+            SelfVersion = selfVersion;
         }
 
-        private Version TryParseVersion(string str)
+        private static Version TryParseVersion(string str)
         {
             Version v;
             if (Version.TryParse(str, out v))
@@ -104,13 +127,13 @@ namespace Duplicati.Library.AutoUpdater
                 return new Version(0, 0);
         }
 
-        public bool HasUpdateInstalled
+        public static bool HasUpdateInstalled
         {
             get
             {
                 if (!m_hasUpdateInstalled.HasValue)
                 {
-                    var selfversion = TryParseVersion(this.SelfVersion.Version);
+                    var selfversion = TryParseVersion(SelfVersion.Version);
 
                     m_hasUpdateInstalled = 
                         (from n in FindInstalledVersions()
@@ -126,39 +149,7 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        private UpdateInfo SelfVersion
-        {
-            get
-            {
-                if (m_selfVersion == null)
-                {
-                    try
-                    {
-                        m_selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location));
-                    }
-                    catch
-                    {
-                    }
-
-                    if (m_selfVersion == null)
-                        m_selfVersion = new UpdateInfo() {
-                            Displayname = "Current",
-                            Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                            ReleaseTime = new DateTime(0),
-                            ReleaseType = 
-#if DEBUG
-                                "Debug"
-#else
-                                "Nightly"                           
-#endif
-                        };
-                }
-
-                return m_selfVersion;
-            }
-        }
-
-        private bool TestDirectoryIsWriteable(string path)
+        private static bool TestDirectoryIsWriteable(string path)
         {
             var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT));
             var probe = System.IO.Directory.Exists(path) ? p2 : path;
@@ -180,9 +171,9 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        public UpdateInfo CheckForUpdate()
+        public static UpdateInfo CheckForUpdate()
         {
-            foreach(var url in m_urls)
+            foreach(var url in MANIFEST_URLS)
             {
                 try
                 {
@@ -192,7 +183,7 @@ namespace Duplicati.Library.AutoUpdater
                         wc.DownloadFile(url, tmpfile);
 
                         using(var fs = System.IO.File.OpenRead(tmpfile))
-                        using(var ss = new SignatureReadingStream(fs, m_key))
+                        using(var ss = new SignatureReadingStream(fs, SIGN_KEY))
                         using(var tr = new System.IO.StreamReader(ss))
                         using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
@@ -218,7 +209,7 @@ namespace Duplicati.Library.AutoUpdater
             return null;
         }
 
-        private UpdateInfo ReadInstalledManifest(string folder)
+        private static UpdateInfo ReadInstalledManifest(string folder)
         {
             var manifest = System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
             if (System.IO.File.Exists(manifest))
@@ -226,7 +217,7 @@ namespace Duplicati.Library.AutoUpdater
                 try
                 {
                     using(var fs = System.IO.File.OpenRead(manifest))
-                    using(var ss = new SignatureReadingStream(fs, m_key))
+                    using(var ss = new SignatureReadingStream(fs, SIGN_KEY))
                     using(var tr = new System.IO.StreamReader(ss))
                     using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         return new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
@@ -241,21 +232,25 @@ namespace Duplicati.Library.AutoUpdater
             return null;
         }
 
-        public IEnumerable<KeyValuePair<string, UpdateInfo>> FindInstalledVersions()
+        public static IEnumerable<KeyValuePair<string, UpdateInfo>> FindInstalledVersions()
         {
             var res = new List<KeyValuePair<string, UpdateInfo>>();
-            foreach(var folder in System.IO.Directory.GetDirectories(m_installdir))
-            {
-                var r = ReadInstalledManifest(folder);
-                if (r != null)
-                    res.Add(new KeyValuePair<string, UpdateInfo>(folder, r));
-            }
+            if (INSTALLDIR != null)
+                foreach(var folder in System.IO.Directory.GetDirectories(INSTALLDIR))
+                {
+                    var r = ReadInstalledManifest(folder);
+                    if (r != null)
+                        res.Add(new KeyValuePair<string, UpdateInfo>(folder, r));
+                }
 
             return res;
         }
 
-        public bool DownloadAndUnpackUpdate(UpdateInfo version)
+        public static bool DownloadAndUnpackUpdate(UpdateInfo version)
         {
+            if (INSTALLDIR == null)
+                return false;
+
             using(var tempfile = new Library.Utility.TempFile())
             {
                 foreach(var url in version.RemoteURLS)
@@ -305,7 +300,8 @@ namespace Duplicati.Library.AutoUpdater
 
                             if (VerifyUnpackedFolder(tempfolder, version))
                             {
-                                var targetfolder = System.IO.Path.Combine(m_installdir, version.ReleaseTime.ToString(DATETIME_FORMAT));
+                                var versionstring = TryParseVersion(version.Version).ToString();
+                                var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
                                 if (System.IO.Directory.Exists(targetfolder))
                                     System.IO.Directory.Delete(targetfolder, true);
                                 
@@ -332,7 +328,8 @@ namespace Duplicati.Library.AutoUpdater
 
                                 // Verification will kick in when we list the installed updates
                                 //VerifyUnpackedFolder(targetfolder, version);
-
+                                System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE), versionstring);
+                                 
                                 m_hasUpdateInstalled = null;
                                 return true;
                             }
@@ -353,7 +350,7 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        public bool VerifyUnpackedFolder(string folder, UpdateInfo version = null)
+        public static bool VerifyUnpackedFolder(string folder, UpdateInfo version = null)
         {
             try
             {
@@ -365,7 +362,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 using(var fs = System.IO.File.OpenRead(System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME)))
                 {
-                    using(var ss = new SignatureReadingStream(fs, m_key))
+                    using(var ss = new SignatureReadingStream(fs, SIGN_KEY))
                     using(var tr = new System.IO.StreamReader(ss))
                     using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         update = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
@@ -458,18 +455,18 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        public bool SetRunUpdate()
+        public static bool SetRunUpdate()
         {
             if (HasUpdateInstalled)
             {
-                Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname), m_hasUpdateInstalled.Value.Key);
-                return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname)));
+                Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, APPNAME), m_hasUpdateInstalled.Value.Key);
+                return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, APPNAME)));
             }
 
             return false;
         }
 
-        public void CreateUpdatePackage(System.Security.Cryptography.RSACryptoServiceProvider key, string inputfolder, string outputfolder, string manifest = null)
+        public static void CreateUpdatePackage(System.Security.Cryptography.RSACryptoServiceProvider key, string inputfolder, string outputfolder, string manifest = null)
         {
             // Read the existing manifest
 
@@ -602,7 +599,7 @@ namespace Duplicati.Library.AutoUpdater
                     new Newtonsoft.Json.JsonSerializer().Serialize(sw, remoteManifest);
                     sw.Flush();
 
-                    using (var fs = System.IO.File.OpenWrite(tf))
+                    using (var fs = System.IO.File.Create(tf))
                         SignatureReadingStream.CreateSignedStream(ms, fs, key);
                 }
 
@@ -611,7 +608,7 @@ namespace Duplicati.Library.AutoUpdater
 
         }
 
-        private int RunMethod(System.Reflection.MethodInfo method, string[] args)
+        private static int RunMethod(System.Reflection.MethodInfo method, string[] args)
         {
             try
             {
@@ -630,17 +627,17 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.InstallDuring)
+        public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.InstallDuring)
         {
             // If we are not the primary domain, just execute
             if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
                 return RunMethod(method, cmdargs);
 
             // If we are a re-launch, wait briefly for the other process to exit
-            var sleepmarker = System.Environment.GetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, m_appname));
+            var sleepmarker = System.Environment.GetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME));
             if (!string.IsNullOrWhiteSpace(sleepmarker))
             {
-                System.Environment.SetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, m_appname), null);
+                System.Environment.SetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME), null);
                 System.Threading.Thread.Sleep(TimeSpan.FromSeconds(15));
             }
 
@@ -759,8 +756,31 @@ namespace Duplicati.Library.AutoUpdater
             }
             
             // Check if there are updates installed, otherwise use current
-            var best = HasUpdateInstalled ? m_hasUpdateInstalled.Value : new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
-            Environment.SetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, m_appname), InstalledBaseDir);
+            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
+            if (HasUpdateInstalled)
+                best = m_hasUpdateInstalled.Value;
+
+            if (INSTALLDIR != null && System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)))
+            {
+                try
+                {
+                    var current = System.IO.File.ReadAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)).Trim();
+                    if (!string.IsNullOrWhiteSpace(current))
+                    {
+                        var targetfolder = System.IO.Path.Combine(INSTALLDIR, current);
+                        var currentmanifest = ReadInstalledManifest(targetfolder);
+                        if (currentmanifest != null && VerifyUnpackedFolder(targetfolder, currentmanifest))
+                            best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (OnError != null)
+                        OnError(ex);
+                }
+            }
+
+            Environment.SetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME), InstalledBaseDir);
 
             var folder = best.Key;
 
@@ -769,8 +789,6 @@ namespace Duplicati.Library.AutoUpdater
             // when the caller exits, the new update is executed
             //
             // This allows more or less seamless updates
-            //
-            // The client is responsible for checking for updates and starting the downloads
             //
 
             int result = 0;
@@ -794,10 +812,10 @@ namespace Duplicati.Library.AutoUpdater
                     Console.WriteLine("Appdomain unload error: {0}", ex);
                 }
 
-                folder = Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname));
+                folder = Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, APPNAME));
                 if (!string.IsNullOrWhiteSpace(folder))
                 {
-                    Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname), null);
+                    Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, APPNAME), null);
                     if (!VerifyUnpackedFolder(folder))
                         folder = prevfolder; //Go back and run the previous version
                     else if (RequiresRespawn)
@@ -814,17 +832,31 @@ namespace Duplicati.Library.AutoUpdater
                             if (!System.IO.Path.IsPathRooted(app))
                                 app = System.IO.Path.Combine(InstalledBaseDir, app);
 
+                            if (Duplicati.Library.Utility.Utility.IsClientOSX && System.Reflection.Assembly.GetEntryAssembly().GetName().Name == "Duplicati.GUI.MacTrayIcon")
+                            {
+                                // On OSX, we re-launch the app with a delay
+                                var np = app;
+                                while(!string.IsNullOrWhiteSpace(np) && !np.EndsWith(".app", StringComparison.InvariantCultureIgnoreCase))
+                                    np = System.IO.Path.GetDirectoryName(np);
+
+                                if (!string.IsNullOrWhiteSpace(np))
+                                {
+                                    app = "bash";
+                                    args = "-c 'sleep 10; open \"" + np + "\" " + args + "'";
+                                }
+                            }
+
                             // Re-launch but give the OS a little time to fully unload all open handles, etc.                        
                             var si = new System.Diagnostics.ProcessStartInfo(app, args);
-                            si.EnvironmentVariables.Add(string.Format(SLEEP_ENVNAME_TEMPLATE, m_appname), "1");
-                            si.UseShellExecute = false;
+                            if (app != "bash")
+                            {
+                                si.UseShellExecute = false;
+                                si.EnvironmentVariables.Add(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME), "1");
+                            }
 
-                            var pr = System.Diagnostics.Process.Start(si);
+                            System.Diagnostics.Process.Start(si);
 
-                            if (pr.WaitForExit((int)TimeSpan.FromSeconds(5).TotalMilliseconds))
-                                folder = prevfolder;
-                            else
-                                return 0;
+                            return 0;
                         }
                         catch (Exception ex)
                         {

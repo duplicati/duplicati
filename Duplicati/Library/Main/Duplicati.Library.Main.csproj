@@ -149,6 +149,10 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+    <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
+      <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

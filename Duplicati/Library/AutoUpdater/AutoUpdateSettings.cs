@@ -18,7 +18,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Duplicati.License
+namespace Duplicati.Library.AutoUpdater
 {
     public static class AutoUpdateSettings
     {
@@ -26,6 +26,7 @@ namespace Duplicati.License
         private const string APP_NAME = "AutoUpdateAppName.txt";
         private const string UPDATE_URL = "AutoUpdateURL.txt";
         private const string UPDATE_KEY = "AutoUpdateSignKey.txt";
+        private const string UPDATE_README = "AutoUpdateFolderReadme.txt";
 
         private const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
 
@@ -35,6 +36,7 @@ namespace Duplicati.License
             ReadResourceText(APP_NAME);
             ReadResourceText(UPDATE_URL);
             ReadResourceText(UPDATE_KEY);
+            ReadResourceText(UPDATE_README);
         }
 
         private static string ReadResourceText(string name)
@@ -84,6 +86,11 @@ namespace Duplicati.License
         public static string AppName
         {
             get { return ReadResourceText(APP_NAME); }
+        }
+
+        public static string UpdateFolderReadme
+        {
+            get { return ReadResourceText(UPDATE_README); }
         }
 
         public static System.Security.Cryptography.RSACryptoServiceProvider SignKey

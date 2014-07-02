@@ -8,24 +8,19 @@ namespace Duplicati.Server
     public class Program
     {
         /// <summary>
-        /// The name of the application, change this to re-brand it
-        /// </summary>
-        public const string ApplicationName = "Duplicati";
-
-        /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
-        public static readonly string StartupPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
 
         /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
         /// </summary>
-        public static readonly string DATAFOLDER_ENV_NAME = ApplicationName.ToUpper() + "_HOME";
+        public static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper() + "_HOME";
 
         /// <summary>
         /// The environment variable that holdes the database key used to encrypt the SQLite database
         /// </summary>
-        public static readonly string DB_KEY_ENV_NAME = ApplicationName.ToUpper() + "_DB_KEY";
+        public static readonly string DB_KEY_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper() + "_DB_KEY";
 
         /// <summary>
         /// Gets the folder where Duplicati data is stored
@@ -83,11 +78,6 @@ namespace Duplicati.Server
         public static WebServer.Server WebServer;
 
         /// <summary>
-        /// The update manager instance
-        /// </summary>
-        public static Library.AutoUpdater.UpdaterManager UpdateManager;
-
-        /// <summary>
         /// The update poll thread.
         /// </summary>
         public static UpdatePollThread UpdatePoller;
@@ -142,12 +132,7 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] args)
         {
-            var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
-                Duplicati.License.AutoUpdateSettings.URLs,
-                Duplicati.License.AutoUpdateSettings.SignKey,
-                Duplicati.License.AutoUpdateSettings.AppName);
-
-            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
         public static void RealMain(string[] args)
@@ -188,7 +173,7 @@ namespace Duplicati.Server
                 //If you change the key, please note that you need to supply the same
                 // key when restoring the setup, as the setup being backed up will
                 // be encrypted as well.
-                Environment.SetEnvironmentVariable(DB_KEY_ENV_NAME, ApplicationName + "_Key_42");
+                Environment.SetEnvironmentVariable(DB_KEY_ENV_NAME, Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42");
             }
 
 
@@ -235,13 +220,13 @@ namespace Duplicati.Server
                 foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                     if (s.Equals(commandlineOptions["log-level"].Trim(), StringComparison.InvariantCultureIgnoreCase))
                         Duplicati.Library.Logging.Log.LogLevel = (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
-            
+
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
             {
 #if DEBUG
                 //debug mode uses a lock file located in the app folder
-                Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, StartupPath);
 #else
                 bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
 
@@ -263,7 +248,7 @@ namespace Duplicati.Server
                 try
                 {
                     //This will also create Program.DATAFOLDER if it does not exist
-                    Instance = new SingleInstance(ApplicationName, Program.DATAFOLDER);
+                    Instance = new SingleInstance(Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName, Program.DATAFOLDER);
                 }
                 catch (Exception ex)
                 {
@@ -358,13 +343,8 @@ namespace Duplicati.Server
                     Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
-
-                UpdateManager = new Duplicati.Library.AutoUpdater.UpdaterManager(
-                    Duplicati.License.AutoUpdateSettings.URLs,
-                    Duplicati.License.AutoUpdateSettings.SignKey,
-                    Duplicati.License.AutoUpdateSettings.AppName);
-
-                UpdateManager.OnError += (Exception obj) => {
+                    
+                Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) => {
                     Program.DataConnection.LogError(null, "Error in updater", obj);
                 };
 

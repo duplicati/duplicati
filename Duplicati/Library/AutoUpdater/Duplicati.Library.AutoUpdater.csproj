@@ -42,6 +42,7 @@
     <Compile Include="UpdateInfo.cs" />
     <Compile Include="FileEntry.cs" />
     <Compile Include="SignatureReadingStream.cs" />
+    <Compile Include="AutoUpdateSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -57,5 +58,11 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="AutoUpdateAppName.txt" />
+    <EmbeddedResource Include="AutoUpdateSignKey.txt" />
+    <EmbeddedResource Include="AutoUpdateURL.txt" />
+    <EmbeddedResource Include="AutoUpdateFolderReadme.txt" />
   </ItemGroup>
 </Project>

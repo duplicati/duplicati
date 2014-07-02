@@ -32,12 +32,7 @@ namespace Duplicati.CommandLine.BackendTool
         [STAThread]
         public static int Main(string[] args)
         {
-            var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
-                Duplicati.License.AutoUpdateSettings.URLs,
-                Duplicati.License.AutoUpdateSettings.SignKey,
-                Duplicati.License.AutoUpdateSettings.AppName);
-
-            return updater.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
         static int RealMain(string[] _args)

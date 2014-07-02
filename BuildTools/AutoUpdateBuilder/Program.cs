@@ -80,16 +80,14 @@ namespace AutoUpdateBuilder
                     privkey.FromXmlString(sr.ReadToEnd());
             }
 
-            if (Duplicati.License.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.License.AutoUpdateSettings.SignKey.ToXmlString(false))
+            if (Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey.ToXmlString(false))
             {
                 Console.WriteLine("The public key in the project is not the same as the public key from the file");
                 Console.WriteLine("Try setting the key to: ");
                 Console.WriteLine(privkey.ToXmlString(false));
                 return 5;
             }
-
-            var manager = new Duplicati.Library.AutoUpdater.UpdaterManager(null, null, Duplicati.License.AutoUpdateSettings.AppName);
-
+                
             Duplicati.Library.AutoUpdater.UpdateInfo updateInfo;
 
             using (var fs = System.IO.File.OpenRead(manifestfile))
@@ -136,7 +134,7 @@ namespace AutoUpdateBuilder
                 using (var tw = new System.IO.StreamWriter(fs))
                     new Newtonsoft.Json.JsonSerializer().Serialize(tw, updateInfo);
 
-                manager.CreateUpdatePackage(privkey, inputfolder, outputfolder, tf);
+                Duplicati.Library.AutoUpdater.UpdaterManager.CreateUpdatePackage(privkey, inputfolder, outputfolder, tf);
             }
 
             return 0;

@@ -216,7 +216,6 @@
     <Compile Include="LicenseReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VersionNumbers.cs" />
-    <Compile Include="AutoUpdateSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
@@ -235,8 +234,5 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
-    <EmbeddedResource Include="AutoUpdateURL.txt" />
-    <EmbeddedResource Include="AutoUpdateAppName.txt" />
-    <EmbeddedResource Include="AutoUpdateSignKey.txt" />
   </ItemGroup>
 </Project>

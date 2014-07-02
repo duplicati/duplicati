@@ -65,7 +65,7 @@ namespace Duplicati.Server
 
         public void ActivateUpdate()
         {
-            if (Program.UpdateManager.SetRunUpdate())
+            if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
                 Program.ApplicationExitEvent.Set();
         }
 
@@ -105,7 +105,7 @@ namespace Duplicati.Server
 
                     try
                     {
-                        var update = Program.UpdateManager.CheckForUpdate();
+                        var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate();
                         if (update != null && (Program.DataConnection.ApplicationSettings.UpdatedVersion == null || Program.DataConnection.ApplicationSettings.UpdatedVersion.ReleaseTime != update.ReleaseTime))
                         {
                             Program.DataConnection.ApplicationSettings.UpdatedVersion = update;
@@ -128,7 +128,7 @@ namespace Duplicati.Server
                         ThreadState = UpdatePollerStates.Downloading;
                         Program.StatusEventNotifyer.SignalNewEvent();
 
-                        if (Program.UpdateManager.DownloadAndUnpackUpdate(v))
+                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v))
                             Program.StatusEventNotifyer.SignalNewEvent();
                     }
                 }

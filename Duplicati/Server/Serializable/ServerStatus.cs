@@ -48,7 +48,7 @@ namespace Duplicati.Server.Serializable
 
         public UpdatePollerStates UpdaterState { get { return Program.UpdatePoller.ThreadState; } }
 
-        public bool UpdateReady { get { return Program.UpdateManager.HasUpdateInstalled; } }
+        public bool UpdateReady { get { return Duplicati.Library.AutoUpdater.UpdaterManager.HasUpdateInstalled; } }
 
 
         public Tuple<long, string> ActiveTask

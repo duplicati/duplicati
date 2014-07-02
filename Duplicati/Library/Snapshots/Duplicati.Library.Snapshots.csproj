@@ -99,6 +99,10 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
+      <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

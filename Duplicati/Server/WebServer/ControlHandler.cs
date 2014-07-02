@@ -180,7 +180,7 @@ namespace Duplicati.Server.WebServer
 
         private void GetLicenseData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.OutputOK(License.LicenseReader.ReadLicenses(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "licenses")));
+            bw.OutputOK(Duplicati.License.LicenseReader.ReadLicenses(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "licenses")));
         }
 
         private void RestoreFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -270,7 +270,7 @@ namespace Duplicati.Server.WebServer
                 APIVersion = 1,
                 PasswordPlaceholder = Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER,
                 ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                ServerVersionName = License.VersionNumbers.Version,
+                ServerVersionName = Duplicati.License.VersionNumbers.Version,
                 ServerTime = DateTime.Now,
                 OSType = Library.Utility.Utility.IsClientLinux ? (Library.Utility.Utility.IsClientOSX ? "OSX" : "Linux") : "Windows",
                 DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
@@ -293,7 +293,7 @@ namespace Duplicati.Server.WebServer
                 BackendModules = Serializable.ServerSettings.BackendModules,
                 GenericModules = Serializable.ServerSettings.GenericModules,
                 WebModules = Serializable.ServerSettings.WebModules,
-                UsingAlternateUpdateURLs = License.AutoUpdateSettings.UsesAlternateURLs
+                UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs
             });
         }
 
@@ -519,7 +519,7 @@ namespace Duplicati.Server.WebServer
             try
             {
                 // Add install defaults/overrides, if present
-                var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "newbackup.json");
+                var path = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "newbackup.json");
                 if (System.IO.File.Exists(path))
                 {
                     Newtonsoft.Json.Linq.JObject n;

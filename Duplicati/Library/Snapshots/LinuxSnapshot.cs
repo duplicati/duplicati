@@ -132,7 +132,7 @@ namespace Duplicati.Library.Snapshots
             /// <returns>A string with the combined output of the stdout and stderr</returns>
             private static string ExecuteCommand(string program, string commandline, int expectedExitCode)
             {
-                program = System.IO.Path.Combine(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "lvm-scripts"), program);
+                program = System.IO.Path.Combine(System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
                 System.Diagnostics.ProcessStartInfo inf = new System.Diagnostics.ProcessStartInfo(program, commandline);
                 inf.CreateNoWindow = true;
                 inf.RedirectStandardError = true;
