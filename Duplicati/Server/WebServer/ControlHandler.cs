@@ -558,8 +558,15 @@ namespace Duplicati.Server.WebServer
                     return;
 
                 case "activate-update":
-                    Program.UpdatePoller.ActivateUpdate();
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    if (Program.WorkThread.CurrentTask != null || Program.WorkThread.CurrentTasks.Count != 0)
+                    {
+                        ReportError(response, bw, "Cannot activate update while task is running or scheduled");
+                    }
+                    else
+                    {
+                        Program.UpdatePoller.ActivateUpdate();
+                        bw.OutputOK();
+                    }
                     return;
 
                 case "pause":
