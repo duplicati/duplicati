@@ -65,6 +65,8 @@ namespace Duplicati.GUI.TrayIcon
         [STAThread]
         public static int Main(string[] args)
         {
+            Duplicati.Library.AutoUpdater.UpdaterManager.RequiresRespawn = true;
+
             var updater = new Duplicati.Library.AutoUpdater.UpdaterManager(
                 Duplicati.License.AutoUpdateSettings.URLs,
                 Duplicati.License.AutoUpdateSettings.SignKey,

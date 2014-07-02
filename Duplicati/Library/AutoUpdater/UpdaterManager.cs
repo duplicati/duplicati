@@ -39,6 +39,8 @@ namespace Duplicati.Library.AutoUpdater
         private string m_appname;
         private string m_installdir;
 
+        public static bool RequiresRespawn { get; set; }
+
         private KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
 
         private UpdateInfo m_selfVersion;
@@ -48,6 +50,7 @@ namespace Duplicati.Library.AutoUpdater
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string INSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
         private const string RUN_UPDATED_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_LOAD_UPDATE";
+        private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
 
         public const string AUTO_UPDATE_OPTION = "auto-update-strategy";
@@ -608,6 +611,14 @@ namespace Duplicati.Library.AutoUpdater
             if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
                 return RunMethod(method, cmdargs);
 
+            // If we are a re-launch, wait briefly for the other process to exit
+            var sleepmarker = System.Environment.GetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, m_appname));
+            if (!string.IsNullOrWhiteSpace(sleepmarker))
+            {
+                System.Environment.SetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, m_appname), null);
+                System.Threading.Thread.Sleep(TimeSpan.FromSeconds(15));
+            }
+
             var options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(cmdargs), null);
             string optstr;
             AutoUpdateStrategy strategy;
@@ -763,6 +774,39 @@ namespace Duplicati.Library.AutoUpdater
                     Environment.SetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname), null);
                     if (!VerifyUnpackedFolder(folder))
                         folder = prevfolder; //Go back and run the previous version
+                    else if (RequiresRespawn)
+                    {
+                        // We have a valid update, and the current instance is terminated.
+                        // But due to external libraries, we need to re-spawn the original process
+
+                        try
+                        {
+                            var args = Environment.CommandLine;
+                            var app = Environment.GetCommandLineArgs().First();
+                            args = args.Substring(app.Length);
+
+                            if (!System.IO.Path.IsPathRooted(app))
+                                app = System.IO.Path.Combine(InstalledBaseDir, app);
+
+                            // Re-launch but give the OS a little time to fully unload all open handles, etc.                        
+                            var si = new System.Diagnostics.ProcessStartInfo(app, args);
+                            si.EnvironmentVariables.Add(string.Format(SLEEP_ENVNAME_TEMPLATE, m_appname), "1");
+                            si.UseShellExecute = false;
+
+                            var pr = System.Diagnostics.Process.Start(si);
+
+                            if (pr.WaitForExit((int)TimeSpan.FromSeconds(5).TotalMilliseconds))
+                                folder = prevfolder;
+                            else
+                                return 0;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (OnError != null)
+                                OnError(ex);
+                            folder = prevfolder;
+                        }
+                    }
                 }
             }
 
