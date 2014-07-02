@@ -34,7 +34,17 @@ namespace Duplicati.Server.Serializable
             get { return EnumConverter.Convert<LiveControlState>(Program.LiveControl.State); }
         }
 
-        public Library.AutoUpdater.UpdateInfo UpdatedVersion { get { return Program.DataConnection.ApplicationSettings.UpdatedVersion; } }
+        public string UpdatedVersion 
+        { 
+            get 
+            { 
+                var u = Program.DataConnection.ApplicationSettings.UpdatedVersion;
+                if (u == null)
+                    return null;
+
+                return u.Displayname; 
+            }
+        }
 
         public UpdatePollerStates UpdaterState { get { return Program.UpdatePoller.ThreadState; } }
 

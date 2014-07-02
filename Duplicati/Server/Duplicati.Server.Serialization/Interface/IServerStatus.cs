@@ -15,7 +15,7 @@ namespace Duplicati.Server.Serialization.Interface
         long LastEventID { get; }
         long LastDataUpdateID { get;  }
 
-        //Library.AutoUpdater.UpdateInfo UpdatedVersion { get; }
+        string UpdatedVersion { get; }
         UpdatePollerStates UpdaterState { get; }
         bool UpdateReady { get; }
 
