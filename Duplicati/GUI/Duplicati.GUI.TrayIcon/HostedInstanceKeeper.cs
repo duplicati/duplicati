@@ -12,6 +12,7 @@ namespace Duplicati.GUI.TrayIcon
     {
         private System.Threading.Thread m_runner;
         private System.Exception m_runnerException = null;
+        public event Action InstanceShutdown;
 
         public HostedInstanceKeeper(string[] args)
         {
@@ -27,7 +28,11 @@ namespace Duplicati.GUI.TrayIcon
                 } catch (Exception ex) {
                     m_runnerException = ex;
                     Duplicati.Server.Program.ServerStartedEvent.Set();
+                } finally {
+                    if (InstanceShutdown != null)
+                        InstanceShutdown();   
                 }
+
             });
             
             m_runner.Start();

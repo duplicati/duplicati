@@ -71,6 +71,11 @@ namespace Duplicati.GUI.TrayIcon
         }
         
         protected abstract void Run(string[] args);
+
+        public void InvokeExit()
+        {
+            UpdateUIState(() => { this.Exit(); });
+        }
         
         protected virtual void UpdateUIState(Action action)
         {

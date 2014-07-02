@@ -188,7 +188,22 @@ namespace Duplicati.GUI.TrayIcon
                             {
                             }
                         }
+
+                        // If the server shuts down, shut down the tray-icon as well
+                        Action shutdownEvent = () =>
+                        {
+                            tk.InvokeExit();
+                        };
+
+                        if (hosted != null)
+                            hosted.InstanceShutdown += shutdownEvent;
+
                         tk.Init(_args);
+
+                        // Make sure that the server shutdown does not access the tray-icon,
+                        // as it would be disposed by now
+                        if (hosted != null)
+                            hosted.InstanceShutdown -= shutdownEvent;
                     }
                 }
             }
