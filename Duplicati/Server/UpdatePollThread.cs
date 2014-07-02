@@ -91,7 +91,7 @@ namespace Duplicati.Server
             while (!m_terminated)
             {
                 var nextCheck = Program.DataConnection.ApplicationSettings.NextUpdateCheck;
-                if (nextCheck > DateTime.UtcNow || m_forceCheck)
+                if (nextCheck < DateTime.UtcNow || m_forceCheck)
                 {
                     lock(m_lock)
                         m_forceCheck = false;
