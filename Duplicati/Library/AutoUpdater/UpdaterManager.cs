@@ -70,7 +70,7 @@ namespace Duplicati.Library.AutoUpdater
                     return s;
             }
         }
-
+            
         public UpdaterManager(string[] urls, System.Security.Cryptography.RSACryptoServiceProvider key, string appname, string installdir = null)
         {
             m_key = key;
@@ -95,12 +95,33 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
+        private Version TryParseVersion(string str)
+        {
+            Version v;
+            if (Version.TryParse(str, out v))
+                return v;
+            else
+                return new Version(0, 0);
+        }
+
         public bool HasUpdateInstalled
         {
             get
             {
                 if (!m_hasUpdateInstalled.HasValue)
-                    m_hasUpdateInstalled = FindInstalledVersions().Where(x => x.Value.ReleaseTime > this.SelfVersion.ReleaseTime).FirstOrDefault();
+                {
+                    var selfversion = TryParseVersion(this.SelfVersion.Version);
+
+                    m_hasUpdateInstalled = 
+                        (from n in FindInstalledVersions()
+                            let nversion = TryParseVersion(n.Value.Version)
+                            let newerVersion = selfversion < nversion
+                            where newerVersion && VerifyUnpackedFolder(n.Key, n.Value)
+                            orderby nversion descending
+                            select n)
+                            .FirstOrDefault();
+                }
+
                 return m_hasUpdateInstalled.Value.Value != null;
             }
         }
@@ -122,6 +143,7 @@ namespace Duplicati.Library.AutoUpdater
                     if (m_selfVersion == null)
                         m_selfVersion = new UpdateInfo() {
                             Displayname = "Current",
+                            Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                             ReleaseTime = new DateTime(0),
                             ReleaseType = 
 #if DEBUG
@@ -175,7 +197,10 @@ namespace Duplicati.Library.AutoUpdater
                         using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
                             var update = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
-                            if (update.ReleaseTime > SelfVersion.ReleaseTime)
+
+                            if (TryParseVersion(update.Version) <= TryParseVersion(SelfVersion.Version))
+                                return null;
+
                             if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
                                 return null;
 
@@ -733,11 +758,8 @@ namespace Duplicati.Library.AutoUpdater
                 }
             }
             
-            // Check if there are updates, otherwise use
-            var best = FindInstalledVersions().OrderBy(x => x.Value.ReleaseTime).FirstOrDefault();
-            if (best.Key == null && !VerifyUnpackedFolder(best.Key, best.Value))
-                best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, null);
-            
+            // Check if there are updates installed, otherwise use current
+            var best = HasUpdateInstalled ? m_hasUpdateInstalled.Value : new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
             Environment.SetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, m_appname), InstalledBaseDir);
 
             var folder = best.Key;
@@ -757,16 +779,20 @@ namespace Duplicati.Library.AutoUpdater
                 var prevfolder = folder;
                 // Create the new domain
                 var domain = AppDomain.CreateDomain(
-                    "UpdateDomain",
-                    null,
-                    folder,
-                    "",
-                    false
-                );
+                                 "UpdateDomain",
+                                 null,
+                                 folder,
+                                 "",
+                                 false
+                             );
 
                 result = domain.ExecuteAssemblyByName(method.DeclaringType.Assembly.GetName().Name, cmdargs);
 
-                AppDomain.Unload(domain);
+                try { AppDomain.Unload(domain); }
+                catch (Exception ex)
+                { 
+                    Console.WriteLine("Appdomain unload error: {0}", ex);
+                }
 
                 folder = Environment.GetEnvironmentVariable(string.Format(RUN_UPDATED_ENVNAME_TEMPLATE, m_appname));
                 if (!string.IsNullOrWhiteSpace(folder))
