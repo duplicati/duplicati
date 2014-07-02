@@ -35,7 +35,7 @@ namespace Duplicati.Server.WebServer
                     res = DumpTable(x, "ErrorLog", "Timestamp", input["offset"].Value, input["pagesize"].Value);
                 });
 
-                bw.WriteJsonObject(res);
+                bw.OutputOK(res);
             }
             else
             {
@@ -62,12 +62,12 @@ namespace Duplicati.Server.WebServer
                                 try { n["Data"] = System.Text.Encoding.UTF8.GetString((byte[])n["Data"]); }
                             catch { }
 
-                            bw.WriteJsonObject(dt);
+                            bw.OutputOK(dt);
                         }
                         else
                         {
                             var dt = DumpTable(cmd, "LogData", "ID", input["offset"].Value, input["pagesize"].Value);
-                            bw.WriteJsonObject(dt);
+                            bw.OutputOK(dt);
                         }
                     }
                 }

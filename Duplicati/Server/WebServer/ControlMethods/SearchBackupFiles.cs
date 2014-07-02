@@ -58,7 +58,7 @@ namespace Duplicati.Server.WebServer
             result["Filesets"] = r.Filesets;
             result["Files"] = r.Files;
 
-            bw.WriteJsonObject(result);
+            bw.OutputOK(result);
         }
     }
 }

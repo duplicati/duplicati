@@ -82,8 +82,7 @@ namespace Duplicati.Server.WebServer
                     response.Cookies.Add(new HttpServer.ResponseCookie(NONCE_COOKIE_NAME, nonce, expires));
                     using(var bw = new BodyWriter(response))
                     {
-                        bw.SetOK();
-                        bw.WriteJsonObject(new {
+                        bw.OutputOK(new {
                             Status = "OK",
                             Nonce = nonce,
                             Salt = Program.DataConnection.ApplicationSettings.WebserverPasswordSalt
@@ -131,12 +130,7 @@ namespace Duplicati.Server.WebServer
                         response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
 
                         using(var bw = new BodyWriter(response))
-                        {
-                            bw.SetOK();
-                            bw.WriteJsonObject(new {
-                                Status = "OK"
-                            });
-                        }
+                            bw.OutputOK();
 
                         return true;
                     }

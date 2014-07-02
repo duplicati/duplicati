@@ -62,7 +62,7 @@ namespace Duplicati.Server.WebServer
 
                 //TODO: Filter out the password in both settings and the target url
 
-                bw.WriteJsonObject(new
+                bw.OutputOK(new
                 {
                     success = true,
                     data = new {

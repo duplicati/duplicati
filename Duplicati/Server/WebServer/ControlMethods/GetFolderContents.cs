@@ -104,7 +104,7 @@ namespace Duplicati.Server.WebServer
                     };
                 }
 
-                bw.WriteJsonObject(res);
+                bw.OutputOK(res);
             }
             catch (Exception ex)
             {

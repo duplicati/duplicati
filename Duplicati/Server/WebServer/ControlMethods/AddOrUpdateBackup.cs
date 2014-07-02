@@ -62,7 +62,7 @@ namespace Duplicati.Server.WebServer
                         throw new InvalidDataException("External is temporary but internal is not?");
 
                     Program.DataConnection.UpdateTemporaryBackup(backup);
-                    bw.WriteJsonObject(new { status = "OK" });
+                    bw.OutputOK();
                 }
                 else
                 {                    
@@ -86,7 +86,7 @@ namespace Duplicati.Server.WebServer
 
                     }
 
-                    bw.WriteJsonObject(new { status = "OK" });
+                    bw.OutputOK();
                 }
             }
             catch (Exception ex)
@@ -124,7 +124,7 @@ namespace Duplicati.Server.WebServer
                 {
                     Program.DataConnection.RegisterTemporaryBackup(data.Backup);
 
-                    bw.WriteJsonObject(new { status = "OK", ID = data.Backup.ID });
+                    bw.OutputOK(new { status = "OK", ID = data.Backup.ID });
                 }
                 else
                 {
@@ -139,7 +139,7 @@ namespace Duplicati.Server.WebServer
                         Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
                     }
 
-                    bw.WriteJsonObject(new { status = "OK", ID = data.Backup.ID });
+                    bw.OutputOK(new { status = "OK", ID = data.Backup.ID });
                 }
             }
             catch (Exception ex)

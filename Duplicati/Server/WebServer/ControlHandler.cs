@@ -180,7 +180,7 @@ namespace Duplicati.Server.WebServer
 
         private void GetLicenseData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.WriteJsonObject(License.LicenseReader.ReadLicenses(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "licenses")));
+            bw.OutputOK(License.LicenseReader.ReadLicenses(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "licenses")));
         }
 
         private void RestoreFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -200,7 +200,7 @@ namespace Duplicati.Server.WebServer
             var task = Runner.CreateRestoreTask(bk, filters, time, restoreTarget, overwrite);
             Program.WorkThread.AddTask(task);
 
-            bw.WriteJsonObject(new { TaskID = task.TaskID });
+            bw.OutputOK(new { TaskID = task.TaskID });
 
         }
 
@@ -217,7 +217,7 @@ namespace Duplicati.Server.WebServer
 
             var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk), false) as Duplicati.Library.Interface.IListResults;
 
-            bw.WriteJsonObject(r.Filesets);
+            bw.OutputOK(r.Filesets);
         }
 
         private void ListRemoteFolder(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -232,7 +232,7 @@ namespace Duplicati.Server.WebServer
             try
             {
                 using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(input["url"].Value, new Dictionary<string, string>()))
-                    bw.WriteJsonObject(new { Status = "OK", Folders = b.List() });
+                    bw.OutputOK(new { Status = "OK", Folders = b.List() });
 
             }
             catch (Exception ex)
@@ -255,7 +255,7 @@ namespace Duplicati.Server.WebServer
                 using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(input["url"].Value, new Dictionary<string, string>()))
                     b.Test();
 
-                bw.WriteJsonObject(new { Status = "OK" });
+                bw.OutputOK();
             }
             catch (Exception ex)
             {
@@ -265,7 +265,7 @@ namespace Duplicati.Server.WebServer
 
         private void ListSystemInfo(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.WriteJsonObject(new
+            bw.OutputOK(new
             {
                 APIVersion = 1,
                 PasswordPlaceholder = Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER,
@@ -299,7 +299,7 @@ namespace Duplicati.Server.WebServer
 
         private void ListSupportedActions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.WriteJsonObject(new { Version = 1, Methods = SUPPORTED_METHODS.Keys });
+            bw.OutputOK(new { Version = 1, Methods = SUPPORTED_METHODS.Keys });
         }
 
         private void ListBackups (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -316,7 +316,7 @@ namespace Duplicati.Server.WebServer
                         select (Database.Schedule)x).FirstOrDefault()
                 };
 
-            bw.WriteJsonObject(all.ToArray());
+            bw.OutputOK(all.ToArray());
         }
 
         private void ListTags(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -331,7 +331,7 @@ namespace Duplicati.Server.WebServer
 
             // Append all known tags
             r = r.Union(from n in Program.DataConnection.Backups select n.Tags into p from x in p select x.ToLower());
-            bw.WriteJsonObject(r);
+            bw.OutputOK(r);
         }
 
         private void ValidatePath(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -348,7 +348,7 @@ namespace Duplicati.Server.WebServer
                 string path = SpecialFolders.ExpandEnvironmentVariables(input["path"].Value);                
                 if (System.IO.Path.IsPathRooted(path) && System.IO.Directory.Exists(path))
                 {
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
                 }
             }
@@ -407,7 +407,7 @@ namespace Duplicati.Server.WebServer
             else
             {
                 var ev = Program.GenerateProgressState();
-                bw.WriteJsonObject(ev);
+                bw.OutputOK(ev);
             }
         }
 
@@ -420,22 +420,22 @@ namespace Duplicati.Server.WebServer
                 //Make sure we do not report a higher number than the eventnotifyer says
                 var st = new Serializable.ServerStatus();
                 st.LastEventID = id;
-                bw.WriteJsonObject(st);
+                bw.OutputOK(st);
             }
             else if (!isError)
             {
-                bw.WriteJsonObject(new Serializable.ServerStatus());
+                bw.OutputOK(new Serializable.ServerStatus());
             }
         }
 
         private void ListCoreOptions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.WriteJsonObject(new Duplicati.Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
+            bw.OutputOK(new Duplicati.Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
         }
 
         private void ListApplicationSettings(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.WriteJsonObject(Program.DataConnection.ApplicationSettings);
+            bw.OutputOK(Program.DataConnection.ApplicationSettings);
         }
 
         private static void MergeJsonObjects(Newtonsoft.Json.Linq.JObject self, Newtonsoft.Json.Linq.JObject other)
@@ -532,7 +532,7 @@ namespace Duplicati.Server.WebServer
             {
             }
 
-            bw.WriteJsonObject(new
+            bw.OutputOK(new
             {
                 success = true,
                 data = o
@@ -549,12 +549,12 @@ namespace Duplicati.Server.WebServer
             {
                 case "check-update":
                     Program.UpdatePoller.CheckNow();
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 case "install-update":
                     Program.UpdatePoller.InstallUpdate();
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 case "activate-update":
@@ -585,11 +585,11 @@ namespace Duplicati.Server.WebServer
                         Program.LiveControl.Pause();
                     }
 
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
                 case "resume":
                     Program.LiveControl.Resume();
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 case "stop":
@@ -619,7 +619,7 @@ namespace Duplicati.Server.WebServer
                         else
                             task.Stop();
 
-                        bw.WriteJsonObject(new { Status = "OK" });
+                        bw.OutputOK();
                         return;
                     }
 
@@ -636,7 +636,7 @@ namespace Duplicati.Server.WebServer
                         var bt = t == null ? null : t.Backup;
                         if (bt != null && backup.ID == bt.ID)
                         {
-                            bw.WriteJsonObject(new { Status = "OK", Active = true });
+                            bw.OutputOK(new { Status = "OK", Active = true });
                             return;
                         }
                         else if (Program.WorkThread.CurrentTasks.Where(x =>
@@ -645,12 +645,12 @@ namespace Duplicati.Server.WebServer
                             return bn == null || bn.ID == backup.ID;
                         }).Any())
                         {
-                            bw.WriteJsonObject(new { Status = "OK", Active = true });
+                            bw.OutputOK(new { Status = "OK", Active = true });
                             return;
                         }
                         else
                         {
-                            bw.WriteJsonObject(new { Status = "OK", Active = false });
+                            bw.OutputOK(new { Status = "OK", Active = false });
                             return;
                         }
                     }
@@ -685,7 +685,7 @@ namespace Duplicati.Server.WebServer
                             Program.StatusEventNotifyer.SignalNewEvent();
                         }
                     }
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 case "run-verify":
@@ -700,7 +700,7 @@ namespace Duplicati.Server.WebServer
                         Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Verify, backup));
                         Program.StatusEventNotifyer.SignalNewEvent();
                     }
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 case "run-repair":
@@ -715,7 +715,7 @@ namespace Duplicati.Server.WebServer
                         Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Repair, backup));
                         Program.StatusEventNotifyer.SignalNewEvent();
                     }
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
                 case "create-report":
                     {
@@ -729,18 +729,18 @@ namespace Duplicati.Server.WebServer
                         Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup));
                         Program.StatusEventNotifyer.SignalNewEvent();
                     }
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 case "clear-warning":
                     Program.HasWarning = false;
                     Program.StatusEventNotifyer.SignalNewEvent();
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
                 case "clear-error":
                     Program.HasError = false;
                     Program.StatusEventNotifyer.SignalNewEvent();
-                    bw.WriteJsonObject(new { Status = "OK" });
+                    bw.OutputOK();
                     return;
 
                 default:
@@ -752,7 +752,7 @@ namespace Duplicati.Server.WebServer
                         return;
                     }
 
-                    bw.WriteJsonObject(new { 
+                    bw.OutputOK(new { 
                         Status = "OK", 
                         Result = m.Execute(input.Where(x => 
                             !x.Name.Equals("command", StringComparison.InvariantCultureIgnoreCase)

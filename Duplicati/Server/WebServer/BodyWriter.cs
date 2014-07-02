@@ -23,6 +23,7 @@ namespace Duplicati.Server.WebServer
     internal class BodyWriter : System.IO.StreamWriter, IDisposable
     {
         private HttpServer.IHttpResponse m_resp;
+        private static object SUCCESS_RESPONSE = new { Status = "OK" };
 
         // We override the format provider so all JSON output uses US format
         public override IFormatProvider FormatProvider
@@ -51,6 +52,12 @@ namespace Duplicati.Server.WebServer
         {
             m_resp.Reason = "OK";
             m_resp.Status = System.Net.HttpStatusCode.OK;
+        }
+
+        public void OutputOK(object result = null)
+        {
+            SetOK();
+            WriteJsonObject(result ?? SUCCESS_RESPONSE);
         }
 
         public void WriteJsonObject(object o)

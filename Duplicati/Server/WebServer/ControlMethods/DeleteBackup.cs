@@ -99,7 +99,7 @@ namespace Duplicati.Server.WebServer
             //We have fiddled with the schedules
             Program.Scheduler.Reschedule();
 
-            bw.WriteJsonObject(new { status = "OK" });
+            bw.OutputOK();
         }
     }
 }
