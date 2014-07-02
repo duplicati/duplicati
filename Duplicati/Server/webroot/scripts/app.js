@@ -482,16 +482,22 @@ $(document).ready(function() {
         .done(function(data) {
             state.polling = false;
             state.state = data;
-            state.eventId = data.LastEventID;
             var oldDataId = state.dataEventId;
             var oldState = state.programState;
+            var oldEventId = state.eventId;
 
+            state.eventId = data.LastEventID;
             state.dataEventId = data.LastDataUpdateID;
             state.programState = data.ProgramState;
             state.scheduled = data.SchedulerQueueIds || [];
 
             if (state.failed) {
                 state.failed = false;
+
+                // If the server was restarted, we refresh
+                if (oldEventId > state.eventId)
+                    location.reload(true);
+
                 $(document).trigger('server-state-restored');
             }
 
@@ -1105,37 +1111,137 @@ $(document).ready(function() {
     var updaterState = {
         state: 'Waiting',
         version: null,
-        installed: false
+        installed: false,
+        restarted: false,
+        simplestate: null,
+        noty: null,
+        closeNoty: function() {
+            if (this.noty != null) {
+                this.noty.close();
+                this.noty = null;
+            }
+        },
+        checkingNoty: function() {
+            this.closeNoty();
+            this.noty = noty({
+                text: 'Checking for updates ...',
+            });
+        },
+        downloadingNoty: function() {
+            this.closeNoty();
+            var self = this;
+            this.noty = noty({
+                text: 'Downloading update ' + self.version,
+            });
+        },
+        foundupdateNoty: function() {
+            this.closeNoty();
+            var self = this;
+            this.noty = noty({
+                text: 'Found update ' + self.version,
+                buttons: [{
+                    text: 'Not now',
+                    onClick: function() {
+                        self.closeNoty();
+                    }
+                },{
+                    text: 'Install',
+                    onClick: function() {
+                        APP_DATA.installUpdate();
+                    }
+                }]
+            });
+        },
+        updateinstalledNoty: function() {
+            this.closeNoty();
+            var self = this;
+            this.noty = noty({
+                text: 'Update ' + self.version + ' installed',
+                buttons: [{
+                    text: 'Not now',
+                    onClick: function() {
+                        self.closeNoty();
+                    }
+                },{
+                    text: 'Activate',
+                    onClick: function() {
+                        self.activateUpdate();
+                    }
+                }]
+            });
+        },
+        activateUpdate: function() {
+            if (confirm('Restart ' + APP_CONFIG.branded_name + ' and activate update?'))
+            {
+                APP_DATA.activateUpdate();
+                updaterState.restarted = true;
+            }
+        }  
     };
 
     $(document).on('server-state-updated', function(eventargs, data) {
+        var prevstate = updaterState.simplestate;
+
         updaterState.state = data.UpdaterState;
         updaterState.version = data.UpdatedVersion;
         updaterState.installed = data.UpdateReady;
 
+        if (updaterState.restarted && updaterState.version == null)
+            location.reload(true);
+
         if (updaterState.state == 'Waiting') {
-
             if (updaterState.version == null)
-                $('#main-control-menu-updates > a').text('Check for updates');
-            else if (!updaterState.installed)
-                $('#main-control-menu-updates > a').text('Install update');
+                updaterState.simplestate = null;
+            else if (!updaterState.installed) 
+                updaterState.simplestate = 'found';
             else if (updaterState.installed)
-                $('#main-control-menu-updates > a').text('Activate update');
+                updaterState.simplestate = 'installed';
             else
-                $('#main-control-menu-updates > a').text('Unknown state ...');
-
-            $('#main-control-menu-updates').removeClass('ui-state-disabled')
+                updaterState.simplestate = null;
 
         } else if (updaterState.state == 'Checking') {
+            updaterState.simplestate = 'check';
+        } else if (updaterState.state == 'Downloading') {
+            updaterState.simplestate = 'download';
+        } else {
+            updaterState.simplestate = null;
+        }
+
+        if (updaterState.simplestate == null) {
+            $('#main-control-menu-updates > a').text('Check for updates');
+            $('#main-control-menu-updates').removeClass('ui-state-disabled');
+        } else if (updaterState.simplestate == 'found') {
+            $('#main-control-menu-updates > a').text('Install update');
+            $('#main-control-menu-updates').removeClass('ui-state-disabled');
+        } else if (updaterState.simplestate == 'installed') {
+            $('#main-control-menu-updates > a').text('Activate update');
+            $('#main-control-menu-updates').removeClass('ui-state-disabled');
+        } else if (updaterState.simplestate == 'check') {
             $('#main-control-menu-updates > a').text('Checking for update ...');
             $('#main-control-menu-updates').addClass('ui-state-disabled');
-        } else if (updaterState.state == 'Downloading') {
+        } else if (updaterState.simplestate == 'download') {
             $('#main-control-menu-updates > a').text('Downloading update ...');
             $('#main-control-menu-updates').addClass('ui-state-disabled');
         } else {
-            $('#main-control-menu-updates > a').text(updaterState.state);
+            $('#main-control-menu-updates > a').text('Unknown state ...');
             $('#main-control-menu-updates').addClass('ui-state-disabled');
         }
+
+        if (updaterState.simplestate != prevstate) {
+            if (updaterState.simplestate == null)
+                updaterState.closeNoty();
+            else if (updaterState.simplestate == 'found')
+                updaterState.foundupdateNoty();
+            else if (updaterState.simplestate == 'installed')
+                updaterState.updateinstalledNoty();                
+            else if (updaterState.simplestate == 'check')
+                updaterState.checkingNoty();                
+            else if (updaterState.simplestate == 'download')
+                updaterState.downloadingNoty();
+            else
+                updaterState.closeNoty();
+        }
+
     });
 
     $('#main-control-menu-updates').click(function() {
@@ -1147,8 +1253,7 @@ $(document).ready(function() {
         } else if (!updaterState.installed) {
             APP_DATA.installUpdate();
         } else if (updaterState.installed) {
-            if (confirm('Restart ' + APP_CONFIG.branded_name + ' and activate update?'))
-                APP_DATA.activateUpdate();
+            updaterState.activateUpdate();
         }
     });
 
