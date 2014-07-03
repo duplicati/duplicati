@@ -1166,6 +1166,7 @@ $(document).ready(function() {
                     text: 'Activate',
                     onClick: function() {
                         self.activateUpdate();
+                        self.closeNoty();
                     }
                 }]
             });
@@ -1210,21 +1211,27 @@ $(document).ready(function() {
         if (updaterState.simplestate == null) {
             $('#main-control-menu-updates > a').text('Check for updates');
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
+            $('#main-control-menu-check-updates').hide();
         } else if (updaterState.simplestate == 'found') {
             $('#main-control-menu-updates > a').text('Install update');
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
+            $('#main-control-menu-check-updates').show();
         } else if (updaterState.simplestate == 'installed') {
             $('#main-control-menu-updates > a').text('Activate update');
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
+            $('#main-control-menu-check-updates').hide();
         } else if (updaterState.simplestate == 'check') {
             $('#main-control-menu-updates > a').text('Checking for update ...');
             $('#main-control-menu-updates').addClass('ui-state-disabled');
+            $('#main-control-menu-check-updates').hide();
         } else if (updaterState.simplestate == 'download') {
             $('#main-control-menu-updates > a').text('Downloading update ...');
             $('#main-control-menu-updates').addClass('ui-state-disabled');
+            $('#main-control-menu-check-updates').hide();
         } else {
             $('#main-control-menu-updates > a').text('Unknown state ...');
             $('#main-control-menu-updates').addClass('ui-state-disabled');
+            $('#main-control-menu-check-updates').show();
         }
 
         if (updaterState.simplestate != prevstate) {
@@ -1244,6 +1251,13 @@ $(document).ready(function() {
 
     });
 
+    $('#main-control-menu-check-updates').click(function() {
+        if (updaterState.state != 'Waiting')
+            return;
+
+        APP_DATA.checkForUpdates();
+    });
+
     $('#main-control-menu-updates').click(function() {
         if (updaterState.state != 'Waiting')
             return;
@@ -1251,6 +1265,7 @@ $(document).ready(function() {
         if (updaterState.version == null) {
             APP_DATA.checkForUpdates();
         } else if (!updaterState.installed) {
+            APP_DATA.checkForUpdates();
             APP_DATA.installUpdate();
         } else if (updaterState.installed) {
             updaterState.activateUpdate();
