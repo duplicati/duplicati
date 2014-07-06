@@ -132,14 +132,6 @@ namespace Duplicati.Server.WebServer
                 if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
                     webroot = tmpwebroot;
             }
-
-            if (Library.Utility.Utility.IsClientOSX)
-            {
-                string osxTmpWebRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", "..", "..", "..", ".."));
-                osxTmpWebRoot = System.IO.Path.Combine(osxTmpWebRoot, "Server");
-                if (System.IO.Directory.Exists(System.IO.Path.Combine(osxTmpWebRoot, "webroot")))
-                    webroot = osxTmpWebRoot;
-            }
 #endif
 
             webroot = System.IO.Path.Combine(webroot, "webroot");
