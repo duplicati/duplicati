@@ -1,0 +1,106 @@
+#region Disclaimer / License
+// Copyright (C) 2011, Kenneth Skovhede
+// http://www.hexad.dk, opensource@hexad.dk
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
+
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
+
+namespace Duplicati.Library.Backend.AzureBlob
+{
+    /// <summary>
+    /// Azure blob storage facade.
+    /// </summary>
+    public class AzureBlobWrapper
+    {
+        private readonly string _containerName;
+        private readonly CloudBlobContainer _container;
+
+        public AzureBlobWrapper(string connectionString, string containerName)
+        {
+            _containerName = containerName;
+            var storageAccount = CloudStorageAccount.Parse(connectionString);
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            _container = blobClient.GetContainerReference(containerName);
+        }
+
+        public void AddContainer()
+        {
+            _container.Create(BlobContainerPublicAccessType.Off);
+        }
+
+        public virtual void GetFileStream(string keyName, Stream target)
+        {
+            _container.GetBlockBlobReference(keyName).DownloadToStream(target);
+        }
+
+        public void GetFileObject(string keyName, string localfile)
+        {
+            _container.GetBlockBlobReference(keyName).DownloadToFile(localfile, FileMode.Create);
+        }
+
+        public void AddFileObject(string keyName, string localfile)
+        {
+            using (var fs = File.Open(localfile, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                AddFileStream(keyName, fs);
+            }
+        }
+
+        public virtual void AddFileStream(string keyName, Stream source)
+        {
+            _container.GetBlockBlobReference(keyName).UploadFromStream(source);
+        }
+
+        public void DeleteObject(string keyName)
+        {
+            _container.GetBlockBlobReference(keyName).DeleteIfExists();
+        }
+
+        public virtual List<IFileEntry> ListContainerEntries()
+        {
+            var listBlobItems = _container.ListBlobs(blobListingDetails: BlobListingDetails.Metadata);
+            try
+            {
+                return listBlobItems.Select(x =>
+                {
+                    var absolutePath = x.StorageUri.PrimaryUri.AbsolutePath;
+                    var containerSegment = string.Concat("/", _containerName, "/");
+                    var blobName = absolutePath.Substring(absolutePath.IndexOf(
+                        containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
+                    return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
+                })
+                .Cast<IFileEntry>()
+                .ToList();
+            }
+            catch (StorageException ex)
+            {
+                if (ex.RequestInformation.HttpStatusCode == 404)
+                {
+                    throw new FolderMissingException(ex);
+                }
+                throw;
+            }
+        }
+    }
+}
