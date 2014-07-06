@@ -60,7 +60,7 @@
     <Compile Include="ConsoleOutput.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Library\Backend\Duplicati.Library.Backend.AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
+    <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>
     </ProjectReference>

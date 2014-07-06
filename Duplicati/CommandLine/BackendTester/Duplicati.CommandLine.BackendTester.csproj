@@ -60,7 +60,7 @@
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Duplicati.Library.Backend.AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
+    <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>
     </ProjectReference>
