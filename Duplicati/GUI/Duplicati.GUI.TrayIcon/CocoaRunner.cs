@@ -14,7 +14,7 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#if __MonoCS__
+#if __MonoCS__ && __MonoMac__
 
 using System;
 using MonoMac.Foundation;
@@ -22,37 +22,10 @@ using MonoMac.AppKit;
 using MonoMac.ObjCRuntime;
 using System.Collections.Generic;
 
-namespace Duplicati.GUI.MacTrayIcon
+namespace Duplicati.GUI.TrayIcon
 {
-    [MonoMac.Foundation.Register("AppDelegate")]
-    public class AppDelegate : NSApplicationDelegate
-    {
-        public override void AwakeFromNib ()
-        {
-            base.AwakeFromNib();
-            
-            CocoaRunner._instance.AwakeFromNib(this);
-        }
-        
-        public override NSApplicationTerminateReply ApplicationShouldTerminate(NSApplication sender)
-        {
-            CocoaRunner._instance.DoTerminate(this);
-            return NSApplicationTerminateReply.Now;
-        }
-    }
-    
     public class CocoaRunner : Duplicati.GUI.TrayIcon.TrayIconBase
-    {
-        public static CocoaRunner _instance;
-        
-        private AppDelegate m_appDelegate;
-        
-        public CocoaRunner()
-            : base()
-        {
-            _instance = this;
-        }
-        
+    {        
         private class MenuItemWrapper : Duplicati.GUI.TrayIcon.IMenuItem
         {
             private NSMenuItem m_item;
@@ -121,50 +94,23 @@ namespace Duplicati.GUI.MacTrayIcon
         
         private NSStatusItem m_statusItem;
         private Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, NSImage> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, NSImage>();
+        private NSApplication m_app;
 
         // We need to keep the items around, otherwise the GC will destroy them and crash the app
         private List<Duplicati.GUI.TrayIcon.IMenuItem> m_keeper = new List<Duplicati.GUI.TrayIcon.IMenuItem>();
 
-        private class TerminateException : Exception
-        {
-        }
-
         public override void Init(string[] args)
         {
             NSApplication.Init();
-            try
-            {
-                NSApplication.Main(args);
-            }
-            catch (TerminateException)
-            {
-            }
-        }
-        
-        public void AwakeFromNib(AppDelegate caller)
-        {
-            m_appDelegate = caller;
+            m_app = NSApplication.SharedApplication;
+            m_app.ActivateIgnoringOtherApps(true);
+
             m_statusItem = NSStatusBar.SystemStatusBar.CreateStatusItem(32);
             m_statusItem.HighlightMode = true;
-            
-            SetMenu(BuildMenu());
-            RegisterStatusUpdateCallback();
-            OnStatusUpdated(Duplicati.GUI.TrayIcon.Program.Connection.Status);
-            
-            base.Init(null);
+
+            base.Init(args);
         }
-        
-        public void DoTerminate(AppDelegate caller)
-        {
-            if (m_statusItem != null)
-            {
-                NSStatusBar.SystemStatusBar.RemoveStatusItem(m_statusItem);
-                m_statusItem = null;
-                m_keeper.Clear();
-                m_images.Clear();
-            }
-        }
-        
+
         private NSImage GetIcon(Duplicati.GUI.TrayIcon.TrayIcons icon)
         {
             if (!m_images.ContainsKey(icon))
@@ -197,13 +143,28 @@ namespace Duplicati.GUI.MacTrayIcon
         }
         
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
-        protected override void Run (string[] args)
+        protected override void Run(string[] args)
         {
+            try
+            {
+                m_app.Run();
+            }
+            finally
+            {
+                if (m_statusItem != null)
+                {
+                    NSStatusBar.SystemStatusBar.RemoveStatusItem(m_statusItem);
+                    m_statusItem = null;
+                    m_keeper.Clear();
+                    m_images.Clear();
+                }
+                m_app = null;
+            }
         }
         
         protected override void UpdateUIState(Action action)
         {
-            m_appDelegate.BeginInvokeOnMainThread(() => { 
+            m_app.BeginInvokeOnMainThread(() => { 
                 action();
             });
         }
@@ -223,11 +184,7 @@ namespace Duplicati.GUI.MacTrayIcon
 
         protected override void Exit ()
         {
-            //NSApplication.SharedApplication.Terminate(m_appDelegate);
-
-            // Not the nicest way, but cannot figure out 
-            // how to stop the message loop without killing the application otherwise
-            throw new TerminateException();
+            m_app.Stop(m_app);
         }
         
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)

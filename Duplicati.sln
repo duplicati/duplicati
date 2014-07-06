@@ -49,8 +49,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.MacTrayIcon", "Duplicati\GUI\Duplicati.GUI.MacTrayIcon\Duplicati.GUI.MacTrayIcon.csproj", "{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDocs", "Duplicati\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj", "{42C91180-11EB-4590-82EA-80FE9D4DEBEC}"
@@ -158,12 +156,6 @@ Global
 		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.Build.0 = Release|Any CPU
 		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Test|Any CPU.Build.0 = Debug|Any CPU
-		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Test|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
