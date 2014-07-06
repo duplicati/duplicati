@@ -23,7 +23,7 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
-    <Commandlineparameters>--webservice-port=8201,8202</Commandlineparameters>
+    <Commandlineparameters>--webservice-port=8200,8201,8202</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
