@@ -48,6 +48,9 @@ namespace Duplicati.GUI.TrayIcon
             
             private Gtk.Image GetIcon(MenuIcons icon)
             {
+                if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                    return null;
+
                 if (!_icons.ContainsKey(icon))
                 {
                     switch(icon)
@@ -83,12 +86,13 @@ namespace Duplicati.GUI.TrayIcon
                 else
                 {
                     m_item = new ImageMenuItem(text);
-                    if (icon != MenuIcons.None) {
-                        ((ImageMenuItem)m_item).Image = GetIcon(icon);
-                        
-                        //TODO: Not sure we should do this, it overrides policy?
-                        m_item.ExposeEvent += DrawImageMenuItemImage;
-                    }
+                    if (!Duplicati.Library.Utility.Utility.IsClientOSX)
+                        if (icon != MenuIcons.None) {
+                            ((ImageMenuItem)m_item).Image = GetIcon(icon);
+                            
+                            //TODO: Not sure we should do this, it overrides policy?
+                            m_item.ExposeEvent += DrawImageMenuItemImage;
+                        }
                     
                     if (subitems != null && subitems.Count > 0)
                     {
