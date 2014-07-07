@@ -220,12 +220,21 @@ namespace Duplicati.GUI.TrayIcon
         
         //We keep these in functions to avoid attempting to load the instance,
         // because the required assemblies may not exist on the machine 
+        //
+        //They must be non-inlined even if they are prime candidates,
+        // as the inlining will pollute the type system and possibly
+        // attempt to load non-existing assemblies
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetWinformsInstance() { return new Windows.WinFormsRunner(); }
 #if __MonoCS__ || __WindowsGTK__
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
 #if __MonoCS__ && __MonoMac__
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 #endif
 
