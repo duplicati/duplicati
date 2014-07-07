@@ -51,11 +51,17 @@ namespace Duplicati.GUI.TrayIcon
 
         public void Dispose()
         {
-            Duplicati.Server.Program.ApplicationExitEvent.Set();
-            if (!m_runner.Join(TimeSpan.FromSeconds(10)))
+            try
             {
-                m_runner.Abort();
-                m_runner.Join(TimeSpan.FromSeconds(10));
+                Duplicati.Server.Program.ApplicationExitEvent.Set();
+                if (!m_runner.Join(TimeSpan.FromSeconds(10)))
+                {
+                    m_runner.Abort();
+                    m_runner.Join(TimeSpan.FromSeconds(10));
+                }
+            }
+            catch
+            {
             }
         }
     }
