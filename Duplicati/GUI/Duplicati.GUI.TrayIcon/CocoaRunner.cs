@@ -164,9 +164,12 @@ namespace Duplicati.GUI.TrayIcon
         
         protected override void UpdateUIState(Action action)
         {
-            m_app.BeginInvokeOnMainThread(() => { 
+            if (m_app != null)
+                m_app.BeginInvokeOnMainThread(() => { 
+                    action();
+                });
+            else
                 action();
-            });
         }
 
         protected override Duplicati.GUI.TrayIcon.TrayIcons Icon 
@@ -182,9 +185,17 @@ namespace Duplicati.GUI.TrayIcon
             return new MenuItemWrapper(text, icon, callback, subitems);
         }
 
-        protected override void Exit ()
+        protected override void Exit()
         {
-            m_app.Stop(m_app);
+            if (m_app != null)
+            {
+                // Set the flag
+                m_app.Stop(m_app);
+                // Post an event to trigger the exit
+                m_app.PostEvent(NSEvent.OtherEvent(NSEventType.ApplicationDefined, 
+                    new System.Drawing.PointF(0,0),
+                    0, 0, 0, null, 0, 0, 0), true);
+            }
         }
         
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)
