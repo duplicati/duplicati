@@ -58,6 +58,7 @@ namespace Duplicati.Server
         {
             lock(m_lock)
             {
+                m_forceCheck = true;
                 m_download = true;
                 m_waitSignal.Set();
             }
