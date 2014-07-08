@@ -42,6 +42,13 @@ namespace Duplicati.Server.Serializable
                 if (u == null)
                     return null;
 
+                Version v;
+                if (!Version.TryParse(u.Version, out v))
+                    return null;
+
+                if (v <= System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
+                    return null;
+
                 return u.Displayname; 
             }
         }
