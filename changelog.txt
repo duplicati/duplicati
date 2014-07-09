@@ -6,4 +6,4 @@
 • Reworked progress bar
 • Reworked “General” dialog
 • Reworked tray icon for OSX
-• Added support for “remote login”. Start server or tray icon with --webserver-password=<password>
+• Added support for “remote login”. Start server or tray icon with --webservice-password=<password>
