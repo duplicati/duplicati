@@ -57,6 +57,8 @@ namespace Duplicati.Server.Serializable
 
         public bool UpdateReady { get { return Duplicati.Library.AutoUpdater.UpdaterManager.HasUpdateInstalled; } }
 
+        public double UpdateDownloadProgress { get { return Program.UpdatePoller.DownloadProgess; } }
+
 
         public Tuple<long, string> ActiveTask
         {

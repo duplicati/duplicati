@@ -247,7 +247,7 @@ namespace Duplicati.Library.AutoUpdater
             return res;
         }
 
-        public static bool DownloadAndUnpackUpdate(UpdateInfo version)
+        public static bool DownloadAndUnpackUpdate(UpdateInfo version, Action<double> progress = null)
         {
             if (INSTALLDIR == null)
                 return false;
@@ -258,8 +258,16 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     try
                     {
-                        System.Net.WebClient wc = new System.Net.WebClient();
-                        wc.DownloadFile(url, tempfile);
+                        Action<long> cb = null;
+                        if (progress != null)
+                            cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
+
+                        System.Net.WebRequest wreq = System.Net.WebRequest.Create(url);
+                        using(var resp = wreq.GetResponse())
+                        using(var rss = resp.GetResponseStream())
+                        using(var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
+                        using(var fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create))
+                            Duplicati.Library.Utility.Utility.CopyStream(pgs, fs);
 
                         var sha256 = System.Security.Cryptography.SHA256.Create();
                         var md5 =  System.Security.Cryptography.MD5.Create();
