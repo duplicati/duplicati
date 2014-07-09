@@ -55,7 +55,7 @@ namespace Duplicati.CommandLine.BackendTester
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
-        static void RealMain(string[] _args)
+        public static void RealMain(string[] _args)
         {
             try
             {

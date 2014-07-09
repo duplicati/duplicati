@@ -930,6 +930,34 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.showChangelog = function(from_update) {
+        serverWithCallback(
+            { action: 'get-changelog', 'from-update': from_update ? 'true' : '' },
+            function(data) {
+                var dlg = $('<div></div>').attr('title', 'Changelog');
+
+                var pgtxt = $('<pre></pre>');
+                pgtxt.text(data.Changelog);
+                dlg.append(pgtxt);  
+
+                dlg.dialog({
+                    autoOpen: true,
+                    width: $('body').width > 450 ? 430 : 600,
+                    height: 500, 
+                    modal: true,
+                    closeOnEscape: true,
+                    buttons: [
+                        { text: 'Close', click: function(event, ui) {
+                            dlg.dialog('close');
+                            dlg.remove();
+                        }}
+                    ]
+                });
+
+            },
+            function(d,s,m) { alert('Failed to get changelog: ' + m); }
+        );      
+    };
 
     APP_DATA.callServer = serverWithCallback;
 
@@ -1148,26 +1176,27 @@ $(document).ready(function() {
             this.closeNoty();
             var self = this;
             this.noty = noty({
-                text: 'Found update ' + self.version,
+                text: 'Found update <div class="noty-update-changelog-link">' + self.version + '</div>',
                 buttons: [{
                     text: 'Not now',
                     onClick: function() {
                         self.closeNoty();
                     }
                 },{
-                    text: 'Install',
+                    text: 'Update',
                     onClick: function() {
                         APP_DATA.installUpdate();
                     }
                 }]
             });
             this.noty_type = 'found';
+            $('.noty-update-changelog-link').click(function() { APP_DATA.showChangelog(true); });
         },
         updateinstalledNoty: function() {
             this.closeNoty();
             var self = this;
             this.noty = noty({
-                text: 'Update ' + self.version + ' installed',
+                text: 'Update <div class="noty-update-changelog-link">' + self.version + '</div> installed',
                 buttons: [{
                     text: 'Not now',
                     onClick: function() {
@@ -1182,6 +1211,7 @@ $(document).ready(function() {
                 }]
             });
             this.noty_type = 'installed';
+            $('.noty-update-changelog-link').click(function() { APP_DATA.showChangelog(true); });            
         },
         activateUpdate: function() {
             if (confirm('Restart ' + APP_CONFIG.branded_name + ' and activate update?'))
@@ -1375,6 +1405,8 @@ $(document).ready(function() {
             }}
         ]
     });
+
+    $('#about-dialog-changelog').click(function() { APP_DATA.showChangelog(false); });
 
     setInterval(function() {
         $('#main-list').find('.backup-last-run').each(function(i, e) {

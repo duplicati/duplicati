@@ -64,5 +64,6 @@
     <EmbeddedResource Include="AutoUpdateSignKey.txt" />
     <EmbeddedResource Include="AutoUpdateURL.txt" />
     <EmbeddedResource Include="AutoUpdateFolderReadme.txt" />
+    <EmbeddedResource Include="AutoUpdateInstallIDTemplate.txt" />
   </ItemGroup>
 </Project>

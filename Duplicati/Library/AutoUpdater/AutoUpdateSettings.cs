@@ -27,6 +27,7 @@ namespace Duplicati.Library.AutoUpdater
         private const string UPDATE_URL = "AutoUpdateURL.txt";
         private const string UPDATE_KEY = "AutoUpdateSignKey.txt";
         private const string UPDATE_README = "AutoUpdateFolderReadme.txt";
+        private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
 
         private const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
 
@@ -37,6 +38,7 @@ namespace Duplicati.Library.AutoUpdater
             ReadResourceText(UPDATE_URL);
             ReadResourceText(UPDATE_KEY);
             ReadResourceText(UPDATE_README);
+            ReadResourceText(UPDATE_INSTALL_FILE);
         }
 
         private static string ReadResourceText(string name)
@@ -91,6 +93,11 @@ namespace Duplicati.Library.AutoUpdater
         public static string UpdateFolderReadme
         {
             get { return ReadResourceText(UPDATE_README); }
+        }
+
+        public static string UpdateInstallFileText
+        {
+            get { return string.Format(ReadResourceText(UPDATE_README), Guid.NewGuid().ToString("N")); }
         }
 
         public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
