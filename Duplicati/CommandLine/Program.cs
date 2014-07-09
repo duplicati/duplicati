@@ -80,7 +80,7 @@ namespace Duplicati.CommandLine
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
-        static int RealMain(string[] args)
+        public static int RealMain(string[] args)
         {
             bool verboseErrors = false;
             bool verbose = false;
