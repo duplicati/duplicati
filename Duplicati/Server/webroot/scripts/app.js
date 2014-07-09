@@ -1115,10 +1115,13 @@ $(document).ready(function() {
         restarted: false,
         simplestate: null,
         noty: null,
+        noty_type: null,
+
         closeNoty: function() {
             if (this.noty != null) {
                 this.noty.close();
                 this.noty = null;
+                this.noty_type = null;
             }
         },
         checkingNoty: function() {
@@ -1126,6 +1129,7 @@ $(document).ready(function() {
             this.noty = noty({
                 text: 'Checking for updates ...',
             });
+            this.noty_type = 'checking';
         },
         downloadingNoty: function() {
             this.closeNoty();
@@ -1133,6 +1137,12 @@ $(document).ready(function() {
             this.noty = noty({
                 text: 'Downloading update ' + self.version,
             });
+            this.noty_type = 'downloading';
+        },
+        setDownloadProgress: function(pg) {
+            if (this.noty_type == 'downloading' && this.noty != null)
+                this.noty.setText('Downloading update ' + this.version + ' (' + parseInt(pg*100) + '%)');
+
         },
         foundupdateNoty: function() {
             this.closeNoty();
@@ -1151,6 +1161,7 @@ $(document).ready(function() {
                     }
                 }]
             });
+            this.noty_type = 'found';
         },
         updateinstalledNoty: function() {
             this.closeNoty();
@@ -1163,13 +1174,14 @@ $(document).ready(function() {
                         self.closeNoty();
                     }
                 },{
-                    text: 'Activate',
+                    text: 'Restart',
                     onClick: function() {
                         self.activateUpdate();
                         self.closeNoty();
                     }
                 }]
             });
+            this.noty_type = 'installed';
         },
         activateUpdate: function() {
             if (confirm('Restart ' + APP_CONFIG.branded_name + ' and activate update?'))
@@ -1177,7 +1189,13 @@ $(document).ready(function() {
                 APP_DATA.activateUpdate();
                 updaterState.restarted = true;
             }
-        }  
+        },
+        noUpdatesNoty: function() {
+            noty({
+                text: 'No updates found',
+                timeout: 5000
+            });
+        }
     };
 
     $(document).on('server-state-updated', function(eventargs, data) {
@@ -1217,7 +1235,7 @@ $(document).ready(function() {
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
             $('#main-control-menu-check-updates').show();
         } else if (updaterState.simplestate == 'installed') {
-            $('#main-control-menu-updates > a').text('Activate update');
+            $('#main-control-menu-updates > a').text('Restart with update');
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
             $('#main-control-menu-check-updates').hide();
         } else if (updaterState.simplestate == 'check') {
@@ -1235,9 +1253,7 @@ $(document).ready(function() {
         }
 
         if (updaterState.simplestate != prevstate) {
-            if (updaterState.simplestate == null)
-                updaterState.closeNoty();
-            else if (updaterState.simplestate == 'found')
+            if (updaterState.simplestate == 'found')
                 updaterState.foundupdateNoty();
             else if (updaterState.simplestate == 'installed')
                 updaterState.updateinstalledNoty();                
@@ -1246,7 +1262,13 @@ $(document).ready(function() {
             else if (updaterState.simplestate == 'download')
                 updaterState.downloadingNoty();
             else
+            {
                 updaterState.closeNoty();
+                if (prevstate == 'check')
+                    updaterState.noUpdatesNoty();
+            }
+        } else if (updaterState.simplestate == 'download') {
+            updaterState.setDownloadProgress(data.UpdateDownloadProgress);
         }
 
     });
