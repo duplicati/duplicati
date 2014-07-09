@@ -59,6 +59,7 @@ namespace Duplicati.Library.AutoUpdater
         private const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
         private const string README_FILE = "README.txt";
+        private const string INSTALL_FILE = "installation.txt";
         private const string CURRENT_FILE = "current";
 
         public const string AUTO_UPDATE_OPTION = "auto-update-strategy";
@@ -92,6 +93,8 @@ namespace Duplicati.Library.AutoUpdater
             {
                 if (!System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, README_FILE)))
                     System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, README_FILE), AutoUpdateSettings.UpdateFolderReadme);
+                if (!System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, INSTALL_FILE)))
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
             }
 
             UpdateInfo selfVersion = null;
@@ -172,8 +175,20 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
+        private static string InstallID
+        {
+            get
+            { 
+                try { return System.IO.File.ReadAllText(INSTALL_FILE).Replace('\r', '\n').Split(new char[] { '\n' }).FirstOrDefault().Trim() ?? ""; } 
+                catch { }
+
+                return "";
+            }
+        }
+
         public static UpdateInfo CheckForUpdate()
         {
+
             foreach(var url in MANIFEST_URLS)
             {
                 try
@@ -181,6 +196,8 @@ namespace Duplicati.Library.AutoUpdater
                     using(var tmpfile = new Library.Utility.TempFile())
                     {
                         System.Net.WebClient wc = new System.Net.WebClient();
+                        wc.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                        wc.Headers.Add("X-Install-ID", InstallID);
                         wc.DownloadFile(url, tmpfile);
 
                         using(var fs = System.IO.File.OpenRead(tmpfile))
@@ -263,6 +280,9 @@ namespace Duplicati.Library.AutoUpdater
                             cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
 
                         System.Net.WebRequest wreq = System.Net.WebRequest.Create(url);
+                        wreq.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                        wreq.Headers.Add("X-Install-ID", InstallID);
+
                         using(var resp = wreq.GetResponse())
                         using(var rss = resp.GetResponseStream())
                         using(var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
