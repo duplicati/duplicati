@@ -1155,7 +1155,7 @@ $(document).ready(function() {
                         self.closeNoty();
                     }
                 },{
-                    text: 'Install',
+                    text: 'Update',
                     onClick: function() {
                         APP_DATA.installUpdate();
                     }
