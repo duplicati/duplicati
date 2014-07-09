@@ -131,6 +131,13 @@ namespace Duplicati.CommandLine
                 }
 #endif
 
+                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
+                    Console.WriteLine(System.IO.File.ReadAllText(path));
+                    return 0;
+                }
+
                 foreach (string internaloption in Library.Main.Options.InternalOptions)
                     if (options.ContainsKey(internaloption))
                     {

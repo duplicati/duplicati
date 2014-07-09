@@ -382,3 +382,9 @@ div.main-icon-plus {
     display: inline;
 }
 
+#about-dialog-changelog, .noty-update-changelog-link {
+    display: inline;
+    cursor: pointer;
+    text-decoration: underline;
+}
+

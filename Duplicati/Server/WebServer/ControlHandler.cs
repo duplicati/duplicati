@@ -57,6 +57,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("restore-files", RestoreFiles);
             SUPPORTED_METHODS.Add("read-log", ReadLogData);
             SUPPORTED_METHODS.Add("get-license-data", GetLicenseData);
+            SUPPORTED_METHODS.Add("get-changelog", GetChangelog);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -176,6 +177,43 @@ namespace Duplicati.Server.WebServer
             }
 
             return result;
+        }
+
+        private void GetChangelog(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var fromUpdate = input["from-update"].Value;
+
+            if (string.IsNullOrWhiteSpace(fromUpdate))
+            {
+                var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
+                bw.SetOK();
+                bw.WriteJsonObject(new {
+                    Status = "OK",
+                    Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    Changelog = System.IO.File.ReadAllText(path)
+                });
+            }
+            else
+            {
+                var updateInfo = Program.DataConnection.ApplicationSettings.UpdatedVersion;
+                if (updateInfo == null)
+                {
+                    ReportError(response, bw, "No update found");
+                }
+                else
+                {
+                    bw.SetOK();
+                    bw.WriteJsonObject(new {
+                        Status = "OK",
+                        Version = updateInfo.Version,
+                        Changelog = updateInfo.ChangeInfo
+                    });
+                }
+            }
+
+
+
         }
 
         private void GetLicenseData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
