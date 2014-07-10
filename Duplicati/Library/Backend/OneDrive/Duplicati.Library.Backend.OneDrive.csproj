@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
-    <AssemblyName>Duplicati.Library.Backend.SkyDrive</AssemblyName>
+    <AssemblyName>Duplicati.Library.Backend.OneDrive</AssemblyName>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileAlignment>512</FileAlignment>
@@ -40,27 +40,13 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SkyDrive.cs" />
+    <Compile Include="OneDrive.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SkyDriveSession.cs" />
-    <Compile Include="Strings\SkyDrive.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SkyDrive.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\SkyDriveSession.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SkyDriveSession.resx</DependentUpon>
-    </Compile>
-    <Compile Include="TaggedFileEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -71,16 +57,10 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\SkyDrive.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SkyDrive.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\SkyDriveSession.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SkyDriveSession.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

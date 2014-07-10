@@ -140,10 +140,6 @@
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
-      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
-      <Name>Duplicati.Library.Backend.SkyDrive</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
@@ -223,6 +219,18 @@
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
+      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
+      <Name>Duplicati.Library.Backend.OneDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
+      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
