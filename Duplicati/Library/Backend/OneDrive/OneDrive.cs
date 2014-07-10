@@ -90,12 +90,8 @@ namespace Duplicati.Library.Backend
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
             using (var tr = new System.IO.StreamReader(rs))
-            {
-                var s = tr.ReadToEnd();
-                using (var xy = new System.IO.StringReader(s))
-                using (var jr = new Newtonsoft.Json.JsonTextReader(xy))
-                    return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);
-            }
+            using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);
         }
 
         private string AccessToken
@@ -345,14 +341,10 @@ namespace Duplicati.Library.Backend
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
             using (var tr = new System.IO.StreamReader(rs))
+            using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
             {
-                var s = tr.ReadToEnd();
-                using (var xy = new System.IO.StringReader(s))
-                using (var jr = new Newtonsoft.Json.JsonTextReader(xy))
-                {
-                    var nf = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_FolderItem>(jr);
-                    m_fileidCache[remotename] = nf.id;
-                }
+                var nf = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_FolderItem>(jr);
+                m_fileidCache[remotename] = nf.id;
             }
         }
 
