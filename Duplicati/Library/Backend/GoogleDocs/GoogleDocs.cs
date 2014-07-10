@@ -523,7 +523,7 @@ namespace Duplicati.Library.Backend
 
                                 //If all goes well, we should now get an atom entry describing the new element
                                 System.Xml.XmlDocument xml = new XmlDocument();
-                                using (System.IO.Stream s = resp.GetResponseStream())
+                                using (System.IO.Stream s = areq.GetResponseStream())
                                     xml.Load(s);
 
                                 System.Xml.XmlNamespaceManager mgr = new XmlNamespaceManager(xml.NameTable);

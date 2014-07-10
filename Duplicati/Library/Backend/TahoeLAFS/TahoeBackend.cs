@@ -106,7 +106,7 @@ namespace Duplicati.Library.Backend
                     try
                     {
                         System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-                        using (System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream()))
+                        using (System.IO.StreamReader sr = new System.IO.StreamReader(areq.GetResponseStream()))
                             data = LitJson.JsonMapper.ToObject(sr);
                     }
                     finally
@@ -278,7 +278,7 @@ namespace Duplicati.Library.Backend
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                     throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                using (System.IO.Stream s = resp.GetResponseStream())
+                using (System.IO.Stream s = areq.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream);
             }
         }
