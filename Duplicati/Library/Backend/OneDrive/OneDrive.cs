@@ -294,7 +294,7 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, LC.L("The authorization code"), string.Format(LC.L("The authorization token retrieved from {0}"), WLID_LOGIN)),
+                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, LC.L("The authorization code"), string.Format(LC.L("The authorization token retrieved from {0}", WLID_LOGIN))),
                 });
             }
         }
