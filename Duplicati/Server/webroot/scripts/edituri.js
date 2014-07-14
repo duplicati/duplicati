@@ -72,6 +72,8 @@ $(document).ready(function() {
             if (!BACKEND_STATE.current_state.hideserverandport) {
                 if (values['server-name'] == '')
                     return EDIT_URI.validation_error($('server-name'), 'You must fill in the server name');
+            } else {
+                values['server-name'] = '';
             }
 
             if (!BACKEND_STATE.current_state.optionalauth) {
