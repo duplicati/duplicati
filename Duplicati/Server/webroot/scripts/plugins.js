@@ -123,8 +123,91 @@ $(document).ready(function() {
         hasssl: false
     }
 
-    APP_DATA.plugins.backend['skydrive'] = {
-        hideserverandport: true
+    APP_DATA.plugins.backend['onedrive'] = {
+        PLUGIN_LOGIN_LINK: 'https://duplicati-oauth-handler.appspot.com/',
+
+        hideserverandport: true,
+        hideusernameandpassword: true,
+        optionalauth: true,
+        hasssl: false,
+        fetchtoken: null,
+
+        passwordlabel: 'AuthID',
+
+        fill_form_map: {
+            '--authid': 'authid'
+        },
+
+        fill_dict_map: {
+            'authid': '--authid'
+        },
+
+        validate: function(form, values) {
+            delete values['auth-username'];
+            delete values['auth-password'];
+            delete values['--auth-username'];
+            delete values['--auth-password'];
+
+            if (values['--authid'] == '')
+                return EDIT_URI.validation_error($('server-password'), 'You must fill in an AuthID');
+
+
+            return EDIT_URI.validate_input(values, true);
+        },
+
+        setup: function(dlg, div) {
+
+            this.fetchtoken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+
+            var authid = EDIT_URI.createFieldset({label: 'AuthID', name: 'authid', after: $('#server-path'), watermark: 'Enter the AuthID value'});
+            var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', type: 'link', after: authid.outer, 'title': 'Click here to obtain an AuthID'});
+
+            var ft = this.fetchtoken;
+            var self = this;
+            signuplink.field.click(function() {
+                var countDown = 100;
+                var url = self.PLUGIN_LOGIN_LINK + '?redirect=1&token=' + self.fetchtoken;
+                var w = 400;
+                var h = 550;
+
+                var left = (screen.width/2)-(w/2);
+                var top = (screen.height/2)-(h/2);                
+                var wnd = window.open(url, '_blank', 'height=' + h +',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
+
+                var recheck = function() {
+                    countDown--;
+                    if (countDown > 0 && ft == self.fetchtoken && wnd != null && !wnd.closed) {
+                        $.ajax({
+                            url: self.PLUGIN_LOGIN_LINK + 'fetch',
+                            dataType: 'jsonp',
+                            data: {'token': ft}
+                        })
+                        .done(function(data) {
+                            if (data.authid) {
+                                authid.field.val(data.authid);
+                                wnd.close();
+                            } else {
+                                setTimeout(recheck, 3000);
+                            }
+                        })
+                        .fail(function() {
+                            setTimeout(recheck, 3000);
+                        });
+                    } else {
+                        if (wnd != null)
+                            wnd.close();
+                    }                  
+                };
+
+                setTimeout(recheck, 6000);
+
+                return false;
+            });
+        },
+
+        cleanup: function(dlg, div) {
+            this.fetchtoken = null;
+        }
     }
 
     APP_DATA.plugins.backend['googledocs'] = {
