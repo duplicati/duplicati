@@ -21,3 +21,5 @@ rm Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug/Duplicati.debug.log
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug/updates
 cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug/* ~/Dropbox/Duplicati/2.0/2.0_snapshot/
 cp -R Duplicati/Server/webroot ~/Dropbox/Duplicati/2.0/2.0_snapshot/
+
+mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"

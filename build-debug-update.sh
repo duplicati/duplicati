@@ -59,6 +59,10 @@ echo "${RELEASE_INC_VERSION}" > "Updates/debug_version.txt"
 mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/duplicati.zip"
 mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
 
+mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
+
 echo
 echo "Built DEBUG version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
 echo "    in folder: ${UPDATE_TARGET}"
+
+
