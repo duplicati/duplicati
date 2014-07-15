@@ -157,16 +157,29 @@ $(document).ready(function() {
 
         setup: function(dlg, div) {
 
-            this.fetchtoken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
 
             var authid = EDIT_URI.createFieldset({label: 'AuthID', name: 'authid', after: $('#server-path'), watermark: 'Enter the AuthID value'});
             var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', type: 'link', after: authid.outer, 'title': 'Click here to obtain an AuthID'});
+            var popuplink = EDIT_URI.createFieldset({'label': '&nbsp;', type: 'link', after: signuplink.outer, 'title': 'Click here if the popup window did not work'});
 
-            var ft = this.fetchtoken;
+            var link1 = EDIT_URI.createFieldset({'label': 'You must agree to', type: 'link', before: $('#server-name-and-port-label'), 'title': 'Microsoft Service Agreement', href: 'http://explore.live.com/microsoft-service-agreement'});
+            var link2 = EDIT_URI.createFieldset({'label': '&nbsp;', type: 'link', after: link1.outer, 'title': 'Microsoft Online Privacy Statement', href: 'http://privacy.microsoft.com/en-us/fullnotice.mspx'});
+            
+            popuplink.outer.hide();
+
             var self = this;
             signuplink.field.click(function() {
+
+                self.fetchtoken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+                var ft = self.fetchtoken;
+
                 var countDown = 100;
                 var url = self.PLUGIN_LOGIN_LINK + '?redirect=1&token=' + self.fetchtoken;
+                popuplink.field.attr('href', url);
+                popuplink.outer.show();
+
+                setTimeout(function() { signuplink.outer.hide(); }, 500);
+
                 var w = 400;
                 var h = 550;
 
@@ -176,7 +189,7 @@ $(document).ready(function() {
 
                 var recheck = function() {
                     countDown--;
-                    if (countDown > 0 && ft == self.fetchtoken && wnd != null && !wnd.closed) {
+                    if (countDown > 0 && ft == self.fetchtoken) {
                         $.ajax({
                             url: self.PLUGIN_LOGIN_LINK + 'fetch',
                             dataType: 'jsonp',
