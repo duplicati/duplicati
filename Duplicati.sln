@@ -59,8 +59,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localizat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
