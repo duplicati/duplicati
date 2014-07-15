@@ -46,7 +46,6 @@ namespace Duplicati.Library.Backend
                 m_authid = options[AUTHID_OPTION];
 
             if (string.IsNullOrEmpty(m_authid))
-                //throw new Exception(string.Format(Strings.SkyDrive.MissingAuthID, WLID_LOGIN));
                 throw new Exception(string.Format(LC.L("You need an AuthID, you can get it from: {0}"), WLID_LOGIN));
         }
 
@@ -100,10 +99,29 @@ namespace Duplicati.Library.Backend
             {
                 if (m_token == null || m_tokenExpires < DateTime.UtcNow)
                 {
-                    var res = GetJSONData<WLID_Service_Response>(string.Format(WLID_SERVICE, Library.Utility.Uri.UrlEncode(m_authid)));
+                    try
+                    {
+                        var res = GetJSONData<WLID_Service_Response>(string.Format(WLID_SERVICE, Library.Utility.Uri.UrlEncode(m_authid)));
 
-                    m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
-                    m_token = res.access_token;
+                        m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
+                        m_token = res.access_token;
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = ex.Message;
+                        if (ex is WebException)
+                        {
+                            var resp = ((WebException)ex).Response as HttpWebResponse;
+                            if (resp != null)
+                            {
+                                msg = resp.Headers["X-Reason"];
+                                if (string.IsNullOrWhiteSpace(msg))
+                                    msg = resp.StatusDescription;
+                            }
+                        }
+
+                        throw new Exception(LC.L("Failed to authorize using the WLID service: {0}. If the problem persists, try generating a new authid token from: {1}", msg, WLID_LOGIN), ex);
+                    }
                 }
 
                 return m_token;
@@ -289,6 +307,7 @@ namespace Duplicati.Library.Backend
                 m_fileidCache.Remove(remotename);
             }
         }        
+            
 
         public IList<ICommandLineArgument> SupportedCommands
         {
@@ -301,7 +320,13 @@ namespace Duplicati.Library.Backend
 
         public string Description
         {
-            get { return LC.L("Stores files on Microsoft OneDrive"); }
+            get { return LC.L("Stores files on Microsoft OneDrive. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})",
+                    "Microsoft Service Agreement",
+                    "http://explore.live.com/microsoft-service-agreement",
+                    "Microsoft Online Privacy Statement", 
+                    "http://privacy.microsoft.com/en-us/fullnotice.mspx"
+                    ); 
+            }
         }
 
         #endregion
