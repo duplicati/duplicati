@@ -96,7 +96,6 @@ namespace Duplicati.Server.WebServer
                     // so we create a new server for each attempt
                 
                     var server = CreateServer(options);
-                    //TODO: Add promiscuous mode and default to loopback only
                     server.Start(listenInterface, p);
                     m_server = server;
                     m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
