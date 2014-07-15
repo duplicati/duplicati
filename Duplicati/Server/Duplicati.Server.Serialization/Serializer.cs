@@ -20,6 +20,7 @@ namespace Duplicati.Server.Serialization
             m_jsonSettings.Converters = new JsonConverter[] {
                 new SerializableStatusCreator(),
                 new SettingsCreator(),
+                new FilterCreator(),
                 new DayOfWeekConcerter()
             }.ToList();
         }

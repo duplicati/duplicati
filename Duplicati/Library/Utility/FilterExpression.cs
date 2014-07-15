@@ -410,6 +410,11 @@ namespace Duplicati.Library.Utility
         /// <param name="second">Second.</param>
         public static FilterExpression Combine(FilterExpression first, FilterExpression second)
         {
+            if (first == null)
+                return second;
+            if (second == null)
+                return first;
+
             if (first.Result != second.Result)
                 throw new ArgumentException("Both filters must have the same result property");
             return new FilterExpression(first.m_filters.Union(second.m_filters).Select(x => x.Type == FilterType.Regexp ? ("[" + x.Filter + "]") : x.Filter), first.Result);

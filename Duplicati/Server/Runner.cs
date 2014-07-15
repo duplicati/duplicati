@@ -470,18 +470,21 @@ namespace Duplicati.Server
             return options;
         }
         
-        private static Duplicati.Library.Utility.FilterExpression ApplyFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Duplicati.Library.Utility.FilterExpression filter)
+        private static Duplicati.Library.Utility.IFilter ApplyFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Duplicati.Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
-                filter = new Duplicati.Library.Utility.FilterExpression[] { filter }.Union(
+            {
+                var nf =
                     (from n in f2
                     orderby n.Order
-                    select new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include))
-                )
-                .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
-            
-            return filter;
+                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include)))
+                    .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
+
+                return Duplicati.Library.Utility.FilterExpression.Combine(filter, nf);
+            }
+            else
+                return filter;
         }
         
         private static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
@@ -492,7 +495,7 @@ namespace Duplicati.Server
                 select n).ToDictionary(k => k.Name, k => k.Value);
         }
         
-        private static Duplicati.Library.Utility.FilterExpression GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
             var filters = Program.DataConnection.Filters;
             if (filters == null || filters.Length == 0)
@@ -501,7 +504,7 @@ namespace Duplicati.Server
            return   
                 (from n in filters
                 orderby n.Order
-                select new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include))
+                select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
     }

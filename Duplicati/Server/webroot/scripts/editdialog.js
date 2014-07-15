@@ -380,6 +380,7 @@ $(document).ready(function() {
     $('#repeat-password').watermark('Long and secret passphrase');
     $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
     $('#source-folder-path-text').watermark('Enter a path to back up');
+    $('#source-filters').watermark('One filter per line, e.g. "+*.txt" or "-[.*\\.txt]"');
 
     var updateState = function() { if (EDIT_STATE != null) EDIT_STATE.dataModified = true; };
 
@@ -389,6 +390,7 @@ $(document).ready(function() {
     $('#encryption-password').change(updateState);
     $('#repeat-password').change(updateState);
     $('#backup-options').change(updateState);
+    $('#source-filters').change(updateState);
 
     function split(val) {
         return val.split(/,\s*/);
@@ -614,30 +616,56 @@ $(document).ready(function() {
 
     var readFormData = function(validateOptions) {
 
-            var obj = {
-                'Schedule': {},
-                'Backup': {
-                    'Settings': {},
-                    'Filters': [],
-                    'Sources': [],
-                    'Tags': []
-                }
-            };
-
-            // To protect against data loss, we use the orig config and update it
-            if (EDIT_STATE.orig_config != null)
-                $.extend(true, obj, EDIT_STATE.orig_config);
-
-            APP_UTIL.read_form($('#edit-dialog-form'), EDIT_BACKUP.fill_dict_map, obj);
-            if (!APP_UTIL.parseOptionStrings($('#backup-options').val(), obj.Backup.Settings, function() {
-                //TODO: Add validation
-                return true;
-            })) {
-                return null;
+        var obj = {
+            'Schedule': {},
+            'Backup': {
+                'Settings': {},
+                'Filters': [],
+                'Sources': [],
+                'Tags': []
             }
-
-            return obj
         };
+
+        // To protect against data loss, we use the orig config and update it
+        if (EDIT_STATE.orig_config != null)
+            $.extend(true, obj, EDIT_STATE.orig_config);
+
+        for(var k in obj.Backup.Settings)
+            if (k.substr(0, 2) == '--')
+                delete obj.Backup.Settings[k];
+
+        APP_UTIL.read_form($('#edit-dialog-form'), EDIT_BACKUP.fill_dict_map, obj);
+
+        if (!APP_UTIL.parseOptionStrings($('#backup-options').val(), obj.Backup.Settings, function() {
+            //TODO: Add validation
+            return true;
+        })) {
+            return null;
+        }
+
+        var filters = $('#source-filters').val();
+        var filterlist = [];
+        if (filters != '') {
+            var lines = filters.split('\n');
+
+            for(var i in lines) {
+                var ld = lines[i].trim();
+                if (ld == '')
+                    continue;
+
+                if (ld[0] != '-' && ld[0] != '+') {
+                    EDIT_URI.validation_error($('#source-filters'), 'Each filter line must start with either a "+" or a "-" character');
+                    return null;
+                }
+
+                filterlist.push({'Expression': ld.substr(1), 'Include': ld[0] == '+', 'Order': i});
+            }
+        }
+
+        obj.Backup.Filters = filterlist;
+
+        return obj
+    };
 
     dlg_buttons.last().click(function(event, ui) {
         var tabs = $('#edit-dialog').parent().find('[role=tablist] > li');
@@ -829,6 +857,13 @@ $(document).ready(function() {
                 opttext += k + '=' + (data['Backup']['Settings'][k] || '') + '\n';
 
         $('#backup-options').val(opttext);
+
+        var filtertext = '';
+        for(var k in data['Backup']['Filters'])
+            filtertext += (data['Backup']['Filters'][k].Include ? '+' : '-') + data['Backup']['Filters'][k].Expression + '\n';
+
+        $('#source-filters').val(filtertext);
+
 
         EDIT_STATE.dataModified = false;
     });

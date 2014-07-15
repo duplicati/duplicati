@@ -23,6 +23,14 @@ namespace Duplicati.Server.Serialization
         }
     }
 
+    public class FilterCreator : CustomCreationConverter<Interface.IFilter>
+    {
+        public override Interface.IFilter Create(Type objectType)
+        {
+            return new Implementations.Filter();
+        }
+    }
+
     public class DayOfWeekConcerter : JsonConverter
     {
         #region implemented abstract members of JsonConverter
