@@ -23,6 +23,8 @@ echo "${RELEASE_NAME}" > Duplicati/License/VersionTag.txt
 cp "Updates/debug_urls.txt"  Duplicati/Library/AutoUpdater/AutoUpdateURL.txt
 cp "Updates/debug_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt
 
+#rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug
+
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="${RELEASE_VERSION}"
 xbuild /p:Configuration=Debug BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
 xbuild /p:Configuration=Debug Duplicati.sln
