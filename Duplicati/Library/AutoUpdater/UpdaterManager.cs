@@ -482,7 +482,7 @@ namespace Duplicati.Library.AutoUpdater
                 if (filteredpaths.Count == 1)
                     throw new Exception(string.Format("Folder {0} is missing: {1}", folder, filteredpaths.First()));
                 else if (filteredpaths.Count > 0)
-                    throw new Exception(string.Format("Folder {0} is missing {1} files", folder, filteredpaths.Count));
+                    throw new Exception(string.Format("Folder {0} is missing {1} and {2} other file(s)", folder, filteredpaths.First(), filteredpaths.Count - 1));
 
                 return true;
             }
