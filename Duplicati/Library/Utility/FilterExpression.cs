@@ -385,7 +385,7 @@ namespace Duplicati.Library.Utility
                 var p = q.Dequeue();
                 if (p == null || p.Empty)
                     continue;
-                else if (p is FilterExpression && ((FilterExpression)filter).Result)
+                else if (p is FilterExpression && ((FilterExpression)p).Result)
                 {
                     match = p;
                     return false; // We have an include filter, so we exclude by default
