@@ -360,6 +360,17 @@ namespace Duplicati.Library.AutoUpdater
                                 System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE), versionstring);
                                  
                                 m_hasUpdateInstalled = null;
+
+                                var obsolete = (from n in FindInstalledVersions()
+                                    where n.Value.Version != version.Version && n.Value.Version != SelfVersion.Version
+                                    let x = TryParseVersion(n.Value.Version) 
+                                    orderby x descending
+                                    select n).Skip(1).ToArray();
+
+                                foreach(var f in obsolete)
+                                    try { System.IO.Directory.Delete(f.Key, true); }
+                                    catch { }
+
                                 return true;
                             }
                             else
