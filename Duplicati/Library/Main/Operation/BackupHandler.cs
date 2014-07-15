@@ -250,8 +250,11 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(m_database, m_options);
                 m_database.VerifyConsistency(null);
                 // If there is no filter, we set an empty filter to simplify the code
-                // If there is a filter, we make sure that fall-through includes the entry
-                m_filter = filter ?? new Library.Utility.FilterExpression();
+                // If there is a filter, we make sure that the sources are included
+                if (filter == null)
+                    m_filter = new Library.Utility.FilterExpression();
+                else
+                    m_filter = new Library.Utility.JoinedFilterExpression(new Library.Utility.FilterExpression(sources, true), filter);
             	
                 var lastVolumeSize = -1L;
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
