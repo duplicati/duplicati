@@ -50,6 +50,7 @@ namespace Duplicati.Library.Main.Operation
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter);
                     
                 DoRun(samples, db, backend);
+                db.WriteResults();
             }
         }
         

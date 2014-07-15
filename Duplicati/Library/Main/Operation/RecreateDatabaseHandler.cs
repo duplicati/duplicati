@@ -39,6 +39,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.SetDatabase(db);
                 DoRun(db, filter, filelistfilter, blockprocessor);
+                db.WriteResults();
             }
         }
 

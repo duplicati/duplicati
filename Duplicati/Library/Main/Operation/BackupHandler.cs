@@ -624,7 +624,8 @@ namespace Duplicati.Library.Main.Operation
 
                         }
                         
-                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);                        
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
+                        m_database.WriteResults();                    
                         return;
                     }
                 }
@@ -651,7 +652,7 @@ namespace Duplicati.Library.Main.Operation
                     if (m_transaction != null)
                         try { m_transaction.Rollback(); }
                         catch (Exception ex) { m_result.AddError(string.Format("Rollback error: {0}", ex.Message), ex); }
-                } 
+                }
             }
         }
         

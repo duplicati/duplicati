@@ -89,6 +89,8 @@ namespace Duplicati.Library.Main.Operation
 	        	{
 	        		backend.WaitForComplete(db, null);
 	        	}
+
+                db.WriteResults();
             }
         }
     }
