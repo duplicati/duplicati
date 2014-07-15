@@ -419,6 +419,35 @@ $(document).ready(function() {
         }
     });
 
+    var validate_and_return_uri = function() {
+        var values = EDIT_URI.read_form($('#edit-uri-form'));
+
+        if (!EDIT_URI.parse_extra_options($('#server-options'), values))
+            return null;
+
+        if (!BACKEND_STATE.current_state.hasssl && values['--use-ssl'] !== undefined)
+            delete values['--use-ssl'];
+
+
+        if (BACKEND_STATE.current_state.validate)
+        {
+            if (!BACKEND_STATE.current_state.validate($('#connection-uri-dialog'), values))
+                return null;
+        } else {
+            if (!EDIT_URI.validate_input(values, true))
+                return null;
+        }
+
+        var uri = null;
+        if (BACKEND_STATE.current_state.build_uri) {
+            uri = BACKEND_STATE.current_state.build_uri($('#connection-uri-dialog'), values);
+        } else {
+            uri = EDIT_URI.build_uri(values);
+        }
+
+        return uri;
+   };
+
     $('#connection-uri-dialog').dialog({ 
         modal: true, 
         minWidth: 320, 
@@ -426,36 +455,63 @@ $(document).ready(function() {
         autoOpen: false, 
         closeOnEscape: true,
         buttons: [
+            {text: 'Test connection', click: function() {
+                var selfbtn = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button').first();
+
+                var uri = validate_and_return_uri();
+                if (uri != null) {
+                    selfbtn.button('option', 'disabled', true);
+                    selfbtn.button('option', 'label', 'Testing ...');
+
+                    APP_DATA.callServer({action: 'test-backend', url: uri}, function(data) {
+                        selfbtn.button('option', 'disabled', false);
+                        selfbtn.button('option', 'label', 'Test connection');
+                        alert('Connection worked!');
+                    },
+                    function(data, success, message) {
+                        selfbtn.button('option', 'disabled', false);
+                        selfbtn.button('option', 'label', 'Test connection');
+
+                        if (message == 'missing-folder')
+                        {
+                            if (confirm('The folder ' + $('#server-path').val() + ' does not exist\nCreate it now?')) {
+                                selfbtn.button('option', 'disabled', true);
+                                selfbtn.button('option', 'label', 'Creating folder ...');
+
+                                APP_DATA.callServer({action: 'create-remote-folder', url: uri}, function(data) {
+                                    selfbtn.button('option', 'label', 'Testing ...');
+
+                                    APP_DATA.callServer({action: 'test-backend', url: uri}, function(data) {
+                                        selfbtn.button('option', 'disabled', false);
+                                        selfbtn.button('option', 'label', 'Test connection');
+                                        alert('Connection worked!');
+                                    },
+                                    function(data, success, message) {
+                                        alert('Failed to connect: ' + message);
+                                    });                                    
+                                },
+                                function(data, success, message) {
+                                    selfbtn.button('option', 'disabled', false);
+                                    selfbtn.button('option', 'label', 'Test connection');
+                                    alert('Could not create folder: ' + message);
+                                });
+
+                            }
+                        }
+                        else
+                            alert('Failed to connect: ' + message);
+                    });
+
+                }
+            } },
             {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Create URI', click: function() { 
 
-                var values = EDIT_URI.read_form($('#edit-uri-form'));
-
-                if (!EDIT_URI.parse_extra_options($('#server-options'), values))
-                    return;
-
-                if (!BACKEND_STATE.current_state.hasssl && values['--use-ssl'] !== undefined)
-                    delete values['--use-ssl'];
-
-
-                if (BACKEND_STATE.current_state.validate)
-                {
-                    if (!BACKEND_STATE.current_state.validate($('#connection-uri-dialog'), values))
-                        return;
-                } else {
-                    if (!EDIT_URI.validate_input(values, true))
-                        return;
+                var uri = validate_and_return_uri;
+                if (uri != null) {
+                    $( this ).dialog( "close" );
+                    $('#backup-uri').val(uri);
                 }
-
-                var uri = null;
-                if (BACKEND_STATE.current_state.build_uri) {
-                    uri = BACKEND_STATE.current_state.build_uri($('#connection-uri-dialog'), values);
-                } else {
-                    uri = EDIT_URI.build_uri(values);
-                }
-
-                $( this ).dialog( "close" );
-                $('#backup-uri').val(uri);
             } }
         ]
      });

@@ -51,6 +51,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("validate-path", ValidatePath);
             SUPPORTED_METHODS.Add("list-tags", ListTags);
             SUPPORTED_METHODS.Add("test-backend", TestBackend);
+            SUPPORTED_METHODS.Add("create-remote-folder", CreateRemoteFolder);
             SUPPORTED_METHODS.Add("list-remote-folder", ListRemoteFolder);
             SUPPORTED_METHODS.Add("list-backup-sets", ListBackupSets);
             SUPPORTED_METHODS.Add("search-backup-files", SearchBackupFiles);
@@ -278,6 +279,27 @@ namespace Duplicati.Server.WebServer
                 ReportError(response, bw, ex.Message);
             }
         }
+        private void CreateRemoteFolder(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            if (input["url"] == null || input["url"].Value == null)
+            {
+                ReportError(response, bw, "The url parameter was not set");
+                return;
+            }
+
+            try
+            {
+                using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(input["url"].Value, new Dictionary<string, string>()))
+                    b.CreateFolder();
+
+                bw.OutputOK();
+            }
+            catch (Exception ex)
+            {
+                ReportError(response, bw, ex.Message);
+            }
+        }
 
         private void TestBackend(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
@@ -294,6 +316,10 @@ namespace Duplicati.Server.WebServer
                     b.Test();
 
                 bw.OutputOK();
+            }
+            catch (Duplicati.Library.Interface.FolderMissingException fex)
+            {
+                ReportError(response, bw, "missing-folder");
             }
             catch (Exception ex)
             {
