@@ -250,7 +250,7 @@ Global
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Test|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj
+		StartupItem = Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj
 		Policies = $0
 		$0.StandardHeader = $1
 		$1.Text = @ Copyright (C) 2014, Kenneth Skovhede\r\n http://www.hexad.dk, opensource@hexad.dk\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
