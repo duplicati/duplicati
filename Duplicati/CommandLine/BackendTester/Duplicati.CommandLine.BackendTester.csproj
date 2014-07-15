@@ -27,6 +27,11 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Commandlineparameters>ftp://test</Commandlineparameters>
+    <EnvironmentVariables>
+      <EnvironmentVariables>
+        <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
+      </EnvironmentVariables>
+    </EnvironmentVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -79,6 +84,10 @@
     <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
+      <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
+      <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

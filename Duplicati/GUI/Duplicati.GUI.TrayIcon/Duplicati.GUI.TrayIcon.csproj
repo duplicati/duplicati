@@ -39,6 +39,11 @@
     <Optimize>false</Optimize>
     <DefineConstants>DEBUG;__MonoMac__</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
+    <EnvironmentVariables>
+      <EnvironmentVariables>
+        <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
+      </EnvironmentVariables>
+    </EnvironmentVariables>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release</OutputPath>

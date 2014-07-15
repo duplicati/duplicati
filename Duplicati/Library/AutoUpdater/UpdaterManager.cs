@@ -44,6 +44,8 @@ namespace Duplicati.Library.AutoUpdater
                                                         System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location)
                                                         : System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME));
 
+        private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
+
         public static bool RequiresRespawn { get; set; }
 
         private static KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
@@ -54,6 +56,7 @@ namespace Duplicati.Library.AutoUpdater
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string INSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
+        private const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
         private const string RUN_UPDATED_FOLDER_PATH = "AUTOUPDATER_LOAD_UPDATE";
         private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
         private const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
@@ -815,8 +818,12 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.InstallDuring)
         {
+            // If the update is disabled, go straight in
+            if (DISABLE_UPDATE_DOMAIN)
+                return RunMethod(method, cmdargs);
+
             // If we are not the primary domain, just execute
-            //if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
+            if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
             {
                 int r = 0;
                 WrapWithUpdater(defaultstrategy, () => {
