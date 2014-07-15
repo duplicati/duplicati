@@ -199,7 +199,7 @@ namespace Duplicati.Library.Backend
                         }
                     }
                     else
-                        throw new FolderMissingException(string.Format(LC.L("Missing the folder: {0}"), f));
+                        throw new FolderMissingException(LC.L("Missing the folder: {0}", f));
                 }
                 else
                     cur = n;
