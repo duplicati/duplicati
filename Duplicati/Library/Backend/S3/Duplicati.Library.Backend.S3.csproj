@@ -60,6 +60,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>S3SettingsControl.resx</DependentUpon>
     </Compile>
+    <Compile Include="S3Config.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">

@@ -230,39 +230,6 @@ $(document).ready(function() {
 
     APP_DATA.plugins.backend['s3'] = {
 
-        //TODO: These can be fetched from the server data, but requires some string parsing to get right
-        PLUGIN_S3_HOSTS: {
-            'Amazon S3': 's3.amazonaws.com',
-            'Hosteurope': 'cs.hosteurope.de',
-            'Dunkel': 'dcs.dunkel.de',
-            'DreamHost': 'objects.dreamhost.com'
-        },
-        
-        //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
-        PLUGIN_S3_LOCATIONS: {
-            '(default)': '',
-            'Europe (EU, Ireland)': 'EU',
-            'US East (Northern Virginia)': 'us-east-1',
-            'US West (Northen California)': 'us-west-1',
-            'US West (Oregon)': 'us-west-2',
-            'Asia Pacific (Singapore)': 'ap-southeast-1',
-            'Asia Pacific (Sydney)': 'ap-southeast-2',
-            'Asia Pacific (Tokyo)': 'ap-northeast-1',
-            'South America (Sao Paulo)': 'sa-east-1'
-        },
-
-        PLUGIN_S3_SERVER_LOCATIONS: {
-            'EU': 's3-eu-west-1.amazonaws.com',
-            'eu-west-1': 's3-eu-west-1.amazonaws.com',
-            'us-east-1': 's3.amazonaws.com',
-            'us-west-1': 's3-us-west-1.amazonaws.com',
-            'us-west-2': 's3-us-west-2.amazonaws.com',
-            'ap-southeast-1': 's3-ap-southeast-1.amazonaws.com',
-            'ap-southeast-2': 's3-ap-southeast-2.amazonaws.com',
-            'ap-northeast-1': 's3-ap-northeast-1.amazonaws.com',
-            'sa-east-1': 's3-sa-east-1.amazonaws.com'
-        },
-
         PLUGIN_S3_LINK: 'https://portal.aws.amazon.com/gp/aws/developer/registration/index.html',
 
         hasssl: true,
@@ -272,9 +239,73 @@ $(document).ready(function() {
         usernamewatermark: 'AWS Access ID',
         passwordwatermark: 'AWS Secret Key',
         serverdrop_field: null,
+        regiondrop_field: null,
         bucket_field: null,
+        known_hosts: null,
+        known_regions: null,
+
+        setup_hosts_after_config: function() {
+            if (this.known_hosts != null && this.serverdrop_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_hosts)
+                    servers.push({label: k + ' (' + this.known_hosts[k] + ')', value: this.known_hosts[k]});
+
+                this.serverdrop_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.serverdrop_field.click(function() {  
+                    self.serverdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup_regions_after_config: function() {
+            if (this.known_regions != null && this.regiondrop_field != null) {
+                var buckets = [];
+                for (var k in this.known_regions)
+                    buckets.push({label: k + ' (' + this.known_regions[k] + ')', value: this.known_regions[k]});
+                
+                this.regiondrop_field.autocomplete({
+                    minLength: 0,
+                    source: buckets, 
+                });
+                var self = this;
+                this.regiondrop_field.click(function() {  
+                    self.regiondrop_field.autocomplete('search', '');
+                });
+            }
+        },
 
         setup: function(dlg, div) {
+            var self = this;
+
+            if (self.known_hosts == null) {
+                APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Providers'}, function(data) {
+                    self.known_hosts = data.Result;
+                    self.setup_hosts_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get S3 config: ' + message);
+                });
+            } else {
+                this.setup_hosts_after_config();
+            }
+
+            if (self.known_regions == null) {
+                APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Regions'}, function(data) {
+                    self.known_regions = data.Result;
+                    self.setup_regions_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get S3 config: ' + message);
+                });
+            } else {
+                this.setup_regions_after_config();
+            }
+
             $('#server-path-label').hide();
             $('#server-path').hide();
 
@@ -286,32 +317,8 @@ $(document).ready(function() {
 
             signuplink.outer.css('margin-bottom', '10px');
 
-            var servers = [];
-            for (var k in this.PLUGIN_S3_HOSTS)
-                servers.push({label: k + ' (' + this.PLUGIN_S3_HOSTS[k] + ')', value: this.PLUGIN_S3_HOSTS[k]});
-
-            var buckets = [];
-            for (var k in this.PLUGIN_S3_LOCATIONS)
-                buckets.push({label: k, value: this.PLUGIN_S3_LOCATIONS[k]});
-
-            regiondrop.field.autocomplete({
-                minLength: 0,
-                source: buckets, 
-            });
-
-            serverdrop.field.autocomplete({
-                minLength: 0,
-                source: servers, 
-            });
-
-            serverdrop.field.click(function() {  
-                serverdrop.field.autocomplete('search', '');
-            });
-            regiondrop.field.click(function() {  
-                regiondrop.field.autocomplete('search', '');
-            });
-
             this.serverdrop_field = serverdrop.field;
+            this.regiondrop_field = regiondrop.field;
             this.bucket_field = bucketfield.field;
         },
 
@@ -319,6 +326,7 @@ $(document).ready(function() {
             $('#server-path-label').show();
             $('#server-path').show();
             this.serverdrop_field = null;
+            this.regiondrop_field = null;
             this.bucket_field = null;
         },
 
