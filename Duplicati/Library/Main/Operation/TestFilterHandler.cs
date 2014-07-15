@@ -34,10 +34,11 @@ namespace Duplicati.Library.Main.Operation
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
             var storeSymlinks = m_options.SymlinkPolicy == Duplicati.Library.Main.Options.SymlinkStrategy.Store;
-            
+            var sourcefilter = new Library.Utility.FilterExpression(sources, true);
+
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options, m_result))
             {
-                foreach(var path in snapshot.EnumerateFilesAndFolders(new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).AttributeFilter))
+                foreach(var path in snapshot.EnumerateFilesAndFolders(new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).AttributeFilter))
                 {
                     var fa = FileAttributes.Normal;
                     try

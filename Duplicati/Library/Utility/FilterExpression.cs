@@ -379,7 +379,8 @@ namespace Duplicati.Library.Utility
             // If we only exclude files, choose to include by default
             var q = new Queue<IFilter>();
             q.Enqueue(filter);
-                
+
+            // TODO: We should cache this, so we do not compute it every time    
             while (q.Count > 0)
             {
                 var p = q.Dequeue();

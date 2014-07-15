@@ -31,7 +31,8 @@ namespace Duplicati.Library.Main.Operation
         private readonly IMetahash EMPTY_METADATA;
         
         private Library.Utility.IFilter m_filter;
-        
+        private Library.Utility.IFilter m_sourceFilter;
+
         private BackupResults m_result;
 
         //To better record what happens with the backend, we flush the log messages regularly
@@ -87,11 +88,13 @@ namespace Duplicati.Library.Main.Operation
             private Options.HardlinkStrategy m_hardlinkPolicy;
             private ILogWriter m_logWriter;
             private Dictionary<string, string> m_hardlinkmap;
+            private Duplicati.Library.Utility.IFilter m_sourcefilter;
             
-            public FilterHandler(Snapshots.ISnapshotService snapshot,FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, ILogWriter logWriter)
+            public FilterHandler(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, ILogWriter logWriter)
             {
                 m_snapshot = snapshot;
                 m_attributeFilter = attributeFilter;
+                m_sourcefilter = sourcefilter;
                 m_filter = filter;
                 m_symlinkPolicy = symlinkPolicy;
                 m_hardlinkPolicy = hardlinkPolicy;
@@ -115,6 +118,16 @@ namespace Duplicati.Library.Main.Operation
                     if (m_logWriter != null)
                         m_logWriter.AddWarning(string.Format("Failed to process path: {0}", path), ex);
                     return false;
+                }
+
+                Duplicati.Library.Utility.IFilter sourcematch;
+                bool sourcematches;
+                if (m_sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Including source path: {0}", path);
+
+                    return true;
                 }
                 
                 if (m_hardlinkPolicy != Options.HardlinkStrategy.All)
@@ -215,7 +228,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).AttributeFilter))
+            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).AttributeFilter))
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -251,10 +264,8 @@ namespace Duplicati.Library.Main.Operation
                 m_database.VerifyConsistency(null);
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
-                if (filter == null)
-                    m_filter = new Library.Utility.FilterExpression();
-                else
-                    m_filter = Library.Utility.FilterExpression.Combine(new Library.Utility.FilterExpression(sources, true), filter);
+                m_filter = filter ?? new Library.Utility.FilterExpression();
+                m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
             	
                 var lastVolumeSize = -1L;
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
@@ -389,7 +400,7 @@ namespace Duplicati.Library.Main.Operation
                             m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
                         }
                         
-                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, m_result);
+                        var filterhandler = new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, m_result);
     		                		                        	
                         using(new Logging.Timer("BackupMainOperation"))
                         {
