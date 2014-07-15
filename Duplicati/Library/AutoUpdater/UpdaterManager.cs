@@ -179,7 +179,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             get
             { 
-                try { return System.IO.File.ReadAllText(INSTALL_FILE).Replace('\r', '\n').Split(new char[] { '\n' }).FirstOrDefault().Trim() ?? ""; } 
+                try { return System.IO.File.ReadAllText(System.IO.Path.Combine(INSTALLDIR, INSTALL_FILE)).Replace('\r', '\n').Split(new char[] { '\n' }).FirstOrDefault().Trim() ?? ""; } 
                 catch { }
 
                 return "";
@@ -816,7 +816,7 @@ namespace Duplicati.Library.AutoUpdater
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.InstallDuring)
         {
             // If we are not the primary domain, just execute
-            if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
+            //if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
             {
                 int r = 0;
                 WrapWithUpdater(defaultstrategy, () => {

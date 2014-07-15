@@ -97,7 +97,7 @@ namespace Duplicati.Library.AutoUpdater
 
         public static string UpdateInstallFileText
         {
-            get { return string.Format(ReadResourceText(UPDATE_README), Guid.NewGuid().ToString("N")); }
+            get { return string.Format(ReadResourceText(UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N")); }
         }
 
         public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
