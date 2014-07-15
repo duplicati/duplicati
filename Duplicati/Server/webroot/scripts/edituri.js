@@ -507,7 +507,7 @@ $(document).ready(function() {
             {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Create URI', click: function() { 
 
-                var uri = validate_and_return_uri;
+                var uri = validate_and_return_uri();
                 if (uri != null) {
                     $( this ).dialog( "close" );
                     $('#backup-uri').val(uri);
