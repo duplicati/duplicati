@@ -4,13 +4,11 @@ $(document).ready(function() {
         hasssl: false,
         hideserverandport: true,
         optionalauth: true,
-        serverpathlabel: 'Path or UNC',
 
         btnel: null,
 
         fill_form_map: {
-            'server-path': false,
-            'server-name': function(dict, key, el, cfgel) {
+            'server-path': function(dict, key, el, cfgel) {
                 var p = [];
                 if (dict['server-name'] && dict['server-name'] != '')
                     p.push(dict['server-name']);
@@ -30,13 +28,12 @@ $(document).ready(function() {
         },
 
         fill_dict_map: {
-            'server-name': false,
             'server-path': function(dict, key, el, cfgel) {
                 var p =  $(el).val();
                 if (p.indexOf('file://') == 0)
                     p = p.substr('file://'.length);
-                dict['server-name'] = p;
-                dict['server-path'] = '';
+                dict['server-path'] = p;
+                dict['server-name'] = '';
             }
         },
 
@@ -149,7 +146,7 @@ $(document).ready(function() {
             delete values['--auth-password'];
 
             if (values['--authid'] == '')
-                return EDIT_URI.validation_error($('server-password'), 'You must fill in an AuthID');
+                return EDIT_URI.validation_error($('#server-password'), 'You must fill in an AuthID');
 
 
             return EDIT_URI.validate_input(values, true);
