@@ -254,7 +254,7 @@ namespace Duplicati.Library.Main.Operation
                 if (filter == null)
                     m_filter = new Library.Utility.FilterExpression();
                 else
-                    m_filter = new Library.Utility.JoinedFilterExpression(new Library.Utility.FilterExpression(sources, true), filter);
+                    m_filter = Library.Utility.FilterExpression.Combine(new Library.Utility.FilterExpression(sources, true), filter);
             	
                 var lastVolumeSize = -1L;
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
