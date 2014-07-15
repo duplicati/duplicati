@@ -279,8 +279,8 @@ namespace Duplicati.Library.AutoUpdater
                         if (progress != null)
                             cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
 
-                        System.Net.WebRequest wreq = System.Net.WebRequest.Create(url);
-                        wreq.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                        var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
+                        wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
                         wreq.Headers.Add("X-Install-ID", InstallID);
 
                         using(var resp = wreq.GetResponse())
