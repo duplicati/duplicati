@@ -240,6 +240,11 @@
     display: inline-block;
 }
 
+#server-options {
+    max-width: none;
+    width: 100%;
+}
+
 .backup-option-name {
     font-weight: bold;
     color: darkgreen;
