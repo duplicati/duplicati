@@ -504,6 +504,7 @@ $(document).ready(function() {
         autoOpen: false, 
         closeOnEscape: true,
         buttons: [
+            {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Test connection', click: function() {
                 var selfbtn = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button').first();
 
@@ -553,7 +554,6 @@ $(document).ready(function() {
 
                 }
             } },
-            {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Create URI', click: function() { 
 
                 var uri = validate_and_return_uri();
