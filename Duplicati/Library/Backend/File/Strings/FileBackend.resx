@@ -145,7 +145,7 @@
     <value>Supplies the username used to connect to the server</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>Folder or drive</value>
+    <value>Local folder or drive</value>
   </data>
   <data name="FolderMissingError" xml:space="preserve">
     <value>The folder {0} does not exist</value>

@@ -250,7 +250,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return LC.L("OneDrive"); }
+            get { return LC.L("Microsoft OneDrive"); }
         }
 
         public string ProtocolKey

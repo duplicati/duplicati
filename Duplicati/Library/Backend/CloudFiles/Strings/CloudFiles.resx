@@ -157,7 +157,7 @@
     <value>Supports connections to the CloudFiles backend. Allowed formats is "cloudfiles://container/folder".</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>CloudFiles (Rackspace)</value>
+    <value>Rackspace CloudFiles</value>
   </data>
   <data name="ETagVerificationError" xml:space="preserve">
     <value>MD5 Hash (ETag) verification failed</value>
