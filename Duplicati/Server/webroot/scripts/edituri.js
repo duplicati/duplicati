@@ -318,10 +318,59 @@ $(document).ready(function() {
             BACKEND_STATE.modules = serverdata['BackendModules'];
             BACKEND_STATE.module_lookup = {};
 
+            var group_basic = $('<optgroup label="Standard protocols"></optgroup>');
+            var group_local = $('<optgroup label="Local storage"></optgroup>');
+            var group_prop = $('<optgroup label="Proprietary"></optgroup>');
+            var group_others = $('<optgroup label="Others"></optgroup>');
+
             for (var i = 0; i < BACKEND_STATE.modules.length; i++) {
-              drop.append($("<option></option>").attr("value", BACKEND_STATE.modules[i].Key).text(BACKEND_STATE.modules[i].DisplayName));
               BACKEND_STATE.module_lookup[BACKEND_STATE.modules[i].Key] = BACKEND_STATE.modules[i];
             }
+
+            var used = {};
+
+            for(var i in {'ftp':0, 'ssh':0, 'webdav':0}) {
+                if (BACKEND_STATE.module_lookup[i]) {
+                    used[i] = true;
+                    group_basic.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));
+                }
+            }
+
+            if (BACKEND_STATE.module_lookup['s3']) {
+                used['s3'] = true;
+                group_basic.append($("<option></option>").attr("value", 's3').text('S3 compatible'));
+            }
+
+            for(var i in {'file':0}) {
+                if (BACKEND_STATE.module_lookup[i]) {
+                    used[i] = true;
+                    group_local.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));
+                }
+            }
+
+            for(var i in {'s3':0, 'googledocs':0, 'onedrive':0, 'cloudfiles':0}) {
+                if (BACKEND_STATE.module_lookup[i]) {
+                    used[i] = true;
+                    group_prop.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));
+                }
+            }
+
+            for (var i = 0; i < BACKEND_STATE.modules.length; i++) {
+                var k = BACKEND_STATE.modules[i].Key;
+                if (!used[k]) {
+                    group_others.append($("<option></option>").attr("value", k).text(BACKEND_STATE.module_lookup[k].DisplayName));
+                }
+            }
+
+            if (group_basic.children().length > 0)
+                drop.append(group_basic);
+            if (group_local.children().length > 0)
+                drop.append(group_local);
+            if (group_prop.children().length > 0)
+                drop.append(group_prop);
+            if (group_others.children().length > 0)
+                drop.append(group_others);
+
 
             BACKEND_STATE.orig_uri = $('#backup-uri').val();
             BACKEND_STATE.orig_cfg = EDIT_URI.decode_uri(BACKEND_STATE.orig_uri);
