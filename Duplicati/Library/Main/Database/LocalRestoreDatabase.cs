@@ -197,7 +197,7 @@ namespace Duplicati.Library.Main.Database
                     if (filecount != foundfiles)
                     {
                         var oldlen = maxpath.Length;
-                        maxpath = System.IO.Path.GetDirectoryName(maxpath);
+                        maxpath = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO.PathGetDirectoryName(maxpath);
                         if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
                             maxpath = "";
                     }
