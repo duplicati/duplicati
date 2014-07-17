@@ -16,7 +16,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public HostedInstanceKeeper(string[] args)
         {
-            m_runner = new System.Threading.Thread(() => {
+            m_runner = new System.Threading.Thread((dummy_arg) => {
                 try
                 {
                     //When running the hosted instance we do not really care what port we are using,
