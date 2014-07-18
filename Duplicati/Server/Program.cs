@@ -238,7 +238,7 @@ namespace Duplicati.Server
                 else
                 {
                     //Normal release mode uses the systems "Application Data" folder
-                    Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ApplicationName));
+                    Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName));
                 }
 #endif
             }
