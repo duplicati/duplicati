@@ -28,6 +28,12 @@ cp "Updates/debug_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="${RELEASE_VERSION}"
 xbuild /p:Configuration=Debug BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
 xbuild /p:Configuration=Debug Duplicati.sln
+BUILD_STATUS=$?
+
+if [ "${BUILD_STATUS}" -ne 0 ]; then
+    echo "Failed to build, xbuild gave ${BUILD_STATUS}, exiting"
+    exit 4
+fi
 
 if [ ! -d "Updates/build" ]; then mkdir "Updates/build"; fi
 
@@ -40,8 +46,6 @@ if [ -e "${UPDATE_TARGET}" ]; then rm -rf "${UPDATE_TARGET}"; fi
 mkdir "${UPDATE_SOURCE}"
 mkdir "${UPDATE_TARGET}"
 
-# TODO: Figure out how to deal with OSX updates
-#cp -R Duplicati/GUI/Duplicati.GUI.MacTrayIcon/bin/Debug/* "${UPDATE_SOURCE}"
 cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug/* "${UPDATE_SOURCE}"
 cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
 
@@ -50,6 +54,8 @@ if [ -e "${UPDATE_SOURCE}/control_dir" ]; then rm -rf "${UPDATE_SOURCE}/control_
 if [ -e "${UPDATE_SOURCE}/Duplicati-server.sqlite" ]; then rm "${UPDATE_SOURCE}/Duplicati-server.sqlite"; fi
 if [ -e "${UPDATE_SOURCE}/Duplicati.debug.log" ]; then rm "${UPDATE_SOURCE}/Duplicati.debug.log"; fi
 if [ -e "${UPDATE_SOURCE}/updates" ]; then rm -rf "${UPDATE_SOURCE}/updates"; fi
+rm -rf "${UPDATE_SOURCE}/updates/"*.mdb;
+rm -rf "${UPDATE_SOURCE}/updates/"*.pdb;
 
 echo
 echo "Building signed package ..."
