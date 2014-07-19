@@ -1,9 +1,23 @@
-2.0.0.32 on 2014-07-09
-======================
-• Added automatic updater
-• Added timestamps to logfiles
-• Fixed additional / in connection URI
-• Reworked progress bar
-• Reworked “General” dialog
-• Reworked tray icon for OSX
-• Added support for “remote login”. Start server or tray icon with --webservice-password=<password>
+ï»¿2014-07-19
+==========
+* Changed status from "Experimental" to "preview"
+* Added filters in source dialog
+* Changed location of duplicati-server.sqlite to ~/.config/Duplicati/Duplicati-server.sqlite resp. %APPDATA%\Duplicati\Duplicati-server.sqlite
+* Fixed some issues with auto-update (wrong webroot, tracking ID, recurring popups, ...)
+* Recompiled http server dll
+* Added connector for OneDrive
+* Connected with OneDrive auth-token service
+* Redesigned the target dropdown a bit
+* Advanced options can be deleted again
+* Problem with looooong paths fixed
+
+
+2014-07-09
+==========
+* Added automatic updater
+* Added timestamps to logfiles
+* Fixed additional / in connection URI
+* Reworked progress bar
+* Reworked "General" dialog
+* Reworked tray icon for OSX
+* Added support for "remote login". Start server or tray icon with --webservice-password=<password>
