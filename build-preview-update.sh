@@ -7,10 +7,10 @@ RELEASE_NAME="2.0_preview_${RELEASE_TIMESTAMP}"
 RELEASE_CHANGEINFO=`cat changelog.txt`
 RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 
-RELEASE_FILE_NAME="duplicati-${RELEASE_VERSION}"
+RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
-UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip\;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
-UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest\;http://alt.updates.duplicati.com/preview/latest.manifest"
+UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
+UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest"
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
 
 if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
@@ -66,7 +66,7 @@ mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPD
 
 echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
-mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/duplicati.zip"
+mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
 mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
 cp "${UPDATE_TARGET}/duplicati.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
