@@ -3,13 +3,15 @@ RELEASE_TIMESTAMP=`date +%Y-%m-%d`
 RELEASE_INC_VERSION=`cat Updates/build_version.txt`
 RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 
-RELEASE_NAME=2.0_preview_${RELEASE_TIMESTAMP}
+RELEASE_NAME="2.0_preview_${RELEASE_TIMESTAMP}"
 RELEASE_CHANGEINFO=`cat changelog.txt`
 RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 
-UPDATE_ZIP_URLS=http://updates.duplicati.com/preview/duplicati.zip\;http://alt.updates.duplicati.com/preview/duplicati.zip
-UPDATE_MANIFEST_URLS=http://updates.duplicati.com/preview/latest.manifest\;http://alt.updates.duplicati.com/preview/latest.manifest
-UPDATER_KEYFILE=/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key
+RELEASE_FILE_NAME="duplicati-${RELEASE_VERSION}"
+
+UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip\;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
+UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest\;http://alt.updates.duplicati.com/preview/latest.manifest"
+UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
 
 if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
     echo "No information in changeinfo file"
@@ -20,14 +22,14 @@ echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
 echo
 
-echo "${RELEASE_NAME}" > Duplicati/License/VersionTag.txt
-echo "${UPDATE_MANIFEST_URLS}" > Duplicati/Library/AutoUpdater/AutoUpdateURL.txt
-cp "Updates/release_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt
+echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
+cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
 
-rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release
+rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="${RELEASE_VERSION}"
-xbuild /p:Configuration=Debug BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
+mono "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+xbuild /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 xbuild /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
@@ -66,6 +68,8 @@ echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
 mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/duplicati.zip"
 mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
+cp "${UPDATE_TARGET}/duplicati.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
