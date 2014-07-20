@@ -4,7 +4,7 @@ RELEASE_INC_VERSION=`cat Updates/build_version.txt`
 RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 
 RELEASE_NAME=2.0_preview_${RELEASE_TIMESTAMP}
-RELEASE_CHANGEINFO=`cat Updates/release_changeinfo.txt`
+RELEASE_CHANGEINFO=`cat changelog.txt`
 RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 
 UPDATE_ZIP_URLS=http://updates.duplicati.com/preview/duplicati.zip\;http://alt.updates.duplicati.com/preview/duplicati.zip
@@ -70,7 +70,7 @@ mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
 echo
-echo "Built DEBUG version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
+echo "Built PREVIEW version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
 echo "    in folder: ${UPDATE_TARGET}"
 
 
