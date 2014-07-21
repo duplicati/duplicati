@@ -930,6 +930,14 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.postponeUpdate = function() {
+        serverWithCallback(
+            { action: 'send-command', command: 'postpone-update' },
+            function() {},
+            function() {}
+        );
+    };
+
     APP_DATA.showChangelog = function(from_update) {
         serverWithCallback(
             { action: 'get-changelog', 'from-update': from_update ? 'true' : '' },
@@ -1180,6 +1188,7 @@ $(document).ready(function() {
                 buttons: [{
                     text: 'Not now',
                     onClick: function() {
+                        APP_DATA.postponeUpdate();
                         self.closeNoty();
                     }
                 },{

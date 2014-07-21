@@ -633,6 +633,11 @@ namespace Duplicati.Server.WebServer
                     }
                     return;
 
+                case "postpone-update":
+                    Program.DataConnection.ApplicationSettings.SuppressUpdateUntil = DateTime.UtcNow.AddDays(2);
+                    bw.OutputOK();
+                    return;
+
                 case "pause":
                     if (input.Contains("duration") && !string.IsNullOrWhiteSpace(input["duration"].Value))
                     {

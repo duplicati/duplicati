@@ -129,6 +129,10 @@ namespace Duplicati.Server
                     catch
                     {
                     }
+                    finally
+                    {
+                        Program.DataConnection.ApplicationSettings.SuppressUpdateUntil = new DateTime(0, DateTimeKind.Utc);
+                    }
                 }
 
                 if (m_download)
