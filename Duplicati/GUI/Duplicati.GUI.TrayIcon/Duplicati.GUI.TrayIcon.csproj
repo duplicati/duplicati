@@ -36,7 +36,7 @@
     <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
-    <DefineConstants>DEBUG;__MonoMac__</DefineConstants>
+    <DefineConstants>DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <EnvironmentVariables>
       <EnvironmentVariables>

@@ -29,10 +29,8 @@ namespace Duplicati.GUI.TrayIcon
         
         private static string GetDefaultToolKit()
         {
-#if __MonoCS__ && __MonoMac__
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
                 return TOOLKIT_COCOA;
-#endif
 
 #if __MonoCS__ || __WindowsGTK__            
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
@@ -105,10 +103,8 @@ namespace Duplicati.GUI.TrayIcon
                 else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
 #endif
-#if __MonoCS__ && __MonoMac__
                 else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
-#endif
                 else
                     toolkit = GetDefaultToolKit();
             }
@@ -210,10 +206,8 @@ namespace Duplicati.GUI.TrayIcon
             else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
                 return GetAppIndicatorInstance();
 #endif
-#if __MonoCS__ && __MonoMac__
             else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
-#endif
             else 
                 throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
         }
@@ -233,10 +227,8 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
-#if __MonoCS__ && __MonoMac__
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
-#endif
 
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
@@ -269,11 +261,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static bool TryGetMonoMac()
         {
-#if __MonoCS__ && __MonoMac__
             return typeof(MonoMac.AppKit.NSApplication) != null;
-#else
-            return false;
-#endif
         }
   
         //The functions below here, simply wrap the call to the above functions,
