@@ -68,7 +68,7 @@ echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
 mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
 mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
-cp "${UPDATE_TARGET}/duplicati.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+cp "${UPDATE_TARGET}/latest.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
