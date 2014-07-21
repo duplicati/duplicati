@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main
                     newpath = System.IO.Path.Combine(folder, GenerateRandomName());
                 
                 if (System.IO.File.Exists(newpath))
-                    throw new Exception("Unable to find a unique name for the database, please use --fh-dbpath");
+                    throw new Exception("Unable to find a unique name for the database, please use --dbpath");
                 
                 //Create a new one, add it to the list, and save it
                 configs.Add(new BackendEntry() {
