@@ -65,8 +65,6 @@ namespace Duplicati.Library.AutoUpdater
         private const string INSTALL_FILE = "installation.txt";
         private const string CURRENT_FILE = "current";
 
-        public const string AUTO_UPDATE_OPTION = "auto-update-strategy";
-
         /// <summary>
         /// Gets the original directory that this application was installed into
         /// </summary>
