@@ -477,8 +477,9 @@ namespace Duplicati.Server
             {
                 var nf =
                     (from n in f2
+                    let exp = Environment.ExpandEnvironmentVariables(n.Expression)
                     orderby n.Order
-                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include)))
+                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                     .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
 
                 return Duplicati.Library.Utility.FilterExpression.Combine(filter, nf);
@@ -504,7 +505,8 @@ namespace Duplicati.Server
            return   
                 (from n in filters
                 orderby n.Order
-                select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include)))
+                let exp = Environment.ExpandEnvironmentVariables(n.Expression)
+                select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
     }
