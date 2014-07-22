@@ -500,7 +500,7 @@ $(document).ready(function() {
     $('#connection-uri-dialog').dialog({ 
         modal: true, 
         minWidth: 320, 
-        width: $('body').width, 
+        width: $('body').width > 600 ? 320 : 600,
         autoOpen: false, 
         closeOnEscape: true,
         buttons: [
