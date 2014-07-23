@@ -78,7 +78,7 @@ namespace Duplicati.Library.Modules.Builtin
             string certHash;
             commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
 
-            m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash == null ? null : certHash.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries));
+            m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash == null ? null : certHash.Split(new string[] {",", ";"}, StringSplitOptions.RemoveEmptyEntries));
             
             bool disableNagle = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_NAGLING);
             bool disableExpect100 = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_EXPECT100);
