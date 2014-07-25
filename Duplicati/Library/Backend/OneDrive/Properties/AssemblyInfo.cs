@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SkyDrive")]
-[assembly: AssemblyDescription("A Duplicati Backend for SkyDrive")]
+[assembly: AssemblyTitle("OneDrive")]
+[assembly: AssemblyDescription("A Duplicati Backend for OneDrive")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("Duplicati.Library.Backend.SkyDrive")]
+[assembly: AssemblyProduct("Duplicati.Library.Backend.OneDrive")]
 [assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
