@@ -506,7 +506,7 @@ $(document).ready(function() {
         buttons: [
             {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
             {text: 'Test connection', click: function() {
-                var selfbtn = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button').first();
+                var selfbtn = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button').first().next();
 
                 var uri = validate_and_return_uri();
                 if (uri != null) {
