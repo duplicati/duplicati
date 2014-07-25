@@ -35,8 +35,7 @@ namespace Duplicati.Library.Backend
         public SkyDrive(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-            uri.RequireHost();
-            
+
             m_rootfolder = uri.Host;
             m_prefix = "/" + uri.Path;
             if (!m_prefix.EndsWith("/"))
@@ -52,6 +51,7 @@ namespace Duplicati.Library.Backend
         private class WLID_Service_Response
         {
             public string access_token { get; set; }
+            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public int expires { get; set; }
         }
 
@@ -68,8 +68,11 @@ namespace Duplicati.Library.Backend
             public string parent_id { get; set; }
             public string upload_location { get; set; }
             public string type { get; set; }
+            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public DateTime created_time { get; set; }
+            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public DateTime updated_time { get; set; }
+            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public long size { get; set; }
         }
 
@@ -89,10 +92,10 @@ namespace Duplicati.Library.Backend
 
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
 
-            using (var resp = (HttpWebResponse)areq.GetResponse())
-            using (var rs = areq.GetResponseStream())
-            using (var tr = new System.IO.StreamReader(rs))
-            using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
+            using(var resp = (HttpWebResponse)areq.GetResponse())
+            using(var rs = areq.GetResponseStream())
+            using(var tr = new System.IO.StreamReader(rs))
+            using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                 return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);
         }
 
