@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Server
 {
@@ -56,6 +57,11 @@ namespace Duplicati.Server
         /// This is the working thread
         /// </summary>
         public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread;
+
+        /// <summary>
+        /// The thread running the ping-pong handler
+        /// </summary>
+        public static System.Threading.Thread PingPongThread;
 
         /// <summary>
         /// The path to the file that contains the current database
@@ -180,7 +186,7 @@ namespace Duplicati.Server
             //Find commandline options here for handling special startup cases
             Dictionary<string, string> commandlineOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
 
-            foreach (string s in args)
+            foreach(string s in args)
                 if (
                     s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
                     s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
@@ -195,7 +201,7 @@ namespace Duplicati.Server
                 {
                     Console.WriteLine(Strings.Program.HelpDisplayDialog);
 
-                    foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                    foreach(Library.Interface.ICommandLineArgument arg in SupportedCommands)
                         Console.WriteLine(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription);
 
                     return;
@@ -217,7 +223,7 @@ namespace Duplicati.Server
 #endif
 
             if (commandlineOptions.ContainsKey("log-level"))
-                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                foreach(string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                     if (s.Equals(commandlineOptions["log-level"].Trim(), StringComparison.InvariantCultureIgnoreCase))
                         Duplicati.Library.Logging.Log.LogLevel = (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
@@ -344,7 +350,8 @@ namespace Duplicati.Server
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
                     
-                Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) => {
+                Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>
+                {
                     Program.DataConnection.LogError(null, "Error in updater", obj);
                 };
 
@@ -355,7 +362,10 @@ namespace Duplicati.Server
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
                 LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
-                Program.WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) => { Runner.Run(x, true); }, LiveControl.State == LiveControls.LiveControlState.Paused);
+                Program.WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) =>
+                {
+                    Runner.Run(x, true);
+                }, LiveControl.State == LiveControls.LiveControlState.Paused);
                 Program.Scheduler = new Scheduler(WorkThread);
 
                 Program.WorkThread.StartingWork += new EventHandler(SignalNewEvent);
@@ -368,6 +378,13 @@ namespace Duplicati.Server
                 if (Program.WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort)
                     ServerPortChanged = true;
                 DataConnection.ApplicationSettings.LastWebserverPort = Program.WebServer.Port;
+
+                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
+                {
+                    Program.PingPongThread = new System.Threading.Thread(PingPongMethod);
+                    Program.PingPongThread.IsBackground = true;
+                    Program.PingPongThread.Start();
+                }
 
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
@@ -400,6 +417,10 @@ namespace Duplicati.Server
                     WorkThread.Terminate(true);
                 if (Instance != null)
                     Instance.Dispose();
+
+                if (PingPongThread != null)
+                    try { PingPongThread.Abort(); }
+                    catch { }
 
 #if DEBUG
                 //Flush the file
@@ -560,6 +581,17 @@ namespace Duplicati.Server
             }
         }
 
+        private static void PingPongMethod()
+        {
+            var rd = new System.IO.StreamReader(Console.OpenStandardInput());
+            var wr = new System.IO.StreamWriter(Console.OpenStandardOutput());
+            while (rd.ReadLine() != null)
+            {
+                wr.WriteLine("pong");
+                wr.Flush();
+            }
+        }
+
         /// <summary>
         /// Gets a list of all supported commandline options
         /// </summary>
@@ -577,6 +609,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_PORT.ToString()),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
                     new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, LC.L("Enables the ping-pong responder"), LC.L("When running as a server, the service daemon must verify that the process is responding. If this option is enabled, the server reads stdin and writes a reply to each line read")),
                 };
             }
         }
