@@ -29,7 +29,6 @@ namespace Duplicati.Service
 
         public Runner()
         {
-            m_event = new System.Threading.ManualResetEvent(false);
             m_thread = new System.Threading.Thread(Run);
             m_thread.IsBackground = true;
             m_thread.Name = "Server Runner";
