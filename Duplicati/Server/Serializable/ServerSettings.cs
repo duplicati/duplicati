@@ -176,7 +176,7 @@ namespace Duplicati.Server.Serializable
         } 
         
         /// <summary>
-        /// The generic modules known by the server
+        /// The web modules known by the server
         /// </summary>
         public static IDynamicModule[] WebModules
         { 
@@ -187,7 +187,23 @@ namespace Duplicati.Server.Serializable
                      select new DynamicModule(n))
                     .ToArray(); 
             }
-        }         
+        }        
+
+        /// <summary>
+        /// The web modules known by the server
+        /// </summary>
+        public static IDynamicModule[] ConnectionModules
+        { 
+            get
+            { 
+                return 
+                    (from n in Library.DynamicLoader.GenericLoader.Modules
+                     where n is Library.Interface.IConnectionModule
+                     select new DynamicModule(n))
+                    .ToArray(); 
+            }
+        }   
+
         /// <summary>
         /// The filters that are applied to all backups
         /// </summary>

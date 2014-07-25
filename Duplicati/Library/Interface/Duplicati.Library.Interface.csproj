@@ -73,6 +73,7 @@
     <Compile Include="IGenericCallbackModule.cs" />
     <Compile Include="ResultInterfaces.cs" />
     <Compile Include="IWebModule.cs" />
+    <Compile Include="IConnectionModule.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\CommandLineArgument.resx">

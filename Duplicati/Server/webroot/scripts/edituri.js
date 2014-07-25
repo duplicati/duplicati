@@ -85,7 +85,7 @@ $(document).ready(function() {
             }
 
             if (validateOptions) {
-                var validOptions = BACKEND_STATE.module_lookup[values['backend-type']].Options;
+                var validOptions = BACKEND_STATE.module_lookup[values['backend-type']].Options.concat(BACKEND_STATE.extra_options);
                 var validOptionsDict = {};
                 var names = [];
                 for (var n in validOptions) {
@@ -188,6 +188,9 @@ $(document).ready(function() {
         },
 
         decode_uri: function(uri) {
+
+            //TODO: Does not like uri's with no server name
+
             var i = EDIT_URI.URL_REGEXP_FIELDS.length + 1;
             var res = {};
 
@@ -317,6 +320,9 @@ $(document).ready(function() {
 
             BACKEND_STATE.modules = serverdata['BackendModules'];
             BACKEND_STATE.module_lookup = {};
+            BACKEND_STATE.extra_options = [];
+            for(var i in serverdata['ConnectionModules'])
+                BACKEND_STATE.extra_options = BACKEND_STATE.extra_options.concat(serverdata['ConnectionModules'][i].Options);
 
             var group_basic = $('<optgroup label="Standard protocols"></optgroup>');
             var group_local = $('<optgroup label="Local storage"></optgroup>');
@@ -508,8 +514,37 @@ $(document).ready(function() {
             {text: 'Test connection', click: function() {
                 var selfbtn = $(this).parent().find('.ui-dialog-buttonpane').find('.ui-button').first().next();
 
-                var uri = validate_and_return_uri();
-                if (uri != null) {
+                var hasTriedCreate = false;
+                var hasTriedCert = false;
+
+                var testConnection = null;
+
+                var handleError = function(data, success, message) {
+                    selfbtn.button('option', 'disabled', false);
+                    selfbtn.button('option', 'label', 'Test connection');
+
+                    if (!hasTriedCreate && message == 'missing-folder')
+                    {
+                        if (confirm('The folder ' + $('#server-path').val() + ' does not exist\nCreate it now?')) {
+                            createFolder();
+                        }
+                    }
+                    else if (!hasTriedCert && message.indexOf('incorrect-cert:') == 0)
+                    {
+                        var hash = message.substr('incorrect-cert:'.length);
+                        if (confirm('The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ' + hash + '?' )) {
+
+                            hasTriedCert = true;
+                            $('#server-options').val($('#server-options').val() + '--accept-specified-ssl-hash=' + hash);
+
+                            testConnection();
+                        }
+                    }
+                    else
+                        alert('Failed to connect: ' + message);
+                }
+
+                testConnection = function() {
                     selfbtn.button('option', 'disabled', true);
                     selfbtn.button('option', 'label', 'Testing ...');
 
@@ -517,41 +552,24 @@ $(document).ready(function() {
                         selfbtn.button('option', 'disabled', false);
                         selfbtn.button('option', 'label', 'Test connection');
                         alert('Connection worked!');
-                    },
-                    function(data, success, message) {
-                        selfbtn.button('option', 'disabled', false);
-                        selfbtn.button('option', 'label', 'Test connection');
+                    }, handleError);
+                };
 
-                        if (message == 'missing-folder')
-                        {
-                            if (confirm('The folder ' + $('#server-path').val() + ' does not exist\nCreate it now?')) {
-                                selfbtn.button('option', 'disabled', true);
-                                selfbtn.button('option', 'label', 'Creating folder ...');
+                var createFolder = function() {
+                    hasTriedCreate = true;
+                    selfbtn.button('option', 'disabled', true);
+                    selfbtn.button('option', 'label', 'Creating folder ...');
 
-                                APP_DATA.callServer({action: 'create-remote-folder', url: uri}, function(data) {
-                                    selfbtn.button('option', 'label', 'Testing ...');
+                    APP_DATA.callServer(
+                        {action: 'create-remote-folder', url: uri}, 
+                        testConnection, 
+                        handleError
+                    );
+                };
 
-                                    APP_DATA.callServer({action: 'test-backend', url: uri}, function(data) {
-                                        selfbtn.button('option', 'disabled', false);
-                                        selfbtn.button('option', 'label', 'Test connection');
-                                        alert('Connection worked!');
-                                    },
-                                    function(data, success, message) {
-                                        alert('Failed to connect: ' + message);
-                                    });                                    
-                                },
-                                function(data, success, message) {
-                                    selfbtn.button('option', 'disabled', false);
-                                    selfbtn.button('option', 'label', 'Test connection');
-                                    alert('Could not create folder: ' + message);
-                                });
-
-                            }
-                        }
-                        else
-                            alert('Failed to connect: ' + message);
-                    });
-
+                var uri = validate_and_return_uri();
+                if (uri != null) {
+                    testConnection();
                 }
             } },
             {text: 'Create URI', click: function() { 
@@ -572,7 +590,7 @@ $(document).ready(function() {
             var m = BACKEND_STATE.module_lookup[k];
             
             if (m && m.Options) {
-            $('#backup-options-dialog').trigger('configure', { Options: m.Options, callback: function(id) {
+            $('#backup-options-dialog').trigger('configure', { Options: m.Options.concat(BACKEND_STATE.extra_options), callback: function(id) {
                 $('#backup-options-dialog').dialog('close');
 
                 var txt = $('#server-options').val().trim();

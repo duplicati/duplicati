@@ -310,9 +310,24 @@ namespace Duplicati.Server.WebServer
                 return;
             }
 
+            var modules = (from n in Library.DynamicLoader.GenericLoader.Modules
+                                    where n is Library.Interface.IConnectionModule
+                                    select n).ToArray();
+
             try
             {
-                using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(input["url"].Value, new Dictionary<string, string>()))
+                var url = input["url"].Value;
+                var uri = new Library.Utility.Uri(url);
+                var qp = uri.QueryParameters;
+
+                var opts = new Dictionary<string, string>();
+                foreach(var k in qp.Keys.Cast<string>())
+                    opts[k] = qp[k];
+
+                foreach(var n in modules)
+                    n.Configure(opts);
+
+                using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
                     b.Test();
 
                 bw.OutputOK();
@@ -321,9 +336,22 @@ namespace Duplicati.Server.WebServer
             {
                 ReportError(response, bw, "missing-folder");
             }
+            catch (Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException icex)
+            {
+                if (string.IsNullOrWhiteSpace(icex.Certificate))
+                    ReportError(response, bw, icex.Message);
+                else
+                    ReportError(response, bw, "incorrect-cert:" + icex.Certificate);
+            }
             catch (Exception ex)
             {
                 ReportError(response, bw, ex.Message);
+            }
+            finally
+            {
+                foreach(var n in modules)
+                    if (n is IDisposable)
+                        ((IDisposable)n).Dispose();
             }
         }
 
@@ -357,6 +385,7 @@ namespace Duplicati.Server.WebServer
                 BackendModules = Serializable.ServerSettings.BackendModules,
                 GenericModules = Serializable.ServerSettings.GenericModules,
                 WebModules = Serializable.ServerSettings.WebModules,
+                ConnectionModules = Serializable.ServerSettings.ConnectionModules,
                 UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs
             });
         }
