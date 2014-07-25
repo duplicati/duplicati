@@ -12,7 +12,7 @@ namespace Duplicati.Library.Backend
     {
         private const string AUTHID_OPTION = "authid";
 
-        private const string WLID_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh?authid={0}";
+        private const string WLID_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
         private const string WLID_LOGIN = "https://duplicati-oauth-handler.appspot.com/";
 
         private const string WLID_SERVER = "https://apis.live.net/v5.0";
@@ -79,10 +79,13 @@ namespace Duplicati.Library.Backend
             public string description;
         }
 
-        private T GetJSONData<T>(string url)
+        private T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null)
         {
             var req = (HttpWebRequest)System.Net.WebRequest.Create(url);
             req.UserAgent = USER_AGENT;
+
+            if (setup != null)
+                setup(req);
 
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
 
@@ -101,7 +104,9 @@ namespace Duplicati.Library.Backend
                 {
                     try
                     {
-                        var res = GetJSONData<WLID_Service_Response>(string.Format(WLID_SERVICE, Library.Utility.Uri.UrlEncode(m_authid)));
+                        var res = GetJSONData<WLID_Service_Response>(WLID_SERVICE, (req) => {
+                            req.Headers.Add("X-AuthID", m_authid);
+                        });
 
                         m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
                         m_token = res.access_token;
