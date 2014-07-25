@@ -59,6 +59,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("read-log", ReadLogData);
             SUPPORTED_METHODS.Add("get-license-data", GetLicenseData);
             SUPPORTED_METHODS.Add("get-changelog", GetChangelog);
+            SUPPORTED_METHODS.Add("locate-uri-db", LocateUriDb);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -180,6 +181,25 @@ namespace Duplicati.Server.WebServer
             return result;
         }
 
+        private void LocateUriDb(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var uri = input["uri"].Value;
+
+            if (string.IsNullOrWhiteSpace(uri))
+            {
+                ReportError(response, bw, "Invalid request, missing uri");
+            }
+            else
+            {
+                var path = Library.Main.DatabaseLocator.GetDatabasePath(uri, null, false, false);
+
+                bw.SetOK();
+                bw.WriteJsonObject(new {Exists = !string.IsNullOrWhiteSpace(path)});
+            }
+
+        }
+
         private void GetChangelog(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
             HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
@@ -212,9 +232,6 @@ namespace Duplicati.Server.WebServer
                     });
                 }
             }
-
-
-
         }
 
         private void GetLicenseData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)

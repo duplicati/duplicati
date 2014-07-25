@@ -688,15 +688,35 @@ $(document).ready(function() {
             for(var k in set)
                 obj.Backup.Settings.push({Name: k, Value: set[k]});
 
-            var method = EDIT_STATE.newBackup ? APP_DATA.addBackup : APP_DATA.updateBackup;
-            method(obj, function() {
-                EDIT_STATE.dataModified = false;
-                $('#edit-dialog').dialog('close');
-            },
-            function(data, succes, status) {
-                alert('Could not save: ' + status);
-            });
+            if (EDIT_STATE.newBackup) {
 
+                APP_DATA.locateUriDb(obj.Backup.TargetURL, function(res) {
+                    var existing_db = (res.Exists && confirm("An existing local database for the storage has been found.\nRe-using the database will allow the commandline and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?")) ? true : false;
+
+                    APP_DATA.addBackup(obj, function() {
+                        EDIT_STATE.dataModified = false;
+                        $('#edit-dialog').dialog('close');
+                    },
+                    function(data, succes, status) {
+                        alert('Could not save: ' + status);
+                    }, 
+                    {
+                        existing_db: existing_db
+                    });
+                },
+                function(data, succes, status) {
+                    alert('Could not save: ' + status);
+                });
+
+            } else {
+                APP_DATA.updateBackup(obj, function() {
+                    EDIT_STATE.dataModified = false;
+                    $('#edit-dialog').dialog('close');
+                },
+                function(data, succes, status) {
+                    alert('Could not save: ' + status);
+                });
+            }
 
         }
     });

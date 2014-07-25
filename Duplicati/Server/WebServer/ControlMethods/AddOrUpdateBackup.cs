@@ -102,6 +102,7 @@ namespace Duplicati.Server.WebServer
         private void AddBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
             var str = request.Form["data"].Value;
+
             if (string.IsNullOrWhiteSpace(str))
             {
                 ReportError(response, bw, "Missing backup object");
@@ -128,6 +129,14 @@ namespace Duplicati.Server.WebServer
                 }
                 else
                 {
+                    if (Library.Utility.Utility.ParseBool(request.Form["existing_db"].Value, false))
+                    {
+                        data.Backup.DBPath = Library.Main.DatabaseLocator.GetDatabasePath(data.Backup.TargetURL, null, false, false);
+                        if (string.IsNullOrWhiteSpace(data.Backup.DBPath))
+                            throw new Exception("Unable to find remote db path?");
+                    }
+
+
                     lock(Program.DataConnection.m_lock)
                     {
                         if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())

@@ -736,9 +736,13 @@ $(document).ready(function() {
         serverWithCallback({ action: 'get-backup', id: id}, callback, errorhandler);
     };
 
-    APP_DATA.addBackup = function(cfg, callback, errorhandler) {
+    APP_DATA.addBackup = function(cfg, callback, errorhandler, extra_options) {
         serverWithCallback(
-            { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)},
+            $.extend(
+                {}, 
+                extra_options,
+                { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}
+            ),
             callback,
             errorhandler
         );
@@ -752,6 +756,13 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.locateUriDb = function(targeturl, callback, errorhandler) {
+        serverWithCallback(
+            { action: 'locate-uri-db', HTTP_METHOD: 'POST', uri: targeturl},
+            callback,
+            errorhandler
+        );
+    };
 
     APP_DATA.editNewBackup = function() {
         APP_DATA.editBackup();

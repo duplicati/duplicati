@@ -39,6 +39,9 @@ namespace Duplicati.Library.Main
         
         public static string GetDatabasePath(string backend, Options options, bool autoCreate = true, bool anyUsername = false)
         {
+            if (options == null)
+                options = new Options(new Dictionary<string, string>());
+
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
          
