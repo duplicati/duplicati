@@ -464,7 +464,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Size, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "false"),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "false"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
