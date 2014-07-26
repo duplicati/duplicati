@@ -1,4 +1,4 @@
- 2014-07-25
+2014-07-25
 ==========
 * Filters can now use Windows style environment variables,
   e.g. %APPDATA%
@@ -10,7 +10,7 @@
 * Fixed that the cancel button changes text
 * Added ssl-certificate options to the URI dialog
 
- 2014-07-19
+2014-07-19
 ==========
 * Changed status from "Experimental" to "preview"
 * Added filters in source dialog
