@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main.Operation
                         m_logWriter.AddVerboseMessage("Including path due to filter: {0} => {1}", path, match.ToString());
                 }
                 
-                if (m_symlinkPolicy != Options.SymlinkStrategy.Follow && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                if (m_symlinkPolicy == Options.SymlinkStrategy.Ignore && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Excluding symlink: {0}", path);
