@@ -67,15 +67,15 @@ namespace Duplicati.Server
         /// <summary>
         /// The folder where control files are placed
         /// </summary>
-        private const string CONTROL_DIR = "control_dir";
+        private const string CONTROL_DIR = "control_dir_v2";
         /// <summary>
         /// The file that is locked by the first process
         /// </summary>
-        private const string CONTROL_FILE = "lock";
+        private const string CONTROL_FILE = "lock_v2";
         /// <summary>
         /// The prefix on files that communicate with the first instance
         /// </summary>
-        private const string COMM_FILE_PREFIX = "other_invocation_";
+        private const string COMM_FILE_PREFIX = "other_invocation_v2_";
 
         /// <summary>
         /// The delegate that is used to inform the first instance of the second invocation
