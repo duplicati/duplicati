@@ -73,6 +73,8 @@ cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.man
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
+git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"
+
 echo
 echo "Built PREVIEW version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
 echo "    in folder: ${UPDATE_TARGET}"
