@@ -80,8 +80,8 @@ namespace Duplicati.Server.Serializable
             get { return (from n in Program.Scheduler.WorkerQueue where n.Backup != null select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList(); }
         }
         
-        public bool HasWarning { get { return Program.HasWarning; } }
-        public bool HasError { get { return Program.HasError; } }
+        public bool HasWarning { get { return Program.DataConnection.ApplicationSettings.UnackedWarning; } }
+        public bool HasError { get { return Program.DataConnection.ApplicationSettings.UnackedError; } }
         
         public SuggestedStatusIcon SuggestedStatusIcon
         {

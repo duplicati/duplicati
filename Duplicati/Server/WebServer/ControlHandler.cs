@@ -855,12 +855,12 @@ namespace Duplicati.Server.WebServer
                     return;
 
                 case "clear-warning":
-                    Program.HasWarning = false;
+                    Program.DataConnection.ApplicationSettings.UnackedWarning = false;
                     Program.StatusEventNotifyer.SignalNewEvent();
                     bw.OutputOK();
                     return;
                 case "clear-error":
-                    Program.HasError = false;
+                    Program.DataConnection.ApplicationSettings.UnackedError = false;
                     Program.StatusEventNotifyer.SignalNewEvent();
                     bw.OutputOK();
                     return;

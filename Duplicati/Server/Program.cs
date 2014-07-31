@@ -108,10 +108,6 @@ namespace Duplicati.Server
         /// </summary>
         public static long LastDataUpdateID = 0;
 
-        //TODO: These should be persisted to the database
-        public static bool HasError;
-        public static bool HasWarning;
-        
         public static int ServerPort
         {
             get

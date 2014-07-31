@@ -372,6 +372,10 @@ namespace Duplicati.Server
         {
             backup.Metadata["LastErrorDate"] = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
             backup.Metadata["LastErrorMessage"] = ex.Message;
+
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.DataConnection.ApplicationSettings.UnackedError = true;
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
         
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
