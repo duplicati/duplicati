@@ -47,14 +47,6 @@ namespace Duplicati.Library.Logging
     }
 
     /// <summary>
-    /// This is the signature for the log event
-    /// </summary>
-    /// <param name="message">The message logged</param>
-    /// <param name="type">The type of message logged</param>
-    /// <param name="ex">An exception, may be null</param>
-    public delegate void EventLoggedDelgate(string message, LogMessageType type, Exception ex);
-
-    /// <summary>
     /// This static class is used to write log messages
     /// </summary>
     public static class Log
