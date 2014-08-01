@@ -26,7 +26,6 @@ namespace Duplicati.Server
     {
         public interface IRunnerData : Duplicati.Server.Serialization.Interface.IQueuedTask
         {
-            Duplicati.Server.Serialization.DuplicatiOperation Operation { get; }
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
             string[] FilterStrings { get; }
