@@ -286,6 +286,21 @@ namespace Duplicati.Server
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
+
+                if (options.ContainsKey("log-file"))
+                {
+                    var file = options["log-file"];
+
+                    string o;
+                    Library.Logging.LogMessageType level;
+                    options.TryGetValue("log-level", out o);
+                    Enum.TryParse<Library.Logging.LogMessageType>(o, true, out level);
+
+                    options.Remove("log-file");
+                    options.Remove("log-level");
+
+                    Program.LogHandler.SetOperationFile(file, level);
+                }
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
@@ -365,6 +380,7 @@ namespace Duplicati.Server
             finally
             {
                 ((RunnerData)data).Controller = null;
+                Program.LogHandler.RemoveOperationFile();
             }
         }
         

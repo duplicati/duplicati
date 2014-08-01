@@ -90,6 +90,15 @@
         </div>
     </script>
 
+    <script id="live-log-data-template" type="text/x-jquery-tmpl">
+        <div class="log-entry">
+            <div class="log-id">${BackupID}</div>
+            <div class="log-timestamp" title="${When}">${When}</div>
+            <div class="log-message">${Message}</div>
+            <div class="log-exception">${Exception}</div>
+        </div>
+    </script>
+
     <script id="log-backup-general-template" type="text/x-jquery-tmpl">
         <div class="log-entry">
             <div class="log-operationid">${BackupID}</div>
@@ -460,6 +469,17 @@
     <div id="folder-browse-dialog" class="modal-dialog" title="Choose folder"></div>
 
     <div id="log-dialog" class="modal-dialog" title="Log data">
+        <ul>
+            <li><a href="#log-tab-stored">Stored</a></li>
+            <li><a href="#log-tab-live">Live</a></li>
+        </ul>
+
+        <div id="log-tab-stored">
+        </div>
+
+        <div id="log-tab-live">
+            <select id="log-tab-live-level"></select>
+        </div>
 
     </div>
 

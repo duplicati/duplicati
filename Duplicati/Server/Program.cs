@@ -108,6 +108,11 @@ namespace Duplicati.Server
         /// </summary>
         public static long LastDataUpdateID = 0;
 
+        /// <summary>
+        /// The log redirect handler
+        /// </summary>
+        public static LogWriteHandler LogHandler = new LogWriteHandler();
+
         public static int ServerPort
         {
             get
@@ -218,11 +223,6 @@ namespace Duplicati.Server
             }
 #endif
 
-            if (commandlineOptions.ContainsKey("log-level"))
-                foreach(string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                    if (s.Equals(commandlineOptions["log-level"].Trim(), StringComparison.InvariantCultureIgnoreCase))
-                        Duplicati.Library.Logging.Log.LogLevel = (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
-
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
             {
@@ -278,11 +278,20 @@ namespace Duplicati.Server
                     }
                 }
 
+                // Setup the log redirect
+                Duplicati.Library.Logging.Log.CurrentLog = Program.LogHandler;
+
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
                     if (System.IO.File.Exists(commandlineOptions["log-file"]))
                         System.IO.File.Delete(commandlineOptions["log-file"]);
-                    Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(commandlineOptions["log-file"]);
+
+                    var loglevel = Duplicati.Library.Logging.LogMessageType.Error;
+
+                    if (commandlineOptions.ContainsKey("log-level"))
+                        Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(commandlineOptions["log-level"], true, out loglevel);
+
+                    Program.LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel); 
                 }
 
                 Version sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
@@ -418,11 +427,9 @@ namespace Duplicati.Server
                     try { PingPongThread.Abort(); }
                     catch { }
 
-#if DEBUG
-                //Flush the file
-                using (Duplicati.Library.Logging.Log.CurrentLog as Duplicati.Library.Logging.StreamLog)
-                    Duplicati.Library.Logging.Log.CurrentLog = null;
-#endif
+                if (LogHandler != null)
+                    LogHandler.Dispose();
+
             }
         }
 

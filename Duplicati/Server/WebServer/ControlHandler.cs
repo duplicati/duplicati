@@ -60,6 +60,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("get-license-data", GetLicenseData);
             SUPPORTED_METHODS.Add("get-changelog", GetChangelog);
             SUPPORTED_METHODS.Add("locate-uri-db", LocateUriDb);
+            SUPPORTED_METHODS.Add("poll-log-messages", PollLogMessages);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -349,7 +350,7 @@ namespace Duplicati.Server.WebServer
 
                 bw.OutputOK();
             }
-            catch (Duplicati.Library.Interface.FolderMissingException fex)
+            catch (Duplicati.Library.Interface.FolderMissingException)
             {
                 ReportError(response, bw, "missing-folder");
             }
@@ -403,7 +404,8 @@ namespace Duplicati.Server.WebServer
                 GenericModules = Serializable.ServerSettings.GenericModules,
                 WebModules = Serializable.ServerSettings.WebModules,
                 ConnectionModules = Serializable.ServerSettings.ConnectionModules,
-                UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs
+                UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
+                LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))
             });
         }
 
@@ -647,6 +649,21 @@ namespace Duplicati.Server.WebServer
                 success = true,
                 data = o
             });
+        }
+
+        private void PollLogMessages(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var level_str = input["level"].Value ?? "";
+            var id_str = input["id"].Value ?? "";
+
+            Library.Logging.LogMessageType level;
+            long id;
+
+            long.TryParse(id_str, out id);
+            Enum.TryParse(level_str, true, out level);
+
+            bw.OutputOK(Program.LogHandler.AfterID(id, level));
         }
 
         private void SendCommand(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)

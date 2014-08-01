@@ -999,7 +999,7 @@ $(document).ready(function() {
     };
 
     $('#edit-dialog-form').find('input').change(setStateModified);
-    $('#edit-dialog-form').find('option').change(setStateModified);
+    $('#edit-dialog-form').find('select').change(setStateModified);
     $('#edit-dialog-form').find('textarea').change(setStateModified);
 
     $('#use-scheduled-run').change(function() {
