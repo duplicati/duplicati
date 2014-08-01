@@ -159,6 +159,8 @@
                 <li id="main-control-menu-throttle"><a>Throttle ...</a></li>
                 <li id="main-control-menu-log"><a>Log ...</a></li>
                 <li>-</li>
+                <li id="main-control-menu-import"><a>Import ...</a></li>
+                <li>-</li>
                 <li id="main-control-menu-about"><a>About ...</a></li>
             </ul>
         </div>
@@ -178,6 +180,8 @@
         <li id="backup-details-delete-local"><a>Delete local data</a></li>
         <li id="backup-details-delete-remote"><a>Delete remote data</a></li>
         <li id="backup-details-repair"><a>Repair</a></li>
+        <li>-</li>
+        <li id="backup-details-export"><a>Export...</a></li>
         <li>-</li>
         <li id="backup-details-send-report"><a>Create bug report</a></li>
     </ul>
@@ -509,6 +513,29 @@
         </div>
 
     </div>
+
+    <div id="export-dialog" class="modal-dialog" title="Export ...">
+        <form>
+            <input type="radio" name="export-type" id="export-type-commandline" value="commandline" /><div class="export-dialog-label">As Commandline</div><br/>
+            <input type="radio" name="export-type" id="export-type-file" value="file" /><div class="export-dialog-label">To File</div><br/>
+            <input type="checkbox" name="use-encryption" id="export-use-encryption" /><div class="export-dialog-label">Encrypt with</div>
+            <input type="password" name="encryption-password" id="export-encryption-password">
+        </form>
+    </div>
+
+    <div id="import-dialog" class="modal-dialog" title="Import ...">
+        <form id="import-dialog-form" enctype="multipart/form-data" method="POST">
+            <div class="import-dialog-label">Configuration file:&nbsp;</div>
+            <input type="file" name="config" id="import-dialog-file"></br></br>
+
+            <div class="import-dialog-label">Passphrase (if encrypted):</div>
+            <input type="password" name="passphrase" id="import-encryption-password">
+
+            <input type="hidden" name="action" value="import-backup">
+            <input type="hidden" name="callback" id="import-dialog-callback" value="">
+        </form>
+    </div>
+
 
 </body>
 </html>

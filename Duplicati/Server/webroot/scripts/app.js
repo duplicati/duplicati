@@ -1155,6 +1155,8 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu-30m').click(function() { APP_DATA.pauseServer('30m'); });
     $('#main-control-menu-pause-submenu-1h').click(function() { APP_DATA.pauseServer('1h'); });
 
+    $('#main-control-menu-import').click(function() { $('#import-dialog').dialog('open'); });
+
     var updaterState = {
         state: 'Waiting',
         version: null,
@@ -1484,6 +1486,11 @@ $(document).ready(function() {
         APP_DATA.runRepair(APP_DATA.contextMenuId);
     });
 
+    $('#backup-details-export').click(function(e) {
+        $('#export-dialog').dialog('open');
+        $('#export-dialog').data('backupid', APP_DATA.contextMenuId);
+    });
+
     $('#backup-details-copy').click(function(e) {
         alert('Function is not implemented yet');
     });
@@ -1589,6 +1596,151 @@ $(document).ready(function() {
         pgtxt.text('Stop the current task?');
         dlg.append(pgtxt);
 
+    });
+
+    $('#import-dialog').dialog({
+        autoOpen: false,
+        width: $('body').width > 320 ? 320 : 600,
+        height: 250, 
+        modal: true,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Cancel', click: function(event, ui) {
+                $(this).dialog('close');
+            }},
+            { text: 'Import', click: function(event, ui) {
+                var uid = 'submit-frm-' + Math.random();
+                var callback = 'callback-' + Math.random();
+                var completed = false;
+
+                var iframe = $('<iframe>')
+                                .hide()
+                                .prop('id', uid)
+                                .prop('name', uid)
+                                .appendTo('body');
+
+                window[callback] = function(message) {
+                    completed = true;
+                    if (message == 'OK')
+                        $('#import-dialog').dialog('close');
+                    else
+                        alert(message);
+                };
+
+                $('#import-dialog-form')
+                    .attr('action', APP_CONFIG.server_url)
+                    .attr('target', uid);
+
+                $('#import-dialog-callback').val(callback);
+
+                $('#import-dialog-form').submit();
+
+                setTimeout(function() { 
+                    if (!completed)
+                        alert('Import failed, see the log for details');
+                    delete window[callback]; 
+                    iframe.remove(); 
+                }, 5000);
+            }}
+        ]
+    });
+    $('#import-dialog').on('dialogopen', function() {
+        $('#import-dialog-form').each(function(i,e) { 
+            e.reset(); 
+        });
+    });
+
+
+    $('#export-dialog').dialog({
+        autoOpen: false,
+        width: $('body').width > 320 ? 320 : 600,
+        height: 250, 
+        modal: true,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Cancel', click: function(event, ui) {
+                $(this).dialog('close');
+            }},
+            { text: 'Export', click: function(event, ui) {
+
+                var dlgself = this;
+                if ($('#export-use-encryption').is(':checked') && $('#export-encryption-password').val().trim() == '') {
+                    alert('Empty passphrase not allowed, de-select encryption or enter a passphrase');
+                    return;
+                }
+
+                var sendobj = {
+                    'action': 'export-backup', 
+                    'id': $('#export-dialog').data('backupid'),
+                    'cmdline': $('#export-type-commandline').is(':checked'),
+                    'passphrase': $('#export-encryption-password').val()
+                };
+
+                if ($('#export-type-file').is(':checked')) {
+
+                    var completed = false;
+                    var url = APP_CONFIG.server_url;
+                    url += (url.indexOf('?') > -1) ? '&' : '?';
+                    url += $.param(sendobj);
+
+                    var iframe = $('<iframe>')
+                                .hide()
+                                .prop('src', url)
+                                .appendTo('body');                
+
+                    setTimeout(function() { iframe.remove(); }, 5000);
+
+                    $(dlgself).dialog('close');
+
+                } else {
+                    APP_DATA.callServer(sendobj, 
+                    function(data) {
+                        var dlg = $('<div></div>').attr('title', 'Commandline');
+                        dlg.dialog({
+                            autoOpen: true,
+                            width: $('body').width > 450 ? 430 : 600,
+                            modal: true,
+                            closeOnEscape: true,
+                            buttons: [
+                                { text: 'Close', click: function(event, ui) {
+                                    dlg.dialog('close');
+                                    dlg.remove();
+                                }}
+                            ]
+                        });
+
+                        var pgtxt = $('<div></div>');
+                        pgtxt.text(data.Command);
+                        dlg.append(pgtxt);
+
+                        $(dlgself).dialog('close');
+                    }, 
+                    function(data, succes, status) {
+                        alert('Could not export: ' + status);                    
+                    });
+                }
+
+
+            }}
+        ]
+    });
+
+    var exportTypeChange = function() {
+        $('#export-use-encryption').attr('disabled', !$('#export-type-file').is(':checked'));
+        $('#export-use-encryption').change();
+    };
+
+    $('#export-dialog').on('dialogopen', function() {
+        $('#export-type-commandline').attr('checked', true);
+        $('#export-use-encryption').attr('checked', false);        
+        $('#export-encryption-password').val('');
+        exportTypeChange();
+    });
+
+    $('#export-type-commandline').change(exportTypeChange);
+    $('#export-type-file').change(exportTypeChange);
+    $('#export-use-encryption').change(function() {
+        $('#export-encryption-password').attr('disabled', !($('#export-use-encryption').is(':checked') && $('#export-type-file').is(':checked')));
     });
 
 });

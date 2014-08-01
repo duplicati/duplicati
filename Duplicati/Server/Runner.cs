@@ -267,10 +267,60 @@ namespace Duplicati.Server
             }
             #endregion
         }
+
+        public static string GetCommandLine(IRunnerData data)
+        {
+            var backup = data.Backup;
+
+            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            if (data.ExtraOptions != null)
+                foreach(var k in data.ExtraOptions)
+                    options[k.Key] = k.Value;
+
+            var cf = Program.DataConnection.Filters;
+            var bf = backup.Filters;
+
+            var sources = 
+                (from n in backup.Sources
+                    let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                    where !string.IsNullOrWhiteSpace(p)
+                    select p).ToArray();
+            
+            var cmd = new System.Text.StringBuilder();
+
+            var exe = 
+                System.IO.Path.Combine(
+                    Library.AutoUpdater.UpdaterManager.InstalledBaseDir,
+                        System.IO.Path.GetFileName(
+                            typeof(Duplicati.CommandLine.Commands).Assembly.Location
+                        )
+                );
+
+            if (Library.Utility.Utility.IsMono)
+                exe = "mono " + exe;
+            
+            cmd.Append(exe);
+            cmd.Append(" backup ");
+            cmd.AppendFormat("\"{0}\"", backup.TargetURL);
+            cmd.Append("\"" + string.Join("\", \"", sources) + "\"");
+
+            foreach(var opt in options)
+                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + opt.Value + "\"");
+            
+            if (cf != null)
+                foreach(var f in cf)
+                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+
+            if (bf != null)
+                foreach(var f in cf)
+                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+
+            return cmd.ToString();
+        }
         
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
-            Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
+            var backup = data.Backup;
             
             try
             {                
@@ -319,7 +369,7 @@ namespace Duplicati.Server
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
                                 return r;
-                            }                            
+                            }                          
                         case DuplicatiOperation.List:
                             {
                                 var r = controller.List(data.FilterStrings);

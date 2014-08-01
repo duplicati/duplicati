@@ -61,6 +61,8 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("get-changelog", GetChangelog);
             SUPPORTED_METHODS.Add("locate-uri-db", LocateUriDb);
             SUPPORTED_METHODS.Add("poll-log-messages", PollLogMessages);
+            SUPPORTED_METHODS.Add("export-backup", ExportBackup);
+            SUPPORTED_METHODS.Add("import-backup", ImportBackup);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -99,6 +101,8 @@ namespace Duplicati.Server.WebServer
                     }
                     catch (Exception ex)
                     {
+                        Program.DataConnection.LogError("", string.Format("Request for {0} gave error", action), ex);
+
                         try
                         {
                             if (!response.HeadersSent)
@@ -120,8 +124,7 @@ namespace Duplicati.Server.WebServer
                         }
                         catch (Exception flex)
                         {
-                            Program.DataConnection.LogError("", "Handling outer ex", ex);
-                            Program.DataConnection.LogError("", "Gaver inner ex", flex);
+                            Program.DataConnection.LogError("", "Reporting error gave error", flex);
                         }
                     }
                 }
@@ -549,6 +552,155 @@ namespace Duplicati.Server.WebServer
         {
             bw.OutputOK(Program.DataConnection.ApplicationSettings);
         }
+
+        private class ImportExportStructure
+        {
+            public Duplicati.Server.Database.Schedule Schedule { get; set; }
+            public Duplicati.Server.Database.Backup Backup { get; set; }
+            public Dictionary<string, string> DisplayNames { get; set; }
+        }
+
+        private void ExportBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var bk = Program.DataConnection.GetBackup(input["id"].Value);
+            if (bk == null)
+            {
+                ReportError(response, bw, "Invalid or missing backup id");
+                return;
+            }
+
+            var cmdline = Library.Utility.Utility.ParseBool(input["cmdline"].Value, false);
+            if (cmdline)
+            {
+                bw.OutputOK(new { Command = Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, bk)) });
+            }
+            else
+            {
+                var passphrase = input["passphrase"].Value;
+                var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
+
+                var ipx = new ImportExportStructure() {
+                    Backup = (Database.Backup)bk,
+                    Schedule = (Database.Schedule)(scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null),
+                    DisplayNames = GetSourceNames(bk)
+                };
+
+                byte[] data;
+                using(var ms = new System.IO.MemoryStream())
+                using(var sw = new System.IO.StreamWriter(ms))
+                {
+                    Serializer.SerializeJson(sw, ipx, true);
+
+                    if (!string.IsNullOrWhiteSpace(passphrase))
+                    {
+                        ms.Position = 0;
+                        using(var ms2 = new System.IO.MemoryStream())
+                        using(var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
+                        {
+                            m.Encrypt(ms, ms2);
+                            data = ms2.ToArray();
+                        }
+                    }
+                    else
+                        data = ms.ToArray();
+                }
+
+                var filename = Library.Utility.Uri.UrlEncode(bk.Name) + "-duplicati-config.json";
+                if (!string.IsNullOrWhiteSpace(passphrase))
+                    filename += ".aes";
+
+                response.ContentLength = data.Length;
+                response.AddHeader("Content-Disposition", string.Format("attachment; filename={0}", filename));
+                response.ContentType = "application/octet-stream";
+
+                bw.SetOK();
+                response.SendHeaders();
+                response.SendBody(data);
+            }
+        }
+
+        private void ImportBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            var output_template = "<html><body><script type=\"text/javascript\">var rp = null; try { rp = parent['CBM']; } catch (e) {}; rp = rp || alert; rp('MSG');</script></body></html>";
+            //output_template = "<html><body><script type=\"text/javascript\">alert('MSG');</script></body></html>";
+            try
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                var cmdline = Library.Utility.Utility.ParseBool(input["cmdline"].Value, false);
+                output_template = output_template.Replace("CBM", input["callback"].Value);
+                if (cmdline)
+                {
+                    response.ContentType = "text/html";
+                    bw.Write(output_template.Replace("MSG", "Import from commandline not yet implemented"));
+                }
+                else
+                {
+                    ImportExportStructure ipx;
+
+                    var file = request.Form.GetFile("config");
+                    if (file == null)
+                        throw new Exception("No file uploaded");
+
+                    var buf = new byte[3];
+                    using(var fs = System.IO.File.OpenRead(file.Filename))
+                    {
+                        fs.Read(buf, 0, buf.Length);
+
+                        fs.Position = 0;
+                        if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')
+                        {
+                            var passphrase = input["passphrase"].Value;
+                            using(var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
+                            using(var m2 = m.Decrypt(fs))
+                            using(var sr = new System.IO.StreamReader(m2))
+                                ipx = Serializer.Deserialize<ImportExportStructure>(sr);
+                        }
+                        else
+                        {
+                            using(var sr = new System.IO.StreamReader(fs))
+                                ipx = Serializer.Deserialize<ImportExportStructure>(sr);
+                        }
+                    }
+
+                    ipx.Backup.ID = null;
+                    ((Database.Backup)ipx.Backup).DBPath = null;
+
+                    if (ipx.Schedule != null)
+                        ipx.Schedule.ID = -1;
+
+                    lock(Program.DataConnection.m_lock)
+                    {
+                        var basename = ipx.Backup.Name;
+                        var c = 0;
+                        while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                            ipx.Backup.Name = basename + " (" + c.ToString() + ")"; 
+                        
+                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                        {
+                            bw.SetOK();
+                            response.ContentType = "text/html";
+                            bw.Write(output_template.Replace("MSG", "There already exists a backup with the name: " + basename.Replace("\'", "\\'")));
+                        }
+
+                        Program.DataConnection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
+                    }
+
+                    response.ContentType = "text/html";
+                    bw.Write(output_template.Replace("MSG", "OK"));
+
+                    //bw.OutputOK(new { status = "OK", ID = ipx.Backup.ID });
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.DataConnection.LogError("", "Failed to import backup", ex);
+                response.ContentType = "text/html";
+                bw.Write(output_template.Replace("MSG", ex.Message.Replace("\'", "\\'").Replace("\r", "\\r").Replace("\n", "\\n")));
+            }
+
+        }
+
 
         private static void MergeJsonObjects(Newtonsoft.Json.Linq.JObject self, Newtonsoft.Json.Linq.JObject other)
         {

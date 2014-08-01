@@ -396,3 +396,6 @@ div.main-icon-plus {
     text-decoration: underline;
 }
 
+.export-dialog-label, .import-dialog-label {
+    display: inline;
+}
