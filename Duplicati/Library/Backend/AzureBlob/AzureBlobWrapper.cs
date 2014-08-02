@@ -36,9 +36,11 @@ namespace Duplicati.Library.Backend.AzureBlob
         private readonly string _containerName;
         private readonly CloudBlobContainer _container;
 
-        public AzureBlobWrapper(string connectionString, string containerName)
+        public AzureBlobWrapper(string accountName, string accessKey, string containerName)
         {
             _containerName = containerName;
+            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
+                accountName, accessKey);
             var storageAccount = CloudStorageAccount.Parse(connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
             _container = blobClient.GetContainerReference(containerName);

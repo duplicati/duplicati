@@ -126,22 +126,43 @@
   <data name="ContainerNameDescriptionShort" xml:space="preserve">
     <value>The name of the storage container </value>
   </data>
-  <data name="Description_v2" xml:space="preserve">
-    <value>This backend can read and write data to Azure blob storage. Allowed formats are: "BlobEndpoint=http://XXX.blob.core.windows.net/;AccountName=XXX;AccountKey=XXX"</value>
-  </data>
   <data name="DisplayName" xml:space="preserve">
     <value>Azure blob</value>
   </data>
   <data name="NoContainerName" xml:space="preserve">
     <value>No container name given</value>
   </data>
-  <data name="NoStorageConnectionString" xml:space="preserve">
-    <value>No Azure storage connection string given</value>
+  <data name="NoStorageAccountName" xml:space="preserve">
+    <value>No Azure storage account name given</value>
   </data>
-  <data name="StorageConnectionStringDescriptionLong" xml:space="preserve">
-    <value>The storage account name and access key can be obtained by clicking the "Manage Access Keys" button on the storage account dashboard</value>
+  <data name="StorageAccountNameDescriptionLong" xml:space="preserve">
+    <value>The Azure storage account name which can be obtained by clicking the "Manage Access Keys" button on the storage account dashboard</value>
   </data>
-  <data name="StorageConnectionStringDescriptionShort" xml:space="preserve">
-    <value>The Azure storage connection string</value>
+  <data name="StorageAccountNameDescriptionShort" xml:space="preserve">
+    <value>The storage account name</value>
+  </data>
+  <data name="AccessKeyDescriptionLong" xml:space="preserve">
+    <value>The Azure access key which can be obtained by clicking the "Manage Access Keys" button on the storage account dashboard</value>
+  </data>
+  <data name="AccessKeyDescriptionShort" xml:space="preserve">
+    <value>The access key</value>
+  </data>
+  <data name="NoAccessKey" xml:space="preserve">
+    <value>No Azure access key given</value>
+  </data>
+  <data name="AuthPasswordDescriptionLong" xml:space="preserve">
+    <value>The password used to connect to the server. This may also be supplied as the environment variable "AUTH_PASSWORD".</value>
+  </data>
+  <data name="AuthPasswordDescriptionShort" xml:space="preserve">
+    <value>Supplies the password used to connect to the server</value>
+  </data>
+  <data name="AuthUsernameDescriptionLong" xml:space="preserve">
+    <value>The username used to connect to the server. This may also be supplied as the environment variable "AUTH_USERNAME".</value>
+  </data>
+  <data name="AuthUsernameDescriptionShort" xml:space="preserve">
+    <value>Supplies the username used to connect to the server</value>
+  </data>
+  <data name="Description_v2" xml:space="preserve">
+    <value>This backend can read and write data to Azure blob storage.  Allowed formats are: "azure://bucketname"</value>
   </data>
 </root>

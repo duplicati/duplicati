@@ -61,6 +61,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
+      <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
+      <Name>Duplicati.Library.Backend.AzureBlob</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>

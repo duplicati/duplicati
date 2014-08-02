@@ -37,21 +37,36 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public AzureBlobBackend(string url, Dictionary<string, string> options)
         {
-            //var uri = new Utility.Uri(url);
-            //uri.RequireHost();
+            var uri = new Utility.Uri(url);
+            uri.RequireHost();
 
-            if (!options.ContainsKey("azure_blob_connection_string"))
+            string storageAccountName = null;
+            string accessKey = null;
+            string containerName = uri.Host.ToLowerInvariant();
+
+            if (options.ContainsKey("auth-username"))
+                storageAccountName = options["auth-username"];
+            if (options.ContainsKey("auth-password"))
+                accessKey = options["auth-password"];
+            if (options.ContainsKey("azure_account_name"))
+                storageAccountName = options["azure_account_name"];
+            if (options.ContainsKey("azure_access_key"))
+                accessKey = options["azure_access_key"];
+            if (!string.IsNullOrEmpty(uri.Username))
+                storageAccountName = uri.Username;
+            if (!string.IsNullOrEmpty(uri.Password))
+                accessKey = uri.Password;
+
+            if (string.IsNullOrWhiteSpace(storageAccountName))
             {
-                throw new Exception(Strings.AzureBlobBackend.NoStorageConnectionString);
+                throw new Exception(Strings.AzureBlobBackend.NoStorageAccountName);
+            }
+            if (string.IsNullOrWhiteSpace(accessKey))
+            {
+                throw new Exception(Strings.AzureBlobBackend.NoAccessKey);
             }
 
-            if (!options.ContainsKey("azure_blob_container_name"))
-            {
-                throw new Exception(Strings.AzureBlobBackend.NoContainerName);
-            }
-
-            _azureBlob = new AzureBlobWrapper(options["azure_blob_connection_string"],
-                options["azure_blob_container_name"].ToLowerInvariant());
+            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, containerName);
         }
 
         public string DisplayName
@@ -113,14 +128,26 @@ namespace Duplicati.Library.Backend.AzureBlob
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("azure_blob_connection_string", 
+                    new CommandLineArgument("azure_account_name", 
+                        CommandLineArgument.ArgumentType.String, 
+                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort, 
+                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong),
+                    new CommandLineArgument("azure_access_key", 
                         CommandLineArgument.ArgumentType.Password, 
-                        Strings.AzureBlobBackend.StorageConnectionStringDescriptionShort, 
-                        Strings.AzureBlobBackend.StorageConnectionStringDescriptionLong),
+                        Strings.AzureBlobBackend.AccessKeyDescriptionShort, 
+                        Strings.AzureBlobBackend.AccessKeyDescriptionLong),
                     new CommandLineArgument("azure_blob_container_name", 
                         CommandLineArgument.ArgumentType.String, 
                         Strings.AzureBlobBackend.ContainerNameDescriptionShort, 
-                        Strings.AzureBlobBackend.ContainerNameDescriptionLong)
+                        Strings.AzureBlobBackend.ContainerNameDescriptionLong),
+                    new CommandLineArgument("auth-password", 
+                        CommandLineArgument.ArgumentType.Password, 
+                        Strings.AzureBlobBackend.AuthPasswordDescriptionShort, 
+                        Strings.AzureBlobBackend.AuthPasswordDescriptionLong),
+                    new CommandLineArgument("auth-username", 
+                        CommandLineArgument.ArgumentType.String, 
+                        Strings.AzureBlobBackend.AuthUsernameDescriptionShort, 
+                        Strings.AzureBlobBackend.AuthUsernameDescriptionLong)
                 });
 
             }
