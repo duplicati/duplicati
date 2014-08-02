@@ -16,7 +16,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public HostedInstanceKeeper(string[] args)
         {
-            m_runner = new System.Threading.Thread(() => {
+            m_runner = new System.Threading.Thread((dummy_arg) => {
                 try
                 {
                     //When running the hosted instance we do not really care what port we are using,
@@ -51,11 +51,17 @@ namespace Duplicati.GUI.TrayIcon
 
         public void Dispose()
         {
-            Duplicati.Server.Program.ApplicationExitEvent.Set();
-            if (!m_runner.Join(TimeSpan.FromSeconds(10)))
+            try
             {
-                m_runner.Abort();
-                m_runner.Join(TimeSpan.FromSeconds(10));
+                Duplicati.Server.Program.ApplicationExitEvent.Set();
+                if (!m_runner.Join(TimeSpan.FromSeconds(10)))
+                {
+                    m_runner.Abort();
+                    m_runner.Join(TimeSpan.FromSeconds(10));
+                }
+            }
+            catch
+            {
             }
         }
     }

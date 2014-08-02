@@ -41,6 +41,16 @@ namespace Duplicati.Server.Serializable
                 var u = Program.DataConnection.ApplicationSettings.UpdatedVersion;
                 if (u == null)
                     return null;
+                
+                if (Program.DataConnection.ApplicationSettings.SuppressUpdateUntil > DateTime.UtcNow)
+                    return null;
+
+                Version v;
+                if (!Version.TryParse(u.Version, out v))
+                    return null;
+
+                if (v <= System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
+                    return null;
 
                 return u.Displayname; 
             }
@@ -49,6 +59,8 @@ namespace Duplicati.Server.Serializable
         public UpdatePollerStates UpdaterState { get { return Program.UpdatePoller.ThreadState; } }
 
         public bool UpdateReady { get { return Duplicati.Library.AutoUpdater.UpdaterManager.HasUpdateInstalled; } }
+
+        public double UpdateDownloadProgress { get { return Program.UpdatePoller.DownloadProgess; } }
 
 
         public Tuple<long, string> ActiveTask
@@ -68,8 +80,8 @@ namespace Duplicati.Server.Serializable
             get { return (from n in Program.Scheduler.WorkerQueue where n.Backup != null select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList(); }
         }
         
-        public bool HasWarning { get { return Program.HasWarning; } }
-        public bool HasError { get { return Program.HasError; } }
+        public bool HasWarning { get { return Program.DataConnection.ApplicationSettings.UnackedWarning; } }
+        public bool HasError { get { return Program.DataConnection.ApplicationSettings.UnackedError; } }
         
         public SuggestedStatusIcon SuggestedStatusIcon
         {

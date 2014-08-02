@@ -35,10 +35,5 @@ namespace Duplicati.Library.Logging
         /// <param name="type">The type of message logged</param>
         /// <param name="exception">An exception, may be null</param>
         void WriteMessage(string message, LogMessageType type, Exception exception);
-
-        /// <summary>
-        /// An event that is raised when a message is logged
-        /// </summary>
-        event EventLoggedDelgate EventLogged;
     }
 }

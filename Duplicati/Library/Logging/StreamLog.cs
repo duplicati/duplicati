@@ -65,16 +65,8 @@ namespace Duplicati.Library.Logging
                 m_stream.WriteLine(exception.ToString());
                 m_stream.WriteLine();
             }
-
-            if (EventLogged != null)
-                EventLogged(message, type, exception);
         }
-
-        /// <summary>
-        /// An event that is raised when a message is logged
-        /// </summary>
-        public event EventLoggedDelgate EventLogged;
-
+            
         #endregion
 
         #region IDisposable Members

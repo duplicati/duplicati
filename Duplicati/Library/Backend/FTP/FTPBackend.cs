@@ -183,7 +183,7 @@ namespace Duplicati.Library.Backend
                 List<IFileEntry> lst = new List<IFileEntry>();
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.Net.WebResponse resp = areq.GetResponse())
-                using (System.IO.Stream rs = resp.GetResponseStream())
+                using (System.IO.Stream rs = areq.GetResponseStream())
                 using (System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
                 {
                     string line;
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Backend
 
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.WebResponse resp = areq.GetResponse())
-            using (System.IO.Stream rs = resp.GetResponseStream())
+            using (System.IO.Stream rs = areq.GetResponseStream())
                 Utility.Utility.CopyStream(rs, output, false);
         }
 

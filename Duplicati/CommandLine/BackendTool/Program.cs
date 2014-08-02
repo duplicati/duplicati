@@ -35,7 +35,7 @@ namespace Duplicati.CommandLine.BackendTool
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
-        static int RealMain(string[] _args)
+        public static int RealMain(string[] _args)
         {
             bool debugoutput = false;
             try

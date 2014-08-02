@@ -68,28 +68,39 @@ namespace Duplicati.Library.DynamicLoader
                 LoadInterfaces();
                 
                 var newOpts = new Dictionary<string, string>(options);
-                foreach(var key in uri.QueryParameters.AllKeys)
+                foreach (var key in uri.QueryParameters.AllKeys)
                     newOpts[key] = uri.QueryParameters[key];
 
                 lock (m_lock)
                 {
-                    if (m_interfaces.ContainsKey(uri.Scheme))
-                        return (IBackend)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, newOpts);
-                    else if (uri.Scheme.EndsWith("s"))
+                    try
                     {
-                        var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
-                        if (m_interfaces.ContainsKey(tmpscheme))
+                        if (m_interfaces.ContainsKey(uri.Scheme))
+                            return (IBackend)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, newOpts);
+                        else if (uri.Scheme.EndsWith("s"))
                         {
-                            var commands = m_interfaces[tmpscheme].SupportedCommands;
-                            if (commands != null && (commands.Where(x =>
+                            var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
+                            if (m_interfaces.ContainsKey(tmpscheme))
+                            {
+                                var commands = m_interfaces[tmpscheme].SupportedCommands;
+                                if (commands != null && (commands.Where(x =>
                                 x.Name.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase) ||
                                 (x.Aliases != null && x.Aliases.Where(y => y.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase)).Any())
                                 ).Any()))
-                            {
-                                newOpts["use-ssl"] = "true";
-                                return (IBackend)Activator.CreateInstance(m_interfaces[tmpscheme].GetType(), url, newOpts);
+                                {
+                                    newOpts["use-ssl"] = "true";
+                                    return (IBackend)Activator.CreateInstance(m_interfaces[tmpscheme].GetType(), url, newOpts);
+                                }
                             }
                         }
+                    }
+                    catch (System.Reflection.TargetInvocationException tex)
+                    {
+                        // Unwrap exceptions for nicer display
+                        if (tex.InnerException != null)
+                            throw tex.InnerException;
+
+                        throw;
                     }
                     
                     return null;

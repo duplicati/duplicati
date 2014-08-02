@@ -149,12 +149,12 @@ namespace Duplicati.Library.Backend
                     if (!string.IsNullOrEmpty(m_debugPropfindFile))
                     {
                         using (System.IO.FileStream fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            Utility.Utility.CopyStream(resp.GetResponseStream(), fs, false);
+                            Utility.Utility.CopyStream(areq.GetResponseStream(), fs, false);
 
                         doc.Load(m_debugPropfindFile);
                     }
                     else
-                        doc.Load(resp.GetResponseStream());
+                        doc.Load(areq.GetResponseStream());
                 }
 
                 System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
@@ -388,7 +388,7 @@ namespace Duplicati.Library.Backend
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    using (System.IO.Stream s = resp.GetResponseStream())
+                    using (System.IO.Stream s = areq.GetResponseStream())
                         Utility.Utility.CopyStream(s, stream);
                 }
             }

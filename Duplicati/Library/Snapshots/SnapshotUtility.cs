@@ -41,5 +41,13 @@ namespace Duplicati.Library.Snapshots
             else
                 return new WindowsSnapshot(folders, options);
         }
+
+        public static ISystemIO SystemIO
+        {
+            get
+            {
+                return Utility.Utility.IsClientLinux ? (ISystemIO)new SystemIOLinux() : (ISystemIO)new SystemIOWindows();
+            }
+        }
     }
 }

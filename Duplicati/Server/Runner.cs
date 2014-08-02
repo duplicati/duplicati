@@ -26,7 +26,6 @@ namespace Duplicati.Server
     {
         public interface IRunnerData : Duplicati.Server.Serialization.Interface.IQueuedTask
         {
-            Duplicati.Server.Serialization.DuplicatiOperation Operation { get; }
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
             string[] FilterStrings { get; }
@@ -268,10 +267,60 @@ namespace Duplicati.Server
             }
             #endregion
         }
+
+        public static string GetCommandLine(IRunnerData data)
+        {
+            var backup = data.Backup;
+
+            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            if (data.ExtraOptions != null)
+                foreach(var k in data.ExtraOptions)
+                    options[k.Key] = k.Value;
+
+            var cf = Program.DataConnection.Filters;
+            var bf = backup.Filters;
+
+            var sources = 
+                (from n in backup.Sources
+                    let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                    where !string.IsNullOrWhiteSpace(p)
+                    select p).ToArray();
+            
+            var cmd = new System.Text.StringBuilder();
+
+            var exe = 
+                System.IO.Path.Combine(
+                    Library.AutoUpdater.UpdaterManager.InstalledBaseDir,
+                        System.IO.Path.GetFileName(
+                            typeof(Duplicati.CommandLine.Commands).Assembly.Location
+                        )
+                );
+
+            if (Library.Utility.Utility.IsMono)
+                exe = "mono " + exe;
+            
+            cmd.Append(exe);
+            cmd.Append(" backup ");
+            cmd.AppendFormat("\"{0}\"", backup.TargetURL);
+            cmd.Append("\"" + string.Join("\", \"", sources) + "\"");
+
+            foreach(var opt in options)
+                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + opt.Value + "\"");
+            
+            if (cf != null)
+                foreach(var f in cf)
+                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+
+            if (bf != null)
+                foreach(var f in cf)
+                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+
+            return cmd.ToString();
+        }
         
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
-            Duplicati.Server.Serialization.Interface.IBackup backup = data.Backup;
+            var backup = data.Backup;
             
             try
             {                
@@ -286,6 +335,21 @@ namespace Duplicati.Server
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
+
+                if (options.ContainsKey("log-file"))
+                {
+                    var file = options["log-file"];
+
+                    string o;
+                    Library.Logging.LogMessageType level;
+                    options.TryGetValue("log-level", out o);
+                    Enum.TryParse<Library.Logging.LogMessageType>(o, true, out level);
+
+                    options.Remove("log-file");
+                    options.Remove("log-level");
+
+                    Program.LogHandler.SetOperationFile(file, level);
+                }
                 
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
@@ -305,7 +369,7 @@ namespace Duplicati.Server
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
                                 return r;
-                            }                            
+                            }                          
                         case DuplicatiOperation.List:
                             {
                                 var r = controller.List(data.FilterStrings);
@@ -365,6 +429,7 @@ namespace Duplicati.Server
             finally
             {
                 ((RunnerData)data).Controller = null;
+                Program.LogHandler.RemoveOperationFile();
             }
         }
         
@@ -372,6 +437,10 @@ namespace Duplicati.Server
         {
             backup.Metadata["LastErrorDate"] = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
             backup.Metadata["LastErrorMessage"] = ex.Message;
+
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.DataConnection.ApplicationSettings.UnackedError = true;
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
         
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
@@ -470,18 +539,22 @@ namespace Duplicati.Server
             return options;
         }
         
-        private static Duplicati.Library.Utility.FilterExpression ApplyFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Duplicati.Library.Utility.FilterExpression filter)
+        private static Duplicati.Library.Utility.IFilter ApplyFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Duplicati.Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
-                filter = new Duplicati.Library.Utility.FilterExpression[] { filter }.Union(
+            {
+                var nf =
                     (from n in f2
+                    let exp = Environment.ExpandEnvironmentVariables(n.Expression)
                     orderby n.Order
-                    select new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include))
-                )
-                .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
-            
-            return filter;
+                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
+                    .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
+
+                return Duplicati.Library.Utility.FilterExpression.Combine(filter, nf);
+            }
+            else
+                return filter;
         }
         
         private static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
@@ -492,7 +565,7 @@ namespace Duplicati.Server
                 select n).ToDictionary(k => k.Name, k => k.Value);
         }
         
-        private static Duplicati.Library.Utility.FilterExpression GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
             var filters = Program.DataConnection.Filters;
             if (filters == null || filters.Length == 0)
@@ -501,7 +574,8 @@ namespace Duplicati.Server
            return   
                 (from n in filters
                 orderby n.Order
-                select new Duplicati.Library.Utility.FilterExpression(n.Expression, n.Include))
+                let exp = Environment.ExpandEnvironmentVariables(n.Expression)
+                select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
     }

@@ -197,24 +197,6 @@ namespace Duplicati.Library.Main.Operation
             
             return new RemoteAnalysisResult() { ParsedVolumes = remotelist, ExtraVolumes = lookup.Values, MissingVolumes = missing };
         }
-        
-        internal static IEnumerable<Volumes.IParsedVolume> ParseFileList(string target, Dictionary<string, string> options, IBackendWriter log)
-        {
-            var opts = new Options(options);
-            using (var db = new LocalDatabase(opts.Dbpath, "ParseFileList"))
-            using (var b = new BackendManager(target, opts, log, db))
-            {
-                var res = 
-                    from n in b.List()
-                    let np = Volumes.VolumeBase.ParseFilename(n)
-                    where np != null
-                    select np;
-                    
-                b.WaitForComplete(db, null);
-                
-                return res;
-            }
-        }    
     }    
 }
 

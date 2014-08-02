@@ -18,6 +18,7 @@ namespace Duplicati.Server.Serialization.Interface
         string UpdatedVersion { get; }
         UpdatePollerStates UpdaterState { get; }
         bool UpdateReady { get; }
+        double UpdateDownloadProgress { get; }
 
     }
 }

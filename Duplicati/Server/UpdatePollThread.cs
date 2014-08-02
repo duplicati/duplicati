@@ -32,8 +32,21 @@ namespace Duplicati.Server
         private volatile bool m_forceCheck = false;
         private object m_lock = new object();
         private AutoResetEvent m_waitSignal;
+        private double m_downloadProgress;
 
         public UpdatePollerStates ThreadState { get; private set; }
+        public double DownloadProgess
+        {
+            get { return m_downloadProgress ; }
+
+            private set
+            {
+                var oldv = m_downloadProgress;
+                m_downloadProgress = value;
+                if ((int)(oldv * 100) != (int)(value * 100))
+                    Program.StatusEventNotifyer.SignalNewEvent();
+            }
+        }
         
         public UpdatePollThread()
         {
@@ -58,6 +71,7 @@ namespace Duplicati.Server
         {
             lock(m_lock)
             {
+                m_forceCheck = true;
                 m_download = true;
                 m_waitSignal.Set();
             }
@@ -115,6 +129,10 @@ namespace Duplicati.Server
                     catch
                     {
                     }
+                    finally
+                    {
+                        Program.DataConnection.ApplicationSettings.SuppressUpdateUntil = new DateTime(0, DateTimeKind.Utc);
+                    }
                 }
 
                 if (m_download)
@@ -128,10 +146,12 @@ namespace Duplicati.Server
                         ThreadState = UpdatePollerStates.Downloading;
                         Program.StatusEventNotifyer.SignalNewEvent();
 
-                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v))
+                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; }))
                             Program.StatusEventNotifyer.SignalNewEvent();
                     }
                 }
+
+                DownloadProgess = 0;
 
                 if (ThreadState != UpdatePollerStates.Waiting)
                 {

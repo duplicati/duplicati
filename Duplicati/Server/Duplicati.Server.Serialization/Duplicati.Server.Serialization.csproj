@@ -64,6 +64,7 @@
     <Compile Include="Interface\ISchedule.cs" />
     <Compile Include="Implementations\Setting.cs" />
     <Compile Include="Interface\IQueuedTask.cs" />
+    <Compile Include="Implementations\Filter.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">

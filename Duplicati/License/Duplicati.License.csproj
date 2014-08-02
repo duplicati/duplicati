@@ -60,16 +60,6 @@
       <Link>licenses\gpg\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\LitJSON\download.txt">
-      <Link>licenses\LitJSON\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
-    </Content>
-    <Content Include="..\..\thirdparty\LitJSON\license.txt">
-      <Link>licenses\LitJSON\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
-    </Content>
     <Content Include="..\..\thirdparty\SharpCompress\download.txt">
       <Link>licenses\SharpCompress\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -168,11 +158,6 @@
       <Link>licenses\Json.NET\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\LitJSON\licensedata.json">
-      <Link>licenses\LitJSON\licensedata.json</Link>
-      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\..\thirdparty\ManagedLZMA\licensedata.json">
       <Link>licenses\ManagedLZMA\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -203,6 +188,10 @@
     </Content>
     <Content Include="..\..\thirdparty\SSH.NET\licensedata.json">
       <Link>licenses\SSH.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\changelog.txt">
+      <Link>changelog.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

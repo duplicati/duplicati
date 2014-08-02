@@ -39,6 +39,9 @@ namespace Duplicati.Library.Main
         
         public static string GetDatabasePath(string backend, Options options, bool autoCreate = true, bool anyUsername = false)
         {
+            if (options == null)
+                options = new Options(new Dictionary<string, string>());
+
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
          
@@ -143,7 +146,7 @@ namespace Duplicati.Library.Main
                     newpath = System.IO.Path.Combine(folder, GenerateRandomName());
                 
                 if (System.IO.File.Exists(newpath))
-                    throw new Exception("Unable to find a unique name for the database, please use --fh-dbpath");
+                    throw new Exception("Unable to find a unique name for the database, please use --dbpath");
                 
                 //Create a new one, add it to the list, and save it
                 configs.Add(new BackendEntry() {

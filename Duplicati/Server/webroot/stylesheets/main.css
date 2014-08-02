@@ -277,6 +277,14 @@ div.main-icon-plus {
     border-top-right-radius: 0px;
 }
 
+#log-dialog {
+    padding: 0px;
+    border: 0px none;
+    width: 100%;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
 .ui-dialog-titlebar {
     border-bottom-right-radius: 0px;
     border-bottom-left-radius: 0px;
@@ -382,3 +390,12 @@ div.main-icon-plus {
     display: inline;
 }
 
+#about-dialog-changelog, .noty-update-changelog-link {
+    display: inline;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.export-dialog-label, .import-dialog-label {
+    display: inline;
+}

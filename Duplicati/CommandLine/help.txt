@@ -10,7 +10,7 @@
 > duplicati.commandline.exe help
 
 See duplicati.commandline.exe help <topic> for more information.
-  Examples: example
+  General: example, changelog
   Commands: backup, find, restore, delete, compact, test, compare, repair
   Debugging: debug, logging, create-report, test-filters
   Targets: %BACKENDS%
@@ -23,6 +23,15 @@ http://www.duplicati.com/              Version: %VERSION%
 
 
 # =============================================================================
+> duplicati.commandline.exe help changelog
+
+Show the last changes to Duplicati
+==================================
+  Duplicati updates automatically when a newer version is available. The following command will show a list of versions and changes. 
+  
+  %MONO%"%APP_PATH%" changelog
+
+
 > duplicati.commandline.exe help example
 > duplicati.commandline.exe help examples
 

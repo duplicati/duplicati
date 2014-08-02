@@ -31,13 +31,29 @@ namespace Duplicati.Server.WebServer
                 ReportError(response, bw, "Invalid or missing backup id");
             else
             {
-                var systemIO = Library.Utility.Utility.IsClientLinux
-                    ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux()
-                    : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
-
                 var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
                 var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
-                var sourcenames = bk.Sources.Distinct().Select(x => {
+                var sourcenames = GetSourceNames(bk);
+
+                //TODO: Filter out the password in both settings and the target url
+
+                bw.OutputOK(new
+                {
+                    success = true,
+                    data = new {
+                        Schedule = schedule,
+                        Backup = bk,
+                        DisplayNames = sourcenames
+                    }
+                });
+            }
+        }
+
+        private Dictionary<string, string> GetSourceNames(Duplicati.Server.Serialization.Interface.IBackup backup)
+        {
+            var systemIO = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO;
+
+            return backup.Sources.Distinct().Select(x => {
                     var sp = SpecialFolders.TranslateToDisplayString(x);
                     if (sp != null)
                         return new KeyValuePair<string, string>(x, sp);
@@ -59,19 +75,6 @@ namespace Duplicati.Server.WebServer
                         return new KeyValuePair<string, string>(x, x);
 
                 }).ToDictionary(x => x.Key, x => x.Value);
-
-                //TODO: Filter out the password in both settings and the target url
-
-                bw.OutputOK(new
-                {
-                    success = true,
-                    data = new {
-                        Schedule = schedule,
-                        Backup = bk,
-                        DisplayNames = sourcenames
-                    }
-                });
-            }
         }
     }
 }

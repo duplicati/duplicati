@@ -454,6 +454,9 @@ namespace Duplicati.CommandLine
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
             }
 
+            if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
+                output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filter\" command");
+
             output.MessageEvent("Backup completed successfully!");
             
             //Interrupted = 50

@@ -38,6 +38,11 @@
     <Optimize>false</Optimize>
     <DefineConstants>DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
+    <EnvironmentVariables>
+      <EnvironmentVariables>
+        <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
+      </EnvironmentVariables>
+    </EnvironmentVariables>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release</OutputPath>
@@ -76,41 +81,16 @@
     </Reference>
     <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="MonoMac">
+      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
-    <Compile Include="WindowsImplementation\BrowserWindow.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="WindowsImplementation\BrowserWindow.Designer.cs">
-      <DependentUpon>BrowserWindow.cs</DependentUpon>
-    </Compile>
     <Compile Include="HostedInstanceKeeper.cs" />
-    <Compile Include="Strings\WindowsMainForm.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>WindowsMainForm.resx</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HttpServerConnection.cs" />
-    <EmbeddedResource Include="Strings\WindowsMainForm.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>WindowsMainForm.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="WindowsImplementation\BrowserWindow.resx">
-      <DependentUpon>BrowserWindow.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
     <None Include="Properties\Settings.settings">
@@ -122,8 +102,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="WindowsImplementation\CallbackShim.cs" />
-    <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
     <Compile Include="AppIndicatorRunner.cs" />
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
@@ -147,27 +125,23 @@
     <EmbeddedResource Include="Resources\Pause.png" />
     <EmbeddedResource Include="Resources\Play.png" />
     <Compile Include="ImageLoader.cs" />
-    <EmbeddedResource Include="Strings\Program.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Program.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <Compile Include="Strings\Program.Designer.cs">
-      <DependentUpon>Program.resx</DependentUpon>
-    </Compile>
     <Compile Include="GtkRunner.cs" />
-    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal-error.png">
-      <Link>OSX Icons\normal-error.png</Link>
+    <Compile Include="CocoaRunner.cs">
+      <DependentUpon>CocoaRunner.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="OSX Icons\normal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal-pause.png">
-      <Link>OSX Icons\normal-pause.png</Link>
+    <EmbeddedResource Include="OSX Icons\normal-error.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal-running.png">
-      <Link>OSX Icons\normal-running.png</Link>
+    <EmbeddedResource Include="OSX Icons\normal-pause.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\Duplicati.GUI.MacTrayIcon\OSX Icons\normal.png">
-      <Link>OSX Icons\normal.png</Link>
+    <EmbeddedResource Include="OSX Icons\normal-running.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <Compile Include="WinFormsRunner.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -189,10 +163,6 @@
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
-      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
-      <Name>Duplicati.Library.Backend.SkyDrive</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>
@@ -285,6 +255,14 @@
     <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
+      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
+      <Name>Duplicati.Library.Backend.OneDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Service\Duplicati.Service\Duplicati.Service.csproj">
+      <Project>{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}</Project>
+      <Name>Duplicati.Service</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

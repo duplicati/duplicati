@@ -144,7 +144,7 @@ namespace Duplicati.Library.Backend
                 {
                     Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                     using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
-                    using (System.IO.Stream s = resp.GetResponseStream())
+                    using (System.IO.Stream s = areq.GetResponseStream())
                         doc.Load(s);
                 }
                 catch (WebException wex)
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Backend
                 if ((int)resp.StatusCode >= 300)
                     throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError , resp);
                 else
-                    using (resp.GetResponseStream())
+                    using (areq.GetResponseStream())
                     { }
         }
 
@@ -282,7 +282,7 @@ namespace Duplicati.Library.Backend
 
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (WebResponse resp = areq.GetResponse())
-            using (System.IO.Stream s = resp.GetResponseStream())
+            using (System.IO.Stream s = areq.GetResponseStream())
             using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
             {
                 string md5Hash = resp.Headers["ETag"];

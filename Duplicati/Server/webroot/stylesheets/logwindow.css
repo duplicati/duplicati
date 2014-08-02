@@ -27,6 +27,23 @@
     padding-right: 5px;
 }
 
+#log-tab-live .log-entry .log-message
+{
+    display: inline;
+}
+
+
+#log-tab-live .log-entry
+{
+    height: 1.2em;
+    overflow: hidden;
+}
+
+#log-tab-live .log-entry.expanded
+{
+    height: auto;
+}
+
 
 
 

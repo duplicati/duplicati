@@ -337,11 +337,19 @@ namespace Duplicati.Library.Main
 
             foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
                 m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
+            
+            var conopts = new Dictionary<string, string>(m_options.RawOptions);
+            var qp = new Library.Utility.Uri(m_backend).QueryParameters;
+            foreach(var k in qp.Keys)
+                conopts[(string)k] = qp[(string)k];
 
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
-                    mx.Value.Configure(m_options.RawOptions);
+                    if (mx.Value is Library.Interface.IConnectionModule)
+                        mx.Value.Configure(conopts);
+                    else
+                        mx.Value.Configure(m_options.RawOptions);
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }

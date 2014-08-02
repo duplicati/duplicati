@@ -34,6 +34,10 @@ namespace Duplicati.Library.Utility
         /// The request/response timeout value
         /// </summary>
         private int m_timeout = 100000;
+        /// <summary>
+        /// The activity timeout value
+        /// </summary>
+        private int m_activity_timeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
 
         /// <summary>
         /// List of valid states
@@ -84,7 +88,12 @@ namespace Duplicati.Library.Utility
 
             //Then we register a custom setting of 30 secs timeout on read/write activity
             if (m_request is HttpWebRequest)
-                ((HttpWebRequest)m_request).ReadWriteTimeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
+            {
+                if (((HttpWebRequest)m_request).ReadWriteTimeout != System.Threading.Timeout.Infinite)
+                    m_activity_timeout = ((HttpWebRequest)m_request).ReadWriteTimeout;
+
+                ((HttpWebRequest)m_request).ReadWriteTimeout = System.Threading.Timeout.Infinite;
+            }
         }
 
         /// <summary>
@@ -112,7 +121,12 @@ namespace Duplicati.Library.Utility
             m_asyncRequest = new AsyncWrapper(this, true);
             m_state = RequestStates.GetRequest;
 
-            return (Stream)m_asyncRequest.GetResponseOrStream();
+            var s = (Stream)m_asyncRequest.GetResponseOrStream();
+
+            try { s.WriteTimeout = m_activity_timeout; }
+            catch { }
+
+            return s;
         }
 
         /// <summary>
@@ -134,6 +148,15 @@ namespace Duplicati.Library.Utility
             return (WebResponse)m_asyncResponse.GetResponseOrStream();
         }
 
+        public Stream GetResponseStream()
+        {
+            var str = GetResponse().GetResponseStream();
+            try { str.ReadTimeout = m_activity_timeout; }
+            catch { }
+
+            return str;
+        }
+            
         /// <summary>
         /// Wrapper class for getting request and respone objects in a async manner
         /// </summary>

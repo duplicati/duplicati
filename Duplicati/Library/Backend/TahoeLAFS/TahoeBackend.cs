@@ -21,6 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace Duplicati.Library.Backend
 {
@@ -28,6 +31,62 @@ namespace Duplicati.Library.Backend
     {
         private string m_url;
         private bool m_useSSL = false;
+
+        private class TahoeEl
+        {
+            public string nodetype { get; set; }
+            public TahoeNode node { get; set; }
+        }
+
+        private class TahoeNode
+        {
+            public string rw_uri { get; set; }
+            public string verify_uri { get; set; }
+            public string ro_uri { get; set; }
+            public Dictionary<string, TahoeEl> children { get; set; }
+            public bool mutable { get; set; }
+            public long size { get; set; }
+            public TahoeMetadata metadata { get; set; }
+        }
+
+        private class TahoeMetadata
+        {
+            public TahoeStamps tahoe { get; set; }
+        }
+
+        private class TahoeStamps
+        {
+            public double linkmotime { get; set; }
+            public double linkcrtime { get; set; }
+        }
+
+        private class TahoeElConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(TahoeEl);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                var array = JArray.Load(reader);
+                string nodetype = null;
+                TahoeNode node = null;
+                foreach (var token in array.Children())
+                    if (token.Type == JTokenType.String)
+                        nodetype = token.ToString();
+                    else if (token.Type == JTokenType.Object)
+                        node = token.ToObject<TahoeNode>(serializer);
+
+                return new TahoeEl() { nodetype = nodetype,  node = node };
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
 
         public TahoeBackend()
         {
@@ -39,7 +98,7 @@ namespace Duplicati.Library.Backend
             var u = new Utility.Uri(url);
             u.RequireHost();
             
-            if (!u.Path.StartsWith("uri/URI:DIR2:"))
+            if (!u.Path.StartsWith("uri/URI:DIR2:") && !u.Path.StartsWith("uri/URI%3ADIR2%3A"))
                 throw new Exception(Strings.TahoeBackend.UnrecognizedUriError);
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
@@ -87,7 +146,7 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            LitJson.JsonData data;
+            TahoeEl data;
 
             try
             {
@@ -101,21 +160,14 @@ namespace Duplicati.Library.Backend
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    //HACK: We need the LitJSON to use Invariant culture, otherwise it cannot parse doubles
-                    System.Globalization.CultureInfo ci = System.Threading.Thread.CurrentThread.CurrentCulture;
-                    try
+                    using (var sr = new System.IO.StreamReader(areq.GetResponseStream()))
+                    using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
                     {
-                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-                        using (System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream()))
-                            data = LitJson.JsonMapper.ToObject(sr);
-                    }
-                    finally
-                    {
-                        try { System.Threading.Thread.CurrentThread.CurrentCulture = ci; }
-                        catch { }
+                        var jsr  =new Newtonsoft.Json.JsonSerializer();
+                        jsr.Converters.Add(new TahoeElConverter());
+                        data = jsr.Deserialize<TahoeEl>(jr);
                     }
                 }
-
             }
             catch (System.Net.WebException wex)
             {
@@ -127,57 +179,29 @@ namespace Duplicati.Library.Backend
                 throw;
             }
 
-            if (data.Count < 2 || !data[0].IsString || (string)data[0] != "dirnode")
-                throw new Exception(string.Format(Strings.TahoeBackend.UnexpectedJsonFragmentType, data.Count < 1 ? "<null>" : data[0], "dirnode"));
-
-            if (!data[1].IsObject)
-                throw new Exception(string.Format(Strings.TahoeBackend.UnexpectedJsonFragmentType, data[1], "Json object"));
-
-            if (!(data[1] as System.Collections.IDictionary).Contains("children") || !data[1]["children"].IsObject || !(data[1]["children"] is System.Collections.IDictionary))
-                throw new Exception(string.Format(Strings.TahoeBackend.UnexpectedJsonFragmentType, data[1], "children"));
-
-            List<IFileEntry> files = new List<IFileEntry>();
-            foreach (string key in ((System.Collections.IDictionary)data[1]["children"]).Keys)
+            if (data == null || data.node == null || data.nodetype != "dirnode")
+                throw new Exception("Invalid folder listing response");
+                
+            var files = new List<IFileEntry>();
+            foreach (var e in data.node.children)
             {
-                LitJson.JsonData entry = data[1]["children"][key];
-                if (!entry.IsArray || entry.Count < 2 || !entry[0].IsString || !entry[1].IsObject)
+                if (e.Value == null || e.Value.node == null)
                     continue;
 
-                bool isDir = ((string)entry[0]) == "dirnode";
-                bool isFile = ((string)entry[0]) == "filenode";
+                bool isDir = e.Value.nodetype == "dirnode";
+                bool isFile = e.Value.nodetype == "filenode";
 
                 if (!isDir && !isFile)
                     continue;
 
-                FileEntry fe = new FileEntry(key);
+                FileEntry fe = new FileEntry(e.Key);
                 fe.IsFolder = isDir;
 
-                if (((System.Collections.IDictionary)entry[1]).Contains("metadata"))
-                {
-                    LitJson.JsonData fentry = entry[1]["metadata"];
-                    if (fentry.IsObject && ((System.Collections.IDictionary)fentry).Contains("tahoe"))
-                    {
-                        fentry = fentry["tahoe"];
-
-                        if (fentry.IsObject && ((System.Collections.IDictionary)fentry).Contains("linkmotime"))
-                        {
-                            try { fe.LastModification = ((DateTime)(Library.Utility.Utility.EPOCH + TimeSpan.FromSeconds((double)fentry["linkmotime"])).ToLocalTime()); }
-                            catch { }
-                        }
-                    }
-                }
-
-                if (((System.Collections.IDictionary)entry[1]).Contains("size"))
-                {
-                    try 
-                    { 
-                        if (entry[1]["size"].IsInt)
-                            fe.Size = (int)entry[1]["size"]; 
-                        else if (entry[1]["size"].IsLong)
-                            fe.Size = (long)entry[1]["size"]; 
-                    }
-                    catch {}
-                }
+                if (e.Value.node.metadata != null && e.Value.node.metadata.tahoe != null)
+                    fe.LastModification = Duplicati.Library.Utility.Utility.EPOCH + TimeSpan.FromSeconds(e.Value.node.metadata.tahoe.linkmotime);
+                
+                if (isFile)
+                    fe.Size = e.Value.node.size;                
 
                 files.Add(fe);
             }
@@ -278,7 +302,7 @@ namespace Duplicati.Library.Backend
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                     throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                using (System.IO.Stream s = resp.GetResponseStream())
+                using (System.IO.Stream s = areq.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream);
             }
         }

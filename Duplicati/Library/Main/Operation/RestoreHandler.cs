@@ -88,6 +88,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     db.SetResult(m_result);
                     DoRun(db, filter, m_result);
+                    db.WriteResults();
                 }
                     
                 return;

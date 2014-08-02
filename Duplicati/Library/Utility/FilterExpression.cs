@@ -379,13 +379,14 @@ namespace Duplicati.Library.Utility
             // If we only exclude files, choose to include by default
             var q = new Queue<IFilter>();
             q.Enqueue(filter);
-                
+
+            // TODO: We should cache this, so we do not compute it every time    
             while (q.Count > 0)
             {
                 var p = q.Dequeue();
                 if (p == null || p.Empty)
                     continue;
-                else if (p is FilterExpression && ((FilterExpression)filter).Result)
+                else if (p is FilterExpression && ((FilterExpression)p).Result)
                 {
                     match = p;
                     return false; // We have an include filter, so we exclude by default
@@ -409,9 +410,34 @@ namespace Duplicati.Library.Utility
         /// <param name="second">Second.</param>
         public static FilterExpression Combine(FilterExpression first, FilterExpression second)
         {
+            if (first == null)
+                return second;
+            if (second == null)
+                return first;
+
+            if (first.Result != second.Result)
+                throw new ArgumentException("Both filters must have the same result property");
             return new FilterExpression(first.m_filters.Union(second.m_filters).Select(x => x.Type == FilterType.Regexp ? ("[" + x.Filter + "]") : x.Filter), first.Result);
         }
-        
+
+        /// <summary>
+        /// Combine the specified filter expressions.
+        /// </summary>
+        /// <param name="first">First.</param>
+        /// <param name="second">Second.</param>
+        public static IFilter Combine(IFilter first, IFilter second)
+        {
+            if (second == null || second.Empty)
+                return first;
+            if (first == null || first.Empty)
+                return second;
+
+            if (first is FilterExpression && second is FilterExpression && ((FilterExpression)first).Result == ((FilterExpression)second).Result)
+                return Combine((FilterExpression)first, (FilterExpression)second);
+
+            return new JoinedFilterExpression(first, second);
+        }
+
         public override string ToString()
         {
             if (this.Empty)

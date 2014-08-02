@@ -53,6 +53,8 @@ namespace Duplicati.Library.Main.Operation
                 {
                     using(new Logging.Timer("CommitDelete"))
                         tr.Commit();
+
+                    db.WriteResults();
                 }
                 else
                     tr.Rollback();

@@ -20,18 +20,21 @@ namespace Duplicati.Server.Serialization
             m_jsonSettings.Converters = new JsonConverter[] {
                 new SerializableStatusCreator(),
                 new SettingsCreator(),
+                new FilterCreator(),
                 new DayOfWeekConcerter()
             }.ToList();
         }
 
-        public static void SerializeJson(System.IO.TextWriter sw, object o)
+        public static void SerializeJson(System.IO.TextWriter sw, object o, bool preventDispose = false)
         {
             Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(m_jsonSettings);
-            using (var jsonWriter = new JsonTextWriter(sw))
+            var jsonWriter = new JsonTextWriter(sw);
+            using (preventDispose ? null : jsonWriter)
             {
                 jsonWriter.Formatting = m_jsonFormatting;
                 jsonSerializer.Serialize(jsonWriter, o);
                 jsonWriter.Flush();
+                sw.Flush();
             }
         }
 

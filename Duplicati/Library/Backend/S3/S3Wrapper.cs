@@ -71,12 +71,17 @@ namespace Duplicati.Library.Backend
             GetObjectRequest objectGetRequest = new GetObjectRequest();
             objectGetRequest.BucketName = bucketName;
             objectGetRequest.Key = keyName;
-            objectGetRequest.Timeout = System.Threading.Timeout.Infinite;
-            objectGetRequest.ReadWriteTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+            objectGetRequest.Timeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
+            objectGetRequest.ReadWriteTimeout = System.Threading.Timeout.Infinite;
             
-            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
-            using (System.IO.Stream s = objectGetResponse.ResponseStream)
+            using(GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
+            using(System.IO.Stream s = objectGetResponse.ResponseStream)
+            {
+                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                catch { }
+
                 Utility.Utility.CopyStream(s, target);
+            }
         }
 
         public void GetFileObject(string bucketName, string keyName, string localfile)
@@ -99,8 +104,12 @@ namespace Duplicati.Library.Backend
             objectAddRequest.InputStream = source;
             objectAddRequest.StorageClass = m_useRRS ? S3StorageClass.ReducedRedundancy : S3StorageClass.Standard;
             objectAddRequest.GenerateMD5Digest = false; //We would like this, but cannot read the stream twice :(
-            objectAddRequest.Timeout = System.Threading.Timeout.Infinite;
-            objectAddRequest.ReadWriteTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+
+            if (!Library.Utility.Utility.IsMono)
+            {
+                objectAddRequest.Timeout = System.Threading.Timeout.Infinite;
+                objectAddRequest.ReadWriteTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+            }
 
             using (PutObjectResponse objectAddResponse = m_client.PutObject(objectAddRequest))
             { }

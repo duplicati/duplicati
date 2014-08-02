@@ -58,7 +58,10 @@ namespace Duplicati.Library.Main.Operation
                     using(new Logging.Timer("CommitCompact"))
                         tr.Commit();
                     if (changed)
+                    {
+                        db.WriteResults();                    
                         db.Vacuum();
+                    }
                 }
 				else
 					tr.Rollback();

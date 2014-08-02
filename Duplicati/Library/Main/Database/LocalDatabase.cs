@@ -895,6 +895,13 @@ namespace Duplicati.Library.Main.Database
                 return;
             IsDisposed = true;
             
+        }
+
+        public void WriteResults()
+        {
+            if (IsDisposed)
+                return;
+
             if (m_connection != null && m_result != null)
             {
                 m_result.FlushLog();

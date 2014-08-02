@@ -80,7 +80,7 @@ namespace Duplicati.CommandLine
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
-        static int RealMain(string[] args)
+        public static int RealMain(string[] args)
         {
             bool verboseErrors = false;
             bool verbose = false;
@@ -130,6 +130,13 @@ namespace Duplicati.CommandLine
                     return 0;
                 }
 #endif
+
+                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
+                    Console.WriteLine(System.IO.File.ReadAllText(path));
+                    return 0;
+                }
 
                 foreach (string internaloption in Library.Main.Options.InternalOptions)
                     if (options.ContainsKey(internaloption))
@@ -268,7 +275,6 @@ namespace Duplicati.CommandLine
                     new Library.Interface.CommandLineArgument("exclude", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
                     new Library.Interface.CommandLineArgument("control-files", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ControlFilesOptionShort, Strings.Program.ControlFilesOptionLong, "false"),
                     new Library.Interface.CommandLineArgument("quiet-console", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.QuietConsoleOptionShort, Strings.Program.QuietConsoleOptionLong, "false"),
-                    new Library.Interface.CommandLineArgument(Duplicati.Library.AutoUpdater.UpdaterManager.AUTO_UPDATE_OPTION, Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.AutoUpdateOptionShort, Strings.Program.AutoUpdateOptionLong, Enum.GetName(typeof(Duplicati.Library.AutoUpdater.AutoUpdateStrategy), Duplicati.Library.AutoUpdater.AutoUpdateStrategy.InstallDuring), Enum.GetNames(typeof(Duplicati.Library.AutoUpdater.AutoUpdateStrategy))),
                 });
             }
         }

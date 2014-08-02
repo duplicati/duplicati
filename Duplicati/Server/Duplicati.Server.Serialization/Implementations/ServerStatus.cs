@@ -20,5 +20,6 @@ namespace Duplicati.Server.Serialization.Implementations
         public string UpdatedVersion { get; set; }
         public UpdatePollerStates UpdaterState { get; set; }
         public bool UpdateReady { get; set; }
+        public double UpdateDownloadProgress { get; set; }
     }
 }

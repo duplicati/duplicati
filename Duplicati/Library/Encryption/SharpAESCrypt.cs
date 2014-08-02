@@ -1253,13 +1253,17 @@ namespace SharpAESCrypt
             {
                 if (m_mode == OperationMode.Encrypt && !m_hasFlushedFinalBlock)
                     FlushFinalBlock();
-
-                m_crypto.Dispose();
+                
+                if (m_crypto != null)
+                    m_crypto.Dispose();
                 m_crypto = null;
-                m_stream.Dispose();
+
+                if (m_stream != null)
+                    m_stream.Dispose();
                 m_stream = null;
                 m_extensions = null;
-                m_helper.Dispose();
+                if (m_helper != null)
+                    m_helper.Dispose();
                 m_helper = null;
                 m_hmac = null;
             }

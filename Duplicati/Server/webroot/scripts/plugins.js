@@ -4,13 +4,11 @@ $(document).ready(function() {
         hasssl: false,
         hideserverandport: true,
         optionalauth: true,
-        serverpathlabel: 'Path or UNC',
 
         btnel: null,
 
         fill_form_map: {
-            'server-path': false,
-            'server-name': function(dict, key, el, cfgel) {
+            'server-path': function(dict, key, el, cfgel) {
                 var p = [];
                 if (dict['server-name'] && dict['server-name'] != '')
                     p.push(dict['server-name']);
@@ -30,13 +28,12 @@ $(document).ready(function() {
         },
 
         fill_dict_map: {
-            'server-name': false,
             'server-path': function(dict, key, el, cfgel) {
                 var p =  $(el).val();
                 if (p.indexOf('file://') == 0)
                     p = p.substr('file://'.length);
-                dict['server-name'] = p;
-                dict['server-path'] = '';
+                dict['server-path'] = p;
+                dict['server-name'] = '';
             }
         },
 
@@ -123,8 +120,106 @@ $(document).ready(function() {
         hasssl: false
     }
 
-    APP_DATA.plugins.backend['skydrive'] = {
-        hideserverandport: true
+    APP_DATA.plugins.backend['onedrive'] = {
+        PLUGIN_LOGIN_LINK: 'https://duplicati-oauth-handler.appspot.com/',
+
+        hideserverandport: true,
+        hideusernameandpassword: true,
+        optionalauth: true,
+        hasssl: false,
+        fetchtoken: null,
+
+        passwordlabel: 'AuthID',
+
+        fill_form_map: {
+            '--authid': 'authid'
+        },
+
+        fill_dict_map: {
+            'authid': '--authid'
+        },
+
+        validate: function(form, values) {
+            delete values['auth-username'];
+            delete values['auth-password'];
+            delete values['--auth-username'];
+            delete values['--auth-password'];
+
+            if (values['--authid'] == '')
+                return EDIT_URI.validation_error($('#server-password'), 'You must fill in an AuthID');
+
+
+            return EDIT_URI.validate_input(values, true);
+        },
+
+        setup: function(dlg, div) {
+
+
+            var authid = EDIT_URI.createFieldset({label: 'AuthID', name: 'authid', after: $('#server-path'), watermark: 'Enter the AuthID value'});
+
+            authid.label.addClass('action-link');
+
+
+            var self = this;
+            authid.label.click(function() {
+
+                self.fetchtoken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+                var ft = self.fetchtoken;
+
+                var countDown = 100;
+                var url = self.PLUGIN_LOGIN_LINK + '?token=' + self.fetchtoken;
+                var real_link = $('<a />').text(authid.label.text())
+                    .addClass('edit-dialog-label')
+                    .addClass('action-link')
+                    .attr('href', url)
+                    .attr('target', '_blank');
+
+                authid.label.attr('href', url).addClass('action-link');
+                real_link.insertAfter(authid.label);
+
+                setTimeout(function() { authid.label.hide(); }, 500);
+
+                var w = 400;
+                var h = 550;
+
+                var left = (screen.width/2)-(w/2);
+                var top = (screen.height/2)-(h/2);                
+                var wnd = window.open(url, '_blank', 'height=' + h +',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
+
+                var recheck = function() {
+                    countDown--;
+                    if (countDown > 0 && ft == self.fetchtoken) {
+                        $.ajax({
+                            url: self.PLUGIN_LOGIN_LINK + 'fetch',
+                            dataType: 'jsonp',
+                            data: {'token': ft}
+                        })
+                        .done(function(data) {
+                            if (data.authid) {
+                                authid.field.val(data.authid);
+                                wnd.close();
+                            } else {
+                                setTimeout(recheck, 3000);
+                            }
+                        })
+                        .fail(function() {
+                            setTimeout(recheck, 3000);
+                        });
+                    } else {
+                        if (wnd != null)
+                            wnd.close();
+                    }                  
+                };
+
+                setTimeout(recheck, 6000);
+
+                return false;
+            });
+        },
+
+        cleanup: function(dlg, div) {
+            this.fetchtoken = null;
+        }
     }
 
     APP_DATA.plugins.backend['googledocs'] = {
@@ -133,39 +228,6 @@ $(document).ready(function() {
 
 
     APP_DATA.plugins.backend['s3'] = {
-
-        //TODO: These can be fetched from the server data, but requires some string parsing to get right
-        PLUGIN_S3_HOSTS: {
-            'Amazon S3': 's3.amazonaws.com',
-            'Hosteurope': 'cs.hosteurope.de',
-            'Dunkel': 'dcs.dunkel.de',
-            'DreamHost': 'objects.dreamhost.com'
-        },
-        
-        //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
-        PLUGIN_S3_LOCATIONS: {
-            '(default)': '',
-            'Europe (EU, Ireland)': 'EU',
-            'US East (Northern Virginia)': 'us-east-1',
-            'US West (Northen California)': 'us-west-1',
-            'US West (Oregon)': 'us-west-2',
-            'Asia Pacific (Singapore)': 'ap-southeast-1',
-            'Asia Pacific (Sydney)': 'ap-southeast-2',
-            'Asia Pacific (Tokyo)': 'ap-northeast-1',
-            'South America (Sao Paulo)': 'sa-east-1'
-        },
-
-        PLUGIN_S3_SERVER_LOCATIONS: {
-            'EU': 's3-eu-west-1.amazonaws.com',
-            'eu-west-1': 's3-eu-west-1.amazonaws.com',
-            'us-east-1': 's3.amazonaws.com',
-            'us-west-1': 's3-us-west-1.amazonaws.com',
-            'us-west-2': 's3-us-west-2.amazonaws.com',
-            'ap-southeast-1': 's3-ap-southeast-1.amazonaws.com',
-            'ap-southeast-2': 's3-ap-southeast-2.amazonaws.com',
-            'ap-northeast-1': 's3-ap-northeast-1.amazonaws.com',
-            'sa-east-1': 's3-sa-east-1.amazonaws.com'
-        },
 
         PLUGIN_S3_LINK: 'https://portal.aws.amazon.com/gp/aws/developer/registration/index.html',
 
@@ -176,9 +238,73 @@ $(document).ready(function() {
         usernamewatermark: 'AWS Access ID',
         passwordwatermark: 'AWS Secret Key',
         serverdrop_field: null,
+        regiondrop_field: null,
         bucket_field: null,
+        known_hosts: null,
+        known_regions: null,
+
+        setup_hosts_after_config: function() {
+            if (this.known_hosts != null && this.serverdrop_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_hosts)
+                    servers.push({label: k + ' (' + this.known_hosts[k] + ')', value: this.known_hosts[k]});
+
+                this.serverdrop_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.serverdrop_field.click(function() {  
+                    self.serverdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup_regions_after_config: function() {
+            if (this.known_regions != null && this.regiondrop_field != null) {
+                var buckets = [];
+                for (var k in this.known_regions)
+                    buckets.push({label: k + ' (' + this.known_regions[k] + ')', value: this.known_regions[k]});
+                
+                this.regiondrop_field.autocomplete({
+                    minLength: 0,
+                    source: buckets, 
+                });
+                var self = this;
+                this.regiondrop_field.click(function() {  
+                    self.regiondrop_field.autocomplete('search', '');
+                });
+            }
+        },
 
         setup: function(dlg, div) {
+            var self = this;
+
+            if (self.known_hosts == null) {
+                APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Providers'}, function(data) {
+                    self.known_hosts = data.Result;
+                    self.setup_hosts_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get S3 config: ' + message);
+                });
+            } else {
+                this.setup_hosts_after_config();
+            }
+
+            if (self.known_regions == null) {
+                APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Regions'}, function(data) {
+                    self.known_regions = data.Result;
+                    self.setup_regions_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get S3 config: ' + message);
+                });
+            } else {
+                this.setup_regions_after_config();
+            }
+
             $('#server-path-label').hide();
             $('#server-path').hide();
 
@@ -190,32 +316,8 @@ $(document).ready(function() {
 
             signuplink.outer.css('margin-bottom', '10px');
 
-            var servers = [];
-            for (var k in this.PLUGIN_S3_HOSTS)
-                servers.push({label: k + ' (' + this.PLUGIN_S3_HOSTS[k] + ')', value: this.PLUGIN_S3_HOSTS[k]});
-
-            var buckets = [];
-            for (var k in this.PLUGIN_S3_LOCATIONS)
-                buckets.push({label: k, value: this.PLUGIN_S3_LOCATIONS[k]});
-
-            regiondrop.field.autocomplete({
-                minLength: 0,
-                source: buckets, 
-            });
-
-            serverdrop.field.autocomplete({
-                minLength: 0,
-                source: servers, 
-            });
-
-            serverdrop.field.click(function() {  
-                serverdrop.field.autocomplete('search', '');
-            });
-            regiondrop.field.click(function() {  
-                regiondrop.field.autocomplete('search', '');
-            });
-
             this.serverdrop_field = serverdrop.field;
+            this.regiondrop_field = regiondrop.field;
             this.bucket_field = bucketfield.field;
         },
 
@@ -223,6 +325,7 @@ $(document).ready(function() {
             $('#server-path-label').show();
             $('#server-path').show();
             this.serverdrop_field = null;
+            this.regiondrop_field = null;
             this.bucket_field = null;
         },
 

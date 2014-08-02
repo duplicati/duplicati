@@ -736,9 +736,13 @@ $(document).ready(function() {
         serverWithCallback({ action: 'get-backup', id: id}, callback, errorhandler);
     };
 
-    APP_DATA.addBackup = function(cfg, callback, errorhandler) {
+    APP_DATA.addBackup = function(cfg, callback, errorhandler, extra_options) {
         serverWithCallback(
-            { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)},
+            $.extend(
+                {}, 
+                extra_options,
+                { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}
+            ),
             callback,
             errorhandler
         );
@@ -752,6 +756,13 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.locateUriDb = function(targeturl, callback, errorhandler) {
+        serverWithCallback(
+            { action: 'locate-uri-db', HTTP_METHOD: 'POST', uri: targeturl},
+            callback,
+            errorhandler
+        );
+    };
 
     APP_DATA.editNewBackup = function() {
         APP_DATA.editBackup();
@@ -930,6 +941,42 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.postponeUpdate = function() {
+        serverWithCallback(
+            { action: 'send-command', command: 'postpone-update' },
+            function() {},
+            function() {}
+        );
+    };
+
+    APP_DATA.showChangelog = function(from_update) {
+        serverWithCallback(
+            { action: 'get-changelog', 'from-update': from_update ? 'true' : '' },
+            function(data) {
+                var dlg = $('<div></div>').attr('title', 'Changelog');
+
+                var pgtxt = $('<pre></pre>');
+                pgtxt.text(data.Changelog);
+                dlg.append(pgtxt);  
+
+                dlg.dialog({
+                    autoOpen: true,
+                    width: $('body').width > 450 ? 430 : 600,
+                    height: 500, 
+                    modal: true,
+                    closeOnEscape: true,
+                    buttons: [
+                        { text: 'Close', click: function(event, ui) {
+                            dlg.dialog('close');
+                            dlg.remove();
+                        }}
+                    ]
+                });
+
+            },
+            function(d,s,m) { alert('Failed to get changelog: ' + m); }
+        );      
+    };
 
     APP_DATA.callServer = serverWithCallback;
 
@@ -1108,6 +1155,8 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu-30m').click(function() { APP_DATA.pauseServer('30m'); });
     $('#main-control-menu-pause-submenu-1h').click(function() { APP_DATA.pauseServer('1h'); });
 
+    $('#main-control-menu-import').click(function() { $('#import-dialog').dialog('open'); });
+
     var updaterState = {
         state: 'Waiting',
         version: null,
@@ -1115,10 +1164,13 @@ $(document).ready(function() {
         restarted: false,
         simplestate: null,
         noty: null,
+        noty_type: null,
+
         closeNoty: function() {
             if (this.noty != null) {
                 this.noty.close();
                 this.noty = null;
+                this.noty_type = null;
             }
         },
         checkingNoty: function() {
@@ -1126,6 +1178,7 @@ $(document).ready(function() {
             this.noty = noty({
                 text: 'Checking for updates ...',
             });
+            this.noty_type = 'checking';
         },
         downloadingNoty: function() {
             this.closeNoty();
@@ -1133,43 +1186,54 @@ $(document).ready(function() {
             this.noty = noty({
                 text: 'Downloading update ' + self.version,
             });
+            this.noty_type = 'downloading';
+        },
+        setDownloadProgress: function(pg) {
+            if (this.noty_type == 'downloading' && this.noty != null)
+                this.noty.setText('Downloading update ' + this.version + ' (' + parseInt(pg*100) + '%)');
+
         },
         foundupdateNoty: function() {
             this.closeNoty();
             var self = this;
             this.noty = noty({
-                text: 'Found update ' + self.version,
+                text: 'Found update <div class="noty-update-changelog-link">' + self.version + '</div>',
                 buttons: [{
                     text: 'Not now',
                     onClick: function() {
+                        APP_DATA.postponeUpdate();
                         self.closeNoty();
                     }
                 },{
-                    text: 'Install',
+                    text: 'Update',
                     onClick: function() {
                         APP_DATA.installUpdate();
                     }
                 }]
             });
+            this.noty_type = 'found';
+            $('.noty-update-changelog-link').click(function() { APP_DATA.showChangelog(true); });
         },
         updateinstalledNoty: function() {
             this.closeNoty();
             var self = this;
             this.noty = noty({
-                text: 'Update ' + self.version + ' installed',
+                text: 'Update <div class="noty-update-changelog-link">' + self.version + '</div> installed',
                 buttons: [{
                     text: 'Not now',
                     onClick: function() {
                         self.closeNoty();
                     }
                 },{
-                    text: 'Activate',
+                    text: 'Restart',
                     onClick: function() {
                         self.activateUpdate();
                         self.closeNoty();
                     }
                 }]
             });
+            this.noty_type = 'installed';
+            $('.noty-update-changelog-link').click(function() { APP_DATA.showChangelog(true); });            
         },
         activateUpdate: function() {
             if (confirm('Restart ' + APP_CONFIG.branded_name + ' and activate update?'))
@@ -1177,7 +1241,13 @@ $(document).ready(function() {
                 APP_DATA.activateUpdate();
                 updaterState.restarted = true;
             }
-        }  
+        },
+        noUpdatesNoty: function() {
+            noty({
+                text: 'No updates found',
+                timeout: 5000
+            });
+        }
     };
 
     $(document).on('server-state-updated', function(eventargs, data) {
@@ -1217,7 +1287,7 @@ $(document).ready(function() {
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
             $('#main-control-menu-check-updates').show();
         } else if (updaterState.simplestate == 'installed') {
-            $('#main-control-menu-updates > a').text('Activate update');
+            $('#main-control-menu-updates > a').text('Restart with update');
             $('#main-control-menu-updates').removeClass('ui-state-disabled');
             $('#main-control-menu-check-updates').hide();
         } else if (updaterState.simplestate == 'check') {
@@ -1235,9 +1305,7 @@ $(document).ready(function() {
         }
 
         if (updaterState.simplestate != prevstate) {
-            if (updaterState.simplestate == null)
-                updaterState.closeNoty();
-            else if (updaterState.simplestate == 'found')
+            if (updaterState.simplestate == 'found')
                 updaterState.foundupdateNoty();
             else if (updaterState.simplestate == 'installed')
                 updaterState.updateinstalledNoty();                
@@ -1246,7 +1314,13 @@ $(document).ready(function() {
             else if (updaterState.simplestate == 'download')
                 updaterState.downloadingNoty();
             else
+            {
                 updaterState.closeNoty();
+                if (prevstate == 'check')
+                    updaterState.noUpdatesNoty();
+            }
+        } else if (updaterState.simplestate == 'download') {
+            updaterState.setDownloadProgress(data.UpdateDownloadProgress);
         }
 
     });
@@ -1354,6 +1428,8 @@ $(document).ready(function() {
         ]
     });
 
+    $('#about-dialog-changelog').click(function() { APP_DATA.showChangelog(false); });
+
     setInterval(function() {
         $('#main-list').find('.backup-last-run').each(function(i, e) {
           $(e).text($.timeago($.parseDate($(e).attr('alt'))));
@@ -1408,6 +1484,11 @@ $(document).ready(function() {
 
     $('#backup-details-repair').click(function(e) {
         APP_DATA.runRepair(APP_DATA.contextMenuId);
+    });
+
+    $('#backup-details-export').click(function(e) {
+        $('#export-dialog').dialog('open');
+        $('#export-dialog').data('backupid', APP_DATA.contextMenuId);
     });
 
     $('#backup-details-copy').click(function(e) {
@@ -1515,6 +1596,151 @@ $(document).ready(function() {
         pgtxt.text('Stop the current task?');
         dlg.append(pgtxt);
 
+    });
+
+    $('#import-dialog').dialog({
+        autoOpen: false,
+        width: $('body').width > 320 ? 320 : 600,
+        height: 250, 
+        modal: true,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Cancel', click: function(event, ui) {
+                $(this).dialog('close');
+            }},
+            { text: 'Import', click: function(event, ui) {
+                var uid = 'submit-frm-' + Math.random();
+                var callback = 'callback-' + Math.random();
+                var completed = false;
+
+                var iframe = $('<iframe>')
+                                .hide()
+                                .prop('id', uid)
+                                .prop('name', uid)
+                                .appendTo('body');
+
+                window[callback] = function(message) {
+                    completed = true;
+                    if (message == 'OK')
+                        $('#import-dialog').dialog('close');
+                    else
+                        alert(message);
+                };
+
+                $('#import-dialog-form')
+                    .attr('action', APP_CONFIG.server_url)
+                    .attr('target', uid);
+
+                $('#import-dialog-callback').val(callback);
+
+                $('#import-dialog-form').submit();
+
+                setTimeout(function() { 
+                    if (!completed)
+                        alert('Import failed, see the log for details');
+                    delete window[callback]; 
+                    iframe.remove(); 
+                }, 5000);
+            }}
+        ]
+    });
+    $('#import-dialog').on('dialogopen', function() {
+        $('#import-dialog-form').each(function(i,e) { 
+            e.reset(); 
+        });
+    });
+
+
+    $('#export-dialog').dialog({
+        autoOpen: false,
+        width: $('body').width > 320 ? 320 : 600,
+        height: 250, 
+        modal: true,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Cancel', click: function(event, ui) {
+                $(this).dialog('close');
+            }},
+            { text: 'Export', click: function(event, ui) {
+
+                var dlgself = this;
+                if ($('#export-use-encryption').is(':checked') && $('#export-encryption-password').val().trim() == '') {
+                    alert('Empty passphrase not allowed, de-select encryption or enter a passphrase');
+                    return;
+                }
+
+                var sendobj = {
+                    'action': 'export-backup', 
+                    'id': $('#export-dialog').data('backupid'),
+                    'cmdline': $('#export-type-commandline').is(':checked'),
+                    'passphrase': $('#export-encryption-password').val()
+                };
+
+                if ($('#export-type-file').is(':checked')) {
+
+                    var completed = false;
+                    var url = APP_CONFIG.server_url;
+                    url += (url.indexOf('?') > -1) ? '&' : '?';
+                    url += $.param(sendobj);
+
+                    var iframe = $('<iframe>')
+                                .hide()
+                                .prop('src', url)
+                                .appendTo('body');                
+
+                    setTimeout(function() { iframe.remove(); }, 5000);
+
+                    $(dlgself).dialog('close');
+
+                } else {
+                    APP_DATA.callServer(sendobj, 
+                    function(data) {
+                        var dlg = $('<div></div>').attr('title', 'Commandline');
+                        dlg.dialog({
+                            autoOpen: true,
+                            width: $('body').width > 450 ? 430 : 600,
+                            modal: true,
+                            closeOnEscape: true,
+                            buttons: [
+                                { text: 'Close', click: function(event, ui) {
+                                    dlg.dialog('close');
+                                    dlg.remove();
+                                }}
+                            ]
+                        });
+
+                        var pgtxt = $('<div></div>');
+                        pgtxt.text(data.Command);
+                        dlg.append(pgtxt);
+
+                        $(dlgself).dialog('close');
+                    }, 
+                    function(data, succes, status) {
+                        alert('Could not export: ' + status);                    
+                    });
+                }
+
+
+            }}
+        ]
+    });
+
+    var exportTypeChange = function() {
+        $('#export-use-encryption').attr('disabled', !$('#export-type-file').is(':checked'));
+        $('#export-use-encryption').change();
+    };
+
+    $('#export-dialog').on('dialogopen', function() {
+        $('#export-type-commandline').attr('checked', true);
+        $('#export-use-encryption').attr('checked', false);        
+        $('#export-encryption-password').val('');
+        exportTypeChange();
+    });
+
+    $('#export-type-commandline').change(exportTypeChange);
+    $('#export-type-file').change(exportTypeChange);
+    $('#export-use-encryption').change(function() {
+        $('#export-encryption-password').attr('disabled', !($('#export-use-encryption').is(':checked') && $('#export-type-file').is(':checked')));
     });
 
 });

@@ -96,7 +96,6 @@ namespace Duplicati.Server.WebServer
                     // so we create a new server for each attempt
                 
                     var server = CreateServer(options);
-                    //TODO: Add promiscuous mode and default to loopback only
                     server.Start(listenInterface, p);
                     m_server = server;
                     m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -120,25 +119,20 @@ namespace Duplicati.Server.WebServer
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 #if DEBUG
-            //For debug we go "../../../.." to get out of "GUI/Duplicati.GUI.TrayIcon/bin/debug"
-            string tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", ".."));
-            tmpwebroot = System.IO.Path.Combine(tmpwebroot, "Server");
-            if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
-                webroot = tmpwebroot;
-            else
+            if (!System.IO.Directory.Exists(System.IO.Path.Combine(webroot, "webroot")))
             {
-                //If we are running the server standalone, we only need to exit "bin/Debug"
-                tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", ".."));
+                //For debug we go "../../../.." to get out of "GUI/Duplicati.GUI.TrayIcon/bin/debug"
+                string tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", ".."));
+                tmpwebroot = System.IO.Path.Combine(tmpwebroot, "Server");
                 if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
                     webroot = tmpwebroot;
-            }
-
-            if (Library.Utility.Utility.IsClientOSX)
-            {
-                string osxTmpWebRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", "..", "..", "..", ".."));
-                osxTmpWebRoot = System.IO.Path.Combine(osxTmpWebRoot, "Server");
-                if (System.IO.Directory.Exists(System.IO.Path.Combine(osxTmpWebRoot, "webroot")))
-                    webroot = osxTmpWebRoot;
+                else
+                {
+                    //If we are running the server standalone, we only need to exit "bin/Debug"
+                    tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", ".."));
+                    if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
+                        webroot = tmpwebroot;
+                }
             }
 #endif
 
