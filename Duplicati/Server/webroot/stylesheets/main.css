@@ -121,6 +121,10 @@
     margin-bottom: 10px;
 }
 
+.main-backup-entry > .last-run-time.last-run-failed {
+    color: red;
+}
+
 div.main-icon-plus {
     width: 23px;
     height: 23px;

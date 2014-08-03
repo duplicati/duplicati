@@ -427,11 +427,22 @@ $(document).ready(function() {
         $('#main-list').find('.main-backup-entry').each(function(i, e) {
             var el = $(e);
 
-            if (isNaN($.parseDate(backupMap[e.id].Backup.Metadata.LastBackupStarted))) {
+            var lastStarted = $.parseDate(backupMap[e.id].Backup.Metadata.LastBackupStarted);
+            var lastError = $.parseDate(backupMap[e.id].Backup.Metadata.LastErrorDate);
+
+            if (isNaN(lastStarted)) {
                 el.find('.last-run-time').hide();
             } else {
                 el.find('.last-run-time').show();
             }
+
+            if (!isNaN(lastStarted) && !isNaN(lastError) && lastError > lastStarted) {
+                //var msg = backupMap[e.id].Backup.Metadata.LastErrorMessage;
+                el.find('.last-run-time').addClass('last-run-failed');
+            } else {
+                el.find('.last-run-time').removeClass('last-run-failed');
+            }
+
 
             // Scheduled items
             if (scheduledMap[e.id]) {
