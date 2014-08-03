@@ -13,7 +13,8 @@ namespace Duplicati.Server.Serialization.Interface
         SuggestedStatusIcon SuggestedStatusIcon { get; }
         DateTime EstimatedPauseEnd { get; }
         long LastEventID { get; }
-        long LastDataUpdateID { get;  }
+        long LastDataUpdateID { get; }
+        long LastNotificationUpdateID { get; }
 
         string UpdatedVersion { get; }
         UpdatePollerStates UpdaterState { get; }

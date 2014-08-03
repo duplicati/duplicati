@@ -21,6 +21,7 @@ namespace Duplicati.Server.Serialization
                 new SerializableStatusCreator(),
                 new SettingsCreator(),
                 new FilterCreator(),
+                new NotificationCreator(),
                 new DayOfWeekConcerter()
             }.ToList();
         }

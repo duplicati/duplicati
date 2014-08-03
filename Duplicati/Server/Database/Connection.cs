@@ -598,7 +598,130 @@ namespace Duplicati.Server.Database
             get { return GetSettings(ANY_BACKUP_ID); }
             set { SetSettings(value, ANY_BACKUP_ID); }
         }
+
+        public INotification[] GetNotifications()
+        {
+            lock(m_lock)
+                return ReadFromDb(
+                    (rd) => (INotification) new Notification() {
+                        ID = ConvertToInt64(rd.GetValue(0)),
+                        Type = ConvertToEnum<Serialization.NotificationType>(rd.GetValue(1), Duplicati.Server.Serialization.NotificationType.Information),
+                        Title = ConvertToString(rd.GetValue(2)) ?? "",
+                        Message = ConvertToString(rd.GetValue(3)) ?? "",
+                        Exception = ConvertToString(rd.GetValue(4)) ?? "",
+                        BackupID = ConvertToString(rd.GetValue(5)) ?? "",
+                        Timestamp = ConvertToDateTime(rd.GetValue(6)),
+                    },
+                    @"SELECT ""ID"", ""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Timestamp"" FROM ""Notifications""")
+                .ToArray();
+        }
+
+        public bool DismissNotification(long id)
+        {
+            lock(m_lock)
+            {
+                var notifications = GetNotifications();
+                var cur = notifications.Where(x => x.ID == id).FirstOrDefault();
+                if (cur == null)
+                    return false;
+
+                DeleteFromDb("Notifications", id);
+                Program.DataConnection.ApplicationSettings.UnackedError = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error).Any();
+                Program.DataConnection.ApplicationSettings.UnackedWarning = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning).Any();
+            }
+
+            System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
+
+            return true;
+        }
+
+        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, Func<INotification, INotification[], INotification> conflicthandler)
+        {
+            lock(m_lock)
+            {
+                var notification = new Notification() {
+                    ID = -1,
+                    Type = type,
+                    Title = title,
+                    Message = message,
+                    Exception = ex == null ? "" : ex.ToString(),
+                    BackupID = backupid,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                var conflictResult = conflicthandler(notification, GetNotifications());
+                if (conflictResult == null)
+                    return;
+                
+                if (conflictResult != notification)
+                    DeleteFromDb("Notifications", conflictResult.ID);
+
+                OverwriteAndUpdateDb(null, null, null, 
+                    new INotification[] { notification },
+                    @"INSERT INTO ""Notifications"" (""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Timestamp"") VALUES (?,?,?,?,?,?)",
+                    x => new object[] {
+                        x.Type.ToString(),
+                        x.Title,
+                        x.Message,
+                        x.Exception,
+                        x.BackupID,
+                        NormalizeDateTimeToEpochSeconds(x.Timestamp)
+                    }
+                );
+
+                if (type == Duplicati.Server.Serialization.NotificationType.Error)
+                    Program.DataConnection.ApplicationSettings.UnackedError = true;
+                else if (type == Duplicati.Server.Serialization.NotificationType.Warning)
+                    Program.DataConnection.ApplicationSettings.UnackedWarning = true;
+            }
+
+            System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
+        }
+
+        public string[] GetUISettingsSchemes()
+        {
+            lock(m_lock)
+                return ReadFromDb(
+                    (rd) => ConvertToString(rd.GetValue(0)) ?? "",
+                    @"SELECT DISTINCT ""Scheme"" FROM ""UIStorage""")
+                .ToArray();
+        }
+
+        public IDictionary<string, string> GetUISettings(string scheme)
+        {
+            lock(m_lock)
+                return ReadFromDb(
+                    (rd) => new KeyValuePair<string, string>(
+                        ConvertToString(rd.GetValue(0)) ?? "",
+                        ConvertToString(rd.GetValue(1)) ?? ""
+                    ),
+                    @"SELECT ""Key"", ""Value"" FROM ""UIStorage"" WHERE ""Scheme"" = ?", 
+                    scheme)
+                    .ToDictionary(x => x.Key, x => x.Value);
+        }
         
+        public void SetUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
+        {
+            lock(m_lock)
+                using(var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                {
+                    OverwriteAndUpdateDb(
+                        tr,
+                        @"DELETE FROM ""UIStorage"" WHERE ""Scheme"" = ?", new object[] { scheme },
+                        values,
+                        @"INSERT INTO ""UIStorage"" (""Scheme"", ""Key"", ""Value"") VALUES (?, ?, ?)",
+                        (f) => {
+                            return new object[] { scheme, f.Key ?? "", f.Value ?? "" };
+                        }
+                    );            
+                    
+                    if (tr != null)
+                        tr.Commit();
+                }
+        }
+
         /// <summary>
         /// Normalizes a DateTime instance floor'ed to seconds and in UTC
         /// </summary>
@@ -645,6 +768,16 @@ namespace Duplicati.Server.Database
             else
                 return Convert.ToInt64(r);
         }
+
+        private T ConvertToEnum<T>(object r, T @default)
+            where T : struct
+        {
+            T res;
+            if (!Enum.TryParse<T>(ConvertToString(r), true, out res))
+                return @default;
+            return res;
+        }
+
                         
         private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)                        
         {

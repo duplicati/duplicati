@@ -65,6 +65,8 @@
     <Compile Include="Implementations\Setting.cs" />
     <Compile Include="Interface\IQueuedTask.cs" />
     <Compile Include="Implementations\Filter.cs" />
+    <Compile Include="Interface\INotification.cs" />
+    <Compile Include="Implementations\Notification.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">

@@ -66,6 +66,13 @@ namespace Duplicati.Server.Serialization
         Downloading
     }
 
+    public enum NotificationType
+    {
+        Information,
+        Warning,
+        Error
+    }
+
     public static class EnumConverter
     {
         public static T Convert<T>(Enum o)

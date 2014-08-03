@@ -109,6 +109,11 @@ namespace Duplicati.Server
         public static long LastDataUpdateID = 0;
 
         /// <summary>
+        /// An event ID that increases whenever a notification is updated
+        /// </summary>
+        public static long LastNotificationUpdateID = 0;
+
+        /// <summary>
         /// The log redirect handler
         /// </summary>
         public static LogWriteHandler LogHandler = new LogWriteHandler();

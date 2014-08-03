@@ -122,6 +122,7 @@ namespace Duplicati.Server
                         var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate();
                         if (update != null && (Program.DataConnection.ApplicationSettings.UpdatedVersion == null || Program.DataConnection.ApplicationSettings.UpdatedVersion.ReleaseTime != update.ReleaseTime))
                         {
+                            // TODO: Register a notification ?
                             Program.DataConnection.ApplicationSettings.UpdatedVersion = update;
                             Program.StatusEventNotifyer.SignalNewEvent();
                         }

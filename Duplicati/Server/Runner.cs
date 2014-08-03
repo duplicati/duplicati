@@ -438,9 +438,20 @@ namespace Duplicati.Server
             backup.Metadata["LastErrorDate"] = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
             backup.Metadata["LastErrorMessage"] = ex.Message;
 
+            if (!backup.IsTemporary)
+                Program.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
+
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
-            Program.DataConnection.ApplicationSettings.UnackedError = true;
-            Program.StatusEventNotifyer.SignalNewEvent();
+            Program.DataConnection.RegisterNotification(
+                NotificationType.Error, 
+                backup.IsTemporary ? 
+                    "Error" : string.Format("Error while running {0}", backup.Name),
+                ex.Message,
+                ex,
+                backup.ID,
+                (n, a) => {
+                    return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
+                });
         }
         
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)

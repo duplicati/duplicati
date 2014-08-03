@@ -340,19 +340,11 @@ namespace Duplicati.GUI.TrayIcon
             ExecuteAndNotify(req);
         }
   
-        public void ClearWarning()
+        public void DismissNotification(long id)
         {
             Dictionary<string, string> req = new Dictionary<string, string>();
-            req.Add("action", "send-command");
-            req.Add("command", "clear-warning");
-            ExecuteAndNotify(req);
-        }
-
-        public void ClearError()
-        {
-            Dictionary<string, string> req = new Dictionary<string, string>();
-            req.Add("action", "send-command");
-            req.Add("command", "clear-error");
+            req.Add("action", "dismiss-notification");
+            req.Add("id", id.ToString());
             ExecuteAndNotify(req);
         }
 

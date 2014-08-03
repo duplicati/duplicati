@@ -116,5 +116,27 @@ CREATE TABLE "Version" (
     "Version" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (0);
+/*
+Notifications not yet acknowledged by the user
+*/
+CREATE TABLE "Notifications" (
+    "ID" INTEGER PRIMARY KEY,
+    "Type" TEXT NOT NULL,
+    "Title" TEXT NOT NULL,
+    "Message" TEXT NOT NULL, 
+    "Exception" TEXT NOT NULL, 
+    "BackupID" TEXT NULL,
+    "Timestamp" INTEGER NOT NULL
+);
+
+/*
+Key/value storage for frontends
+*/
+CREATE TABLE "UIStorage" (
+    "Scheme" TEXT NOT NULL, 
+    "Key" TEXT NOT NULL, 
+    "Value" TEXT NOT NULL
+);
+
+INSERT INTO "Version" ("Version") VALUES (2);
 

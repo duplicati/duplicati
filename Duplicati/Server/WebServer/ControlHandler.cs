@@ -21,6 +21,7 @@ using HttpServer;
 using HttpServer.HttpModules;
 using System.Collections.Generic;
 using Duplicati.Server.Serialization;
+using System.IO;
 
 namespace Duplicati.Server.WebServer
 {
@@ -63,6 +64,11 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("poll-log-messages", PollLogMessages);
             SUPPORTED_METHODS.Add("export-backup", ExportBackup);
             SUPPORTED_METHODS.Add("import-backup", ImportBackup);
+            SUPPORTED_METHODS.Add("get-ui-settings", GetUISettings);
+            SUPPORTED_METHODS.Add("set-ui-settings", SetUISettings);
+            SUPPORTED_METHODS.Add("get-ui-schemes", GetUISettingSchemes);
+            SUPPORTED_METHODS.Add("get-notifications", GetNotifications);
+            SUPPORTED_METHODS.Add("dismiss-notification", DismissNotification);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -555,6 +561,7 @@ namespace Duplicati.Server.WebServer
 
         private class ImportExportStructure
         {
+            public string CreatedByVersion { get; set; }
             public Duplicati.Server.Database.Schedule Schedule { get; set; }
             public Duplicati.Server.Database.Backup Backup { get; set; }
             public Dictionary<string, string> DisplayNames { get; set; }
@@ -581,6 +588,7 @@ namespace Duplicati.Server.WebServer
                 var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
 
                 var ipx = new ImportExportStructure() {
+                    CreatedByVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                     Backup = (Database.Backup)bk,
                     Schedule = (Database.Schedule)(scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null),
                     DisplayNames = GetSourceNames(bk)
@@ -701,6 +709,80 @@ namespace Duplicati.Server.WebServer
 
         }
 
+        private void GetNotifications(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            bw.OutputOK(Program.DataConnection.GetNotifications());
+        }
+
+        private void DismissNotification(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var str = input["id"].Value;
+            long id;
+            long.TryParse(str, out id);
+
+            if (Program.DataConnection.DismissNotification(id))
+                bw.OutputOK();
+            else
+                ReportError(response, bw, "No such notification");
+
+        }
+
+        private void GetUISettings(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var scheme = input["scheme"].Value;
+            if (string.IsNullOrWhiteSpace(scheme))
+            {
+                ReportError(response, bw, "No scheme supplied");
+                return;
+            }
+
+            bw.OutputOK(Program.DataConnection.GetUISettings(scheme));
+        }
+
+        private void SetUISettings(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var scheme = input["scheme"].Value;
+            var str = input["data"].Value;
+            if (string.IsNullOrWhiteSpace(scheme))
+            {
+                ReportError(response, bw, "No scheme supplied");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(str))
+            {
+                ReportError(response, bw, "No data supplied");
+                return;
+            }
+
+            IDictionary<string, string> data;
+            try
+            {
+                data = Serializer.Deserialize<Dictionary<string, string>>(new StringReader(str));
+            }
+            catch (Exception ex)
+            {
+                ReportError(response, bw, string.Format("Unable to parse settings object: {0}", ex.Message));
+                return;
+            }
+
+            if (data == null)
+            {
+                ReportError(response, bw, string.Format("Unable to parse settings object"));
+                return;
+            }
+
+            Program.DataConnection.SetUISettings(scheme, data);
+            bw.OutputOK();
+        }
+
+        private void GetUISettingSchemes(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            bw.OutputOK(Program.DataConnection.GetUISettingsSchemes());
+        }
 
         private static void MergeJsonObjects(Newtonsoft.Json.Linq.JObject self, Newtonsoft.Json.Linq.JObject other)
         {
@@ -1020,17 +1102,6 @@ namespace Duplicati.Server.WebServer
                         Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup));
                         Program.StatusEventNotifyer.SignalNewEvent();
                     }
-                    bw.OutputOK();
-                    return;
-
-                case "clear-warning":
-                    Program.DataConnection.ApplicationSettings.UnackedWarning = false;
-                    Program.StatusEventNotifyer.SignalNewEvent();
-                    bw.OutputOK();
-                    return;
-                case "clear-error":
-                    Program.DataConnection.ApplicationSettings.UnackedError = false;
-                    Program.StatusEventNotifyer.SignalNewEvent();
                     bw.OutputOK();
                     return;
 

@@ -31,6 +31,14 @@ namespace Duplicati.Server.Serialization
         }
     }
 
+    public class NotificationCreator : CustomCreationConverter<Interface.INotification>
+    {
+        public override Interface.INotification Create(Type objectType)
+        {
+            return new Implementations.Notification();
+        }
+    }
+
     public class DayOfWeekConcerter : JsonConverter
     {
         #region implemented abstract members of JsonConverter

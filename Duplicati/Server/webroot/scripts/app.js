@@ -289,6 +289,7 @@ $(document).ready(function() {
         state: null,
         failed: false,
         dataEventId: -1,
+        notificationId: -1,
 
         retryTimer: null,
         pauseUpdateTimer: null,
@@ -496,9 +497,11 @@ $(document).ready(function() {
             var oldDataId = state.dataEventId;
             var oldState = state.programState;
             var oldEventId = state.eventId;
+            var oldNotificationId = state.notificationId;
 
             state.eventId = data.LastEventID;
             state.dataEventId = data.LastDataUpdateID;
+            state.notificationId = data.LastNotificationUpdateID;
             state.programState = data.ProgramState;
             state.scheduled = data.SchedulerQueueIds || [];
 
@@ -523,6 +526,9 @@ $(document).ready(function() {
             $(document).trigger('server-state-updated', data);
             if (oldDataId != state.dataEventId)
                 $(document).trigger('server-state-data-updated', data);
+            
+            if (oldNotificationId != state.notificationId)
+                PRIVATE_DATA.refresh_notifications();
 
             if (oldState != state.programState) {
                 if (state.pauseUpdateTimer != null) {
@@ -580,6 +586,67 @@ $(document).ready(function() {
 
             state.retryTimer = setInterval(updateTimer, 500);
         });
+    };
+
+    PRIVATE_DATA.notifications = {
+        lastId: -1,
+        pending: []
+    };
+
+    PRIVATE_DATA.refresh_notifications = function() {
+        serverWithCallback({'action': 'get-notifications'},
+            function(data) {
+                // Append new notifications to pending
+                var pendingmap = {};
+                for(var n in data)
+                    pendingmap[data[n].ID] = data[n];
+
+                var toremove = [];
+                for(var n in PRIVATE_DATA.notifications.pending)
+                    if (pendingmap[PRIVATE_DATA.notifications.pending[n].ID] == null) {
+                        toremove.push(PRIVATE_DATA.notifications.pending[n]);
+                    } else {
+                        delete pendingmap[PRIVATE_DATA.notifications.pending[n].ID];
+                    }
+
+                // Remove missing notifications, and dismiss any shown noty's
+                for(var n in toremove) {
+                    if (toremove[n].noty)
+                        toremove[n].noty.close();
+
+                    for(var n in PRIVATE_DATA.notifications.pending)
+                        if (PRIVATE_DATA.notifications.pending[n] == toremove[n]) {
+                            PRIVATE_DATA.notifications.pending.splice(n, 1);
+                            break;
+                        }
+                }
+
+                // Append new pending notifications
+                for(var n in pendingmap) {
+                    PRIVATE_DATA.notifications.pending.push(pendingmap[n]);
+                }
+
+                // Setup noty's for new notifications
+                for(var n in PRIVATE_DATA.notifications.pending) {
+                    if (!PRIVATE_DATA.notifications.pending[n].noty) {
+                        PRIVATE_DATA.notifications.pending[n].noty = noty({
+                            text: PRIVATE_DATA.notifications.pending[n].Title + ': ' + PRIVATE_DATA.notifications.pending[n].Message,
+                            type: PRIVATE_DATA.notifications.pending[n].Type.toLowerCase(),
+                            buttons: [{
+                                text: 'Dismiss',
+                                onClick: function() {
+                                    APP_DATA.callServer({'action': 'dismiss-notification', 'id': PRIVATE_DATA.notifications.pending[n].ID})
+                                }
+                            }]
+                        });
+                    }
+                }
+
+            },
+            function(a,b,message) {
+
+            }
+        );
     };
 
     PRIVATE_DATA.server_progress = {
@@ -650,7 +717,6 @@ $(document).ready(function() {
                 restart_poll();
             }
         });
-
     };
 
     PRIVATE_DATA.refresh_server_settings = function(callback, errorhandler) {

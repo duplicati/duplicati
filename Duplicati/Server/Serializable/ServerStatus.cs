@@ -127,6 +127,7 @@ namespace Duplicati.Server.Serializable
 
         public long LastDataUpdateID { get { return Program.LastDataUpdateID; } }
 
+        public long LastNotificationUpdateID { get { return Program.LastNotificationUpdateID; } }
 
     }
 }
