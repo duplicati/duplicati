@@ -37,7 +37,6 @@ namespace Duplicati.Server.Database
             public const string UPDATE_CHECK_LAST = "last-update-check";
             public const string UPDATE_CHECK_INTERVAL = "update-check-interval";
             public const string UPDATE_CHECK_NEW_VERSION = "update-check-latest";
-            public const string SUPRESS_UPDATE_UNTIL = "supress-update-until";
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
         }
@@ -313,23 +312,6 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public DateTime SuppressUpdateUntil
-        {
-            get 
-            {
-                long t;
-                if (long.TryParse(m_values[CONST.SUPRESS_UPDATE_UNTIL], out t))
-                    return new DateTime(t, DateTimeKind.Utc);
-                else
-                    return new DateTime(0, DateTimeKind.Utc);
-            }
-            set
-            {
-                lock(Program.DataConnection.m_lock)
-                    m_values[CONST.SUPRESS_UPDATE_UNTIL] = value.ToUniversalTime().Ticks.ToString();
-                SaveSettings();
-            }
-        }
         public Library.AutoUpdater.UpdateInfo UpdatedVersion
         {
             get
@@ -365,10 +347,7 @@ namespace Duplicati.Server.Database
 
                 m_latestUpdate = value;
                 lock(Program.DataConnection.m_lock)
-                {
                     m_values[CONST.UPDATE_CHECK_NEW_VERSION] = result;
-                    m_values[CONST.SUPRESS_UPDATE_UNTIL] = "";
-                }
 
                 SaveSettings();
             }

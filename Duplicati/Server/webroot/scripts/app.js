@@ -629,15 +629,42 @@ $(document).ready(function() {
                 // Setup noty's for new notifications
                 for(var n in PRIVATE_DATA.notifications.pending) {
                     if (!PRIVATE_DATA.notifications.pending[n].noty) {
-                        PRIVATE_DATA.notifications.pending[n].noty = noty({
-                            text: PRIVATE_DATA.notifications.pending[n].Title + ': ' + PRIVATE_DATA.notifications.pending[n].Message,
-                            type: PRIVATE_DATA.notifications.pending[n].Type.toLowerCase(),
-                            buttons: [{
-                                text: 'Dismiss',
-                                onClick: function() {
-                                    APP_DATA.callServer({'action': 'dismiss-notification', 'id': PRIVATE_DATA.notifications.pending[n].ID})
+                        var self = PRIVATE_DATA.notifications.pending[n];
+
+                        var buttons = [{
+                            text: 'Dismiss',
+                            onClick: function($noty) { $noty.close(); }
+                        }];
+
+                        if (self.Action == 'backup:show-log') {
+                            buttons.push({
+                                text: 'Show',
+                                onClick: function($noty) { $.showBackupLog(self.BackupID); }
+                            });
+                        }
+
+                        if (self.Action == 'update:new') {
+                            buttons.push({
+                                text: 'Show',
+                                onClick: function($noty) { APP_DATA.showChangelog(true); }
+                            });
+
+                            buttons.push({
+                                text: 'Install',
+                                onClick: function($noty) { APP_DATA.installUpdate(); $noty.close(); }
+                            });
+                        }
+
+
+                        self.noty = noty({
+                            text: self.Title + ': ' + self.Message,
+                            type: self.Type.toLowerCase(),
+                            callback: {
+                                afterClose: function() {
+                                    APP_DATA.callServer({'action': 'dismiss-notification', 'id': self.ID});                                    
                                 }
-                            }]
+                            },
+                            buttons: buttons
                         });
                     }
                 }
@@ -1002,10 +1029,15 @@ $(document).ready(function() {
         );
     };
 
-    APP_DATA.installUpdate = function() {
+    APP_DATA.installUpdate = function() {            
         serverWithCallback(
             { action: 'send-command', command: 'install-update' },
-            function() {},
+            function() {
+                // Remove notifications for updates when we install
+                for(var n in PRIVATE_DATA.notifications.pending)
+                    if (PRIVATE_DATA.notifications.pending[n].Action == 'backup:new' && PRIVATE_DATA.notifications.pending[n].noty)
+                        PRIVATE_DATA.notifications.pending[n].noty.close();
+            },
             function(d,s,m) { alert('Failed to install for update: ' + m); }
         );
     };
@@ -1015,14 +1047,6 @@ $(document).ready(function() {
             { action: 'send-command', command: 'activate-update' },
             function() {},
             function(d,s,m) { alert('Failed to activate update: ' + m); }
-        );
-    };
-
-    APP_DATA.postponeUpdate = function() {
-        serverWithCallback(
-            { action: 'send-command', command: 'postpone-update' },
-            function() {},
-            function() {}
         );
     };
 
@@ -1272,30 +1296,13 @@ $(document).ready(function() {
         },
         foundupdateNoty: function() {
             this.closeNoty();
-            var self = this;
-            this.noty = noty({
-                text: 'Found update <div class="noty-update-changelog-link">' + self.version + '</div>',
-                buttons: [{
-                    text: 'Not now',
-                    onClick: function() {
-                        APP_DATA.postponeUpdate();
-                        self.closeNoty();
-                    }
-                },{
-                    text: 'Update',
-                    onClick: function() {
-                        APP_DATA.installUpdate();
-                    }
-                }]
-            });
-            this.noty_type = 'found';
-            $('.noty-update-changelog-link').click(function() { APP_DATA.showChangelog(true); });
         },
         updateinstalledNoty: function() {
             this.closeNoty();
             var self = this;
             this.noty = noty({
                 text: 'Update <div class="noty-update-changelog-link">' + self.version + '</div> installed',
+                type: 'information',
                 buttons: [{
                     text: 'Not now',
                     onClick: function() {

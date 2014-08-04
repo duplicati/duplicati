@@ -42,9 +42,6 @@ namespace Duplicati.Server.Serializable
                 if (u == null)
                     return null;
                 
-                if (Program.DataConnection.ApplicationSettings.SuppressUpdateUntil > DateTime.UtcNow)
-                    return null;
-
                 Version v;
                 if (!Version.TryParse(u.Version, out v))
                     return null;

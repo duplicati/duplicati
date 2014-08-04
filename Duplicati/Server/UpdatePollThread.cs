@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 using System.Threading;
 using Duplicati.Server.Serialization;
 
@@ -120,19 +121,26 @@ namespace Duplicati.Server
                     try
                     {
                         var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate();
-                        if (update != null && (Program.DataConnection.ApplicationSettings.UpdatedVersion == null || Program.DataConnection.ApplicationSettings.UpdatedVersion.ReleaseTime != update.ReleaseTime))
-                        {
-                            // TODO: Register a notification ?
+                        if (update != null)
                             Program.DataConnection.ApplicationSettings.UpdatedVersion = update;
-                            Program.StatusEventNotifyer.SignalNewEvent();
-                        }
                     }
                     catch
                     {
                     }
-                    finally
+
+                    if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Program.DataConnection.ApplicationSettings.UpdatedVersion.Version != System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
                     {
-                        Program.DataConnection.ApplicationSettings.SuppressUpdateUntil = new DateTime(0, DateTimeKind.Utc);
+                        Program.DataConnection.RegisterNotification(
+                                    NotificationType.Information,
+                                    "Found update",
+                                    Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname,
+                                    null,
+                                    null,
+                                    "update:new",
+                                    (self, all) => {
+                                        return all.Where(x => x.Action == "update:new").FirstOrDefault() ?? self;
+                                    }
+                                );
                     }
                 }
 
