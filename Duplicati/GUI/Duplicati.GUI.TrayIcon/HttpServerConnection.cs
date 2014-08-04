@@ -21,8 +21,9 @@ namespace Duplicati.GUI.TrayIcon
         private bool m_saltedpassword;
         private string m_authtoken;
         private static readonly System.Text.Encoding ENCODING = System.Text.Encoding.GetEncoding("utf-8");
-        public delegate void StatusUpdate(IServerStatus status);
-        public event StatusUpdate StatusUpdated;
+
+        public delegate void StatusUpdateDelegate(IServerStatus status);
+        public event StatusUpdateDelegate OnStatusUpdated;
 
         private volatile IServerStatus m_status;
 
@@ -76,8 +77,8 @@ namespace Duplicati.GUI.TrayIcon
             m_status = PerformRequest<IServerStatus>(m_updateRequest);
             m_updateRequest["lasteventid"] = m_status.LastEventID.ToString();
 
-            if (StatusUpdated != null)
-                StatusUpdated(m_status);
+            if (OnStatusUpdated != null)
+                OnStatusUpdated(m_status);
         }
 
         private void LongPollRunner()

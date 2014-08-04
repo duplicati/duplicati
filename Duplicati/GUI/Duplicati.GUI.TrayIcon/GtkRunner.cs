@@ -281,7 +281,7 @@ namespace Duplicati.GUI.TrayIcon
         
         protected override void RegisterStatusUpdateCallback ()
         {
-            Program.Connection.StatusUpdated += delegate(Duplicati.Server.Serialization.Interface.IServerStatus status) {
+            Program.Connection.OnStatusUpdated += delegate(Duplicati.Server.Serialization.Interface.IServerStatus status) {
                 Gtk.Application.Invoke(this, new StatusEventArgs(status), StatusUpdateEvent);
             };
         }

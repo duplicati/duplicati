@@ -155,7 +155,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
         
         protected override void RegisterStatusUpdateCallback ()
         {
-            Program.Connection.StatusUpdated += delegate(IServerStatus status) {
+            Program.Connection.OnStatusUpdated += delegate(IServerStatus status) {
                 m_handleProvider.Invoke(new Action<IServerStatus>(OnStatusUpdated), status);
             };
         }

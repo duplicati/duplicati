@@ -92,7 +92,7 @@ namespace Duplicati.GUI.TrayIcon
         
         protected virtual void RegisterStatusUpdateCallback()
         {
-            Program.Connection.StatusUpdated += OnStatusUpdated;
+            Program.Connection.OnStatusUpdated += OnStatusUpdated;
         }
 
         public virtual IBrowserWindow ShowUrlInWindow(string url)
