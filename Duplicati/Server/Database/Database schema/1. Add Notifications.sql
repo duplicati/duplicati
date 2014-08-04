@@ -8,6 +8,7 @@ CREATE TABLE "Notifications" (
     "Message" TEXT NOT NULL, 
     "Exception" TEXT NOT NULL, 
     "BackupID" TEXT NULL,
+    "Action" TEXT NOT NULL,
     "Timestamp" INTEGER NOT NULL
 );
 

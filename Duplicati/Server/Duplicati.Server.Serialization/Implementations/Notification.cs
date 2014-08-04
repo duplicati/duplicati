@@ -27,6 +27,7 @@ namespace Duplicati.Server.Serialization.Implementations
         public string Message { get; set; }
         public string Exception { get; set; }
         public string BackupID { get; set; }
+        public string Action { get; set; }
         public DateTime Timestamp  { get; set; }
     }
 }

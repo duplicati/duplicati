@@ -610,9 +610,10 @@ namespace Duplicati.Server.Database
                         Message = ConvertToString(rd.GetValue(3)) ?? "",
                         Exception = ConvertToString(rd.GetValue(4)) ?? "",
                         BackupID = ConvertToString(rd.GetValue(5)) ?? "",
-                        Timestamp = ConvertToDateTime(rd.GetValue(6)),
+                        Action = ConvertToString(rd.GetValue(6)) ?? "",
+                        Timestamp = ConvertToDateTime(rd.GetValue(7)),
                     },
-                    @"SELECT ""ID"", ""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Timestamp"" FROM ""Notifications""")
+                    @"SELECT ""ID"", ""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Action"", ""Timestamp"" FROM ""Notifications""")
                 .ToArray();
         }
 
@@ -636,7 +637,7 @@ namespace Duplicati.Server.Database
             return true;
         }
 
-        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, Func<INotification, INotification[], INotification> conflicthandler)
+        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, Func<INotification, INotification[], INotification> conflicthandler)
         {
             lock(m_lock)
             {
@@ -647,6 +648,7 @@ namespace Duplicati.Server.Database
                     Message = message,
                     Exception = ex == null ? "" : ex.ToString(),
                     BackupID = backupid,
+                    Action = action ?? "",
                     Timestamp = DateTime.UtcNow
                 };
 
@@ -659,13 +661,14 @@ namespace Duplicati.Server.Database
 
                 OverwriteAndUpdateDb(null, null, null, 
                     new INotification[] { notification },
-                    @"INSERT INTO ""Notifications"" (""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Timestamp"") VALUES (?,?,?,?,?,?)",
+                    @"INSERT INTO ""Notifications"" (""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Action"", ""Timestamp"") VALUES (?,?,?,?,?,?,?)",
                     x => new object[] {
                         x.Type.ToString(),
                         x.Title,
                         x.Message,
                         x.Exception,
                         x.BackupID,
+                        x.Action,
                         NormalizeDateTimeToEpochSeconds(x.Timestamp)
                     }
                 );

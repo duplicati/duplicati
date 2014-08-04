@@ -449,6 +449,7 @@ namespace Duplicati.Server
                 ex.Message,
                 ex,
                 backup.ID,
+                "backup:show-log",
                 (n, a) => {
                     return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
                 });
