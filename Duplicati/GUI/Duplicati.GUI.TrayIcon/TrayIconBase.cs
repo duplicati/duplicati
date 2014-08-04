@@ -45,6 +45,13 @@ namespace Duplicati.GUI.TrayIcon
         Regular,
         LogWindow
     }
+
+    public enum NotificationType
+    {
+        Information,
+        Warning,
+        Error
+    }
     
     public interface IMenuItem
     {
@@ -65,6 +72,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             SetMenu(BuildMenu());
             RegisterStatusUpdateCallback();
+            RegisterNotificationCallback();
             OnStatusUpdated(Program.Connection.Status);
             m_onDoubleClick = ShowStatusWindow;
             Run(args);
@@ -89,10 +97,38 @@ namespace Duplicati.GUI.TrayIcon
         protected abstract void Exit();
         
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
-        
+
+        protected abstract void NotifyUser(string title, string message, NotificationType type);
+
         protected virtual void RegisterStatusUpdateCallback()
         {
             Program.Connection.OnStatusUpdated += OnStatusUpdated;
+        }
+
+        protected virtual void RegisterNotificationCallback()
+        {
+            Program.Connection.OnNotification += OnNotification;
+        }
+
+        protected void OnNotification(INotification notification)
+        {
+            var type = NotificationType.Information;
+            switch (notification.Type)
+            {
+                case Server.Serialization.NotificationType.Information:
+                    type = NotificationType.Information;
+                    break;
+                case Server.Serialization.NotificationType.Warning:
+                    type = NotificationType.Warning;
+                    break;
+                case Server.Serialization.NotificationType.Error:
+                    type = NotificationType.Error;
+                    break;
+            }
+
+            UpdateUIState(() => {
+                NotifyUser(notification.Title, notification.Message, type);
+            });
         }
 
         public virtual IBrowserWindow ShowUrlInWindow(string url)

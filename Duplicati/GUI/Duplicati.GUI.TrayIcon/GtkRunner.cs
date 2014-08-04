@@ -285,7 +285,41 @@ namespace Duplicati.GUI.TrayIcon
                 Gtk.Application.Invoke(this, new StatusEventArgs(status), StatusUpdateEvent);
             };
         }
-        
+
+        protected override void NotifyUser(string title, string message, NotificationType type)
+        {
+            try
+            {
+                // We guard it like this to allow running on systems without sharp-notify
+                RealNotifyUser(title, message, type);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to send notification: {0}", ex);
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private void RealNotifyUser(string title, string message, NotificationType type)
+        {
+            var icon = Stock.Info;
+            switch (type)
+            {
+                case NotificationType.Information:
+                    icon = Stock.DialogInfo;
+                    break;
+                case NotificationType.Warning:
+                    icon = Stock.DialogWarning;
+                    break;
+                case NotificationType.Error:
+                    icon = Stock.DialogError;
+                    break;
+            }
+
+            var notification = new Notifications.Notification(title, message, Stock.Info);
+            notification.Show();
+        }
+
         protected void StatusUpdateEvent(object sender, EventArgs a)
         {
             if (a as StatusEventArgs == null)

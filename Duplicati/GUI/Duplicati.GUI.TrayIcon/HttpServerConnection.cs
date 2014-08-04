@@ -25,6 +25,11 @@ namespace Duplicati.GUI.TrayIcon
         public delegate void StatusUpdateDelegate(IServerStatus status);
         public event StatusUpdateDelegate OnStatusUpdated;
 
+        public long m_lastNotificationId = -1;
+        public DateTime m_firstNotificationTime;
+        public delegate void NewNotificationDelegate(INotification notification);
+        public event NewNotificationDelegate OnNotification;
+
         private volatile IServerStatus m_status;
 
         private volatile bool m_shutdown = false;
@@ -45,6 +50,8 @@ namespace Duplicati.GUI.TrayIcon
             if (!m_baseUri.EndsWith("/"))
                 m_baseUri += "/";
             
+            m_firstNotificationTime = DateTime.Now;
+
             m_controlUri = new Uri(m_baseUri + CONTROL_SCRIPT);
             m_password = password;
             m_saltedpassword = saltedpassword;
@@ -79,6 +86,29 @@ namespace Duplicati.GUI.TrayIcon
 
             if (OnStatusUpdated != null)
                 OnStatusUpdated(m_status);
+
+            if (m_lastNotificationId != m_status.LastNotificationUpdateID)
+            {
+                m_lastNotificationId = m_status.LastNotificationUpdateID;
+                UpdateNotifications();
+            }
+        }
+
+        private void UpdateNotifications()
+        {
+            var req = new Dictionary<string, string>();
+            req["action"] = "get-notifications";
+
+            var notifications = PerformRequest<INotification[]>(req);
+            if (notifications != null)
+            {
+                foreach(var n in notifications.Where(x => x.Timestamp > m_firstNotificationTime))
+                    if (OnNotification != null)
+                        OnNotification(n);
+
+                if (notifications.Any())
+                    m_firstNotificationTime = notifications.Select(x => x.Timestamp).Max();
+            }
         }
 
         private void LongPollRunner()

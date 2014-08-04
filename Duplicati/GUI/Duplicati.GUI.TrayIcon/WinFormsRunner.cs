@@ -199,6 +199,26 @@ namespace Duplicati.GUI.TrayIcon.Windows
             return new MenuItemWrapper(text, icon, callback, subitems);
         }
 
+        protected override void NotifyUser(string title, string message, NotificationType type)
+        {
+            var icon = ToolTipIcon.None;
+
+            switch (type)
+            {
+                case NotificationType.Information:
+                    icon = ToolTipIcon.Info;
+                    break;
+                case NotificationType.Warning:
+                    icon = ToolTipIcon.Warning;
+                    break;
+                case NotificationType.Error:
+                    icon = ToolTipIcon.Error;
+                    break;
+            }
+
+            m_trayIcon.ShowBalloonTip((int)TimeSpan.FromSeconds(60).TotalMilliseconds, title, message, icon);
+        }
+
         protected override void Exit ()
         {
             Application.Exit();

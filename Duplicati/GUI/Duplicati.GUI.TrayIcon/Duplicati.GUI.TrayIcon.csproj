@@ -84,6 +84,10 @@
     <Reference Include="MonoMac">
       <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
     </Reference>
+    <Reference Include="notify-sharp">
+      <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />

@@ -204,6 +204,34 @@ namespace Duplicati.GUI.TrayIcon
                 m_statusItem.Menu.AddItem(((MenuItemWrapper)itm).MenuItem);
         }
 
+        protected override void NotifyUser(string title, string message, NotificationType type)
+        {
+            var notification = new NSUserNotification();
+            notification.Title = title;
+            notification.InformativeText = message;
+            notification.DeliveryDate = DateTime.Now;
+            notification.SoundName = NSUserNotification.NSUserNotificationDefaultSoundName;
+ 
+            // We get the Default notification Center
+            var center = NSUserNotificationCenter.DefaultUserNotificationCenter;
+
+            // TODO: Figure out why this does not work
+            if (center == null)
+                return;
+
+            //center.DidDeliverNotification += (s, e) => { };
+
+            center.DidActivateNotification += (s, e) => { };
+
+            // If we return true here, Notification will show up even if your app is TopMost.
+            center.ShouldPresentNotification = (c, n) =>
+            {
+                return true;
+            };
+
+            center.ScheduleNotification(notification);
+        }
+
         public override void Dispose ()
         {
         }
