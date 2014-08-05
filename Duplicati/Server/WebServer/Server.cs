@@ -108,7 +108,7 @@ namespace Duplicati.Server.WebServer
                 
             throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
         }
-        
+            
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
             HttpServer.HttpServer server = new HttpServer.HttpServer();
@@ -118,7 +118,12 @@ namespace Duplicati.Server.WebServer
             server.Add(new ControlHandler());
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
+
 #if DEBUG
+            // Easy test for extensions while debugging
+            install_webroot = Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+
             if (!System.IO.Directory.Exists(System.IO.Path.Combine(webroot, "webroot")))
             {
                 //For debug we go "../../../.." to get out of "GUI/Duplicati.GUI.TrayIcon/bin/debug"
@@ -158,10 +163,21 @@ namespace Duplicati.Server.WebServer
 #endif
                 {
                     webroot = userroot;
+                    install_webroot = webroot;
                 }
             }
 
-            FileModule fh = new FileModule("/", webroot);
+            if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "customized")))
+            {
+                var customized_files = new FileModule("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
+                customized_files.AddDefaultMimeTypes();
+                customized_files.MimeTypes.Add("htc", "text/x-component");
+                customized_files.MimeTypes.Add("json", "application/json");
+                customized_files.MimeTypes.Add("map", "application/json");
+                server.Add(customized_files);
+            }
+
+            var fh = new FileModule("/", webroot);
             fh.AddDefaultMimeTypes();
             fh.MimeTypes.Add("htc", "text/x-component");
             fh.MimeTypes.Add("json", "application/json");
