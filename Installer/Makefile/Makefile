@@ -25,7 +25,7 @@ package: build
 	mkdir "$(PACKAGE_DIR)/usr/share/pixmaps"
 	mkdir "$(PACKAGE_DIR)/usr/share/doc"
 	mkdir "$(PACKAGE_DIR)/usr/share/doc/duplicati"	
-	cp -R "$(SOURCE_DIR)/Duplicati/GUI/bin/Release" "$(PACKAGE_DIR)/usr/lib/duplicati"
+	cp -R "$(SOURCE_DIR)/Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release" "$(PACKAGE_DIR)/usr/lib/duplicati"
 
 	rm -rf "$(PKG_TARGET)/alphavss"
 	rm -rf "$(PKG_TARGET)/SQLite"
@@ -34,7 +34,7 @@ package: build
 	rm -rf "$(PKG_TARGET)/AlphaFS.dll"
 	rm -rf "$(PKG_TARGET)/AlphaVSS.Common.dll"
 
-	cp "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/bin/duplicati/"
+	cp -R "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/bin/duplicati/"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-commandline-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-cli"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-server-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-server"
@@ -57,7 +57,7 @@ package: build
 	done
 	
 	chmod +x "$(PACKAGE_DIR)/usr/bin/duplicati"
-	chmod +x "$(PACKAGE_DIR)/usr/bin/duplicati-commandline"
+	chmod +x "$(PACKAGE_DIR)/usr/bin/duplicati-cli"
 	
 	if [ -e "duplicati.tar" ]; then \
 		rm -rf "duplicati.tar"; \
