@@ -701,6 +701,32 @@ namespace Duplicati.Server.Database
                 }
         }
 
+        public TempFile[] GetTempFiles()
+        {
+            lock(m_lock)
+                return ReadFromDb<TempFile>(null).ToArray();
+        }
+
+        public void DeleteTempFile(long id)
+        {
+            lock(m_lock)
+                DeleteFromDb(typeof(TempFile).Name, id);
+        }
+
+        public long RegisterTempFile(string origin, string path, DateTime expires)
+        {
+            var tempfile = new TempFile() {
+                Timestamp = DateTime.Now,
+                Origin = origin,
+                Path = path,
+                Expires = expires
+            };
+
+            OverwriteAndUpdateDb(null, null, null, new TempFile[] { tempfile }, false);
+
+            return tempfile.ID;
+        }
+
         /// <summary>
         /// Normalizes a DateTime instance floor'ed to seconds and in UTC
         /// </summary>
@@ -941,7 +967,7 @@ namespace Duplicati.Server.Database
                 return Read(cmd, f).ToArray();
             }
         }
-        
+                
         private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction transaction, string deleteSql, object[] deleteArgs, IEnumerable<T> values, string insertSql, Func<T, object[]> f)
         {
             using(var cmd = m_connection.CreateCommand())

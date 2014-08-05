@@ -139,5 +139,16 @@ CREATE TABLE "UIStorage" (
     "Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (2);
+/*
+Long-term temporary file records
+*/
+CREATE TABLE "TempFile" (
+    "ID" INTEGER PRIMARY KEY,
+    "Origin" TEXT NOT NULL, 
+    "Path" TEXT NOT NULL, 
+    "Timestamp" INTEGER NOT NULL,
+    "Expires" INTEGER NOT NULL
+);
+
+INSERT INTO "Version" ("Version") VALUES (3);
 

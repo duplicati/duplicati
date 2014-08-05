@@ -641,9 +641,7 @@ $(document).ready(function() {
                                 text: 'Show',
                                 onClick: function($noty) { $.showBackupLog(self.BackupID); }
                             });
-                        }
-
-                        if (self.Action == 'update:new') {
+                        } else if (self.Action == 'update:new') {
                             buttons.push({
                                 text: 'Show',
                                 onClick: function($noty) { APP_DATA.showChangelog(true); }
@@ -652,6 +650,12 @@ $(document).ready(function() {
                             buttons.push({
                                 text: 'Install',
                                 onClick: function($noty) { APP_DATA.installUpdate(); $noty.close(); }
+                            });
+                        } else if (self.Action != null && self.Action.indexOf('bug-report:created:') == 0) {
+                            var id = self.Action.substr('bug-report:created:'.length);
+                            buttons.push({
+                                text: 'Download',
+                                onClick: function($noty) { APP_DATA.downloadBugReport(id); $noty.close(); }
                             });
                         }
 
@@ -1077,6 +1081,25 @@ $(document).ready(function() {
             },
             function(d,s,m) { alert('Failed to get changelog: ' + m); }
         );      
+    };
+
+    APP_DATA.downloadBugReport = function(id) {
+        var sendobj = {
+            'action': 'download-bug-report', 
+            'id': id
+        };
+
+        var completed = false;
+        var url = APP_CONFIG.server_url;
+        url += (url.indexOf('?') > -1) ? '&' : '?';
+        url += $.param(sendobj);
+
+        var iframe = $('<iframe>')
+                    .hide()
+                    .prop('src', url)
+                    .appendTo('body');                
+
+        setTimeout(function() { iframe.remove(); }, 5000);
     };
 
     APP_DATA.callServer = serverWithCallback;
@@ -1562,7 +1585,6 @@ $(document).ready(function() {
     });
 
     $('#backup-details-send-report').click(function(e) {
-        alert('Method is missing a method for retrieving the report after it has been generated');
         APP_DATA.createReport(APP_DATA.contextMenuId);
     });
 

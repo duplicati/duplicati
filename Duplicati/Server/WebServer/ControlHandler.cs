@@ -69,6 +69,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("get-ui-schemes", GetUISettingSchemes);
             SUPPORTED_METHODS.Add("get-notifications", GetNotifications);
             SUPPORTED_METHODS.Add("dismiss-notification", DismissNotification);
+            SUPPORTED_METHODS.Add("download-bug-report", DownloadBugReport);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -108,6 +109,7 @@ namespace Duplicati.Server.WebServer
                     catch (Exception ex)
                     {
                         Program.DataConnection.LogError("", string.Format("Request for {0} gave error", action), ex);
+                        Console.WriteLine(ex.ToString());
 
                         try
                         {
@@ -557,6 +559,39 @@ namespace Duplicati.Server.WebServer
         private void ListApplicationSettings(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
             bw.OutputOK(Program.DataConnection.ApplicationSettings);
+        }
+
+        private void DownloadBugReport(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            long id;
+            long.TryParse(input["id"].Value, out id);
+
+            var tf = Program.DataConnection.GetTempFiles().Where(x => x.ID == id).FirstOrDefault();
+            if (tf == null)
+            {
+                ReportError(response, bw, "Invalid or missing backup id");
+                return;
+            }
+
+            if (!System.IO.File.Exists(tf.Path))
+            {
+                ReportError(response, bw, "File is missing");
+                return;
+            }
+
+            var filename = "bugreport.zip";
+            using(var fs = System.IO.File.OpenRead(tf.Path))
+            {
+                response.ContentLength = fs.Length;
+                response.AddHeader("Content-Disposition", string.Format("attachment; filename={0}", filename));
+                response.ContentType = "application/octet-stream";
+
+                bw.SetOK();
+                response.SendHeaders();
+                fs.CopyTo(response.Body);
+                response.Send();
+            }
         }
 
         private class ImportExportStructure

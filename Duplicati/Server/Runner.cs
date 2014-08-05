@@ -406,7 +406,21 @@ namespace Duplicati.Server
                                 using(var tf = new Duplicati.Library.Utility.TempFile())
                                 {
                                     var r = controller.CreateLogDatabase(tf);
-                                    tf.Protected = true;
+                                    var tempid = Program.DataConnection.RegisterTempFile("create-bug-report", r.TargetPath, DateTime.Now.AddDays(3));
+
+                                    if (string.Equals(tf, r.TargetPath, Library.Utility.Utility.ClientFilenameStringComparision))
+                                        tf.Protected = true;
+
+                                    Program.DataConnection.RegisterNotification(
+                                        NotificationType.Information,
+                                        "Bugreport ready",
+                                        "Bugreport is ready for download",
+                                         null,
+                                         null,
+                                         "bug-report:created:" + tempid,
+                                         (n, a) => n
+                                     );
+
                                     return r;
                                 }
                             }
@@ -452,7 +466,8 @@ namespace Duplicati.Server
                 "backup:show-log",
                 (n, a) => {
                     return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
-                });
+                }
+            );
         }
         
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
@@ -498,6 +513,32 @@ namespace Duplicati.Server
                  
                 if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
+
+                if (r.FilesWithError > 0 || r.Warnings.Any())
+                {
+                    Program.DataConnection.RegisterNotification(
+                        NotificationType.Error, 
+                        backup.IsTemporary ? 
+                            "Warning" : string.Format("Warning while running {0}", backup.Name),
+                            r.FilesWithError > 0 ? 
+                                string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
+                                string.Format("Got {0} warning(s) ", r.Warnings.Count())
+                            ,
+                        null,
+                        backup.ID,
+                        "backup:show-log",
+                        (n, a) => {
+                            var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
+                            if (existing == null)
+                                return n;
+
+                            if (existing.Type == NotificationType.Error)
+                                return existing;
+
+                            return n;
+                        }
+                    );
+                }
             }
             
             if (!backup.IsTemporary)

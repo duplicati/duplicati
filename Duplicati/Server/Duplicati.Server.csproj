@@ -118,6 +118,7 @@
     <Compile Include="UpdatePollThread.cs" />
     <Compile Include="LogWriteHandler.cs" />
     <Compile Include="Database\Notification.cs" />
+    <Compile Include="Database\TempFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -126,6 +127,7 @@
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
     <EmbeddedResource Include="Database\Database schema\1. Add Notifications.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
+    <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
