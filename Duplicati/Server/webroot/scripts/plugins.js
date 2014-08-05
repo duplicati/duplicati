@@ -369,4 +369,57 @@ $(document).ready(function() {
         }
     }
 
+    APP_DATA.plugins.backend['azure'] = {
+
+        PLUGIN_AZURE_LINK: 'https://account.windowsazure.com/Home/Index',
+
+        hasssl: false,
+        hideserverandport: true,
+        usernamelabel: 'Account Name',
+        passwordlabel: 'Access Key',
+        usernamewatermark: 'Account Name',
+        passwordwatermark: 'Access Key',
+        container_field: null,
+
+        setup: function (dlg, div) {
+            $('#server-path-label').hide();
+            $('#server-path').hide();
+
+            $('#server-username').attr('placeholder', this.usernamewatermark);
+            $('#server-password').attr('placeholder', this.passwordwatermark);
+
+            var containerfield = EDIT_URI.createFieldset({ label: 'Container Name', name: 'azure-container', after: $('#server-username-and-password'), title: 'Container name', watermark: 'Enter container name' });
+            this.container_field = containerfield.field;
+
+            var signuplink = EDIT_URI.createFieldset({ 'label': '&nbsp;', href: this.PLUGIN_AZURE_LINK, type: 'link', before: $('#server-options-label'), 'title': 'Click here to sign in or register' });
+            signuplink.outer.css('margin-bottom', '10px');
+
+        },
+
+        cleanup: function (dlg, div) {
+            $('#server-path-label').show();
+            $('#server-path').show();
+            this.container_field = null;
+        },
+
+        validate: function (dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return false;
+            if (values['azure-container'] == '')
+                return EDIT_URI.validation_error(this.container_field, 'You must enter an Azure container name');
+
+            values['server-name'] = values["azure-container"].toLowerCase();
+            this.container_field.val(values['server-name']);
+
+            return true;
+        },
+
+        fill_form_map: {
+            'server-name': 'azure-container'
+        },
+
+        fill_dict_map: {
+            'azure-container': 'server-name'
+        }
+    }
 });
