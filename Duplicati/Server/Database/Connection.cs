@@ -602,19 +602,7 @@ namespace Duplicati.Server.Database
         public INotification[] GetNotifications()
         {
             lock(m_lock)
-                return ReadFromDb(
-                    (rd) => (INotification) new Notification() {
-                        ID = ConvertToInt64(rd.GetValue(0)),
-                        Type = ConvertToEnum<Serialization.NotificationType>(rd.GetValue(1), Duplicati.Server.Serialization.NotificationType.Information),
-                        Title = ConvertToString(rd.GetValue(2)) ?? "",
-                        Message = ConvertToString(rd.GetValue(3)) ?? "",
-                        Exception = ConvertToString(rd.GetValue(4)) ?? "",
-                        BackupID = ConvertToString(rd.GetValue(5)) ?? "",
-                        Action = ConvertToString(rd.GetValue(6)) ?? "",
-                        Timestamp = ConvertToDateTime(rd.GetValue(7)),
-                    },
-                    @"SELECT ""ID"", ""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Action"", ""Timestamp"" FROM ""Notifications""")
-                .ToArray();
+                return ReadFromDb<Notification>(null).Cast<INotification>().ToArray();
         }
 
         public bool DismissNotification(long id)
@@ -626,7 +614,7 @@ namespace Duplicati.Server.Database
                 if (cur == null)
                     return false;
 
-                DeleteFromDb("Notifications", id);
+                DeleteFromDb(typeof(Notification).Name, id);
                 Program.DataConnection.ApplicationSettings.UnackedError = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error).Any();
                 Program.DataConnection.ApplicationSettings.UnackedWarning = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning).Any();
             }
@@ -657,21 +645,9 @@ namespace Duplicati.Server.Database
                     return;
                 
                 if (conflictResult != notification)
-                    DeleteFromDb("Notifications", conflictResult.ID);
+                    DeleteFromDb(typeof(Notification).Name, conflictResult.ID);
 
-                OverwriteAndUpdateDb(null, null, null, 
-                    new INotification[] { notification },
-                    @"INSERT INTO ""Notifications"" (""Type"", ""Title"", ""Message"", ""Exception"", ""BackupID"", ""Action"", ""Timestamp"") VALUES (?,?,?,?,?,?,?)",
-                    x => new object[] {
-                        x.Type.ToString(),
-                        x.Title,
-                        x.Message,
-                        x.Exception,
-                        x.BackupID,
-                        x.Action,
-                        NormalizeDateTimeToEpochSeconds(x.Timestamp)
-                    }
-                );
+                OverwriteAndUpdateDb(null, null, null, new Notification[] { notification }, false);
 
                 if (type == Duplicati.Server.Serialization.NotificationType.Error)
                     Program.DataConnection.ApplicationSettings.UnackedError = true;
@@ -781,6 +757,19 @@ namespace Duplicati.Server.Database
             return res;
         }
 
+        private object ConvertToEnum(Type enumType, object r, object @default)
+        {
+            try
+            {
+                return Enum.Parse(enumType, ConvertToString(r));
+            }
+            catch
+            {
+            }
+
+            return @default;
+        }
+
                         
         private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)                        
         {
@@ -822,6 +811,118 @@ namespace Duplicati.Server.Database
         {
             while(rd.Read())
                 yield return f();
+        }
+
+        private System.Reflection.PropertyInfo[] GetORMFields<T>()
+        {
+            var flags = 
+                System.Reflection.BindingFlags.FlattenHierarchy | 
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public;
+
+            var supportedPropertyTypes = new Type[] {
+                typeof(long),
+                typeof(string),
+                typeof(bool),
+                typeof(DateTime)
+            };
+
+            return 
+                (from n in typeof(T).GetProperties(flags)
+                where supportedPropertyTypes.Contains(n.PropertyType) || n.PropertyType.IsEnum
+                select n).ToArray();        
+        }
+
+        private IEnumerable<T> ReadFromDb<T>(string whereclause, params object[] args)
+        {
+            var properties = GetORMFields<T>();
+
+            var sql = string.Format(
+                @"SELECT ""{0}"" FROM ""{1}"" {2} {3}",
+                string.Join(@""", """, properties.Select(x => x.Name)),
+                typeof(T).Name,
+                string.IsNullOrWhiteSpace(whereclause) ? "" : " WHERE ",
+                whereclause ?? ""
+            );
+
+            return ReadFromDb((rd) => {
+                    var item = Activator.CreateInstance<T>();
+                    for(var i = 0; i < properties.Length; i++)
+                    {
+                        var prop = properties[i];
+                        var obj = rd.GetValue(i);
+
+                        if (prop.PropertyType.IsEnum)
+                            prop.SetValue(item, ConvertToEnum(prop.PropertyType, obj, Enum.GetValues(prop.PropertyType).GetValue(0)), null);
+                        else if (prop.PropertyType == typeof(string))
+                            prop.SetValue(item, ConvertToString(obj), null);
+                        else if (prop.PropertyType == typeof(long))
+                            prop.SetValue(item, ConvertToInt64(obj), null);
+                        else if (prop.PropertyType == typeof(bool))
+                            prop.SetValue(item, ConvertToBoolean(obj), null);
+                        else if (prop.PropertyType == typeof(DateTime))
+                            prop.SetValue(item, ConvertToDateTime(obj), null);
+                    }
+
+                    return item;
+                }, sql, args);
+        }
+
+        private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction transaction, string deleteSql, object[] deleteArgs, IEnumerable<T> values, bool updateExisting)
+        {
+            var properties = GetORMFields<T>();
+            var idfield = properties.Where(x => x.Name == "ID").FirstOrDefault();
+            properties = properties.Where(x => x.Name != "ID").ToArray();
+
+            string sql;
+
+            if (updateExisting)
+            {
+                sql = string.Format(
+                    @"UPDATE ""{0}"" SET {1} WHERE ""ID""=?",
+                    typeof(T).Name,
+                    string.Join(@", ", properties.Select(x => string.Format(@"""{0}""=?", x.Name)))
+                );
+
+                properties = properties.Union(new System.Reflection.PropertyInfo[] { idfield }).ToArray();
+            }
+            else
+            {
+    
+                sql = string.Format(
+                    @"INSERT INTO ""{0}"" (""{1}"") VALUES ({2})",
+                    typeof(T).Name,
+                    string.Join(@""", """, properties.Select(x => x.Name)),
+                    string.Join(@", ", properties.Select(x => "?"))
+                );
+            }
+
+            OverwriteAndUpdateDb(transaction, deleteSql, deleteArgs, values, sql, (item) =>
+            {
+                return properties.Select((x) =>
+                {
+                    var val = x.GetValue(item, null);
+
+                    if (x.PropertyType.IsEnum)
+                        val = val.ToString();
+                    else if (x.PropertyType == typeof(DateTime))
+                        val = NormalizeDateTimeToEpochSeconds((DateTime)val);
+
+                    return val;                    
+                }).ToArray();
+            });
+
+            if (!updateExisting && values.Count() == 1 && idfield != null)
+                using(var cmd = m_connection.CreateCommand())
+                {
+                    cmd.Transaction = transaction;
+                    cmd.CommandText = @"SELECT last_insert_rowid();";
+                    var id = cmd.ExecuteScalar();
+                    if (idfield.PropertyType == typeof(string))
+                        idfield.SetValue(values.First(), ConvertToString(id), null);
+                    else
+                        idfield.SetValue(values.First(), ConvertToInt64(id), null);
+                }
         }
         
         private IEnumerable<T> ReadFromDb<T>(Func<System.Data.IDataReader, T> f, string sql, params object[] args)
