@@ -1,0 +1,7 @@
+{
+    "name": "WindowsAzure.Blob",
+    "description": "A .Net library for working with Azure Blobs",
+    "link": "http://azure.microsoft.com/",
+    "license": "Apache 2.0",
+    "notes": ""
+}

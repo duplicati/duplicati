@@ -194,6 +194,18 @@
       <Link>changelog.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\WindowsAzureStorage\download.txt">
+      <Link>licenses\WindowsAzure\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\WindowsAzureStorage\license.txt">
+      <Link>licenses\WindowsAzure\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\WindowsAzureStorage\licensedata.json">
+      <Link>licenses\WindowsAzure\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -220,6 +232,7 @@
     <Folder Include="licenses\HttpServer\" />
     <Folder Include="licenses\ManagedLZMA\" />
     <Folder Include="licenses\MonoMac\" />
+    <Folder Include="licenses\WindowsAzure\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
