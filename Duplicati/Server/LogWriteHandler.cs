@@ -320,7 +320,6 @@ namespace Duplicati.Server
             {
                 lock(m_lock)
                 {
-                    var i = 0;
                     var q = GetActiveTimeouts();
 
                     if (q.Length == 0)
