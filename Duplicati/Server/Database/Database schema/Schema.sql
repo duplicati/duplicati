@@ -119,7 +119,7 @@ CREATE TABLE "Version" (
 /*
 Notifications not yet acknowledged by the user
 */
-CREATE TABLE "Notifications" (
+CREATE TABLE "Notification" (
     "ID" INTEGER PRIMARY KEY,
     "Type" TEXT NOT NULL,
     "Title" TEXT NOT NULL,
