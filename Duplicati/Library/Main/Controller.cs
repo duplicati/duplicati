@@ -210,7 +210,6 @@ namespace Duplicati.Library.Main
             var t = new string[] { targetpath };
             
             return RunAction(new CreateLogDatabaseResults(), ref t, (result) => {
-                result.TargetPath = t[0];
                 new Operation.CreateBugReportHandler(t[0], m_options, result).Run();
             });
         }

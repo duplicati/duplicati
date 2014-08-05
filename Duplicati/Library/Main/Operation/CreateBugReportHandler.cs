@@ -91,6 +91,8 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
+
+                m_result.TargetPath = m_targetpath;
             }				
 		}
 	}
