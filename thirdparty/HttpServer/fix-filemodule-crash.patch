@@ -1,0 +1,31 @@
+From 4ef5d02d06c5297469d814462daf6aa449628467 Mon Sep 17 00:00:00 2001
+From: Kenneth Skovhede <kenneth@hexad.dk>
+Date: Tue, 5 Aug 2014 10:06:31 +0200
+Subject: [PATCH] Fixed bug that causes FileModule to crash
+
+---
+ HttpServer/HttpModules/FileModule.cs | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/HttpServer/HttpModules/FileModule.cs b/HttpServer/HttpModules/FileModule.cs
+index 071fd01..8efa5a4 100755
+--- a/HttpServer/HttpModules/FileModule.cs
++++ b/HttpServer/HttpModules/FileModule.cs
+@@ -120,10 +120,12 @@ namespace HttpServer.HttpModules
+         {
+             if (Contains(uri.AbsolutePath, _forbiddenChars))
+                 return false;
+-
++            
++            if (!uri.AbsolutePath.StartsWith(_baseUri))
++                return false;
++            
+             string path = GetPath(uri);
+             return
+-                uri.AbsolutePath.StartsWith(_baseUri) && // Correct directory
+                 File.Exists(path) && // File exists
+                 (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0; // Not a symlink
+         }
+-- 
+1.8.4.2
+
