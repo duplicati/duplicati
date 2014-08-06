@@ -1,3 +1,16 @@
+2014-08-07
+==========
+* Azure Blob Storage support, thanks Don Lockhart!
+* Changed the lock dir name, so 2.0 can co-exist with 1.3.x
+* Added a live log monitor
+* Added import/export jobs to file and commandline
+* Implemented a notification system
+* Added desktop notifications (not working on OSX)
+* Changed so the customized folder is read from the base install dir instead of the update dir
+* Implemented the method for using the bug report creation feature
+* Added automatic removal of leftover temporary files
+* Added acknowledgements to the about dialog
+
 2014-07-25
 ==========
 * Filters can now use Windows style environment variables,
