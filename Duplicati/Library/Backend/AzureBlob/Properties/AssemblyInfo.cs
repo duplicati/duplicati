@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.Backend.S3")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2010")]
+[assembly: AssemblyCopyright("LGPL, Copyright ï¿½ HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -31,6 +31,6 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
+// [assembly: AssemblyVersion("2.0.0.7")]
 [assembly: AssemblyVersion("2.0.0.7")]
 [assembly: AssemblyFileVersion("2.0.0.7")]
