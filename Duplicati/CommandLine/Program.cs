@@ -224,6 +224,12 @@ namespace Duplicati.CommandLine
                         Console.WriteLine("{0}: {1}", n.Key, n.Value);
                     Console.WriteLine();                        
                 }
+
+                Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) => {
+                    if (verbose)
+                        Console.WriteLine(string.Format("Failed to delete temp file: {0}", path)); 
+                });
+
                 
                 if (knownCommands.ContainsKey(command))
                 {

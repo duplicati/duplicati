@@ -118,6 +118,8 @@ namespace Duplicati.Server
         /// </summary>
         public static LogWriteHandler LogHandler = new LogWriteHandler();
 
+        private static System.Threading.Timer PurgeTempFilesTimer = null;
+
         public static int ServerPort
         {
             get
@@ -366,7 +368,35 @@ namespace Duplicati.Server
                 };
 
                 UpdatePoller = new UpdatePollThread();
+                PurgeTempFilesTimer = new System.Threading.Timer((x) => {
+                    try
+                    {
+                        foreach(var e in Program.DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
+                        {
+                            try 
+                            { 
+                                if (System.IO.File.Exists(e.Path))
+                                    System.IO.File.Delete(e.Path);
+                            }
+                            catch (Exception ex)
+                            {
+                                Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", e.Path), ex); 
+                            }
 
+                            Program.DataConnection.DeleteTempFile(e.ID);                                
+                        }
+
+
+                        Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) => {
+                            Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex); 
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.DataConnection.LogError(null, "Failed during temp file cleanup", ex); 
+                    }
+                }, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+                    
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
@@ -427,6 +457,8 @@ namespace Duplicati.Server
                     WorkThread.Terminate(true);
                 if (Instance != null)
                     Instance.Dispose();
+                if (PurgeTempFilesTimer != null)
+                    PurgeTempFilesTimer.Dispose();
 
                 if (PingPongThread != null)
                     try { PingPongThread.Abort(); }

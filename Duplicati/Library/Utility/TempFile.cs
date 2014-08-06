@@ -98,6 +98,26 @@ namespace Duplicati.Library.Utility
                 try { System.IO.File.Delete(s); }
                 catch { }
         }
+
+        /// <summary>
+        /// Removes all old temporary files for this application.
+        /// </summary>
+        /// <param name="errorcallback">An optional callback method for logging errors</param>
+        public static void RemoveOldApplicationTempFiles(Action<string, Exception> errorcallback = null)
+        {
+            var expired = DateTime.UtcNow.AddMonths(1);
+            foreach(var e in GetApplicationTempFiles())
+                try
+                {
+                    if (System.IO.File.GetLastWriteTimeUtc(e) < expired)
+                        System.IO.File.Delete(e);
+                }
+                catch (Exception ex)
+                {
+                    if (errorcallback != null)
+                        errorcallback(e, ex);
+                }
+        }
         
         public TempFile()
             : this(System.IO.Path.Combine(TempFolder.SystemTempPath, GenerateUniqueName()))
