@@ -39,23 +39,6 @@ namespace Duplicati.Server.Serialization
         }
     }
 
-    // This class is needed for some reason, with newer versions of JSON.Net (5.0+)
-    public class BasicStringEnumConverter : Newtonsoft.Json.Converters.StringEnumConverter
-    {
-        public override void WriteJson(JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
-        {
-            if (value != null)
-                writer.WriteValue(value.ToString());
-            else
-                base.WriteJson(writer, value, serializer);
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType.IsEnum;
-        }
-    }
-
     public class DayOfWeekConcerter : JsonConverter
     {
         #region implemented abstract members of JsonConverter

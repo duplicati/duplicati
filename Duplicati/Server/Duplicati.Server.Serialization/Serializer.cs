@@ -16,14 +16,13 @@ namespace Duplicati.Server.Serialization
         {
             m_jsonSettings = new JsonSerializerSettings();
             m_jsonSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-            m_jsonSettings.ContractResolver = new JsonSerializer();
             m_jsonSettings.Converters = new JsonConverter[] {
-                new BasicStringEnumConverter(),
+                new DayOfWeekConcerter(),
+                new StringEnumConverter(),
                 new SerializableStatusCreator(),
                 new SettingsCreator(),
                 new FilterCreator(),
                 new NotificationCreator(),
-                new DayOfWeekConcerter(),
             }.ToList();
         }
 

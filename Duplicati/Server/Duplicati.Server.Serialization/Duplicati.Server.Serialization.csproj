@@ -51,7 +51,6 @@
     <Compile Include="Enums.cs" />
     <Compile Include="Implementations\ServerStatus.cs" />
     <Compile Include="InterfaceResolver.cs" />
-    <Compile Include="JsonSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="Interface\IBackup.cs" />
