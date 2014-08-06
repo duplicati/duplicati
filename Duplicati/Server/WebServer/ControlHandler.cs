@@ -60,6 +60,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("read-log", ReadLogData);
             SUPPORTED_METHODS.Add("get-license-data", GetLicenseData);
             SUPPORTED_METHODS.Add("get-changelog", GetChangelog);
+            SUPPORTED_METHODS.Add("get-acknowledgements", GetAcknowledgements);
             SUPPORTED_METHODS.Add("locate-uri-db", LocateUriDb);
             SUPPORTED_METHODS.Add("poll-log-messages", PollLogMessages);
             SUPPORTED_METHODS.Add("export-backup", ExportBackup);
@@ -209,7 +210,16 @@ namespace Duplicati.Server.WebServer
                 bw.SetOK();
                 bw.WriteJsonObject(new {Exists = !string.IsNullOrWhiteSpace(path)});
             }
+        }
 
+        private void GetAcknowledgements(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "acknowledgements.txt");
+                bw.SetOK();
+                bw.WriteJsonObject(new {
+                    Status = "OK",
+                    Acknowledgements = System.IO.File.ReadAllText(path)
+                });            
         }
 
         private void GetChangelog(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -217,7 +227,7 @@ namespace Duplicati.Server.WebServer
             HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
             var fromUpdate = input["from-update"].Value;
 
-            if (string.IsNullOrWhiteSpace(fromUpdate))
+            if (!Library.Utility.Utility.ParseBool(fromUpdate, false))
             {
                 var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
                 bw.SetOK();

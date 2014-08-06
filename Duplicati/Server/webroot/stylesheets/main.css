@@ -273,15 +273,8 @@ div.main-icon-plus {
     border: 0px none;
 }
 
-#backup-log-dialog {
-    padding: 0px;
-    border: 0px none;
-    width: 100%;
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
-}
-
-#log-dialog {
+/* Merge tabs in dialog */
+#backup-log-dialog, #log-dialog, #about-dialog {
     padding: 0px;
     border: 0px none;
     width: 100%;
@@ -304,7 +297,7 @@ div.main-icon-plus {
     z-index: 9999;
 }
 
-#about-dialog-thirdparty {
+#about-dialog-current {
     margin-bottom: 10px;
     margin-top: 10px;
 }

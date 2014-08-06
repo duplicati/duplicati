@@ -501,17 +501,33 @@
     </div>
 
     <div id="about-dialog" class="modal-dialog" title="About">
-        <div id="about-dialog-general">Duplicati was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. Duplicati can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. Duplicati is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.</div>
+        <ul>
+            <li><a href="#about-dialog-tab-general">General</a></li>
+            <li><a href="#about-dialog-tab-changelog">Changelog</a></li>
+            <li><a href="#about-dialog-tab-libraries">Libraries</a></li>
+        </ul>
 
-        <div>You are currenly running Duplicati <p id="about-dialog-current-version">unknown</p>. <p id="about-dialog-changelog">Changelog</p></div>
+        <div id="about-dialog-tab-general">
+            Duplicati was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. Duplicati can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. Duplicati is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.
 
-        <div id="about-dialog-thirdparty">
+            <div id="about-dialog-current">You are currenly running Duplicati <p id="about-dialog-current-version">unknown</p></div>
+
+            <div id="about-dialog-tab-general-acknowledgements">
+                Loading ...
+            </div>
+        </div>
+
+        <div id="about-dialog-tab-changelog">
+            Loading ...
+        </div>
+
+        <div id="about-dialog-tab-libraries">
         Duplicati is using the following third party libraries:
-        <ul id="about-dialog-thirdparty-list">
+        <ul id="about-dialog-tab-thirdparty-list">
             <li>Loading ...</li>
         </ul>
         </div>
-
+    
     </div>
 
     <div id="export-dialog" class="modal-dialog" title="Export ...">

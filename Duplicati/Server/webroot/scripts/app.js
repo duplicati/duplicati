@@ -981,6 +981,8 @@ $(document).ready(function() {
     };
 
     APP_DATA.hasLoadedAbout = false;
+    APP_DATA.hasLoadedChangelog = false;
+    APP_DATA.hasLoadedAcknowledgements = false;
 
     APP_DATA.showAbout = function() {
 
@@ -996,6 +998,34 @@ $(document).ready(function() {
             'Microsoft Public': 'http://opensource.org/licenses/MS-PL',
             'New BSD': 'http://opensource.org/licenses/BSD-3-Clause'
         };
+
+        if (!APP_DATA.hasLoadedAcknowledgements) {
+            serverWithCallback(
+                { action: 'get-acknowledgements' },
+                function(data) {
+                    $('#about-dialog-tab-general-acknowledgements').empty();
+                    $('#about-dialog-tab-general-acknowledgements').html(nl2br(replace_all(data.Acknowledgements, '  ', '&nbsp;&nbsp;')));
+                    APP_DATA.hasLoadedAcknowledgements = true;
+                }, function(a,b,message) {
+                    alert('Failed to load acknowledgements: ' + message);
+                }
+            );
+            
+            
+        }
+
+        if (!APP_DATA.hasLoadedChangelog) {
+            serverWithCallback(
+                { action: 'get-changelog', 'from-update': 'false' },
+                function(data) {
+                    $('#about-dialog-tab-changelog').empty();
+                    $('#about-dialog-tab-changelog').html(nl2br(replace_all(data.Changelog, '  ', '&nbsp;&nbsp;')));
+                    APP_DATA.hasLoadedChangelog = true;
+                }, function(a,b,message) {
+                    alert('Failed to load changelog: ' + message);
+                }
+            );
+        }
 
         if (!APP_DATA.hasLoadedAbout) {
             serverWithCallback('get-license-data',
@@ -1013,13 +1043,13 @@ $(document).ready(function() {
 
                     $('#about-dialog-current-version').text(PRIVATE_DATA.server_config.ServerVersionName);
 
-                    $('#about-dialog-thirdparty-list').empty();
-                    $('#about-dialog-thirdparty-list').append($.tmpl($('#about-dialog-template'), d));
+                    $('#about-dialog-tab-thirdparty-list').empty();
+                    $('#about-dialog-tab-thirdparty-list').append($.tmpl($('#about-dialog-template'), d));
                     APP_DATA.hasLoadedAbout = true;
                     APP_DATA.showAbout();
                 }, function(msg) {
                     alert('Failed to load data: ' + msg);
-                });
+                });            
         } else {
             $('#about-dialog').dialog('open');
         }
@@ -1060,8 +1090,8 @@ $(document).ready(function() {
             function(data) {
                 var dlg = $('<div></div>').attr('title', 'Changelog');
 
-                var pgtxt = $('<pre></pre>');
-                pgtxt.text(data.Changelog);
+                var pgtxt = $('<div class="change-log-data"></div>');
+                pgtxt.html(nl2br(replace_all(data.Changelog, '  ', '&nbsp;&nbsp;')));
                 dlg.append(pgtxt);  
 
                 dlg.dialog({
@@ -1520,6 +1550,7 @@ $(document).ready(function() {
         pausenoty.n.setText('Server is paused, resuming in ' + timestr);
     });
 
+    $('#about-dialog').tabs({ active: 0 });
     $("#about-dialog").dialog({
         minWidth: 320,
         width: $('body').width > 600 ? 320 : 600,
@@ -1534,8 +1565,6 @@ $(document).ready(function() {
             }}
         ]
     });
-
-    $('#about-dialog-changelog').click(function() { APP_DATA.showChangelog(false); });
 
     setInterval(function() {
         $('#main-list').find('.backup-last-run').each(function(i, e) {
