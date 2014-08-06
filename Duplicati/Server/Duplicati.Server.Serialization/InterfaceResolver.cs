@@ -51,8 +51,6 @@ namespace Duplicati.Server.Serialization
             }
             else
             {
-                DayOfWeek v = (DayOfWeek)value;
-            
                 switch ((DayOfWeek)value)
                 {
                     case DayOfWeek.Monday:

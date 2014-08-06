@@ -284,7 +284,7 @@ namespace Duplicati.Library.Utility
                     m_active = true;
                     m_delegate(m_currentTask);
                 }
-                catch (System.Threading.ThreadAbortException tex)
+                catch (System.Threading.ThreadAbortException)
                 {
                     System.Threading.Thread.ResetAbort();
                 }

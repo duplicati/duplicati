@@ -71,7 +71,7 @@ namespace Duplicati.Library.Backend
                 {
                     client.ChangeDirectory(SSH_FOLDER);
                 }
-                catch (Exception ex)
+                catch
                 {
                     client.CreateDirectory(SSH_FOLDER);
                     client.ChangePermissions(SSH_FOLDER, SSH_FOLDER_PERMISSIONS);
