@@ -316,9 +316,9 @@ namespace Duplicati.Server
                 {
                 }
 
-            if (m_anytimeouts)
+            lock(m_lock)
             {
-                lock(m_lock)
+                if (m_anytimeouts)
                 {
                     var q = GetActiveTimeouts();
 
@@ -328,15 +328,14 @@ namespace Duplicati.Server
                         m_anytimeouts = false;
                         if (m_buffer == null || m_buffer.Size != INACTIVE_SIZE)
                             m_buffer = new RingBuffer<LogEntry>(INACTIVE_SIZE, m_buffer);
-                    }
-                    else
-                    {
-                        var level = (LogMessageType)q.Max();
-                        if (type >= level && m_buffer != null)
-                            m_buffer.Enqueue(new LogEntry(message, type, exception));
+
                     }
                 }
+
+                if (m_buffer != null)
+                    m_buffer.Enqueue(new LogEntry(message, type, exception));
             }
+
         }
 
         #endregion
