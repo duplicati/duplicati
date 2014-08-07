@@ -43,6 +43,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net" />
     <Reference Include="System.Xml" />
+    <Reference Include="agsXMPP">
+      <HintPath>..\..\..\..\thirdparty\agsXMPP\agsXMPP.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsolePasswordInput.cs" />
@@ -70,6 +73,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SendMail.resx</DependentUpon>
     </Compile>
+    <Compile Include="SendJabberMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -83,6 +87,10 @@
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
       <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

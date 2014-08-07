@@ -206,6 +206,18 @@
     <Content Include="acknowledgements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\agsXMPP\download.txt">
+      <Link>licenses\agsXMPP\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\agsXMPP\license.txt">
+      <Link>licenses\agsXMPP\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\agsXMPP\licensedata.json">
+      <Link>licenses\agsXMPP\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -233,6 +245,7 @@
     <Folder Include="licenses\ManagedLZMA\" />
     <Folder Include="licenses\MonoMac\" />
     <Folder Include="licenses\WindowsAzure\" />
+    <Folder Include="licenses\agsXMPP\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
