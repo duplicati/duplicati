@@ -244,7 +244,6 @@ namespace Duplicati.Library.Main.Database
                         cmd.AddParameter(pathprefix, "1");                    
                         cmd.AddParameter(pathprefix.Length + 1, "2");
                         
-                        var anyResults = false;
                         using(var rd = cmd.ExecuteReader(query))
                             if (rd.Read())
                             {
@@ -254,7 +253,6 @@ namespace Duplicati.Library.Main.Database
                                     var f = new Fileversion(rd);
                                     if (!(string.IsNullOrWhiteSpace(f.Path) || f.Path == pathprefix))
                                     {
-                                        anyResults = true;
                                         yield return f;
                                         more = f.More;
                                     }
