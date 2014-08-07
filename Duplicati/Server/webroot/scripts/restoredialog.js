@@ -163,7 +163,7 @@ $(document).ready(function() {
                     var tasks = [];
                     for(var n in includeMap) {
                         var t = {
-                            time: n,
+                            time: $('#restore-version').val(),
                             id: backupId,
                             'restore-path': restorePath,
                             'overwrite': overwrite,
