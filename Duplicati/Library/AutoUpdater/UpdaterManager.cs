@@ -804,9 +804,30 @@ namespace Duplicati.Library.AutoUpdater
                     return (int)n;
 
                 return 0;
-            } 
+            }
             catch (System.Reflection.TargetInvocationException tex)
             {
+                try
+                {
+                    Console.WriteLine("Crash! {0}{1}", Environment.NewLine, tex.ToString());
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    var report_file = System.IO.Path.Combine(
+                        string.IsNullOrEmpty(INSTALLDIR) ? Library.Utility.TempFolder.SystemTempPath : INSTALLDIR,
+                        string.Format("{0}-crashlog.txt", AutoUpdateSettings.AppName)
+                     );
+
+                     System.IO.File.WriteAllText(report_file, tex.ToString());
+                }
+                catch
+                {
+                }
+
                 if (tex.InnerException != null)
                     throw tex.InnerException;
                 else
