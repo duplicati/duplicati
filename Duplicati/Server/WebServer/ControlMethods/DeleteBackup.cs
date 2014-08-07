@@ -55,7 +55,7 @@ namespace Duplicati.Server.WebServer
 
                         try
                         {
-                            for (int i = 0; i < 10; i++)
+                            for(int i = 0; i < 10; i++)
                                 if (Program.WorkThread.Active)
                                 {
                                     var t = Program.WorkThread.CurrentTask;
@@ -94,7 +94,23 @@ namespace Duplicati.Server.WebServer
                 }
             }
 
+
+            //var dbpath = backup.DBPath;
             Program.DataConnection.DeleteBackup(backup);
+
+            // TODO: Before we activate this, 
+            // we need some strategy to figure out
+            // if the db is shared with something else
+            // like the commandline or another backup
+            /*try
+            {
+                if (System.IO.File.Exists(dbpath))
+                    System.IO.File.Delete(dbpath);
+            }
+            catch (Exception ex)
+            {
+                Program.DataConnection.LogError(null, string.Format("Failed to delete database: {0}", dbpath), ex);
+            }*/
 
             //We have fiddled with the schedules
             Program.Scheduler.Reschedule();
