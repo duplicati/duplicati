@@ -980,6 +980,14 @@ $(document).ready(function() {
         );
     };
 
+    APP_DATA.deleteLocalData = function(id) {
+        serverWithCallback(
+            { action: 'delete-local-data', id: id },
+            function() {},
+            function(d,s,m) { alert('Failed to delete local data: ' + m); }
+        );
+    };
+
     APP_DATA.hasLoadedAbout = false;
     APP_DATA.hasLoadedChangelog = false;
     APP_DATA.hasLoadedAcknowledgements = false;
@@ -1631,7 +1639,8 @@ $(document).ready(function() {
     });
 
     $('#backup-details-delete-local').click(function(e) {
-        alert('Function is not implemented yet');
+        if (confirm('Do you really want to delete the local database?'))
+            APP_DATA.deleteLocalData(APP_DATA.contextMenuId);
     });
 
     $('#backup-details-delete-remote').click(function(e) {

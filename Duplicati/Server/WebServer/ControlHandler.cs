@@ -71,6 +71,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("get-notifications", GetNotifications);
             SUPPORTED_METHODS.Add("dismiss-notification", DismissNotification);
             SUPPORTED_METHODS.Add("download-bug-report", DownloadBugReport);
+            SUPPORTED_METHODS.Add("delete-local-data", DeleteLocalData);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -602,6 +603,20 @@ namespace Duplicati.Server.WebServer
                 fs.CopyTo(response.Body);
                 response.Send();
             }
+        }
+
+        private void DeleteLocalData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var bk = Program.DataConnection.GetBackup(input["id"].Value);
+            if (bk == null)
+            {
+                ReportError(response, bw, "Invalid or missing backup id");
+                return;
+            }
+
+            System.IO.File.Delete(bk.DBPath);
+            bw.OutputOK();
         }
 
         private class ImportExportStructure
