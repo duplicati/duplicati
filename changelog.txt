@@ -1,3 +1,11 @@
+2014-08-10
+==========
+* Now stores app crash exceptions in a file
+* Added support for local stored update packages
+* Added Jabber (XMPP) notification support
+* Implemented method to delete the local db
+* Fixed problem where restore always used newest version
+
 2014-08-07
 ==========
 * Azure Blob Storage support, thanks Don Lockhart!
