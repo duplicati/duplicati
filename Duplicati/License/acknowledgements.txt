@@ -7,6 +7,7 @@ Software Development:
   James Colton
   Nicolas Hatier, Niversoft idées logicielles
   Tobias Käes
+  Don Lockhart
   
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
