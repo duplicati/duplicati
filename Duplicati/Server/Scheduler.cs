@@ -169,13 +169,13 @@ namespace Duplicati.Server
             return res;
         }
         
-        private void OnCompleted(object sender, EventArgs e)
+        private void OnCompleted(WorkerThread<Runner.IRunnerData> worker, Runner.IRunnerData task)
         {
             Tuple<ISchedule, DateTime, DateTime> t = null;
             lock(m_lock)
             {
-                if (m_updateTasks.TryGetValue(m_worker.CurrentTask, out t))
-                    m_updateTasks.Remove(m_worker.CurrentTask);
+                if (task != null && m_updateTasks.TryGetValue(task, out t))
+                    m_updateTasks.Remove(task);
             }
             
             if (t != null)

@@ -73,15 +73,19 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Event that occurs when a new operation is being processed
         /// </summary>
-        public event EventHandler StartingWork;
+        public event Action<WorkerThread<Tx>, Tx> StartingWork;
         /// <summary>
         /// Event that occurs when an operation has completed
         /// </summary>
-        public event EventHandler CompletedWork;
+        public event Action<WorkerThread<Tx>, Tx> CompletedWork;
+        /// <summary>
+        /// Event that occurs when an error is detected
+        /// </summary>
+        public event Action<WorkerThread<Tx>, Tx, Exception> OnError;
         /// <summary>
         /// An evnet that occurs when a new task is added to the queue or an existing one is removed
         /// </summary>
-        public event EventHandler WorkQueueChanged;
+        public event Action<WorkerThread<Tx>> WorkQueueChanged;
 
         /// <summary>
         /// The internal state
@@ -155,7 +159,7 @@ namespace Duplicati.Library.Utility
             }
 
             if (WorkQueueChanged != null)
-                WorkQueueChanged(this, null);
+                WorkQueueChanged(this);
         }
 
         /// <summary>
@@ -178,7 +182,7 @@ namespace Duplicati.Library.Utility
             }
 
             if (WorkQueueChanged != null)
-                WorkQueueChanged(this, null);
+                WorkQueueChanged(this);
         }
 
         /// <summary>
@@ -277,24 +281,36 @@ namespace Duplicati.Library.Utility
                     continue;
 
                 if (StartingWork != null)
-                    StartingWork(this, null);
+                    StartingWork(this, m_currentTask);
 
                 try
                 {
                     m_active = true;
                     m_delegate(m_currentTask);
                 }
-                catch (System.Threading.ThreadAbortException)
+                catch (Exception ex)
                 {
-                    System.Threading.Thread.ResetAbort();
+                    System.Threading.Thread.ResetAbort(); 
+                    if (OnError != null)
+                        try { OnError(this, m_currentTask, ex); }
+                        catch { }
                 }
                 finally
                 {
+                    System.Threading.Thread.ResetAbort(); 
                     m_active = false;
                 }
 
+                var task = m_currentTask;
+                m_currentTask = null;
+
                 if (CompletedWork != null)
-                    CompletedWork(this, null);
+                    try { CompletedWork(this, task); }
+                    catch (Exception ex) 
+                    {
+                        try { OnError(this, task, ex); }
+                        catch { }
+                    }
             }
         }
 

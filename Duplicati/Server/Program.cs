@@ -408,10 +408,11 @@ namespace Duplicati.Server
                 }, LiveControl.State == LiveControls.LiveControlState.Paused);
                 Program.Scheduler = new Scheduler(WorkThread);
 
-                Program.WorkThread.StartingWork += new EventHandler(SignalNewEvent);
-                Program.WorkThread.CompletedWork += new EventHandler(SignalNewEvent);
-                Program.WorkThread.WorkQueueChanged += new EventHandler(SignalNewEvent);
+                Program.WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
+                Program.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
+                Program.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+                Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task == null ? null : task.BackupID, "Error in worker", exception); };
 
                 Program.WebServer = new WebServer.Server(commandlineOptions);
 
