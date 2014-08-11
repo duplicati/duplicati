@@ -1,3 +1,7 @@
+2014-08-11
+==========
+* Fixed a stuck progress issue on Windows
+
 2014-08-10
 ==========
 * Now stores app crash exceptions in a file
