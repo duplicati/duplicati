@@ -32,7 +32,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The number of messages to keep when inactive
         /// </summary>
-        private const int INACTIVE_SIZE = 15;
+        private const int INACTIVE_SIZE = 30;
         /// <summary>
         /// The number of messages to keep when active
         /// </summary>
@@ -204,7 +204,7 @@ namespace Duplicati.Server
         {
             lock(m_lock)
             {
-                m_timeouts[(int)type] = DateTime.Now.AddSeconds(10);
+                m_timeouts[(int)type] = DateTime.Now.AddSeconds(30);
                 m_anytimeouts = true;
                 if (m_buffer == null || m_buffer.Size == INACTIVE_SIZE)
                     m_buffer = new RingBuffer<LogEntry>(ACTIVE_SIZE, m_buffer);
