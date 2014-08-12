@@ -1,3 +1,9 @@
+2014-08-12
+==========
+* Fixed a crash on Windows after running a backup
+* Improved logging in the live-log area
+* Improved execution time when counting modified files
+
 2014-08-11
 ==========
 * Fixed a stuck progress issue on Windows
