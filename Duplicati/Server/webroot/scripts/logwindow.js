@@ -20,6 +20,8 @@ $(document).ready(function() {
     };
 
     var livedatacallback = function(data, tag) {
+        var scrolledToEnd = tag.parent().scrollTop() > tag.height() - (tag.parent().height()*2);
+
         var td = $.tmpl($('#live-log-data-template'), data)
         td.appendTo(tag);
 
@@ -38,7 +40,8 @@ $(document).ready(function() {
             $(this).toggleClass('expanded');
         });
 
-        tag.parent().scrollTop(tag.parent().height());
+        if (data != null && data.length > 0 && scrolledToEnd)
+            tag.parent().scrollTop(tag.height());
     };
 
     var generaldatacallback = function(data, tag) {
