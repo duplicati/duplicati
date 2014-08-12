@@ -39,6 +39,9 @@ namespace Duplicati.Library.Logging
         {
             m_operation = operation;
             m_begin = DateTime.Now;
+            if (Log.LogLevel == LogMessageType.Profiling)
+                Log.WriteMessage(string.Format("Starting - {0}", m_operation), LogMessageType.Profiling);
+
         }
 
         #region IDisposable Members
@@ -52,7 +55,7 @@ namespace Duplicati.Library.Logging
                 return;
 
             if (Log.LogLevel == LogMessageType.Profiling)
-                Log.WriteMessage(string.Format("{0} took {1:mm\\:ss\\.fff}", m_operation, DateTime.Now - m_begin), LogMessageType.Profiling);
+                Log.WriteMessage(string.Format("{0} took {1:hh\\:mm\\:ss\\.fff}", m_operation, DateTime.Now - m_begin), LogMessageType.Profiling);
             m_operation = null;
         }
 
