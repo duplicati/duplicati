@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("CommandLine.BackendTester")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2010")]
+[assembly: AssemblyCopyright("Copyright © HexaD 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

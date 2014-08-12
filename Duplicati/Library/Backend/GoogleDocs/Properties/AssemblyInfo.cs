@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.Library.Backend.GoogleDocs")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2011")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
