@@ -290,14 +290,18 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception ex)
                 {
-                    System.Threading.Thread.ResetAbort(); 
+                    try { System.Threading.Thread.ResetAbort(); }
+                    catch { }
+
                     if (OnError != null)
                         try { OnError(this, m_currentTask, ex); }
                         catch { }
                 }
                 finally
                 {
-                    System.Threading.Thread.ResetAbort(); 
+                    try { System.Threading.Thread.ResetAbort(); }
+                    catch { }
+
                     m_active = false;
                 }
 
