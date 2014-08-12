@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main
             {
                 m_currentTask = result;
                 m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                using(new Logging.Timer(string.Format("Running {0} took", result.MainOperation)))
+                using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
                 {
                     SetupCommonOptions(result, ref paths);
                     OperationRunning(true);
