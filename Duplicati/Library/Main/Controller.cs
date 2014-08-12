@@ -355,7 +355,9 @@ namespace Duplicati.Library.Main
 
             OperationRunning(true);
 
-            Library.Logging.Log.LogLevel = m_options.Loglevel;
+            if (m_options.HasLoglevel)
+                Library.Logging.Log.LogLevel = m_options.Loglevel;
+
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
                 m_hasSetLogging = true;

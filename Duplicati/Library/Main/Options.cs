@@ -1137,6 +1137,25 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets a value indicating if the log level has been set
+        /// </summary>
+        public bool HasLoglevel
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("log-level", out value))
+                    value = null;
+
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    if (s.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                        return true;
+
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Gets the log detail level
         /// </summary>
         public Duplicati.Library.Logging.LogMessageType Loglevel
