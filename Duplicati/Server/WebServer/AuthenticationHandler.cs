@@ -25,8 +25,8 @@ namespace Duplicati.Server.WebServer
 {
     internal class AuthenticationHandler : HttpModule
     {
-        private const string AUTH_COOKIE_NAME = "session_auth";
-        private const string NONCE_COOKIE_NAME = "session_nonce";
+        private const string AUTH_COOKIE_NAME = "session-auth";
+        private const string NONCE_COOKIE_NAME = "session-nonce";
 
         private Dictionary<string, DateTime> m_activeTokens = new Dictionary<string, DateTime>();
         private Dictionary<string, Tuple<DateTime, string>> m_activeNonces = new Dictionary<string, Tuple<DateTime, string>>();
@@ -35,8 +35,12 @@ namespace Duplicati.Server.WebServer
         public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
         {
             HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
-            var auth_token = request.Cookies[AUTH_COOKIE_NAME] == null || string.IsNullOrWhiteSpace(request.Cookies[AUTH_COOKIE_NAME].Value) ? null : request.Cookies[AUTH_COOKIE_NAME].Value;
-            if (input["auth-token"] != null && !string.IsNullOrWhiteSpace(input["auth-token"].Value))
+
+            var authcookie = request.Cookies[AUTH_COOKIE_NAME] ?? request.Cookies[Library.Utility.Uri.UrlEncode(AUTH_COOKIE_NAME)];
+            var authinput = input["auth-token"] ?? input[Library.Utility.Uri.UrlEncode("auth-token")];
+
+            var auth_token = authcookie == null || string.IsNullOrWhiteSpace(authcookie.Value) ? null : authcookie.Value;
+            if (authinput != null && !string.IsNullOrWhiteSpace(authinput.Value))
                 auth_token = input["auth-token"].Value;
 
             if (request.Uri.AbsolutePath == "/logout.cgi")
@@ -94,7 +98,7 @@ namespace Duplicati.Server.WebServer
                 {
                     if (input["password"] != null && !string.IsNullOrWhiteSpace(input["password"].Value))
                     {
-                        var nonce_el = request.Cookies[NONCE_COOKIE_NAME];
+                        var nonce_el = request.Cookies[NONCE_COOKIE_NAME] ?? request.Cookies[Library.Utility.Uri.UrlEncode(NONCE_COOKIE_NAME)];
                         var nonce = nonce_el == null || string.IsNullOrWhiteSpace(nonce_el.Value) ? "" : nonce_el.Value;
                         var urldecoded = nonce == null ? "" : Duplicati.Library.Utility.Uri.UrlDecode(nonce);
                         if (m_activeNonces.ContainsKey(urldecoded))
@@ -148,7 +152,14 @@ namespace Duplicati.Server.WebServer
             if (!string.IsNullOrWhiteSpace(auth_token))
             {
                 DateTime expires;
-                if (m_activeTokens.TryGetValue(auth_token, out expires) && DateTime.UtcNow < expires)
+                var found = m_activeTokens.TryGetValue(auth_token, out expires);
+                if (!found)
+                {
+                    auth_token = Duplicati.Library.Utility.Uri.UrlDecode(auth_token);
+                    found = m_activeTokens.TryGetValue(auth_token, out expires);
+                }
+
+                if (found && DateTime.UtcNow < expires)
                 {
                     expires = DateTime.UtcNow.AddHours(1);
                     m_activeTokens[auth_token] = expires;

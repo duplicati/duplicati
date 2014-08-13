@@ -13,7 +13,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string LOGIN_SCRIPT = "login.cgi";
         private const string STATUS_WINDOW = "index.html";
         private const string EDIT_WINDOW = "edit-window.html";
-        private const string AUTH_COOKIE = "session_auth";
+        private const string AUTH_COOKIE = "session-auth";
         
         private Uri m_controlUri;
         private string m_baseUri;
@@ -209,13 +209,13 @@ namespace Duplicati.GUI.TrayIcon
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
-            req.CookieContainer.Add(new System.Net.Cookie("session_nonce", nonce, "/", req.RequestUri.Host));
+            req.CookieContainer.Add(new System.Net.Cookie("session-nonce", nonce, "/", req.RequestUri.Host));
 
             //Wrap it all in async stuff
             Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
             using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
-            if (r.StatusCode == System.Net.HttpStatusCode.OK)
-                return r.Cookies["session_auth"].Value;
+                if (r.StatusCode == System.Net.HttpStatusCode.OK)
+                    return (r.Cookies[AUTH_COOKIE] ?? r.Cookies[Library.Utility.Uri.UrlEncode(AUTH_COOKIE)]).Value;
 
             return null;
         }
