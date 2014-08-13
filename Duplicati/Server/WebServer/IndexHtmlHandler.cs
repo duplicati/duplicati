@@ -33,7 +33,7 @@ namespace Duplicati.Server.WebServer
             {
                 response.Status = System.Net.HttpStatusCode.OK;
                 response.Reason = "OK";
-                response.ContentType = "text/html";
+                response.ContentType = "text/html; charset=utf-8";
 
                 using (var fs = System.IO.File.OpenRead(m_defaultdoc))
                 {

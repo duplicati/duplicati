@@ -328,7 +328,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z]", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-\_]", System.Text.RegularExpressions.RegexOptions.Compiled);
         
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
@@ -356,9 +356,8 @@ namespace Duplicati.Library.Utility
 
             var encoder = encoding.GetEncoder();
             var inbuf = new char[1];               
-            var outbuf = new byte[2];
-            var shortout = new byte[1];
-            
+            var outbuf = new byte[4];
+
             return RE_ESCAPECHAR.Replace(value, (m) => {
                 if (m.Value == " ")
                     return spacevalue;
@@ -368,13 +367,7 @@ namespace Duplicati.Library.Utility
                 try 
                 {
                     var len = encoder.GetBytes(inbuf, 0, 1, outbuf, 0, true);
-                    if (len == 1)
-                    {
-                        shortout[0] = outbuf[0];
-                        return "%" + Utility.ByteArrayAsHexString(shortout).ToLower();
-                    }
-                    else if (len == 2)
-                        return "%u" + Utility.ByteArrayAsHexString(outbuf).ToLower();
+                    return "%" + BitConverter.ToString(outbuf, 0, len).Replace("-", "%");
                 }
                 catch
                 {
@@ -389,12 +382,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-z]|[A-Z]){2}))|(\+)|(\%u(?<number>([0-9]|[a-z]|[A-Z]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-        /// <summary>
-        /// A helper for converting byte arrays to hex, vice versa
-        /// </summary>
-        private const string HEX_DIGITS_UPPER = "0123456789ABCDEF";
+        private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){2,4,6,8}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
@@ -410,20 +398,20 @@ namespace Duplicati.Library.Utility
             encoding = encoding ?? System.Text.Encoding.UTF8;
                 
             var decoder = encoding.GetDecoder();
-            var inbuf = new byte[2];
-            var outbuf = new char[1];
-            
-            return RE_NUMBER.Replace(value, (m) => { 
+            var inbuf = new byte[8];
+            var outbuf = new char[8];
+
+            return RE_NUMBER.Replace(value, (m) => {
                 if (m.Value == "+")
                     return " ";
 
                 try
                 {
                     var hex = m.Groups["number"].Value;
+                    var bytelen = hex.Length / 2;
                     Utility.HexStringAsByteArray(hex, inbuf);
-                                 
-                    decoder.GetChars(inbuf, 0, hex.Length / 2, outbuf, 0); 
-                    return outbuf[0].ToString();
+                    var c = decoder.GetChars(inbuf, 0, bytelen, outbuf, 0); 
+                    return new string(outbuf, 0, c);
                 }
                 catch
                 {

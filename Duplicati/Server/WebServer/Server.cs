@@ -174,6 +174,8 @@ namespace Duplicati.Server.WebServer
                 customized_files.MimeTypes.Add("htc", "text/x-component");
                 customized_files.MimeTypes.Add("json", "application/json");
                 customized_files.MimeTypes.Add("map", "application/json");
+                customized_files.MimeTypes["htm"] = "text/html; charset=utf-8";
+                customized_files.MimeTypes["html"] = "text/html; charset=utf-8";
                 server.Add(customized_files);
             }
 
@@ -182,13 +184,14 @@ namespace Duplicati.Server.WebServer
             fh.MimeTypes.Add("htc", "text/x-component");
             fh.MimeTypes.Add("json", "application/json");
             fh.MimeTypes.Add("map", "application/json");
+            fh.MimeTypes["htm"] = "text/html; charset=utf-8";
+            fh.MimeTypes["html"] = "text/html; charset=utf-8";
             server.Add(fh);
             server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "index.html")));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
             server.Add(new DebugReportHandler());
 #endif
-            
             return server;
         }
 

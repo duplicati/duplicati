@@ -626,67 +626,29 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// A helper for converting byte arrays to hex, vice versa
+        /// Converts a sequence of bytes to a hex string
         /// </summary>
-        private const string HEX_DIGITS_UPPER = "0123456789ABCDEF";
-
-        /// <summary>
-        /// Converts the byte array to hex digits
-        /// </summary>
+        /// <returns>The array as hex string.</returns>
         /// <param name="data">The data to convert</param>
-        /// <returns>The data as a string of hex digits</returns>
         public static string ByteArrayAsHexString(byte[] data)
         {
-            if (data == null || data.Length == 0)
-                return "";
-    
-            StringBuilder sb = new StringBuilder();
-            foreach(byte b in data)
-            {
-                sb.Append(HEX_DIGITS_UPPER[(b >> 4) & 0xF]);
-                sb.Append(HEX_DIGITS_UPPER[b & 0xF]);
-            }
-
-            return sb.ToString();
+            return BitConverter.ToString(data).Replace("-", string.Empty);
         }
 
-        
         /// <summary>
-        /// Converts the given hex string into a byte array
+        /// Converts a hex string to a byte array
         /// </summary>
+        /// <returns>The string as byte array.</returns>
         /// <param name="hex">The hex string</param>
-        /// <param name="data">A pre-allocated output data array, or null</param>
-        /// <returns>The byte array</returns>
-        public static byte[] HexStringAsByteArray(string hex, byte[] data = null)
+        /// <param name="data">The parsed data</param>
+        public static byte[] HexStringAsByteArray(string hex, byte[] data)
         {
-            if (string.IsNullOrEmpty(hex))
-                return new byte[0];
-
-            hex = hex.Trim().ToUpper();
-
-            if (hex.Length % 2 != 0)
-                throw new Exception(Strings.Utility.InvalidHexStringLengthError);
-                
-            if (data == null)
-                data = new byte[hex.Length / 2];
-            else if (data.Length < hex.Length / 2)
-                throw new ArgumentOutOfRangeException("data");
-                
-            for(int i = 0; i < hex.Length; i+= 2)
-            {
-                int upper = HEX_DIGITS_UPPER.IndexOf(hex[i]);
-                int lower = HEX_DIGITS_UPPER.IndexOf(hex[i + 1]);
-
-                if (upper < 0)
-                    throw new Exception(string.Format(Strings.Utility.InvalidHexDigitError, hex[i]));
-                if (lower < 0)
-                    throw new Exception(string.Format(Strings.Utility.InvalidHexDigitError, hex[i + 1]));
-
-                data[i % 2] = (byte)((upper << 4) | lower);
-            }
+            for (var i = 0; i < hex.Length; i += 2)
+                data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
 
             return data;
         }
+
         
         public static bool Which(string appname)
         {
