@@ -631,7 +631,7 @@ $(document).ready(function() {
             $.extend(true, obj, EDIT_STATE.orig_config);
 
         for(var k in obj.Backup.Settings)
-            if (k.substr(0, 2) == '--')
+            if (k.indexOf('--') == 0)
                 delete obj.Backup.Settings[k];
 
         APP_UTIL.read_form($('#edit-dialog-form'), EDIT_BACKUP.fill_dict_map, obj);
