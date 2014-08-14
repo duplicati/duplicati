@@ -39,6 +39,7 @@ namespace Duplicati.Server.Database
             public const string UPDATE_CHECK_NEW_VERSION = "update-check-latest";
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
+            public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
         }
         
         private Dictionary<string, string> m_values;
@@ -349,6 +350,20 @@ namespace Duplicati.Server.Database
                 lock(Program.DataConnection.m_lock)
                     m_values[CONST.UPDATE_CHECK_NEW_VERSION] = result;
 
+                SaveSettings();
+            }
+        }
+
+        public string ServerListenInterface
+        {
+            get 
+            {
+                return m_values[CONST.SERVER_LISTEN_INTERFACE];
+            }
+            set
+            {
+                lock(m_connection.m_lock)
+                    m_values[CONST.SERVER_LISTEN_INTERFACE] = value;
                 SaveSettings();
             }
         }

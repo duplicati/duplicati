@@ -75,9 +75,12 @@ namespace Duplicati.Server.WebServer
             string interfacestring;
             System.Net.IPAddress listenInterface;
             options.TryGetValue(OPTION_INTERFACE, out interfacestring);
+
+            if (string.IsNullOrWhiteSpace(interfacestring))
+                interfacestring = Program.DataConnection.ApplicationSettings.ServerListenInterface;
             if (string.IsNullOrWhiteSpace(interfacestring))
                 interfacestring = DEFAULT_OPTION_INTERFACE;
-            
+
             if (interfacestring.Trim() == "*" || interfacestring.Trim().Equals("any", StringComparison.InvariantCultureIgnoreCase))
                 listenInterface = System.Net.IPAddress.Any;
             else if (interfacestring.Trim() == "loopback")
@@ -100,6 +103,10 @@ namespace Duplicati.Server.WebServer
                     m_server = server;
                     m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
                     this.Port = p;
+
+                    if (interfacestring !=  Program.DataConnection.ApplicationSettings.ServerListenInterface)
+                        Program.DataConnection.ApplicationSettings.ServerListenInterface = interfacestring;
+    
                     return;
                 }
                 catch (System.Net.Sockets.SocketException)
