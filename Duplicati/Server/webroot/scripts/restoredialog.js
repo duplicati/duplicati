@@ -576,10 +576,64 @@ $(document).ready(function() {
                         $('#restore-dialog').dialog('close');
                     }
 
-                    $('#restore-version').append($("<option></option>").attr("value", data[0].Time).text('Latest - ' + $.timeago(data[0].Time)));
-                    for(var i in data)
-                        if (i != '0')
-                            $('#restore-version').append($("<option></option>").attr("value", data[i].Time).text($.timeago(data[i].Time)));
+                    var latest_group = $('<optgroup></optgroup>').attr('label', 'Newest - ' + $.timeago(data[0].Time));
+                    latest_group.append($("<option></option>").attr("value", data[0].Time).text($.toDisplayDateAndTime($.parseDate(data[0].Time))));
+                    $('#restore-version').append(latest_group);
+
+                    var dateStamp = function(a) { return a.getFullYear() * 10000 + a.getMonth() * 100 + a.getDate(); }
+                    var now = new Date();
+                    var today = dateStamp(now);
+                    var yesterday = dateStamp(new Date(new Date().setDate(now.getDate() - 1)));
+                    var week = dateStamp(new Date(new Date().setDate(now.getDate() - 7)));
+                    var month = dateStamp(new Date(new Date().setMonth(now.getMonth() - 1)));
+
+                    var dateBuckets = [
+                        {text:'Today', stamp: today, items: []}, 
+                        {text: 'Yesterday', stamp: yesterday, items: []}, 
+                        {text: 'This week', stamp: week, items: []}, 
+                        {text: 'This month', stamp: month, items: []}
+                    ];
+
+                    var yearBuckets = { };
+
+                    for(var i in data) {
+                        if (i == '0')
+                            continue;
+                        var dt = $.parseDate(data[i].Time);
+                        var stamp = dateStamp(dt);
+                        var inserted = false;
+
+                        for(var t in dateBuckets) {
+                            if (stamp > dateBuckets[t].stamp) {
+                                dateBuckets[t].items.push(data[i])
+                                inserted = true;
+                                break;
+                            }
+                        }
+
+                        if (!inserted) {
+                            var y = dt.getFullYear() + '';
+                            if (yearBuckets[y] == null) {
+                                yearBuckets[y] = {text: y, stamp: dateStamp(new Date(dt.getFullYear(), 0, 1)), items: []};
+                                dateBuckets.push(yearBuckets[y]);
+                            }
+                            yearBuckets[y].items.push(data[i]);
+                        }
+                    }
+
+
+                    for(var n in dateBuckets) {
+                        var e = dateBuckets[n];
+                        if (e.items.length == 0)
+                            continue;
+
+                        var group = $('<optgroup></optgroup>').attr('label', e.text);
+                        for(var d in e.items)
+                            group.append($("<option></option>").attr("value", e.items[d].Time).text($.toDisplayDateAndTime($.parseDate(e.items[d].Time))));
+
+                        $('#restore-version').append(group);
+
+                    }
 
                     $('#restore-version').trigger('change');
 
