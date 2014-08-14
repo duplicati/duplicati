@@ -851,7 +851,7 @@ $(document).ready(function() {
             $.extend(
                 {}, 
                 extra_options,
-                { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)}
+                { action: 'add-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg), contentType : "application/x-www-form-urlencoded; charset=utf-8"}
             ),
             callback,
             errorhandler
@@ -860,7 +860,7 @@ $(document).ready(function() {
 
     APP_DATA.updateBackup = function(cfg, callback, errorhandler) {
         serverWithCallback(
-            { action: 'update-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg)},
+            { action: 'update-backup', HTTP_METHOD: 'POST', data: JSON.stringify(cfg), contentType : "application/x-www-form-urlencoded; charset=utf-8"},
             callback,
             errorhandler
         );
