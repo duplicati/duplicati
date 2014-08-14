@@ -196,6 +196,34 @@
     width: 165px;
 }
 
+#dblock-size-number, #dblock-size-multiplier, #keep-time-type, #keep-time-number, #keep-time-multiplier {
+    width: 120px;
+}
+
+#dblock-size-multiplier {
+    width: 145px;
+}
+
+#keep-time-multiplier {
+    width: 80px;
+}
+
+#dblock-size-number {
+    width: 178px;    
+}
+
+#keep-time-type {
+    width: 180px;
+}
+
+#keep-time-number {
+    width: 60px;
+}
+
+#dblock-size-number {
+    width: 178px;
+}
+
  input.simple-checkbox {
     width: auto;
     float: none;

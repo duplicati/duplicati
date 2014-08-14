@@ -161,6 +161,8 @@ $(document).ready(function() {
 
     var PRIVATE_DATA = {};
 
+    $(document).tooltip();
+
     $('#main-appname').text(APP_CONFIG.branded_name);
 
     window.document.title = APP_CONFIG.branded_name;
@@ -1492,6 +1494,7 @@ $(document).ready(function() {
     });
 
     $('#main-control-menu-log').click(function() { $.showAppLog(); });
+    $('#main-control-menu-options').click( function() { APP_DATA.showAppSettings(); });
 
     $('#main-control-menu').find('li').click(function() {  $('#click-intercept').trigger('click'); });
 
@@ -1592,6 +1595,19 @@ $(document).ready(function() {
     APP_DATA.showContextMenu = function(id, anchor) {
         APP_DATA.contextMenuId = id;
         $.showPopupMenu($('#backup-context-menu'), anchor, {x: $(anchor).outerWidth() + 10});
+    };
+
+    APP_DATA.showAppSettings = function() {
+        serverWithCallback(
+            {'action': 'get-server-options'},
+            function(data) {
+                $('#options-dialog').trigger('setup-data', data);
+                $('#options-dialog').dialog('open');
+            },
+            function(a,b,msg) {
+                alert('Failed to load server options: ' + msg);
+            }
+        );
     };
 
     $('#backup-details-run').click(function(e) {
@@ -1867,6 +1883,103 @@ $(document).ready(function() {
 
             }}
         ]
+    });
+
+    var option_dialog_data = null;
+
+    $('#options-dialog').dialog({
+        autoOpen: false,
+        width: $('body').width > 320 ? 320 : 600,
+        minWidth: 320,
+        height: 500, 
+        modal: true,
+        closeOnEscape: true,
+        buttons: [{
+            text: 'Cancel', click: function(event, ui) {
+                option_dialog_data = null;
+                $(this).dialog('close');
+            }
+        }, {
+            text: 'OK', click: function(event, ui) {
+                if ($('#webservice-password-enabled').is(':checked') && $('#webservice-password').val() == '') {
+                    EDIT_URI.validation_error($('#webservice-password'), 'Cannot use empty password');
+                    return;
+                }
+
+                var data = $.extend({}, option_dialog_data);
+
+                for(var k in data)
+                    if (k.indexOf('--') == 0)
+                        delete data[k];
+
+                if (!EDIT_URI.parse_extra_options($('#global-advanced-options'), data))
+                    return;
+
+                if (!$('#webservice-remote-access-enabled').is(':checked'))
+                    data['server-listen-interface'] = 'loopback';
+                else if (data['server-listen-interface'] == 'loopback')
+                    data['server-listen-interface'] = 'any';
+
+                if ($('#webservice-password-enabled').is(':checked')) {
+                    if (data['server-passphrase'] != $('#webservice-password').val()) {
+                        data['server-passphrase-salt'] =  CryptoJS.lib.WordArray.random(256/8).toString(CryptoJS.enc.Base64);
+                        data['server-passphrase'] = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(CryptoJS.enc.Utf8.parse($('#webservice-password').val()) + CryptoJS.enc.Base64.parse(data['server-passphrase-salt']))).toString(CryptoJS.enc.Base64);
+                    }
+                } else {
+                    data['server-passphrase-salt'] = '';
+                    data['server-passphrase'] = '';
+                }
+
+                data['startup-delay'] = $('#global-delay-startup-value').val() + $('#global-delay-startup-multiplier').val();
+
+                var dlg = $(this);
+                APP_DATA.callServer(
+                    {'action': 'set-server-options', 'data': JSON.stringify(data), 'HTTP_METHOD': 'POST'},
+                    function() {
+                        dlg.dialog('close');
+                    },
+                    function(a,b,msg) {
+                        alert('Failed to save: ' + msg);
+                    }
+                );
+
+            }
+        }]
+    });
+
+    $('#webservice-password-enabled').change(function() {
+        $('#webservice-password').attr('disabled', !$('#webservice-password-enabled').is(':checked'));
+    });
+
+    $('#options-dialog').on('setup-data', function(e, data) {
+        option_dialog_data = data;
+
+        $('#webservice-remote-access-enabled').attr('checked', data['server-listen-interface'] != 'loopback');
+        $('#webservice-password-enabled').attr('checked', (data['server-passphrase'] || '') != '');
+        $('#webservice-password-enabled').change();
+
+        if ($('#webservice-password-enabled').is(':checked'))
+            $('#webservice-password').val(data['server-passphrase']);
+        else
+            $('#webservice-password').val('');
+
+        var advopts = '';
+        for(var n in data)
+            if (n.indexOf('--') == 0)
+                advopts += n + '=' + data[n] + '\n';
+
+        if ((data['startup-delay'] || '')  == '') {
+            $('#global-delay-startup-value').val('1');
+            $('#global-delay-startup-multiplier').val('s');
+        } else {
+            var v = data['startup-delay'].substr(0, data['startup-delay'].length - 1);
+            var m = data['startup-delay'].substr(data['startup-delay'].length - 1, 1);
+            $('#global-delay-startup-value').val(v);
+            $('#global-delay-startup-multiplier').val(m);
+        }
+
+
+        $('#global-advanced-options').val('').val(advopts);
     });
 
     var exportTypeChange = function() {

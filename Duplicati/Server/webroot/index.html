@@ -17,6 +17,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/oem.css" />
     <link rel="stylesheet" type="text/css" href="customized/customized.css" />
 
+
 <!--[if lt IE 9]>
     <script type="text/javascript" src="scripts/jquery-1.11.0.min.js"></script>
 <![endif]-->
@@ -38,6 +39,7 @@
     <script type="text/javascript" src="scripts/hideShowPassword.min.js"></script>
     <script type="text/javascript" src="scripts/jquery.timeago.js"></script>
     <script type="text/javascript" src="scripts/jquery.noty.packaged.min.js"></script>
+    <script type="text/javascript" src="scripts/cryptojs.js"></script>    
     <script type="text/javascript" src="scripts/oem.js"></script>
     <script type="text/javascript" src="customized/customized.js"></script>
 
@@ -158,6 +160,7 @@
                 <li id="main-control-menu-updates"><a>Check for updates</a></li>
                 <li id="main-control-menu-throttle"><a>Throttle ...</a></li>
                 <li id="main-control-menu-log"><a>Log ...</a></li>
+                <li id="main-control-menu-options"><a>Options ...</a></li>
                 <li>-</li>
                 <li id="main-control-menu-import"><a>Import backup job...</a></li>
                 <li>-</li>
@@ -236,7 +239,7 @@
         <form id="edit-dialog-form">
             <div id="edit-tab-general">
                 <div class="input-block">
-                    <div class="edit-dialog-label">Name</div>
+                    <div class="edit-dialog-label" title="Choose a descriptive name for your backup job">Name</div>
                     <input type="text" name="backup-name" id="backup-name" class="ui-corner-all" />
                 </div>
 <!--
@@ -246,7 +249,7 @@
                 </div>
  -->
                 <div class="input-block">
-                    <div class="edit-dialog-label action-link" id="backup-uri-label">Backup to…</div>
+                    <div class="edit-dialog-label action-link" id="backup-uri-label" title="The destination where the backup data is stored is supplied in the form of a URI. Click the link here to edit the indiviual parts of the connection URI.">Backup to…</div>
                     <div class="field-group">
                         <textarea type="text" name="backup-uri" id="backup-uri" value="" class="ui-corner-all" rows="3"></textarea>
                     </div>
@@ -254,7 +257,7 @@
 
                 <div id="encryption-area">
                     <div class="input-block">
-                        <div class="edit-dialog-label">Encryption</div>
+                        <div class="edit-dialog-label" title="It is recommended to encrypt all backups stored on remote servers">Encryption</div>
                         <div class="field-group">
                             <select type="text" name="encryption-method" id="encryption-method" class="ui-corner-all">
                                 <option>AES 256 bit</option>
@@ -318,7 +321,7 @@
 
                     <div class="clearfix"></div>
 
-                    <div class="edit-dialog-label">Next time</div>
+                    <div class="edit-dialog-label" title="The next time the backup is started">Next time</div>
                     <div class="input-wrapper">
                         <input type="time" id="next-run-time" name="next-run-time"/>
                         <input type="date" id="next-run-date" name="next-run-date" />
@@ -326,7 +329,7 @@
 
                     <div class="clearfix"></div>
 
-                    <div class="edit-dialog-label">Run again every</div>
+                    <div class="edit-dialog-label" title="How often the backup is repeated">Run again every</div>
                     <div class="input-wrapper">
                         <input type="number" id="repeat-run-number" name="repeat-run-number"/>
                         <select id="repeat-run-multiplier" name="repeat-run-multiplier">
@@ -550,6 +553,62 @@
             <input type="hidden" name="action" value="import-backup">
             <input type="hidden" name="callback" id="import-dialog-callback" value="">
         </form>
+    </div>
+
+    <div id="options-dialog" class="modal-dialog" title="Options">
+        <div>
+            <div class="options-header options-header-first">Remote access</div>
+            <div class="options-items">
+                <input type="checkbox" id="webservice-remote-access-enabled"/>
+                <div>Allow remote access (requires restart)</div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div>
+                <div class="options-items">
+                    <input type="checkbox" id="webservice-password-enabled"/>
+                    <div id="webservice-password-label">Password</div>
+                    <input type="password" id="webservice-password" name="webservice-password"/>
+                </div>
+            </div>
+
+        </div>
+
+        <div>
+            <div class="options-header">Pause after startup or hibernation</div>
+            <div class="hint-line-last">To grant all processes and the network some time to recover after a startup or hibernation, you can delay backup jobs a little</div>
+            <div class="options-items">
+                <div class="edit-dialog-label">Pause</div>
+                <select id="global-delay-startup-value">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                </select>
+                <select id="global-delay-startup-multiplier">
+                    <option value="s">Seconds</option>
+                    <option value="m">Minutes</option>
+                    <option value="h">Hours</option>
+                </select>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="options-header">Advanced options</div>
+            <div class="options-items">
+                <div class="edit-dialog-label" id="global-options-link"><a class="action-link">Options<div class="ui-icon ui-icon-info ui-icon-inline"></div></a></div>
+
+                <textarea id="global-advanced-options" rows="4" class="pre-style-text" name="global-advanced-options"></textarea>
+            </div>
+
+        </div>
+
     </div>
 
 

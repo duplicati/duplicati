@@ -72,6 +72,8 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("dismiss-notification", DismissNotification);
             SUPPORTED_METHODS.Add("download-bug-report", DownloadBugReport);
             SUPPORTED_METHODS.Add("delete-local-data", DeleteLocalData);
+            SUPPORTED_METHODS.Add("get-server-options", GetServerOptions);
+            SUPPORTED_METHODS.Add("set-server-options", SetServerOptions);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -617,6 +619,47 @@ namespace Duplicati.Server.WebServer
 
             System.IO.File.Delete(bk.DBPath);
             bw.OutputOK();
+        }
+
+        private void GetServerOptions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            var adv_props = from n in Program.DataConnection.GetSettings(Database.Connection.APP_SETTINGS_ID)
+                            select new KeyValuePair<string, string>(n.Name, n.Value);
+
+            bw.OutputOK(adv_props.ToDictionary(x => x.Key, x => x.Value));
+        }
+
+        private void SetServerOptions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            string str = request.Form["data"].Value;
+            if (string.IsNullOrWhiteSpace(str))
+            {
+                ReportError(response, bw, "Missing data object");
+                return;
+            }
+
+            Dictionary<string, string> data = null;
+            try
+            {
+                data = Serializer.Deserialize<Dictionary<string, string>>(new StringReader(str));
+                if (data == null)
+                {
+                    ReportError(response, bw, "Data object had no backup entry");
+                    return;
+                }
+
+                Program.DataConnection.ApplicationSettings.UpdateSettings(data);
+
+                bw.OutputOK();
+            }
+            catch (Exception ex)
+            {
+                if (data == null)
+                    ReportError(response, bw, string.Format("Unable to parse data object: {0}", ex.Message));
+                else
+                    ReportError(response, bw, string.Format("Unable to save settings: {0}", ex.Message));
+            }
+
         }
 
         private class ImportExportStructure

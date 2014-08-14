@@ -33,7 +33,7 @@ namespace Duplicati.Server.Database
             public const string IS_FIRST_RUN = "is-first-run";
             public const string SERVER_PORT_CHANGED = "server-port-changed";
             public const string SERVER_PASSPHRASE = "server-passphrase";
-            public const string SERVER_PASSPHRASE_SALT = "server-passphras-salt";
+            public const string SERVER_PASSPHRASE_SALT = "server-passphrase-salt";
             public const string UPDATE_CHECK_LAST = "last-update-check";
             public const string UPDATE_CHECK_INTERVAL = "update-check-interval";
             public const string UPDATE_CHECK_NEW_VERSION = "update-check-latest";
@@ -43,24 +43,55 @@ namespace Duplicati.Server.Database
         }
         
         private Dictionary<string, string> m_values;
+        private Database.Connection m_connection;
         private Library.AutoUpdater.UpdateInfo m_latestUpdate;
 
         internal ApplicationSettings(Connection con)
         {
-            var settings = con.GetSettings(Connection.APP_SETTINGS_ID).ToDictionary(x => x.Name, x => x.Value);
             m_values = new Dictionary<string, string>();
-            
-            string nx;
-            foreach(var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
+            m_connection = con;
+            ReloadSettings();
+        }
+
+        private void ReloadSettings()
+        {
+            lock(m_connection.m_lock)
             {
-                settings.TryGetValue(n, out nx);
-                m_values[n] = nx;
+                string nx;
+
+                m_values.Clear();
+                var settings = m_connection.GetSettings(Connection.APP_SETTINGS_ID).ToDictionary(x => x.Name, x => x.Value);
+                foreach(var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
+                {
+                    settings.TryGetValue(n, out nx);
+                    m_values[n] = nx;
+                }
             }
+        }
+
+        public void UpdateSettings(Dictionary<string, string> newsettings)
+        {
+            if (newsettings == null)
+                throw new ArgumentNullException();
+
+            lock(m_connection.m_lock)
+            {
+                m_latestUpdate = null;
+                m_values.Clear();
+
+                foreach(var k in newsettings)
+                    m_values[k.Key] = newsettings[k.Key];
+
+                SaveSettings();
+            }
+
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
         
         private void SaveSettings()
         {
-            Program.DataConnection.SetSettings(
+            m_connection.SetSettings(
                 from n in m_values
                 select (Duplicati.Server.Serialization.Interface.ISetting)new Setting() {
                     Filter = "",
@@ -77,7 +108,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.STARTUP_DELAY] = value;
                 SaveSettings();
             }
@@ -99,7 +130,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
             }
         }
@@ -112,7 +143,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.DOWNLOAD_SPEED_LIMIT] = value;
                 SaveSettings();
             }
@@ -126,7 +157,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.UPLOAD_SPEED_LIMIT] = value;
                 SaveSettings();
             }
@@ -144,7 +175,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.IS_FIRST_RUN] = value.ToString();
                 SaveSettings();
             }
@@ -158,7 +189,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.UNACKED_ERROR] = value.ToString();
                 SaveSettings();
             }
@@ -172,7 +203,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.UNACKED_WARNING] = value.ToString();
                 SaveSettings();
             }
@@ -185,7 +216,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.SERVER_PORT_CHANGED] = value.ToString();
                 SaveSettings();
             }
@@ -204,7 +235,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.LAST_WEBSERVER_PORT] = value.ToString();
                 SaveSettings();
             }
@@ -230,7 +261,7 @@ namespace Duplicati.Server.Database
         {
             if (string.IsNullOrWhiteSpace(password))
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                 {
                     m_values[CONST.SERVER_PASSPHRASE] = "";
                     m_values[CONST.SERVER_PASSPHRASE_SALT] = "";
@@ -251,7 +282,7 @@ namespace Duplicati.Server.Database
                 sha256.TransformFinalBlock(buf, 0, buf.Length);
                 var pwd = Convert.ToBase64String(sha256.Hash);
 
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                 {
                     m_values[CONST.SERVER_PASSPHRASE] = pwd;
                     m_values[CONST.SERVER_PASSPHRASE_SALT] = salt;
@@ -273,7 +304,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.UPDATE_CHECK_LAST] = value.ToUniversalTime().Ticks.ToString();
                 SaveSettings();
             }
@@ -291,7 +322,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.UPDATE_CHECK_INTERVAL] = value;
                 SaveSettings();
                 Program.UpdatePoller.Reschedule();
@@ -347,7 +378,7 @@ namespace Duplicati.Server.Database
                 }
 
                 m_latestUpdate = value;
-                lock(Program.DataConnection.m_lock)
+                lock(m_connection.m_lock)
                     m_values[CONST.UPDATE_CHECK_NEW_VERSION] = result;
 
                 SaveSettings();

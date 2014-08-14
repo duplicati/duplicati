@@ -402,3 +402,45 @@ textarea.pre-style-text, .pre-style-text {
 .export-dialog-label, .import-dialog-label {
     display: inline;
 }
+
+ .ui-icon-inline {
+    display: inline-block;
+ }
+
+ #options-dialog .options-header {
+    font-size: 22px;
+    font-weight: bold;
+ }
+
+#options-dialog .options-items, #options-dialog .edit-dialog-label {
+    margin-left: 10px;
+}
+
+#options-dialog .hint-line-last {
+    margin-left: 10px;
+    font-style: italic;
+}
+
+#options-dialog .options-items > div {
+    display: inline-block;
+}
+
+#options-dialog .options-header {
+    padding-top: 15px;
+}
+
+#options-dialog .options-header.options-header-first {
+    padding-top: 0px;
+}
+
+#global-advanced-options, #global-webservice-options {
+    width: 320px;
+}
+
+#global-options-startup-delay-multiplier {
+    width: 270px;
+}
+
+#webservice-password-label {
+    min-width: 180px;
+}
