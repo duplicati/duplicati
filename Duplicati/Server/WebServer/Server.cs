@@ -194,7 +194,7 @@ namespace Duplicati.Server.WebServer
             fh.MimeTypes["htm"] = "text/html; charset=utf-8";
             fh.MimeTypes["html"] = "text/html; charset=utf-8";
             server.Add(fh);
-            server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "index.html")));
+            server.Add(new IndexHtmlHandler(webroot));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
             server.Add(new DebugReportHandler());
