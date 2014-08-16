@@ -549,7 +549,7 @@ $(document).ready(function() {
         return m;
     };
 
-    $('#restore-dialog').on('setup-data', function(e, id) {
+    $('#restore-dialog').on('setup-dialog', function(e, id) {
         backupId = id;
         trees = { };
         searchdata = { };

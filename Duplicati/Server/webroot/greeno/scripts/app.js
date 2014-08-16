@@ -926,7 +926,7 @@ $(document).ready(function() {
                 alert('Cannot start restore while the backup is active.');
             } else {
                 $('#restore-dialog').dialog('open');
-                $('#restore-dialog').trigger('setup-data', id);
+                $('#restore-dialog').trigger('setup-dialog', id);
             }
         });
 
@@ -1591,7 +1591,7 @@ $(document).ready(function() {
         serverWithCallback(
             {'action': 'get-server-options'},
             function(data) {
-                $('#options-dialog').trigger('setup-data', data);
+                $('#options-dialog').trigger('setup-dialog', data);
                 $('#options-dialog').dialog('open');
             },
             function(a,b,msg) {
@@ -1941,7 +1941,7 @@ $(document).ready(function() {
         $('#webservice-password').attr('disabled', !$('#webservice-password-enabled').is(':checked'));
     });
 
-    $('#options-dialog').on('setup-data', function(e, data) {
+    $('#options-dialog').on('setup-dialog', function(e, data) {
         option_dialog_data = data;
 
         $('#webservice-remote-access-enabled').attr('checked', data['server-listen-interface'] != 'loopback');
