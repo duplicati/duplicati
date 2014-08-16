@@ -195,17 +195,7 @@ $(document).ready(function() {
         };
 
         try { onUpdate(zxcvbn(password)); }
-        catch (e) {
-            // Not loaded, try this:
-            $.getScript('/scripts/zxcvbn.js', function() {
-                try {
-                    onUpdate(zxcvbn(password));
-                }
-                catch (e) {
-                    onUpdate(null);
-                }
-            });
-        }
+        catch (e) { onUpdate(null); }
     };
 
     var formatSizes = ['TB', 'GB', 'MB', 'KB'];
