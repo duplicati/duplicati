@@ -555,6 +555,8 @@ $(document).ready(function() {
 
     $('#edit-dialog').on( "dialogopen", function( event, ui ) {
         $('#edit-dialog-form').each(function(i, e) { e.reset(); });
+        $('#edit-dialog-form select').each(function(i, e) { $(e).change(); });
+        $('#edit-dialog-form input').each(function(i, e) { $(e).change(); });
         $('#source-folder-paths').find('.source-folder').remove();
         removeSourceFolder();
 
