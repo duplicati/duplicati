@@ -67,6 +67,13 @@ $(document).ready(function() {
                     return false;
                 }
 
+                if ($('#backup-uri').val().trim() == '') {
+                    $('#edit-dialog').tabs( "option", "active", tabindex);
+                    $('#backup-uri').focus();
+                    alert('You must enter a connection url for the backup');
+                    return false;
+                }
+
                 if ($('#encryption-method').val() != '') {
                     if ($('#encryption-password').val().trim() == '') {
                         $('#edit-dialog').tabs( "option", "active", tabindex);
@@ -92,17 +99,6 @@ $(document).ready(function() {
                     $('#edit-dialog').tabs( "option", "active", tabindex);
                     $('#source-folder-paths').focus();
                     alert('You must select at least one source folder to back up');
-                    return false;
-                }
-
-                return true;
-            },
-
-            'edit-tab-target': function(tabindex) {
-                if ($('#backup-uri').val().trim() == '') {
-                    $('#edit-dialog').tabs( "option", "active", tabindex);
-                    $('#backup-uri').focus();
-                    alert('You must enter a connection url for the backup');
                     return false;
                 }
 
