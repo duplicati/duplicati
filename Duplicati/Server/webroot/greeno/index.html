@@ -366,19 +366,39 @@
             </div>
 
             <div id="edit-tab-options">
-                <div class="hint-line-last">Duplicati splits backups into smaller files. A smaller size (e.g. 10MB) is recommended for slow and unstable connections. A larger size (e.g. 200MB) is recommended in LAN environments</div>
+
+                <div class="input-block">
+                    <div class="edit-dialog-label" title="Duplicati splits backups into smaller files. A smaller size (e.g. 10MB) is recommended for slow and unstable connections. A larger size (e.g. 200MB) is recommended in LAN environments.">Max backup file size<div class="ui-icon ui-icon-info ui-icon-inline"></div></div>
+                    <div class="input-wrapper">
+                        <input type="number" id="dblock-size-number" name="dblock-size-number" />
+                        <select id="dblock-size-multiplier" name="dblock-size-multiplier">
+                            <option value="kb">KByte</option>
+                            <option value="mb">MByte</option>
+                            <option value="gb">GByte</option>
+                            <option value="tb">TByte</option>
+                        </select>
+                    </div>
+                </div>
 
                 <div class="clearfix"></div>
 
-                <div class="edit-dialog-label">Max backup file size</div>
-                <div class="input-wrapper">
-                    <input type="number" id="dblock-size-number" name="dblock-size-number" />
-                    <select id="dblock-size-multiplier" name="dblock-size-multiplier">
-                        <option value="kb">KByte</option>
-                        <option value="mb">MByte</option>
-                        <option value="gb">GByte</option>
-                        <option value="tb">TByte</option>
-                    </select>
+                <div class="input-block">
+
+                    <div class="edit-dialog-label" title="Define how many backups you want to keep stored. Old backups are removed if Duplicati can free a significant amount of space. This is done during compacting.">Keep backups<div class="ui-icon ui-icon-info ui-icon-inline"></div></div>
+                    <div class="input-wrapper">
+                        <select id="keep-time-type" name="keep-time-type">
+                            <option value="">forever</option>
+                            <option value="keep-time">for a specific time</option>
+                            <option value="keep-versions">a specific number</option>
+                        </select>
+                        <input type="number" id="keep-time-number" name="keep-time-number" />
+                        <select id="keep-time-multiplier" name="keep-time-multiplier">
+                            <option value="D">Days</option>
+                            <option value="W">Weeks</option>
+                            <option value="M">Months</option>
+                            <option value="Y">Years</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="clearfix"></div>

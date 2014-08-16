@@ -117,7 +117,19 @@ $(document).ready(function() {
                 }
 
                 return true;
-            }
+            },
+
+            'edit-tab-options': function(tabindex) {
+                var kt = ($('#keep-time-number').val() || '').trim();
+                if ($('#keep-time-type').val() != '' && (parseInt(kt) <= 0 || (parseInt(kt) + '') != kt)) {
+                    $('#edit-dialog').tabs( "option", "active", tabindex);
+                    $('keep-time-number').focus();
+                    alert('You must enter a positive integer for the backup retention');
+                    return false;
+                }
+
+                return true;
+            }            
         },
 
         fill_form_map: {
@@ -263,6 +275,31 @@ $(document).ready(function() {
                     $('#dblock-size-number').val(m[1]);
                     $('#dblock-size-multiplier').val(m[2]);
                 }
+            },
+            'keep-time': function(dict, key, val, cfgel) {
+                if (val == null || val.length == 0) {
+                    $('#keep-time-type').val('');
+                } else {
+                    var m = (/(\d*)(\w)/mg).exec(val);
+                    if (m) {
+                        $('#keep-time-type').val('keep-time');
+                        $('#keep-time-number').val(parseInt(m[1]));
+                        $('#keep-time-multiplier').val(m[2]);
+                    } else {
+                        $('#keep-time-type').val('');
+                    }
+                }
+
+                $('#keep-time-type').change();
+            },
+            'keep-versions': function(dict, key, val, cfgel) {
+                if (val == null || val.length == 0) {
+                    $('#keep-time-type').val('');
+                } else {
+                    $('#keep-time-type').val('keep-versions');
+                    $('#keep-time-number').val(parseInt(val));
+                }
+                $('#keep-time-type').change();
             }
         },
 
@@ -278,6 +315,8 @@ $(document).ready(function() {
             'allow-day-thu': false,
             'allow-day-fri': false,
             'allow-day-sat': false,
+            'keep-time-number': false,
+            'keep-time-multiplier': false,
 
             'allow-day-sun': function(dict, key, el, cfgel) {
                 if (!$('#use-scheduled-run').is(':checked'))
@@ -365,6 +404,19 @@ $(document).ready(function() {
                     dict['Schedule']['Repeat'] = $(el).val();
                 else
                     dict['Schedule']['Repeat'] = $(el).val() + m;
+            },
+            'keep-time-type': function(dict, key, el, cfgel) {
+                var t = $('#keep-time-type').val();
+                if (t == 'keep-time') {
+                    delete dict['Backup']['Settings']['keep-versions'];
+                    dict['Backup']['Settings']['keep-time'] = parseInt($('#keep-time-number').val()) + $('#keep-time-multiplier').val();
+                } else if (t == 'keep-versions') {
+                    delete dict['Backup']['Settings']['keep-time'];
+                    dict['Backup']['Settings']['keep-versions'] = parseInt($('#keep-time-number').val());
+                } else {
+                    delete dict['Backup']['Settings']['keep-versions'];
+                    delete dict['Backup']['Settings']['keep-time'];
+                }
             }
         }
     };
@@ -1045,6 +1097,20 @@ $(document).ready(function() {
 
         } else {
             $('#use-scheduled-run-details').hide();
+        }
+    });
+
+    $('#keep-time-type').change(function() {
+        var v = $('#keep-time-type').val();
+        if (v == 'keep-time') {
+            $('#keep-time-number').show();
+            $('#keep-time-multiplier').show();
+        } else if (v == 'keep-versions') {
+            $('#keep-time-number').show();
+            $('#keep-time-multiplier').hide();
+        } else {
+            $('#keep-time-number').hide();
+            $('#keep-time-multiplier').hide();
         }
     });
 });

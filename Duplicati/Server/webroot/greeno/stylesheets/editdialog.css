@@ -192,7 +192,7 @@
     margin-right: 10px;
 }
 
-#next-run-time, #next-run-date, #repeat-run-number, #repeat-run-multiplier, #dblock-size-number, #dblock-size-multiplier {
+#next-run-time, #next-run-date, #repeat-run-number, #repeat-run-multiplier {
     width: 165px;
 }
 

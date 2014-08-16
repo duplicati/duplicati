@@ -3,7 +3,8 @@
         Settings: [
             {Name: "encryption-module", Value: "aes"},
             {Name: "compression-module", Value: "zip"},
-            {Name: "dblock-size", Value: "50mb"}
+            {Name: "dblock-size", Value: "50mb"},
+            {Name: "keep-time", Value: "3M"}
         ]
     },
     Schedule: {
