@@ -948,7 +948,7 @@ $(document).ready(function() {
         closeOnEscape: true,
         buttons: [
             { text: 'Close', disabled: false, click: function(event, ui) {
-                $('#backup-options-dialog').dialog('close');
+                $(this).dialog('close');
             }}
         ]
     });
