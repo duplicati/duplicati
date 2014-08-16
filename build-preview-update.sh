@@ -9,6 +9,8 @@ RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
+GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
+
 UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest"
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
@@ -21,6 +23,8 @@ fi
 echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
 echo
+
+git stash save "${GIT_STASH_NAME}"
 
 echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
 echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
@@ -73,6 +77,8 @@ cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.man
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
+git add "Updates/build_version.txt"
+git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}"
 git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"
 
 echo
