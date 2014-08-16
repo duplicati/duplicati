@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -336,6 +336,15 @@ namespace Duplicati.Library.Backend
 
                 return -1;
             }
+        }
+
+        public void Rename(string oldname, string newname)
+        {
+            var source = GetRemoteName(oldname);
+            var target = GetRemoteName(newname);
+            if (System.IO.File.Exists(target))
+                System.IO.File.Delete(target);
+            System.IO.File.Move(source, target);
         }
     }
 }
