@@ -1,3 +1,17 @@
+2014-08-16
+==========
+* Fixed the copyright statement on all assemblies, this should fix some cases where Antivirus would flag it
+* Fixed a problem with login when using a password to protect the service
+* Fixed handling extended/accented character in source and target input
+* Fixed an issue on older Mono installs where System.Numerics.BigInteger.Parse is missing from the framework (updated to Json.Net 6.0r4 .Net3.5 version)
+* Better display of advanced options and filters
+* Improved the way times are displayed in the restore dialog
+* Added saving the commandline option for server listen interface
+* Added a dialog for setting application-wide options
+* Improved the index handler to allow for new UI versions in subfolders
+* Added tooltips to many common options
+* Added options to specify retention without needing to use the advanced options
+
 2014-08-12
 ==========
 * Fixed a crash on Windows after running a backup
