@@ -444,3 +444,8 @@ textarea.pre-style-text, .pre-style-text {
 #webservice-password-label {
     min-width: 180px;
 }
+
+#source-folder-filter-area {
+    margin-top: 10px;
+}
+
