@@ -576,16 +576,11 @@
         </form>
     </div>
 
+    <div id="global-advanced-options-dialog" class="modal-dialog" title="Avaliable options"></div>
+
     <div id="options-dialog" class="modal-dialog" title="Options">
         <div>
-            <div class="options-header options-header-first">Remote access</div>
-            <div class="options-items">
-                <input type="checkbox" id="webservice-remote-access-enabled"/>
-                <div>Allow remote access (requires restart)</div>
-            </div>
-
-            <div class="clearfix"></div>
-
+            <div class="options-header options-header-first">Access to user interface</div>
             <div>
                 <div class="options-items">
                     <input type="checkbox" id="webservice-password-enabled"/>
@@ -594,11 +589,17 @@
                 </div>
             </div>
 
+            <div class="clearfix"></div>
+
+            <div class="options-items">
+                <input type="checkbox" id="webservice-remote-access-enabled"/>
+                <div>Allow remote access (requires restart)</div>
+            </div>
+
         </div>
 
         <div>
-            <div class="options-header">Pause after startup or hibernation</div>
-            <div class="hint-line-last">To grant all processes and the network some time to recover after a startup or hibernation, you can delay backup jobs a little</div>
+            <div class="options-header" title="To grant all processes and the network some time to recover after a startup or hibernation, you can delay backup jobs a little">Pause after startup or hibernation<div class="ui-icon ui-icon-info ui-icon-inline"></div></div>
             <div class="options-items">
                 <div class="edit-dialog-label">Pause</div>
                 <select id="global-delay-startup-value">
@@ -623,7 +624,7 @@
 
             <div class="options-header">Advanced options</div>
             <div class="options-items">
-                <div class="edit-dialog-label" id="global-options-link"><a class="action-link">Options<div class="ui-icon ui-icon-info ui-icon-inline"></div></a></div>
+                <div class="edit-dialog-label" id="global-options-link" title="Advanced options can be specified comandline style. One option per line like --option=value. Click here to see a list of options"><a class="action-link">Options<div class="ui-icon ui-icon-info ui-icon-inline"></div></a></div>
 
                 <textarea id="global-advanced-options" rows="4" class="pre-style-text" name="global-advanced-options"></textarea>
             </div>
