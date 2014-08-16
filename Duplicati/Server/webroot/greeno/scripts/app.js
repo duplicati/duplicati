@@ -1972,6 +1972,93 @@ $(document).ready(function() {
         $('#global-advanced-options').val('').val(advopts);
     });
 
+
+    $('#global-advanced-options-dialog').dialog({
+        minWidth: 320,
+        width: $('body').width > 600 ? 320 : 600,
+        minHeight: 480,
+        height: 500,
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Close', disabled: false, click: function(event, ui) {
+                $(this).dialog('close');
+            }}
+        ]
+    });
+
+
+    $('#global-options-link').click(function() {
+        APP_DATA.getServerConfig(function(data) {
+            $('#global-advanced-options-dialog').dialog('open');
+
+            var baseOpts = data.Options;
+
+            for(var n in data.BackendModules)
+                baseOpts = baseOpts.concat(data.BackendModules[n].Options);
+
+            for(var n in data.CompressionModules)
+                baseOpts = baseOpts.concat(data.CompressionModules[n].Options);
+
+            for(var n in data.EncryptionModules)
+                baseOpts = baseOpts.concat(data.EncryptionModules[n].Options);
+
+            for(var n in data.GenericModules)
+                baseOpts = baseOpts.concat(data.GenericModules[n].Options);
+
+
+            $('#global-advanced-options-dialog').trigger('configure', { Options: baseOpts, callback: function(id) {
+                $('#global-advanced-options-dialog').dialog('close');
+
+                var txt = $('#global-advanced-options').val().trim();
+                if (txt.length > 0)
+                    txt += '\n';
+
+                var defaultvalue = '';
+                for(var o in data.Options)
+                    if (data.Options[o].Name == id) {
+                        defaultvalue = data.Options[o].DefaultValue;
+                        break;
+                    }
+
+
+                txt += '--' + id + '=' + defaultvalue;
+                $('#global-advanced-options').val('').val(txt);
+                $('#global-advanced-options').focus();
+
+            }});
+        }, function() {
+        });
+    });
+
+    $('#global-advanced-options-dialog').on('configure', function(e, data) {
+        $('#global-advanced-options-dialog').empty();
+
+        var s = data.Options.sort(function(a, b){
+            if (a == null)
+                return -1;
+            if (b == null)
+                return 1;
+            if (a == null && b == null)
+                return 0;
+
+            if(a.Name < b.Name) return -1;
+            if(a.Name > b.Name) return 1;
+            return 0;
+        });
+
+        //Fill with jQuery template
+        $.tmpl($('#backup-option-template'), s).prependTo($('#global-advanced-options-dialog'));
+        $('#global-advanced-options-dialog').find('.backup-option-link').click(function(e) {
+            data.callback(e.target.id);
+        });
+
+        $('#global-advanced-options-dialog').find('.backup-option-long').each(function(i, e) {
+            $(e).html(nl2br($(e).html()));
+        });
+    });
+
     var exportTypeChange = function() {
         $('#export-use-encryption').attr('disabled', !$('#export-type-file').is(':checked'));
         $('#export-use-encryption').change();
