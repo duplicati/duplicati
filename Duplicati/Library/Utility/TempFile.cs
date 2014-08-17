@@ -105,11 +105,11 @@ namespace Duplicati.Library.Utility
         /// <param name="errorcallback">An optional callback method for logging errors</param>
         public static void RemoveOldApplicationTempFiles(Action<string, Exception> errorcallback = null)
         {
-            var expired = DateTime.UtcNow.AddMonths(1);
+            var expires = TimeSpan.FromDays(30);
             foreach(var e in GetApplicationTempFiles())
                 try
                 {
-                    if (System.IO.File.GetLastWriteTimeUtc(e) < expired)
+                    if (DateTime.Now > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
                         System.IO.File.Delete(e);
                 }
                 catch (Exception ex)
