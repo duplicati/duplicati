@@ -145,7 +145,7 @@
     <value>Files are not deleted, use the --force command to actually remove files</value>
   </data>
   <data name="InternalDeleteCountError" xml:space="preserve">
-    <value>An internal error occured, and the operation was aborted to protect the backup sets</value>
+    <value>An internal error occurred, and the operation was aborted to protect the backup sets</value>
   </data>
   <data name="ManifestsMustBeReadOnBackups" xml:space="preserve">
     <value>It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
@@ -292,7 +292,7 @@
     <value>Hash checks cannot be disabled while performing a backup</value>
   </data>
   <data name="CannotVerifyChain" xml:space="preserve">
-    <value>Unable to verfiy the backup chain when the option --dont-read-manifests is active</value>
+    <value>Unable to verify the backup chain when the option --dont-read-manifests is active</value>
   </data>
   <data name="CannotVerifyWithoutHashes" xml:space="preserve">
     <value>Hash checks cannot be disabled while performing a verification</value>
@@ -352,10 +352,10 @@
     <value>The operation {0} has started</value>
   </data>
   <data name="CompressionModuleNotFoundError" xml:space="preserve">
-    <value>The specified compression module was not found: {0}. Avaliable compression modules: {1}</value>
+    <value>The specified compression module was not found: {0}. Available compression modules: {1}</value>
   </data>
   <data name="EncryptionModuleNotFoundError" xml:space="preserve">
-    <value>The specified encryption module was not found: {0}. Avaliable encryption modules: {1}</value>
+    <value>The specified encryption module was not found: {0}. Available encryption modules: {1}</value>
   </data>
   <data name="InvalidManifestFileCount" xml:space="preserve">
     <value>The manifest file {0} is invalid, as it specifies that there should be {1} signature volumes and {2} content volumes.</value>
