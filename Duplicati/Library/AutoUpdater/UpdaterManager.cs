@@ -38,7 +38,7 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly string[] MANIFEST_URLS = AutoUpdateSettings.URLs;
         private static readonly string APPNAME = AutoUpdateSettings.AppName;
 
-        private static readonly string INSTALLDIR;
+        internal static readonly string INSTALLDIR;
 
         private static readonly string INSTALLED_BASE_DIR = string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) ?
                                                         System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location)
@@ -50,16 +50,16 @@ namespace Duplicati.Library.AutoUpdater
 
         private static KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
 
-        private static readonly UpdateInfo SelfVersion;
+        public static readonly UpdateInfo SelfVersion;
 
         public static event Action<Exception> OnError;
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string INSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
-        private const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
+        internal const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
         private const string RUN_UPDATED_FOLDER_PATH = "AUTOUPDATER_LOAD_UPDATE";
         private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
-        private const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
+        internal const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
         private const string README_FILE = "README.txt";
         private const string INSTALL_FILE = "installation.txt";
@@ -70,6 +70,11 @@ namespace Duplicati.Library.AutoUpdater
         /// </summary>
         /// <value>The original directory that this application was installed into</value>
         public static string InstalledBaseDir { get { return INSTALLED_BASE_DIR; } }
+
+        /// <summary>
+        /// Gets the last version found from an update
+        /// </summary>
+        public static UpdateInfo LastUpdateCheckVersion { get; private set; }       
 
         static UpdaterManager()
         {
@@ -197,7 +202,7 @@ namespace Duplicati.Library.AutoUpdater
                     using(var tmpfile = new Library.Utility.TempFile())
                     {
                         System.Net.WebClient wc = new System.Net.WebClient();
-                        wc.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                        wc.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(InstallID) ? "" : " -" + InstallID));
                         wc.Headers.Add("X-Install-ID", InstallID);
                         wc.DownloadFile(url, tmpfile);
 
@@ -214,6 +219,7 @@ namespace Duplicati.Library.AutoUpdater
                             if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
                                 return null;
 
+                            LastUpdateCheckVersion = update;
                             return update;
                         }
                     }
@@ -856,7 +862,7 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.InstallDuring)
+        public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
             // If the update is disabled, go straight in
             if (DISABLE_UPDATE_DOMAIN)

@@ -29,8 +29,7 @@ namespace Duplicati.Library.AutoUpdater
         private const string UPDATE_README = "AutoUpdateFolderReadme.txt";
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
 
-        private const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
-
+        internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
 
         static AutoUpdateSettings()
         {

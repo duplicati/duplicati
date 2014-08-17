@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.CommandLine
 {
@@ -230,10 +231,36 @@ namespace Duplicati.CommandLine
                         Console.WriteLine(string.Format("Failed to delete temp file: {0}", path)); 
                 });
 
-                
+                var autoupdate = Library.Utility.Utility.ParseBoolOption(options, "auto-update");
+                options.Remove("auto-update");
+
                 if (knownCommands.ContainsKey(command))
                 {
-                    return knownCommands[command](cargs, options, filter);
+                    var res = knownCommands[command](cargs, options, filter);
+
+                    if (autoupdate)
+                    {
+                        var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
+                        if (update == null)
+                            update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
+
+                        if (update != null && update.Version != Library.AutoUpdater.UpdaterManager.SelfVersion.Version)
+                        {
+                            Console.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
+                            long lastpg = 0;
+                            Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f => {
+                                var npg = (long)(f*100);
+                                if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                                {
+                                    lastpg = npg;
+                                    Console.WriteLine("Downloading {0}% ...", npg);
+                                }
+                            });
+                            Console.WriteLine("Update \"{0}\" ({1}) installed, using on next launch", update.Displayname, update.Version);
+                        }
+                    }
+
+                    return res;
                 }
                 else
                 {
@@ -281,6 +308,7 @@ namespace Duplicati.CommandLine
                     new Library.Interface.CommandLineArgument("exclude", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
                     new Library.Interface.CommandLineArgument("control-files", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ControlFilesOptionShort, Strings.Program.ControlFilesOptionLong, "false"),
                     new Library.Interface.CommandLineArgument("quiet-console", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.QuietConsoleOptionShort, Strings.Program.QuietConsoleOptionLong, "false"),
+                    new Library.Interface.CommandLineArgument("auto-update", Library.Interface.CommandLineArgument.ArgumentType.Boolean, LC.L("Toggle automatic updates"), LC.L("Set this option if you prefer to have the commandline version automatically update"), "false"),
                 });
             }
         }
