@@ -190,14 +190,7 @@ namespace Duplicati.Library.Main
                     this.Encrypted = true;
                 }
             }
-
-            public static string CalculateFileHash(string filename)
-            {
-                using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
-                    return Convert.ToBase64String(hasher.ComputeHash(fs));
-            }
-
+               
             public bool UpdateHashAndSize(Options options)
             {
                 if (Hash == null || Size < 0)
@@ -383,7 +376,14 @@ namespace Duplicati.Library.Main
             m_thread.IsBackground = true;
             m_thread.Start();
         }
-        
+
+        public static string CalculateFileHash(string filename)
+        {
+            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
+            using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+                return Convert.ToBase64String(hasher.ComputeHash(fs));
+        }
+
         private void ThreadRun()
         {
             var uploadSuccess = false;
@@ -644,7 +644,7 @@ namespace Duplicati.Library.Main
                 else
                     m_backend.Get(item.RemoteFilename, tmpfile);
                 
-                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
+                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = CalculateFileHash(tmpfile) }));
                 m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
                 if (!m_options.SkipFileHashChecks)
@@ -658,7 +658,7 @@ namespace Duplicati.Library.Main
                     else
                     	item.Size = nl;
 
-                    var nh = FileEntryItem.CalculateFileHash(tmpfile);
+                    var nh = CalculateFileHash(tmpfile);
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (nh != item.Hash)
@@ -848,6 +848,28 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
+        public Library.Utility.TempFile GetWithInfo(string remotename, out long size, out string hash)
+        {
+            if (m_lastException != null)
+                throw m_lastException;
+
+            var req = new FileEntryItem(OperationType.Get, remotename, -1, null);
+            if (m_queue.Enqueue(req))
+            {
+                req.WaitForComplete();
+                if (req.Exception != null)
+                    throw req.Exception;
+            }
+
+            if (m_lastException != null)
+                throw m_lastException;
+
+            size = req.Size;
+            hash = req.Hash;
+
+            return (Library.Utility.TempFile)req.Result;
+        }
+
         public Library.Utility.TempFile Get(string remotename, long size, string hash)
 		{
 			if (m_lastException != null)
@@ -887,7 +909,7 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
             
-            if (hash == null)
+            if (string.IsNullOrWhiteSpace(hash))
                 throw new InvalidOperationException("Cannot test a file without the hash");
 
             var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
