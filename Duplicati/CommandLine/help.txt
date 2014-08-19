@@ -206,6 +206,12 @@ Usage: test-filters <source-path> [<options>]
   
   Scans the source files and tests against the filters specified, the console output shows which files and folders are examined and the result.
     
+# =============================================================================
+> duplicati.commandline.exe help affected
+
+Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
+  
+  Returns a report explaning what backup sets and files are affected by a remote file. You 
   
   
 # =============================================================================

@@ -62,6 +62,17 @@ namespace Duplicati.Library.Interface
         IEnumerable<long> Sizes { get; }
     }
 
+    public interface IListResultRemoteLog
+    {
+        DateTime Timestamp { get; }
+        string Message { get; }
+    }
+
+    public interface IListResultRemoteVolume
+    {
+        string Name { get; }
+    }
+
     public interface IListResultFileset
     {
         long Version { get; }
@@ -74,6 +85,14 @@ namespace Duplicati.Library.Interface
     {
         IEnumerable<IListResultFileset> Filesets { get; }
         IEnumerable<IListResultFile> Files { get; }
+    }
+
+    public interface IListAffectedResults : IBasicResults
+    {
+        IEnumerable<IListResultFileset> Filesets { get; }
+        IEnumerable<IListResultFile> Files { get; }
+        IEnumerable<IListResultRemoteLog> LogMessages { get; }
+        IEnumerable<IListResultRemoteVolume> RemoteVolumes { get; }
     }
         
     public interface IDeleteResults : IBasicResults

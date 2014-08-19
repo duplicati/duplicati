@@ -210,6 +210,7 @@ namespace Duplicati.CommandLine
                 knownCommands["test"] = Commands.Test;
                 knownCommands["verify"] = Commands.Test;
                 knownCommands["test-filters"] = Commands.TestFilters;
+                knownCommands["affected"] = Commands.Affected;
 
                 if (!isHelp && verbose)
                 {

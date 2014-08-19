@@ -33,6 +33,7 @@ namespace Duplicati.Library.Main
         Backup,
         Restore,
         List,
+        ListAffected,
         ListChanges,
         Delete,
         RestoreControlfiles,

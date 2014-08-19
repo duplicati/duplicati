@@ -119,6 +119,8 @@
     <Compile Include="Database\PathLookupHelper.cs" />
     <Compile Include="Database\HashLookupHelper.cs" />
     <Compile Include="Operation\TestFilterHandler.cs" />
+    <Compile Include="Operation\ListAffected.cs" />
+    <Compile Include="Database\LocalListAffectedDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

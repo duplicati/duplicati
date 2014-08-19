@@ -134,6 +134,83 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
+        public static int Affected(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            var backend = args[0];
+            args.RemoveAt(0);
+
+            if (args.Count == 0)
+            {
+                Console.WriteLine("You must specify at least a remote filename");
+                return 200;
+            }
+
+            // Support for not adding the --auth-username if possible
+            string dbpath;
+            options.TryGetValue("dbpath", out dbpath);
+            if (string.IsNullOrEmpty(dbpath))
+            {
+                dbpath = Library.Main.DatabaseLocator.GetDatabasePath(backend, new Duplicati.Library.Main.Options(options), false, true);
+                if (dbpath != null)
+                    options["dbpath"] = dbpath;
+            }
+
+            // Don't ask for passphrase if we have a local db
+            if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption") && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "no-local-db"))
+            {
+                string passphrase;
+                options.TryGetValue("passphrase", out passphrase);
+                if (string.IsNullOrEmpty(passphrase))
+                    options["no-encryption"] = "true";
+            }
+
+            using(var i = new Library.Main.Controller(backend, options, new ConsoleOutput(options)))
+            {
+                var res = i.ListAffected(args);
+
+                if (res.Filesets != null && res.Filesets.Count() != 0)
+                {
+                    Console.WriteLine("The following filesets are affected:");
+                    foreach(var e in res.Filesets)
+                        Console.WriteLine("{0}\t: {1}", e.Version, e.Time);
+                    Console.WriteLine();
+                }
+
+                if (res.RemoteVolumes != null && res.RemoteVolumes.Count() != 0)
+                {
+                }
+           
+
+                var filecount = res.Files.Count();
+                if (filecount == 0 || (filecount > 10 && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose")))
+                    Console.WriteLine("A total of {0} file(s) are affected (use --{1} to see filenames)", res.Files.Count(), "verbose");
+                else
+                {
+                    Console.WriteLine("The following files are affected:");
+                    foreach(var file in res.Files)
+                        Console.WriteLine(file.Path);
+                }
+
+                Console.WriteLine();
+
+                var logcount = res.LogMessages.Count();
+                if (logcount == 0 || (logcount > 10 && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose")))
+                    Console.WriteLine("Found {0} related log messages (use --{1} to see the data)", res.Files.Count(), "verbose");
+                else
+                {
+                    Console.WriteLine("The following related log messages were found:");
+                    foreach(var log in res.LogMessages)
+                        if (log.Message.Length > 100 && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose"))
+                            Console.WriteLine("{0}: {1}", log.Timestamp, log.Message.Substring(0, 96) + " ...");
+                        else
+                            Console.WriteLine("{0}: {1}", log.Timestamp, log.Message);
+                }
+
+                Console.WriteLine();
+
+                return 0;
+            }
+        }
         public static int List(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             filter = filter ?? new Duplicati.Library.Utility.FilterExpression();
