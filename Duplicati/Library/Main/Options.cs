@@ -22,6 +22,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main
 {
@@ -394,6 +395,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
                     new CommandLineArgument("list-prefix-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListprefixonlyShort, Strings.Options.ListprefixonlyLong, "false"),
                     new CommandLineArgument("list-folder-contents", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListfoldercontentsShort, Strings.Options.ListfoldercontentsLong, "false"),
+                    new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, LC.L("List only filesets"), LC.L("Use this option to only list filesets and avoid traversing file names and other metadata which slows down the process"), "false"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
                     new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
@@ -629,6 +631,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if only folder contents are returned
         /// </summary>
         public bool ListFolderContents { get { return GetBool("list-folder-contents"); } }
+
+        /// <summary>
+        /// A value indicating that only filesets are returned
+        /// </summary>
+        public bool ListSetsOnly { get { return GetBool("list-sets-only"); } }
 
         /// <summary>
         /// A value indicating if file time checks are skipped

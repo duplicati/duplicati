@@ -136,6 +136,10 @@ namespace Duplicati.CommandLine
 
         public static int List(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
+            filter = filter ?? new Duplicati.Library.Utility.FilterExpression();
+            if (Duplicati.Library.Utility.Utility.ParseBoolOption(options, "list-sets-only"))
+                filter = new Duplicati.Library.Utility.FilterExpression();
+
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
             {
                 var backend = args[0];
@@ -191,6 +195,7 @@ namespace Duplicati.CommandLine
                     if (string.IsNullOrEmpty(passphrase))
                         options["no-encryption"] = "true";
                 }
+
             
                 bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
                 options.Remove("control-files");
@@ -202,7 +207,7 @@ namespace Duplicati.CommandLine
                 var isRequestForFiles = 
                     !controlFiles && res.Filesets.Count() != 0 && 
                     (res.Files == null || res.Files.Count() == 0) && 
-                    new Library.Utility.FilterExpression(args).Type != Duplicati.Library.Utility.FilterType.Empty;
+                    !filter.Empty;
                 
                 if (isRequestForFiles && !Library.Utility.Utility.ParseBoolOption(options, "all-versions"))
                 {
@@ -213,7 +218,7 @@ namespace Duplicati.CommandLine
                     res = i.List(args, filter);
                 }
                 
-                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && new Library.Utility.FilterExpression(args).Type == Duplicati.Library.Utility.FilterType.Empty)
+                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && filter.Empty)
                 {
                     Console.WriteLine("Listing filesets:");
                     

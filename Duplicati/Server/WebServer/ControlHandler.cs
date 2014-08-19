@@ -295,8 +295,12 @@ namespace Duplicati.Server.WebServer
                 return;
             }
 
+            var extra = new Dictionary<string, string>();
+            extra["list-sets-only"] = "true";
+            if (input["include-metadata"].Value != null)
+                extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value, false)).ToString();
 
-            var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk), false) as Duplicati.Library.Interface.IListResults;
+            var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk, extra), false) as Duplicati.Library.Interface.IListResults;
 
             bw.OutputOK(r.Filesets);
         }
