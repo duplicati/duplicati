@@ -78,6 +78,7 @@ Usage: backup <storage-URL> "<source-path>" [<options>]
 
 # =============================================================================
 > duplicati.commandline.exe help find
+> duplicati.commandline.exe help list
 
 Usage: find <storage-URL> ["<filename>"] [<options>]
 
