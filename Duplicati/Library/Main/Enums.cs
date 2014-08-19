@@ -71,12 +71,6 @@ namespace Duplicati.Library.Main
         Verified,
 
         /// <summary>
-        /// Indicates that the remote volume has been uploaded,
-        /// but is now missing from the remote location
-        /// </summary>
-        Missing,
-
-        /// <summary>
         /// Indicattes that the remote volume should be deleted
         /// </summary>
         Deleting,
