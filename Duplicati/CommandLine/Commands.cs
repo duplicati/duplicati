@@ -372,7 +372,7 @@ namespace Duplicati.CommandLine
                         
                         if (res.FilesRestored > 0)
                         {
-                       	    output.MessageEvent("***********************************************);
+                            output.MessageEvent("***********************************************);
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation. We suggest 10€ for private use and 100€ for commercial use.");
                             output.MessageEvent("");
                             output.MessageEvent("Paypal: http://goo.gl/P4XJ6S");
