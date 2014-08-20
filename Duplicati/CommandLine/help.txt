@@ -376,15 +376,15 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
 Duplicati can send email notifications.
 
   --send-mail-to=<email-address>
-    After a backup an email is sent to <email-address>. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
+    Send an email to <email-address> after a backup. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
   --send-mail-from=<email-address>
-    This is the sender address of an email.
+    This is the sender address of the email that is sent.
   --send-mail-subject=<subject>
     This is the subject line of the email that is sent. E.g. this can be "Duplicati %OPERATIONNAME% Report"
   --send-mail-body=<body>
     The content of the email message. This should contain "%RESULT%".
   --send-mail-url=<smtp-url>
-    An URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587" or "smtp://smtp.example.com:25"
+    A URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587" or "smtp://smtp.example.com:25"
   --send-mail-username=<username>
     Required username to authenticate with SMTP server.
   --send-mail-password=<password>
