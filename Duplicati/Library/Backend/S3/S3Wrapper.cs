@@ -187,6 +187,20 @@ namespace Duplicati.Library.Backend
             return files;
         }
 
+        public void RenameFile(string bucketName, string source, string target)
+        {
+            CopyObjectRequest copyObjectRequest = new CopyObjectRequest();
+            copyObjectRequest.SourceBucket = bucketName;
+            copyObjectRequest.SourceKey = source;
+            copyObjectRequest.DestinationBucket = bucketName;
+            copyObjectRequest.DestinationKey = target;
+
+            using (CopyObjectResponse copyObjectResponse = m_client.CopyObject(copyObjectRequest))
+            { }
+
+            DeleteObject(bucketName, source);
+        }
+
         #region IDisposable Members
 
         public void Dispose()

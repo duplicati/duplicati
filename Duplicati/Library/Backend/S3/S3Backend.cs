@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend, IStreamingBackend
+    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         public const string RRS_OPTION = "s3-use-rrs";
         public const string EU_BUCKETS_OPTION = "s3-european-buckets";
@@ -350,6 +350,15 @@ namespace Duplicati.Library.Backend
         {
             //S3 does not complain if the bucket already exists
             Connection.AddBucket(m_bucket);
+        }
+
+        #endregion
+
+        #region IRenameEnabledBackend Members
+
+        public void Rename(string source, string target)
+        {
+            Connection.RenameFile(m_bucket, GetFullKey(source), GetFullKey(target));
         }
 
         #endregion
