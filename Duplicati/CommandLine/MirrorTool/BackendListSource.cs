@@ -56,7 +56,10 @@ namespace Duplicati.CommandLine.MirrorTool
                 {
                     var name = p + (p.EndsWith("/") ? "" : "/") + n.Name;
                     if (n.IsFolder)
+                    {
                         worklist.Enqueue(name);
+                        yield return new FileEntry(name + "/", -1);
+                    }
                     else if (name.StartsWith(m_options.TempFilePrefix))
                     {
                         // TODO: Logging, and setting
@@ -233,16 +236,61 @@ namespace Duplicati.CommandLine.MirrorTool
             var targetsplit = SplitPath(path);
 
             var tmpfilename = GenerateTempFilename(targetsplit.Item1);
-
-            var tmpsplit = SplitPath(tmpfilename);
             var dt = DateTime.Now;
 
-            PerformRemoteActionWithRetry(x => {
-                x.Put(tmpsplit.Item2, filename);
-                dt = DateTime.Now;
-            }, tmpsplit.Item1);
+            var uploadsplit = targetsplit;
+            if (!m_options.SkipRenaming)
+                uploadsplit = SplitPath(tmpfilename);
 
-            Rename(tmpfilename, path);
+            PerformRemoteActionWithRetry(x => {
+                try
+                {
+                    x.Put(uploadsplit.Item2, filename);
+                }
+                catch (FolderMissingException ofex)
+                {
+                    var folders = uploadsplit.Item1.Split(new char[] { '/' });
+
+                    // First we traverse backwards until we succesfully create a folder
+                    var pos = folders.Length;
+                    while(pos > 0)
+                    {
+                        try
+                        {
+                            var cp = string.Join("/", folders, 0, pos);
+                            PerformRemoteActionWithRetry(y => {
+                                y.CreateFolder();
+                            }, cp);
+
+                            break;
+                        } 
+                        catch (FolderMissingException)
+                        {
+                            pos--;
+                        }
+                    }
+
+                    if (pos <= 0)
+                        throw ofex;
+                       
+                    // Then we move forward until all folders are created
+                    for(var i = pos + 1; i <= folders.Length; i++)
+                    {
+                        var cp = string.Join("/", folders, 0, i);
+                            PerformRemoteActionWithRetry(y => {
+                                y.CreateFolder();
+                            }, cp);
+                    }
+
+                    // And finally we try again
+                    GetBackend(uploadsplit.Item1).Put(uploadsplit.Item2, filename);
+                }
+
+                dt = DateTime.Now;
+            }, uploadsplit.Item1);
+
+            if (!m_options.SkipRenaming)
+                Rename(tmpfilename, path);
 
             return GetTimestamp(path, dt);
         }

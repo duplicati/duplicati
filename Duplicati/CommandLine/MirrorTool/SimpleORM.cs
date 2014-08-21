@@ -251,119 +251,6 @@ namespace Duplicati.CommandLine.MirrorTool
             }
         }
 
-        private class EnumerableDisposable<T> : IEnumerable<T>, IDisposable
-        {
-            private class Enumerator : IEnumerator<T>
-            {
-                private IEnumerator<T> m_enumerator;
-                private EnumerableDisposable<T> m_parent;
-                private bool m_done;
-
-                public Enumerator(IEnumerator<T> enumerator, EnumerableDisposable<T> parent)
-                {
-                    m_enumerator = enumerator;
-                    m_parent = parent;
-                }
-
-                #region IEnumerator implementation
-                public bool MoveNext()
-                {
-                    if (m_done)
-                        return false;
-
-                    m_done = !m_enumerator.MoveNext();
-                    if (m_done)
-                        m_parent.Dispose();
-
-                    return !m_done;
-                }
-                public void Reset()
-                {
-                    m_done = false;
-                    m_enumerator.Reset();
-                }
-                object System.Collections.IEnumerator.Current
-                {
-                    get
-                    {
-                        return m_enumerator.Current;
-                    }
-                }
-                #endregion
-                #region IDisposable implementation
-                public void Dispose()
-                {
-                    if (m_enumerator != null)
-                        try { m_enumerator.Dispose(); }
-                        finally { m_enumerator = null; }
-
-                    m_parent.Dispose();   
-                }
-                #endregion
-                #region IEnumerator implementation
-                public T Current
-                {
-                    get
-                    {
-                        return m_enumerator.Current;
-                    }
-                }
-                #endregion
-            }
-
-            private IEnumerable<T> m_enumerable;
-            private IDisposable m_disposable;
-
-            public EnumerableDisposable(IEnumerable<T> enumerable, IDisposable disposable)
-            {
-                m_enumerable = enumerable;
-                m_disposable = disposable;
-            }
-
-            #region IDisposable implementation
-
-            public void Dispose()
-            {
-                if (m_disposable != null)
-                    try { m_disposable.Dispose(); }
-                    finally { m_disposable = null; }
-            }
-
-            #endregion
-
-            #region IEnumerable implementation
-
-            public IEnumerator<T> GetEnumerator()
-            {
-                return new Enumerator(m_enumerable.GetEnumerator(), this);   
-            }
-
-            #endregion
-
-            #region IEnumerable implementation
-
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            {
-                return this.GetEnumerator();
-            }
-
-            #endregion
-        }
-
-
-        private static IEnumerable<T> Read<T>(System.Data.IDbCommand cmd, Func<System.Data.IDataReader, T> f)
-        {
-            var rd = cmd.ExecuteReader();
-            return new EnumerableDisposable<T>(Read(rd, () => f(rd)), rd);
-        }
-        
-        private static IEnumerable<T> Read<T>(System.Data.IDataReader rd, Func<T> f)
-        {
-            while(rd.Read())
-                yield return f();
-        }
-
-
         public IEnumerable<T> ReadFromDb<T>(string whereclause, params object[] args)
         {
             var properties = GetORMFields<T>();
@@ -498,7 +385,9 @@ namespace Duplicati.CommandLine.MirrorTool
                         cmd.Parameters.Add(p);
                     }
                 
-                return Read(cmd, f);
+                using(var rd = cmd.ExecuteReader())
+                    while (rd.Read())
+                        yield return f(rd);
             }
         }
                 
@@ -540,6 +429,7 @@ namespace Duplicati.CommandLine.MirrorTool
                     cmd.ExecuteNonQuery();
                 }
             }
-        }    }
+        }
+    }
 }
 

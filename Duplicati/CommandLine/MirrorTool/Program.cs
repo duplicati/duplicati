@@ -92,8 +92,25 @@ namespace Duplicati.CommandLine.MirrorTool
                 var options_dict = tmpparsed.Item1;
                 var filter = tmpparsed.Item2;
 
+
                 var options = new Options(options_dict);
                 verboseErrors = options.Verbose || options.DebugOutput;
+
+                var isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.InvariantCultureIgnoreCase));
+                if (isHelp)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Usage: ");
+                    Console.WriteLine("  {0}{1} <local-source-uri> <remote-target-uri> [<options>]", Duplicati.Library.Utility.Utility.IsMono ? "mono " : "", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                    Console.WriteLine();
+                    if (options.SkipRenaming)
+                        Console.WriteLine("Supported destinations: {0}", string.Join(", ", Library.DynamicLoader.BackendLoader.Backends.Select(x => x.ProtocolKey)));
+                    else
+                        Console.WriteLine("Supported destinations: {0}", string.Join(", ", Library.DynamicLoader.BackendLoader.Backends.Where(x => x is Library.Interface.IRenameEnabledBackend).Select(x => x.ProtocolKey)));
+                    Console.WriteLine();
+                    Options.Print(Console.Out);
+                    return 200;
+                }
 
                 if (cargs.Count != 2)
                     throw new Exception(LC.L("You must supply exactly 2 arguments, you supplied {0}: {1}", cargs.Count, Environment.NewLine + string.Join(Environment.NewLine, cargs)));
@@ -110,21 +127,23 @@ namespace Duplicati.CommandLine.MirrorTool
                     if (remote_probe == null)
                         throw new Exception(LC.L("Unable to find a matching backend for \"{0}\"", cargs[1]));
 
-
-                    if (!(local_probe is Library.Interface.IRenameEnabledBackend))
+                    
+                    if (!options.SkipRenaming)
                     {
-                        if (options.ConflictPolicy != Options.ConflictPolicies.ForceLocal && options.ConflictPolicy != Options.ConflictPolicies.KeepLocal)
-                            throw new Exception(LC.L("Backend does not support rename: {0}", cargs[0]));
-                            
-                    }
+                        if (!(local_probe is Library.Interface.IRenameEnabledBackend))
+                        {
+                            if (options.ConflictPolicy != Options.ConflictPolicies.ForceLocal && options.ConflictPolicy != Options.ConflictPolicies.KeepLocal)
+                                throw new Exception(LC.L("Backend does not support rename: {0}", cargs[0]));
+                                
+                        }
 
-                    if (!(remote_probe is Library.Interface.IRenameEnabledBackend))
-                    {
-                        if (options.ConflictPolicy != Options.ConflictPolicies.ForceRemote && options.ConflictPolicy != Options.ConflictPolicies.KeepRemote)
-                            throw new Exception(LC.L("Backend does not support rename: {0}", cargs[1]));
-                            
+                        if (!(remote_probe is Library.Interface.IRenameEnabledBackend))
+                        {
+                            if (options.ConflictPolicy != Options.ConflictPolicies.ForceRemote && options.ConflictPolicy != Options.ConflictPolicies.KeepRemote)
+                                throw new Exception(LC.L("Backend does not support rename: {0}", cargs[1]));
+                                
+                        }
                     }
-    
                 }
 
                 var tempitems = new List<EnumEntry>();
@@ -156,7 +175,7 @@ namespace Duplicati.CommandLine.MirrorTool
                                     Console.WriteLine(LC.L("Ignoring file due to filter: {0}", e.Path));
                                 continue;
                             }
-                                
+
                             var localDeleted = e.LocalTimestamp < 0 && e.LocalRecordedTimestamp >= 0;
                             var remoteDeleted = e.RemoteTimestamp < 0 && e.RemoteRecordedTimestamp >= 0;
                             var localCreated = e.LocalTimestamp >= 0 && e.LocalRecordedTimestamp < 0;
@@ -168,11 +187,14 @@ namespace Duplicati.CommandLine.MirrorTool
                             var localChanged = !localDeleted && !localCreated && e.LocalTimestamp > e.LocalRecordedTimestamp;
                             var remoteChanged = !remoteDeleted && !remoteCreated && e.RemoteTimestamp > e.RemoteRecordedTimestamp;
 
+                            // Ignore folders, they are auto-created
+                            // TODO: Empty folders are left behind...
+                            if (e.Path.EndsWith("/"))
+                                continue;
+
                             // Filter the simple conflict where both are deleted
                             if (localDeleted && remoteDeleted)
                             {
-                                local.Delete(e.Path);
-                                remote.Delete(e.Path);
                                 db.Update(e.Path, -1, -1);
                             }
                             // If a conflict is detected, we end up here
@@ -369,6 +391,8 @@ namespace Duplicati.CommandLine.MirrorTool
 
                             c.ExecuteNonQuery();
                         }
+
+
                 }
 
                 Console.WriteLine("Sync completed in {0}", DateTime.Now - startTime);
