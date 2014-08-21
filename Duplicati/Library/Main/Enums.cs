@@ -33,6 +33,7 @@ namespace Duplicati.Library.Main
         Backup,
         Restore,
         List,
+        ListAffected,
         ListChanges,
         Delete,
         RestoreControlfiles,
@@ -68,12 +69,6 @@ namespace Duplicati.Library.Main
         /// and seen by a list operation
         /// </summary>
         Verified,
-
-        /// <summary>
-        /// Indicates that the remote volume has been uploaded,
-        /// but is now missing from the remote location
-        /// </summary>
-        Missing,
 
         /// <summary>
         /// Indicattes that the remote volume should be deleted

@@ -131,9 +131,17 @@ namespace Duplicati.Library.Main.Operation
             var rawlist = backend.List();
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
 
-            var remotelist = (from n in rawlist let p = Volumes.VolumeBase.ParseFilename(n) where p != null select p).ToList();
-            var unknownlist = (from n in rawlist let p = Volumes.VolumeBase.ParseFilename(n) where p == null select n).ToList();
-            var filesets = (from n in remotelist where n.FileType == RemoteVolumeType.Files orderby n.Time descending select n).ToList();
+            var remotelist = (from n in rawlist
+                                       let p = Volumes.VolumeBase.ParseFilename(n)
+                                       where p != null
+                                       select p).ToList();
+            var unknownlist = (from n in rawlist
+                                        let p = Volumes.VolumeBase.ParseFilename(n)
+                                        where p == null
+                                        select n).ToList();
+            var filesets = (from n in remotelist
+                                     where n.FileType == RemoteVolumeType.Files orderby n.Time descending
+                                     select n).ToList();
             
             log.KnownFileCount = remotelist.Count();
             log.KnownFileSize = remotelist.Select(x => x.File.Size).Sum();
@@ -150,49 +158,77 @@ namespace Duplicati.Library.Main.Operation
 
             log.AssignedQuotaSpace = options.QuotaSize;
             
-            foreach (var s in remotelist)
+            foreach(var s in remotelist)
                 if (s.Prefix == options.Prefix)
                     lookup[s.File.Name] = s;
                     
             var missing = new List<RemoteVolumeEntry>();
             var locallist = database.GetRemoteVolumes();
-            foreach (var i in locallist)
+            foreach(var i in locallist)
             {
-                //Ignore those that are deleted
-                if (i.State == RemoteVolumeState.Deleted)
-                    continue;
-                    
-                if (i.State == RemoteVolumeState.Temporary)
+                Volumes.IParsedVolume r;
+                var remoteFound = lookup.TryGetValue(i.Name, out r);
+                var correctSize = remoteFound && i.Size >= 0 && (i.Size == r.File.Size || r.File.Size < 0);
+
+                lookup.Remove(i.Name);
+
+                switch (i.State)
                 {
-                    log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
-                    database.RemoveRemoteVolume(i.Name, null);
-                }
-                else if (i.State == RemoteVolumeState.Deleting && lookup.ContainsKey(i.Name))
-                {
-                    log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
-                    backend.Delete(i.Name, i.Size, true);
-                    lookup.Remove(i.Name);
-                }
-                else
-                {
-                    Volumes.IParsedVolume r;
-                    if (!lookup.TryGetValue(i.Name, out r))
-                    {
-                        if (i.State == RemoteVolumeState.Uploading || i.State == RemoteVolumeState.Deleting || (r != null && r.File.Size != i.Size && r.File.Size >= 0 && i.Size >= 0))
+                    case RemoteVolumeState.Deleted:
+                        if (remoteFound)
+                            log.AddMessage(string.Format("ignoring remote file listed as {0}: {1}", i.State, i.Name));
+
+                        break;
+
+                    case RemoteVolumeState.Temporary:
+                    case RemoteVolumeState.Deleting:
+                        if (remoteFound)
+                        {
+                            log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
+                            backend.Delete(i.Name, i.Size, true);
+                        }
+                        else
                         {
                             log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
                             database.RemoveRemoteVolume(i.Name, null);
                         }
+                        break;
+                    case RemoteVolumeState.Uploading:
+                        if (remoteFound && correctSize && r.File.Size >= 0)
+                        {
+                            log.AddMessage(string.Format("promoting uploaded complete file from {0} to {2}: {1}", i.State, i.Name, RemoteVolumeState.Uploaded));
+                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Uploaded, i.Size, i.Hash);
+                        }
                         else
-                            missing.Add(i);
-                    }
-                    else if (i.State != RemoteVolumeState.Verified)
-                    {
-                        database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Verified, i.Size, i.Hash);
-                    }
+                        {
+                            log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                            backend.Delete(i.Name, i.Size, true);
+                        }
+                        break;
 
-                    lookup.Remove(i.Name);
+                     case RemoteVolumeState.Uploaded:
+                        if (!remoteFound)
+                            missing.Add(i);
+                        else if (correctSize)
+                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Verified, i.Size, i.Hash);
+                        else
+                            log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.State, i.Name, r.File.Size, i.Size, i.Hash), null);
+
+                        break;
+
+                    case RemoteVolumeState.Verified:
+                        if (!remoteFound)
+                            missing.Add(i);
+                        else if (!correctSize)
+                            log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.State, i.Name, r.File.Size, i.Size, i.Hash), null);
+
+                        break;
+                
+                    default:
+                        log.AddWarning(string.Format("unknown state for remote file listed as {0}: {1}", i.State, i.Name), null);
+                        break;
                 }
+
             }
             
             return new RemoteAnalysisResult() { ParsedVolumes = remotelist, ExtraVolumes = lookup.Values, MissingVolumes = missing };

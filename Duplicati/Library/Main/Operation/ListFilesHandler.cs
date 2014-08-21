@@ -47,13 +47,19 @@ namespace Duplicati.Library.Main.Operation
                         else
                             files = filesets.SelectFiles(filter);
                         
-                        m_result.SetResult(
-                            filesets.Sets.Select(x => new ListResultFileset(x.Version, x.Time, x.FileCount, x.FileSizes)).ToArray(),
-                            files == null ? null :
-                                (from n in files
-                                 select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
-                                 .ToArray()
-                        );
+                        if (m_options.ListSetsOnly)
+                            m_result.SetResult(
+                                filesets.QuickSets.Select(x => new ListResultFileset(x.Version, x.Time, x.FileCount, x.FileSizes)).ToArray(),
+                                null
+                            );
+                        else
+                            m_result.SetResult(
+                                filesets.Sets.Select(x => new ListResultFileset(x.Version, x.Time, x.FileCount, x.FileSizes)).ToArray(),
+                                files == null ? null :
+                                    (from n in files
+                                     select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Path, n.Sizes.ToArray())))
+                                     .ToArray()
+                            );
                         
 
                         return;

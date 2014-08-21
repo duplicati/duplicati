@@ -45,7 +45,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Backupmetadata.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings\Foresthash.Designer.cs">
@@ -119,6 +118,8 @@
     <Compile Include="Database\PathLookupHelper.cs" />
     <Compile Include="Database\HashLookupHelper.cs" />
     <Compile Include="Operation\TestFilterHandler.cs" />
+    <Compile Include="Operation\ListAffected.cs" />
+    <Compile Include="Database\LocalListAffectedDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

@@ -223,6 +223,13 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args)
+        {
+            return RunAction(new ListAffectedResults(), (result) => {
+                new Operation.ListAffected(m_backend, m_options, result).Run(args);
+            });
+        }
+
         public Duplicati.Library.Interface.ITestResults Test(long samples = 1)
         {            
             return RunAction(new TestResults(), (result) => {

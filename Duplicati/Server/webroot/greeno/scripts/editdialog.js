@@ -1,5 +1,5 @@
 /*
- * Editdialog app code
+ * Edit dialog app code
  */
 
  EDIT_STATE = null;
@@ -426,7 +426,7 @@ $(document).ready(function() {
     $('#backup-uri').watermark('webdavs://user:pass@example.com:995/backup?option=true');
     $('#encryption-password').watermark('Long and secret passphrase');
     $('#repeat-password').watermark('Long and secret passphrase');
-    $('#backup-options').watermark('Enter one option pr. line in commandline format, eg. --dblock-size=100MB');
+    $('#backup-options').watermark('Enter one option per line in command-line format, eg. --dblock-size=100MB');
     $('#source-folder-path-text').watermark('Enter a path to back up');
     $('#source-filters').watermark('One filter per line, e.g. "+*.txt" or "-[.*\\.txt]"');
 
@@ -741,7 +741,7 @@ $(document).ready(function() {
             if (EDIT_STATE.newBackup) {
 
                 APP_DATA.locateUriDb(obj.Backup.TargetURL, function(res) {
-                    var existing_db = (res.Exists && confirm("An existing local database for the storage has been found.\nRe-using the database will allow the commandline and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?")) ? true : false;
+                    var existing_db = (res.Exists && confirm("An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?")) ? true : false;
 
                     APP_DATA.addBackup(obj, function() {
                         EDIT_STATE.dataModified = false;

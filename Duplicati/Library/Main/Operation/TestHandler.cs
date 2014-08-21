@@ -19,6 +19,7 @@ using System;
 using Duplicati.Library.Main.Database;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -56,22 +57,12 @@ namespace Duplicati.Library.Main.Operation
         
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
-
-            var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
- 
-            if (blockhasher == null)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
-            if (!blockhasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
-                
-            var hashsize = blockhasher.HashSize / 8;
             var files = db.SelectTestTargets(samples, m_options).ToList();
             
             if (m_options.FullRemoteVerification)
             {
                 foreach(var vol in new AsyncDownloader(files, backend))
                 {
-                    var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
                     try
                     {
                         if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
@@ -81,86 +72,7 @@ namespace Duplicati.Library.Main.Operation
                         }    
                         
                         using(var tf = vol.TempFile)
-                        {
-                            if (parsedInfo.FileType == RemoteVolumeType.Files)
-                            {
-                                //Compare with db and see if all files are accounted for 
-                                // with correct file hashes and blocklist hashes
-                                using(var fl = db.CreateFilelist(vol.Name))
-                                {
-                                    using(var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, m_options))
-                                        foreach(var f in rd.Files)
-                                            fl.Add(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time);
-                                    
-                                    m_results.AddResult(vol.Name, fl.Compare().ToList());
-                                }       
-                            }
-                            else if (parsedInfo.FileType == RemoteVolumeType.Index)
-                            {
-                                var blocklinks = new List<Tuple<string, string, long>>();
-                                IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> combined = new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]; 
-                                
-                                //Compare with db and see that all hashes and volumes are listed
-                                using(var rd = new Volumes.IndexVolumeReader(parsedInfo.CompressionModule, tf, m_options, hashsize))
-                                    foreach(var v in rd.Volumes)
-                                    {
-                                        blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                                        using(var bl = db.CreateBlocklist(v.Filename))
-                                        {
-                                            foreach(var h in v.Blocks)
-                                                bl.AddBlock(h.Key, h.Value);
-                                                
-                                            combined = combined.Union(bl.Compare().ToArray());
-                                        }
-                                    }
-                                
-                                using(var il = db.CreateIndexlist(vol.Name))
-                                {
-                                    foreach(var t in blocklinks)
-                                        il.AddBlockLink(t.Item1, t.Item2, t.Item3);
-                                        
-                                    combined = combined.Union(il.Compare()).ToList();
-                                }
-                                
-                                m_results.AddResult(vol.Name, combined.ToList());
-                            }
-                            else if (parsedInfo.FileType == RemoteVolumeType.Blocks)
-                            {
-                                using(var bl = db.CreateBlocklist(vol.Name))
-                                using(var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, m_options))
-                                {                                    
-                                    //Verify that all blocks are in the file
-                                    foreach(var b in rd.Blocks)
-                                        bl.AddBlock(b.Key, b.Value);
-    
-                                    //Select 20% random blocks and verify their hashes match the filename and size
-                                    var hashsamples = new List<KeyValuePair<string, long>>(rd.Blocks);
-                                    var sampleCount = Math.Min(Math.Max(0, (int)(hashsamples.Count * 0.2)), hashsamples.Count - 1);
-                                    var rnd = new Random();
-                                     
-                                    while (hashsamples.Count > sampleCount)
-                                        hashsamples.RemoveAt(rnd.Next(hashsamples.Count));
-    
-                                    var blockbuffer = new byte[m_options.Blocksize];
-                                    var changes = new List<KeyValuePair<Library.Interface.TestEntryStatus, string>>();
-                                    foreach(var s in hashsamples)
-                                    {
-                                        var size = rd.ReadBlock(s.Key, blockbuffer);
-                                        if (size != s.Value)
-                                            changes.Add(new KeyValuePair<Library.Interface.TestEntryStatus, string>(Library.Interface.TestEntryStatus.Modified, s.Key));
-                                        else
-                                        {
-                                            var hash = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
-                                            if (hash != s.Key)
-                                                changes.Add(new KeyValuePair<Library.Interface.TestEntryStatus, string>(Library.Interface.TestEntryStatus.Modified, s.Key));
-                                        }
-                                    }
-                                    
-                                    m_results.AddResult(vol.Name, changes.Union(bl.Compare().ToList()));
-                                }
-                                
-                            }
-                        }
+                            TestVolumeInternals(db, vol, tf);
                         
                         db.UpdateVerificationCount(vol.Name);
                     }
@@ -181,8 +93,28 @@ namespace Duplicati.Library.Main.Operation
                     {   
                         if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
                             return;
-                        
-                        backend.GetForTesting(f.Name, f.Size, f.Hash);
+
+                        if (f.Size < 0 || string.IsNullOrWhiteSpace(f.Hash))
+                        {
+                            m_results.AddMessage(string.Format("No hash recorded for {0}, performing full verification", f.Name));
+                            KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
+                            string hash;
+                            long size;
+
+                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
+                                res = TestVolumeInternals(db, f, tf, 1);
+                            
+                            if (res.Value != null && !res.Value.Any() && !string.IsNullOrWhiteSpace(hash))
+                            {
+                                if (!m_options.Dryrun)
+                                {
+                                    m_results.AddMessage(string.Format("Sucessfully captured hash for {0}, updating database", f.Name));
+                                    db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash);
+                                }
+                            }
+                        }
+                        else
+                            backend.GetForTesting(f.Name, f.Size, f.Hash);
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
@@ -195,6 +127,107 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Tests the volume by examining the internal contents
+        /// </summary>
+        /// <param name="vol">The remote volume being examined</param>
+        /// <param name="tf">The path to the downloaded copy of the file</param>
+        /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
+        private KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, double sample_percent = 0.2)
+        {
+            var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+ 
+            if (blockhasher == null)
+                throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
+            if (!blockhasher.CanReuseTransform)
+                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
+                
+            var hashsize = blockhasher.HashSize / 8;
+            var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
+            sample_percent = Math.Min(1, Math.Max(sample_percent, 0.01));
+
+            if (parsedInfo.FileType == RemoteVolumeType.Files)
+            {
+                //Compare with db and see if all files are accounted for 
+                // with correct file hashes and blocklist hashes
+                using(var fl = db.CreateFilelist(vol.Name))
+                {
+                    using(var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, m_options))
+                        foreach(var f in rd.Files)
+                            fl.Add(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time);
+                                    
+                    return m_results.AddResult(vol.Name, fl.Compare().ToList());
+                }       
+            }
+            else if (parsedInfo.FileType == RemoteVolumeType.Index)
+            {
+                var blocklinks = new List<Tuple<string, string, long>>();
+                IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> combined = new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]; 
+                                
+                //Compare with db and see that all hashes and volumes are listed
+                using(var rd = new Volumes.IndexVolumeReader(parsedInfo.CompressionModule, tf, m_options, hashsize))
+                    foreach(var v in rd.Volumes)
+                    {
+                        blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
+                        using(var bl = db.CreateBlocklist(v.Filename))
+                        {
+                            foreach(var h in v.Blocks)
+                                bl.AddBlock(h.Key, h.Value);
+                                                
+                            combined = combined.Union(bl.Compare().ToArray());
+                        }
+                    }
+                                
+                using(var il = db.CreateIndexlist(vol.Name))
+                {
+                    foreach(var t in blocklinks)
+                        il.AddBlockLink(t.Item1, t.Item2, t.Item3);
+                                        
+                    combined = combined.Union(il.Compare()).ToList();
+                }
+                                
+                return m_results.AddResult(vol.Name, combined.ToList());
+            }
+            else if (parsedInfo.FileType == RemoteVolumeType.Blocks)
+            {
+                using(var bl = db.CreateBlocklist(vol.Name))
+                using(var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, m_options))
+                {                                    
+                    //Verify that all blocks are in the file
+                    foreach(var b in rd.Blocks)
+                        bl.AddBlock(b.Key, b.Value);
+    
+                    //Select random blocks and verify their hashes match the filename and size
+                    var hashsamples = new List<KeyValuePair<string, long>>(rd.Blocks);
+                    var sampleCount = Math.Min(Math.Max(0, (int)(hashsamples.Count * sample_percent)), hashsamples.Count - 1);
+                    var rnd = new Random();
+                                     
+                    while (hashsamples.Count > sampleCount)
+                        hashsamples.RemoveAt(rnd.Next(hashsamples.Count));
+    
+                    var blockbuffer = new byte[m_options.Blocksize];
+                    var changes = new List<KeyValuePair<Library.Interface.TestEntryStatus, string>>();
+                    foreach(var s in hashsamples)
+                    {
+                        var size = rd.ReadBlock(s.Key, blockbuffer);
+                        if (size != s.Value)
+                            changes.Add(new KeyValuePair<Library.Interface.TestEntryStatus, string>(Library.Interface.TestEntryStatus.Modified, s.Key));
+                        else
+                        {
+                            var hash = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
+                            if (hash != s.Key)
+                                changes.Add(new KeyValuePair<Library.Interface.TestEntryStatus, string>(Library.Interface.TestEntryStatus.Modified, s.Key));
+                        }
+                    }
+                                    
+                    return m_results.AddResult(vol.Name, changes.Union(bl.Compare().ToList()));
+                }                                
+            }
+
+            m_results.AddWarning(string.Format("Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name), null);
+            return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, null);
         }
     }
 }

@@ -46,6 +46,7 @@ namespace Duplicati.Library.Main.Database
         public interface IFileSets : IDisposable
         {
             IEnumerable<IFileset> Sets { get; }
+            IEnumerable<IFileset> QuickSets { get; }
             IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
             IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter);
             IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter);
@@ -310,7 +311,27 @@ namespace Duplicati.Library.Main.Database
                 using(var cmd = m_connection.CreateCommand())
                     cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )", m_tablename));
             }
-            
+
+            public IEnumerable<IFileset> QuickSets
+            {
+                get
+                {
+                    var dict = new Dictionary<long, long>();
+                    for(var i = 0; i < m_filesets.Length; i++)
+                        dict[m_filesets[i].Key] = i;
+
+                    using(var cmd = m_connection.CreateCommand())
+                    using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ", m_tablename)))
+                        while (rd.Read())
+                        {
+                            var id = Convert.ToInt64(rd.GetValue(0));
+                            var e = dict[id];
+                            
+                            yield return new Fileset(e, m_filesets[e].Value, -1L, -1L);
+                        }
+                }
+            }
+
             public IEnumerable<IFileset> Sets 
             { 
                 get

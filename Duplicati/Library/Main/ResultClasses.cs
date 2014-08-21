@@ -681,6 +681,29 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.List; } }
     }
 
+    internal class ListAffectedResults : BasicResults, Duplicati.Library.Interface.IListAffectedResults
+    {
+        private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;
+        private IEnumerable<Duplicati.Library.Interface.IListResultFile> m_files;
+        private IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> m_logs;
+        private IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> m_volumes;
+
+        public void SetResult(IEnumerable<Duplicati.Library.Interface.IListResultFileset> filesets, IEnumerable<Duplicati.Library.Interface.IListResultFile> files, IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> logs, IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> volumes)
+        {
+            m_filesets = filesets;
+            m_files = files;
+            m_logs = logs;
+            m_volumes = volumes;
+        }
+        
+        public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
+        public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
+        public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> LogMessages { get { return m_logs; } }
+        public IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> RemoteVolumes { get { return m_volumes; } }
+
+        public override OperationMode MainOperation { get { return OperationMode.ListAffected; } }
+    }
+
     internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
     {
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
@@ -839,9 +862,11 @@ namespace Duplicati.Library.Main
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get { return m_changes; } }
         private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_changes = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
         
-        public void AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
+        public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
-            m_changes.Add(new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes));
+            var res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes);
+            m_changes.Add(res);
+            return res;
         }
     }
     

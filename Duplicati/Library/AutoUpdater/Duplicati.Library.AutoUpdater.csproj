@@ -6,11 +6,12 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7E119745-1F62-43F0-936C-F312A1912C0B}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>Duplicati.Library.AutoUpdater</RootNamespace>
     <AssemblyName>Duplicati.Library.AutoUpdater</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\GUI\Duplicati.GUI.TrayIcon\Duplicati.snk</AssemblyOriginatorKeyFile>
+    <StartupObject>Duplicati.Library.AutoUpdater.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -43,6 +44,7 @@
     <Compile Include="FileEntry.cs" />
     <Compile Include="SignatureReadingStream.cs" />
     <Compile Include="AutoUpdateSettings.cs" />
+    <Compile Include="Program.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

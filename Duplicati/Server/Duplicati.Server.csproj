@@ -226,10 +226,6 @@
       <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
       <Name>Duplicati.Library.SQLiteHelper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
-      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
-      <Name>Duplicati.Library.AutoUpdater</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
@@ -241,6 +237,10 @@
     <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
+      <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
