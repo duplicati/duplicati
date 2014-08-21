@@ -60,12 +60,8 @@ namespace Duplicati.Server.Database
                 string nx;
 
                 m_values.Clear();
-                var settings = m_connection.GetSettings(Connection.APP_SETTINGS_ID).ToDictionary(x => x.Name, x => x.Value);
-                foreach(var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
-                {
-                    settings.TryGetValue(n, out nx);
-                    m_values[n] = nx;
-                }
+                foreach(var n in m_connection.GetSettings(Connection.APP_SETTINGS_ID))
+                    m_values[n.Name] =  n.Value;
             }
         }
 

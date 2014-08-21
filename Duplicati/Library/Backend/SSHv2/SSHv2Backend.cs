@@ -26,7 +26,7 @@ using Renci.SshNet;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSHv2 : IBackend, IStreamingBackend
+    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend
     {
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         public const string SSH_KEYFILE_INLINE = "ssh-key";
@@ -164,6 +164,15 @@ namespace Duplicati.Library.Backend
         public void Get(string remotename, System.IO.Stream stream)
         {
             CreateConnection(true).DownloadFile(remotename, stream);
+        }
+
+        #endregion
+
+        #region IRenameEnabledBackend Implementation
+
+        public void Rename(string source, string target)
+        {
+            CreateConnection(true).RenameFile(source, target);
         }
 
         #endregion

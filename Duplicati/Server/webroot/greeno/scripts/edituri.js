@@ -10,7 +10,7 @@ $(document).ready(function() {
 
     EDIT_URI = {
         URL_REGEXP_FIELDS: ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'],
-        URL_REGEXP: /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]+)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/,
+        URL_REGEXP: /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/,
         QUERY_REGEXP: /(?:^|&)([^&=]*)=?([^&]*)/g,
 
         createFieldset: function(config) {
@@ -189,8 +189,6 @@ $(document).ready(function() {
 
         decode_uri: function(uri) {
 
-            //TODO: Does not like uri's with no server name
-
             var i = EDIT_URI.URL_REGEXP_FIELDS.length + 1;
             var res = {};
 
@@ -248,7 +246,7 @@ $(document).ready(function() {
             '--auth-username': 'server-username',
             '--auth-password': 'server-password',
             '--use-ssl': 'server-use-ssl',
-            'backend-type': function() {}
+            'backend-type': function() {},
         },
 
         fill_dict_map: {
@@ -466,6 +464,17 @@ $(document).ready(function() {
         $('#server-use-ssl').change();
 
         if (BACKEND_STATE.first_setup) {
+
+            if (cfg.hideserverandport) {
+                var hostname = BACKEND_STATE.orig_cfg['server-name'];
+                if (hostname != '' && hostname != null) {
+                    if (hostname[hostname.length - 1] != '/' && BACKEND_STATE.orig_cfg['server-path'] != '')
+                        hostname += '/';
+                    BACKEND_STATE.orig_cfg['server-name'] = '';
+                    BACKEND_STATE.orig_cfg['server-path'] = hostname + BACKEND_STATE.orig_cfg['server-path'];
+                }
+            }
+
             BACKEND_STATE.first_setup = false;
             if (cfg.fill_form)
                 cfg.fill_form($('#edit-uri-form'), BACKEND_STATE.orig_cfg);
