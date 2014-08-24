@@ -346,7 +346,17 @@ namespace Duplicati.Library.Utility
 
             return r;                    
         }
-        
+
+        /// <summary>
+        /// A cache for computing the fallback strategy for a filter
+        /// </summary>
+        private static Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
+
+        /// <summary>
+        /// The lock object for protecting access to the lookup table
+        /// </summary>
+        private static object _matchLock = new object();
+
         /// <summary>
         /// Utility function to match a filter with a default fall-through value
         /// </summary>
@@ -376,31 +386,71 @@ namespace Duplicati.Library.Utility
             if (filter.Matches(path, out result, out match))
                 return result;
 
-            // If we only exclude files, choose to include by default
-            var q = new Queue<IFilter>();
-            q.Enqueue(filter);
+            var includes = false;
+            var excludes = false;
 
-            // TODO: We should cache this, so we do not compute it every time    
-            while (q.Count > 0)
-            {
-                var p = q.Dequeue();
-                if (p == null || p.Empty)
-                    continue;
-                else if (p is FilterExpression && ((FilterExpression)p).Result)
+            Tuple<bool, bool> cacheLookup;
+
+            // Check for cached results
+            lock(_matchLock)
+                if (_matchFallbackLookup.TryGetValue(filter, out cacheLookup))
                 {
-                    match = p;
-                    return false; // We have an include filter, so we exclude by default
+                    includes = cacheLookup.Item1;
+                    excludes = cacheLookup.Item2;
                 }
-                else if (p is JoinedFilterExpression)
+
+            // Figure out what components are in the filter
+            if (cacheLookup == null)
+            {
+                var q = new Queue<IFilter>();
+                q.Enqueue(filter);
+
+                while (q.Count > 0)
                 {
-                    q.Enqueue(((JoinedFilterExpression)p).First);
-                    q.Enqueue(((JoinedFilterExpression)p).Second);
+                    var p = q.Dequeue();
+                    if (p == null || p.Empty)
+                        continue;
+                    else if (p is FilterExpression)
+                    {
+                        if (((FilterExpression)p).Result)
+                            includes = true;
+                        else
+                            excludes = true;
+                    }
+                    else if (p is JoinedFilterExpression)
+                    {
+                        q.Enqueue(((JoinedFilterExpression)p).First);
+                        q.Enqueue(((JoinedFilterExpression)p).Second);
+                    }
+                }
+
+                // Populate the cache
+                lock(_matchLock)
+                {
+                    if (_matchFallbackLookup.Count > 10)
+                        _matchFallbackLookup.Remove(_matchFallbackLookup.Keys.Skip(new Random().Next(0, _matchFallbackLookup.Count)).First());
+                    _matchFallbackLookup[filter] = new Tuple<bool, bool>(includes, excludes);
                 }
             }
-                    
-            // Only excludes, we return true
+
             match = null;
-            return true;
+
+            // Advanced setup, exclude non-matching items
+            if (includes && excludes)
+            {
+                return false;
+            }
+            // We have only include filters, so we exclude files by default
+            else if (includes)
+            {
+                return path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString());
+            }
+            // We have only exclude filters, so we include by default
+            else
+            {
+                return true;
+            }
+
         }
         
         /// <summary>
