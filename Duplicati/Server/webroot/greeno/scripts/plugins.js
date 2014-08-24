@@ -281,6 +281,21 @@ $(document).ready(function() {
         setup: function(dlg, div) {
             var self = this;
 
+            $('#server-path-label').hide();
+            $('#server-path').hide();
+
+            var serverdrop = EDIT_URI.createFieldset({label: 'S3 servername', name: 's3-server', after: $('#server-path'), watermark: 'Click for a list of providers'});
+            var bucketfield = EDIT_URI.createFieldset({label: 'S3 Bucket name', name: 's3-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
+            var regiondrop = EDIT_URI.createFieldset({label: 'Bucket create region', name: 's3-region', before: $('#server-options-label'), watermark: 'Click for a list of regions', title: 'Note that region is only used when creating buckets'});
+            var rrscheck = EDIT_URI.createFieldset({'label': 'Use RRS', name: 's3-rrs', type: 'checkbox', before: $('#server-options-label'), title: 'Reduced Redundancy Storage is cheaper, but less reliable'});
+            var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: this.PLUGIN_S3_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
+
+            signuplink.outer.css('margin-bottom', '10px');
+
+            this.serverdrop_field = serverdrop.field;
+            this.regiondrop_field = regiondrop.field;
+            this.bucket_field = bucketfield.field;
+
             if (self.known_hosts == null) {
                 APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Providers'}, function(data) {
                     self.known_hosts = data.Result;
@@ -303,22 +318,7 @@ $(document).ready(function() {
                 });
             } else {
                 this.setup_regions_after_config();
-            }
-
-            $('#server-path-label').hide();
-            $('#server-path').hide();
-
-            var serverdrop = EDIT_URI.createFieldset({label: 'S3 servername', name: 's3-server', after: $('#server-path'), watermark: 'Click for a list of providers'});
-            var bucketfield = EDIT_URI.createFieldset({label: 'S3 Bucket name', name: 's3-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
-            var regiondrop = EDIT_URI.createFieldset({label: 'Bucket create region', name: 's3-region', before: $('#server-options-label'), watermark: 'Click for a list of regions', title: 'Note that region is only used when creating buckets'});
-            var rrscheck = EDIT_URI.createFieldset({'label': 'Use RRS', name: 's3-rrs', type: 'checkbox', before: $('#server-options-label'), title: 'Reduced Redundancy Storage is cheaper, but less reliable'});
-            var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: this.PLUGIN_S3_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
-
-            signuplink.outer.css('margin-bottom', '10px');
-
-            this.serverdrop_field = serverdrop.field;
-            this.regiondrop_field = regiondrop.field;
-            this.bucket_field = bucketfield.field;
+            }            
         },
 
         cleanup: function(dlg, div) {
