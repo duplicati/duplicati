@@ -134,10 +134,6 @@
       <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
       <Name>Duplicati.CommandLine.BackendTester</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj">
-      <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
-      <Name>Duplicati.CommandLine.Decrypter</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
       <Name>Duplicati.CommandLine</Name>

@@ -141,10 +141,6 @@
       <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
       <Name>Duplicati.CommandLine.BackendTester</Name>
     </ProjectReference>
-    <ProjectReference Include="Decrypter\Duplicati.CommandLine.Decrypter.csproj">
-      <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
-      <Name>Duplicati.CommandLine.Decrypter</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
       <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
       <Name>Duplicati.Library.Backend.GoogleDocs</Name>
