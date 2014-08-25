@@ -585,6 +585,7 @@ $(document).ready(function() {
 
     $('#backup-uri-label').click(function() {
         $('#connection-uri-dialog').dialog('open');
+        $('#connection-uri-dialog').trigger('setup-dialog', $('#backup-uri'));
     });
 
     var dlg_buttons = $('#edit-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button');
