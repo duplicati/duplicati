@@ -57,8 +57,6 @@ namespace Duplicati.Server.Database
         {
             lock(m_connection.m_lock)
             {
-                string nx;
-
                 m_values.Clear();
                 foreach(var n in m_connection.GetSettings(Connection.APP_SETTINGS_ID))
                     m_values[n.Name] =  n.Value;
