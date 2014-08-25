@@ -143,6 +143,34 @@ APP_UTIL = {
         });
 
         return values;
+    },
+
+    create_modal_wait: function(title, text, cancel_callback) {
+        var dlg = $('<div></div>').attr('title', title);
+
+        dlg.dialog({
+            autoOpen: true,
+            modal: true,
+            closeOnEscape: false,
+            buttons: [
+                { text: 'Cancel', click: function(event, ui) {
+                    if (!cancel_callback || cancel_callback())
+                    {
+                        dlg.dialog('close');
+                        dlg.remove();
+                    }
+                }}
+            ]
+        });
+
+        dlg.parent().find('.ui-dialog-titlebar-close').remove().first().remove();
+
+        var pgtxt = $('<div></div>');
+        pgtxt.text(text);
+
+        dlg.append(pgtxt);
+
+        return dlg;
     }
 };
 
