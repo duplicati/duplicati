@@ -1172,10 +1172,12 @@ namespace Duplicati.Server.WebServer
                             return;
                         }
 
-                        Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Verify, backup));
+                        var task = Runner.CreateTask(DuplicatiOperation.Verify, backup);
+                        Program.WorkThread.AddTask(task);
                         Program.StatusEventNotifyer.SignalNewEvent();
+
+                        bw.OutputOK(new {Status = "OK", ID = task.TaskID});
                     }
-                    bw.OutputOK();
                     return;
 
                 case "run-repair":
@@ -1187,10 +1189,12 @@ namespace Duplicati.Server.WebServer
                             return;
                         }
 
-                        Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Repair, backup));
+                        var task = Runner.CreateTask(DuplicatiOperation.Repair, backup);
+                        Program.WorkThread.AddTask(task);
                         Program.StatusEventNotifyer.SignalNewEvent();
+
+                        bw.OutputOK(new {Status = "OK", ID = task.TaskID});
                     }
-                    bw.OutputOK();
                     return;
                 case "create-report":
                     {
@@ -1201,10 +1205,12 @@ namespace Duplicati.Server.WebServer
                             return;
                         }
 
-                        Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup));
+                        var task = Runner.CreateTask(DuplicatiOperation.CreateReport, backup);
+                        Program.WorkThread.AddTask(task);
                         Program.StatusEventNotifyer.SignalNewEvent();
+
+                        bw.OutputOK(new { Status = "OK", ID = task.TaskID });
                     }
-                    bw.OutputOK();
                     return;
 
                 default:
