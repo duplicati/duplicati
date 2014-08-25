@@ -435,17 +435,12 @@ namespace Duplicati.Library.Utility
 
             match = null;
 
-            // Advanced setup, exclude non-matching items
-            if (includes && excludes)
-            {
-                return false;
-            }
-            // We have only include filters, so we exclude files by default
-            else if (includes)
+            // We have only include filters, we exclude files by default
+            if (includes && !excludes)
             {
                 return path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString());
             }
-            // We have only exclude filters, so we include by default
+            // Otherwise we include by default
             else
             {
                 return true;
