@@ -218,6 +218,18 @@
       <Link>licenses\agsXMPP\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
+      <Link>licenses\SharpAESCrypt\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\License.txt">
+      <Link>licenses\SharpAESCrypt\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\licensedata.json">
+      <Link>licenses\SharpAESCrypt\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -246,6 +258,7 @@
     <Folder Include="licenses\MonoMac\" />
     <Folder Include="licenses\WindowsAzure\" />
     <Folder Include="licenses\agsXMPP\" />
+    <Folder Include="licenses\SharpAESCrypt\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
