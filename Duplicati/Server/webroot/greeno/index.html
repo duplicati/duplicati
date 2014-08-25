@@ -164,6 +164,7 @@
                 <li id="main-control-menu-options"><a>Options ...</a></li>
                 <li>-</li>
                 <li id="main-control-menu-import"><a>Import backup job...</a></li>
+                <li id="main-control-menu-restore-direct"><a>Restore files ...</a></li>
                 <li>-</li>
                 <li id="main-control-menu-about"><a>About ...</a></li>
             </ul>
@@ -632,6 +633,36 @@
 
     </div>
 
+    <div id="restore-direct-options-dialog" class="modal-dialog" title="Available options"></div>
+
+
+
+    <div id="restore-direct-dialog" class="modal-dialog tabs edit-dialog" title="Restore data">
+
+        <form id="restore-direct-dialog-form">
+            <div class="input-block">
+                <div class="edit-dialog-label action-link" id="restore-direct-uri-label" title="The destination where the backup data is stored is supplied in the form of a URI. Click the link here to edit the individual parts of the connection URI.">Backup to…</div>
+                <div class="field-group">
+                    <textarea type="text" name="restore-direct-uri" id="restore-direct-uri" value="" class="ui-corner-all" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="input-block">
+                <div class="edit-dialog-label">Passphrase</div>
+                <div class="field-group">
+                    <input type="password" name="restore-direct-encryption-password" id="restore-direct-encryption-password" value="" class="ui-corner-all" />
+                </div>
+            </div>
+
+            <div class="options-items">
+                <div class="edit-dialog-label" id="restore-direct-options-link" title="Advanced options can be specified command-line style. One option per line like --option=value. Click here to see a list of options"><a class="action-link">Advanced Options<div class="ui-icon ui-icon-info ui-icon-inline"></div></a></div>
+
+                <textarea id="restore-direct-advanced-options" rows="4" class="pre-style-text" name="restore-direct-advanced-options"></textarea>
+            </div>
+
+        </form>
+
+    </div>
 
 </body>
 </html>

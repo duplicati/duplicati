@@ -984,11 +984,11 @@ $(document).ready(function() {
         );
     };
 
-    APP_DATA.runRepair = function(id) {
+    APP_DATA.runRepair = function(id, callback, errorhandler) {
         serverWithCallback(
             { action: 'send-command', command: 'run-repair', id: id },
-            function() {},
-            function(d,s,m) { alert('Failed to start repair: ' + m); }
+            callback,
+            errorhandler || function(d,s,m) { alert('Failed to start repair: ' + m); }
         );
     };
 
@@ -1007,6 +1007,18 @@ $(document).ready(function() {
             function(d,s,m) { alert('Failed to delete local data: ' + m); }
         );
     };
+
+    APP_DATA.restoreDirect = function() {
+        $('#restore-direct-dialog').dialog('open');
+    }
+
+    APP_DATA.testConnection = function (uri, callback, errorhandler) {
+        serverWithCallback(
+            {action: 'test-backend', url: uri}, 
+            callback,
+            errorhandler
+        );
+    }
 
     APP_DATA.hasLoadedAbout = false;
     APP_DATA.hasLoadedChangelog = false;
@@ -1338,6 +1350,7 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu-1h').click(function() { APP_DATA.pauseServer('1h'); });
 
     $('#main-control-menu-import').click(function() { $('#import-dialog').dialog('open'); });
+    $('#main-control-menu-restore-direct').click(function() { APP_DATA.restoreDirect(); });
 
     var updaterState = {
         state: 'Waiting',
