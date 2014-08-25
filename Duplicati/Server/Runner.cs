@@ -321,6 +321,9 @@ namespace Duplicati.Server
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
             var backup = data.Backup;
+
+            if (backup.Metadata == null)
+                backup.Metadata = new Dictionary<string, string>();
             
             try
             {                
