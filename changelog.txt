@@ -1,3 +1,23 @@
+2014-08-26
+==========
+* Added an updater tool to allow manual update control for the commandline interface
+* Disabled automatic update for the commandline
+* Fixed a bunch of typos
+* Fixed an issue with temporary files being deleted
+* Improved the tracking of remote files
+* Improved speed of listing the backup fileset times in the UI
+* Added a commandline method for listing what backups depends on a particular remote file
+* Fixed problem with clearing options on server startup
+* Fixed an issue where the S3 dialog did not generate valid URLs
+* Improved filter performance
+* Fixed an issue where the S3 server list occasionally did not drop down
+* Simplified filter logic
+* Implemented direct restore
+* Fixed generating invalid commandline commands on Windows
+* Improved the repair and verify routines for certain errors
+* Fixed handling file:// prefixed paths
+* Added progress indicator for restore and verify
+
 2014-08-16
 ==========
 * Fixed the copyright statement on all assemblies, this should fix some cases where Antivirus would flag it
