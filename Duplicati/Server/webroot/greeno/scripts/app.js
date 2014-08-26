@@ -1229,7 +1229,10 @@ $(document).ready(function() {
 
     $('#main-newbackup').click(function() {
         APP_DATA.editNewBackup();
+    });
 
+    $('#main-restorebackup').click(function() {
+        APP_DATA.restoreDirect();
     });
 
     $('#edit-dialog').tabs({ active: 0 });
@@ -1356,6 +1359,7 @@ $(document).ready(function() {
 
     $('#main-control-menu-import').click(function() { $('#import-dialog').dialog('open'); });
     $('#main-control-menu-restore-direct').click(function() { APP_DATA.restoreDirect(); });
+    $('#main-control-menu-add-backup').click(function() { APP_DATA.editNewBackup(); });
 
     var updaterState = {
         state: 'Waiting',
