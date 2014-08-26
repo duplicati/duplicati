@@ -296,24 +296,28 @@ namespace Duplicati.Server
                         )
                 );
 
+            Func<string, string> appendBackslash = x => x.EndsWith("\\") ? x + "\\" : x;
+            exe = "\"" + appendBackslash(exe) + "\"";
+
             if (Library.Utility.Utility.IsMono)
                 exe = "mono " + exe;
             
+
             cmd.Append(exe);
-            cmd.Append(" backup ");
-            cmd.AppendFormat("\"{0}\"", backup.TargetURL);
-            cmd.Append("\"" + string.Join("\", \"", sources) + "\"");
+            cmd.Append(" backup");
+            cmd.AppendFormat(" \"{0}\"", appendBackslash(backup.TargetURL));
+            cmd.Append(" \"" + string.Join("\" \"", sources.Select(x => appendBackslash(x))) + "\"");
 
             foreach(var opt in options)
-                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + opt.Value + "\"");
+                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + appendBackslash(opt.Value) + "\"");
             
             if (cf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
 
             if (bf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
 
             return cmd.ToString();
         }
