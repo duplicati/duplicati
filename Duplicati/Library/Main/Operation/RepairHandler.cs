@@ -87,6 +87,8 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
+            m_result.OperationProgressUpdater.UpdateProgress(0);
+
             using(var db = new LocalRepairDatabase(m_options.Dbpath))
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
@@ -103,7 +105,10 @@ namespace Duplicati.Library.Main.Operation
                 if (!blockhasher.CanReuseTransform)
                     throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
 				
-                if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0)
+                var progress = 0;
+                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
+
+                if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0 || tp.VerificationRequiredVolumes.Count() > 0)
                 {
                     if (m_options.Dryrun)
                     {
@@ -112,14 +117,56 @@ namespace Duplicati.Library.Main.Operation
                             if (tp.BackupPrefixes.Length == 1)
                                 throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
                             else
-                                throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ",  tp.BackupPrefixes)));
+                                throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
                         }
                         else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
                         {
                             throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
                         }
                     }
-				
+
+                    if (tp.VerificationRequiredVolumes.Any())
+                    {
+                        using(var testdb = new LocalTestDatabase(db))
+                        {
+                            foreach(var n in tp.VerificationRequiredVolumes)
+                                try
+                                {
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    {
+                                        backend.WaitForComplete(db, null);
+                                        return;
+                                    }
+
+                                    progress++;
+                                    m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+
+                                    long size;
+                                    string hash;
+                                    KeyValuePair<string, IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>> res;
+                                   
+                                    using (var tf = backend.GetWithInfo(n.Name, out size, out hash))
+                                        res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, m_result, 1);
+
+                                    if (res.Value.Any())
+                                        throw new Exception(string.Format("Remote verification failure: {0}", res.Value.First()));
+
+                                    if (!m_options.Dryrun)
+                                    {
+                                        m_result.AddMessage(string.Format("Sucessfully captured hash for {0}, updating database", n.Name));
+                                        db.UpdateRemoteVolume(n.Name, RemoteVolumeState.Verified, size, hash);
+                                    }
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    m_result.AddError(string.Format("Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message), ex);
+                                    if (ex is System.Threading.ThreadAbortException)
+                                        throw;
+                                }
+                        }
+                    }
+
                     // TODO: It is actually possible to use the extra files if we parse them
                     foreach(var n in tp.ExtraVolumes)
                         try
@@ -128,7 +175,10 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 backend.WaitForComplete(db, null);
                                 return;
-                            }    
+                            }
+
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
                         
                             if (!m_options.Dryrun)
                             {
@@ -156,7 +206,10 @@ namespace Duplicati.Library.Main.Operation
                                 backend.WaitForComplete(db, null);
                                 return;
                             }    
-                            
+
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+
                             if (n.Type == RemoteVolumeType.Files)
                             {
                                 var filesetId = db.GetFilesetIdFromRemotename(n.Name);
@@ -315,9 +368,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     m_result.AddMessage("Destination and database are synchronized, not making any changes");
                 }
-				
+
+                m_result.OperationProgressUpdater.UpdateProgress(1);				
 				backend.WaitForComplete(db, null);
                 db.WriteResults();
+
 			}
         }
     }
