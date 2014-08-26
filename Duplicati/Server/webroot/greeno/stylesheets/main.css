@@ -45,7 +45,6 @@
 
 #main-newbackup, #main-restorebackup {
     color: white;
-    padding: 6px 12px 6px 6px;
     cursor: pointer;
     border-radius: 3px;
     display: inline-block;
@@ -205,7 +204,7 @@ div.main-icon-restore {
     margin-left: 0px;
     margin-top: 4px;
     position: absolute;
-    background-image: url('../images/menu-grey.png');
+    background-image: url('../images/menu-grey-small.png');
 }
 
 .main-backup-entry .caption-text, .main-backup-entry ul.hint-text, #main-newbackup > .caption-text, #main-newbackup > ul.hint-text, #main-restorebackup > .caption-text, #main-restorebackup > ul.hint-text {
