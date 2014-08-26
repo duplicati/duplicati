@@ -169,6 +169,7 @@ APP_UTIL = {
         pgtxt.text(text);
 
         dlg.append(pgtxt);
+        dlg.pgtxt = pgtxt;
 
         return dlg;
     }

@@ -778,30 +778,55 @@ $(document).ready(function() {
                 var backupid = null;
                 var taskid = null;
 
+                var isTaskActive = false;
+
                 var handler_for_event;
+                var handler_for_progress;
+
+                var pg = $('<div></div>');
+                pg.progressbar({ value: false });
+
                 var dlg = APP_UTIL.create_modal_wait('Creating database', 'Building local database ... ', function() {
                     if (confirm('Stop the process ?')) {
-                        // TODO: Stop ....
+                        APP_DATA.stopTask(taskid, true);
                         $(document).off('server-state-updated', handler_for_event);
+                        $(document).off('server-progress-updated', handler_for_progress);
                         return true;
                     } else {
                         return false;
                     }
                 });
 
+                pg.insertAfter(dlg.pgtxt);
+
+                handler_for_progress = function(ev, data) {
+                    if (data.TaskID == taskid) {
+                        pg.progressbar('option', 'value', parseInt(data.OverallProgress * 100));
+                    } else {
+                        pg.progressbar('option', 'value', false);
+                    }
+                };
+
+
                 handler_for_event = function(ev, data) {
 
-                    var active = data.ActiveTask != null && data.ActiveTask.Item1 == taskid;
+                    isTaskActive = data.ActiveTask != null && data.ActiveTask.Item1 == taskid;
+
+                    var active = isTaskActive;
                     if (!active && data.SchedulerQueueIds)
                         for(var n in data.SchedulerQueueIds)
                             active = active || (data.SchedulerQueueIds[n].Item1 == taskid);                
 
                     if (!active) {
+                        handler_for_progress(null, {OverallProgress: 1, TaskID: taskid});
+
                         $(document).off('server-state-updated', handler_for_event);
+                        $(document).off('server-progress-updated', handler_for_progress);
+                        APP_DATA.restoreBackup(backupid);
+
                         dlg.dialog('close');
                         dlg.remove();
                         $(self).dialog('close');
-                        APP_DATA.restoreBackup(backupid);
                     }
                 };
 
@@ -812,6 +837,7 @@ $(document).ready(function() {
                         APP_DATA.runRepair(backupid, function(data) {
                             taskid = data.ID;
                             $(document).on('server-state-updated', handler_for_event);
+                            $(document).on('server-progress-updated', handler_for_progress);
 
                         }, function(a,b,msg) {
                             alert('Failed to connect: ' + msg);
