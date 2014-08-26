@@ -782,6 +782,7 @@ $(document).ready(function() {
                 var dlg = APP_UTIL.create_modal_wait('Creating database', 'Building local database ... ', function() {
                     if (confirm('Stop the process ?')) {
                         // TODO: Stop ....
+                        $(document).off('server-state-updated', handler_for_event);
                         return true;
                     } else {
                         return false;
