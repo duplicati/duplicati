@@ -341,6 +341,9 @@ $(document).ready(function() {
         'Restore_DownloadingRemoteFiles': 'Downloading files ...',
         'Restore_PostRestoreVerify': 'Verifying restored files ...',
         'Restore_Complete': 'Finished!',
+        'Recreate_Running': 'Recreating database ...',
+        'Repair_Running': 'Reparing ...',
+        'Verify_Running': 'Verifying ...',
         'Error': 'Error!'
     };
 
@@ -422,7 +425,8 @@ $(document).ready(function() {
                     txt = PRIVATE_DATA.progress_state_text[PRIVATE_DATA.server_progress.lastEvent.Phase] || txt;
                     if (PRIVATE_DATA.server_progress.lastEvent.Phase == 'Backup_WaitForUpload')
                         pg = 1;
-
+                    else if (PRIVATE_DATA.server_progress.lastEvent.OverallProgress > 0)
+                        pg = PRIVATE_DATA.server_progress.lastEvent.OverallProgress;
                 }
 
                 if (pg == -1) {

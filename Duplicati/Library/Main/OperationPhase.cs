@@ -44,7 +44,10 @@ namespace Duplicati.Library.Main
         Restore_DownloadingRemoteFiles,
         Restore_PostRestoreVerify,
         Restore_Complete,
-        
+
+        Recreate_Running,
+        Verify_Running,
+
         Error
     }
 }

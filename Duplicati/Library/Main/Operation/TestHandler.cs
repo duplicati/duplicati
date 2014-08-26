@@ -58,6 +58,10 @@ namespace Duplicati.Library.Main.Operation
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
             var files = db.SelectTestTargets(samples, m_options).ToList();
+
+            m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
+            m_results.OperationProgressUpdater.UpdateProgress(0);
+            var progress = 0L;
             
             if (m_options.FullRemoteVerification)
             {
@@ -70,6 +74,9 @@ namespace Duplicati.Library.Main.Operation
                             backend.WaitForComplete(db, null);
                             return;
                         }    
+
+                        progress++;
+                        m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using(var tf = vol.TempFile)
@@ -95,6 +102,9 @@ namespace Duplicati.Library.Main.Operation
                     {   
                         if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
                             return;
+
+                        progress++;
+                        m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         if (f.Size < 0 || string.IsNullOrWhiteSpace(f.Hash))
                         {
