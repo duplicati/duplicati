@@ -130,19 +130,19 @@
 }
 
 div.main-icon-plus {
-    width: 23px;
-    height: 23px;
+    width: 24px;
+    height: 24px;
     display: block;
     background-repeat: no-repeat;
     background-image: url('../images/plus.png');
 }
 
 div.main-icon-restore {
-    width: 23px;
-    height: 23px;
+    width: 24px;
+    height: 24px;
     display: block;
     background-repeat: no-repeat;
-    background-image: url('../images/plus.png');
+    background-image: url('../images/restore.png');
 }
 
 .main-icon-clock {
@@ -167,22 +167,22 @@ div.main-icon-restore {
 }
 
 .main-icon-pause {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background-repeat: no-repeat;
     background-image: url('../images/pause.png');
 }
 
 .main-icon-run {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background-repeat: no-repeat;
     background-image: url('../images/play.png');
 }
 
 .main-icon-settings {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background-repeat: no-repeat;
     background-image: url('../images/menu-grey.png');
 }
@@ -200,8 +200,8 @@ div.main-icon-restore {
 
 .main-backup-control {
     display: block;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     margin-left: 0px;
     margin-top: 4px;
     position: absolute;
