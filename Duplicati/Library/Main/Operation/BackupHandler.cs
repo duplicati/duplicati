@@ -89,6 +89,7 @@ namespace Duplicati.Library.Main.Operation
             private ILogWriter m_logWriter;
             private Dictionary<string, string> m_hardlinkmap;
             private Duplicati.Library.Utility.IFilter m_sourcefilter;
+            private Queue<string> m_mixinqueue;
             
             public FilterHandler(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, ILogWriter logWriter)
             {
@@ -100,6 +101,7 @@ namespace Duplicati.Library.Main.Operation
                 m_hardlinkPolicy = hardlinkPolicy;
                 m_logWriter = logWriter;
                 m_hardlinkmap = new Dictionary<string, string>();
+                m_mixinqueue = new Queue<string>();
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -186,17 +188,63 @@ namespace Duplicati.Library.Main.Operation
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Including path due to filter: {0} => {1}", path, match.ToString());
                 }
-                
-                if (m_symlinkPolicy == Options.SymlinkStrategy.Ignore && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+
+                var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
+                if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
                 {
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Excluding symlink: {0}", path);
                     return false;
                 }
+
+                if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Storing symlink: {0}", path);
+
+                    m_mixinqueue.Enqueue(path);
+                    return false;
+                }
                                 
                 return true;
             }
+
+            public IEnumerable<string> EnumerateFilesAndFolders(Snapshots.ISnapshotService snapshot)
+            {
+                foreach(var s in snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                {
+                    while (m_mixinqueue.Count > 0)
+                        yield return m_mixinqueue.Dequeue();
+
+                    yield return s;
+                }
+
+                while (m_mixinqueue.Count > 0)
+                    yield return m_mixinqueue.Dequeue();
+            }
+
+            public IEnumerable<string> Mixin(IEnumerable<string> list, Snapshots.ISnapshotService snapshot)
+            {
+                foreach(var s in list.Where(x => {
+                    var fa = FileAttributes.Normal;
+                    try { fa = m_snapshot.GetAttributes(x); }
+                    catch { }
+
+                    return AttributeFilter(null, x, fa);
+                }))
+                {
+                    while (m_mixinqueue.Count > 0)
+                        yield return m_mixinqueue.Dequeue();
+
+                    yield return s;
+                }
+
+                while (m_mixinqueue.Count > 0)
+                    yield return m_mixinqueue.Dequeue();
+            }
+
         }
+
 
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
@@ -228,7 +276,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).AttributeFilter))
+            foreach(var path in new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders(m_snapshot))
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -409,7 +457,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
                                 m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
                                 
-                                foreach(var p in m_options.ChangedFilelist)
+                                foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist, m_snapshot))
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
@@ -417,26 +465,13 @@ namespace Duplicati.Library.Main.Operation
                                         break;
                                     }
                                     
-                                    FileAttributes fa = new FileAttributes();
                                     try
                                     {
-                                        fa = m_snapshot.GetAttributes(p);
+                                        this.HandleFilesystemEntry(p, m_snapshot.GetAttributes(p));
                                     }
                                     catch (Exception ex)
                                     {
-                                        m_result.AddWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex);
-                                    }
-    		
-                                    if (filterhandler.AttributeFilter(null, p, fa))
-                                    {                                        
-                                        try
-                                        {
-                                            this.HandleFilesystemEntry(p, fa);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
-                                        }
+                                        m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
                                     }
                                 }
     		
@@ -444,15 +479,19 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {                                    
-                                foreach(var path in m_snapshot.EnumerateFilesAndFolders(filterhandler.AttributeFilter))
+                                foreach(var path in filterhandler.EnumerateFilesAndFolders(m_snapshot))
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
                                         m_result.AddMessage("Stopping backup operation on request");
                                         break;
                                     }
+
+                                    var fa = FileAttributes.Normal;
+                                    try { fa = m_snapshot.GetAttributes(path); }
+                                    catch { }
                                     
-                                    this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
+                                    this.HandleFilesystemEntry(path, fa);
                                 }
                                 
                             }
