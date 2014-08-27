@@ -12,8 +12,8 @@ For a release build, do this:
 If the zip file is missing, you need to install 7zip.
 If the msi file is missing, you need to install the .Net SDK 2.0.
 If you get errors during run, you may need to download "paraffin.exe" (v3.13):
-http://www.wintellect.com/cs/blogs/jrobbins/archive/2007/10/21/wix-a-better-tallow-paraffin.aspx
-http://www.wintellect.com/CS/files/folders/8198/download.aspx
+http://www.wintellect.com/blogs/jrobbins/wix-a-better-tallow-paraffin-part-3-of-3
+http://www.wintellect.com/CS/files/folders/8198/download.aspx //broken link
 
 You also need to install Wix (Tested with 3.0): 
 http://wix.sourceforge.net/
