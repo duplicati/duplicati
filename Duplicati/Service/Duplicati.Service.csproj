@@ -38,11 +38,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
+    <ProjectReference Include="..\Server\Duplicati.Server.csproj">
       <Project>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</Project>
       <Name>Duplicati.Server</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>

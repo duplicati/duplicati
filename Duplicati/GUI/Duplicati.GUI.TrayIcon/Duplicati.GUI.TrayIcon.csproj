@@ -260,7 +260,7 @@
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Service\Duplicati.Service\Duplicati.Service.csproj">
+    <ProjectReference Include="..\..\Service\Duplicati.Service.csproj">
       <Project>{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}</Project>
       <Name>Duplicati.Service</Name>
     </ProjectReference>
