@@ -188,7 +188,7 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendMail.OptionSendlevelShort, string.Format(Strings.SendMail.OptionSendlevelLong, MailLevels.Success, MailLevels.Warning, MailLevels.Error, MailLevels.All), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, string.Format(Strings.SendMail.OptionSendlevelLong, MailLevels.Success, MailLevels.Warning, MailLevels.Error, MailLevels.All), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
                 });
             }
