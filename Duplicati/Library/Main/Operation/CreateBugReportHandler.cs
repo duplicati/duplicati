@@ -75,6 +75,7 @@ namespace Duplicati.Library.Main.Operation
                         cs.WriteLine("Processors: {0}", Environment.ProcessorCount);
                         cs.WriteLine(".Net Version: {0}", Environment.Version);
                         cs.WriteLine("Mono: {0} ({1}) ({2})", Duplicati.Library.Utility.Utility.IsMono, Duplicati.Library.Utility.Utility.MonoVersion, Duplicati.Library.Utility.Utility.MonoDisplayVersion);
+                        cs.WriteLine("Locale: {0}, {1}", System.Threading.Thread.CurrentThread.CurrentCulture, System.Threading.Thread.CurrentThread.CurrentUICulture);
 
                         Type sqlite = null;
                         string sqliteversion = "";
