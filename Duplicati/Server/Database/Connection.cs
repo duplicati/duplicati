@@ -360,7 +360,7 @@ namespace Duplicati.Server.Database
                 bool update = item.ID != null;
                 if (!update && item.DBPath == null)
                 {
-                    var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
+                    var folder = Program.DATAFOLDER;
                     if (!System.IO.Directory.Exists(folder))
                         System.IO.Directory.CreateDirectory(folder);
                     
