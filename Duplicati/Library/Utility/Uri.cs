@@ -143,7 +143,7 @@ namespace Duplicati.Library.Utility
                     path = path.Substring("file://".Length);
 
                 if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
-                    try 
+                    try
                     {
                         var fp = System.IO.Path.GetFullPath(path);
                         this.Scheme = "file";
@@ -161,12 +161,21 @@ namespace Duplicati.Library.Utility
                 throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), "url");
             }
                 
-			this.Scheme = m.Groups["scheme"].Value;
-            this.Host = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
+            this.Scheme = m.Groups["scheme"].Value;
+            var h = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
 
             var p = m.Groups["path"].Success ? m.Groups["path"].Value : "";
             if (m.Groups["hostname"].Success && p.StartsWith("/"))
-			    p = p.Substring(1);
+                p = p.Substring(1);
+
+            // file://c:\test support
+            if (h.Length == 1 && p.StartsWith(":"))
+            {
+                h = h + p;
+                p = "";
+            }
+
+            this.Host = h;
             this.Path = p;
 
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
