@@ -460,3 +460,12 @@ textarea.pre-style-text, .pre-style-text {
     margin-top: 10px;
 }
 
+#backup-context-menu > li > u {
+    text-decoration: none;
+}
+
+#backup-context-menu > li > u > b {
+    padding: 0.4em;
+    padding-top: 2px;
+    color: #7f7f7f;
+}
