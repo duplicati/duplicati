@@ -469,3 +469,30 @@ textarea.pre-style-text, .pre-style-text {
     padding-top: 2px;
     color: #7f7f7f;
 }
+
+/* 
+*	custom CSS
+*/
+footer{
+	height: 50px;
+	width: 100%;
+	background-color: #3A5E30;
+	color: #F0F0F0;
+}
+
+a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern:link {
+	color: #F0F0F0;
+}
+
+div.box-duplicati-copy{
+	margin-left:5px; 
+	float:left; 
+	width:49%; 
+	text-align: left; 
+}
+
+div.box-visit-us{
+	float:left; 
+	width:49%; 
+	text-align: right;
+}
