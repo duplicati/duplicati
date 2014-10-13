@@ -478,6 +478,9 @@ footer{
 	width: 100%;
 	background-color: #3A5E30;
 	color: #F0F0F0;
+	bottom:0px;
+	/* position:fixed; */
+	border-top: 10px solid #91AA8A;
 }
 
 a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern:link {
@@ -485,14 +488,13 @@ a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern
 }
 
 div.box-duplicati-copy{
+	float:left;
 	margin-left:5px; 
-	float:left; 
-	width:49%; 
 	text-align: left; 
 }
 
 div.box-visit-us{
-	float:left; 
-	width:49%; 
+	float:right; 
+	margin-right: 5px;
 	text-align: right;
 }
