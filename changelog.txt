@@ -1,3 +1,13 @@
+2014-10-14
+==========
+* Improved symlink handling
+* Fixed a warning with --send-mail-level
+* Improved support for portable installs
+* Fixed the issue with failed backups due to file://
+* Fixed a problem with recreating the local database
+* Adjusted display to use fixed header and footer
+
+
 2014-08-26
 ==========
 * Added an updater tool to allow manual update control for the commandline interface
