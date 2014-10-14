@@ -234,7 +234,7 @@ namespace Duplicati.Library.Main
                     "skip-files-larger-than",
                     "upload-unchanged-backups",
                     "list-verify-uploads",
-                    "signature-control-files",
+                    "control-files",
                     "snapshot-policy",
                     "vss-exclude-writers",
                     "vss-use-mapping",
