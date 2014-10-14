@@ -202,7 +202,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             var hash = rd.GetValue(0).ToString();
                             var size = Convert.ToInt64(rd.GetValue(1));
-                            m_blockHashLookup.Add(hash, size, -1);
+                            m_blockHashLookup.TryAdd(hash, size, -1);
                         }
                 }                
                                                 
