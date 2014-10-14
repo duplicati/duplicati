@@ -665,15 +665,7 @@ namespace Duplicati.Server.WebServer
             }
 
         }
-
-        private class ImportExportStructure
-        {
-            public string CreatedByVersion { get; set; }
-            public Duplicati.Server.Database.Schedule Schedule { get; set; }
-            public Duplicati.Server.Database.Backup Backup { get; set; }
-            public Dictionary<string, string> DisplayNames { get; set; }
-        }
-
+            
         private void ExportBackup(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
             HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
@@ -692,14 +684,7 @@ namespace Duplicati.Server.WebServer
             else
             {
                 var passphrase = input["passphrase"].Value;
-                var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
-
-                var ipx = new ImportExportStructure() {
-                    CreatedByVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                    Backup = (Database.Backup)bk,
-                    Schedule = (Database.Schedule)(scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null),
-                    DisplayNames = GetSourceNames(bk)
-                };
+                var ipx = Program.DataConnection.PrepareBackupForExport(bk);
 
                 byte[] data;
                 using(var ms = new System.IO.MemoryStream())
@@ -751,7 +736,7 @@ namespace Duplicati.Server.WebServer
                 }
                 else
                 {
-                    ImportExportStructure ipx;
+                    Serializable.ImportExportStructure ipx;
 
                     var file = request.Form.GetFile("config");
                     if (file == null)
@@ -769,12 +754,12 @@ namespace Duplicati.Server.WebServer
                             using(var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
                             using(var m2 = m.Decrypt(fs))
                             using(var sr = new System.IO.StreamReader(m2))
-                                ipx = Serializer.Deserialize<ImportExportStructure>(sr);
+                                ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
                         }
                         else
                         {
                             using(var sr = new System.IO.StreamReader(fs))
-                                ipx = Serializer.Deserialize<ImportExportStructure>(sr);
+                                ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
                         }
                     }
 

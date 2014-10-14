@@ -417,6 +417,9 @@ $(document).ready(function() {
                     delete dict['Backup']['Settings']['keep-versions'];
                     delete dict['Backup']['Settings']['keep-time'];
                 }
+            },
+            'store-task-config': function(dict, key, el, cfgel) {
+                dict['Backup']['Settings']['store-task-config'] = $(el).val();
             }
         }
     };

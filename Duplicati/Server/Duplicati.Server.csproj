@@ -119,6 +119,7 @@
     <Compile Include="LogWriteHandler.cs" />
     <Compile Include="Database\Notification.cs" />
     <Compile Include="Database\TempFile.cs" />
+    <Compile Include="Serializable\ImportExportStructure.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

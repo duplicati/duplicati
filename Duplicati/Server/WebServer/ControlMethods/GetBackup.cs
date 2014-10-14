@@ -33,7 +33,7 @@ namespace Duplicati.Server.WebServer
             {
                 var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
                 var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
-                var sourcenames = GetSourceNames(bk);
+                var sourcenames = SpecialFolders.GetSourceNames(bk);
 
                 //TODO: Filter out the password in both settings and the target url
 
@@ -47,34 +47,6 @@ namespace Duplicati.Server.WebServer
                     }
                 });
             }
-        }
-
-        private Dictionary<string, string> GetSourceNames(Duplicati.Server.Serialization.Interface.IBackup backup)
-        {
-            var systemIO = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO;
-
-            return backup.Sources.Distinct().Select(x => {
-                    var sp = SpecialFolders.TranslateToDisplayString(x);
-                    if (sp != null)
-                        return new KeyValuePair<string, string>(x, sp);
-
-                    x = SpecialFolders.ExpandEnvironmentVariables(x);
-                    try {
-                        var nx = x;
-                        if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                            nx = nx.Substring(0, nx.Length - 1);
-                        var n = systemIO.PathGetFileName(nx);
-                        if (!string.IsNullOrWhiteSpace(n))
-                            return new KeyValuePair<string, string>(x, n);
-                    } catch {
-                    }
-
-                    if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
-                        return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/") + 1));
-                    else
-                        return new KeyValuePair<string, string>(x, x);
-
-                }).ToDictionary(x => x.Key, x => x.Value);
         }
     }
 }

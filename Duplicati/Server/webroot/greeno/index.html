@@ -297,6 +297,18 @@
 	            </div>
 	
 	            <div id="edit-tab-sourcedata">
+
+                    <div class="input-wrapper">
+                        <div class="edit-dialog-label" title="Choose if the backup configuration should be stored">Store configuration</div>
+                        <select id="store-task-config" name="store-task-config">
+                            <option value="false">Don't store setup</option>
+                            <option value="true">Store this backup job setup</option>
+                            <option value="all">Store all backup job setups</option>
+                        </select>
+                    </div>
+
+                    <div class="clearfix"></div>
+
 	                <div id="source-folder-paths" class="empty">
 	                <div id="source-folder-droptarget"></div>
 	                    <div id="source-folder-paths-hint" class="hint-text">Click the &quot;Browse&quot; button to add folders</div>
