@@ -15,12 +15,13 @@
 #main-list {
     padding-top: 82px;
     overflow: auto;
+    padding-bottom: 60px;
 }
 
 #main-list-container {
     background-color: #f3f3f3;
     overflow: hidden;
-    min-height: calc(100vh - 82px);
+    /*min-height: calc(100vh - 82px);*/
 }
 
 #main-appname {
@@ -473,14 +474,22 @@ textarea.pre-style-text, .pre-style-text {
 /* 
 *	custom CSS
 */
+
+header {
+    position: fixed;
+    width: 100%;
+    z-index: 100;
+}
+
 footer{
 	height: 50px;
 	width: 100%;
 	background-color: #3A5E30;
 	color: #F0F0F0;
 	bottom:0px;
-	/* position:fixed; */
+	position:fixed;
 	border-top: 10px solid #91AA8A;
+    z-index: 100;
 }
 
 a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern:link {

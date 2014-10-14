@@ -133,8 +133,8 @@
 
 </head>
 <body>
+    <div id="click-intercept"></div>
 	<header>
-	    <div id="click-intercept"></div>
 	
 	    <div id="main-topbar">
 	        <div class="content-wrap padded">
@@ -171,6 +171,24 @@
 	            </ul>
 	        </div>
 	    </div>
+
+        <div class="main-status-area-outer">
+            <div class="content-wrap padded">
+                <div id="main-status-area">
+                    <div id="main-status-area-text">
+                    My Important Backup
+                    </div>
+                    <div id="main-status-area-cancel-button"></div>
+                    <div id="main-status-area-progress-outer">
+                        <div id="main-status-area-progress-bar" class="">
+                        </div>
+                        <div id="main-status-area-progress-text">
+                        Processing 123456 files ...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>        
 	</header>
 	<section>
 	    <ul id="backup-context-menu" class="context-popup-menu menu" style="display: none">
@@ -194,24 +212,6 @@
 			<li id="backup-details-show-log"><a>Show log ...</a></li>
 	        <li id="backup-details-send-report"><a>Create bug report ...</a></li>
 	    </ul>
-	
-	    <div class="main-status-area-outer">
-	        <div class="content-wrap padded">
-	            <div id="main-status-area">
-	                <div id="main-status-area-text">
-	                My Important Backup
-	                </div>
-	                <div id="main-status-area-cancel-button"></div>
-	                <div id="main-status-area-progress-outer">
-	                    <div id="main-status-area-progress-bar" class="">
-	                    </div>
-	                    <div id="main-status-area-progress-text">
-	                    Processing 123456 files ...
-	                    </div>
-	                </div>
-	            </div>
-	        </div>
-	    </div>
 	
 	    <div id="main-list">
 	        <div id="main-list-container" class="content-wrap padded">
