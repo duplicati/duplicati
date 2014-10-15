@@ -3,7 +3,7 @@
 body {
 	background: #C0C0C0;
 	color: #000;
-	font: 100%/1.5em "Varela Round", sans-serif;
+	font: 100%/1.5em "Arial Black","GillSans",Helvetica,Arial,sans-serif;
 	margin: 0;
 }
 
@@ -26,9 +26,10 @@ input {
 
 #login h2 {
 	background: #3A5E30;
-	border-radius: 20px 20px 0 0;
-	color: #fff;
+	color: #9DAB98;
 	font-size: 28px;
+	text-transform: uppercase;
+	border-radius: 20px 20px 0 0;
 	padding: 18px 20px;
 	margin: 0px;
 }
@@ -36,7 +37,7 @@ input {
 	background-color: #fff;
 	border-radius: 0 0 20px 20px;
 	border: 0px;
-	padding: 18px 20px;
+	padding: 15px 20px;
 	margin-left: 0px;
 	margin-right: 0px;
 }
@@ -63,11 +64,11 @@ input {
 
 #login fieldset input[type="submit"] {
 	background: #91AA8A;
-	color: #fff;
+	color: #000000;
+	width: 100px;
 	display: block;
 	margin: 0 auto;
 	padding: 4px 0;
-	width: 100px;
 }
 
 #login fieldset input[type="submit"]:hover {
