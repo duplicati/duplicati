@@ -585,13 +585,15 @@ $(document).ready(function() {
                     var today = dateStamp(now);
                     var yesterday = dateStamp(new Date(new Date().setDate(now.getDate() - 1)));
                     var week = dateStamp(new Date(new Date().setDate(now.getDate() - 7)));
-                    var month = dateStamp(new Date(new Date().setMonth(now.getMonth() - 1)));
+                    var thismonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 1)));
+                    var lastmonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 2)));
 
                     var dateBuckets = [
                         {text:'Today', stamp: today, items: []}, 
                         {text: 'Yesterday', stamp: yesterday, items: []}, 
                         {text: 'This week', stamp: week, items: []}, 
-                        {text: 'This month', stamp: month, items: []}
+                        {text: 'This month', stamp: thismonth, items: []},
+                        {text: 'Last month', stamp: lastmonth, items: []}
                     ];
 
                     var yearBuckets = { };
@@ -604,7 +606,7 @@ $(document).ready(function() {
                         var inserted = false;
 
                         for(var t in dateBuckets) {
-                            if (stamp > dateBuckets[t].stamp) {
+                            if (stamp >= dateBuckets[t].stamp) {
                                 dateBuckets[t].items.push(data[i])
                                 inserted = true;
                                 break;
