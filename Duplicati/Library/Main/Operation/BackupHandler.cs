@@ -710,6 +710,16 @@ namespace Duplicati.Library.Main.Operation
                     m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                     m_backend.FlushDbMessages(m_database, null);
                 }
+
+                DateTime lastwrite = new DateTime(0);
+                try 
+                { 
+                    lastwrite = m_snapshot.GetLastWriteTimeUtc(path); 
+                }
+                catch (Exception ex) 
+                {
+                    m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                }
                                             
                 if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
@@ -731,8 +741,8 @@ namespace Duplicati.Library.Main.Operation
     
                             if (!metadata.ContainsKey("CoreAttributes"))
                                 metadata["CoreAttributes"] = attributes.ToString();
-                            if (!metadata.ContainsKey("CoreLastWritetime"))
-                                metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                            if (!metadata.ContainsKey("CoreLastWritetime") && lastwrite.Ticks > 0)
+                                metadata["CoreLastWritetime"] = lastwrite.Ticks.ToString();
                         }
                         else
                         {
@@ -763,8 +773,8 @@ namespace Duplicati.Library.Main.Operation
     
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                        if (!metadata.ContainsKey("CoreLastWritetime") && lastwrite.Ticks > 0)
+                            metadata["CoreLastWritetime"] = lastwrite.Ticks.ToString();
                         metahash = Utility.WrapMetadata(metadata, m_options);
                     }
                     else
@@ -785,12 +795,10 @@ namespace Duplicati.Library.Main.Operation
                 DateTime scantime = DateTime.UtcNow;
                 // Last scan time
                 DateTime oldScanned;
-                // Last file modification
-                DateTime lastModified = m_snapshot.GetLastWriteTimeUtc(path);
                 var oldId = m_database.GetFileEntry(path, out oldScanned);
 
                 long filestatsize = m_snapshot.GetFileSize(path);
-                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || filestatsize < m_options.SkipFilesLargerThan))
+                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastwrite) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || filestatsize < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                     m_result.OpenedFiles++;
@@ -805,8 +813,8 @@ namespace Duplicati.Library.Main.Operation
 
                         if (!metadata.ContainsKey("CoreAttributes"))
                             metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = lastModified.Ticks.ToString();
+                        if (!metadata.ContainsKey("CoreLastWritetime") && lastwrite.Ticks > 0)
+                            metadata["CoreLastWritetime"] = lastwrite.Ticks.ToString();
 
                         metahashandsize = Utility.WrapMetadata(metadata, m_options);
                     }
