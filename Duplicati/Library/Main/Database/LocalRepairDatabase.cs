@@ -288,6 +288,87 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        public void FixDuplicateMetahash()
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using(var tr = m_connection.BeginTransaction())
+            {
+                cmd.Transaction = tr;
+
+                var sql = 
+                    @"SELECT COUNT(*) FROM (" +
+                        @" SELECT DISTINCT c1 FROM (" +
+                            @"SELECT COUNT(*) AS ""C1"" FROM (SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") UNION SELECT COUNT(*) AS ""C1"" FROM ""Metadataset"" " +
+                        @")" +
+                    @")";
+
+                var x = cmd.ExecuteScalar(sql);
+                if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                {
+                    m_result.AddMessage("Found duplicate metadatahashes, repairing");
+
+                    sql = @"SELECT ""A"".""ID"", ""B"".""BlocksetID"" FROM (SELECT MIN(""ID"") AS ""ID"", COUNT(""ID"") AS ""Duplicates"" FROM ""Metadataset"" GROUP BY ""BlocksetID"") ""A"", ""Metadataset"" ""B"" WHERE ""A"".""Duplicates"" > 1 AND ""A"".""ID"" = ""B"".""ID""";
+
+                    using(var c2 = m_connection.CreateCommand())
+                    {
+                        c2.Transaction = tr;
+                        c2.CommandText = @"UPDATE ""File"" SET ""MetadataID"" = ? WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" = ?)";
+                        c2.CommandText += @"; DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" = ? AND ""ID"" != ?";
+                        using(var rd = cmd.ExecuteReader(sql))
+                            while (rd.Read())
+                                c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(1), rd.GetValue(0));
+                    }
+
+                    cmd.CommandText = sql;
+                    x = cmd.ExecuteScalar();
+                    if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                        throw new Exception("Repair failed, there are still duplicate metadatahashes!");
+
+                    m_result.AddMessage("Duplicate metadatahashes repaired succesfully");
+                    tr.Commit();
+                }
+            }
+        }
+
+        public void FixDuplicateFileentries()
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using(var tr = m_connection.BeginTransaction())
+            {
+                cmd.Transaction = tr;
+
+                var sql = @"SELECT COUNT(*) FROM (SELECT ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Duplicates"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") WHERE ""Duplicates"" > 1";
+
+                var x = cmd.ExecuteScalar(sql);
+                if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 0)
+                {
+                    m_result.AddMessage("Found duplicate file entries, repairing");
+
+                    sql = @"SELECT ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""Entries"" FROM (
+                            SELECT MIN(""ID"") AS ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") 
+                            WHERE ""Entries"" > 1 ORDER BY ""ID""";
+
+                    using(var c2 = m_connection.CreateCommand())
+                    {
+                        c2.Transaction = tr;
+                        c2.CommandText = @"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)";
+                        c2.CommandText += @"; DELETE FROM ""File"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""ID"" != ?";
+                        using(var rd = cmd.ExecuteReader(sql))
+                            while (rd.Read())
+                                c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(0));
+                    }
+
+                    cmd.CommandText = sql;
+                    x = cmd.ExecuteScalar();
+                    if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                        throw new Exception("Repair failed, there are still duplicate file entries!");
+
+                    m_result.AddMessage("Duplicate file entries repaired succesfully");
+                    tr.Commit();
+                }
+            }
+
+        }
 	}
 }
 

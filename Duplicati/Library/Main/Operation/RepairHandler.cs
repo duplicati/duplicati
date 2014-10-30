@@ -28,6 +28,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
             {
                 RunRepairLocal();
+                RunRepairCommon();
                 return;
             }
 
@@ -60,9 +61,11 @@ namespace Duplicati.Library.Main.Operation
                 }
                 
                 RunRepairLocal();
+                RunRepairCommon();
             }
             else
             {
+                RunRepairCommon();
                 RunRepairRemote();
             }
 
@@ -374,6 +377,21 @@ namespace Duplicati.Library.Main.Operation
                 db.WriteResults();
 
 			}
+        }
+
+        public void RunRepairCommon()
+        {
+            if (!System.IO.File.Exists(m_options.Dbpath))
+                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+
+            m_result.OperationProgressUpdater.UpdateProgress(0);
+
+            using(var db = new LocalRepairDatabase(m_options.Dbpath))
+            {
+                db.SetResult(m_result);
+                db.FixDuplicateMetahash();
+                db.FixDuplicateFileentries();
+            }
         }
     }
 }
