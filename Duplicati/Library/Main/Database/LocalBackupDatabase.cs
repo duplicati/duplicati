@@ -59,7 +59,6 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_findblocksetCommand;
         private readonly System.Data.IDbCommand m_findfilesetCommand;
         private readonly System.Data.IDbCommand m_findmetadatasetCommand;
-        private readonly System.Data.IDbCommand m_findmetadatasetProbeCommand;
 
         private readonly System.Data.IDbCommand m_insertblockCommand;
 
@@ -115,7 +114,6 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand = m_connection.CreateCommand();
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
-            m_findmetadatasetProbeCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
 				
 			m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
@@ -123,9 +121,6 @@ namespace Duplicati.Library.Main.Database
 
             m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
             m_findblocksetCommand.AddParameters(2);
-
-            m_findmetadatasetProbeCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
-            m_findmetadatasetProbeCommand.AddParameters(2);
 
             m_findmetadatasetCommand.CommandText = @"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = ? AND ""C"".""Size"" = ?";
             m_findmetadatasetCommand.AddParameters(2);
@@ -160,8 +155,11 @@ namespace Duplicati.Library.Main.Database
             //Need a temporary table with path/scantime lookups
             m_scantimelookupTablename = "ScanTime-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             var scantableDefinition = @"SELECT ""A"".""FileID"" AS ""FileID"", ""A"".""Scantime"" AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM (SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"" FROM ""FilesetEntry"" GROUP BY ""FilesetEntry"".""FileID"") A, ""File"" WHERE ""File"".""ID"" = ""A"".""FileID""";
-            using (var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand())
+            {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + scantableDefinition, m_scantimelookupTablename));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}Index"" ON ""{0}"" (""Path"", ""Scantime"", ""FileID"") ",  m_scantimelookupTablename));
+            }
 
             m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 AND ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
@@ -255,7 +253,7 @@ namespace Duplicati.Library.Main.Database
 
                 if (m_pathLookup != null)
                     using(new Logging.Timer("Build path scantime lookup table"))
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 ", m_scantimelookupTablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Scantime"", ""Path"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 ", m_scantimelookupTablename)))
                         while (rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
@@ -470,17 +468,12 @@ namespace Duplicati.Library.Main.Database
                 }
                 else
                 {
-                    m_findmetadatasetProbeCommand.Transaction = transaction;
-                    var r = m_findmetadatasetProbeCommand.ExecuteScalar(null, hash, size);
+                    m_findmetadatasetCommand.Transaction = transaction;
+                    var r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
                     if (r != null && r != DBNull.Value)
                     {
-                        m_findmetadatasetCommand.Transaction = transaction;
-                        r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
-                        if (r != null && r != DBNull.Value)
-                        {
-                            metadataid = Convert.ToInt64(r);
-                            return false;
-                        }
+                        metadataid = Convert.ToInt64(r);
+                        return false;
                     }
                 }
             
