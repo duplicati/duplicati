@@ -199,37 +199,59 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 if (m_blockHashLookup != null)
-                    using(new Logging.Timer("Build blockhash lookup table"))
-                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"", ""Block"".""ID"", ""Block"".""Size"" FROM ""Block"" "))
-                        while (rd.Read())
-                        {
-                            var str = rd.GetValue(0).ToString();
-                            var id = Convert.ToInt64(rd.GetValue(1));
-                            var size = Convert.ToInt64(rd.GetValue(2));
-                            m_blockHashLookup.Add(str, size, new KeyValuePair<long, long>(id, size));
-                        }
+                    try
+                    {
+                        using(new Logging.Timer("Build blockhash lookup table"))
+                        using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"", ""Block"".""ID"", ""Block"".""Size"" FROM ""Block"" "))
+                            while (rd.Read())
+                            {
+                                var str = rd.GetValue(0).ToString();
+                                var id = Convert.ToInt64(rd.GetValue(1));
+                                var size = Convert.ToInt64(rd.GetValue(2));
+                                m_blockHashLookup.Add(str, size, new KeyValuePair<long, long>(id, size));
+                            }
+                    }
+                    catch (Exception ex) 
+                    {
+                        throw new InvalidDataException("Duplicate blockhashes detected, either repair the database or rebuild it", ex);
+                    }
                 
                 if (m_fileHashLookup != null)
-                    using(new Logging.Timer("Build filehash lookup table"))
-                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"", ""Length"", ""ID"" FROM ""BlockSet"""))
-                        while (rd.Read())
-                        {
-                            var str = rd.GetValue(0).ToString();
-                            var size = Convert.ToInt64(rd.GetValue(1));
-                            var id = Convert.ToInt64(rd.GetValue(2));
-                            m_fileHashLookup.Add(str, size, id);
-                        }
+                    try
+                    {
+                        using(new Logging.Timer("Build filehash lookup table"))
+                        using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"", ""Length"", ""ID"" FROM ""BlockSet"""))
+                            while (rd.Read())
+                            {
+                                var str = rd.GetValue(0).ToString();
+                                var size = Convert.ToInt64(rd.GetValue(1));
+                                var id = Convert.ToInt64(rd.GetValue(2));
+                                m_fileHashLookup.Add(str, size, id);
+                            }
+                    }
+                    catch (Exception ex) 
+                    {
+                        throw new InvalidDataException("Duplicate filehashes detected, either repair the database or rebuild it", ex);
+                    }
+
 
                 if (m_metadataLookup != null)
-                    using(new Logging.Timer("Build metahash lookup table"))
-                    using (var rd = cmd.ExecuteReader(@"SELECT ""Metadataset"".""ID"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""Metadataset"", ""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" "))
-                        while (rd.Read())
-                        {
-                            var metadataid = Convert.ToInt64(rd.GetValue(0));
-                            var hash = rd.GetValue(1).ToString();
-                            var size = Convert.ToInt64(rd.GetValue(2));
-                            m_metadataLookup.Add(hash, size, metadataid);
-                        }
+                    try 
+                    { 
+                        using(new Logging.Timer("Build metahash lookup table"))
+                        using (var rd = cmd.ExecuteReader(@"SELECT ""Metadataset"".""ID"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""Metadataset"", ""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" "))
+                            while (rd.Read())
+                            {
+                                var metadataid = Convert.ToInt64(rd.GetValue(0));
+                                var hash = rd.GetValue(1).ToString();
+                                var size = Convert.ToInt64(rd.GetValue(2));
+                                    m_metadataLookup.Add(hash, size, metadataid); 
+                            }
+                    }
+                    catch (Exception ex) 
+                    {
+                        throw new InvalidDataException("Duplicate metadatahash detected, run repair to fix it", ex);
+                    }
 
                 if (m_pathLookup != null)
                     using(new Logging.Timer("Build path scantime lookup table"))
@@ -243,24 +265,32 @@ namespace Duplicati.Library.Main.Database
                         }
 
                 if (m_pathLookup != null)
-                    using(new Logging.Timer("Build path lookup table"))
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""File"" ")))
-                        while (rd.Read())
-                        {
-                            var path = rd.GetValue(0).ToString();
-                            var blocksetid = Convert.ToInt64(rd.GetValue(1));
-                            var metadataid = Convert.ToInt64(rd.GetValue(2));
-                            var filesetid = Convert.ToInt64(rd.GetValue(3));
-                            PathEntryKeeper r;
-                            if (!m_pathLookup.TryFind(path, out r))
+                    try
+                    {
+                        using(new Logging.Timer("Build path lookup table"))
+                        using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""File"" ")))
+                            while (rd.Read())
                             {
-                                r = new PathEntryKeeper(-1, DateTime.UtcNow);
-                                r.AddFilesetID(blocksetid, metadataid, filesetid);
-                                m_pathLookup.Insert(path, r);
+                                var path = rd.GetValue(0).ToString();
+                                var blocksetid = Convert.ToInt64(rd.GetValue(1));
+                                var metadataid = Convert.ToInt64(rd.GetValue(2));
+                                var filesetid = Convert.ToInt64(rd.GetValue(3));
+
+                                PathEntryKeeper r;
+                                if (!m_pathLookup.TryFind(path, out r))
+                                {
+                                    r = new PathEntryKeeper(-1, DateTime.UtcNow);
+                                    r.AddFilesetID(blocksetid, metadataid, filesetid);
+                                    m_pathLookup.Insert(path, r);
+                                }
+                                else
+                                    r.AddFilesetID(blocksetid, metadataid, filesetid);
                             }
-                            else
-                                r.AddFilesetID(blocksetid, metadataid, filesetid);
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidDataException("Duplicate file entries detected, run repair to fix it", ex);
+                    }
                                                         
                 m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
             }
