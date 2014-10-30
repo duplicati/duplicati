@@ -475,7 +475,12 @@ namespace Duplicati.Library.Main.Database
                     if (r != null && r != DBNull.Value)
                     {
                         m_findmetadatasetCommand.Transaction = transaction;
-                        m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
+                        r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
+                        if (r != null && r != DBNull.Value)
+                        {
+                            metadataid = Convert.ToInt64(r);
+                            return false;
+                        }
                     }
                 }
             
