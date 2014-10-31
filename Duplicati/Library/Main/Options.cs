@@ -461,12 +461,13 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
-                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, DEFAULT_READ_BUFFER_SIZE),
+                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0"),
                     new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "false"),
-                    new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "false"),
+                    new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, "0"),
+                    new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, "0"),
+                    new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, "0"),
+                    new CommandLineArgument("old-lookup-memory-defaults", CommandLineArgument.ArgumentType.Size, LC.L("Activate caches"), LC.L("Activate in-memory caches, which are now off by default"), "false"),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, string.Format(Strings.Options.DeletedfilesLong, "changed-files")),
 
@@ -1319,6 +1320,14 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets a flag indicating whether this <see cref="Duplicati.Library.Main.Options"/> old memory defaults.
+        /// </summary>
+        public bool OldMemoryDefaults
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "old-lookup-memory-defaults"); }
+        }
+
+        /// <summary>
         /// Gets the block hash lookup size
         /// </summary>
         public long BlockHashLookupMemory
@@ -1328,7 +1337,7 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("blockhash-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
-                    v = DEFAULT_BLOCK_HASH_LOOKUP_SIZE;
+                    v = OldMemoryDefaults ? DEFAULT_BLOCK_HASH_LOOKUP_SIZE : "0";
 
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
@@ -1344,7 +1353,7 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("filehash-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
-                    v = DEFAULT_FILE_HASH_LOOKUP_SIZE;
+                    v = OldMemoryDefaults ? DEFAULT_FILE_HASH_LOOKUP_SIZE : "0";
 
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
@@ -1360,7 +1369,7 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("metadatahash-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
-                    v = DEFAULT_METADATA_HASH_LOOKUP_SIZE;
+                    v = OldMemoryDefaults ? DEFAULT_METADATA_HASH_LOOKUP_SIZE : "0";
                 
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
@@ -1373,7 +1382,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                return !Library.Utility.Utility.ParseBoolOption(m_options, "disable-filepath-cache");
+
+                if (OldMemoryDefaults)
+                    return !Library.Utility.Utility.ParseBoolOption(m_options, "disable-filepath-cache");
+                else
+                {
+                    string s;
+                    m_options.TryGetValue("disable-filepath-cache", out s);
+                    return !Library.Utility.Utility.ParseBool(s, true);
+                }
             }
         }
         
