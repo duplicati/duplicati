@@ -1,3 +1,15 @@
+2014-10-31
+==========
+* Fixed the display of restore times so it no longer shows todays backups as last week
+* Updated the login page with something fancier, thanks to @sfraenholz!
+* Improved handling of files and folders with no date information
+* Fixed a few bugs related to storing metadata
+* Added some auto-healing routines to the repair command
+* Added some better error messages with correction suggestions
+* Improved the speed of backups and restores by a factor of 30
+* Default is now no in-memory lookups with same speed and lower memory footprint
+
+
 2014-10-14
 ==========
 * Improved symlink handling
