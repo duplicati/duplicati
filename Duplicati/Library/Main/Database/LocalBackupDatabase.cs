@@ -75,9 +75,6 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_selectfileHashCommand;
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
 
-        private readonly System.Data.IDbCommand m_findremotevolumestateCommand;
-        private readonly System.Data.IDbCommand m_updateblockCommand;
-
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
 		
 		private HashLookupHelper<KeyValuePair<long, long>> m_blockHashLookup;
@@ -107,8 +104,6 @@ namespace Duplicati.Library.Main.Database
             m_findmetadatasetCommand = m_connection.CreateCommand();
             m_findfilesetCommand = m_connection.CreateCommand();
             m_insertblocksetentryCommand = m_connection.CreateCommand();
-            m_findremotevolumestateCommand = m_connection.CreateCommand();
-            m_updateblockCommand = m_connection.CreateCommand();
             m_insertblocklistHashesCommand = m_connection.CreateCommand();
             m_selectblocklistHashesCommand = m_connection.CreateCommand();
             m_insertfileOperationCommand = m_connection.CreateCommand();
@@ -159,6 +154,10 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + scantableDefinition, m_scantimelookupTablename));
                 cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}Index"" ON ""{0}"" (""Path"", ""Scantime"", ""FileID"") ",  m_scantimelookupTablename));
+
+                var tc = cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"") AND ""State"" NOT IN (?, ?, ?, ?);", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
+                if (((tc == null || tc == DBNull.Value) ? 0 : Convert.ToInt64(tc)) > 0)
+                    throw new InvalidDataException("Detected blocks that are not reachable in the block table");
             }
 
             m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 AND ""Path"" = ?", m_scantimelookupTablename);
@@ -169,12 +168,6 @@ namespace Duplicati.Library.Main.Database
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
-
-            m_findremotevolumestateCommand.CommandText = @"SELECT ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
-            m_findremotevolumestateCommand.AddParameters(1);
-
-            m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
-            m_updateblockCommand.AddParameters(3);
         }
         
         /// <summary>
@@ -330,24 +323,11 @@ namespace Duplicati.Library.Main.Database
             }
             else
             {
-                //We add/update it now
+                //Update lookup cache if required
                 if (m_blockHashLookup != null)
                     m_blockHashLookup.Add(key, size, new KeyValuePair<long, long>(Convert.ToInt64(r), size));
 
-                //If the block is found and the volume is broken somehow.
-                m_findremotevolumestateCommand.Transaction = transaction;
-                r = m_findremotevolumestateCommand.ExecuteScalar(null, r);
-                if (r != null && (r.ToString() == RemoteVolumeState.Temporary.ToString() || r.ToString() == RemoteVolumeState.Uploading.ToString() || r.ToString() == RemoteVolumeState.Uploaded.ToString() || r.ToString() == RemoteVolumeState.Verified.ToString()))
-                {
-                    return false;
-                }
-                else
-                {
-                    m_updateblockCommand.Transaction = transaction;
-                    m_updateblockCommand.ExecuteNonQuery(null, volumeid, key, size);
-                    return true;
-                }
-
+                return false;
             }
         }
 
