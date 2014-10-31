@@ -210,6 +210,8 @@ div.main-icon-restore {
 
 .main-backup-entry .caption-text, .main-backup-entry ul.hint-text, #main-newbackup > .caption-text, #main-newbackup > ul.hint-text, #main-restorebackup > .caption-text, #main-restorebackup > ul.hint-text {
     margin-left: 42px;
+    font-size: 14pt;
+    margin-top: 4px;
 }
 
 .main-button-add-text {
