@@ -329,14 +329,172 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IPatchBlock> Blocks { get; }
         }
 
+        private class ExistingFile : IExistingFile
+        {
+            private System.Data.IDataReader m_reader;
+
+            public ExistingFile(System.Data.IDataReader rd) { m_reader = rd; }
+
+            public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+            public string TargetHash { get { return m_reader.ConvertValueToString(1); } }
+            public long TargetFileID { get { return m_reader.ConvertValueToInt64(2); } }
+            public long Length { get { return m_reader.ConvertValueToInt64(3); } }
+
+            public bool HasMore { get; private set; }
+
+            private class ExistingFileBlock : IExistingFileBlock
+            {
+                private System.Data.IDataReader m_reader;
+
+                public ExistingFileBlock(System.Data.IDataReader rd) { m_reader = rd; }
+
+                public string Hash { get { return m_reader.ConvertValueToString(4); } }
+                public long Index { get { return m_reader.ConvertValueToInt64(5); } }
+                public long Size { get { return m_reader.ConvertValueToInt64(6); } }
+            }
+
+            public IEnumerable<IExistingFileBlock> Blocks 
+            {
+                get
+                {
+                    string p = this.TargetPath;
+                    while (HasMore && p == this.TargetPath)
+                    {
+                        yield return new ExistingFileBlock(m_reader);
+                        HasMore = m_reader.Read();
+                    }
+                }
+            }
+
+            public static IEnumerable<IExistingFile> GetExistingFilesWithBlocks(System.Data.IDbConnection connection, string tablename)
+            {
+                using(var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = string.Format(@"SELECT ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""{0}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{0}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{0}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{0}"".""TargetPath"", ""BlocksetEntry"".""Index""", m_tablename);
+                    using(var rd = cmd.ExecuteReader())
+                        if (rd.Read())
+                        {
+                            var more = true;
+                            while(more)
+                            {
+                                var f = new ExistingFile(rd);
+                                string current = f.TargetPath;
+                                yield return f;
+
+                                more = f.HasMore;
+                                while (more && current == f.TargetPath)
+                                    more = rd.Read();
+                            }
+                        }
+                }
+            }
+        }
+
         public IEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
-            return new ExistingFileEnumerable(m_connection, m_tempfiletable);
+            return ExistingFile.GetExistingFilesWithBlocks(m_connection, m_tempfiletable);
+        }
+
+        private class LocalBlockSource : ILocalBlockSource
+        {
+            private class BlockDescriptor : IBlockDescriptor
+            {
+                private class BlockSource : IBlockSource
+                {
+                    private System.Data.IDataReader m_reader;
+                    public BlockSource(System.Data.IDataReader rd) { m_reader = rd; }
+
+                    public string Path { get { return m_reader.ConvertValueToString(6); } }
+                    public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
+                    public long Size { get { return m_reader.ConvertValueToInt64(8); } }
+                }
+
+                private System.Data.IDataReader m_reader;
+                public BlockDescriptor(System.Data.IDataReader rd) { m_reader = rd; }
+
+                private string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+
+                public string Hash { get { return m_reader.ConvertValueToString(2); } }
+                public long Offset { get { return m_reader.ConvertValueToInt64(3); } }
+                public long Index { get { return m_reader.ConvertValueToInt64(4); } }
+                public long Size { get { return m_reader.ConvertValueToInt64(5); } }
+
+                public bool HasMore { get; private set; }
+
+                public IEnumerable<IBlockSource> Blocksources
+                {
+                    get
+                    {
+                        var p = this.TargetPath;
+                        var h = this.Hash;
+                        var s = this.Size;
+
+                        while (HasMore && p == this.TargetPath && h == this.Hash && s == this.Size)
+                        {
+                            yield return new BlockSource(m_reader);
+                            HasMore = m_reader.Read();
+                        }
+                    }
+                }
+            }
+
+            private System.Data.IDataReader m_reader;
+            public LocalBlockSource(System.Data.IDataReader rd) { m_reader = rd; }
+
+            public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+            public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
+
+            public bool HasMore { get; private set; }
+
+            public IEnumerable<IBlockDescriptor> Blocks
+            {
+                get 
+                {
+                    var p = this.TargetPath;
+                    while (HasMore && p == this.TargetPath)
+                    {
+                        var c = new BlockDescriptor(m_reader);
+                        var h = c.Hash;
+                        var s = c.Size;
+
+                        yield return c;
+
+                        HasMore = c.HasMore;
+                        while (HasMore && c.Hash == h && c.Size == s && this.TargetPath == p)
+                            HasMore = m_reader.Read();
+                    }
+                }
+            }
+
+            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize)
+            {
+                using(var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {2}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {2}), ""E"".""Size"" FROM ""{0}"" ""A"", ""{1}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ", filetablename, blocktablename, blocksize);
+                    using(var rd = cmd.ExecuteReader())
+                    {
+                        if (rd.Read())
+                        {
+                            var more = true;
+                            while(more)
+                            {
+                                var f = new LocalBlockSource(rd);
+                                string current = f.TargetPath;
+                                yield return f;
+
+                                more = f.HasMore;
+                                while (more && current == f.TargetPath)
+                                    more = rd.Read();
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks()
         {
-            return new LocalBlockSourceEnumerable(m_connection, m_tempfiletable, m_tempblocktable, m_blocksize);
+            return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, m_blocksize);
         }
 
         public IEnumerable<IRemoteVolume> GetMissingVolumes()
