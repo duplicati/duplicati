@@ -184,8 +184,9 @@ namespace Duplicati.Library.Main.Operation
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
             using(var blockmarker = database.CreateBlockMarker())
+            using(var volumekeeper = database.GetMissingBlockData(blocks))
             {
-                foreach(var restorelist in database.GetFilesWithMissingBlocks(blocks))
+                foreach(var restorelist in volumekeeper.FilesWithMissingBlocks)
                 {
                     var targetpath = restorelist.Path;
                     result.AddVerboseMessage("Patching file with remote data: {0}", targetpath);
@@ -215,7 +216,7 @@ namespace Duplicati.Library.Main.Operation
                                     if (targetblock.Size == size)
                                     {
                                         file.Write(blockbuffer, 0, size);
-                                        blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size);
+                                        blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false);
                                     }   
                                     
                                 }
@@ -227,10 +228,46 @@ namespace Duplicati.Library.Main.Operation
                         {
                             result.AddWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
                         }
-    	                
+                    }
+                }
+
+                foreach(var restoremetadata in volumekeeper.MetadataWithMissingBlocks)
+                {
+                    var targetpath = restoremetadata.Path;
+                    result.AddVerboseMessage("Patching metadata with remote data: {0}", targetpath);
+                    
+                    if (options.Dryrun)
+                    {
+                        result.AddDryrunMessage(string.Format("Would patch metadata with remote data: {0}", targetpath));
+                    }
+                    else
+                    {               
                         try
                         {
-                            ApplyMetadata(targetpath, database);
+                            var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                            if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
+                            {
+                                result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+                                m_systemIO.DirectoryCreate(folderpath);
+                            }
+
+                            // TODO: When we support multi-block metadata this needs to deal with it
+                            using(var ms = new System.IO.MemoryStream())
+                            {
+                                foreach(var targetblock in restoremetadata.Blocks)
+                                {
+                                    ms.Position = targetblock.Offset;
+                                    var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                                    if (targetblock.Size == size)
+                                    {
+                                        ms.Write(blockbuffer, 0, size);
+                                        blockmarker.SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true);
+                                    }   
+                                }
+
+                                ms.Position = 0;
+                                ApplyMetadata(targetpath, ms);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -407,9 +444,17 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, LocalRestoreDatabase database)
+        private static void ApplyMetadata(string path, System.IO.Stream stream)
         {
-            //TODO: Implement writing metadata
+            using(var tr = new System.IO.StreamReader(stream))
+            using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+            {
+                var metadata = new Newtonsoft.Json.JsonSerializer().Deserialize<Dictionary<string, string>>(jr);
+                string k;
+                long t;
+                if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
+                    m_systemIO.FileSetLastWriteTimeUtc(path, new DateTime(t, DateTimeKind.Utc));
+            }
         }
 
         private static void ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
@@ -446,7 +491,9 @@ namespace Duplicati.Library.Main.Operation
 		    			                {
                                             if (result.TaskControlRendevouz() == TaskControlState.Stop)
                                                 return;
-                                            
+
+                                            //TODO: Handle metadata
+
 			    			                if (sourcestream.Length > block.Offset)
 				                    		{
 				                    			sourcestream.Position = block.Offset;
@@ -464,7 +511,7 @@ namespace Duplicati.Library.Main.Operation
 		                                                    targetstream.Write(blockbuffer, 0, size);
 		                                                }
 		                                                    
-		                                                blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size);
+		                                                blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size, false);
 		                                            }
 		                                        }	                    		
 											}
@@ -541,7 +588,7 @@ namespace Duplicati.Library.Main.Operation
                         using (var block = new Blockprocessor(file, blockbuffer))
                             foreach (var targetblock in restorelist.Blocks)
                             {
-                            	if (!options.Dryrun)
+                                if (!options.Dryrun && !targetblock.IsMetadata)
                                 	file.Position = targetblock.Offset;
                                 	
                                 foreach (var source in targetblock.Blocksources)
@@ -550,26 +597,43 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         if (result.TaskControlRendevouz() == TaskControlState.Stop)
                                             return;
-                                        
+
                                         if (m_systemIO.FileExists(source.Path))
-                                            using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
+                                        {
+                                            if (source.IsMetadata)
                                             {
-                                                sourcefile.Position = source.Offset;
-                                                var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
-                                                if (size == targetblock.Size)
+                                                // TODO: Handle this by reconstructing 
+                                                // metadata from file and checking the hash
+
+                                                continue;
+                                            }
+                                            else
+                                            {
+                                                using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
                                                 {
-                                                    var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-                                                    if (key == targetblock.Hash)
+                                                    sourcefile.Position = source.Offset;
+                                                    var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
+                                                    if (size == targetblock.Size)
                                                     {
-                                                        patched = true;
-						                            	if (!options.Dryrun)
-	                                                        file.Write(blockbuffer, 0, size);
-	                                                        
-                                                        blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size);
-                                                        break;
+                                                        var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                                        if (key == targetblock.Hash)
+                                                        {
+    						                            	if (!options.Dryrun)
+                                                            {
+                                                                if (targetblock.IsMetadata)
+                                                                    ApplyMetadata(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
+                                                                else
+    	                                                            file.Write(blockbuffer, 0, size);
+                                                            }
+    	                                                        
+                                                            blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size, false);
+                                                            patched = true;
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                             }
+                                        }
                                     }
                                     catch (Exception ex)
                                     {
@@ -671,16 +735,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     result.AddWarning(string.Format("Failed to create folder: \"{0}\", message: {1}", folder, ex.Message), ex);
                 }
-
-                try
-                {
-                	if (!options.Dryrun)
-	                    ApplyMetadata(folder, database);
-                }
-                catch (Exception ex)
-                {
-                    result.AddWarning(string.Format("Failed to set folder metadata: \"{0}\", message: {1}", folder, ex.Message), ex);
-                }
             }
         }
 
@@ -714,12 +768,14 @@ namespace Duplicati.Library.Main.Operation
                                     if (size <= 0)
                                         break;
     
+                                    //TODO: Handle Metadata
+
                                     if (size == targetblock.Size)
                                     {
                                         var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
                                         if (key == targetblock.Hash)
                                         {
-                                            blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size);
+                                            blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size, false);
                                         }
                                     }
                                     
