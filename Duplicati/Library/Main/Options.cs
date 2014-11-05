@@ -462,7 +462,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
                     new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0"),
-                    new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "false"),
+                    new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "true", null, null, LC.L("This option is no longer used as metadata is now stored by default")),
+                    new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, LC.L("Don't store metadata"), LC.L("Use this option to disable the storage of metadata, such as file timestamps. Disabling metadata storage will speed up the backup and restore operations, but does not affect file size much."), "false"),
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, "0"),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, "0"),
                     new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, "0"),
@@ -1316,9 +1317,18 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool StoreMetadata
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "store-metadata"); }
-        }
+            get 
+            { 
+                if (m_options.ContainsKey("skip-metadata"))
+                    return !Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata");
 
+                if (m_options.ContainsKey("store-metadata"))
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "store-metadata"); 
+
+                return true;
+            }
+        }
+            
         /// <summary>
         /// Gets a flag indicating whether this <see cref="Duplicati.Library.Main.Options"/> old memory defaults.
         /// </summary>
