@@ -1,3 +1,7 @@
+2014-11-06
+==========
+* Fixed a broken SQL
+
 2014-10-31
 ==========
 * Fixed the display of restore times so it no longer shows todays backups as last week
