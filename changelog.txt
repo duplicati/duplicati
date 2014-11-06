@@ -1,7 +1,7 @@
 2014-10-31
 ==========
 * Fixed the display of restore times so it no longer shows todays backups as last week
-* Updated the login page with something fancier, thanks to @sfraenholz!
+* Updated the login page with something fancier, thanks to @sfahrenholz!
 * Improved handling of files and folders with no date information
 * Fixed a few bugs related to storing metadata
 * Added some auto-healing routines to the repair command

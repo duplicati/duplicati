@@ -8,6 +8,7 @@ Software Development:
   Nicolas Hatier, Niversoft idées logicielles
   Tobias Käes
   Don Lockhart
+  Sebastian Fahrenholz
   
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
