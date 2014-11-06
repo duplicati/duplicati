@@ -317,6 +317,25 @@ namespace Duplicati.Library.Snapshots
 
             return Alphaleonis.Win32.Filesystem.File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
+
+        /// <summary>
+        /// Gets the creation of a given file in UTC
+        /// </summary>
+        /// <param name="file">The full path to the file in non-shadow format</param>
+        /// <returns>The last write time of the file</returns>
+        public DateTime GetCreationTimeUtc(string file)
+        {
+            string spath = GetSnapshotPath(file);
+            if (!SystemIOWindows.IsPathTooLong(spath))
+                try
+            {
+                return File.GetCreationTimeUtc(spath);
+            }
+            catch (PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+        }
+
         /// <summary>
         /// Opens a file for reading
         /// </summary>
@@ -371,7 +390,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public Dictionary<string, string> GetMetadata(string file)
         {
-            return null;
+            return _ioWin.GetMetadata(file);
         }
         
         /// <summary>

@@ -694,6 +694,51 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
         }
+
+        private Dictionary<string, string> GenerateMetadata(string path, System.IO.FileAttributes attributes)
+        {
+            Dictionary<string, string> metadata;
+
+            if (m_options.StoreMetadata)
+            {
+                metadata = m_snapshot.GetMetadata(path);
+                if (metadata == null)
+                    metadata = new Dictionary<string, string>();
+
+                if (!metadata.ContainsKey("CoreAttributes"))
+                    metadata["CoreAttributes"] = attributes.ToString();
+
+                if (!metadata.ContainsKey("CoreLastWritetime"))
+                {
+                    try
+                    {
+                        metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                    }
+                }
+
+                if (!metadata.ContainsKey("CoreCreatetime"))
+                {
+                    try
+                    {
+                        metadata["CoreCreatetime"] = m_snapshot.GetCreationTimeUtc(path).Ticks.ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                    }
+                }
+            }
+            else
+            {
+                metadata = new Dictionary<string, string>();
+            }
+
+            return metadata;
+        }
         
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
@@ -731,23 +776,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                     {
-                        Dictionary<string, string> metadata;
-    
-                        if (m_options.StoreMetadata)
-                        {
-                            metadata = m_snapshot.GetMetadata(path);
-                            if (metadata == null)
-                                metadata = new Dictionary<string, string>();
-    
-                            if (!metadata.ContainsKey("CoreAttributes"))
-                                metadata["CoreAttributes"] = attributes.ToString();
-                            if (!metadata.ContainsKey("CoreLastWritetime") && lastwrite.Ticks > 0)
-                                metadata["CoreLastWritetime"] = lastwrite.Ticks.ToString();
-                        }
-                        else
-                        {
-                            metadata = new Dictionary<string, string>();
-                        }
+                        Dictionary<string, string> metadata = GenerateMetadata(path, attributes);
     
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
@@ -767,15 +796,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
-                        if (metadata == null)
-                            metadata = new Dictionary<string, string>();
-    
-                        if (!metadata.ContainsKey("CoreAttributes"))
-                            metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime") && lastwrite.Ticks > 0)
-                            metadata["CoreLastWritetime"] = lastwrite.Ticks.ToString();
-                        metahash = Utility.WrapMetadata(metadata, m_options);
+                        metahash = Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options);
                     }
                     else
                     {
@@ -807,16 +828,7 @@ namespace Duplicati.Library.Main.Operation
                     IMetahash metahashandsize;
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
-                        if (metadata == null)
-                            metadata = new Dictionary<string, string>();
-
-                        if (!metadata.ContainsKey("CoreAttributes"))
-                            metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime") && lastwrite.Ticks > 0)
-                            metadata["CoreLastWritetime"] = lastwrite.Ticks.ToString();
-
-                        metahashandsize = Utility.WrapMetadata(metadata, m_options);
+                        metahashandsize = Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options);
                     }
                     else
                     {

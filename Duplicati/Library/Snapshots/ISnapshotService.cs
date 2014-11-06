@@ -42,6 +42,13 @@ namespace Duplicati.Library.Snapshots
         DateTime GetLastWriteTimeUtc(string file);
 
         /// <summary>
+        /// Gets the last write time of a given file in UTC
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The last write time of the file</returns>
+        DateTime GetCreationTimeUtc(string file);
+
+        /// <summary>
         /// Opens a file for reading
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>

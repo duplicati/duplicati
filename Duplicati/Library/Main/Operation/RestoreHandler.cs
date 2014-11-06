@@ -452,8 +452,20 @@ namespace Duplicati.Library.Main.Operation
                 var metadata = new Newtonsoft.Json.JsonSerializer().Deserialize<Dictionary<string, string>>(jr);
                 string k;
                 long t;
+                System.IO.FileAttributes fa;
+
+                // Make the symlink first, otherwise we cannot apply metadata to it
+                if (metadata.TryGetValue("CoreSymlinkTarget", out k))
+                    m_systemIO.CreateSymlink(path, k, path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()));
+
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
                     m_systemIO.FileSetLastWriteTimeUtc(path, new DateTime(t, DateTimeKind.Utc));
+                if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
+                    m_systemIO.FileSetCreationTimeUtc(path, new DateTime(t, DateTimeKind.Utc));
+                if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
+                    m_systemIO.SetFileAttributes(path, fa);
+
+                m_systemIO.SetMetadata(path, metadata);
             }
         }
 

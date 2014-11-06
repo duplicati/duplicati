@@ -111,6 +111,43 @@ namespace Duplicati.Library.Snapshots
             Alphaleonis.Win32.Filesystem.File.SetLastWriteTimeUtc(PrefixWithUNC(path), time);
         }
 
+        public void FileSetCreationTimeUtc(string path, DateTime time)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    System.IO.File.SetCreationTimeUtc(path, time);
+                    return;
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            Alphaleonis.Win32.Filesystem.File.SetCreationTimeUtc(PrefixWithUNC(path), time);
+        }
+
+        public DateTime FileGetLastWriteTimeUtc(string path)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    return System.IO.File.GetLastWriteTimeUtc(path);
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTimeUtc(PrefixWithUNC(path));
+        }
+
+        public DateTime FileGetCreationTimeUtc(string path)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    return System.IO.File.GetCreationTimeUtc(path);
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.GetCreationTimeUtc(PrefixWithUNC(path));
+        }
+
         public bool FileExists(string path)
         {
             if (!IsPathTooLong(path))
@@ -166,6 +203,19 @@ namespace Duplicati.Library.Snapshots
                 catch (System.IO.PathTooLongException) { }
 
             return (System.IO.FileAttributes)Alphaleonis.Win32.Filesystem.File.GetAttributes(PrefixWithUNC(path));
+        }
+
+        public void SetFileAttributes(string path, System.IO.FileAttributes attributes)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    System.IO.File.SetAttributes(path, attributes); 
+                    return;
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            Alphaleonis.Win32.Filesystem.File.SetAttributes(PrefixWithUNC(path), (Alphaleonis.Win32.Filesystem.FileAttributes)attributes);
         }
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
@@ -246,6 +296,43 @@ namespace Duplicati.Library.Snapshots
             Alphaleonis.Win32.Filesystem.File.SetLastWriteTimeUtc(PrefixWithUNC(path), time);
         }
 
+        public void DirectorySetCreationTimeUtc(string path, DateTime time)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    System.IO.Directory.SetCreationTimeUtc(path, time);
+                    return;
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            Alphaleonis.Win32.Filesystem.File.SetCreationTimeUtc(PrefixWithUNC(path), time);
+        }
+
+        public DateTime DirectoryGetLastWriteTimeUtc(string path)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    return System.IO.Directory.GetLastWriteTimeUtc(path);
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.Directory.GetLastWriteTimeUtc(PrefixWithUNC(path));
+        }
+
+        public DateTime DirectoryGetCreationTimeUtc(string path)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    return System.IO.Directory.GetCreationTimeUtc(path);
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.Directory.GetCreationTimeUtc(PrefixWithUNC(path));
+        }
+
         public void FileMove(string source, string target)
         {
             if (!IsPathTooLong(source) && !IsPathTooLong(target))
@@ -280,6 +367,18 @@ namespace Duplicati.Library.Snapshots
 
             Alphaleonis.Win32.Filesystem.Directory.Delete(PrefixWithUNC(path), recursive);
         }
+
+        public Dictionary<string, string> GetMetadata(string path)
+        {
+            //TODO: Implement it
+            return null;
+        }
+
+        public void SetMetadata(string path, Dictionary<string, string> data)
+        {
+            //TODO: Implement it
+        }
+
         #endregion    
     }
 }

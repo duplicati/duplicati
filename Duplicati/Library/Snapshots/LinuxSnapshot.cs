@@ -39,6 +39,8 @@ namespace Duplicati.Library.Snapshots
         /// A frequently used char-as-string
         /// </summary>
         protected readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
+
+        protected readonly SystemIOLinux _sysIO = new SystemIOLinux();
         
         /// <summary>
         /// Internal helper class for keeping track of a single snapshot volume
@@ -409,6 +411,17 @@ namespace Duplicati.Library.Snapshots
         {
             return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
         }
+
+        /// <summary>
+        /// Gets the creation time of a given file in UTC
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The last write time of the file</returns>
+        public DateTime GetCreationTimeUtc(string file)
+        {
+            return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
+        }
+
         /// <summary>
         /// Opens a file for reading
         /// </summary>
@@ -458,12 +471,7 @@ namespace Duplicati.Library.Snapshots
         public Dictionary<string, string> GetMetadata(string file)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            var n = UnixSupport.File.GetExtendedAttributes(local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local);
-            var dict = new Dictionary<string, string>();
-            foreach(var x in n)
-                dict[x.Key] = Convert.ToBase64String(x.Value);
-                
-            return dict;
+            return _sysIO.GetMetadata(local);
         }
         
         /// <summary>
