@@ -1061,7 +1061,9 @@ namespace Duplicati.Library.Main.Operation
             long metadataid;
             bool r = false;
 
-            //TODO: If meta.Size > blocksize...
+            if (meta.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
@@ -1083,7 +1085,9 @@ namespace Duplicati.Library.Main.Operation
             long metadataid;
             bool r = false;
 
-            //TODO: If meta.Size > blocksize...
+            if (meta.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
@@ -1105,13 +1109,14 @@ namespace Duplicati.Library.Main.Operation
             long metadataid;
             long blocksetid;
             
-            //TODO: If metadata.Size > blocksize...
+            if (metadata.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             AddBlockToOutput(metadata.Hash, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
             m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
             m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
 
-            //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
             m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);
         }
 
