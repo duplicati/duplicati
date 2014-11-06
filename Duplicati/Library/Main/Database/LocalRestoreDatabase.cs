@@ -639,16 +639,12 @@ namespace Duplicati.Library.Main.Database
             {
                 get
                 { 
-                    // TODO: Write new SQL
                     using(var cmd = m_connection.CreateCommand())
                     {
                         cmd.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""FileID"", (""B"".""Index"" * {3}), ""B"".""Size"", ""C"".""Hash"" FROM ""{0}"" A, ""{1}"" B, ""{2}"" C WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"" AND ""B"".""Restored"" = 0 AND ""B"".""Metadata"" = 1 ORDER BY ""A"".""TargetPath"", ""B"".""Index""", m_filetablename, m_blocktablename, m_tmptable, m_blocksize);
                         using(var rd = cmd.ExecuteReader())
                             while (rd.Read())
-                            {
-                                // TODO: Return the correct entry
                                 yield return new VolumePatch(rd);
-                            }
                     }
                 }
             }
