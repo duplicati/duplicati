@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Database
             m_insertBlockset.CommandText = string.Format(@"INSERT INTO ""{0}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (?,?,?) ", m_tempblocklist);
             m_insertBlockset.AddParameters(3);
             
-            m_findBlocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Size"" = ? AND ""FullHash"" = ? ";
+            m_findBlocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = ? AND ""FullHash"" = ? ";
             m_findBlocksetCommand.AddParameters(2);
             
             m_findMetadatasetCommand.CommandText = @"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""BlocksetEntry"",""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? ";
