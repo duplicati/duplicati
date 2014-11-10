@@ -110,7 +110,7 @@ namespace Duplicati.Library.Utility
             m_stream = new MemoryStream();
             m_count = 0;
                         
-            this.SwitchToFileLimit = 10 * 1024 * 1024;
+            this.SwitchToFileLimit = 2 * 1024 * 1024;
 		}
 
         public void Add(T value)
@@ -137,6 +137,19 @@ namespace Duplicati.Library.Utility
 
         public void Dispose()
         {
+            Dispose(true);
+        }
+
+        ~FileBackedList()
+        {
+            Dispose(false);
+        }
+
+        protected void Dispose(bool disposing)
+        {
+            if (disposing)
+                GC.SuppressFinalize(this);
+
             if (m_stream != null)
             {
                 m_stream.Dispose();
@@ -183,7 +196,9 @@ namespace Duplicati.Library.Utility
 	public class FileBackedStringList : FileBackedList<string>
 	{
         private byte[] m_buf;
-        public System.Text.Encoding m_encoding;
+        public readonly System.Text.Encoding m_encoding;
+        private const int MIN_BUF_SIZE = 1024;
+        private const int BUFFER_OVERSHOOT = 32;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Duplicati.Library.Utility.FileBackedStringList"/> class.
@@ -196,20 +211,22 @@ namespace Duplicati.Library.Utility
                             
         protected override long GetSize(string value)
         {
-            m_buf = m_encoding.GetBytes(value);            
-            return m_buf.Length;
+            var size = m_encoding.GetByteCount(value);
+            if (m_buf == null || m_buf.Length < size)
+                m_buf = new byte[Math.Max(MIN_BUF_SIZE, size + BUFFER_OVERSHOOT)];
+            return size;
         }
         
         protected override void Serialize(string value, Stream stream)
         {
-            stream.Write(m_buf, 0, m_buf.Length);
-            m_buf = null;
+            var size = m_encoding.GetBytes(value, 0, value.Length, m_buf, 0);            
+            stream.Write(m_buf, 0, size);
         }
         
         protected override string Deserialize(Stream stream, long length)
         {
             if (m_buf == null || m_buf.Length < length)
-                m_buf = new byte[length];
+                m_buf = new byte[Math.Max(MIN_BUF_SIZE, length + BUFFER_OVERSHOOT)];
             Utility.ForceStreamRead(stream, m_buf, (int)length);
             return (m_encoding ?? System.Text.Encoding.UTF8).GetString(m_buf, 0, (int)length);
         }            
