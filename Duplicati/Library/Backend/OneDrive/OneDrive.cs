@@ -30,6 +30,8 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
         public SkyDrive() { }
 
         public SkyDrive(string url, Dictionary<string, string> options)
@@ -193,7 +195,7 @@ namespace Duplicati.Library.Backend
                             req.ContentType = "application/json";
 
                             using (var reqs = areq.GetRequestStream())
-                                Utility.Utility.CopyStream(ms, reqs);
+                                Utility.Utility.CopyStream(ms, reqs, true, m_copybuffer);
                         }
 
                         using (var resp = (HttpWebResponse)areq.GetResponse())
@@ -369,7 +371,7 @@ namespace Duplicati.Library.Backend
 
             var areq = new Utility.AsyncHttpRequest(req);
             using (var reqs = areq.GetRequestStream())
-                Utility.Utility.CopyStream(stream, reqs);
+                Utility.Utility.CopyStream(stream, reqs, true, m_copybuffer);
 
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
@@ -391,7 +393,7 @@ namespace Duplicati.Library.Backend
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, stream);
+                Utility.Utility.CopyStream(rs, stream, true, m_copybuffer);
         }
 
         #endregion

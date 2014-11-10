@@ -35,6 +35,8 @@ namespace Duplicati.Library.Backend
         private readonly bool m_passive = false;
         private readonly bool m_listVerify = true;
 
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
         public FTP()
         {
         }
@@ -220,7 +222,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream rs = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(input, rs, true);
+                    Utility.Utility.CopyStream(input, rs, true, m_copybuffer);
                 
                 if (m_listVerify) 
                 {
@@ -265,7 +267,7 @@ namespace Duplicati.Library.Backend
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.WebResponse resp = areq.GetResponse())
             using (System.IO.Stream rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, output, false);
+                Utility.Utility.CopyStream(rs, output, false, m_copybuffer);
         }
 
         public void Get(string remotename, string localname)
