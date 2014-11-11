@@ -1,3 +1,8 @@
+2014-11-11
+==========
+* Fixed another broken SQL
+* Reduced memory allocations
+
 2014-11-06
 ==========
 * Fixed a broken SQL
