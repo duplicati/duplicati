@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
 using Renci.SshNet;
+using Renci.SshNet.Common;
 
 namespace Duplicati.Library.Backend
 {
@@ -117,7 +118,15 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            CreateConnection(true).DeleteFile(remotename);
+            try
+            {
+                CreateConnection(true).DeleteFile(remotename);
+            }
+            catch (SftpPathNotFoundException ex)
+            {
+                throw new FolderMissingException(ex);
+            }
+                
         }
 
         public IList<ICommandLineArgument> SupportedCommands

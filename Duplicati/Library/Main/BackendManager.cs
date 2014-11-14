@@ -738,7 +738,11 @@ namespace Duplicati.Library.Main
             try
             {
                 m_backend.Delete(item.RemoteFilename);
-            } 
+            }
+            catch (Duplicati.Library.Interface.FolderMissingException ex)
+            {
+                result = ex.ToString();
+            }
             catch (Exception ex)
             {
                 result = ex.ToString();

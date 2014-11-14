@@ -324,6 +324,10 @@ namespace Duplicati.Library.Backend
             {
                 throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
             }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                throw new FolderMissingException(ex);
+            }
             catch
             {
                 //We have no idea if the file was removed or not,
