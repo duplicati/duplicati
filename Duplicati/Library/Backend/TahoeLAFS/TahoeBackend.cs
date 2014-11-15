@@ -224,11 +224,21 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename, "");
-            req.Method = "DELETE";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (areq.GetResponse())
-            { }
+            try
+            {
+                System.Net.HttpWebRequest req = CreateRequest(remotename, "");
+                req.Method = "DELETE";
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (areq.GetResponse())
+                { }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
+            }
         }
 
         public IList<ICommandLineArgument> SupportedCommands

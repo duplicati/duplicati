@@ -253,14 +253,27 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename);
-            req.Method = "DELETE";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            try
             {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                System.Net.HttpWebRequest req = CreateRequest(remotename);
+                req.Method = "DELETE";
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                }
+            } 
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
             }
         }
 

@@ -304,17 +304,30 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            var id = GetFileID(remotename);
-            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(AccessToken));
-            var req = (HttpWebRequest)WebRequest.Create(url);
-            req.Method = "DELETE";
-
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var resp = (HttpWebResponse)areq.GetResponse())
+            try
             {
-                if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
-                    throw new ProtocolViolationException(string.Format(LC.L("Unexpected error code: {0} - {1}"), resp.StatusCode, resp.StatusDescription));
-                m_fileidCache.Remove(remotename);
+                var id = GetFileID(remotename);
+                var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(AccessToken));
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "DELETE";
+
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
+                        throw new ProtocolViolationException(string.Format(LC.L("Unexpected error code: {0} - {1}"), resp.StatusCode, resp.StatusDescription));
+                    m_fileidCache.Remove(remotename);
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
             }
         }        
             

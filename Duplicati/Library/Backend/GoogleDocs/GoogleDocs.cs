@@ -326,7 +326,7 @@ namespace Duplicati.Library.Backend
             }
             catch (System.IO.FileNotFoundException ex)
             {
-                throw new FolderMissingException(ex);
+                throw new FileMissingException(ex);
             }
             catch
             {
