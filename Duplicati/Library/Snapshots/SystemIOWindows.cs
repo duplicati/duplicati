@@ -16,7 +16,9 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.Security.AccessControl;
 
 
 namespace Duplicati.Library.Snapshots
@@ -24,6 +26,7 @@ namespace Duplicati.Library.Snapshots
     public struct SystemIOWindows : ISystemIO
     {
         private const string UNCPREFIX = @"\\?\";
+        private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
         public static bool IsPathTooLong(string path)
         {
@@ -368,15 +371,117 @@ namespace Duplicati.Library.Snapshots
             Alphaleonis.Win32.Filesystem.Directory.Delete(PrefixWithUNC(path), recursive);
         }
 
+        private class FileSystemAccess
+        {
+            public FileSystemRights Rights;
+            public AccessControlType ControlType;
+            public string SID;
+            public bool Inherited;
+            public InheritanceFlags Inheritance;
+            public PropagationFlags Propagation;
+
+            public FileSystemAccess()
+            {
+            }
+
+            public FileSystemAccess(FileSystemAccessRule rule)
+            {
+                Rights = rule.FileSystemRights;
+                ControlType = rule.AccessControlType;
+                SID = rule.IdentityReference.Value;
+                Inherited = rule.IsInherited;
+                Inheritance = rule.InheritanceFlags;
+                Propagation = rule.PropagationFlags;
+            }
+
+            public FileSystemAccessRule Create(System.Security.AccessControl.FileSystemSecurity owner)
+            {
+                return (FileSystemAccessRule)owner.AccessRuleFactory(
+                    new System.Security.Principal.SecurityIdentifier(SID),
+                    (int)Rights,
+                    Inherited,
+                    Inheritance,
+                    Propagation,
+                    ControlType);
+            }
+        }
+
+        private string SerializeObject<T>(T o)
+        {
+            using(var tw = new System.IO.StringWriter())
+            {
+                Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings() { Culture = System.Globalization.CultureInfo.InvariantCulture }).Serialize(tw, o);
+                tw.Flush();
+                return tw.ToString();
+            }
+        }
+
+        private T DeserializeObject<T>(string data)
+        {
+            using(var tr = new System.IO.StringReader(data))
+                return (T)Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings() { Culture = System.Globalization.CultureInfo.InvariantCulture }).Deserialize(tr, typeof(T));
+
+        }
+
         public Dictionary<string, string> GetMetadata(string path)
         {
-            //TODO: Implement it
-            return null;
+            var isDirTarget = path.EndsWith(DIRSEP);
+            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+            var dict = new Dictionary<string, string>();
+
+            System.Security.AccessControl.FileSystemSecurity rules;
+
+            if (isDirTarget)
+                rules = System.IO.Directory.GetAccessControl(targetpath);
+            else
+                rules = System.IO.File.GetAccessControl(targetpath);
+
+            var objs = new List<FileSystemAccess>();
+            foreach(var f in rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier)))
+                objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
+
+            dict["win-ext:accessrules"] = SerializeObject(objs);
+
+            return dict;
         }
 
         public void SetMetadata(string path, Dictionary<string, string> data)
         {
-            //TODO: Implement it
+            var isDirTarget = path.EndsWith(DIRSEP);
+            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+
+            System.Security.AccessControl.FileSystemSecurity rules;
+
+            if (isDirTarget)
+                rules = System.IO.Directory.GetAccessControl(targetpath);
+            else
+                rules = System.IO.File.GetAccessControl(targetpath);
+
+            if (data.ContainsKey("win-ext:accessrules"))
+            {
+                var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
+                var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
+                for(var i = c.Count - 1; i >= 0; i--)
+                    rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+
+                Exception ex = null;
+               
+                foreach (var r in content)
+                {
+                    // Attempt to apply as many rules as we can
+                    try
+                    {
+                        rules.AddAccessRule((System.Security.AccessControl.FileSystemAccessRule)r.Create(rules));
+                    }
+                    catch(Exception e)
+                    {
+                        ex = e;
+                    }
+                }
+
+                if (ex != null)
+                    throw ex;
+            }
         }
 
         #endregion    
