@@ -14,6 +14,7 @@ namespace Duplicati.Library.Main.Operation
         private byte[] m_blockbuffer;
         private RestoreResults m_result;
         private static readonly Snapshots.ISystemIO m_systemIO = Duplicati.Library.Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
+        private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
         public RestoreHandler(string backendurl, Options options, RestoreResults result)
         {
@@ -247,10 +248,10 @@ namespace Duplicati.Library.Main.Operation
                             var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
                             if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
                             {
-                                result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+                                result.AddWarning(string.Format("Creating missing folder {0} for target {1}", folderpath, targetpath), null);
                                 m_systemIO.DirectoryCreate(folderpath);
                             }
-
+                                
                             // TODO: When we support multi-block metadata this needs to deal with it
                             using(var ms = new System.IO.MemoryStream())
                             {
@@ -454,16 +455,31 @@ namespace Duplicati.Library.Main.Operation
                 long t;
                 System.IO.FileAttributes fa;
 
+                var isDirTarget = path.EndsWith(DIRSEP);
+                var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+
                 // Make the symlink first, otherwise we cannot apply metadata to it
                 if (metadata.TryGetValue("CoreSymlinkTarget", out k))
-                    m_systemIO.CreateSymlink(path, k, path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()));
+                    m_systemIO.CreateSymlink(targetpath, k, isDirTarget);
 
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
-                    m_systemIO.FileSetLastWriteTimeUtc(path, new DateTime(t, DateTimeKind.Utc));
+                {
+                    if (isDirTarget)
+                        m_systemIO.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    else
+                        m_systemIO.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                }
+
                 if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
-                    m_systemIO.FileSetCreationTimeUtc(path, new DateTime(t, DateTimeKind.Utc));
+                {
+                    if (isDirTarget)
+                        m_systemIO.DirectorySetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    else
+                        m_systemIO.FileSetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                }
+
                 if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
-                    m_systemIO.SetFileAttributes(path, fa);
+                    m_systemIO.SetFileAttributes(targetpath, fa);
 
                 m_systemIO.SetMetadata(path, metadata);
             }
