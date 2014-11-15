@@ -81,6 +81,24 @@ namespace Duplicati.Library.Main.Database
                 return self.ExecuteReader();
         }
 
+        public static string ConvertValueToString(this System.Data.IDataReader reader, int index)
+        {
+            var v = reader.GetValue(index);
+            if (v == null || v == DBNull.Value)
+                return null;
+
+            return v.ToString();
+        }
+
+        public static long ConvertValueToInt64(this System.Data.IDataReader reader, int index, long defaultvalue = -1)
+        {
+            var v = reader.GetValue(index);
+            if (v == null || v == DBNull.Value)
+                return defaultvalue;
+
+            return Convert.ToInt64(v);
+        }
+
         public static void DumpSQL(this System.Data.IDbConnection self, System.Data.IDbTransaction trans, string sql, params object[] parameters)
         {
             using (var c = self.CreateCommand())
