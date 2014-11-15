@@ -6,6 +6,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main
 {
@@ -481,7 +482,7 @@ namespace Duplicati.Library.Main
                             if (!recovered)
                             {
                                 try { m_backend.Dispose(); }
-                                catch(Exception dex) { m_statwriter.AddWarning(string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
+                                catch(Exception dex) { m_statwriter.AddWarning(LC.L("Failed to dispose backend instance: {0}", ex.Message), dex); }
     
                                 m_backend = null;
                                 
@@ -492,6 +493,23 @@ namespace Duplicati.Library.Main
                         
 
                     } while (retries < m_options.NumberOfRetries);
+
+                    if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
+                    {
+                        m_statwriter.AddMessage(LC.L("Failed to delete file {0}, testing if file exists", item.RemoteFilename));
+                        try
+                        {
+                            if (!m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename))
+                            {
+                                lastException = null;
+                                m_statwriter.AddMessage(LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            m_statwriter.AddWarning(LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
+                        }
+                    }
 
                     if (lastException != null)
                     {
@@ -739,9 +757,22 @@ namespace Duplicati.Library.Main
             {
                 m_backend.Delete(item.RemoteFilename);
             }
-            catch (Duplicati.Library.Interface.FolderMissingException ex)
+            catch (Duplicati.Library.Interface.FileMissingException fex)
             {
-                result = ex.ToString();
+                m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), fex);
+                bool success = false;
+                try
+                {
+                    success = !m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename);
+                }
+                catch
+                {
+                }
+
+                if (success)
+                    m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                else
+                    throw;
             }
             catch (Exception ex)
             {
