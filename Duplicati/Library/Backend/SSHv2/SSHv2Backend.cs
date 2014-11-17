@@ -124,7 +124,7 @@ namespace Duplicati.Library.Backend
             }
             catch (SftpPathNotFoundException ex)
             {
-                throw new FolderMissingException(ex);
+                throw new FileMissingException(ex);
             }
                 
         }
