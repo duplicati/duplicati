@@ -9,6 +9,7 @@ Software Development:
   Tobias Käes
   Don Lockhart
   Sebastian Fahrenholz
+  Malte Neumann
   
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
