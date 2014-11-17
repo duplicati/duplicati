@@ -209,16 +209,31 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename, "");
+            try
+            {
+                HttpWebRequest req = CreateRequest("/" + remotename, "");
 
-            req.Method = "DELETE";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
-                if ((int)resp.StatusCode >= 300)
-                    throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError , resp);
+                req.Method = "DELETE";
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    if ((int)resp.StatusCode >= 300)
+                        throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError, resp);
+                    else
+                        using (areq.GetResponseStream())
+                        { }
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
                 else
-                    using (areq.GetResponseStream())
-                    { }
+                    throw;
+            }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
