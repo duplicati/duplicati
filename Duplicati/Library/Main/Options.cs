@@ -1328,6 +1328,14 @@ namespace Duplicati.Library.Main
                 return true;
             }
         }
+
+        /// <summary>
+        /// Gets a flag indicating if metadata for files and folders should be ignored
+        /// </summary>
+        public bool SkipMetadata
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata"); }
+        }
             
         /// <summary>
         /// Gets a flag indicating whether this <see cref="Duplicati.Library.Main.Options"/> old memory defaults.

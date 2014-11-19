@@ -232,47 +232,50 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                foreach(var restoremetadata in volumekeeper.MetadataWithMissingBlocks)
+                if (!options.SkipMetadata)
                 {
-                    var targetpath = restoremetadata.Path;
-                    result.AddVerboseMessage("Patching metadata with remote data: {0}", targetpath);
-                    
-                    if (options.Dryrun)
+                    foreach(var restoremetadata in volumekeeper.MetadataWithMissingBlocks)
                     {
-                        result.AddDryrunMessage(string.Format("Would patch metadata with remote data: {0}", targetpath));
-                    }
-                    else
-                    {               
-                        try
+                        var targetpath = restoremetadata.Path;
+                        result.AddVerboseMessage("Patching metadata with remote data: {0}", targetpath);
+                    
+                        if (options.Dryrun)
                         {
-                            var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
-                            if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
-                            {
-                                result.AddWarning(string.Format("Creating missing folder {0} for target {1}", folderpath, targetpath), null);
-                                m_systemIO.DirectoryCreate(folderpath);
-                            }
-                                
-                            // TODO: When we support multi-block metadata this needs to deal with it
-                            using(var ms = new System.IO.MemoryStream())
-                            {
-                                foreach(var targetblock in restoremetadata.Blocks)
-                                {
-                                    ms.Position = targetblock.Offset;
-                                    var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
-                                    if (targetblock.Size == size)
-                                    {
-                                        ms.Write(blockbuffer, 0, size);
-                                        blockmarker.SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true);
-                                    }   
-                                }
-
-                                ms.Position = 0;
-                                ApplyMetadata(targetpath, ms);
-                            }
+                            result.AddDryrunMessage(string.Format("Would patch metadata with remote data: {0}", targetpath));
                         }
-                        catch (Exception ex)
-                        {
-                            result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                        else
+                        {               
+                            try
+                            {
+                                var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                                if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
+                                {
+                                    result.AddWarning(string.Format("Creating missing folder {0} for target {1}", folderpath, targetpath), null);
+                                    m_systemIO.DirectoryCreate(folderpath);
+                                }
+                                
+                                // TODO: When we support multi-block metadata this needs to deal with it
+                                using(var ms = new System.IO.MemoryStream())
+                                {
+                                    foreach(var targetblock in restoremetadata.Blocks)
+                                    {
+                                        ms.Position = targetblock.Offset;
+                                        var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                                        if (targetblock.Size == size)
+                                        {
+                                            ms.Write(blockbuffer, 0, size);
+                                            blockmarker.SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true);
+                                        }   
+                                    }
+
+                                    ms.Position = 0;
+                                    ApplyMetadata(targetpath, ms);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                            }
                         }
                     }
                 }
@@ -595,7 +598,7 @@ namespace Duplicati.Library.Main.Operation
             using (var blockmarker = database.CreateBlockMarker())
             {
                 var updateCount = 0L;
-                foreach (var restorelist in database.GetFilesAndSourceBlocks())
+                foreach (var restorelist in database.GetFilesAndSourceBlocks(options.SkipMetadata))
                 {
                     var targetpath = restorelist.TargetPath;
                     var targetfileid = restorelist.TargetFileID;
@@ -721,7 +724,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
 			using(new Logging.Timer("FindMissingBlocks"))
-                database.FindMissingBlocks(result);
+                database.FindMissingBlocks(result, options.SkipMetadata);
         }
 
         private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, RestoreResults result)

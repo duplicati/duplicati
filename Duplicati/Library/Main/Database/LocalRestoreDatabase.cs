@@ -247,15 +247,19 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void FindMissingBlocks(ILogWriter log)
+        public void FindMissingBlocks(ILogWriter log, bool skipMetadata)
         {
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"") SELECT DISTINCT ""{1}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 0 FROM ""{1}"", ""BlocksetEntry"", ""Block"" WHERE ""{1}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ", m_tempblocktable, m_tempfiletable);
                 var p1 = cmd.ExecuteNonQuery();
 
-                cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"") SELECT DISTINCT ""{1}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 1 FROM ""{1}"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""{1}"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ", m_tempblocktable, m_tempfiletable);
-                var p2 = cmd.ExecuteNonQuery();
+                int p2 = 0;
+                if (!skipMetadata)
+                {
+                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"") SELECT DISTINCT ""{1}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 1 FROM ""{1}"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""{1}"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ", m_tempblocktable, m_tempfiletable);
+                    p2 = cmd.ExecuteNonQuery();
+                }
 
                 if (log.VerboseOutput)
                 {
@@ -473,7 +477,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize)
+            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
             {
                 using(var cmd = connection.CreateCommand())
                 {
@@ -499,9 +503,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks()
+        public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata)
         {
-            return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, m_blocksize);
+            return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, m_blocksize, skipMetadata);
         }
 
         public IEnumerable<IRemoteVolume> GetMissingVolumes()
