@@ -8,3 +8,4 @@ CREATE INDEX "BlocksetEntryIds_Forward" ON "BlocksetEntry" ("BlocksetID", "Block
 CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID", "BlocksetID");
 CREATE INDEX "MetadatasetBlocksetID" ON "Metadataset" ("BlocksetID");
 
+UPDATE "Version" SET "Version" = 1;
