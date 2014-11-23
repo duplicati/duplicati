@@ -151,18 +151,22 @@ namespace Duplicati.Library.Main.Database
                     var blockCount = cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Hash"", ""Size"", ""Restored"") SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"", 0 AS ""Restored"" FROM ""Block"",""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""Name"" = ? ", m_tablename), volumename);
                     if (blockCount == 0)
                         throw new Exception(string.Format("Unexpected empty block volume: {0}", volumename));
+
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE UNIQUE INDEX ""{0}-Ix"" ON ""{0}"" (""Hash"", ""Size"", ""Restored"")", tablename));
                 }
-                
+
                 m_insertCommand = m_connection.CreateCommand();
                 m_insertCommand.Transaction = m_transaction.Parent;
-                m_insertCommand.AddParameters(3);
+                m_insertCommand.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Restored"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? AND ""Restored"" = ? ", tablename);
+                m_insertCommand.AddParameters(4);
             }
             
             public bool SetBlockRestored(string hash, long size)
             {
-                m_insertCommand.SetParameterValue(0, hash);
-                m_insertCommand.SetParameterValue(1, size);
-                m_insertCommand.SetParameterValue(2, 1);
+                m_insertCommand.SetParameterValue(0, 1);
+                m_insertCommand.SetParameterValue(1, hash);
+                m_insertCommand.SetParameterValue(2, size);
+                m_insertCommand.SetParameterValue(3, 0);
                 return m_insertCommand.ExecuteNonQuery() == 1;
             }
             
