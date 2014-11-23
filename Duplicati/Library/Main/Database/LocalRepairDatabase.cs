@@ -295,31 +295,54 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = tr;
 
-                var sql = 
+                var sql_count = 
                     @"SELECT COUNT(*) FROM (" +
-                        @" SELECT DISTINCT c1 FROM (" +
-                            @"SELECT COUNT(*) AS ""C1"" FROM (SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") UNION SELECT COUNT(*) AS ""C1"" FROM ""Metadataset"" " +
-                        @")" +
+                    @" SELECT DISTINCT c1 FROM (" +
+                    @"SELECT COUNT(*) AS ""C1"" FROM (SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") UNION SELECT COUNT(*) AS ""C1"" FROM ""Metadataset"" " +
+                    @")" +
                     @")";
 
-                var x = cmd.ExecuteScalar(sql);
+                var x = cmd.ExecuteScalar(sql_count);
                 if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
                 {
                     m_result.AddMessage("Found duplicate metadatahashes, repairing");
 
-                    sql = @"SELECT ""A"".""ID"", ""B"".""BlocksetID"" FROM (SELECT MIN(""ID"") AS ""ID"", COUNT(""ID"") AS ""Duplicates"" FROM ""Metadataset"" GROUP BY ""BlocksetID"") ""A"", ""Metadataset"" ""B"" WHERE ""A"".""Duplicates"" > 1 AND ""A"".""ID"" = ""B"".""ID""";
+                    var tablename = "TmpFile-" + Guid.NewGuid().ToString("N");
+
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT * FROM ""File""", tablename));
+
+                    var sql = @"SELECT ""A"".""ID"", ""B"".""BlocksetID"" FROM (SELECT MIN(""ID"") AS ""ID"", COUNT(""ID"") AS ""Duplicates"" FROM ""Metadataset"" GROUP BY ""BlocksetID"") ""A"", ""Metadataset"" ""B"" WHERE ""A"".""Duplicates"" > 1 AND ""A"".""ID"" = ""B"".""ID""";
 
                     using(var c2 = m_connection.CreateCommand())
                     {
                         c2.Transaction = tr;
-                        c2.CommandText = @"UPDATE ""File"" SET ""MetadataID"" = ? WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" = ?)";
+                        c2.CommandText = string.Format(@"UPDATE ""{0}"" SET ""MetadataID"" = ? WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" = ?)", tablename);
                         c2.CommandText += @"; DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" = ? AND ""ID"" != ?";
                         using(var rd = cmd.ExecuteReader(sql))
                             while (rd.Read())
                                 c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(1), rd.GetValue(0));
                     }
 
-                    cmd.CommandText = sql;
+                    sql = string.Format(@"SELECT ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""Entries"" FROM (
+                            SELECT MIN(""ID"") AS ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""{0}"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") 
+                            WHERE ""Entries"" > 1 ORDER BY ""ID""", tablename);
+
+                    using(var c2 = m_connection.CreateCommand())
+                    {
+                        c2.Transaction = tr;
+                        c2.CommandText = @"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)";
+                        c2.CommandText += string.Format(@"; DELETE FROM ""{0}"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""ID"" != ?", tablename);
+                        using(var rd = cmd.ExecuteReader(sql))
+                            while (rd.Read())
+                                c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(0));
+                    }
+
+                    cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""File"" WHERE ""ID"" NOT IN (SELECT ""ID"" FROM ""{0}"") ", tablename));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}-Ix"" ON  ""{0}"" (""ID"", ""MetadataID"")", tablename));
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""File"" SET ""MetadataID"" = (SELECT ""MetadataID"" FROM ""{0}"" A WHERE ""A"".""ID"" = ""File"".""ID"") ", tablename));
+                    cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", tablename));
+
+                    cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalar();
                     if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
                         throw new Exception("Repair failed, there are still duplicate metadatahashes!");
@@ -337,14 +360,14 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = tr;
 
-                var sql = @"SELECT COUNT(*) FROM (SELECT ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Duplicates"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") WHERE ""Duplicates"" > 1";
+                var sql_count = @"SELECT COUNT(*) FROM (SELECT ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Duplicates"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") WHERE ""Duplicates"" > 1";
 
-                var x = cmd.ExecuteScalar(sql);
+                var x = cmd.ExecuteScalar(sql_count);
                 if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 0)
                 {
                     m_result.AddMessage("Found duplicate file entries, repairing");
 
-                    sql = @"SELECT ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""Entries"" FROM (
+                    var sql = @"SELECT ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""Entries"" FROM (
                             SELECT MIN(""ID"") AS ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") 
                             WHERE ""Entries"" > 1 ORDER BY ""ID""";
 
@@ -358,7 +381,7 @@ namespace Duplicati.Library.Main.Database
                                 c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(0));
                     }
 
-                    cmd.CommandText = sql;
+                    cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalar();
                     if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
                         throw new Exception("Repair failed, there are still duplicate file entries!");
