@@ -1,3 +1,12 @@
+2014-12-01
+==========
+* Improved metadata collection to include more timestamps and permissions
+* Implemented metadata restore
+* Fixed an issue with interrupted backups attempting to delete a non-existing file
+* Fixed a unique constraint violation on repair
+* Improved the filter rules to prevent including empty folders
+* Fixed an issue where a restore would create empty folders
+
 2014-11-11
 ==========
 * Fixed another broken SQL
