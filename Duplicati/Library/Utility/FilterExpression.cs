@@ -367,27 +367,17 @@ namespace Duplicati.Library.Utility
             IFilter match;
             return Matches(filter, path, out match);
         }
-        
-        /// <summary>
-        /// Utility function to match a filter with a default fall-through value
-        /// </summary>
-        /// <param name="filter">The filter to evaluate</param>
-        /// <param name="path">The path to evaluate</param>
-        /// <param name="match">The filter that matched</param>
-        public static bool Matches(IFilter filter, string path, out IFilter match)
-        {
-            if (filter == null || filter.Empty)
-            {
-                match = null;
-                return true;
-            }
-        
-            bool result;
-            if (filter.Matches(path, out result, out match))
-                return result;
 
-            var includes = false;
-            var excludes = false;
+        /// <summary>
+        /// Examines a list of filters and returns flags indicating if the list contains excludes and includes
+        /// </summary>
+        /// <param name="filter">The filter to examine</param>
+        /// <param name="includes">True if the filter contains includes, false otherwise.</param>
+        /// <param name="excludes">True if the filter contains excludes, false otherwise.</param>
+        public static void AnalyzeFilters(IFilter filter, out bool includes, out bool excludes)
+        {
+            includes = false;
+            excludes = false;
 
             Tuple<bool, bool> cacheLookup;
 
@@ -432,13 +422,36 @@ namespace Duplicati.Library.Utility
                     _matchFallbackLookup[filter] = new Tuple<bool, bool>(includes, excludes);
                 }
             }
+        }
 
+        /// <summary>
+        /// Utility function to match a filter with a default fall-through value
+        /// </summary>
+        /// <param name="filter">The filter to evaluate</param>
+        /// <param name="path">The path to evaluate</param>
+        /// <param name="match">The filter that matched</param>
+        public static bool Matches(IFilter filter, string path, out IFilter match)
+        {
+            if (filter == null || filter.Empty)
+            {
+                match = null;
+                return true;
+            }
+        
+            bool result;
+            if (filter.Matches(path, out result, out match))
+                return result;
+
+            bool includes;
+            bool excludes;
+
+            AnalyzeFilters(filter, out includes, out excludes);
             match = null;
 
             // We have only include filters, we exclude files by default
             if (includes && !excludes)
             {
-                return path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString());
+                return false;
             }
             // Otherwise we include by default
             else

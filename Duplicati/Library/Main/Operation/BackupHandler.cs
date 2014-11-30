@@ -83,7 +83,8 @@ namespace Duplicati.Library.Main.Operation
         {
             private Snapshots.ISnapshotService m_snapshot;
             private FileAttributes m_attributeFilter;
-            private Duplicati.Library.Utility.IFilter m_filter;
+            private Duplicati.Library.Utility.IFilter m_enumeratefilter;
+            private Duplicati.Library.Utility.IFilter m_emitfilter;
             private Options.SymlinkStrategy m_symlinkPolicy;
             private Options.HardlinkStrategy m_hardlinkPolicy;
             private ILogWriter m_logWriter;
@@ -96,12 +97,23 @@ namespace Duplicati.Library.Main.Operation
                 m_snapshot = snapshot;
                 m_attributeFilter = attributeFilter;
                 m_sourcefilter = sourcefilter;
-                m_filter = filter;
+                m_emitfilter = filter;
                 m_symlinkPolicy = symlinkPolicy;
                 m_hardlinkPolicy = hardlinkPolicy;
                 m_logWriter = logWriter;
                 m_hardlinkmap = new Dictionary<string, string>();
                 m_mixinqueue = new Queue<string>();
+
+                bool includes;
+                bool excludes;
+                Library.Utility.FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                if (includes && !excludes)
+                {
+                    m_enumeratefilter = Library.Utility.FilterExpression.Combine(filter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
+                }
+                else
+                    m_enumeratefilter = m_emitfilter;
+
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -177,7 +189,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                             
                 Library.Utility.IFilter match;
-                if (!Library.Utility.FilterExpression.Matches(m_filter, path, out match))
+                if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
                 {
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
@@ -209,12 +221,16 @@ namespace Duplicati.Library.Main.Operation
                 return true;
             }
 
-            public IEnumerable<string> EnumerateFilesAndFolders(Snapshots.ISnapshotService snapshot)
+            public IEnumerable<string> EnumerateFilesAndFolders()
             {
-                foreach(var s in snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
                 {
                     while (m_mixinqueue.Count > 0)
                         yield return m_mixinqueue.Dequeue();
+
+                    Library.Utility.IFilter m;
+                    if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
+                        continue;
 
                     yield return s;
                 }
@@ -223,7 +239,7 @@ namespace Duplicati.Library.Main.Operation
                     yield return m_mixinqueue.Dequeue();
             }
 
-            public IEnumerable<string> Mixin(IEnumerable<string> list, Snapshots.ISnapshotService snapshot)
+            public IEnumerable<string> Mixin(IEnumerable<string> list)
             {
                 foreach(var s in list.Where(x => {
                     var fa = FileAttributes.Normal;
@@ -242,7 +258,6 @@ namespace Duplicati.Library.Main.Operation
                 while (m_mixinqueue.Count > 0)
                     yield return m_mixinqueue.Dequeue();
             }
-
         }
 
 
@@ -276,7 +291,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders(m_snapshot))
+            foreach(var path in new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders())
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -457,7 +472,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
                                 m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
                                 
-                                foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist, m_snapshot))
+                                foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist))
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
@@ -479,7 +494,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {                                    
-                                foreach(var path in filterhandler.EnumerateFilesAndFolders(m_snapshot))
+                                foreach(var path in filterhandler.EnumerateFilesAndFolders())
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {

@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
 
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options, m_result))
             {
-                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).EnumerateFilesAndFolders(snapshot))
+                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).EnumerateFilesAndFolders())
                 {
                     var fa = FileAttributes.Normal;
                     try { fa = snapshot.GetAttributes(path); }
