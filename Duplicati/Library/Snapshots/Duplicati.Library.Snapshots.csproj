@@ -56,7 +56,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
-    <Compile Include="FileHasChangedException.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />
     <Compile Include="Program.cs" />
