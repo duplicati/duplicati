@@ -464,6 +464,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0"),
                     new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "true", null, null, LC.L("This option is no longer used as metadata is now stored by default")),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, LC.L("Don't store metadata"), LC.L("Use this option to disable the storage of metadata, such as file timestamps. Disabling metadata storage will speed up the backup and restore operations, but does not affect file size much."), "false"),
+                    new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, LC.L("Restore file permissions"), LC.L("By default permissions are not restored as they might prevent you from accessing your files. Use this option to restore the permissions as well."), "false"),
                     new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, "0"),
                     new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, "0"),
                     new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, "0"),
@@ -1336,7 +1337,15 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata"); }
         }
-            
+
+        /// <summary>
+        /// Gets a flag indicating if permissions should be restored
+        /// </summary>
+        public bool RestorePermissions
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-permissions"); }
+        }
+
         /// <summary>
         /// Gets a flag indicating whether this <see cref="Duplicati.Library.Main.Options"/> old memory defaults.
         /// </summary>

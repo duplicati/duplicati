@@ -186,7 +186,7 @@ namespace Duplicati.Library.Snapshots
             return dict;
         }
 
-        public void SetMetadata(string file, Dictionary<string, string> data)
+        public void SetMetadata(string file, Dictionary<string, string> data, bool restorePermissions)
         {
             if (data == null)
                 return;
@@ -196,7 +196,7 @@ namespace Duplicati.Library.Snapshots
             foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:")).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
 
-            if (data.ContainsKey("unix:uid-gid-perm"))
+            if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
             {
                 var parts = data["unix:uid-gid-perm"].Split(new char[] { '-' });
                 if (parts.Length == 3)

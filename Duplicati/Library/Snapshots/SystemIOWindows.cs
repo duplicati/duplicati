@@ -445,7 +445,7 @@ namespace Duplicati.Library.Snapshots
             return dict;
         }
 
-        public void SetMetadata(string path, Dictionary<string, string> data)
+        public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
             var isDirTarget = path.EndsWith(DIRSEP);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
@@ -457,7 +457,7 @@ namespace Duplicati.Library.Snapshots
             else
                 rules = System.IO.File.GetAccessControl(targetpath);
 
-            if (data.ContainsKey("win-ext:accessrules"))
+            if (restorePermissions && data.ContainsKey("win-ext:accessrules"))
             {
                 var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
                 var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));

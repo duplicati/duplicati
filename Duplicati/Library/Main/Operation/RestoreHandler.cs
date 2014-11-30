@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                                     }
 
                                     ms.Position = 0;
-                                    ApplyMetadata(targetpath, ms);
+                                    ApplyMetadata(targetpath, ms, options.RestorePermissions);
                                 }
                             }
                             catch (Exception ex)
@@ -448,7 +448,7 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, System.IO.Stream stream)
+        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions)
         {
             using(var tr = new System.IO.StreamReader(stream))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -484,7 +484,7 @@ namespace Duplicati.Library.Main.Operation
                 if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
                     m_systemIO.SetFileAttributes(targetpath, fa);
 
-                m_systemIO.SetMetadata(path, metadata);
+                m_systemIO.SetMetadata(path, metadata, restorePermissions);
             }
         }
 
@@ -652,7 +652,7 @@ namespace Duplicati.Library.Main.Operation
     						                            	if (!options.Dryrun)
                                                             {
                                                                 if (targetblock.IsMetadata)
-                                                                    ApplyMetadata(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
+                                                                    ApplyMetadata(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size), options.RestorePermissions);
                                                                 else
     	                                                            file.Write(blockbuffer, 0, size);
                                                             }
