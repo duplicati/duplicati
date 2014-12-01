@@ -38,6 +38,9 @@ namespace Duplicati.Library.Backend
         private bool m_hasAutenticated;
         private bool m_forceReauth;
 
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
+
         public File()
         {
         }
@@ -202,14 +205,14 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, System.IO.Stream stream)
         {
             using(System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Utility.Utility.CopyStream(stream, writestream);
+                Utility.Utility.CopyStream(stream, writestream, true, m_copybuffer);
         }
 #endif
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             using (System.IO.FileStream readstream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Utility.Utility.CopyStream(readstream, stream);
+                Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
         public void Put(string remotename, string filename)

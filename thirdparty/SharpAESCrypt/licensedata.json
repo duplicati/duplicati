@@ -1,0 +1,7 @@
+{
+    "name": "SharpAESCrypt",
+    "description": "A C# implementation of the AESCrypt file format ",
+    "link": "https://github.com/kenkendk/sharpaescrypt",
+    "license": "LGPL",
+    "notes": ""
+}

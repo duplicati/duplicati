@@ -304,11 +304,18 @@ $(document).ready(function() {
         $('#edit-dialog-extensions').empty();        
     };
 
+    var uriel = null;
+
     $('#connection-uri-dialog').on( "dialogclose", function( event, ui ) {
+        uriel = null;
         resetform();
     });
 
-    $('#connection-uri-dialog').on( "dialogopen", function( event, ui ) {
+
+
+    $('#connection-uri-dialog').on( "setup-dialog", function( event, el ) {
+        uriel = $(el);
+
         BACKEND_STATE = {};
         $('#edit-uri-form').each(function(i, e) { e.reset(); });
 
@@ -376,7 +383,7 @@ $(document).ready(function() {
                 drop.append(group_others);
 
 
-            BACKEND_STATE.orig_uri = $('#backup-uri').val();
+            BACKEND_STATE.orig_uri = uriel.val();
             BACKEND_STATE.orig_cfg = EDIT_URI.decode_uri(BACKEND_STATE.orig_uri);
             var scheme = BACKEND_STATE.orig_cfg['backend-type'];
 
@@ -585,8 +592,8 @@ $(document).ready(function() {
 
                 var uri = validate_and_return_uri();
                 if (uri != null) {
+                    uriel.val(uri);
                     $( this ).dialog( "close" );
-                    $('#backup-uri').val(uri);
                 }
             } }
         ]

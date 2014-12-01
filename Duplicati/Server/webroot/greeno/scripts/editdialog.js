@@ -417,6 +417,9 @@ $(document).ready(function() {
                     delete dict['Backup']['Settings']['keep-versions'];
                     delete dict['Backup']['Settings']['keep-time'];
                 }
+            },
+            'store-task-config': function(dict, key, el, cfgel) {
+                dict['Backup']['Settings']['store-task-config'] = $(el).val();
             }
         }
     };
@@ -585,6 +588,7 @@ $(document).ready(function() {
 
     $('#backup-uri-label').click(function() {
         $('#connection-uri-dialog').dialog('open');
+        $('#connection-uri-dialog').trigger('setup-dialog', $('#backup-uri'));
     });
 
     var dlg_buttons = $('#edit-dialog').parent().find('.ui-dialog-buttonpane').find('.ui-button');

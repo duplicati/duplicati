@@ -33,7 +33,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:]+)(\:(?<password>[^@]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?(/(?<path>[^\?]*))?(\?(?<query>.+))?");
+        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:]+)(\:(?<password>[^@]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -143,7 +143,7 @@ namespace Duplicati.Library.Utility
                     path = path.Substring("file://".Length);
 
                 if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
-                    try 
+                    try
                     {
                         var fp = System.IO.Path.GetFullPath(path);
                         this.Scheme = "file";
@@ -161,17 +161,23 @@ namespace Duplicati.Library.Utility
                 throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), "url");
             }
                 
-			this.Scheme = m.Groups["scheme"].Value;
-			if (!m.Groups["hostname"].Success && m.Groups["path"].Success)
-			{
-				this.Host = m.Groups["path"].Value;
-				this.Path = "";
-			}
-			else
-			{
-				this.Host = m.Groups["hostname"].Value;
-				this.Path = m.Groups["path"].Success ? m.Groups["path"].Value : "";
-			}
+            this.Scheme = m.Groups["scheme"].Value;
+            var h = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
+
+            var p = m.Groups["path"].Success ? m.Groups["path"].Value : "";
+            if (m.Groups["hostname"].Success && p.StartsWith("/"))
+                p = p.Substring(1);
+
+            // file://c:\test support
+            if (h.Length == 1 && p.StartsWith(":"))
+            {
+                h = h + p;
+                p = "";
+            }
+
+            this.Host = h;
+            this.Path = p;
+
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
             this.Username = m.Groups["username"].Success ? UrlDecode(m.Groups["username"].Value) : null;
             this.Password = m.Groups["password"].Success ? UrlDecode(m.Groups["password"].Value) : null;

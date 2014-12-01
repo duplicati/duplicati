@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Database
             m_insertBlockset.CommandText = string.Format(@"INSERT INTO ""{0}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (?,?,?) ", m_tempblocklist);
             m_insertBlockset.AddParameters(3);
             
-            m_findBlocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Size"" = ? AND ""FullHash"" = ? ";
+            m_findBlocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = ? AND ""FullHash"" = ? ";
             m_findBlocksetCommand.AddParameters(2);
             
             m_findMetadatasetCommand.CommandText = @"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""BlocksetEntry"",""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? ";
@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Database
             m_insertBlockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (?,?,?)";
             m_insertBlockCommand.AddParameters(3);
             
-            m_insertDuplicateBlockCommand.CommandText = @"INSERT INTO ""DuplicateBlock"" (""Hash"", ""Size"", ""VolumeID"") VALUE (?,?,?)";
+            m_insertDuplicateBlockCommand.CommandText = @"INSERT INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
             m_insertDuplicateBlockCommand.AddParameters(3);
 
             if (options.BlockHashLookupMemory > 0)
@@ -202,7 +202,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             var hash = rd.GetValue(0).ToString();
                             var size = Convert.ToInt64(rd.GetValue(1));
-                            m_blockHashLookup.Add(hash, size, -1);
+                            m_blockHashLookup.TryAdd(hash, size, -1);
                         }
                 }                
                                                 

@@ -76,11 +76,17 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The last write time of the file</returns>
         public override DateTime GetLastWriteTimeUtc (string file)
         {
-            if (!SystemIOWindows.IsPathTooLong(file))
-                try { return base.GetLastWriteTimeUtc(file); }
-                catch (System.IO.PathTooLongException) { }
+            return m_sysIO.FileGetLastWriteTimeUtc(file);
+        }
 
-            return File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(file));
+        /// <summary>
+        /// Gets the last write time of a given file in UTC
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The last write time of the file</returns>
+        public override DateTime GetCreationTimeUtc (string file)
+        {
+            return m_sysIO.FileGetCreationTimeUtc(file);
         }
 
         /// <summary>
@@ -90,11 +96,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public override System.IO.Stream OpenRead (string file)
         {
-            if (!SystemIOWindows.IsPathTooLong(file))
-                try { return base.OpenRead(file); }
-                catch (System.IO.PathTooLongException) { }
-
-            return File.OpenRead(SystemIOWindows.PrefixWithUNC(file));
+            return m_sysIO.FileOpenRead(file);
         }
 
         /// <summary>
@@ -142,7 +144,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public override Dictionary<string, string> GetMetadata(string file)
         {
-            return null;
+            return m_sysIO.GetMetadata(file);
         }
         
         /// <summary>

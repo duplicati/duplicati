@@ -41,6 +41,9 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="SharpAESCrypt">
+      <HintPath>..\..\..\thirdparty\SharpAESCrypt\SharpAESCrypt.exe</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AESEncryption.cs" />
@@ -49,7 +52,6 @@
     <Compile Include="GPGStreamWrapper.cs" />
     <Compile Include="GPGEncryption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SharpAESCrypt.cs" />
     <Compile Include="Strings\AESEncryption.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

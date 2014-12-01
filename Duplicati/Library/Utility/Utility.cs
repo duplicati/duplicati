@@ -79,15 +79,15 @@ namespace Duplicati.Library.Utility
         /// <param name="source">The stream to read from</param>
         /// <param name="target">The stream to write to</param>
         /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
-        public static void CopyStream(System.IO.Stream source, System.IO.Stream target, bool tryRewindSource)
+        public static void CopyStream(System.IO.Stream source, System.IO.Stream target, bool tryRewindSource, byte[] buf = null)
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
                 catch { }
 
-            byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
-            int read;
+            buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
+            int read;
             while ((read = source.Read(buf, 0, buf.Length)) != 0)
                 target.Write(buf, 0, read);
         }

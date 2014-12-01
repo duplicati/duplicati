@@ -30,6 +30,8 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
         public SkyDrive() { }
 
         public SkyDrive(string url, Dictionary<string, string> options)
@@ -193,7 +195,7 @@ namespace Duplicati.Library.Backend
                             req.ContentType = "application/json";
 
                             using (var reqs = areq.GetRequestStream())
-                                Utility.Utility.CopyStream(ms, reqs);
+                                Utility.Utility.CopyStream(ms, reqs, true, m_copybuffer);
                         }
 
                         using (var resp = (HttpWebResponse)areq.GetResponse())
@@ -302,17 +304,30 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            var id = GetFileID(remotename);
-            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(AccessToken));
-            var req = (HttpWebRequest)WebRequest.Create(url);
-            req.Method = "DELETE";
-
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var resp = (HttpWebResponse)areq.GetResponse())
+            try
             {
-                if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
-                    throw new ProtocolViolationException(string.Format(LC.L("Unexpected error code: {0} - {1}"), resp.StatusCode, resp.StatusDescription));
-                m_fileidCache.Remove(remotename);
+                var id = GetFileID(remotename);
+                var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(AccessToken));
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "DELETE";
+
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
+                        throw new ProtocolViolationException(string.Format(LC.L("Unexpected error code: {0} - {1}"), resp.StatusCode, resp.StatusDescription));
+                    m_fileidCache.Remove(remotename);
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
             }
         }        
             
@@ -369,7 +384,7 @@ namespace Duplicati.Library.Backend
 
             var areq = new Utility.AsyncHttpRequest(req);
             using (var reqs = areq.GetRequestStream())
-                Utility.Utility.CopyStream(stream, reqs);
+                Utility.Utility.CopyStream(stream, reqs, true, m_copybuffer);
 
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
@@ -391,7 +406,7 @@ namespace Duplicati.Library.Backend
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, stream);
+                Utility.Utility.CopyStream(rs, stream, true, m_copybuffer);
         }
 
         #endregion

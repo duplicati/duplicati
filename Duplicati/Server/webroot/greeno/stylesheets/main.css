@@ -15,12 +15,13 @@
 #main-list {
     padding-top: 82px;
     overflow: auto;
+    padding-bottom: 60px;
 }
 
 #main-list-container {
     background-color: #f3f3f3;
     overflow: hidden;
-    min-height: calc(100vh - 82px);
+    /*min-height: calc(100vh - 82px);*/
 }
 
 #main-appname {
@@ -43,9 +44,8 @@
     font-style: italic;
 }
 
-#main-newbackup {
+#main-newbackup, #main-restorebackup {
     color: white;
-    padding: 6px 12px 6px 12px;
     cursor: pointer;
     border-radius: 3px;
     display: inline-block;
@@ -53,7 +53,7 @@
     clear: both;
     float: left;
     margin-top: 40px;
-    margin-bottom: 40px;
+    margin-bottom: 0px;
 }
 
 #main-control-menu {
@@ -77,9 +77,13 @@
     display: inline-block;
 }
 
-.main-backup-entry, #main-newbackup {
+.main-backup-entry, #main-newbackup, #main-restorebackup {
     margin-top: 20px;
     clear: both;
+}
+
+#main-restorebackup {
+    margin-top: 0px;
 }
 
 .main-backup-entry .action-links {
@@ -88,12 +92,12 @@
     padding-left: 0px;
 }
 
-.main-backup-entry ul.hint-text, #main-newbackup > ul.hint-text {
+.main-backup-entry ul.hint-text, #main-newbackup > ul.hint-text, #main-restorebackup > ul.hint-text {
     list-style: none;
     padding: 0px;
     margin: 0px;
 }
-.main-backup-entry ul.hint-text > li, #main-newbackup > ul.hint-text > li {
+.main-backup-entry ul.hint-text > li, #main-newbackup > ul.hint-text > li, #main-restorebackup > ul.hint-text > li {
     display: inline-block;
 }
 
@@ -117,7 +121,7 @@
     padding-right: 5px;
 }
 
-.main-backup-entry .caption-text, #main-newbackup .caption-text {
+.main-backup-entry .caption-text, #main-newbackup .caption-text, #main-restorebackup .caption-text {
     margin-bottom: 10px;
 }
 
@@ -126,11 +130,19 @@
 }
 
 div.main-icon-plus {
-    width: 23px;
-    height: 23px;
+    width: 24px;
+    height: 24px;
     display: block;
     background-repeat: no-repeat;
     background-image: url('../images/plus.png');
+}
+
+div.main-icon-restore {
+    width: 24px;
+    height: 24px;
+    display: block;
+    background-repeat: no-repeat;
+    background-image: url('../images/restore.png');
 }
 
 .main-icon-clock {
@@ -155,22 +167,22 @@ div.main-icon-plus {
 }
 
 .main-icon-pause {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background-repeat: no-repeat;
     background-image: url('../images/pause.png');
 }
 
 .main-icon-run {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background-repeat: no-repeat;
     background-image: url('../images/play.png');
 }
 
 .main-icon-settings {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background-repeat: no-repeat;
     background-image: url('../images/menu-grey.png');
 }
@@ -182,22 +194,27 @@ div.main-icon-plus {
     background-image: url('../images/small-close');
 }
 
-#main-newbackup .main-icon-plus {
+#main-newbackup .main-icon-plus, #main-restorebackup .main-icon-restore {
     display: inline-block;
 }
 
 .main-backup-control {
     display: block;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     margin-left: 0px;
     margin-top: 4px;
     position: absolute;
-    background-image: url('../images/menu-grey.png');
+    background-image: url('../images/menu-grey-small.png');
 }
 
-.main-backup-entry .caption-text, .main-backup-entry ul.hint-text, #main-newbackup > .caption-text, #main-newbackup > ul.hint-text {
+.main-backup-entry .caption-text, .main-backup-entry ul.hint-text, #main-newbackup > .caption-text, #main-newbackup > ul.hint-text, #main-restorebackup > .caption-text, #main-restorebackup > ul.hint-text {
     margin-left: 42px;
+}
+
+.main-backup-action-buttons > .caption-text {
+    font-size: 14pt;
+    margin-top: 4px;
 }
 
 .main-button-add-text {
@@ -449,3 +466,49 @@ textarea.pre-style-text, .pre-style-text {
     margin-top: 10px;
 }
 
+#backup-context-menu > li > u {
+    text-decoration: none;
+}
+
+#backup-context-menu > li > u > b {
+    padding: 0.4em;
+    padding-top: 2px;
+    color: #7f7f7f;
+}
+
+/* 
+*	custom CSS
+*/
+
+header {
+    position: fixed;
+    width: 100%;
+    z-index: 100;
+}
+
+footer{
+	height: 50px;
+	width: 100%;
+	background-color: #3A5E30;
+	color: #F0F0F0;
+	bottom:0px;
+	position:fixed;
+	border-top: 10px solid #91AA8A;
+    z-index: 100;
+}
+
+a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern:link {
+	color: #F0F0F0;
+}
+
+div.box-duplicati-copy{
+	float:left;
+	margin-left:5px; 
+	text-align: left; 
+}
+
+div.box-visit-us{
+	float:right; 
+	margin-right: 5px;
+	text-align: right;
+}

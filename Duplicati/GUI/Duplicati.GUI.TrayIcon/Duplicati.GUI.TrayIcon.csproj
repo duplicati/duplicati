@@ -208,10 +208,6 @@
       <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
       <Name>Duplicati.CommandLine.BackendTool</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj">
-      <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
-      <Name>Duplicati.CommandLine.Decrypter</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
       <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
       <Name>Duplicati.Library.Backend.GoogleDocs</Name>
@@ -264,7 +260,7 @@
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Service\Duplicati.Service\Duplicati.Service.csproj">
+    <ProjectReference Include="..\..\Service\Duplicati.Service.csproj">
       <Project>{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}</Project>
       <Name>Duplicati.Service</Name>
     </ProjectReference>

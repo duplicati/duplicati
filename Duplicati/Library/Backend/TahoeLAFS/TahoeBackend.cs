@@ -31,6 +31,7 @@ namespace Duplicati.Library.Backend
     {
         private string m_url;
         private bool m_useSSL = false;
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private class TahoeEl
         {
@@ -223,11 +224,21 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename, "");
-            req.Method = "DELETE";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (areq.GetResponse())
-            { }
+            try
+            {
+                System.Net.HttpWebRequest req = CreateRequest(remotename, "");
+                req.Method = "DELETE";
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (areq.GetResponse())
+                { }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
+            }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -270,7 +281,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, s);
+                    Utility.Utility.CopyStream(stream, s, true, m_copybuffer);
 
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -303,7 +314,7 @@ namespace Duplicati.Library.Backend
                     throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
                 using (System.IO.Stream s = areq.GetResponseStream())
-                    Utility.Utility.CopyStream(s, stream);
+                    Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
             }
         }
 

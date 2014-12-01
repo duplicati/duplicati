@@ -585,13 +585,15 @@ $(document).ready(function() {
                     var today = dateStamp(now);
                     var yesterday = dateStamp(new Date(new Date().setDate(now.getDate() - 1)));
                     var week = dateStamp(new Date(new Date().setDate(now.getDate() - 7)));
-                    var month = dateStamp(new Date(new Date().setMonth(now.getMonth() - 1)));
+                    var thismonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 1)));
+                    var lastmonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 2)));
 
                     var dateBuckets = [
                         {text:'Today', stamp: today, items: []}, 
                         {text: 'Yesterday', stamp: yesterday, items: []}, 
                         {text: 'This week', stamp: week, items: []}, 
-                        {text: 'This month', stamp: month, items: []}
+                        {text: 'This month', stamp: thismonth, items: []},
+                        {text: 'Last month', stamp: lastmonth, items: []}
                     ];
 
                     var yearBuckets = { };
@@ -604,7 +606,7 @@ $(document).ready(function() {
                         var inserted = false;
 
                         for(var t in dateBuckets) {
-                            if (stamp > dateBuckets[t].stamp) {
+                            if (stamp >= dateBuckets[t].stamp) {
                                 dateBuckets[t].items.push(data[i])
                                 inserted = true;
                                 break;
@@ -721,6 +723,229 @@ $(document).ready(function() {
             }
         });
     });
+
+    $('#restore-direct-uri').watermark('webdavs://user:pass@example.com:995/backup?option=true');
+    $('#restore-direct-encryption-password').watermark('Enter backup passphrase, if any');
+    $('#restore-direct-advanced-options').watermark('Enter one option per line in command-line format, eg. --prefix=backup');
+
+    $('#restore-direct-uri-label').click(function() {
+        $('#connection-uri-dialog').dialog('open');
+        $('#connection-uri-dialog').trigger('setup-dialog', $('#restore-direct-uri'));
+    });
+
+    $('#restore-direct-dialog').dialog({
+        minWidth: 320, 
+        width: $('body').width > 600 ? 320 : 600, 
+        minHeight: 480, 
+        height: 500, 
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Cancel', click: function(event, ui) {
+                $(this).dialog('close');
+            }},
+            { text: 'Connect', click: function(event, ui) {
+                var uri = $('#restore-direct-uri').val();
+                var passphrase = $('#restore-direct-encryption-password').val();
+
+                if (uri == null || uri.trim().length == 1) {
+                    alert('You must supply a connection URI');
+                    return;
+                }
+
+                var options = {};
+                if (passphrase != null && passphrase.trim().length > 0)
+                    options['--passphrase'] = passphrase;
+                else
+                    options['--no-encryption'] = 'true';
+
+                if (!EDIT_URI.parse_extra_options($('#restore-direct-advanced-options'), options))
+                    return;
+
+                var settings = [];
+                for(var k in options)
+                    settings.push({'Name': k, 'Value': options[k]});
+
+                var item = {
+                    'Schedule': null,
+                    'Backup': {
+                        'TargetURL': uri,
+                        'Settings': settings
+                    }
+                };
+
+                var self = this;
+
+                var backupid = null;
+                var taskid = null;
+
+                var isTaskActive = false;
+
+                var handler_for_event;
+                var handler_for_progress;
+
+                var pg = $('<div></div>');
+                pg.progressbar({ value: false });
+
+                var dlg = APP_UTIL.create_modal_wait('Creating database', 'Building local database ... ', function() {
+                    if (confirm('Stop the process ?')) {
+                        APP_DATA.stopTask(taskid, true);
+                        $(document).off('server-state-updated', handler_for_event);
+                        $(document).off('server-progress-updated', handler_for_progress);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+
+                pg.insertAfter(dlg.pgtxt);
+
+                handler_for_progress = function(ev, data) {
+                    if (data.TaskID == taskid) {
+                        pg.progressbar('option', 'value', parseInt(data.OverallProgress * 100));
+                    } else {
+                        pg.progressbar('option', 'value', false);
+                    }
+                };
+
+
+                handler_for_event = function(ev, data) {
+
+                    isTaskActive = data.ActiveTask != null && data.ActiveTask.Item1 == taskid;
+
+                    var active = isTaskActive;
+                    if (!active && data.SchedulerQueueIds)
+                        for(var n in data.SchedulerQueueIds)
+                            active = active || (data.SchedulerQueueIds[n].Item1 == taskid);                
+
+                    if (!active) {
+                        handler_for_progress(null, {OverallProgress: 1, TaskID: taskid});
+
+                        $(document).off('server-state-updated', handler_for_event);
+                        $(document).off('server-progress-updated', handler_for_progress);
+                        APP_DATA.restoreBackup(backupid);
+
+                        dlg.dialog('close');
+                        dlg.remove();
+                        $(self).dialog('close');
+                    }
+                };
+
+                APP_DATA.testConnection(uri, function() {
+                    APP_DATA.addBackup(item, function(data) {
+                        backupid = data.ID;
+
+                        APP_DATA.runRepair(backupid, function(data) {
+                            taskid = data.ID;
+                            $(document).on('server-state-updated', handler_for_event);
+                            $(document).on('server-progress-updated', handler_for_progress);
+
+                        }, function(a,b,msg) {
+                            alert('Failed to connect: ' + msg);
+                            dlg.dialog('close');
+                            dlg.remove();
+                        });
+
+                    }, function(a,b,msg) {
+                        alert('Failed to create a backup set: ' + msg);
+                        dlg.dialog('close');
+                        dlg.remove();
+                    }, {'temporary': true});
+                }, function(a,b,msg) {
+                    alert('Failed to connect: ' + msg);
+                    dlg.dialog('close');
+                    dlg.remove();
+                });
+
+            }}
+        ]
+    });
+
+    $('#restore-direct-options-dialog').dialog({
+        minWidth: 320,
+        width: $('body').width > 600 ? 320 : 600,
+        minHeight: 480,
+        height: 500,
+        modal: true,
+        autoOpen: false,
+        closeOnEscape: true,
+        buttons: [
+            { text: 'Close', disabled: false, click: function(event, ui) {
+                $(this).dialog('close');
+            }}
+        ]
+    });
+
+    $('#restore-direct-options-link').click(function() {
+        APP_DATA.getServerConfig(function(data) {
+            $('#restore-direct-options-dialog').dialog('open');
+
+            var baseOpts = data.Options;
+
+            for(var n in data.BackendModules)
+                baseOpts = baseOpts.concat(data.BackendModules[n].Options);
+
+            for(var n in data.CompressionModules)
+                baseOpts = baseOpts.concat(data.CompressionModules[n].Options);
+
+            for(var n in data.EncryptionModules)
+                baseOpts = baseOpts.concat(data.EncryptionModules[n].Options);
+
+            for(var n in data.GenericModules)
+                baseOpts = baseOpts.concat(data.GenericModules[n].Options);
+
+
+            $('#restore-direct-options-dialog').trigger('configure', { Options: baseOpts, callback: function(id) {
+                $('#restore-direct-options-dialog').dialog('close');
+
+                var txt = $('#restore-direct-advanced-options').val().trim();
+                if (txt.length > 0)
+                    txt += '\n';
+
+                var defaultvalue = '';
+                for(var o in data.Options)
+                    if (data.Options[o].Name == id) {
+                        defaultvalue = data.Options[o].DefaultValue;
+                        break;
+                    }
+
+
+                txt += '--' + id + '=' + defaultvalue;
+                $('#restore-direct-advanced-options').val('').val(txt);
+                $('#restore-direct-advanced-options').focus();
+
+            }});
+        }, function() {
+        });
+    });    
+
+    $('#restore-direct-options-dialog').on('configure', function(e, data) {
+        $('#restore-direct-options-dialog').empty();
+
+        var s = data.Options.sort(function(a, b){
+            if (a == null)
+                return -1;
+            if (b == null)
+                return 1;
+            if (a == null && b == null)
+                return 0;
+
+            if(a.Name < b.Name) return -1;
+            if(a.Name > b.Name) return 1;
+            return 0;
+        });
+
+        //Fill with jQuery template
+        $.tmpl($('#backup-option-template'), s).prependTo($('#restore-direct-options-dialog'));
+        $('#restore-direct-options-dialog').find('.backup-option-link').click(function(e) {
+            data.callback(e.target.id);
+        });
+
+        $('#restore-direct-options-dialog').find('.backup-option-long').each(function(i, e) {
+            $(e).html(nl2br($(e).html()));
+        });
+    });    
 
    
 });

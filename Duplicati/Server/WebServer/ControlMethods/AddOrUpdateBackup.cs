@@ -123,6 +123,9 @@ namespace Duplicati.Server.WebServer
 
                 if (Duplicati.Library.Utility.Utility.ParseBool(request.Form["temporary"].Value, false))
                 {
+                    using(var tf = new Duplicati.Library.Utility.TempFile())
+                        data.Backup.DBPath = tf;
+
                     Program.DataConnection.RegisterTemporaryBackup(data.Backup);
 
                     bw.OutputOK(new { status = "OK", ID = data.Backup.ID });

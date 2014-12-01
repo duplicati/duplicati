@@ -64,7 +64,18 @@ namespace Duplicati.Server.Database
                 using(var cmd = m_connection.CreateCommand())
                     f(cmd);
         }
-        
+
+        internal Serializable.ImportExportStructure PrepareBackupForExport(IBackup backup)
+        {
+            var scheduleId = GetScheduleIDsFromTags(new string[] { "ID=" + backup.ID });
+            return new Serializable.ImportExportStructure() {
+                    CreatedByVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    Backup = (Database.Backup)backup,
+                    Schedule = (Database.Schedule)(scheduleId.Any() ? GetSchedule(scheduleId.First()) : null),
+                    DisplayNames = SpecialFolders.GetSourceNames(backup)
+                };
+        }
+                
         public string RegisterTemporaryBackup(IBackup backup)
         {
             lock(m_lock)
@@ -360,7 +371,7 @@ namespace Duplicati.Server.Database
                 bool update = item.ID != null;
                 if (!update && item.DBPath == null)
                 {
-                    var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
+                    var folder = Program.DATAFOLDER;
                     if (!System.IO.Directory.Exists(folder))
                         System.IO.Directory.CreateDirectory(folder);
                     
@@ -562,6 +573,7 @@ namespace Duplicati.Server.Database
                     foreach(var n in lst)
                         n.Metadata = GetMetadata(long.Parse(n.ID));
                         
+                    
                     return lst;
                 }
             }

@@ -35,6 +35,8 @@ namespace Duplicati.Library.Backend
         private Google.GData.Client.RequestSettings m_settings = null;
         private Google.GData.Client.ClientLoginAuthenticator m_cla;
 
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
         public GoogleDocs() { }
 
         public GoogleDocs(string url, Dictionary<string, string> options)
@@ -321,6 +323,10 @@ namespace Duplicati.Library.Backend
             catch (Google.GData.Client.CaptchaRequiredException cex)
             {
                 throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                throw new FileMissingException(ex);
             }
             catch
             {
@@ -621,7 +627,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 using (System.IO.Stream s = CreateRequest().Service.Query(new Uri(GetFile(remotename).Url)))
-                    Utility.Utility.CopyStream(s, stream);
+                    Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
             }
             catch (Google.GData.Client.CaptchaRequiredException cex)
             {

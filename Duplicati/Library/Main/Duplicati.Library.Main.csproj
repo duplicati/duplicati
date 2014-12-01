@@ -71,7 +71,6 @@
     <Compile Include="Database\RemoteVolumeEntry.cs" />
     <Compile Include="Database\ExtensionMethods.cs" />
     <Compile Include="Database\LocalDeleteDatabase.cs" />
-    <Compile Include="Database\RestoreIterators.cs" />
     <Compile Include="Database\LocalBugReportDatabase.cs" />
     <Compile Include="Database\LocalRepairDatabase.cs" />
     <Compile Include="Operation\BackupHandler.cs" />
@@ -185,6 +184,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Controller.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Database\Database schema\1. Add index.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -23,13 +23,11 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class ListAffected
     {
-        private string m_backendurl;
         private Options m_options;
         private ListAffectedResults m_result;
 
-        public ListAffected(string backend, Options options, ListAffectedResults result)
+        public ListAffected(Options options, ListAffectedResults result)
         {
-            m_backendurl = backend;
             m_options = options;
             m_result = result;
         }

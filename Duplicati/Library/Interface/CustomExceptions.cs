@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Interface
 {
@@ -42,6 +43,29 @@ namespace Duplicati.Library.Interface
         { }
 
         public FolderMissingException(string message, Exception innerException)
+            : base(message, innerException)
+        { }
+    }
+
+    /// <summary>
+    /// An exception indicating that the requested folder is missing
+    /// </summary>
+    [Serializable]
+    public class FileMissingException : Exception
+    {
+        public FileMissingException()
+            : base(LC.L("The requested file does not exist"))
+        { }
+
+        public FileMissingException(string message)
+            : base(message)
+        { }
+
+        public FileMissingException(Exception innerException)
+            : base(LC.L("The requested file does not exist"), innerException)
+        { }
+
+        public FileMissingException(string message, Exception innerException)
             : base(message, innerException)
         { }
     }

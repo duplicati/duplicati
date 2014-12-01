@@ -367,10 +367,18 @@ namespace Duplicati.Server
                     Program.DataConnection.LogError(null, "Error in updater", obj);
                 };
 
+
                 UpdatePoller = new UpdatePollThread();
-                PurgeTempFilesTimer = new System.Threading.Timer((x) => {
+                DateTime lastPurge = new DateTime(0);
+
+                System.Threading.TimerCallback purgeTempFilesCallback = (x) => {
                     try
                     {
+                        if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
+                            return;
+                        
+                        lastPurge = DateTime.Now;
+
                         foreach(var e in Program.DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
                         {
                             try 
@@ -395,7 +403,17 @@ namespace Duplicati.Server
                     {
                         Program.DataConnection.LogError(null, "Failed during temp file cleanup", ex); 
                     }
-                }, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+                };
+
+                try 
+                {
+                    PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+                } 
+                catch (ArgumentOutOfRangeException aex)
+                {
+                    //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
+                    PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
+                }
                     
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);

@@ -31,10 +31,16 @@ namespace Duplicati.Library.Snapshots
         void DirectoryCreate(string path);
         bool DirectoryExists(string path);
         void DirectorySetLastWriteTimeUtc(string path, DateTime time);
+        void DirectorySetCreationTimeUtc(string path, DateTime time);
+        DateTime DirectoryGetLastWriteTimeUtc(string path);
+        DateTime DirectoryGetCreationTimeUtc(string path);
 
         void FileMove(string source, string target);
         void FileDelete(string path);
         void FileSetLastWriteTimeUtc(string path, DateTime time);
+        void FileSetCreationTimeUtc(string path, DateTime time);
+        DateTime FileGetLastWriteTimeUtc(string path);
+        DateTime FileGetCreationTimeUtc(string path);
         bool FileExists(string path);
         long FileLength(string path);
         Stream FileOpenRead(string path);
@@ -42,12 +48,16 @@ namespace Duplicati.Library.Snapshots
         Stream FileOpenReadWrite(string path);
         Stream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
+        void SetFileAttributes(string path, FileAttributes attributes);
         void CreateSymlink(string symlinkfile, string target, bool asDir);
         string PathGetDirectoryName(string path);
         string PathGetFileName(string path);
         string PathGetExtension(string path);
         string PathChangeExtension(string path, string extension);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
+
+        void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
+        Dictionary<string, string> GetMetadata(string path);
     }
 }
 

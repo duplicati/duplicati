@@ -38,21 +38,15 @@ namespace Duplicati.Library.Main.Operation
 
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options, m_result))
             {
-                foreach(var path in snapshot.EnumerateFilesAndFolders(new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).AttributeFilter))
+                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).EnumerateFilesAndFolders())
                 {
                     var fa = FileAttributes.Normal;
-                    try
-                    {
-                        fa = snapshot.GetAttributes(path);
-                    }
-                    catch
-                    {
-                    }
+                    try { fa = snapshot.GetAttributes(path); }
+                    catch { }
                     
                     if (storeSymlinks && ((fa & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
                     {
-                        m_result.AddVerboseMessage("Including symlink: {0}", path);
-                    
+                        m_result.AddVerboseMessage("Storing symlink: {0}", path);
                     }
                     else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)
                     {

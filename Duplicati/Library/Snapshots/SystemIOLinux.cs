@@ -17,12 +17,18 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Snapshots
 {
     public struct SystemIOLinux : ISystemIO
     {
+        /// <summary>
+        /// A frequently used char-as-string
+        /// </summary>
+        private static readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
+
         #region ISystemIO implementation
         public void DirectoryDelete(string path)
         {
@@ -47,6 +53,21 @@ namespace Duplicati.Library.Snapshots
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
             File.SetLastWriteTimeUtc(path, time);
+        }
+
+        public void FileSetCreationTimeUtc(string path, DateTime time)
+        {
+            File.SetCreationTimeUtc(path, time);
+        }
+
+        public DateTime FileGetLastWriteTimeUtc(string path)
+        {
+            return File.GetLastWriteTimeUtc(path);
+        }
+
+        public DateTime FileGetCreationTimeUtc(string path)
+        {
+            return File.GetCreationTimeUtc(path);
         }
 
         public bool FileExists(string path)
@@ -77,6 +98,11 @@ namespace Duplicati.Library.Snapshots
         public FileAttributes GetFileAttributes(string path)
         {
             return File.GetAttributes(path);
+        }
+
+        public void SetFileAttributes(string path, FileAttributes attributes)
+        {
+            File.SetAttributes(path, attributes);
         }
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
@@ -114,6 +140,21 @@ namespace Duplicati.Library.Snapshots
             Directory.SetLastWriteTimeUtc(path, time);
         }
 
+        public void DirectorySetCreationTimeUtc(string path, DateTime time)
+        {
+            Directory.SetCreationTimeUtc(path, time);
+        }
+
+        public DateTime DirectoryGetLastWriteTimeUtc(string path)
+        {
+            return Directory.GetLastWriteTimeUtc(path);
+        }
+
+        public DateTime DirectoryGetCreationTimeUtc(string path)
+        {
+            return Directory.GetCreationTimeUtc(path);
+        }
+
         public void FileMove(string source, string target)
         {
             File.Move(source, target);
@@ -127,6 +168,57 @@ namespace Duplicati.Library.Snapshots
         public void DirectoryDelete(string path, bool recursive)
         {
             Directory.Delete(path, recursive);
+        }
+
+        public Dictionary<string, string> GetMetadata(string file)
+        {
+            var f = file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file;
+            var n = UnixSupport.File.GetExtendedAttributes(f);
+            var dict = new Dictionary<string, string>();
+            foreach(var x in n)
+                dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
+
+            var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
+            dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
+            dict["unix:owner-name"] = fse.OwnerName;
+            dict["unix:group-name"] = fse.GroupName;
+
+            return dict;
+        }
+
+        public void SetMetadata(string file, Dictionary<string, string> data, bool restorePermissions)
+        {
+            if (data == null)
+                return;
+
+            var f = file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file;
+
+            foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:")).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
+                UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
+
+            if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
+            {
+                var parts = data["unix:uid-gid-perm"].Split(new char[] { '-' });
+                if (parts.Length == 3)
+                {
+                    long uid;
+                    long gid;
+                    long perm;
+
+                    if (long.TryParse(parts[0], out uid) && long.TryParse(parts[1], out gid) && long.TryParse(parts[2], out perm))
+                    {
+                        if (data.ContainsKey("unix:owner-name"))
+                            try { uid = UnixSupport.File.GetUserID(data["unix:owner-name"]); }
+                            catch { }
+
+                        if (data.ContainsKey("unix:group-name"))
+                            try { gid = UnixSupport.File.GetGroupID(data["unix:group-name"]); }
+                            catch { }
+
+                        UnixSupport.File.SetUserGroupAndPermissions(f, uid, gid, perm);
+                    }
+                }
+            }
         }
         #endregion
 

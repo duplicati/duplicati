@@ -1,3 +1,63 @@
+2014-12-01
+==========
+* Improved metadata collection to include more timestamps and permissions
+* Implemented metadata restore
+* Fixed an issue with interrupted backups attempting to delete a non-existing file
+* Fixed a unique constraint violation on repair
+* Improved the filter rules to prevent including empty folders
+* Fixed an issue where a restore would create empty folders
+
+2014-11-11
+==========
+* Fixed another broken SQL
+* Reduced memory allocations
+
+2014-11-06
+==========
+* Fixed a broken SQL
+
+2014-10-31
+==========
+* Fixed the display of restore times so it no longer shows todays backups as last week
+* Updated the login page with something fancier, thanks to @sfahrenholz!
+* Improved handling of files and folders with no date information
+* Fixed a few bugs related to storing metadata
+* Added some auto-healing routines to the repair command
+* Added some better error messages with correction suggestions
+* Improved the speed of backups and restores by a factor of 30
+* Default is now no in-memory lookups with same speed and lower memory footprint
+
+
+2014-10-14
+==========
+* Improved symlink handling
+* Fixed a warning with --send-mail-level
+* Improved support for portable installs
+* Fixed the issue with failed backups due to file://
+* Fixed a problem with recreating the local database
+* Adjusted display to use fixed header and footer
+
+
+2014-08-26
+==========
+* Added an updater tool to allow manual update control for the commandline interface
+* Disabled automatic update for the commandline
+* Fixed a bunch of typos
+* Fixed an issue with temporary files being deleted
+* Improved the tracking of remote files
+* Improved speed of listing the backup fileset times in the UI
+* Added a commandline method for listing what backups depends on a particular remote file
+* Fixed problem with clearing options on server startup
+* Fixed an issue where the S3 dialog did not generate valid URLs
+* Improved filter performance
+* Fixed an issue where the S3 server list occasionally did not drop down
+* Simplified filter logic
+* Implemented direct restore
+* Fixed generating invalid commandline commands on Windows
+* Improved the repair and verify routines for certain errors
+* Fixed handling file:// prefixed paths
+* Added progress indicator for restore and verify
+
 2014-08-16
 ==========
 * Fixed the copyright statement on all assemblies, this should fix some cases where Antivirus would flag it

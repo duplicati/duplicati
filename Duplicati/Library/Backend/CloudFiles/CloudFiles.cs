@@ -46,6 +46,8 @@ namespace Duplicati.Library.Backend
         private string m_authToken = null;
         private string m_authUrl;
 
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
         public CloudFiles()
         {
         }
@@ -207,16 +209,31 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename, "");
+            try
+            {
+                HttpWebRequest req = CreateRequest("/" + remotename, "");
 
-            req.Method = "DELETE";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
-                if ((int)resp.StatusCode >= 300)
-                    throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError , resp);
+                req.Method = "DELETE";
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    if ((int)resp.StatusCode >= 300)
+                        throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError, resp);
+                    else
+                        using (areq.GetResponseStream())
+                        { }
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
                 else
-                    using (areq.GetResponseStream())
-                    { }
+                    throw;
+            }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -286,7 +303,7 @@ namespace Duplicati.Library.Backend
             using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
             {
                 string md5Hash = resp.Headers["ETag"];
-                Utility.Utility.CopyStream(mds, stream);
+                Utility.Utility.CopyStream(mds, stream, true, m_copybuffer);
 
                 if (mds.GetFinalHashString().ToLower() != md5Hash.ToLower())
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
@@ -333,7 +350,7 @@ namespace Duplicati.Library.Backend
                 using (System.IO.Stream s = areq.GetRequestStream())
                 using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
                 {
-                    Utility.Utility.CopyStream(stream, mds);
+                    Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);
                     fileHash = mds.GetFinalHashString();
                 }
 

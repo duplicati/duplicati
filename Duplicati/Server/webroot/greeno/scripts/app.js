@@ -143,6 +143,35 @@ APP_UTIL = {
         });
 
         return values;
+    },
+
+    create_modal_wait: function(title, text, cancel_callback) {
+        var dlg = $('<div></div>').attr('title', title);
+
+        dlg.dialog({
+            autoOpen: true,
+            modal: true,
+            closeOnEscape: false,
+            buttons: [
+                { text: 'Cancel', click: function(event, ui) {
+                    if (!cancel_callback || cancel_callback())
+                    {
+                        dlg.dialog('close');
+                        dlg.remove();
+                    }
+                }}
+            ]
+        });
+
+        dlg.parent().find('.ui-dialog-titlebar-close').remove().first().remove();
+
+        var pgtxt = $('<div></div>');
+        pgtxt.text(text);
+
+        dlg.append(pgtxt);
+        dlg.pgtxt = pgtxt;
+
+        return dlg;
     }
 };
 
@@ -313,6 +342,9 @@ $(document).ready(function() {
         'Restore_DownloadingRemoteFiles': 'Downloading files ...',
         'Restore_PostRestoreVerify': 'Verifying restored files ...',
         'Restore_Complete': 'Finished!',
+        'Recreate_Running': 'Recreating database ...',
+        'Repair_Running': 'Reparing ...',
+        'Verify_Running': 'Verifying ...',
         'Error': 'Error!'
     };
 
@@ -394,7 +426,8 @@ $(document).ready(function() {
                     txt = PRIVATE_DATA.progress_state_text[PRIVATE_DATA.server_progress.lastEvent.Phase] || txt;
                     if (PRIVATE_DATA.server_progress.lastEvent.Phase == 'Backup_WaitForUpload')
                         pg = 1;
-
+                    else if (PRIVATE_DATA.server_progress.lastEvent.OverallProgress > 0)
+                        pg = PRIVATE_DATA.server_progress.lastEvent.OverallProgress;
                 }
 
                 if (pg == -1) {
@@ -956,11 +989,11 @@ $(document).ready(function() {
         );
     };
 
-    APP_DATA.runRepair = function(id) {
+    APP_DATA.runRepair = function(id, callback, errorhandler) {
         serverWithCallback(
             { action: 'send-command', command: 'run-repair', id: id },
-            function() {},
-            function(d,s,m) { alert('Failed to start repair: ' + m); }
+            callback,
+            errorhandler || function(d,s,m) { alert('Failed to start repair: ' + m); }
         );
     };
 
@@ -979,6 +1012,18 @@ $(document).ready(function() {
             function(d,s,m) { alert('Failed to delete local data: ' + m); }
         );
     };
+
+    APP_DATA.restoreDirect = function() {
+        $('#restore-direct-dialog').dialog('open');
+    }
+
+    APP_DATA.testConnection = function (uri, callback, errorhandler) {
+        serverWithCallback(
+            {action: 'test-backend', url: uri}, 
+            callback,
+            errorhandler
+        );
+    }
 
     APP_DATA.hasLoadedAbout = false;
     APP_DATA.hasLoadedChangelog = false;
@@ -1184,7 +1229,10 @@ $(document).ready(function() {
 
     $('#main-newbackup').click(function() {
         APP_DATA.editNewBackup();
+    });
 
+    $('#main-restorebackup').click(function() {
+        APP_DATA.restoreDirect();
     });
 
     $('#edit-dialog').tabs({ active: 0 });
@@ -1310,6 +1358,8 @@ $(document).ready(function() {
     $('#main-control-menu-pause-submenu-1h').click(function() { APP_DATA.pauseServer('1h'); });
 
     $('#main-control-menu-import').click(function() { $('#import-dialog').dialog('open'); });
+    $('#main-control-menu-restore-direct').click(function() { APP_DATA.restoreDirect(); });
+    $('#main-control-menu-add-backup').click(function() { APP_DATA.editNewBackup(); });
 
     var updaterState = {
         state: 'Waiting',

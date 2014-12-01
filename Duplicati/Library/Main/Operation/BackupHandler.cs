@@ -83,23 +83,37 @@ namespace Duplicati.Library.Main.Operation
         {
             private Snapshots.ISnapshotService m_snapshot;
             private FileAttributes m_attributeFilter;
-            private Duplicati.Library.Utility.IFilter m_filter;
+            private Duplicati.Library.Utility.IFilter m_enumeratefilter;
+            private Duplicati.Library.Utility.IFilter m_emitfilter;
             private Options.SymlinkStrategy m_symlinkPolicy;
             private Options.HardlinkStrategy m_hardlinkPolicy;
             private ILogWriter m_logWriter;
             private Dictionary<string, string> m_hardlinkmap;
             private Duplicati.Library.Utility.IFilter m_sourcefilter;
+            private Queue<string> m_mixinqueue;
             
             public FilterHandler(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, ILogWriter logWriter)
             {
                 m_snapshot = snapshot;
                 m_attributeFilter = attributeFilter;
                 m_sourcefilter = sourcefilter;
-                m_filter = filter;
+                m_emitfilter = filter;
                 m_symlinkPolicy = symlinkPolicy;
                 m_hardlinkPolicy = hardlinkPolicy;
                 m_logWriter = logWriter;
                 m_hardlinkmap = new Dictionary<string, string>();
+                m_mixinqueue = new Queue<string>();
+
+                bool includes;
+                bool excludes;
+                Library.Utility.FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                if (includes && !excludes)
+                {
+                    m_enumeratefilter = Library.Utility.FilterExpression.Combine(filter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
+                }
+                else
+                    m_enumeratefilter = m_emitfilter;
+
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -175,7 +189,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                             
                 Library.Utility.IFilter match;
-                if (!Library.Utility.FilterExpression.Matches(m_filter, path, out match))
+                if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
                 {
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
@@ -186,17 +200,66 @@ namespace Duplicati.Library.Main.Operation
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Including path due to filter: {0} => {1}", path, match.ToString());
                 }
-                
-                if (m_symlinkPolicy == Options.SymlinkStrategy.Ignore && (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+
+                var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
+                if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
                 {
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Excluding symlink: {0}", path);
                     return false;
                 }
+
+                if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddVerboseMessage("Storing symlink: {0}", path);
+
+                    m_mixinqueue.Enqueue(path);
+                    return false;
+                }
                                 
                 return true;
             }
+
+            public IEnumerable<string> EnumerateFilesAndFolders()
+            {
+                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                {
+                    while (m_mixinqueue.Count > 0)
+                        yield return m_mixinqueue.Dequeue();
+
+                    Library.Utility.IFilter m;
+                    if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
+                        continue;
+
+                    yield return s;
+                }
+
+                while (m_mixinqueue.Count > 0)
+                    yield return m_mixinqueue.Dequeue();
+            }
+
+            public IEnumerable<string> Mixin(IEnumerable<string> list)
+            {
+                foreach(var s in list.Where(x => {
+                    var fa = FileAttributes.Normal;
+                    try { fa = m_snapshot.GetAttributes(x); }
+                    catch { }
+
+                    return AttributeFilter(null, x, fa);
+                }))
+                {
+                    while (m_mixinqueue.Count > 0)
+                        yield return m_mixinqueue.Dequeue();
+
+                    yield return s;
+                }
+
+                while (m_mixinqueue.Count > 0)
+                    yield return m_mixinqueue.Dequeue();
+            }
         }
+
 
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
@@ -228,7 +291,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in m_snapshot.EnumerateFilesAndFolders(new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).AttributeFilter))
+            foreach(var path in new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders())
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -409,7 +472,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
                                 m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
                                 
-                                foreach(var p in m_options.ChangedFilelist)
+                                foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist))
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
@@ -417,26 +480,13 @@ namespace Duplicati.Library.Main.Operation
                                         break;
                                     }
                                     
-                                    FileAttributes fa = new FileAttributes();
                                     try
                                     {
-                                        fa = m_snapshot.GetAttributes(p);
+                                        this.HandleFilesystemEntry(p, m_snapshot.GetAttributes(p));
                                     }
                                     catch (Exception ex)
                                     {
-                                        m_result.AddWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex);
-                                    }
-    		
-                                    if (filterhandler.AttributeFilter(null, p, fa))
-                                    {                                        
-                                        try
-                                        {
-                                            this.HandleFilesystemEntry(p, fa);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
-                                        }
+                                        m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
                                     }
                                 }
     		
@@ -444,15 +494,19 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {                                    
-                                foreach(var path in m_snapshot.EnumerateFilesAndFolders(filterhandler.AttributeFilter))
+                                foreach(var path in filterhandler.EnumerateFilesAndFolders())
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
                                         m_result.AddMessage("Stopping backup operation on request");
                                         break;
                                     }
+
+                                    var fa = FileAttributes.Normal;
+                                    try { fa = m_snapshot.GetAttributes(path); }
+                                    catch { }
                                     
-                                    this.HandleFilesystemEntry(path, m_snapshot.GetAttributes(path));
+                                    this.HandleFilesystemEntry(path, fa);
                                 }
                                 
                             }
@@ -655,6 +709,51 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
         }
+
+        private Dictionary<string, string> GenerateMetadata(string path, System.IO.FileAttributes attributes)
+        {
+            Dictionary<string, string> metadata;
+
+            if (m_options.StoreMetadata)
+            {
+                metadata = m_snapshot.GetMetadata(path);
+                if (metadata == null)
+                    metadata = new Dictionary<string, string>();
+
+                if (!metadata.ContainsKey("CoreAttributes"))
+                    metadata["CoreAttributes"] = attributes.ToString();
+
+                if (!metadata.ContainsKey("CoreLastWritetime"))
+                {
+                    try
+                    {
+                        metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                    }
+                }
+
+                if (!metadata.ContainsKey("CoreCreatetime"))
+                {
+                    try
+                    {
+                        metadata["CoreCreatetime"] = m_snapshot.GetCreationTimeUtc(path).Ticks.ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                    }
+                }
+            }
+            else
+            {
+                metadata = new Dictionary<string, string>();
+            }
+
+            return metadata;
+        }
         
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
@@ -671,6 +770,16 @@ namespace Duplicati.Library.Main.Operation
                     m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                     m_backend.FlushDbMessages(m_database, null);
                 }
+
+                DateTime lastwrite = new DateTime(0);
+                try 
+                { 
+                    lastwrite = m_snapshot.GetLastWriteTimeUtc(path); 
+                }
+                catch (Exception ex) 
+                {
+                    m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                }
                                             
                 if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
@@ -682,23 +791,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                     {
-                        Dictionary<string, string> metadata;
-    
-                        if (m_options.StoreMetadata)
-                        {
-                            metadata = m_snapshot.GetMetadata(path);
-                            if (metadata == null)
-                                metadata = new Dictionary<string, string>();
-    
-                            if (!metadata.ContainsKey("CoreAttributes"))
-                                metadata["CoreAttributes"] = attributes.ToString();
-                            if (!metadata.ContainsKey("CoreLastWritetime"))
-                                metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
-                        }
-                        else
-                        {
-                            metadata = new Dictionary<string, string>();
-                        }
+                        Dictionary<string, string> metadata = GenerateMetadata(path, attributes);
     
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
@@ -718,15 +811,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
-                        if (metadata == null)
-                            metadata = new Dictionary<string, string>();
-    
-                        if (!metadata.ContainsKey("CoreAttributes"))
-                            metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
-                        metahash = Utility.WrapMetadata(metadata, m_options);
+                        metahash = Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options);
                     }
                     else
                     {
@@ -746,12 +831,10 @@ namespace Duplicati.Library.Main.Operation
                 DateTime scantime = DateTime.UtcNow;
                 // Last scan time
                 DateTime oldScanned;
-                // Last file modification
-                DateTime lastModified = m_snapshot.GetLastWriteTimeUtc(path);
                 var oldId = m_database.GetFileEntry(path, out oldScanned);
 
                 long filestatsize = m_snapshot.GetFileSize(path);
-                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || filestatsize < m_options.SkipFilesLargerThan))
+                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastwrite) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || filestatsize < m_options.SkipFilesLargerThan))
                 {
                     m_result.AddVerboseMessage("Checking file for changes {0}", path);
                     m_result.OpenedFiles++;
@@ -760,16 +843,7 @@ namespace Duplicati.Library.Main.Operation
                     IMetahash metahashandsize;
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
-                        if (metadata == null)
-                            metadata = new Dictionary<string, string>();
-
-                        if (!metadata.ContainsKey("CoreAttributes"))
-                            metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = lastModified.Ticks.ToString();
-
-                        metahashandsize = Utility.WrapMetadata(metadata, m_options);
+                        metahashandsize = Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options);
                     }
                     else
                     {
@@ -1002,7 +1076,9 @@ namespace Duplicati.Library.Main.Operation
             long metadataid;
             bool r = false;
 
-            //TODO: If meta.Size > blocksize...
+            if (meta.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
@@ -1024,7 +1100,9 @@ namespace Duplicati.Library.Main.Operation
             long metadataid;
             bool r = false;
 
-            //TODO: If meta.Size > blocksize...
+            if (meta.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
@@ -1046,13 +1124,14 @@ namespace Duplicati.Library.Main.Operation
             long metadataid;
             long blocksetid;
             
-            //TODO: If metadata.Size > blocksize...
+            if (metadata.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             AddBlockToOutput(metadata.Hash, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
             m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
             m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
 
-            //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
             m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);
         }
 

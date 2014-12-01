@@ -57,6 +57,8 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
             var hashsize = hashalg.HashSize / 8;
 
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Recreate_Running);
+
             //We build a local database in steps.
             using(var restoredb = new LocalRecreateDatabase(dbparent, m_options))
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
@@ -113,10 +115,13 @@ namespace Duplicati.Library.Main.Operation
                 foreach(var fl in remotefiles)
                     volumeIds[fl.File.Name] = restoredb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
 
+
                 //Record all blocksets and files needed
                 using(var tr = restoredb.BeginTransaction())
                 {
                     var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
+                    var progress = 0;
+
                     foreach(var entry in new AsyncDownloader(filelistWork, backend))
                         try
                         {
@@ -126,6 +131,9 @@ namespace Duplicati.Library.Main.Operation
                                 return;
                             }    
                         
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress(((float)progress / filelistWork.Count()) * 0.2f);
+
                             using(var tmpfile = entry.TempFile)
                             {
                                 if (entry.Hash != null && entry.Size > 0)
@@ -178,20 +186,25 @@ namespace Duplicati.Library.Main.Operation
                 //Grab all index files, and update the block table
                 using(var tr = restoredb.BeginTransaction())
                 {
-                    var indexfiles = 
+                    var indexfiles = (
                         from n in remotefiles
                         where n.FileType == RemoteVolumeType.Index
-                        select new RemoteVolume(n.File) as IRemoteVolume;
+                        select new RemoteVolume(n.File) as IRemoteVolume).ToList();
+
+                    var progress = 0;
                                     
-                    foreach(var sf in new AsyncDownloader(indexfiles.ToList(), backend))
+                    foreach(var sf in new AsyncDownloader(indexfiles, backend))
                         try
                         {
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             {
                                 backend.WaitForComplete(restoredb, null);
                                 return;
-                            }    
-                        
+                            }
+
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress((((float)progress / indexfiles.Count) * 0.5f) + 0.2f);
+
                             using(var tmpfile = sf.TempFile)
                             {
                                 if (sf.Hash != null && sf.Size > 0)
@@ -242,6 +255,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // Grab the list matching the pass type
                     var lst = restoredb.GetMissingBlockListVolumes(i).ToList();
+                    var progress = 0;
                     foreach (var sf in new AsyncDownloader(lst, backend))
                     	using (var tmpfile = sf.TempFile)
                         using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
@@ -253,6 +267,9 @@ namespace Duplicati.Library.Main.Operation
                                 return;
                             }    
                             
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
+
                         	var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
                             
                             // Update the block table so we know about the block/volume map

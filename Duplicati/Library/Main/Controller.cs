@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main
         public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args)
         {
             return RunAction(new ListAffectedResults(), (result) => {
-                new Operation.ListAffected(m_backend, m_options, result).Run(args);
+                new Operation.ListAffected(m_options, result).Run(args);
             });
         }
 

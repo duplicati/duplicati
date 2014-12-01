@@ -116,6 +116,11 @@ namespace Duplicati.Library.Main.Database
             samples = Math.Max(1, samples);
             using(var cmd = m_connection.CreateCommand())
             {
+                // Select any broken items
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" = ? OR ""State"" = ?) AND (""Hash"" = """" OR ""Hash"" IS NULL OR ""Size"" < 0) ", RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()))
+                    while (rd.Read())
+                        yield return new RemoteVolume(rd);
+
                 //Grab the max value
                 var max = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"""));
             
@@ -144,7 +149,8 @@ namespace Duplicati.Library.Main.Database
                                             
                 foreach(var f in FilterByVerificationCount(files, samples, max))
                     yield return f;
-                //And finally some block files
+
+                //And finally some block files
                 files.Clear();
                 
                 using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = ? ", RemoteVolumeType.Blocks.ToString()))

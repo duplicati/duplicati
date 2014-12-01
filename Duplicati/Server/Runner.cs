@@ -296,24 +296,28 @@ namespace Duplicati.Server
                         )
                 );
 
+            Func<string, string> appendBackslash = x => x.EndsWith("\\") ? x + "\\" : x;
+            exe = "\"" + appendBackslash(exe) + "\"";
+
             if (Library.Utility.Utility.IsMono)
                 exe = "mono " + exe;
             
+
             cmd.Append(exe);
-            cmd.Append(" backup ");
-            cmd.AppendFormat("\"{0}\"", backup.TargetURL);
-            cmd.Append("\"" + string.Join("\", \"", sources) + "\"");
+            cmd.Append(" backup");
+            cmd.AppendFormat(" \"{0}\"", appendBackslash(backup.TargetURL));
+            cmd.Append(" \"" + string.Join("\" \"", sources.Select(x => appendBackslash(x))) + "\"");
 
             foreach(var opt in options)
-                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + opt.Value + "\"");
+                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + appendBackslash(opt.Value) + "\"");
             
             if (cf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
 
             if (bf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat("--{0}=\"{1}\"", f.Include ? "include" : "exclude", f.Expression);
+                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
 
             return cmd.ToString();
         }
@@ -321,6 +325,10 @@ namespace Duplicati.Server
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
             var backup = data.Backup;
+            Duplicati.Library.Utility.TempFolder tempfolder = null;
+
+            if (backup.Metadata == null)
+                backup.Metadata = new Dictionary<string, string>();
             
             try
             {                
@@ -335,7 +343,10 @@ namespace Duplicati.Server
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
-
+                
+                // Log file is using the internal log-handler 
+                // so we can display output in the GUI as well as log 
+                // into the given file
                 if (options.ContainsKey("log-file"))
                 {
                     var file = options["log-file"];
@@ -350,7 +361,49 @@ namespace Duplicati.Server
 
                     Program.LogHandler.SetOperationFile(file, level);
                 }
-                
+
+                // Pack in the system or task config for easy restore
+                if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
+                {
+                    var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.InvariantCultureIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.InvariantCultureIgnoreCase);
+                    var this_task = Duplicati.Library.Utility.Utility.ParseBool(options["store-task-config"], false);
+
+                    options.Remove("store-task-config");
+
+                    if (all_tasks || this_task)
+                    {
+                        if (tempfolder == null)
+                            tempfolder = new Duplicati.Library.Utility.TempFolder();
+
+                        var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
+                        using(var tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(temppath))
+                        {
+                            object taskdata = null;
+                            if (all_tasks)
+                                taskdata = Program.DataConnection.Backups.Where(x => !x.IsTemporary).Select(x => Program.DataConnection.PrepareBackupForExport(Program.DataConnection.GetBackup(x.ID)));
+                            else
+                                taskdata = new [] { Program.DataConnection.PrepareBackupForExport(data.Backup) };
+
+                            using(var fs = System.IO.File.OpenWrite(tempfile))
+                            using(var sw = new System.IO.StreamWriter(fs, System.Text.Encoding.UTF8))
+                                Serializer.SerializeJson(sw, taskdata, true);
+
+                            tempfile.Protected = true;
+
+                            string controlfiles = null;
+                            options.TryGetValue("control-files", out controlfiles);
+
+                            if (string.IsNullOrWhiteSpace(controlfiles))
+                                controlfiles = tempfile;
+                            else
+                                controlfiles += System.IO.Path.PathSeparator + tempfile;
+
+                            options["control-files"] = controlfiles;
+                        }
+                    }
+                }
+
+                using(tempfolder)
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
                     ((RunnerData)data).Controller = controller;
@@ -365,7 +418,7 @@ namespace Duplicati.Server
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
                                         where !string.IsNullOrWhiteSpace(p)
                                         select p).ToArray();
-                                
+
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
                                 return r;

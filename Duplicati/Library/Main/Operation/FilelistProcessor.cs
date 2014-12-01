@@ -74,7 +74,8 @@ namespace Duplicati.Library.Main.Operation
             public IEnumerable<Volumes.IParsedVolume> ParsedVolumes;
             public IEnumerable<Volumes.IParsedVolume> ExtraVolumes;
             public IEnumerable<RemoteVolumeEntry> MissingVolumes;
-            
+            public IEnumerable<RemoteVolumeEntry> VerificationRequiredVolumes;
+
             public string[] BackupPrefixes { get { return ParsedVolumes.Select(x => x.Prefix).Distinct().ToArray(); } }
         }
 
@@ -163,6 +164,7 @@ namespace Duplicati.Library.Main.Operation
                     lookup[s.File.Name] = s;
                     
             var missing = new List<RemoteVolumeEntry>();
+            var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
             var locallist = database.GetRemoteVolumes();
             foreach(var i in locallist)
             {
@@ -206,13 +208,13 @@ namespace Duplicati.Library.Main.Operation
                         }
                         break;
 
-                     case RemoteVolumeState.Uploaded:
+                    case RemoteVolumeState.Uploaded:
                         if (!remoteFound)
                             missing.Add(i);
                         else if (correctSize)
                             database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Verified, i.Size, i.Hash);
                         else
-                            log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.State, i.Name, r.File.Size, i.Size, i.Hash), null);
+                            missingHash.Add(new Tuple<long, RemoteVolumeEntry>(r.File.Size, i));
 
                         break;
 
@@ -220,7 +222,7 @@ namespace Duplicati.Library.Main.Operation
                         if (!remoteFound)
                             missing.Add(i);
                         else if (!correctSize)
-                            log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.State, i.Name, r.File.Size, i.Size, i.Hash), null);
+                            missingHash.Add(new Tuple<long, RemoteVolumeEntry>(r.File.Size, i));
 
                         break;
                 
@@ -230,8 +232,11 @@ namespace Duplicati.Library.Main.Operation
                 }
 
             }
+
+            foreach(var i in missingHash)
+                log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash), null);
             
-            return new RemoteAnalysisResult() { ParsedVolumes = remotelist, ExtraVolumes = lookup.Values, MissingVolumes = missing };
+            return new RemoteAnalysisResult() { ParsedVolumes = remotelist, ExtraVolumes = lookup.Values, MissingVolumes = missing, VerificationRequiredVolumes = missingHash.Select(x => x.Item2) };
         }
     }    
 }
