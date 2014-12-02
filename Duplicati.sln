@@ -19,8 +19,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Decrypter", "Duplicati\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj", "{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.CloudFiles", "Duplicati\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj", "{1BFAE226-8364-4086-825C-BB83F6F3EE4C}"
@@ -59,7 +57,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localizat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Duplicati\Service\Duplicati.Service\Duplicati.Service.csproj", "{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Duplicati\Service\Duplicati.Service.csproj", "{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
 EndProject
@@ -228,12 +226,6 @@ Global
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Test|Any CPU.Build.0 = Debug|Any CPU
-		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Test|Any CPU.ActiveCfg = Debug|Any CPU
-		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{E7280DCA-7776-4A73-B9B5-41FD77FC8799}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E7280DCA-7776-4A73-B9B5-41FD77FC8799}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7280DCA-7776-4A73-B9B5-41FD77FC8799}.Release|Any CPU.ActiveCfg = Release|Any CPU
