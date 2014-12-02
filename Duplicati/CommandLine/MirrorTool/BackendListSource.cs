@@ -25,7 +25,7 @@ namespace Duplicati.CommandLine.MirrorTool
 {
     public class BackendListSource : IEnumerable<IFileEntry>, IDisposable
     {
-        private readonly string m_backendurl;
+        private readonly Duplicati.Library.Utility.Uri m_backenduri;
         private readonly Options m_options;
         private Tuple<string, IBackend> m_backend;
         private TimeSpan m_drift;
@@ -33,7 +33,7 @@ namespace Duplicati.CommandLine.MirrorTool
 
         public BackendListSource(string url, Options options)
         {
-            m_backendurl = url;
+            m_backenduri = new Duplicati.Library.Utility.Uri(url);
             m_options = options;
         }
 
@@ -102,7 +102,7 @@ namespace Duplicati.CommandLine.MirrorTool
 
         private IBackend GetBackend(string folder)
         {
-            var newurl = m_backendurl + (m_backendurl.EndsWith("/") ? "" : "/") + folder;
+            var newurl = m_backenduri.SetPath(m_backenduri.Path + (string.IsNullOrWhiteSpace(m_backenduri.Path) || m_backenduri.Path.EndsWith("/") ? "" : "/") + folder).ToString();
             if (m_backend != null && m_backend.Item1 != newurl)
                 try
                 {
