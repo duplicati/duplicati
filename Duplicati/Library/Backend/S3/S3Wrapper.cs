@@ -41,11 +41,10 @@ namespace Duplicati.Library.Backend
         public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, bool useRRS, bool useSSL)
         {
             AmazonS3Config cfg = new AmazonS3Config();
-            
-            cfg.CommunicationProtocol = useSSL ? Amazon.S3.Model.Protocol.HTTPS : Amazon.S3.Model.Protocol.HTTP;
-            cfg.ServiceURL = servername;
+
+            cfg.UseHttp = !useSSL;
+            cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
             cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
-            cfg.UseSecureStringForAwsSecretKey = false;
             cfg.BufferSize = (int)Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE;
 
             m_client = new Amazon.S3.AmazonS3Client(awsID, awsKey, cfg);
@@ -62,8 +61,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            using (PutBucketResponse response = m_client.PutBucket(request))
-            { }
+            m_client.PutBucket(request);
         }
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
@@ -71,9 +69,7 @@ namespace Duplicati.Library.Backend
             GetObjectRequest objectGetRequest = new GetObjectRequest();
             objectGetRequest.BucketName = bucketName;
             objectGetRequest.Key = keyName;
-            objectGetRequest.Timeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
-            objectGetRequest.ReadWriteTimeout = System.Threading.Timeout.Infinite;
-            
+
             using(GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
             using(System.IO.Stream s = objectGetResponse.ResponseStream)
             {
@@ -103,16 +99,8 @@ namespace Duplicati.Library.Backend
             objectAddRequest.Key = keyName;
             objectAddRequest.InputStream = source;
             objectAddRequest.StorageClass = m_useRRS ? S3StorageClass.ReducedRedundancy : S3StorageClass.Standard;
-            objectAddRequest.GenerateMD5Digest = false; //We would like this, but cannot read the stream twice :(
 
-            if (!Library.Utility.Utility.IsMono)
-            {
-                objectAddRequest.Timeout = System.Threading.Timeout.Infinite;
-                objectAddRequest.ReadWriteTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
-            }
-
-            using (PutObjectResponse objectAddResponse = m_client.PutObject(objectAddRequest))
-            { }
+            m_client.PutObject(objectAddRequest);
         }
 
         public void DeleteObject(string bucketName, string keyName)
@@ -121,8 +109,7 @@ namespace Duplicati.Library.Backend
             objectDeleteRequest.BucketName = bucketName;
             objectDeleteRequest.Key = keyName;
 
-            using (DeleteObjectResponse objectDeleteResponse = m_client.DeleteObject(objectDeleteRequest))
-            { }
+            m_client.DeleteObject(objectDeleteRequest);
         }
 
         public virtual List<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -145,30 +132,19 @@ namespace Duplicati.Library.Backend
                 if (!string.IsNullOrEmpty(prefix))
                     listRequest.Prefix = prefix;
 
-                using (ListObjectsResponse listResponse = m_client.ListObjects(listRequest))
+                ListObjectsResponse listResponse = m_client.ListObjects(listRequest);
+                isTruncated = listResponse.IsTruncated;
+                filename = listResponse.NextMarker;
+
+                foreach (S3Object obj in listResponse.S3Objects)
                 {
-                    isTruncated = listResponse.IsTruncated;
-                    filename = listResponse.NextMarker;
+                    files.Add(new FileEntry(
+                        obj.Key,
+                        obj.Size,
+                        obj.LastModified,
+                        obj.LastModified
+                    ));
 
-                    foreach (S3Object obj in listResponse.S3Objects)
-                    {
-                        DateTime dt;
-                        if (DateTime.TryParse(obj.LastModified, out dt))
-                            files.Add(new FileEntry(
-                                obj.Key,
-                                obj.Size,
-                                dt,
-                                dt
-                            ));
-                        else
-                            files.Add(new FileEntry(
-                                obj.Key,
-                                obj.Size
-                            ));
-
-                    }
-
-                    //filename = files[files.Count - 1].Name;
                 }
             }
 
@@ -195,8 +171,7 @@ namespace Duplicati.Library.Backend
             copyObjectRequest.DestinationBucket = bucketName;
             copyObjectRequest.DestinationKey = target;
 
-            using (CopyObjectResponse copyObjectResponse = m_client.CopyObject(copyObjectRequest))
-            { }
+            m_client.CopyObject(copyObjectRequest);
 
             DeleteObject(bucketName, source);
         }
