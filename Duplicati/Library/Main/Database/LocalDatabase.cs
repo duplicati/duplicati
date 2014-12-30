@@ -324,8 +324,8 @@ namespace Duplicati.Library.Main.Database
                 deletecmd.Transaction = tr.Parent;
             	var volumeid = GetRemoteVolumeID(name, tr.Parent);
                 
-				// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
+				// If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? OR ""IndexVolumeID"" = ?", volumeid, volumeid);
 				
                 // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" = ?)", volumeid);
