@@ -748,6 +748,24 @@ namespace Duplicati.Library.Main.Database
                     }
             }
         }
+
+        public IRemoteVolume GetRemoteVolumeFromName(string name)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using(var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Name"" = ?", name))
+                if (rd.Read())
+                    return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
+                else
+                    return null;
+        }
+
+        public IEnumerable<string> GetMissingIndexFiles()
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using(var rd = cmd.ExecuteReader(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = ""Blocks"" AND NOT ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"")"))
+                while (rd.Read())
+                    yield return rd.GetValue(0).ToString();
+        }
         
         public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
         {

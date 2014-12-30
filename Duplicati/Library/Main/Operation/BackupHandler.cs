@@ -384,6 +384,43 @@ namespace Duplicati.Library.Main.Operation
                     }                          
                 }
             }
+
+            if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+            {
+                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var hashsize = blockhasher.HashSize / 8;
+
+                foreach(var blockfile in m_database.GetMissingIndexFiles())
+                {
+                    var w = new IndexVolumeWriter(m_options);
+                    w.VolumeID = m_database.RegisterRemoteVolume(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
+
+                    var blockvolume = m_database.GetRemoteVolumeFromName(blockfile);
+                    w.StartVolume(blockvolume.Name);
+                    var volumeid = m_database.GetRemoteVolumeID(blockvolume.Name);
+
+                    foreach(var b in m_database.GetBlocks(volumeid))
+                        w.AddBlock(b.Hash, b.Size);
+
+                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+
+                    if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                        foreach(var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+
+                    w.Close();
+
+                    m_database.AddIndexBlockLink(w.VolumeID, volumeid, null);
+
+                    if (m_options.Dryrun)
+                        m_result.AddDryrunMessage(string.Format("would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize)));
+                    else
+                    {
+                        m_database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                        m_backend.Put(w);
+                    }
+                }
+            }
         }
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
