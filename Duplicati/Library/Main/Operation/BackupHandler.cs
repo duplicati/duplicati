@@ -424,98 +424,29 @@ namespace Duplicati.Library.Main.Operation
                     using(m_backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(m_filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
-                        var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();                        
-                        if (incompleteFilesets.Length != 0)
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
+                        using(new Logging.Timer("PreBackupVerify"))
                         {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                            m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
-                            using(var trn = m_database.BeginTransaction())
+                            try
                             {
-                                var incompleteSet = incompleteFilesets.Last();
-                                var badIds = from n in incompleteFilesets select n.Key;
-                                
-                                var prevs = (from n in m_database.FilesetTimes 
-                                            where 
-                                                n.Key < incompleteSet.Key
-                                                &&
-                                                !badIds.Contains(n.Key)
-                                            orderby n.Key                                                
-                                            select n.Key).ToArray();
-                                            
-                                var prevId = prevs.Length == 0 ? -1 : prevs.Last();
-
-                                FilesetVolumeWriter fsw = null;
-                                try
-                                {
-                                    var s = 1;
-                                    var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                                    var oldFilesetID = incompleteSet.Key;
-                                    
-                                    // Probe for an unused filename
-                                    while (s < 60)
-                                    {
-                                        var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
-                                        if (id < 0)
-                                            break;
-
-                                        fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                                    }
-                                    
-                                    fsw = new FilesetVolumeWriter(m_options, fileTime);
-                                    fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                                    var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
-                                    m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
-                                    m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
-                                    
-                                    m_database.WriteFileset(fsw, trn, newFilesetID);
-                                    
-                                    if (m_options.Dryrun)
-                                    {
-                                        m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
-                                    }
-                                    else
-                                    {
-                                        m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
-                                        
-                                        using(new Logging.Timer("CommitUpdateFilelistVolume"))
-                                            trn.Commit();
-                                        
-                                        m_backend.Put(fsw);
-                                        fsw = null;
-                                    }
-                                }
-                                finally
-                                {
-                                    if (fsw != null)
-                                        try { fsw.Dispose(); }
-                                        catch { fsw = null; }
-                                }                          
+                                if (m_options.NoBackendverification) 
+                                    FilelistProcessor.VerifyLocalList(m_backend, m_options, m_database, m_result.BackendWriter);
+                                else
+                                    FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_result.BackendWriter);
                             }
-                        }
-
-                        if (!m_options.NoBackendverification)
-                        {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
-                            using(new Logging.Timer("PreBackupVerify"))
+                            catch (Exception ex)
                             {
-                                try
+                                if (m_options.AutoCleanup)
                                 {
+                                    m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
+                                    m_result.RepairResults = new RepairResults(m_result);
+                                    new RepairHandler(m_backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
+
+                                    m_result.AddMessage("Backend cleanup finished, retrying verification");
                                     FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_result.BackendWriter);
                                 }
-                                catch (Exception ex)
-                                {
-                                    if (m_options.AutoCleanup)
-                                    {
-                                        m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
-                                        m_result.RepairResults = new RepairResults(m_result);
-                                        new RepairHandler(m_backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
-        		            			
-                                        m_result.AddMessage("Backend cleanup finished, retrying verification");
-                                        FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_result.BackendWriter);
-                                    }
-                                    else
-                                        throw;
-                                }
+                                else
+                                    throw;
                             }
                         }
 
