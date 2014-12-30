@@ -251,47 +251,6 @@ namespace Duplicati.Library.Main.Database
             return new MissingBlockList(volumename, m_connection, transaction);
         }
 
-        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize)
-        {
-            using(var cmd = m_connection.CreateCommand())
-            {
-                var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " + 
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = 5) A, " + 
-                    @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " + 
-                    @" ""B"".""Index"" >= (""A"".""Index"" * ({0}/{1})) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * ({0}/{1})) AND ""C"".""ID"" = ""B"".""BlockID"" " + 
-                    @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
-                    blocksize,
-                    hashsize
-                );
-                    
-                string curHash = null;
-                int index = 0;
-                byte[] buffer = new byte[blocksize];
-                
-                using(var rd = cmd.ExecuteReader(sql))
-                    while (rd.Read())
-                    {
-                        var blockhash = rd.GetValue(0).ToString();
-                        if (blockhash != curHash && curHash != null)
-                        {
-                            yield return new Tuple<string, byte[], int>(curHash, buffer, index);
-                            curHash = null;
-                            index = 0;
-                        }
-                        
-                        var hash = Convert.FromBase64String(rd.GetValue(1).ToString());
-                        Array.Copy(hash, 0, buffer, index, hashsize);
-                        curHash = blockhash;
-                        index += hashsize;
-                    }
-                    
-                if (curHash != null)                    
-                    yield return new Tuple<string, byte[], int>(curHash, buffer, index);
-                    
-                
-            }
-        }
-
         public void FixDuplicateMetahash()
         {
             using(var cmd = m_connection.CreateCommand())
