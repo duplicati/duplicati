@@ -400,41 +400,45 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
                 
                 var fileErrors = 0L;
-                // After all blocks in the files are restored, verify the file hash
-                using(new Logging.Timer("RestoreVerification"))
-                    foreach (var file in database.GetFilesToRestore())
-                    {
-                        try
+
+                if (m_options.PerformRestoredFileVerification)
+                {
+                    // After all blocks in the files are restored, verify the file hash
+                    using(new Logging.Timer("RestoreVerification"))
+                        foreach(var file in database.GetFilesToRestore())
                         {
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            try
                             {
-                                backend.WaitForComplete(database, null);
-                                return;
-                            }
+                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                {
+                                    backend.WaitForComplete(database, null);
+                                    return;
+                                }
                             
-                            result.AddVerboseMessage("Testing restored file integrity: {0}", file.Path);
+                                result.AddVerboseMessage("Testing restored file integrity: {0}", file.Path);
                             
-                            string key;
-                            long size;
-                            using (var fs = m_systemIO.FileOpenRead(file.Path))
-                            {
-                                size = fs.Length;
-                                key = Convert.ToBase64String(filehasher.ComputeHash(fs));
-                            }
+                                string key;
+                                long size;
+                                using(var fs = m_systemIO.FileOpenRead(file.Path))
+                                {
+                                    size = fs.Length;
+                                    key = Convert.ToBase64String(filehasher.ComputeHash(fs));
+                                }
     
-                            if (key != file.Hash)
-                                throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
-                            result.FilesRestored++;
-                            result.SizeOfRestoredFiles += size;
-                        } 
-                        catch (Exception ex)
-                        {
-                            fileErrors++;
-                            result.AddWarning(ex.Message, ex);
-                            if (ex is System.Threading.ThreadAbortException)
-                                throw;
+                                if (key != file.Hash)
+                                    throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
+                                result.FilesRestored++;
+                                result.SizeOfRestoredFiles += size;
+                            }
+                            catch (Exception ex)
+                            {
+                                fileErrors++;
+                                result.AddWarning(ex.Message, ex);
+                                if (ex is System.Threading.ThreadAbortException)
+                                    throw;
+                            }
                         }
-                    }
+                }
                     
                 if (fileErrors > 0 && brokenFiles.Count > 0)
                     m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
