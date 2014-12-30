@@ -271,6 +271,8 @@ namespace Duplicati.Library.Main.Operation
                             m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
 
                         	var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
+
+                            restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
                             
                             // Update the block table so we know about the block/volume map
                             foreach(var h in rd.Blocks)
