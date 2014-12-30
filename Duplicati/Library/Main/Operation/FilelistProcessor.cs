@@ -28,9 +28,53 @@ namespace Duplicati.Library.Main.Operation
         /// Helper method that verifies uploaded volumes and updates their state in the database.
         /// Throws an error if there are issues with the remote storage
         /// </summary>
+        /// <param name="options">The options used</param>
+        /// <param name="database">The database to compare with</param>
+        /// <param name="log">The log instance to use</param>
+        public static void VerifyLocalList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
+        {
+            var locallist = database.GetRemoteVolumes();
+            foreach(var i in locallist)
+            {
+                switch (i.State)
+                {
+                    case RemoteVolumeState.Uploaded:
+                    case RemoteVolumeState.Verified:
+                    case RemoteVolumeState.Deleted:
+                        break;
+
+                    case RemoteVolumeState.Temporary:
+                    case RemoteVolumeState.Deleting:
+                    case RemoteVolumeState.Uploading:
+                        log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
+                        try
+                        {
+                            backend.Delete(i.Name, i.Size, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            log.AddWarning(string.Format("Failed to erase file {0}, treating as deleted: {1}", i.Name, ex.Message), ex);
+                        }
+
+                        break;
+
+                    default:
+                        log.AddWarning(string.Format("unknown state for remote file listed as {0}: {1}", i.State, i.Name), null);
+                        break;
+                }
+
+                backend.FlushDbMessages();
+            }
+        }
+
+        /// <summary>
+        /// Helper method that verifies uploaded volumes and updates their state in the database.
+        /// Throws an error if there are issues with the remote storage
+        /// </summary>
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
+        /// <param name="log">The log instance to use</param>
         public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
 		{
 			var tp = RemoteListAnalysis(backend, options, database, log);
