@@ -333,11 +333,12 @@ namespace Duplicati.Library.Main.Database
                                                 
 				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
 
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery + @" OR ""MetadataID"" IN " + subQuery, volumeid, volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
-				
+
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?)", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
 

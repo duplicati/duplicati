@@ -149,17 +149,6 @@ namespace Duplicati.Library.Main.Database
 
             //Need a temporary table with path/scantime lookups
             m_scantimelookupTablename = "ScanTime-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            var scantableDefinition = @"SELECT ""A"".""FileID"" AS ""FileID"", ""A"".""Scantime"" AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM (SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"" FROM ""FilesetEntry"" GROUP BY ""FilesetEntry"".""FileID"") A, ""File"" WHERE ""File"".""ID"" = ""A"".""FileID""";
-            using(var cmd = m_connection.CreateCommand())
-            {
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + scantableDefinition, m_scantimelookupTablename));
-                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}Index"" ON ""{0}"" (""Path"", ""Scantime"", ""FileID"") ",  m_scantimelookupTablename));
-
-                var tc = cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"") AND ""State"" NOT IN (?, ?, ?, ?);", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
-                if (((tc == null || tc == DBNull.Value) ? 0 : Convert.ToInt64(tc)) > 0)
-                    throw new InvalidDataException("Detected blocks that are not reachable in the block table");
-            }
-
             m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Scantime"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 AND ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
 
@@ -284,6 +273,16 @@ namespace Duplicati.Library.Main.Database
                     }
                                                         
                 m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
+
+                //Need a temporary table with path/scantime lookups
+                var scantableDefinition = @"SELECT ""A"".""FileID"" AS ""FileID"", ""A"".""Scantime"" AS ""Scantime"", ""File"".""Path"" AS ""Path"" FROM (SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", MAX(""FilesetEntry"".""Scantime"") AS ""Scantime"" FROM ""FilesetEntry"" GROUP BY ""FilesetEntry"".""FileID"") A, ""File"" WHERE ""File"".""ID"" = ""A"".""FileID""";
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + scantableDefinition, m_scantimelookupTablename));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}Index"" ON ""{0}"" (""Path"", ""Scantime"", ""FileID"") ",  m_scantimelookupTablename));
+
+                var tc = cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"") AND ""State"" NOT IN (?, ?, ?, ?);", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
+                if (((tc == null || tc == DBNull.Value) ? 0 : Convert.ToInt64(tc)) > 0)
+                    throw new InvalidDataException("Detected blocks that are not reachable in the block table");
+
             }
         }
 
