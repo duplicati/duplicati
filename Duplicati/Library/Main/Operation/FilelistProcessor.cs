@@ -245,6 +245,11 @@ namespace Duplicati.Library.Main.Operation
                             log.AddMessage(string.Format("promoting uploaded complete file from {0} to {2}: {1}", i.State, i.Name, RemoteVolumeState.Uploaded));
                             database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Uploaded, i.Size, i.Hash);
                         }
+                        else if (!remoteFound)
+                        {
+                            log.AddMessage(string.Format("removing missing file listed as {0}: {1}", i.State, i.Name));
+                            database.RemoveRemoteVolume(i.Name, null);
+                        }
                         else
                         {
                             log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
