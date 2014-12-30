@@ -581,6 +581,15 @@ namespace Duplicati.Library.Main.Database
                 		
 	                    throw new InvalidDataException(sb.ToString());
                 	}
+
+                var real_count = cmd.ExecuteScalar(@"SELECT Count(*) FROM ""BlocklistHash""");
+                var unique_count = cmd.ExecuteScalar(@"SELECT Count(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")");
+
+                var real_count_long = (real_count == null || real_count == DBNull.Value) ? 0 : Convert.ToInt64(real_count);
+                var unique_count_long = (unique_count == null || unique_count == DBNull.Value) ? 0 : Convert.ToInt64(unique_count);
+
+                if (real_count_long != unique_count_long)
+                    throw new InvalidDataException(string.Format("Found {0} blocklist hashes, but there should be {1}", real_count_long, unique_count_long));
             }
         }
 
