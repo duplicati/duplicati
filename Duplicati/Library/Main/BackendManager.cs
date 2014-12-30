@@ -837,7 +837,6 @@ namespace Duplicati.Library.Main
 				throw m_lastException;
             
 			item.Close();
-			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 			var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, null);
 			req.LocalTempfile = item.TempFile;
 						
@@ -848,13 +847,14 @@ namespace Duplicati.Library.Main
             
             // As the network link is the bottleneck,
             // we encrypt the dblock volume before the
-            // upload is enqueue (i.e. on the worker thread)
+            // upload is enqueued (i.e. on the worker thread)
             if (m_encryption != null)
                 lock (m_encryptionLock)
                     req.Encrypt(m_encryption, m_statwriter);
                     
             req.UpdateHashAndSize(m_options);
-            
+            m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, req.Size, req.Hash);
+
             // We do not encrypt the dindex volume, because it is small,
             // and may need to be re-written if the dblock upload is retried
 			if (indexfile != null)
@@ -864,6 +864,8 @@ namespace Duplicati.Library.Main
 				req2.LocalTempfile = indexfile.TempFile;
                 req.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, req2);
             }
+
+            m_db.FlushDbMessages(true);
             
             if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
             {
