@@ -521,9 +521,9 @@ namespace Duplicati.Library.Main.Database
                     {
                         rd.GetValues(r);
                         yield return new RemoteVolume(
-                            r[0] == null ? null : r[0].ToString(),
-                            r[1] == null ? null : r[1].ToString(),
-                            r[2] == null ? -1 : Convert.ToInt64(r[2])
+                            r[0] == null || r[0] == DBNull.Value ? null : r[0].ToString(),
+                            r[1] == null || r[1] == DBNull.Value ? null : r[1].ToString(),
+                            r[2] == null || r[2] == DBNull.Value ? -1 : Convert.ToInt64(r[2])
                         );
                     }
                 }
