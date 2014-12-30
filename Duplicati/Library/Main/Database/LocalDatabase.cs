@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.SetParameterValue(4, name);
             var c = m_updateremotevolumeCommand.ExecuteNonQuery();
             if (c != 1)
-            	throw new Exception("Unexpected number of remote volumes detected!");
+                throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
             	
            	if (state == RemoteVolumeState.Deleted)
            		RemoveRemoteVolume(name, transaction);
