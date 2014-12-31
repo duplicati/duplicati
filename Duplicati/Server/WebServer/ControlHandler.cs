@@ -278,7 +278,12 @@ namespace Duplicati.Server.WebServer
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
-            var task = Runner.CreateRestoreTask(bk, filters, time, restoreTarget, overwrite);
+
+            var permissions = Duplicati.Library.Utility.Utility.ParseBool(input["permissions"].Value, false);
+            var skip_metadata = Duplicati.Library.Utility.Utility.ParseBool(input["skip-metadata"].Value, false);
+
+            var task = Runner.CreateRestoreTask(bk, filters, time, restoreTarget, overwrite, permissions, skip_metadata);
+
             Program.WorkThread.AddTask(task);
 
             bw.OutputOK(new { TaskID = task.TaskID });

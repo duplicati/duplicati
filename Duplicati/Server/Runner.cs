@@ -114,7 +114,7 @@ namespace Duplicati.Server
                 filters);
         }
 
-        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite)
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, bool skip_metadata)
         {
             var dict = new Dictionary<string, string>();
             dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
@@ -122,6 +122,10 @@ namespace Duplicati.Server
                 dict["restore-path"] = restoreTarget;
             if (overwrite)
                 dict["overwrite"] = "true";
+            if (restore_permissions)
+                dict["restore-permissions"] = "true";
+            if (skip_metadata)
+                dict["skip-metadata"] = "true";
             
             return CreateTask(
                 DuplicatiOperation.Restore,

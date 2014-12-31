@@ -157,6 +157,9 @@ $(document).ready(function() {
 
                     var overwrite = $('#restore-overwrite-overwrite').is(':checked');
 
+                    var restore_permissions = $('#restore-metadata-permissions').is(':checked');
+                    var skip_metadata = $('#restore-metadata-none').is(':checked');
+
                     if ($('#restore-overwrite-target-other').is(':checked'))
                         restorePath = $('#restore-target-path').val();
 
@@ -167,6 +170,8 @@ $(document).ready(function() {
                             id: backupId,
                             'restore-path': restorePath,
                             'overwrite': overwrite,
+                            'permissions': restore_permissions,
+                            'skip-metadata': skip_metadata,
                             paths: []
                         }
                         for(var p in includeMap[n]) {
@@ -558,6 +563,7 @@ $(document).ready(function() {
         $('#restore-form').each(function(i, e) { e.reset(); });
         $('#restore-overwrite-overwrite').each(function(i, e) { e.checked = true; });
         $('#restore-overwrite-target-original').each(function(i, e) { e.checked = true; });
+        $('#restore-metadata-timestamps').each(function(i, e) { e.checked = true; });
 
         curpage = 0; 
         updatePageNav();

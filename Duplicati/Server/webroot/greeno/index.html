@@ -491,10 +491,19 @@
 	                <div id="restore-target-path-area">
 	                    <input type="text" id="restore-target-path" /><input type="button" id="restore-target-path-browse" class="browse-button" value="..." />
 	                </div>
-	
+
+		            <div class="clearfix"></div>
+
 	                <div id="restore-hint-overwrite" class="hint-text">How do you want to handle existing files?</div>
 	                <div><input id="restore-overwrite-overwrite" type="radio" name="restore-overwrite" value="overwrite" />Overwrite</div>
 	                <div><input id="restore-overwrite-keep" type="radio" name="restore-overwrite" value="keep" />Save different versions with timestamp in file name</div>
+
+		            <div class="clearfix"></div>
+
+	                <div id="restore-hint-metadata" class="hint-text">What metadata should be restored?</div>
+	                <div><input id="restore-metadata-permissions" type="radio" name="restore-metadata" value="permissions" />Permissions and attributes</div>
+	                <div><input id="restore-metadata-timestamps" type="radio" name="restore-metadata" value="timestamps" />Attributes only</div>
+	                <div><input id="restore-metadata-none" type="radio" name="restore-metadata" value="none" />No metadata</div>
 	            </div>
 	
 	            <div id="restore-complete-page">
