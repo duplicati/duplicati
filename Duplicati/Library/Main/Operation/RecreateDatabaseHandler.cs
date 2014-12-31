@@ -255,6 +255,31 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // Grab the list matching the pass type
                     var lst = restoredb.GetMissingBlockListVolumes(i).ToList();
+                    if (lst.Count > 0)
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                                if (m_options.Verbose)
+                                    m_result.AddVerboseMessage("Processing required {0} blocklist volumes: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
+                                else
+                                    m_result.AddMessage(string.Format("Processing required {0} blocklist volumes", lst.Count));
+                                break;
+                            case 1:
+                                if (m_options.Verbose)
+                                    m_result.AddVerboseMessage("Probing {0} candidate blocklist volumes: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
+                                else
+                                    m_result.AddMessage(string.Format("Probing {0} candidate blocklist volumes", lst.Count));
+                                break;
+                            default:
+                                if (m_options.Verbose)
+                                    m_result.AddVerboseMessage("Processing all of the {0} volumes for blocklists: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
+                                else
+                                    m_result.AddMessage(string.Format("Processing all of the {0} volumes for blocklists", lst.Count));
+                                break;
+                        }
+                    }
+
                     var progress = 0;
                     foreach (var sf in new AsyncDownloader(lst, backend))
                     	using (var tmpfile = sf.TempFile)
