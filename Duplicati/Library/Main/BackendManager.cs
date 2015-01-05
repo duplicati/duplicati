@@ -620,7 +620,7 @@ namespace Duplicati.Library.Main
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
@@ -655,7 +655,7 @@ namespace Duplicati.Library.Main
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
-                    using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                    using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                     using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }

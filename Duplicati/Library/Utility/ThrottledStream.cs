@@ -132,7 +132,7 @@ namespace Duplicati.Library.Utility
         {
             m_progresscounter += count;
 
-            DelayIfRequired(true, buffer, ref offset, ref count);
+            DelayIfRequired(false, buffer, ref offset, ref count);
             if (count > 0)
                 m_basestream.Write(buffer, offset, count);
 
