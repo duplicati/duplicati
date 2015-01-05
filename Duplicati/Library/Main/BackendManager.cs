@@ -617,6 +617,8 @@ namespace Duplicati.Library.Main
             m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
+            var begin = DateTime.Now;
+
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
@@ -626,6 +628,9 @@ namespace Duplicati.Library.Main
             }
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
+
+            var duration = DateTime.Now - begin;
+            Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
 
             if (!item.NotTrackedInDb)
 			    m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
@@ -651,6 +656,8 @@ namespace Duplicati.Library.Main
 
             try
             {
+                var begin = DateTime.Now;
+
                 tmpfile = new Library.Utility.TempFile();
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
@@ -661,7 +668,10 @@ namespace Duplicati.Library.Main
                 }
                 else
                     m_backend.Get(item.RemoteFilename, tmpfile);
-                
+
+                var duration = DateTime.Now - begin;
+                Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
+
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = CalculateFileHash(tmpfile) }));
                 m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
