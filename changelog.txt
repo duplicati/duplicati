@@ -1,3 +1,15 @@
+2104-01-05
+==========
+* Added option to avoid verifying restored files
+* Various fixes to prevent broken databases and remote files during interrupted backups
+* Improved the use of uploaded files after an interrupted backup
+* Fixed the throttle-upload and throttle-download options
+* Improved robustness for uses with no remote backend verification
+* Improved recreate database for setups with no dindex files
+* Added automatic generation of missing dindex files
+* Reduced attempts to delete non-existing files
+* Added a checkbox to control restore of permissions in the GUI
+
 2014-12-01
 ==========
 * Improved metadata collection to include more timestamps and permissions
