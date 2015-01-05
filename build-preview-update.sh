@@ -14,6 +14,7 @@ GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest"
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
+XBUILD=/usr/bin/xbuild
 
 if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
     echo "No information in changeinfo file"
@@ -33,8 +34,8 @@ cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.t
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 mono "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
-xbuild /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
-xbuild /p:Configuration=Release Duplicati.sln
+${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+${XBUILD} /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
