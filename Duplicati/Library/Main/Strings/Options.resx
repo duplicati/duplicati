@@ -148,13 +148,13 @@
     <value>By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.</value>
   </data>
   <data name="ThrottledownloadShort" xml:space="preserve">
-    <value>Max number of bytes to download pr. second</value>
+    <value>Max number of kilobytes to download pr. second</value>
   </data>
   <data name="ThrottleuploadLong" xml:space="preserve">
     <value>By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.</value>
   </data>
   <data name="ThrottleuploadShort" xml:space="preserve">
-    <value>Max number of bytes to upload pr. second</value>
+    <value>Max number of kilobytes to upload pr. second</value>
   </data>
   <data name="NoencryptionLong" xml:space="preserve">
     <value>If you store the backups on a local disk, and prefer that they are kept unencrypted, you can turn of encryption completely by using this switch.</value>
