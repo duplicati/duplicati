@@ -117,10 +117,11 @@ namespace Duplicati.Library.Main.Operation
         {
             public IEnumerable<Volumes.IParsedVolume> ParsedVolumes;
             public IEnumerable<Volumes.IParsedVolume> ExtraVolumes;
+            public IEnumerable<Volumes.IParsedVolume> OtherVolumes;
             public IEnumerable<RemoteVolumeEntry> MissingVolumes;
             public IEnumerable<RemoteVolumeEntry> VerificationRequiredVolumes;
 
-            public string[] BackupPrefixes { get { return ParsedVolumes.Select(x => x.Prefix).Distinct().ToArray(); } }
+            public string[] BackupPrefixes { get { return ParsedVolumes.Union(ExtraVolumes).Union(OtherVolumes).Select(x => x.Prefix).Distinct().ToArray(); } }
         }
 
         /// <summary>
@@ -178,16 +179,23 @@ namespace Duplicati.Library.Main.Operation
 
             var remotelist = (from n in rawlist
                                        let p = Volumes.VolumeBase.ParseFilename(n)
-                                       where p != null
+                                        where p != null && p.Prefix == options.Prefix
                                        select p).ToList();
+
+            var otherlist = (from n in rawlist
+                                let p = Volumes.VolumeBase.ParseFilename(n)
+                                where p != null && p.Prefix != options.Prefix
+                                select p).ToList();
+
             var unknownlist = (from n in rawlist
                                         let p = Volumes.VolumeBase.ParseFilename(n)
                                         where p == null
                                         select n).ToList();
+
             var filesets = (from n in remotelist
                                      where n.FileType == RemoteVolumeType.Files orderby n.Time descending
                                      select n).ToList();
-            
+
             log.KnownFileCount = remotelist.Count();
             log.KnownFileSize = remotelist.Select(x => x.File.Size).Sum();
             log.UnknownFileCount = unknownlist.Count();
@@ -204,8 +212,7 @@ namespace Duplicati.Library.Main.Operation
             log.AssignedQuotaSpace = options.QuotaSize;
             
             foreach(var s in remotelist)
-                if (s.Prefix == options.Prefix)
-                    lookup[s.File.Name] = s;
+                lookup[s.File.Name] = s;
                     
             var missing = new List<RemoteVolumeEntry>();
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
@@ -287,7 +294,13 @@ namespace Duplicati.Library.Main.Operation
             foreach(var i in missingHash)
                 log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash), null);
             
-            return new RemoteAnalysisResult() { ParsedVolumes = remotelist, ExtraVolumes = lookup.Values, MissingVolumes = missing, VerificationRequiredVolumes = missingHash.Select(x => x.Item2) };
+            return new RemoteAnalysisResult() { 
+                ParsedVolumes = remotelist, 
+                OtherVolumes = otherlist,
+                ExtraVolumes = lookup.Values, 
+                MissingVolumes = missing, 
+                VerificationRequiredVolumes = missingHash.Select(x => x.Item2) 
+            };
         }
     }    
 }
