@@ -355,6 +355,51 @@ namespace Duplicati.Library.Main.Database
             }
 
         }
+
+        public void FixDuplicateBlocklistHashes()
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using(var tr = m_connection.BeginTransaction())
+            {
+                cmd.Transaction = tr;
+
+                var dup_sql = @"SELECT * FROM (SELECT ""BlocksetID"", ""Index"", COUNT(*) AS ""EC"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"", ""Index"") WHERE ""EC"" > 1";
+
+                var sql_count = @"SELECT COUNT(*) FROM (" + dup_sql + ")";
+
+                var x = cmd.ExecuteScalar(sql_count);
+                if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 0)
+                {
+                    m_result.AddMessage("Found duplicate blocklisthash entries, repairing");
+
+                    var unique_count = cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")");
+                    var unique_count_long = (unique_count == null || unique_count == DBNull.Value) ? 0 : Convert.ToInt64(unique_count);
+
+                    using(var c2 = m_connection.CreateCommand())
+                    {
+                        c2.Transaction = tr;
+                        c2.CommandText = @"DELETE FROM ""BlocklistHash"" WHERE rowid = (SELECT rowid FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? AND ""Index"" = ? LIMIT (?-1))";
+                        using(var rd = cmd.ExecuteReader(dup_sql))
+                            while (rd.Read())
+                                c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(2));
+                    }
+
+                    cmd.CommandText = sql_count;
+                    x = cmd.ExecuteScalar();
+                    if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                        throw new Exception("Repair failed, there are still duplicate file entries!");
+
+                    var real_count = cmd.ExecuteScalar(@"SELECT Count(*) FROM ""BlocklistHash""");
+                    var real_count_long = (real_count == null || real_count == DBNull.Value) ? 0 : Convert.ToInt64(real_count);
+
+                    if (real_count_long != unique_count_long)
+                        throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count_long, real_count_long));
+
+                    m_result.AddMessage("Duplicate file entries repaired succesfully");
+                    tr.Commit();
+                }
+            }
+        }
 	}
 }
 

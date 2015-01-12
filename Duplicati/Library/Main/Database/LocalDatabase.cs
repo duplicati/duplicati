@@ -580,6 +580,7 @@ namespace Duplicati.Library.Main.Database
                 		if (c > 0)
                 			sb.AppendFormat("... and {0} more", c);
                 		
+                        sb.Append(". Run repair to fix it.");
 	                    throw new InvalidDataException(sb.ToString());
                 	}
 
@@ -590,7 +591,7 @@ namespace Duplicati.Library.Main.Database
                 var unique_count_long = (unique_count == null || unique_count == DBNull.Value) ? 0 : Convert.ToInt64(unique_count);
 
                 if (real_count_long != unique_count_long)
-                    throw new InvalidDataException(string.Format("Found {0} blocklist hashes, but there should be {1}", real_count_long, unique_count_long));
+                    throw new InvalidDataException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count_long, unique_count_long));
             }
         }
 

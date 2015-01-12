@@ -390,6 +390,7 @@ namespace Duplicati.Library.Main.Operation
                 db.SetResult(m_result);
                 db.FixDuplicateMetahash();
                 db.FixDuplicateFileentries();
+                db.FixDuplicateBlocklistHashes();
             }
         }
     }
