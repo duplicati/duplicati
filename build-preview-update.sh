@@ -83,7 +83,7 @@ aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.mani
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/rene/latest.manifest"
 
 git add "Updates/build_version.txt"
-git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}\nYou can download this build from: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
+git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"
 
 echo
