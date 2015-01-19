@@ -1,4 +1,11 @@
-2104-01-05
+2014-01-19
+==========
+* Fixed an issue with multiple file prefixes
+* Change the UI to simplify restoring permissions
+* Updated AWSSDK and added the dinCloud provider
+* Fixed an issue where interrupted upload requires a repair
+
+2014-01-05
 ==========
 * Added option to avoid verifying restored files
 * Various fixes to prevent broken databases and remote files during interrupted backups
