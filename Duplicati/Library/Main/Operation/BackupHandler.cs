@@ -594,7 +594,11 @@ namespace Duplicati.Library.Main.Operation
                                     m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
                                     m_blockvolume.Close();
                                     UpdateIndexVolume();
-        	                		        	                		
+
+                                    using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                                        m_transaction.Commit();
+                                    m_transaction = m_database.BeginTransaction();
+
                                     m_backend.Put(m_blockvolume, m_indexvolume);
 
                                     using(new Logging.Timer("CommitUpdateRemoteVolume"))
@@ -641,6 +645,11 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+
+                                    using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                                        m_transaction.Commit();
+                                    m_transaction = m_database.BeginTransaction();
+
                                     m_backend.Put(m_filesetvolume);
         
                                     using(new Logging.Timer("CommitUpdateRemoteVolume"))
@@ -1074,6 +1083,10 @@ namespace Duplicati.Library.Main.Operation
 	                	
 	                	m_backend.FlushDbMessages(m_database, m_transaction);
         				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
+
+                        using(new Logging.Timer("CommitAddBlockToOutputFlush"))
+                            m_transaction.Commit();
+                        m_transaction = m_database.BeginTransaction();
 
                         m_backend.Put(m_blockvolume, m_indexvolume);
                         m_blockvolume = null;
