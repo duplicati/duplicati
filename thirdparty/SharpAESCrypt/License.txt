@@ -488,4 +488,4 @@ convey the exclusion of warranty; and each file should have at least the
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-    Copyright 2010, http://www.hexad.dk, opensource@hexad.dk
+    Copyright 2015, http://www.duplicati.com, info@duplicati.com
