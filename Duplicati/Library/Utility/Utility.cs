@@ -539,15 +539,15 @@ namespace Duplicati.Library.Utility
         public static string FormatSizeString(long size)
         {
             if (size >= 1024 * 1024 * 1024 * 1024L)
-                return string.Format(Strings.Utility.FormatStringTB, (double)size / (1024 * 1024 * 1024 * 1024L));
+                return Strings.Utility.FormatStringTB((double)size / (1024 * 1024 * 1024 * 1024L));
             else if (size >= 1024 * 1024 * 1024)
-                return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024 * 1024));
+                return Strings.Utility.FormatStringGB((double)size / (1024 * 1024 * 1024));
             else if (size >= 1024 * 1024)
-                return string.Format(Strings.Utility.FormatStringMB, (double)size / (1024 * 1024));
+                return Strings.Utility.FormatStringMB((double)size / (1024 * 1024));
             else if (size >= 1024)
-                return string.Format(Strings.Utility.FormatStringKB, (double)size / 1024);
+                return Strings.Utility.FormatStringKB((double)size / 1024);
             else
-                return string.Format(Strings.Utility.FormatStringB, size);
+                return Strings.Utility.FormatStringB(size);
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
@@ -935,7 +935,7 @@ namespace Duplicati.Library.Utility
         {
             DateTime dt;
             if (!DateTime.TryParseExact(str, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
-                throw new Exception(string.Format(Strings.Utility.InvalidDateError, str));
+                throw new Exception(Strings.Utility.InvalidDateError(str));
 
             return dt;
         }

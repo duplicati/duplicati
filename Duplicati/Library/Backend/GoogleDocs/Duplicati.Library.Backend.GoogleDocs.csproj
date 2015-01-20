@@ -65,18 +65,8 @@
   <ItemGroup>
     <Compile Include="GoogleDocs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Strings\GoogleDocs.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>GoogleDocs.resx</DependentUpon>
-    </Compile>
     <Compile Include="TaggedFileEntry.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\GoogleDocs.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>GoogleDocs.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -86,6 +76,10 @@
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

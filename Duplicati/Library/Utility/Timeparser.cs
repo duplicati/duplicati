@@ -75,7 +75,7 @@ namespace Duplicati.Library.Utility
                 string partial = datestring.Substring(previndex, index - previndex).Trim();
                 int factor;
                 if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out factor))
-                    throw new Exception(string.Format(Strings.Timeparser.InvalidIntegerError, partial));
+                    throw new Exception(Strings.Timeparser.InvalidIntegerError(partial));
 
                 factor *= multiplier;
 
@@ -103,13 +103,13 @@ namespace Duplicati.Library.Utility
                         offset = offset.AddYears(factor);
                         break;
                     default:
-                        throw new Exception(string.Format(Strings.Timeparser.InvalidSpecifierError, datestring[index]));
+                        throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index]));
                 }
                 previndex = index + 1;    
             }
 
             if (datestring.Substring(previndex).Trim().Length > 0)
-                throw new Exception(string.Format(Strings.Timeparser.UnparsedDataFragmentError, datestring.Substring(previndex)));
+                throw new Exception(Strings.Timeparser.UnparsedDataFragmentError(datestring.Substring(previndex)));
 
             return offset;
         }

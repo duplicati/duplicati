@@ -233,7 +233,7 @@ namespace Duplicati.Library.Backend
             {
                 if (wex.Response as System.Net.HttpWebResponse != null &&
                         ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict))
-                    throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                    throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                 throw;
             }
@@ -382,7 +382,7 @@ namespace Duplicati.Library.Backend
                 //Convert to better exception
                 if (wex.Response as System.Net.HttpWebResponse != null)
                     if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                        throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                 throw;
             }
@@ -411,7 +411,7 @@ namespace Duplicati.Library.Backend
                 if (wex.Response as System.Net.HttpWebResponse != null)
                 {
                     if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict)
-                        throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                        throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                     if
                     (
@@ -421,7 +421,7 @@ namespace Duplicati.Library.Backend
                         &&
                         m_filenamelist.Contains(remotename)
                     )
-                        throw new Exception(string.Format(Strings.WEBDAV.SeenThenNotFoundError, m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
+                        throw new Exception(Strings.WEBDAV.SeenThenNotFoundError(m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
                 }
 
                 throw;

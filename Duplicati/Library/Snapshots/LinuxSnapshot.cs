@@ -153,7 +153,7 @@ namespace Duplicati.Library.Snapshots
                         p.Kill();
                         p.WaitForExit(5 * 1000); //This should work, and if it does, prevents a race with any cleanup invocations
 
-                        throw new Exception(string.Format(Strings.LinuxSnapshot.ExternalProgramTimeoutError, program, commandline));
+                        throw new Exception(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline));
                     }
 
                     //Build the output string. Since the process has exited, these cannot block
@@ -161,13 +161,13 @@ namespace Duplicati.Library.Snapshots
 
                     //Throw an exception if something went wrong
                     if (p.ExitCode != expectedExitCode)
-                        throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptExitCodeError, p.ExitCode, expectedExitCode, output));
+                        throw new Exception(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output));
 
                     return output;
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.ExternalProgramLaunchError, ex.ToString(), program, commandline));
+                    throw new Exception(Strings.LinuxSnapshot.ExternalProgramLaunchError(ex.ToString(), program, commandline));
                 }
             }
 
@@ -183,23 +183,23 @@ namespace Duplicati.Library.Snapshots
                 System.Text.RegularExpressions.Match m = rex.Match(output);
 
                 if (!m.Success)
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "device", output));
+                    throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("device", output));
 
                 m_device = rex.Match(output).Groups["device"].Value;
 
                 if (string.IsNullOrEmpty(m_device) || m_device.Trim().Length == 0)
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "device", output));
+                    throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("device", output));
 
                 rex = new System.Text.RegularExpressions.Regex("mountpoint=\"(?<mountpoint>[^\"]+)\"");
                 m = rex.Match(output);
 
                 if (!m.Success)
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "mountpoint", output));
+                    throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("mountpoint", output));
 
                 m_mountPoint = rex.Match(output).Groups["mountpoint"].Value;
 
                 if (string.IsNullOrEmpty(m_mountPoint) || m_mountPoint.Trim().Length == 0)
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "mountpoint", output));
+                    throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("mountpoint", output));
 
                 m_mountPoint = Utility.Utility.AppendDirSeparator(m_mountPoint);
             }
@@ -222,12 +222,12 @@ namespace Duplicati.Library.Snapshots
                 System.Text.RegularExpressions.Match m = rex.Match(output);
 
                 if (!m.Success)
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "tmpdir", output));
+                    throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("tmpdir", output));
 
                 m_tmpDir = rex.Match(output).Groups["tmpdir"].Value;
 
                 if (!System.IO.Directory.Exists(m_tmpDir))
-                    throw new Exception(string.Format(Strings.LinuxSnapshot.MountFolderMissingError, m_tmpDir, output));
+                    throw new Exception(Strings.LinuxSnapshot.MountFolderMissingError(m_tmpDir, output));
 
                 m_tmpDir = Utility.Utility.AppendDirSeparator(m_tmpDir);
             }
@@ -243,7 +243,7 @@ namespace Duplicati.Library.Snapshots
                 {
                     string output = ExecuteCommand("remove-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, m_tmpDir), 0);
                     if (System.IO.Directory.Exists(m_tmpDir))
-                        throw new Exception(string.Format(Strings.LinuxSnapshot.MountFolderNotRemovedError, m_tmpDir, output));
+                        throw new Exception(Strings.LinuxSnapshot.MountFolderNotRemovedError(m_tmpDir, output));
 
                     m_tmpDir = null;
                     m_device = null;
@@ -358,7 +358,7 @@ namespace Duplicati.Library.Snapshots
                 foreach (KeyValuePair<string, SnapShot> s in m_entries)
                     sb.AppendFormat("{0} ({1} -> {2}){3}", s.Key, s.Value.MountPoint, s.Value.SnapshotPath, Environment.NewLine);
 
-                throw new InvalidOperationException(string.Format(Strings.LinuxSnapshot.InvalidFilePathError, name, sb.ToString()));
+                throw new InvalidOperationException(Strings.LinuxSnapshot.InvalidFilePathError(name, sb.ToString()));
             }
 
             return best.Value;

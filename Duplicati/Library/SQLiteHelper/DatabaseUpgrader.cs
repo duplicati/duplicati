@@ -129,7 +129,7 @@ namespace Duplicati.Library.SQLiteHelper
             catch(Exception ex)
             {
                 //Hopefully a more explanatory error message
-                throw new Exception(string.Format(Strings.DatabaseUpgrader.DatabaseFormatError, ex.Message), ex);
+                throw new Exception(Strings.DatabaseUpgrader.DatabaseFormatError(ex.Message), ex);
             }
 
 
@@ -145,7 +145,7 @@ namespace Duplicati.Library.SQLiteHelper
 
 
             if (dbversion > versions.Count)
-                throw new Exception(string.Format(Strings.DatabaseUpgrader.InvalidVersionError, dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
+                throw new Exception(Strings.DatabaseUpgrader.InvalidVersionError(dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
 
             if (versions.Count > dbversion)
             {
@@ -182,7 +182,7 @@ namespace Duplicati.Library.SQLiteHelper
                     connection.Close();
                     //Restore the database
                     System.IO.File.Copy(backupfile, sourcefile, true);
-                    throw new Exception(string.Format(Strings.DatabaseUpgrader.UpgradeFailure, cmd.CommandText, ex.Message), ex);
+                    throw new Exception(Strings.DatabaseUpgrader.UpgradeFailure(cmd.CommandText, ex.Message), ex);
                 }
             }
 

@@ -349,7 +349,7 @@ namespace Duplicati.CommandLine
             
 			if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
 			{
-				Console.WriteLine(string.Format(Strings.Program.DeleteCommandNeedsOptions, "delete", string.Join(",", requiredOptions))); 
+				Console.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
 				return 200;
 			}
         
@@ -630,13 +630,13 @@ namespace Duplicati.CommandLine
                 
         private static int PrintWrongNumberOfArguments(List<string> args, int expected)
         {
-            Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
+            Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2(args.Count, expected, args.Select(n => "\"" + n + "\"").ToArray()));
             return 200;
         }
 
         public static int PrintInvalidCommand(string command, List<string> args)
         {
-            Console.WriteLine(Strings.Program.InvalidCommandError, command);
+            Console.WriteLine(Strings.Program.InvalidCommandError(command));
             return 200;
         }
 

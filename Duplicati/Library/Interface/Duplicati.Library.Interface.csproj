@@ -55,41 +55,12 @@
     <Compile Include="IQuotaEnabledBackend.cs" />
     <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Strings\CommandLineArgument.Designer.cs">
-      <DependentUpon>CommandLineArgument.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\Common.Designer.cs">
-      <DependentUpon>Common.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\DataTypes.Designer.cs">
-      <DependentUpon>DataTypes.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="IGenericCallbackModule.cs" />
     <Compile Include="ResultInterfaces.cs" />
     <Compile Include="IWebModule.cs" />
     <Compile Include="IConnectionModule.cs" />
     <Compile Include="IRenameEnabledBackend.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\CommandLineArgument.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>CommandLineArgument.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\Common.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Common.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DataTypes.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DataTypes.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />

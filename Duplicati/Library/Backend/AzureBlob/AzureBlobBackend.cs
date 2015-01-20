@@ -1,5 +1,3 @@
-
-
 #region Disclaimer / License
 // Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk

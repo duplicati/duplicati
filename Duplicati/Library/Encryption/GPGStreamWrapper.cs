@@ -61,7 +61,7 @@ namespace Duplicati.Library.Encryption
                 {
                     string errmsg = m_p.StandardError.ReadToEnd();
                     if (errmsg.Contains("decryption failed:"))
-                        throw new System.Security.Cryptography.CryptographicException(string.Format(Strings.GPGStreamWrapper.DecryptionError, errmsg));
+                        throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(errmsg));
                 }
 
                 m_p.Dispose();

@@ -175,7 +175,7 @@ namespace Duplicati.Library.Backend
                 //Convert to better exception
                 if (wex.Response as System.Net.HttpWebResponse != null)
                     if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new Interface.FolderMissingException(string.Format(Strings.TahoeBackend.MissingFolderError, m_url, wex.Message), wex);
+                        throw new Interface.FolderMissingException(Strings.TahoeBackend.MissingFolderError(m_url, wex.Message), wex);
 
                 throw;
             }
@@ -295,7 +295,7 @@ namespace Duplicati.Library.Backend
                 //Convert to better exception
                 if (wex.Response as System.Net.HttpWebResponse != null)
                     if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new Interface.FolderMissingException(string.Format(Strings.TahoeBackend.MissingFolderError, m_url, wex.Message), wex);
+                        throw new Interface.FolderMissingException(Strings.TahoeBackend.MissingFolderError(m_url, wex.Message), wex);
 
                 throw;
             }

@@ -210,7 +210,7 @@ namespace Duplicati.Server
                     Console.WriteLine(Strings.Program.HelpDisplayDialog);
 
                     foreach(Library.Interface.ICommandLineArgument arg in SupportedCommands)
-                        Console.WriteLine(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription);
+                        Console.WriteLine(Strings.Program.HelpDisplayFormat(arg.Name, arg.LongDescription));
 
                     return;
                 }
@@ -263,12 +263,12 @@ namespace Duplicati.Server
                 {
                     if (writeConsole)
                     {
-                        Console.WriteLine(Strings.Program.StartupFailure, ex.ToString());
+                        Console.WriteLine(Strings.Program.StartupFailure(ex));
                         return;
                     }
                     else
                     {
-                        throw new Exception(Strings.Program.StartupFailure, ex);
+                        throw new Exception(Strings.Program.StartupFailure(ex));
                     }
                 }
 
@@ -307,12 +307,12 @@ namespace Duplicati.Server
                     if (writeConsole)
                     {
                         //The official Mono SQLite provider is also broken with less than 3.6.3
-                        Console.WriteLine(Strings.Program.WrongSQLiteVersion, sqliteVersion, "3.6.3");
+                        Console.WriteLine(Strings.Program.WrongSQLiteVersion(sqliteVersion, "3.6.3"));
                         return;
                     }
                     else
                     {
-                        throw new Exception(string.Format(Strings.Program.WrongSQLiteVersion, sqliteVersion, "3.6.3"));
+                        throw new Exception(Strings.Program.WrongSQLiteVersion(sqliteVersion, "3.6.3"));
                     }
                 }
 
@@ -346,12 +346,12 @@ namespace Duplicati.Server
 
                     if (writeConsole)
                     {
-                        Console.WriteLine(Strings.Program.DatabaseOpenError, ex.Message);
+                        Console.WriteLine(Strings.Program.DatabaseOpenError(ex.Message));
                         return;
                     }
                     else
                     {
-                        throw new Exception(string.Format(Strings.Program.DatabaseOpenError, ex.Message), ex);
+                        throw new Exception(Strings.Program.DatabaseOpenError(ex.Message), ex);
                     }
                 }
 
@@ -450,19 +450,19 @@ namespace Duplicati.Server
             }
             catch (SingleInstance.MultipleInstanceException mex)
             {
-                System.Diagnostics.Trace.WriteLine(string.Format(Strings.Program.SeriousError, mex.ToString()));
+                System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (writeConsole)
-                    Console.WriteLine(Strings.Program.SeriousError, mex.ToString());
+                    Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 else
                     throw mex;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine(string.Format(Strings.Program.SeriousError, ex.ToString()));
+                System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 if (writeConsole)
-                    Console.WriteLine(Strings.Program.SeriousError, ex.ToString());
+                    Console.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 else
-                    throw new Exception(string.Format(Strings.Program.SeriousError, ex.ToString()), ex);
+                    throw new Exception(Strings.Program.SeriousError(ex.ToString()), ex);
             }
             finally
             {

@@ -55,14 +55,10 @@
     <Compile Include="Help.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Strings\Program.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Program.resx</DependentUpon>
-    </Compile>
     <Compile Include="UnitTest.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="ConsoleOutput.cs" />
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
@@ -197,13 +193,6 @@
     </Content>
     <EmbeddedResource Include="help.txt" />
     <Content Include="TrayWarning.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\Program.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Program.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
