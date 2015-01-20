@@ -80,4 +80,30 @@ To enable TLS, use the format smtptls://example.com or tls://example.com. If no 
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
     }
+    internal static class SendJabberMessage {
+        public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
+        public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users seperated with commas"); } }
+        public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
+        public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If a the file exists, the file contents will be used as the message.
+
+In the message, certain tokens are replaced:
+%OPERATIONNAME% - The name of the operation, normally ""Backup""
+%REMOTEURL% - Remote server url
+%LOCALPATH% - The path to the local files or folders involved in the operation (if any)
+
+All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
+        public static string SendxmppusernameShort { get { return LC.L(@"The XMPP username"); } }
+        public static string SendxmppusernameLong { get { return LC.L(@"The username for the account that will send the message, including the hostname. I.e. ""account@jabber.org/Home"""); } }
+        public static string SendxmpppasswordShort { get { return LC.L(@"The XMPP password"); } }
+        public static string SendxmpppasswordLong { get { return LC.L(@"The password for the account that will send the message"); } }
+        public static string SendxmpplevelShort { get { return LC.L(@"The messages to send"); } }
+        public static string SendxmpplevelLong(string success, string warning, string error, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"". 
+You can supply multiple options with a comma seperator, e.g. ""{0},{1}"". The special value ""{3}"" is a shorthand for ""{0},{1},{2}"" and will cause all backup operations to send a message.", success, warning, error, all); }
+        public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
+        public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
+        public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
+        public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messagesß"); } }
+        public static string LoginTimeoutError { get { return LC.L(@"Timeout occured while logging in to jabber server"); } }
+        public static string SendMessageError(string message) { return LC.L(@"Failed to send jabber message: {0}", message); }
+    }
 }
