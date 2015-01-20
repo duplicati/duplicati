@@ -21,6 +21,9 @@ Error message: {0}", error); }
         public static string WebserverPortDescription { get { return LC.L(@"The port the webserver listens on. Multiple values may be supplied with a comma in between."); } }
         public static string WebserverInterfaceDescription { get { return LC.L(@"The interface the webserver listens on. The special values ""*"" and ""any"" means any interface. The special value ""loopback"" means the loopback adapter."); } }
         public static string WebserverPasswordDescription { get { return LC.L(@"The password required to access the webserver. This option is saved so you do not need to set it on each run. Setting an empty value disables the password."); } }
+        public static string PingpongkeepaliveShort { get { return LC.L(@"Enables the ping-pong responder"); } }
+        public static string PingpongkeepaliveLong { get { return LC.L(@"When running as a server, the service daemon must verify that the process is responding. If this option is enabled, the server reads stdin and writes a reply to each line read"); } }
+
     }
     internal static class TaskType {
         public static string FullBackup { get { return LC.L(@"Full backup"); } }
