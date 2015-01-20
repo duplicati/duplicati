@@ -130,7 +130,7 @@ namespace Duplicati.Library.DynamicLoader
                             }
                             catch (Exception ex)
                             {
-                                Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicTypeLoadError, t.FullName, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
+                                Duplicati.Library.Logging.Log.WriteMessage(Strings.DynamicLoader.DynamicTypeLoadError(t.FullName, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
                             }
                     }
                 }

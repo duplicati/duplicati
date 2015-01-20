@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend
             options.TryGetValue(LOCATION_OPTION, out locationConstraint);
 
             if (!string.IsNullOrEmpty(locationConstraint) && euBuckets)
-                throw new Exception(string.Format(Strings.S3Backend.OptionsAreMutuallyExclusiveError, LOCATION_OPTION, EU_BUCKETS_OPTION));
+                throw new Exception(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION));
 
             if (euBuckets)
                 locationConstraint = S3_EU_REGION_NAME;
@@ -177,10 +177,10 @@ namespace Duplicati.Library.Backend
                             m_prefix = m_prefix.Substring(1);
                     }
                     else
-                        throw new Exception(string.Format(Strings.S3Backend.UnableToDecodeBucketnameError, url));
+                        throw new Exception(Strings.S3Backend.UnableToDecodeBucketnameError(url));
                 }
 
-                try { Console.Error.WriteLine(string.Format(Strings.S3Backend.DeprecatedUrlFormat, "s3://" + m_bucket + "/" + m_prefix)); }
+                try { Console.Error.WriteLine(Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); }
                 catch { }
             }
             else
@@ -323,10 +323,10 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"auth-password"}, null),
                     new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
                     new CommandLineArgument(SUBDOMAIN_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3NewStyleDescriptionShort, Strings.S3Backend.S3NewStyleDescriptionLong, "true", null, null, Strings.S3Backend.S3NewStyleDeprecation),
-                    new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false", null, null, string.Format(Strings.S3Backend.S3EurobucketDeprecationDescription, LOCATION_OPTION, S3_EU_REGION_NAME)),
+                    new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false", null, null, Strings.S3Backend.S3EurobucketDeprecationDescription(LOCATION_OPTION, S3_EU_REGION_NAME)),
                     new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false"),
-                    new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, string.Format(Strings.S3Backend.S3ServerNameDescriptionLong, hostnames.ToString()), DEFAULT_S3_HOST),
-                    new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, string.Format(Strings.S3Backend.S3LocationDescriptionLong, locations.ToString())),
+                    new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
+                    new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),

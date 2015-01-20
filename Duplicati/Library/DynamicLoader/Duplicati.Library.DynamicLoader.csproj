@@ -49,17 +49,8 @@
     <Compile Include="EncryptionLoader.cs" />
     <Compile Include="GenericLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Strings\BackendLoader.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>BackendLoader.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\DynamicLoader.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>DynamicLoader.resx</DependentUpon>
-    </Compile>
     <Compile Include="WebLoader.cs" />
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
@@ -74,21 +65,14 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\BackendLoader.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>BackendLoader.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DynamicLoader.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DynamicLoader.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

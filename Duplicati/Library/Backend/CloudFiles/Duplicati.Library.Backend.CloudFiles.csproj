@@ -47,16 +47,7 @@
     <Compile Include="CloudFiles.cs" />
     <Compile Include="MD5CalculatingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Strings\CloudFiles.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>CloudFiles.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\MD5CalculatingStream.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>MD5CalculatingStream.resx</DependentUpon>
-    </Compile>
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
@@ -67,18 +58,10 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\CloudFiles.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>CloudFiles.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\MD5CalculatingStream.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>MD5CalculatingStream.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -97,7 +97,7 @@ namespace Duplicati.Library.Encryption
             catch (System.Security.Cryptography.CryptographicException cex)
             {
                 //Better error message than "Padding is invalid and cannot be removed" :)
-                throw new System.Security.Cryptography.CryptographicException(string.Format(Strings.EncryptionBase.DecryptionError, cex.Message), cex);
+                throw new System.Security.Cryptography.CryptographicException(Strings.EncryptionBase.DecryptionError(cex.Message), cex);
             }
         }
 

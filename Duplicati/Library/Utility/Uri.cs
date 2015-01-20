@@ -158,7 +158,7 @@ namespace Duplicati.Library.Utility
                     catch
                     {
                     }
-                throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), "url");
+                throw new ArgumentException(Strings.Uri.UriParseError(url), "url");
             }
                 
             this.Scheme = m.Groups["scheme"].Value;
@@ -225,7 +225,7 @@ namespace Duplicati.Library.Utility
         public void RequireHost()
         {
             if (string.IsNullOrEmpty(Host))
-                throw new ArgumentException(string.Format(Strings.Uri.NoHostname, OriginalUri));
+                throw new ArgumentException(Strings.Uri.NoHostname(OriginalUri));
         }
         
         /// <summary>

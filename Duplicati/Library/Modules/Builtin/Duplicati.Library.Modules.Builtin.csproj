@@ -52,28 +52,9 @@
     <Compile Include="HttpOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SendMail.cs" />
-    <Compile Include="Strings\ConsolePasswordInput.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>ConsolePasswordInput.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\HttpOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>HttpOptions.resx</DependentUpon>
-    </Compile>
     <Compile Include="RunScript.cs" />
-    <Compile Include="Strings\RunScript.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>RunScript.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\SendMail.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SendMail.resx</DependentUpon>
-    </Compile>
     <Compile Include="SendJabberMessage.cs" />
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -100,24 +81,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup />
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\ConsolePasswordInput.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ConsolePasswordInput.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\HttpOptions.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>HttpOptions.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\RunScript.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>RunScript.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\SendMail.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SendMail.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

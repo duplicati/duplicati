@@ -65,14 +65,14 @@ namespace Duplicati.Library.Main.Operation
             m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 
 			if (m_blockhasher == null)
-				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
+				throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
 			if (m_filehasher == null)
-				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
+				throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
 
             if (!m_blockhasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
+                throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
             if (!m_filehasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
+                throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
                 
             if (options.AllowPassphraseChange)
                 throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
@@ -274,7 +274,7 @@ namespace Duplicati.Library.Main.Operation
                     throw;
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
-                    log.AddWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()), ex);
+                    log.AddWarning(Strings.RSyncDir.SnapshotFailedError(ex.ToString()), ex);
                 }
             }
 

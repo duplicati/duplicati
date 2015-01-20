@@ -98,13 +98,13 @@ namespace Duplicati.Library.Main
 					}
 					catch (Exception ex)
 					{
-						throw new ArgumentException(string.Format(Strings.Controller.InvalidPathError, sources[i], ex.Message), ex);
+						throw new ArgumentException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
 					}
                 	
                     var fi = new System.IO.FileInfo(sources[i]);
                     var di = new System.IO.DirectoryInfo(sources[i]);
                     if (!(fi.Exists || di.Exists) && !m_options.AllowMissingSource)
-                        throw new System.IO.IOException(String.Format(Strings.Controller.SourceIsMissingError, sources[i]));
+                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(sources[i]));
                     
                     if (!fi.Exists)
     					sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
@@ -388,7 +388,7 @@ namespace Duplicati.Library.Main
 
             ValidateOptions(result);
 
-            Library.Logging.Log.WriteMessage(string.Format(Strings.Controller.StartingOperationMessage, m_options.MainAction), Logging.LogMessageType.Information);
+            Library.Logging.Log.WriteMessage(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
         }
 
         /// <summary>
@@ -452,7 +452,7 @@ namespace Duplicati.Library.Main
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
                         if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
-                            log.AddWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, a.Name), null);
+                            log.AddWarning(Strings.Controller.DuplicateOptionNameWarning(a.Name), null);
 
                         supportedOptions[a.Name] = a;
 
@@ -460,7 +460,7 @@ namespace Duplicati.Library.Main
                             foreach (string s in a.Aliases)
                             {
                                 if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
-                                    log.AddWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, s), null);
+                                    log.AddWarning(Strings.Controller.DuplicateOptionNameWarning(s), null);
 
                                 supportedOptions[s] = a;
                             }
@@ -479,7 +479,7 @@ namespace Duplicati.Library.Main
                                     if (a.Name != s)
                                         optname += " (" + s + ")";
 
-                                    log.AddWarning(string.Format(Strings.Controller.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage), null);
+                                    log.AddWarning(Strings.Controller.DeprecatedOptionUsedWarning(optname, a.DeprecationMessage), null);
                                 }
 
                         }
@@ -490,9 +490,9 @@ namespace Duplicati.Library.Main
             foreach (string s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
                     if (disabledModuleOptions.ContainsKey(s))
-                        log.AddWarning(string.Format(Strings.Controller.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]), null);
+                        log.AddWarning(Strings.Controller.UnsupportedOptionDisabledModuleWarning(s, disabledModuleOptions[s]), null);
                     else
-                        log.AddWarning(string.Format(Strings.Controller.UnsupportedOptionWarning, s), null);
+                        log.AddWarning(Strings.Controller.UnsupportedOptionWarning(s), null);
 
             //Look at the value supplied for each argument and see if is valid according to its type
             foreach (string s in ropts.Keys)
@@ -529,25 +529,25 @@ namespace Duplicati.Library.Main
                     }
 
                 if (!found)
-                    return string.Format(Strings.Controller.UnsupportedEnumerationValue, optionname, value, string.Join(", ", arg.ValidValues ?? new string[0]));
+                    return Strings.Controller.UnsupportedEnumerationValue(optionname, value, arg.ValidValues ?? new string[0]);
 
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
             {
                 if (!string.IsNullOrEmpty(value) && Library.Utility.Utility.ParseBool(value, true) != Library.Utility.Utility.ParseBool(value, false))
-                    return string.Format(Strings.Controller.UnsupportedBooleanValue, optionname, value);
+                    return Strings.Controller.UnsupportedBooleanValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
             {
                 long l;
                 if (!long.TryParse(value, out l))
-                    return string.Format(Strings.Controller.UnsupportedIntegerValue, optionname, value);
+                    return Strings.Controller.UnsupportedIntegerValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)
             {
                 foreach (string p in value.Split(System.IO.Path.DirectorySeparatorChar))
                     if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
-                        return string.Format(Strings.Controller.UnsupportedPathValue, optionname, p);
+                        return Strings.Controller.UnsupportedPathValue(optionname, p);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Size)
             {
@@ -557,7 +557,7 @@ namespace Duplicati.Library.Main
                 }
                 catch
                 {
-                    return string.Format(Strings.Controller.UnsupportedSizeValue, optionname, value);
+                    return Strings.Controller.UnsupportedSizeValue(optionname, value);
                 }
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
@@ -568,7 +568,7 @@ namespace Duplicati.Library.Main
                 }
                 catch
                 {
-                    return string.Format(Strings.Controller.UnsupportedTimeValue, optionname, value);
+                    return Strings.Controller.UnsupportedTimeValue(optionname, value);
                 }
             }
 

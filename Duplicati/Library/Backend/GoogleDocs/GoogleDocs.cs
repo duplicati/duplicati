@@ -131,7 +131,7 @@ namespace Duplicati.Library.Backend
             foreach (Google.Documents.Document file in req.GetFolderContent(folder).Entries)
             {
                 if (results.ContainsKey(file.Title))
-                    throw new Exception(string.Format(Strings.GoogleDocs.DuplicateFilenameFoundError, file.Title, folder.Title));
+                    throw new Exception(Strings.GoogleDocs.DuplicateFilenameFoundError(file.Title, folder.Title));
 
                 string updateUrl = null;
                 foreach (Google.GData.Client.AtomLink x in file.AtomEntry.Links)
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Backend
                     for(int i = 0; i < pids.Length; i++)
                         pids[i] = parentlookup[cur.ParentFolders[i]].Title;
 
-                    throw new Exception(string.Format(Strings.GoogleDocs.FolderHasMultipleOwnersError, cur.Title, string.Join(", ", pids)));
+                    throw new Exception(Strings.GoogleDocs.FolderHasMultipleOwnersError(cur.Title, pids));
                 }
 
                 parents.Reverse();
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Backend
 
                 string key = string.Join("/", p);
                 if (dict.ContainsKey(key))
-                    throw new Exception(string.Format(Strings.GoogleDocs.DuplicateFoldernameFoundError, key));
+                    throw new Exception(Strings.GoogleDocs.DuplicateFoldernameFoundError(key));
                 dict.Add(key, d);
             }
             
@@ -285,7 +285,7 @@ namespace Duplicati.Library.Backend
             } 
             catch (Google.GData.Client.CaptchaRequiredException cex) 
             {
-                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+                throw new Exception(Strings.GoogleDocs.CaptchaRequiredError(CAPTCHA_UNLOCK_URL), cex);
             }
         }
 
@@ -322,7 +322,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Google.GData.Client.CaptchaRequiredException cex)
             {
-                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+                throw new Exception(Strings.GoogleDocs.CaptchaRequiredError(CAPTCHA_UNLOCK_URL), cex);
             }
             catch (System.IO.FileNotFoundException ex)
             {
@@ -345,7 +345,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionAuthPasswordShort, Strings.GoogleDocs.DescriptionAuthPasswordLong),
                     new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGoogleUsernameShort, Strings.GoogleDocs.DescriptionGoogleUsernameLong, null, new string[] {"auth-username"}),
                     new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDocs.DescriptionGooglePasswordShort, Strings.GoogleDocs.DescriptionGooglePasswordLong, null, new string[] {"auth-password"}),
-                    new CommandLineArgument(ATTRIBUTES_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGoogleLabelsShort, string.Format(Strings.GoogleDocs.DescriptionGoogleLabelsLong, string.Join(",", KNOWN_LABELS)), DEFAULT_LABELS),
+                    new CommandLineArgument(ATTRIBUTES_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleDocs.DescriptionGoogleLabelsShort, Strings.GoogleDocs.DescriptionGoogleLabelsLong(KNOWN_LABELS), DEFAULT_LABELS),
                 });
             }
         }
@@ -402,7 +402,7 @@ namespace Duplicati.Library.Backend
 
                             doc = TryGetFile(remotename);
                             if (doc != null || doc.MediaUrl == null)
-                                throw new Exception(string.Format(Strings.GoogleDocs.FileIsReadOnlyError, remotename));
+                                throw new Exception(Strings.GoogleDocs.FileIsReadOnlyError(remotename));
                         }
                     }
 
@@ -618,7 +618,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Google.GData.Client.CaptchaRequiredException cex)
             {
-                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+                throw new Exception(Strings.GoogleDocs.CaptchaRequiredError(CAPTCHA_UNLOCK_URL), cex);
             }
         }
 
@@ -631,7 +631,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Google.GData.Client.CaptchaRequiredException cex)
             {
-                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+                throw new Exception(Strings.GoogleDocs.CaptchaRequiredError(CAPTCHA_UNLOCK_URL), cex);
             }
         }
 

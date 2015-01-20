@@ -163,7 +163,7 @@ namespace Duplicati.Server
                         sb.Append(w.ToString());
                     }
 
-                throw new Exception(string.Format(Strings.Scheduler.InvalidTimeSetupError, basetime, repetition, sb.ToString()));
+                throw new Exception(Strings.Scheduler.InvalidTimeSetupError(basetime, repetition, sb.ToString()));
             }
             
             return res;

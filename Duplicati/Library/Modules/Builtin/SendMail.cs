@@ -183,12 +183,12 @@ namespace Duplicati.Library.Modules.Builtin
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionRecipientShort, Strings.SendMail.OptionRecipientLong),
                     new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
-                    new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, string.Format(Strings.SendMail.OptionSubjectLong, DEFAULT_SUBJECT, OPTION_BODY)),
+                    new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, Strings.SendMail.OptionSubjectLong(OPTION_BODY), DEFAULT_SUBJECT),
                     new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, Strings.SendMail.OptionBodyLong, DEFAULT_BODY),
                     new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, string.Format(Strings.SendMail.OptionSendlevelLong, MailLevels.Success, MailLevels.Warning, MailLevels.Error, MailLevels.All), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(MailLevels.Success.ToString(), MailLevels.Warning.ToString(), MailLevels.Error.ToString(), MailLevels.All.ToString()), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
                 });
             }
@@ -356,7 +356,7 @@ namespace Duplicati.Library.Modules.Builtin
 
                     servers = dnslite.getMXRecords(message.To[0].Host).OfType<MXRecord>().OrderBy(record => record.preference).Select(x => "smtp://" +  x.exchange).Distinct().ToList();
                     if (servers.Count == 0)
-                        throw new IOException(string.Format(Strings.SendMail.FailedToLookupMXServer, OPTION_SERVER));
+                        throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
                 }
                 else 
                 {
@@ -372,7 +372,7 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach(var server in servers)
                 {
                     if (lastEx != null)
-                        Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailFailedRetryError, lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
+                        Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
                 
                     lastServer = server;
                     try
@@ -391,7 +391,7 @@ namespace Duplicati.Library.Modules.Builtin
         
                         client.Send(message);
                         lastEx = null;
-                        Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailSuccess, server), LogMessageType.Information);
+                        Logging.Log.WriteMessage(Strings.SendMail.SendMailSuccess(server), LogMessageType.Information);
                         break;
                     }
                     catch (Exception ex)
@@ -415,7 +415,7 @@ namespace Duplicati.Library.Modules.Builtin
                     top = top.InnerException;
                 }
 
-                Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailFailedError, sb.ToString()), LogMessageType.Warning, ex);
+                Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedError(sb.ToString()), LogMessageType.Warning, ex);
             }
         }
 

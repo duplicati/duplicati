@@ -137,7 +137,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
-                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, string.Format(Strings.SSHv2Backend.DescriptionSshkeyLong, KEYFILE_URI)),
+                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
                 });
 
             }
@@ -214,7 +214,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                throw new Interface.FolderMissingException(string.Format(Strings.SSHv2Backend.FolderNotFoundManagedError, m_path, ex.Message), ex);
+                throw new Interface.FolderMissingException(Strings.SSHv2Backend.FolderNotFoundManagedError(m_path, ex.Message), ex);
             }
 			
 			if (changeDir)

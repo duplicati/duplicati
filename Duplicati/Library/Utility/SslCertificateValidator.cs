@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility
             public SslPolicyErrors SslError { get { return m_errors; } }
 
             public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(string.Format(Strings.SslCertificateValidator.VerifyCertificateException, error, certificate))
+                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate))
             {
                 m_certificate = certificate;
                 m_errors = error;
@@ -98,7 +98,7 @@ namespace Duplicati.Library.Utility
             }
             catch (Exception ex)
             {
-                throw new Exception(string.Format(Strings.SslCertificateValidator.VerifyCertificateHashError, ex, sslPolicyErrors), ex);
+                throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
             }
 
             m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);

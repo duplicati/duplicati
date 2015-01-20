@@ -66,27 +66,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AzureBlobBackend.cs" />
     <Compile Include="AzureBlobWrapper.cs" />
-    <Compile Include="Strings\AzureBlobBackend.Designer.cs">
-      <DependentUpon>AzureBlobBackend.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\AzureBlobSettingsControl.Designer.cs">
-      <DependentUpon>AzureBlobSettingsControl.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\AzureBlobBackend.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>AzureBlobBackend.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\AzureBlobSettingsControl.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>AzureBlobSettingsControl.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -96,6 +76,10 @@
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
+      <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

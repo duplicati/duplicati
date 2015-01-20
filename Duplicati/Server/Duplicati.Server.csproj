@@ -68,31 +68,6 @@
     <Compile Include="Scheduler.cs" />
     <Compile Include="Serializable\TreeNode.cs" />
     <Compile Include="SingleInstance.cs" />
-    <Compile Include="Strings\DuplicatiRunner.Designer.cs">
-      <DependentUpon>DuplicatiRunner.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\DynamicSetupHelper.Designer.cs">
-      <DependentUpon>DynamicSetupHelper.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\Program.Designer.cs">
-      <DependentUpon>Program.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\Scheduler.Designer.cs">
-      <DependentUpon>Scheduler.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\TaskType.Designer.cs">
-      <DependentUpon>TaskType.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Serializable\ServerStatus.cs" />
     <Compile Include="Database\Backup.cs" />
     <Compile Include="Serializable\ServerSettings.cs" />
@@ -120,6 +95,7 @@
     <Compile Include="Database\Notification.cs" />
     <Compile Include="Database\TempFile.cs" />
     <Compile Include="Serializable\ImportExportStructure.cs" />
+    <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -239,30 +215,6 @@
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\DuplicatiRunner.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DuplicatiRunner.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DynamicSetupHelper.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DynamicSetupHelper.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\Program.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Program.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\Scheduler.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Scheduler.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\TaskType.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>TaskType.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
