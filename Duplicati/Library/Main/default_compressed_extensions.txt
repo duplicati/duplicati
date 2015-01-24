@@ -125,7 +125,6 @@
 .ots #OpenDocument Spreadsheet Template
 .ott #OpenDocument Text Document Template
 .pages #Apple iWork Document
-.pdf #Portable Document Format
 .pptx #Microsoft PowerPoint Presentation
 .pptm #Microsoft PowerPoint Presentation (macros enabled)
 .stw #OpenOffice.org Text Document Template	
