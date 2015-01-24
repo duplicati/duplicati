@@ -254,8 +254,9 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (!remoteFound)
                         {
-                            log.AddMessage(string.Format("removing missing file listed as {0}: {1}", i.State, i.Name));
+                            log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
                             database.RemoveRemoteVolume(i.Name, null);
+                            database.RegisterRemoteVolume(i.Name, i.Type, RemoteVolumeState.Deleting, null);
                         }
                         else
                         {
