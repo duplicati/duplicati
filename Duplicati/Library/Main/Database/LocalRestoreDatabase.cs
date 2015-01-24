@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Database
                     var filesetId = filesetIds[0];
                     filesetIds.RemoveAt(0);
                     
-                    m_restoreTime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
+                    m_restoreTime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
                     
                     var ix = this.FilesetTimes.Select((value, index) => new { value.Key, index })
                             .Where(n => n.Key == filesetId)
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main.Database
                                     while (rd.Read())
                                         sb.AppendLine(rd.GetValue(0).ToString());
     
-                                var actualrestoretime = ParseFromEpochSeconds(Convert.ToInt64(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", filesetId)));
+                                var actualrestoretime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
                                 log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
                                 cmd.Parameters.Clear();
                             }
@@ -148,12 +148,8 @@ namespace Duplicati.Library.Main.Database
 
                         if (rd.Read())
                         {
-                            var r0 = rd.GetValue(0);
-                            var r1 = rd.GetValue(1);
-                            if (r0 != null && r0 != DBNull.Value)
-                                filecount = Convert.ToInt64(r0);
-                            if (r1 != null && r1 != DBNull.Value)
-                                filesize = Convert.ToInt64(r1);
+                            filecount = rd.ConvertValueToInt64(0, 0);
+                            filesize = rd.ConvertValueToInt64(1, 0);
                         }
 
                         if (filecount > 0)
@@ -179,7 +175,7 @@ namespace Duplicati.Library.Main.Database
                     maxpath = v0.ToString();
 
                 cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", m_tempfiletable);
-                var filecount = Convert.ToInt64(cmd.ExecuteScalar());
+                var filecount = cmd.ExecuteScalarInt64(-1);
                 long foundfiles = -1;
 
                 //TODO: Handle FS case-sensitive?
@@ -192,7 +188,7 @@ namespace Duplicati.Library.Main.Database
                     var mp = Library.Utility.Utility.AppendDirSeparator(maxpath);
                     cmd.SetParameterValue(0, mp.Length);
                     cmd.SetParameterValue(1, mp);
-                    foundfiles = Convert.ToInt64(cmd.ExecuteScalar());
+                    foundfiles = cmd.ExecuteScalarInt64(-1);
 
                     if (filecount != foundfiles)
                     {
@@ -263,7 +259,7 @@ namespace Duplicati.Library.Main.Database
 
                 if (log.VerboseOutput)
                 {
-                    var size = Convert.ToInt64(cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_tempblocktable)));
+                    var size = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_tempblocktable), 0);
                     log.AddVerboseMessage("Restore list contains {0} blocks with a total size of {1}", p1 + p2, Library.Utility.Utility.FormatSizeString(size));
                 }
             }
@@ -346,7 +342,7 @@ namespace Duplicati.Library.Main.Database
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
             public string TargetHash { get { return m_reader.ConvertValueToString(1); } }
-            public long TargetFileID { get { return m_reader.ConvertValueToInt64(2); } }
+            public long TargetFileID { get { return  m_reader.ConvertValueToInt64(2); } }
             public long Length { get { return m_reader.ConvertValueToInt64(3); } }
 
             public bool HasMore { get; private set; }
@@ -521,9 +517,9 @@ namespace Duplicati.Library.Main.Database
                     {
                         rd.GetValues(r);
                         yield return new RemoteVolume(
-                            r[0] == null || r[0] == DBNull.Value ? null : r[0].ToString(),
-                            r[1] == null || r[1] == DBNull.Value ? null : r[1].ToString(),
-                            r[2] == null || r[2] == DBNull.Value ? -1 : Convert.ToInt64(r[2])
+                            rd.ConvertValueToString(0),
+                            rd.ConvertValueToString(1),
+                            rd.ConvertValueToInt64(2, -1)
                         );
                     }
                 }
@@ -681,7 +677,7 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
                 while (rd.Read())
-                	yield return new FileToRestore(Convert.ToInt64(rd.GetValue(0)), rd.GetValue(1).ToString(), rd.GetValue(2).ToString());
+                    yield return new FileToRestore(rd.GetInt64(0), rd.GetString(1), rd.GetString(2));
         }
 
         public void DropRestoreTable()
@@ -772,14 +768,8 @@ namespace Duplicati.Library.Main.Database
                     
                     if (rd.Read())
                     {
-                        var r0 = rd.GetValue(0);
-                        var r1 = rd.GetValue(1);
-                    
-                        if (r0 != null && r0 != DBNull.Value)
-                            filesprocessed = Convert.ToInt64(r0);
-                    
-                        if (r1 != null && r1 != DBNull.Value)
-                            processedsize = Convert.ToInt64(r1);
+                        filesprocessed = rd.ConvertValueToInt64(0, 0);
+                        processedsize = rd.ConvertValueToInt64(1, 0);
                     }
 
                     updater.UpdatefilesProcessed(filesprocessed, processedsize);
@@ -821,7 +811,7 @@ namespace Duplicati.Library.Main.Database
             {
                 m_insertblockCommand.Parameters.Clear();
                 var rc = m_insertblockCommand.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" AND ""{0}"".""Metadata"" = ""{1}"".""Metadata"" )", m_blocktablename, m_updateTable));
-                var nc = Convert.ToInt64(m_insertblockCommand.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable)));
+                var nc = m_insertblockCommand.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable), 0);
                     		
                 if (rc != nc)
                     log.AddWarning(string.Format("Inconsistency while marking blocks as updated. Updated blocks: {0}, Registered blocks: {1}", rc, nc), null);
@@ -915,10 +905,10 @@ namespace Duplicati.Library.Main.Database
 				private System.Data.IDataReader m_rd;
 				private long m_blocksize;
 				public BlockEntry(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
-				public long Offset { get { return Convert.ToInt64(m_rd.GetValue(3)) * m_blocksize; } }
-				public long Index { get { return Convert.ToInt64(m_rd.GetValue(3)); } }
-				public long Size { get { return Convert.ToInt64(m_rd.GetValue(5)); } }
-				public string Hash { get { return m_rd.GetValue(4).ToString(); } }
+                public long Offset { get { return m_rd.GetInt64(3) * m_blocksize; } }
+                public long Index { get { return m_rd.GetInt64(3); } }
+                public long Size { get { return m_rd.GetInt64(5); } }
+                public string Hash { get { return m_rd.GetString(4); } }
 			}
 		
 			private System.Data.IDataReader m_rd;
@@ -926,7 +916,7 @@ namespace Duplicati.Library.Main.Database
 			public FastSource(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
 			public bool MoreData { get; private set; }
 			public string TargetPath { get { return m_rd.GetValue(0).ToString(); } }
-			public long TargetFileID { get { return Convert.ToInt64(m_rd.GetValue(2)); } }
+            public long TargetFileID { get { return m_rd.GetInt64(2); } }
 			public string SourcePath { get { return m_rd.GetValue(1).ToString(); } }
 			
 			public IEnumerable<IBlockEntry> Blocks
@@ -948,7 +938,7 @@ namespace Duplicati.Library.Main.Database
 		{
             var whereclause = string.Format(@" ""{0}"".""ID"" = ""{1}"".""FileID"" AND ""{1}"".""Restored"" = 0 AND ""{1}"".""Metadata"" = 0 AND ""{0}"".""TargetPath"" != ""{0}"".""Path"" ", m_tempfiletable, m_tempblocktable);		
 			var sourepaths = string.Format(@"SELECT DISTINCT ""{0}"".""Path"" FROM ""{0}"", ""{1}"" WHERE " + whereclause, m_tempfiletable, m_tempblocktable);
-			var latestBlocksetIds = @"SELECT ""File"".""Path"", ""File"".""BlocksetID"", MAX(""FilesetEntry"".""Scantime"") FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""Path"" IN (" + sourepaths + @") GROUP BY ""File"".""Path"" ";
+			var latestBlocksetIds = @"SELECT ""File"".""Path"", ""File"".""BlocksetID"", MAX(""Fileset"".""Timestamp"") FROM ""Fileset"", ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" = ""Fileset"".""ID"" AND ""File"".""Path"" IN (" + sourepaths + @") GROUP BY ""File"".""Path"" ";
 			var sources = string.Format(@"SELECT DISTINCT ""{0}"".""TargetPath"", ""{0}"".""Path"", ""{0}"".""ID"", ""{1}"".""Index"", ""{1}"".""Hash"", ""{1}"".""Size"" FROM ""{0}"", ""{1}"", ""File"", (" + latestBlocksetIds + @") S, ""Block"", ""BlocksetEntry"" WHERE ""BlocksetEntry"".""BlocksetID"" = ""S"".""BlocksetID"" AND ""BlocksetEntry"".""BlocksetID"" = ""File"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""{1}"".""Index"" = ""BlocksetEntry"".""Index"" AND ""{1}"".""Hash"" = ""Block"".""Hash"" AND ""{1}"".""Size"" = ""Block"".""Size"" AND ""S"".""Path"" = ""{0}"".""Path"" AND " + whereclause + @" ORDER BY ""{0}"".""ID"", ""{1}"".""Index"" ", m_tempfiletable, m_tempblocktable);
 			using(var cmd = m_connection.CreateCommand())
 			using(var rd = cmd.ExecuteReader(sources))

@@ -32,11 +32,11 @@ namespace Duplicati.Library.Main.Database
 		{
 			using(var cmd = m_connection.CreateCommand())
 			{
-				var r = cmd.ExecuteScalar(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", filelist);
-				if (r == null || r == DBNull.Value)
+				var filesetid = cmd.ExecuteScalarInt64(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", -1, filelist);
+                if (filesetid == -1)
 					throw new Exception(string.Format("No such remote file: {0}", filelist));
 					
-				return Convert.ToInt64(r);
+                return filesetid;
 			}
 		}
 
@@ -70,7 +70,7 @@ namespace Duplicati.Library.Main.Database
 			public bool Done { get; private set; }
 			
 			public BlockWithSources(System.Data.IDataReader rd)
-				: base(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)))
+                : base(rd.GetString(0), rd.GetInt64(1))
 			{
 				m_rd = rd;
 				Done = !m_rd.Read();
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Database
 					if (Done)
 						yield break;
 					
-					var cur = new BlockSource(m_rd.GetValue(2).ToString(), Convert.ToInt64(m_rd.GetValue(3)));
+                    var cur = new BlockSource(m_rd.GetString(2), m_rd.GetInt64(3));
 					var file = cur.File;
 					
 					while(!Done && cur.File == file)
@@ -91,7 +91,7 @@ namespace Duplicati.Library.Main.Database
 						yield return cur;
 						Done = m_rd.Read();
 						if (!Done)
-							cur = new BlockSource(m_rd.GetValue(2).ToString(), Convert.ToInt64(m_rd.GetValue(3)));
+                            cur = new BlockSource(m_rd.GetString(2), m_rd.GetInt64(3));
 					}
 				}
 			}
@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Database
 			using(var cmd = m_connection.CreateCommand())
 			using(var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name))
 				while (rd.Read())
-					yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
+                    yield return new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
 		}
         
         public interface IMissingBlockList : IDisposable
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.Transaction = m_transaction.Parent;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""Hash"", ""{0}"".""Size"" FROM ""{0}"" WHERE ""{0}"".""Restored"" = ? ", m_tablename), 0))
                         while (rd.Read())
-                            yield return new KeyValuePair<string, long>(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
+                            yield return new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
                 }
             }
             
@@ -208,7 +208,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.Transaction = m_transaction.Parent;
                     using(var rd = cmd.ExecuteReader(string.Format(cmdtxt, m_tablename), RemoteVolumeType.Files.ToString()))
                         while (rd.Read())
-                            yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
+                            yield return new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
                 }
             }
             
@@ -219,7 +219,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.Transaction = m_transaction.Parent;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"", ""{0}"" WHERE ""Block"".""Hash"" = ""{0}"".""Hash"" AND ""Block"".""Size"" = ""{0}"".""Size"" AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Remotevolume"".""Name"" != ? ", m_tablename), m_volumename))
                         while (rd.Read())
-                            yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
+                            yield return new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
                 }
             }
             
@@ -265,8 +265,8 @@ namespace Duplicati.Library.Main.Database
                     @")" +
                     @")";
 
-                var x = cmd.ExecuteScalar(sql_count);
-                if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                var x = cmd.ExecuteScalarInt64(sql_count, 0);
+                if (x > 1)
                 {
                     m_result.AddMessage("Found duplicate metadatahashes, repairing");
 
@@ -306,8 +306,8 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", tablename));
 
                     cmd.CommandText = sql_count;
-                    x = cmd.ExecuteScalar();
-                    if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                    x = cmd.ExecuteScalarInt64(0);
+                    if (x > 1)
                         throw new Exception("Repair failed, there are still duplicate metadatahashes!");
 
                     m_result.AddMessage("Duplicate metadatahashes repaired succesfully");
@@ -325,8 +325,8 @@ namespace Duplicati.Library.Main.Database
 
                 var sql_count = @"SELECT COUNT(*) FROM (SELECT ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Duplicates"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") WHERE ""Duplicates"" > 1";
 
-                var x = cmd.ExecuteScalar(sql_count);
-                if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 0)
+                var x = cmd.ExecuteScalarInt64(sql_count, 0);
+                if (x > 0)
                 {
                     m_result.AddMessage("Found duplicate file entries, repairing");
 
@@ -345,8 +345,8 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     cmd.CommandText = sql_count;
-                    x = cmd.ExecuteScalar();
-                    if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                    x = cmd.ExecuteScalarInt64(0);
+                    if (x > 1)
                         throw new Exception("Repair failed, there are still duplicate file entries!");
 
                     m_result.AddMessage("Duplicate file entries repaired succesfully");
@@ -367,13 +367,12 @@ namespace Duplicati.Library.Main.Database
 
                 var sql_count = @"SELECT COUNT(*) FROM (" + dup_sql + ")";
 
-                var x = cmd.ExecuteScalar(sql_count);
-                if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 0)
+                var x = cmd.ExecuteScalarInt64(sql_count, 0);
+                if (x > 0)
                 {
                     m_result.AddMessage("Found duplicate blocklisthash entries, repairing");
 
-                    var unique_count = cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")");
-                    var unique_count_long = (unique_count == null || unique_count == DBNull.Value) ? 0 : Convert.ToInt64(unique_count);
+                    var unique_count = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
 
                     using(var c2 = m_connection.CreateCommand())
                     {
@@ -385,15 +384,14 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     cmd.CommandText = sql_count;
-                    x = cmd.ExecuteScalar();
-                    if ((x == null || x == DBNull.Value ? 0 : Convert.ToInt64(x)) > 1)
+                    x = cmd.ExecuteScalarInt64();
+                    if (x > 1)
                         throw new Exception("Repair failed, there are still duplicate file entries!");
 
-                    var real_count = cmd.ExecuteScalar(@"SELECT Count(*) FROM ""BlocklistHash""");
-                    var real_count_long = (real_count == null || real_count == DBNull.Value) ? 0 : Convert.ToInt64(real_count);
+                    var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
 
-                    if (real_count_long != unique_count_long)
-                        throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count_long, real_count_long));
+                    if (real_count != unique_count)
+                        throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
 
                     m_result.AddMessage("Duplicate file entries repaired succesfully");
                     tr.Commit();

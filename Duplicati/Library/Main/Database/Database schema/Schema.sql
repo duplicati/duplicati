@@ -62,7 +62,7 @@ scanned in UNIX EPOCH format
 CREATE TABLE "FilesetEntry" (
 	"FilesetID" INTEGER NOT NULL,
 	"FileID" INTEGER NOT NULL,
-	"Scantime" INTEGER NOT NULL
+	"Lastmodified" INTEGER NOT NULL
 );
 
 /*
@@ -219,4 +219,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (1);
+INSERT INTO "Version" ("Version") VALUES (2);

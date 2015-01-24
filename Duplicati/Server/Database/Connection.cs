@@ -124,8 +124,8 @@ namespace Duplicati.Server.Database
             lock(m_lock)
                 return ReadFromDb(
                     (rd) => new KeyValuePair<string, string>(
-                        ConvertToString(rd.GetValue(0)),
-                        ConvertToString(rd.GetValue(1))
+                        ConvertToString(rd, 0),
+                        ConvertToString(rd, 1)
                     ),
                     @"SELECT ""Name"", ""Value"" FROM ""Metadata"" WHERE ""BackupID"" = ? ", id)
                     .ToDictionary((k) => k.Key, (k) => k.Value);
@@ -154,9 +154,9 @@ namespace Duplicati.Server.Database
             lock(m_lock)
                 return ReadFromDb(
                     (rd) => (IFilter)new Filter() {
-                        Order = ConvertToInt64(rd.GetValue(0)),
-                        Include = ConvertToBoolean(rd.GetValue(1)),
-                        Expression = ConvertToString(rd.GetValue(2)) ?? ""
+                    Order = ConvertToInt64(rd, 0),
+                        Include = ConvertToBoolean(rd, 1),
+                        Expression = ConvertToString(rd, 2) ?? ""
                     },
                     @"SELECT ""Order"", ""Include"", ""Expression"" FROM ""Filter"" WHERE ""BackupID"" = ? ORDER BY ""Order"" ", id)
                     .ToArray();
@@ -185,9 +185,9 @@ namespace Duplicati.Server.Database
             lock(m_lock)
                 return ReadFromDb(
                     (rd) => (ISetting)new Setting() {
-                        Filter = ConvertToString(rd.GetValue(0)) ?? "",
-                        Name = ConvertToString(rd.GetValue(1)) ?? "",
-                        Value = ConvertToString(rd.GetValue(2)) ?? ""
+                        Filter = ConvertToString(rd, 0) ?? "",
+                        Name = ConvertToString(rd, 1) ?? "",
+                        Value = ConvertToString(rd, 2) ?? ""
                         //TODO: Attach the argument information
                     },
                     @"SELECT ""Filter"", ""Name"", ""Value"" FROM ""Option"" WHERE ""BackupID"" = ?", id)
@@ -220,7 +220,7 @@ namespace Duplicati.Server.Database
         {
             lock(m_lock)
                 return ReadFromDb(
-                    (rd) => ConvertToString(rd.GetValue(0)),
+                    (rd) => ConvertToString(rd, 0),
                     @"SELECT ""Path"" FROM ""Source"" WHERE ""BackupID"" = ?", id)
                     .ToArray();
         }
@@ -269,7 +269,7 @@ namespace Duplicati.Server.Database
                 
                     cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb.ToString();
                     
-                    return Read(cmd, (rd) => ConvertToInt64(rd.GetValue(0))).ToArray();
+                    return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
         }
 
@@ -291,11 +291,11 @@ namespace Duplicati.Server.Database
             {
                 var bk = ReadFromDb(
                     (rd) => new Backup() {
-                        ID = ConvertToInt64(rd.GetValue(0)).ToString(),
-                        Name = ConvertToString(rd.GetValue(1)),
-                        Tags = (ConvertToString(rd.GetValue(2)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                        TargetURL = ConvertToString(rd.GetValue(3)),
-                        DBPath = ConvertToString(rd.GetValue(4)),
+                        ID = ConvertToInt64(rd, 0).ToString(),
+                        Name = ConvertToString(rd, 1),
+                        Tags = (ConvertToString(rd, 2) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                        TargetURL = ConvertToString(rd, 3),
+                        DBPath = ConvertToString(rd, 4),
                     },
                     @"SELECT ""ID"", ""Name"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
                     .FirstOrDefault();
@@ -313,12 +313,12 @@ namespace Duplicati.Server.Database
             {
                 var bk = ReadFromDb(
                     (rd) => new Schedule() {
-                        ID = ConvertToInt64(rd.GetValue(0)),
-                        Tags = (ConvertToString(rd.GetValue(1)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                        Time = ConvertToDateTime(rd.GetValue(2)),
-                        Repeat = ConvertToString(rd.GetValue(3)),
-                        LastRun = ConvertToDateTime(rd.GetValue(4)),
-                        Rule = ConvertToString(rd.GetValue(5)),
+                        ID = ConvertToInt64(rd, 0),
+                        Tags = (ConvertToString(rd, 1) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                        Time = ConvertToDateTime(rd, 2),
+                        Repeat = ConvertToString(rd, 3),
+                        LastRun = ConvertToDateTime(rd, 4),
+                        Rule = ConvertToString(rd, 5),
                     },
                     @"SELECT ""ID"", ""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"" FROM ""Schedule"" WHERE ID = ?", id)
                     .FirstOrDefault();
@@ -350,7 +350,7 @@ namespace Duplicati.Server.Database
                 
                     cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb.ToString();
                     
-                    return Read(cmd, (rd) => ConvertToInt64(rd.GetValue(0))).ToArray();
+                    return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
         }
 
@@ -417,7 +417,7 @@ namespace Duplicati.Server.Database
                         {
                             cmd.Transaction = tr;
                             cmd.CommandText = @"SELECT last_insert_rowid();";
-                            item.ID = ConvertToInt64(cmd.ExecuteScalar()).ToString();
+                            item.ID = ExecuteScalarInt64(cmd).ToString();
                         }
                         
                     var id = long.Parse(item.ID);
@@ -500,7 +500,7 @@ namespace Duplicati.Server.Database
                     {
                         cmd.Transaction = tr;
                         cmd.CommandText = @"SELECT last_insert_rowid();";
-                        item.ID = ConvertToInt64(cmd.ExecuteScalar());
+                        item.ID = ExecuteScalarInt64(cmd);
                     }
             }
         }
@@ -561,11 +561,11 @@ namespace Duplicati.Server.Database
                 {
                     var lst = ReadFromDb(
                         (rd) => (IBackup)new Backup() {
-                            ID = ConvertToInt64(rd.GetValue(0)).ToString(),
-                            Name = ConvertToString(rd.GetValue(1)),
-                            Tags = (ConvertToString(rd.GetValue(2)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            TargetURL = ConvertToString(rd.GetValue(3)),
-                            DBPath = ConvertToString(rd.GetValue(4)),
+                            ID = ConvertToInt64(rd, 0).ToString(),
+                            Name = ConvertToString(rd, 1),
+                            Tags = (ConvertToString(rd, 2) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                            TargetURL = ConvertToString(rd, 3),
+                            DBPath = ConvertToString(rd, 4),
                         },
                         @"SELECT ""ID"", ""Name"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
                         .ToArray();
@@ -586,12 +586,12 @@ namespace Duplicati.Server.Database
                 lock(m_lock)
                     return ReadFromDb(
                         (rd) => (ISchedule)new Schedule() {
-                            ID = ConvertToInt64(rd.GetValue(0)),
-                            Tags = (ConvertToString(rd.GetValue(1)) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            Time = ConvertToDateTime(rd.GetValue(2)),
-                            Repeat = ConvertToString(rd.GetValue(3)),
-                            LastRun = ConvertToDateTime(rd.GetValue(4)),
-                            Rule = ConvertToString(rd.GetValue(5)),
+                            ID = ConvertToInt64(rd, 0),
+                            Tags = (ConvertToString(rd, 1) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                            Time = ConvertToDateTime(rd, 2),
+                            Repeat = ConvertToString(rd, 3),
+                            LastRun = ConvertToDateTime(rd, 4),
+                            Rule = ConvertToString(rd, 5),
                         },
                         @"SELECT ""ID"", ""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"" FROM ""Schedule"" ")
                         .ToArray();
@@ -675,7 +675,7 @@ namespace Duplicati.Server.Database
         {
             lock(m_lock)
                 return ReadFromDb(
-                    (rd) => ConvertToString(rd.GetValue(0)) ?? "",
+                    (rd) => ConvertToString(rd, 0) ?? "",
                     @"SELECT DISTINCT ""Scheme"" FROM ""UIStorage""")
                 .ToArray();
         }
@@ -685,8 +685,8 @@ namespace Duplicati.Server.Database
             lock(m_lock)
                 return ReadFromDb(
                     (rd) => new KeyValuePair<string, string>(
-                        ConvertToString(rd.GetValue(0)) ?? "",
-                        ConvertToString(rd.GetValue(1)) ?? ""
+                        ConvertToString(rd, 0) ?? "",
+                        ConvertToString(rd, 1) ?? ""
                     ),
                     @"SELECT ""Key"", ""Value"" FROM ""UIStorage"" WHERE ""Scheme"" = ?", 
                     scheme)
@@ -756,50 +756,69 @@ namespace Duplicati.Server.Database
             return (long)Math.Floor((NormalizeDateTime(input) - Library.Utility.Utility.EPOCH).TotalSeconds);
         }
         
-        private static DateTime ConvertToDateTime(object r)
+        private static DateTime ConvertToDateTime(System.Data.IDataReader rd, int index)
         {
-            var unixTime = ConvertToInt64(r);
+            var unixTime = ConvertToInt64(rd, index);
             if (unixTime == 0)
                 return new DateTime(0);
             
             return Library.Utility.Utility.EPOCH.AddSeconds(unixTime);
         }
         
-        private static bool ConvertToBoolean(object r)
+        private static bool ConvertToBoolean(System.Data.IDataReader rd, int index)
         {
-            return ConvertToInt64(r) == 1;
+            return ConvertToInt64(rd, index) == 1;
         }
         
-        private static string ConvertToString(object r)
+        private static string ConvertToString(System.Data.IDataReader rd, int index)
         {
+            var r = rd.GetValue(index);
             if (r == null || r == DBNull.Value)
                 return null;
             else
                 return r.ToString();
         }
-        
-        private static long ConvertToInt64(object r, long @default = 0)
+
+        private static long ConvertToInt64(System.Data.IDataReader rd, int index)
         {
-            if (r == null || r == DBNull.Value)
-                return @default;
-            else
-                return Convert.ToInt64(r);
+            try
+            {
+                if (!rd.IsDBNull(index))
+                    return rd.GetInt64(index);
+            }
+            catch
+            {
+            }
+
+            return -1;
         }
 
-        private T ConvertToEnum<T>(object r, T @default)
+        private static long ExecuteScalarInt64(System.Data.IDbCommand cmd)
+        {
+            using(var rd = cmd.ExecuteReader())
+                return ConvertToInt64(rd, 0);
+        }
+
+        private static string ExecuteScalarString(System.Data.IDbCommand cmd)
+        {
+            using(var rd = cmd.ExecuteReader())
+                return ConvertToString(rd, 0);
+        }
+
+        private T ConvertToEnum<T>(System.Data.IDataReader rd, int index, T @default)
             where T : struct
         {
             T res;
-            if (!Enum.TryParse<T>(ConvertToString(r), true, out res))
+            if (!Enum.TryParse<T>(ConvertToString(rd, index), true, out res))
                 return @default;
             return res;
         }
 
-        private object ConvertToEnum(Type enumType, object r, object @default)
+        private object ConvertToEnum(Type enumType, System.Data.IDataReader rd, int index, object @default)
         {
             try
             {
-                return Enum.Parse(enumType, ConvertToString(r));
+                return Enum.Parse(enumType, ConvertToString(rd, index));
             }
             catch
             {
@@ -888,18 +907,17 @@ namespace Duplicati.Server.Database
                     for(var i = 0; i < properties.Length; i++)
                     {
                         var prop = properties[i];
-                        var obj = rd.GetValue(i);
 
                         if (prop.PropertyType.IsEnum)
-                            prop.SetValue(item, ConvertToEnum(prop.PropertyType, obj, Enum.GetValues(prop.PropertyType).GetValue(0)), null);
+                        prop.SetValue(item, ConvertToEnum(prop.PropertyType, rd, i, Enum.GetValues(prop.PropertyType).GetValue(0)), null);
                         else if (prop.PropertyType == typeof(string))
-                            prop.SetValue(item, ConvertToString(obj), null);
+                        prop.SetValue(item, ConvertToString(rd, i), null);
                         else if (prop.PropertyType == typeof(long))
-                            prop.SetValue(item, ConvertToInt64(obj), null);
+                        prop.SetValue(item, ConvertToInt64(rd, i), null);
                         else if (prop.PropertyType == typeof(bool))
-                            prop.SetValue(item, ConvertToBoolean(obj), null);
+                        prop.SetValue(item, ConvertToBoolean(rd, i), null);
                         else if (prop.PropertyType == typeof(DateTime))
-                            prop.SetValue(item, ConvertToDateTime(obj), null);
+                        prop.SetValue(item, ConvertToDateTime(rd, i), null);
                     }
 
                     return item;
@@ -955,11 +973,10 @@ namespace Duplicati.Server.Database
                 {
                     cmd.Transaction = transaction;
                     cmd.CommandText = @"SELECT last_insert_rowid();";
-                    var id = cmd.ExecuteScalar();
                     if (idfield.PropertyType == typeof(string))
-                        idfield.SetValue(values.First(), ConvertToString(id), null);
+                        idfield.SetValue(values.First(), ExecuteScalarString(cmd), null);
                     else
-                        idfield.SetValue(values.First(), ConvertToInt64(id), null);
+                        idfield.SetValue(values.First(), ExecuteScalarInt64(cmd), null);
                 }
         }
         

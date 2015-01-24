@@ -76,7 +76,7 @@ namespace Duplicati.Library.Main.Database
             using(var rd = cmd.ExecuteReader(sql, it.ToArray()))
                 while (rd.Read())
                 {
-                    var v = dict[Convert.ToInt64(rd.GetValue(0))];
+                    var v = dict[rd.GetInt64(0)];
                     yield return new ListResultFileset() {
                         Version = v,
                         Time = filesets[v].Value
@@ -127,8 +127,8 @@ namespace Duplicati.Library.Main.Database
             using(var rd = cmd.ExecuteReader(sql, it.ToArray()))
                 while (rd.Read())
                     yield return new ListResultRemoteLog() {
-                        Timestamp = ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(0))),
-                        Message = Convert.ToString(rd.GetValue(1))
+                        Timestamp = ParseFromEpochSeconds(rd.GetInt64(0)),
+                        Message = rd.GetString(1)
                     };
         }
 

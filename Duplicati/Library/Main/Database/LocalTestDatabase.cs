@@ -49,11 +49,11 @@ namespace Duplicati.Library.Main.Database
             
             public RemoteVolume(System.Data.IDataReader rd)
             {
-                this.ID = Convert.ToInt64(rd.GetValue(0));
-                this.Name = rd.GetValue(1).ToString();
-                this.Size = Convert.ToInt64(rd.GetValue(2));
-                this.Hash = rd.GetValue(3).ToString();
-                this.VerificationCount = Convert.ToInt64(rd.GetValue(4));
+                this.ID = rd.GetInt64(0);
+                this.Name = rd.GetString(1);
+                this.Size = rd.GetInt64(2);
+                this.Hash = rd.GetString(3);
+                this.VerificationCount = rd.GetInt64(4);
             }
         }
         
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Database
                         yield return new RemoteVolume(rd);
 
                 //Grab the max value
-                var max = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"""));
+                var max = cmd.ExecuteScalarInt64(@"SELECT MAX(""VerificationCount"") FROM ""RemoteVolume""", 0);
             
                 //First we select some filesets
                 var files = new List<RemoteVolume>();
@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
                         using(var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while(rd.Read())
-                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)Convert.ToInt64(rd.GetValue(0)), rd.GetValue(1).ToString() );
+                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
                         
                     }
                     finally
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
                         using(var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while(rd.Read())
-                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)Convert.ToInt64(rd.GetValue(0)), rd.GetValue(1).ToString() );
+                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1) );
                         
                     }
                     finally
@@ -379,7 +379,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.ExecuteNonQuery(string.Format(create, cmpName, curBlocks, delBlocks), m_volumename, m_volumename);
                         using(var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while(rd.Read())
-                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)Convert.ToInt64(rd.GetValue(0)), rd.GetValue(1).ToString() );
+                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1) );
                         
                     }
                     finally

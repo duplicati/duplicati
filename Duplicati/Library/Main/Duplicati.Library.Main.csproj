@@ -147,6 +147,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
     <EmbeddedResource Include="Database\Database schema\1. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\2. Use Lastmodified.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

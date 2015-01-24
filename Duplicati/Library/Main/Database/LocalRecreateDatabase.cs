@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
             m_insertFileCommand.CommandText = @"INSERT INTO ""File"" (""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?); SELECT last_insert_rowid();";
             m_insertFileCommand.AddParameters(3);
             
-            m_insertFilesetEntryCommand.CommandText = @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Scantime"") VALUES (?,?,?)";
+            m_insertFilesetEntryCommand.CommandText = @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?,?,?)";
             m_insertFilesetEntryCommand.AddParameters(3);
 
             m_insertMetadatasetCommand.CommandText = @"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();";
@@ -200,8 +200,8 @@ namespace Duplicati.Library.Main.Database
                     using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = -1 "))
                         while(rd.Read())
                         {
-                            var hash = rd.GetValue(0).ToString();
-                            var size = Convert.ToInt64(rd.GetValue(1));
+                            var hash = rd.GetString(0);
+                            var size = rd.GetInt64(1);
                             m_blockHashLookup.TryAdd(hash, size, -1);
                         }
                 }                
@@ -270,9 +270,7 @@ namespace Duplicati.Library.Main.Database
                 m_findFilesetCommand.SetParameterValue(0, path);
                 m_findFilesetCommand.SetParameterValue(1, blocksetid);
                 m_findFilesetCommand.SetParameterValue(2, metadataid);
-                var r = m_findFilesetCommand.ExecuteScalar();
-                if (r != null && r != DBNull.Value)
-                    fileid = Convert.ToInt64(r);
+                fileid = m_findFilesetCommand.ExecuteScalarInt64(-1);
             }
             
             if (fileid < 0)
@@ -281,7 +279,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertFileCommand.SetParameterValue(0, path);
                 m_insertFileCommand.SetParameterValue(1, blocksetid);
                 m_insertFileCommand.SetParameterValue(2, metadataid);
-                fileid = Convert.ToInt64(m_insertFileCommand.ExecuteScalar());
+                fileid = m_insertFileCommand.ExecuteScalarInt64(-1);
                 if (m_filesetLookup != null)
                 {
                     PathEntryKeeper e;
@@ -299,7 +297,7 @@ namespace Duplicati.Library.Main.Database
             m_insertFilesetEntryCommand.Transaction = transaction;
             m_insertFilesetEntryCommand.SetParameterValue(0, filesetid);
             m_insertFilesetEntryCommand.SetParameterValue(1, fileid);
-            m_insertFilesetEntryCommand.SetParameterValue(2,  NormalizeDateTimeToEpochSeconds(time));
+            m_insertFilesetEntryCommand.SetParameterValue(2, time.ToUniversalTime().Ticks);
             m_insertFilesetEntryCommand.ExecuteNonQuery();
         }
         
@@ -321,16 +319,16 @@ namespace Duplicati.Library.Main.Database
                 m_findMetadatasetCommand.Transaction = transaction;
                 m_findMetadatasetCommand.SetParameterValue(0, metahash);
                 m_findMetadatasetCommand.SetParameterValue(1, metahashsize);
-                var r = m_findMetadatasetCommand.ExecuteScalar();
-                if (r != null && r != DBNull.Value)
-                    return Convert.ToInt64(r);                        
+                metadataid = m_findMetadatasetCommand.ExecuteScalarInt64(-1);
+                if (metadataid != -1)
+                    return metadataid;
             }
             
             var blocksetid = AddBlockset(metahash, metahashsize, null, transaction);
             
             m_insertMetadatasetCommand.Transaction = transaction;
             m_insertMetadatasetCommand.SetParameterValue(0, blocksetid);
-            metadataid = Convert.ToInt64(m_insertMetadatasetCommand.ExecuteScalar());
+            metadataid = m_insertMetadatasetCommand.ExecuteScalarInt64(-1);
             
             if (m_metadataLookup != null)
                 m_metadataLookup.Add(metahash, metahashsize, metadataid);
@@ -353,15 +351,15 @@ namespace Duplicati.Library.Main.Database
                 m_findBlocksetCommand.Transaction = transaction;
                 m_findBlocksetCommand.SetParameterValue(0, size);
                 m_findBlocksetCommand.SetParameterValue(1, fullhash);
-                var r = m_findBlocksetCommand.ExecuteScalar();
-                if (r != null && r != DBNull.Value)
-                    return Convert.ToInt64(r);                        
+                blocksetid = m_findBlocksetCommand.ExecuteScalarInt64(-1);
+                if (blocksetid != -1)
+                    return blocksetid;                        
             }
             
             m_insertBlocksetCommand.Transaction = transaction;
             m_insertBlocksetCommand.SetParameterValue(0, size);
             m_insertBlocksetCommand.SetParameterValue(1, fullhash);
-            blocksetid = Convert.ToInt64(m_insertBlocksetCommand.ExecuteScalar());
+            blocksetid = m_insertBlocksetCommand.ExecuteScalarInt64(-1);
 
             if (m_fileHashLookup != null)
                 m_fileHashLookup.Add(fullhash, size, blocksetid);
@@ -398,9 +396,7 @@ namespace Duplicati.Library.Main.Database
                 m_findHashBlockCommand.Transaction = transaction;
                 m_findHashBlockCommand.SetParameterValue(0, hash);
                 m_findHashBlockCommand.SetParameterValue(1, size);
-                var r = m_findHashBlockCommand.ExecuteScalar();
-                if (r != null && r != DBNull.Value)
-                    currentVolumeId = Convert.ToInt64(r);
+                currentVolumeId = m_findHashBlockCommand.ExecuteScalarInt64(-2);
             }
             
             if (currentVolumeId == volumeID)
@@ -525,8 +521,8 @@ namespace Duplicati.Library.Main.Database
                 else
                 {
                     //On anything but the first pass, we check if we are done
-                    var r = cmd.ExecuteScalar(countMissingInformation);
-                    if (r == null || r == DBNull.Value || Convert.ToInt64(r) == 0)
+                    var r = cmd.ExecuteScalarInt64(countMissingInformation, 0);
+                    if (r == 0)
                         yield break;
                     
                     if (passNo == 1)
@@ -550,12 +546,10 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var rd = cmd.ExecuteReader())
                 {
-                    object[] r = new object[4];
                     while (rd.Read())
                     {
-                        rd.GetValues(r);
-                        
-                        var volumeID = Convert.ToInt64(r[3]);
+
+                        var volumeID = rd.GetInt64(3);
                         
                         // Guard against multiple downloads of the same file
                         if (!m_proccessedVolumes.ContainsKey(volumeID))
@@ -563,9 +557,9 @@ namespace Duplicati.Library.Main.Database
                             m_proccessedVolumes.Add(volumeID, volumeID);
                             
                             yield return new RemoteVolume(
-                                (r[0] == null || r[0] == DBNull.Value) ? null : r[0].ToString(),
-                                (r[1] == null || r[1] == DBNull.Value) ? null : r[1].ToString(),
-                                (r[2] == null || r[2] == DBNull.Value) ? -1 : Convert.ToInt64(r[2])
+                                rd.GetString(0),
+                                rd.GetString(1),
+                                rd.ConvertValueToInt64(2, -1)
                             );
                         }
                     }

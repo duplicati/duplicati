@@ -65,6 +65,36 @@ namespace Duplicati.Library.Main.Database
                 return self.ExecuteScalar();
         }
 
+        public static long ExecuteScalarInt64(this System.Data.IDbCommand self, long defaultvalue = -1)
+        {
+            return ExecuteScalarInt64(self, null, defaultvalue, null);
+        }
+
+        public static long ExecuteScalarInt64(this System.Data.IDbCommand self, string cmd, long defaultvalue = -1)
+        {
+            return ExecuteScalarInt64(self, cmd, defaultvalue, null);
+        }
+
+        public static long ExecuteScalarInt64(this System.Data.IDbCommand self, string cmd, long defaultvalue, params object[] values)
+        {
+            if (cmd != null)
+                self.CommandText = cmd;
+
+            if (values != null && values.Length > 0)
+            {
+                self.Parameters.Clear();
+                foreach (var n in values)
+                    self.AddParameter(n);
+            }
+
+            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
+                using(var rd = self.ExecuteReader())
+                    if (rd.Read())
+                        return ConvertValueToInt64(rd, 0, defaultvalue);
+
+            return defaultvalue;
+        }
+
         public static System.Data.IDataReader ExecuteReader(this System.Data.IDbCommand self, string cmd, params object[] values)
         {
             if (cmd != null)
@@ -92,13 +122,18 @@ namespace Duplicati.Library.Main.Database
 
         public static long ConvertValueToInt64(this System.Data.IDataReader reader, int index, long defaultvalue = -1)
         {
-            var v = reader.GetValue(index);
-            if (v == null || v == DBNull.Value)
-                return defaultvalue;
+            try
+            {
+                if (!reader.IsDBNull(index))
+                    return reader.GetInt64(index);
+            }
+            catch
+            {
+            }
 
-            return Convert.ToInt64(v);
+            return -1;
         }
-
+            
         public static void DumpSQL(this System.Data.IDbConnection self, System.Data.IDbTransaction trans, string sql, params object[] parameters)
         {
             using (var c = self.CreateCommand())

@@ -134,8 +134,6 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("prefix"))
                 options["prefix"] = "duplicati_unittest";
 
-            //This would break the test, because the data is not modified the normal way
-            options["disable-filetime-check"] = "true";
             //We want all messages in the log
             options["log-level"] = LogMessageType.Profiling.ToString();
             //We cannot rely on USN numbering, but we can use USN enumeration
