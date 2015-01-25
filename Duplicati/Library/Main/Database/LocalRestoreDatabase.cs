@@ -644,8 +644,22 @@ namespace Duplicati.Library.Main.Database
                     {
                         cmd.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""FileID"", (""B"".""Index"" * {3}), ""B"".""Size"", ""C"".""Hash"" FROM ""{0}"" A, ""{1}"" B, ""{2}"" C WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"" AND ""B"".""Restored"" = 0 AND ""B"".""Metadata"" = 1 ORDER BY ""A"".""TargetPath"", ""B"".""Index""", m_filetablename, m_blocktablename, m_tmptable, m_blocksize);
                         using(var rd = cmd.ExecuteReader())
-                            while (rd.Read())
-                                yield return new VolumePatch(rd);
+                        {
+                            if (rd.Read())
+                            {
+                                var more = true;
+                                while (more)
+                                {
+                                    var f = new VolumePatch(rd);
+                                    string current = f.Path;
+                                    yield return f;
+
+                                    more = f.HasMore;
+                                    while (more && current == f.Path)
+                                        more = rd.Read();
+                                }
+                            }
+                        }
                     }
                 }
             }
