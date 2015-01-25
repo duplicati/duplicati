@@ -5,7 +5,9 @@ RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 
 RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_preview_${RELEASE_TIMESTAMP}"
-RELEASE_CHANGEINFO=`cat changelog.txt`
+
+RELEASE_CHANGELOG_FILE="changelog.txt"
+RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt"
 
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
@@ -16,20 +18,47 @@ UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http:
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
 XBUILD=/usr/bin/xbuild
 
-if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
-    echo "No information in changeinfo file"
-    exit 0
+if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
+	echo "Changelog file is missing..."
+	exit 0
+fi
+
+if [ ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]; then
+	echo "No updates to changelog file found"
+	echo
+	echo "To make a build without changelog news, run:"
+	echo "    touch ""${RELEASE_CHANGELOG_NEWS_FILE}"" "
+	exit 0
 fi
 
 echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
 echo
 
-git stash save "${GIT_STASH_NAME}"
+RELEASE_CHANGEINFO_NEWS=`cat ${RELEASE_CHANGELOG_NEWS_FILE}`
+
+#git stash save "${GIT_STASH_NAME}"
+
+if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
+
+	echo "${RELEASE_TIMESTAMP}" > "tmp_changelog.txt"
+	echo "==========" >> "tmp_changelog.txt"
+	echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
+	echo >> "tmp_changelog.txt"
+	cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
+	cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
+	rm "tmp_changelog.txt"
+fi
 
 echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
 echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
 cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
+
+RELEASE_CHANGEINFO=`cat ${RELEASE_CHANGELOG_FILE}`
+if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
+    echo "No information in changeinfo file"
+    exit 0
+fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
@@ -78,11 +107,15 @@ cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.man
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.manifest"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/rene/latest.manifest"
+echo "Uploading binaries"
+#aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
+#aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.manifest"
+#aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/rene/latest.manifest"
 
+rm "${RELEASE_CHANGELOG_NEWS_FILE}"
+git checkout "Duplicati/License/VersionTag.txt"
 git add "Updates/build_version.txt"
+git add "${RELEASE_CHANGELOG_FILE}"
 git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"
 
