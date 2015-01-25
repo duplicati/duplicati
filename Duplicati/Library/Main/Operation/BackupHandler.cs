@@ -1022,7 +1022,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (!changed)
-                    AddUnmodifiedFile(oldId, oldModified);
+                    AddUnmodifiedFile(oldId, lastwrite);
 
                 m_result.SizeOfExaminedFiles += filestatsize;
                 if (filestatsize != 0)
