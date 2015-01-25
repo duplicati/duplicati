@@ -735,10 +735,10 @@ namespace Duplicati.Library.Main.Database
                     {
                         var path = rd.GetValue(0).ToString();
                         var filehash = rd.GetValue(3).ToString();
-                            var size = rd.ConvertValueToInt64(2);
-                            var lastmodified = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
+                        var size = rd.ConvertValueToInt64(2);
+                        var lastmodified = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
                         var metahash = rd.GetValue(4).ToString();
-                            var metasize = rd.ConvertValueToInt64(5, -1);
+                        var metasize = rd.ConvertValueToInt64(5, -1);
                         var p = rd.GetValue(6);
                         var blrd = (p == null || p == DBNull.Value) ? null : new BlocklistHashEnumerable(rd);
 
