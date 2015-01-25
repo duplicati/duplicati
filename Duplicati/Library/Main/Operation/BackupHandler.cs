@@ -883,32 +883,28 @@ namespace Duplicati.Library.Main.Operation
                 // Last scan time
                 DateTime oldModified;
                 long lastFileSize = -1;
-                var oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize);
+                string oldMetahash;
+                long oldMetasize;
+                var oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
 
                 long filestatsize = -1;
                 try { filestatsize = m_snapshot.GetFileSize(path); }
                 catch { }
 
+                IMetahash metahashandsize = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options) : EMPTY_METADATA;
+
                 var timestampChanged = lastwrite != oldModified || lastwrite.Ticks == 0 || oldModified.Ticks == 0;
                 var filesizeChanged = filestatsize < 0 || lastFileSize < 0 || filestatsize != lastFileSize;
                 var tooLargeFile = m_options.SkipFilesLargerThan != long.MaxValue && m_options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > m_options.SkipFilesLargerThan;
+                var metadatachanged = !m_options.SkipMetadata && (metahashandsize.Size != oldMetasize || metahashandsize.Hash != oldMetahash);
 
-                if ((oldId < 0 || m_options.DisableFiletimeCheck || timestampChanged || filesizeChanged) && !tooLargeFile)
+                if ((oldId < 0 || m_options.DisableFiletimeCheck || timestampChanged || filesizeChanged || metadatachanged) && !tooLargeFile)
                 {
-                    m_result.AddVerboseMessage("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, {4} vs {5}", path, oldId <= 0, timestampChanged, filesizeChanged, lastwrite, oldModified);
+                    m_result.AddVerboseMessage("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", path, oldId <= 0, timestampChanged, filesizeChanged, metadatachanged, lastwrite, oldModified);
 
                     m_result.OpenedFiles++;
                     
                     long filesize = 0;
-                    IMetahash metahashandsize;
-                    if (m_options.StoreMetadata)
-                    {
-                        metahashandsize = Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options);
-                    }
-                    else
-                    {
-                        metahashandsize = EMPTY_METADATA;
-                    }
 
                     var hint = m_options.GetCompressionHintFromFilename(path);
                     var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);
@@ -1005,12 +1001,19 @@ namespace Duplicati.Library.Main.Operation
                             AddFileToOutput(path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
                             changed = true;
                         }
+                        else if (metadatachanged)
+                        {
+                            m_result.AddVerboseMessage("File has only metadata changes {0}", path);
+                            AddFileToOutput(path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
+                            changed = true;
+                        }
                         else
                         {
                             // When we write the file to output, update the last modified time
                             oldModified = lastwrite;
                             m_result.AddVerboseMessage("File has not changed {0}", path);
                         }
+
                     }
                 }
                 else
