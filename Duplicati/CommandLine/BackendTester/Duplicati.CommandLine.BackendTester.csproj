@@ -17,6 +17,8 @@
     <UpgradeBackupLocation />
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,6 +34,7 @@
         <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
       </EnvironmentVariables>
     </EnvironmentVariables>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -40,6 +43,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

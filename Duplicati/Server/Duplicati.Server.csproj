@@ -11,6 +11,8 @@
     <RootNamespace>Duplicati.Server</RootNamespace>
     <AssemblyName>Duplicati.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -24,6 +26,7 @@
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
     <Commandlineparameters>--webservice-port=8200,8201,8202</Commandlineparameters>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -35,6 +38,7 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -218,10 +222,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
-    <Folder Include="Database\" />
-    <Folder Include="Database\Database schema\" />
-    <Folder Include="WebServer\" />
-    <Folder Include="WebServer\ControlMethods\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

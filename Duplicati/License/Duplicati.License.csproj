@@ -17,6 +17,8 @@
     <UpgradeBackupLocation />
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,6 +28,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,6 +37,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -249,17 +253,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="licenses\AWSSDK\" />
-    <Folder Include="licenses\DnsLite\" />
-    <Folder Include="licenses\gdata\" />
-    <Folder Include="licenses\HttpServer\" />
-    <Folder Include="licenses\ManagedLZMA\" />
-    <Folder Include="licenses\MonoMac\" />
-    <Folder Include="licenses\WindowsAzure\" />
-    <Folder Include="licenses\agsXMPP\" />
-    <Folder Include="licenses\SharpAESCrypt\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>

@@ -13,7 +13,7 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <PublishUrl>publish\</PublishUrl>

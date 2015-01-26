@@ -14,6 +14,8 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
