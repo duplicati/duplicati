@@ -361,6 +361,7 @@ namespace Duplicati.Library.Main
                     "allow-passphrase-change",
                     "no-local-db",
                     "no-local-blocks",
+                    "full-block-verification"
                 };
             }
         }
@@ -497,6 +498,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
+                    new CommandLineArgument("full-block-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullblockverificationShort, Strings.Options.FullblockverificationLong, "false"),
                 });
 
                 return lst;
@@ -1695,7 +1697,16 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-db"); }
         }
-        
+
+        /// <summary>
+        /// Gets a flag indicating if block hashes are checked before being applied
+        /// </summary>
+        /// <value><c>true</c> if block hashes are checked; otherwise, <c>false</c>.</value>
+        public bool FullBlockVerification
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-block-verification"); }
+        }
+
         /// <summary>
         /// Gets a lookup table with compression hints, the key is the file extension with the leading period
         /// </summary>

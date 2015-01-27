@@ -197,6 +197,8 @@ namespace Duplicati.Library.Main.Strings
         public static string OldmemorylookupdefaultsLong { get { return LC.L(@"Activate in-memory caches, which are now off by default"); } }
         public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
         public static string NolocalblocksLong { get { return LC.L(@"Duplicati will attempt to use data from source files to minimize the amount of downloaded data. Use this option to skip this optimization and only use remote data."); } }
+        public static string FullblockverificationShort { get { return LC.L(@"Check block hashes"); } }
+        public static string FullblockverificationLong { get { return LC.L(@"Use this option to increase verification by checking the hash of blocks read from a volume before patching restored files with the data."); } }
     }
 
     internal static class Foresthash 

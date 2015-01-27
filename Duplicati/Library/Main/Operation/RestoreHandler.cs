@@ -182,6 +182,9 @@ namespace Duplicati.Library.Main.Operation
         {
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
+            var fullblockverification = options.FullBlockVerification;
+            var blockhasher = fullblockverification ? System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
+
             using(var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks))
             {
@@ -214,10 +217,23 @@ namespace Duplicati.Library.Main.Operation
                                     var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
                                     if (targetblock.Size == size)
                                     {
-                                        file.Write(blockbuffer, 0, size);
-                                        blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false);
+                                        var valid = !fullblockverification;
+                                        if (!valid)
+                                        {
+                                            blockhasher.Initialize();
+                                            var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
+                                            if (targetblock.Key == key)
+                                                valid = true;
+                                            else
+                                                result.AddWarning(string.Format("Invalid block detected for {0}, expected hash: {1}, actual hash: {2}", targetpath, targetblock.Key, key), null);
+                                        }
+
+                                        if (valid)
+                                        {
+                                            file.Write(blockbuffer, 0, size);
+                                            blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false);
+                                        }
                                     }   
-                                    
                                 }
                             
                             if (updateCounter++ % 20 == 0)
