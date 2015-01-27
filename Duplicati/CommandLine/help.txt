@@ -419,6 +419,7 @@ Duplicati offers more options than listed in the other topics. Those additional 
 > duplicati.commandline.exe help returncodes
 > duplicati.commandline.exe help exitcodes
 > duplicati.commandline.exe help statuscodes
+> duplicati.commandline.exe help errorlevel
 
 Duplicati reports the following return/exit codes:
   0 - Success
