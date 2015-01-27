@@ -195,7 +195,9 @@ namespace Duplicati.Library.Main.Strings
         public static string SkiprestoreverificationLong { get { return LC.L(@"After restoring files, the file hash of all restored files are checked to verify that the restore was successfull. Use this option to disable the check and avoid waiting for the verification."); } }
         public static string OldmemorylookupdefaultsShort { get { return LC.L(@"Activate caches"); } }
         public static string OldmemorylookupdefaultsLong { get { return LC.L(@"Activate in-memory caches, which are now off by default"); } }
-        }
+        public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
+        public static string NolocalblocksLong { get { return LC.L(@"Duplicati will attempt to use data from source files to minimize the amount of downloaded data. Use this option to skip this optimization and only use remote data."); } }
+    }
 
     internal static class Foresthash 
     {

@@ -359,6 +359,8 @@ namespace Duplicati.Library.Main
                     "time",
                     "version",
                     "allow-passphrase-change",
+                    "no-local-db",
+                    "no-local-blocks",
                 };
             }
         }
@@ -494,9 +496,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
-#if DEBUG
-                    new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
-#endif
+                    new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
                 });
 
                 return lst;
@@ -1678,12 +1678,14 @@ namespace Duplicati.Library.Main
             get { return m_options.ContainsKey("patch-with-local-blocks"); }
         }
 
-#if DEBUG
+        /// <summary>
+        /// Gets a value indicating whether local blocks usage should be skipped.
+        /// </summary>
+        /// <value><c>true</c> if no local blocks; otherwise, <c>false</c>.</value>
         public bool NoLocalBlocks
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); } 
         }
-#endif
 
         /// <summary>
         /// Gets a flag indicating if the local database should not be used

@@ -149,11 +149,9 @@ namespace Duplicati.Library.Main.Operation
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 return;
 
-#if DEBUG
-                            if (!m_options.NoLocalBlocks)
-#endif
                             // If other local files already have the blocks we want, we use them instead of downloading
-                            ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result);
+                            if (!m_options.NoLocalBlocks)
+                                ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result);
                             
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 return;
@@ -330,11 +328,7 @@ namespace Duplicati.Library.Main.Operation
 
                 //Look for existing blocks in the original source files only
                 using(new Logging.Timer("ScanForExistingSourceBlocksFast"))
-#if DEBUG
                     if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
-#else
-				    if (!string.IsNullOrEmpty(m_options.Restorepath))
-#endif
                     {
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
                         ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
