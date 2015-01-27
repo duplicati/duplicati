@@ -464,6 +464,9 @@ namespace Duplicati.CommandLine
                     
                         if (output.VerboseOutput)
                             Library.Utility.Utility.PrintSerializeObject(res, Console.Out);
+
+                        if (res.Warnings.Count() > 0)
+                            return 2;
                     }
                 }
             
