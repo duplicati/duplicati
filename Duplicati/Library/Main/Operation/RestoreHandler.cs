@@ -261,6 +261,17 @@ namespace Duplicati.Library.Main.Operation
                         {               
                             try
                             {
+                                // TODO: We can end up in a situation where the file is not created yet,
+                                // but we get the metadata anyway.
+                                // This could be handled by creating an empty file and applying metadata to it
+                                // Another solution is to store the metadata stream in a temporary
+                                // file, and then applying the metadata when/before verifying
+
+                                // TODO: Another issue is that we may end up writing to a file after applying
+                                // metadata, which will change the file timestamp
+                                // This can be solved by keeping a table with timestamps read from
+                                // metadata and then applying this when verifying the files
+
                                 var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
                                 if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
                                 {
