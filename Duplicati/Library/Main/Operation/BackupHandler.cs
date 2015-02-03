@@ -355,6 +355,11 @@ namespace Duplicati.Library.Main.Operation
 
                         fsw = new FilesetVolumeWriter(m_options, fileTime);
                         fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+
+                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                            foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                                m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
                         var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
                         m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
                         m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
