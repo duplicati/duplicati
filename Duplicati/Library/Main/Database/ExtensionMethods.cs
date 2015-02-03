@@ -111,6 +111,13 @@ namespace Duplicati.Library.Main.Database
                 return self.ExecuteReader();
         }
 
+        public static IEnumerable<System.Data.IDataReader> ExecuteReaderEnumerable(this System.Data.IDbCommand self, string cmd, params object[] values)
+        {
+            using(var rd = ExecuteReader(self, cmd, values))
+                while (rd.Read())
+                    yield return rd;
+        }
+
         public static string ConvertValueToString(this System.Data.IDataReader reader, int index)
         {
             var v = reader.GetValue(index);

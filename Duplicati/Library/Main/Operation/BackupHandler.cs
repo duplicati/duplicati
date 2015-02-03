@@ -433,7 +433,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.Dryrun = m_options.Dryrun;
                 
                 Utility.VerifyParameters(m_database, m_options);
-                m_database.VerifyConsistency(null);
+                m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
                 m_filter = filter ?? new Library.Utility.FilterExpression();
@@ -488,7 +488,7 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         // Verify before uploading a synthetic list
-                        m_database.VerifyConsistency(null);
+                        m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                         UploadSyntheticFilelist();
 
                         m_database.BuildLookupTable(m_options);
@@ -620,7 +620,7 @@ namespace Duplicati.Library.Main.Operation
                         using(new Logging.Timer("UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
                         using(new Logging.Timer("VerifyConsistency"))
-                            m_database.VerifyConsistency(m_transaction);
+                            m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize);
     
     
                         var changeCount = 

@@ -324,7 +324,7 @@ namespace Duplicati.Library.Main.Operation
                 //All done, we must verify that we have all blocklist fully intact
                 // if this fails, the db will not be deleted, so it can be used,
                 // except to continue a backup
-                restoredb.VerifyConsistency(null);
+                restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
             }
         }
 

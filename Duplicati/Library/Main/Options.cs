@@ -1300,6 +1300,18 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the size of the blockhash.
+        /// </summary>
+        /// <value>The size of the blockhash.</value>
+        public int BlockhashSize
+        {
+            get
+            {
+                return System.Security.Cryptography.HashAlgorithm.Create(BlockHashAlgorithm).HashSize / 8;
+            }
+        }
+
+        /// <summary>
         /// Gets the size the read-ahead buffer
         /// </summary>
         public long FileReadBufferSize
