@@ -1,3 +1,17 @@
+2015-02-04
+==========
+* Change the scanning method to look at the current timestamp instead of the last scantime
+* Added a delay for deleting partial remote files to work around a strange Apache bug
+* Removed .pdf from the list of compressed extensions
+* Various fixes for storing/restoring metadata
+* Fixed the errorlevel/exit code for restore with warnings
+* Exposed the --no-local-blocks option to release builds
+* Added a --full-block-verification option to help trace the cause of incorrect blocks
+* Added a new consistency check for missing BlocklistHash entries
+* Added a new repair method for recovering from missing BlocklistHash entries
+* Fixed an issue when multiple source folders resolves to the same path
+* Added control files to synthetic filelist uploads
+
 2015-01-19
 ==========
 * Fixed an issue with multiple file prefixes
