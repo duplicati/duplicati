@@ -313,7 +313,6 @@ namespace Duplicati.Library.Main.Database
 
         public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
         {
-
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var deletecmd = m_connection.CreateCommand())
             {
@@ -338,7 +337,7 @@ namespace Duplicati.Library.Main.Database
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
 
-                ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
+                m_removeremotevolumeCommand.SetParameterValue(0, name);
                 m_removeremotevolumeCommand.Transaction = tr.Parent;
                 m_removeremotevolumeCommand.ExecuteNonQuery();
 

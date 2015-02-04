@@ -140,6 +140,13 @@ namespace Duplicati.Library.Main.Database
 
             return -1;
         }
+
+        public static System.Data.IDbCommand CreateCommand(this System.Data.IDbConnection self, System.Data.IDbTransaction transaction)
+        {
+            var con = self.CreateCommand();
+            con.Transaction = transaction;
+            return con;
+        }
             
         public static void DumpSQL(this System.Data.IDbConnection self, System.Data.IDbTransaction trans, string sql, params object[] parameters)
         {
