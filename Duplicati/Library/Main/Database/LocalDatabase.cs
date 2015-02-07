@@ -326,12 +326,12 @@ namespace Duplicati.Library.Main.Database
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" = ?)", volumeid);
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""VolumeID"" = ?", volumeid);
                                                 
-				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
+                var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ? UNION SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?))";
 
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery + @" OR ""MetadataID"" IN " + subQuery, volumeid, volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery + @" OR ""MetadataID"" IN " + subQuery, volumeid, volumeid, volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
 
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?)", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
