@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main.Database
 	
 				using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
 				while (rd.Read())
-                    yield return new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
+                    yield return new KeyValuePair<string, long>(rd.GetString(0), rd.ConvertValueToInt64(1));
 			}
 		}
 
