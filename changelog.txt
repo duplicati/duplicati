@@ -1,3 +1,9 @@
+2015-02-15
+==========
+* Fixed an issue with many warnings
+* Fixed an issue where new backups were incorrectly saved
+* Added automatic log purging
+
 2015-02-04
 ==========
 * Change the scanning method to look at the current timestamp instead of the last scantime
