@@ -799,16 +799,23 @@ namespace Duplicati.Server.Database
             return -1;
         }
 
-        private static long ExecuteScalarInt64(System.Data.IDbCommand cmd)
+        private static long ExecuteScalarInt64(System.Data.IDbCommand cmd, long defaultValue = -1)
         {
             using(var rd = cmd.ExecuteReader())
-                return ConvertToInt64(rd, 0);
+                if (rd.Read())
+                    return ConvertToInt64(rd, 0);
+                else
+                    return defaultValue;
         }
 
         private static string ExecuteScalarString(System.Data.IDbCommand cmd)
         {
             using(var rd = cmd.ExecuteReader())
-                return ConvertToString(rd, 0);
+                if (rd.Read())
+                    return ConvertToString(rd, 0);
+                else
+                    return null;
+
         }
 
         private T ConvertToEnum<T>(System.Data.IDataReader rd, int index, T @default)
