@@ -944,7 +944,10 @@ namespace Duplicati.Server.WebServer
             var o = new Newtonsoft.Json.Linq.JObject();
 
             // Add application wide settings
-            o.Add("ApplicationOptions", new Newtonsoft.Json.Linq.JArray(Program.DataConnection.Settings));
+            o.Add("ApplicationOptions", new Newtonsoft.Json.Linq.JArray(
+                from n in Program.DataConnection.Settings
+                select Newtonsoft.Json.Linq.JObject.FromObject(n)
+            ));
 
             try
             {
