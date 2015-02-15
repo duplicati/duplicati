@@ -677,6 +677,36 @@ namespace Duplicati.Server.Database
             Program.StatusEventNotifyer.SignalNewEvent();
         }
 
+        //Workaround to clean up the database after invalid settings update
+        public void FixInvalidBackupId()
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using (var tr = m_connection.BeginTransaction())
+            {
+                cmd.Transaction = tr;
+                cmd.Parameters.Add(cmd.CreateParameter());
+                ((System.Data.IDbDataParameter)cmd.Parameters[0]).Value = -1;
+                cmd.CommandText = @"DELETE FROM ""Option"" WHERE ""BackupID"" = ?";
+                cmd.ExecuteNonQuery();
+                cmd.CommandText = @"DELETE FROM ""Metadata"" WHERE ""BackupID"" = ?";
+                cmd.ExecuteNonQuery();
+                cmd.CommandText = @"DELETE FROM ""Filter"" WHERE ""BackupID"" = ?";
+                cmd.ExecuteNonQuery();
+                cmd.CommandText = @"DELETE FROM ""Source"" WHERE ""BackupID"" = ?";
+                cmd.ExecuteNonQuery();
+
+                cmd.Parameters.Clear();
+                cmd.Parameters.Add(cmd.CreateParameter());
+
+                ((System.Data.IDbDataParameter)cmd.Parameters[0]).Value = "ID=-1";
+                cmd.CommandText = @"DELETE FROM ""Schedule"" WHERE ""Tags"" = ?";
+                cmd.ExecuteNonQuery();
+                tr.Commit();
+            }
+
+            ApplicationSettings.FixedInvalidBackupId = true;
+        }
+
         public string[] GetUISettingsSchemes()
         {
             lock(m_lock)

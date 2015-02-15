@@ -356,6 +356,9 @@ namespace Duplicati.Server
 
                 DataConnection = new Duplicati.Server.Database.Connection(con);
 
+                if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
+                    DataConnection.FixInvalidBackupId();
+
                 if (commandlineOptions.ContainsKey("webservice-password"))
                     Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
 

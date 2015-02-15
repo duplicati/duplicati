@@ -40,6 +40,7 @@ namespace Duplicati.Server.Database
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
+            public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
         }
         
         private Dictionary<string, string> m_values;
@@ -394,6 +395,24 @@ namespace Duplicati.Server.Database
                 SaveSettings();
             }
         }
+
+        public bool FixedInvalidBackupId
+        {
+            get
+            {
+                if (m_values.ContainsKey(CONST.HAS_FIXED_INVALID_BACKUPID) && string.IsNullOrWhiteSpace(m_values[CONST.HAS_FIXED_INVALID_BACKUPID]))
+                    return false;
+                else
+                    return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_FIXED_INVALID_BACKUPID);
+            }
+            set
+            {
+                lock(m_connection.m_lock)
+                    m_values[CONST.HAS_FIXED_INVALID_BACKUPID] = value.ToString();
+                SaveSettings();
+            }
+        }
+
     }
 }
 
