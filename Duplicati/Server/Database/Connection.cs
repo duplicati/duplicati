@@ -401,9 +401,11 @@ namespace Duplicati.Server.Database
                             @"INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
                         (n) => {
                         
-                        if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER) >= 0)
+                            if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER) >= 0)
                                 throw new Exception("Attempted to save a backup with the password placeholder");
-                        
+                            if (update && long.Parse(n.ID) <= 0)
+                                throw new Exception("Invalid update, cannot update application settings through update method");
+                           
                             return new object[] {
                                 n.Name,
                                 string.Join(",", n.Tags),
@@ -421,6 +423,10 @@ namespace Duplicati.Server.Database
                         }
                         
                     var id = long.Parse(item.ID);
+
+                    if (long.Parse(item.ID) <= 0)
+                        throw new Exception("Invalid addition, cannot update application settings through update method");
+
                     SetSources(item.Sources, id, tr);
                     SetSettings(item.Settings, id, tr);
                     SetFilters(item.Filters, id, tr);
