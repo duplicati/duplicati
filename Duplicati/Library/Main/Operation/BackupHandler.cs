@@ -738,6 +738,7 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         m_database.WriteResults();                    
+                        m_database.PurgeLogData(m_options.LogRetention);
                         return;
                     }
                 }

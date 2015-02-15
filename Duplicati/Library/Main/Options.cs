@@ -69,6 +69,11 @@ namespace Duplicati.Library.Main
         private const int DEFAULT_KEEP_VERSIONS = 0;
 
         /// <summary>
+        /// The default threshold for purging log data
+        /// </summary>
+        private const string DEFAULT_LOG_RETENTION = "30D";
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -499,6 +504,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
                     new CommandLineArgument("full-block-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullblockverificationShort, Strings.Options.FullblockverificationLong, "false"),
+
+                    new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
+
                 });
 
                 return lst;
@@ -1719,6 +1727,21 @@ namespace Duplicati.Library.Main
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-block-verification"); }
         }
 
+
+        /// <summary>
+        /// Gets the threshold for when log data should be cleaned
+        /// </summary>
+        public DateTime LogRetention
+        {
+            get
+            {
+                string pts;
+                if (!m_options.TryGetValue("log-retention", out pts))
+                    pts = DEFAULT_LOG_RETENTION;
+
+                return Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true);
+            }
+        }
         /// <summary>
         /// Gets a lookup table with compression hints, the key is the file extension with the leading period
         /// </summary>

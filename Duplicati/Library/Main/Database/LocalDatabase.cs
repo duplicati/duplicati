@@ -934,6 +934,21 @@ namespace Duplicati.Library.Main.Database
 
             }
         }
+
+        public void PurgeLogData(DateTime threshold)
+        {
+            using(var tr = m_connection.BeginTransaction())
+            using(var cmd = m_connection.CreateCommand(tr))
+            {
+                var t = NormalizeDateTimeToEpochSeconds(threshold);
+                cmd.ExecuteNonQuery(@"DELETE FROM ""LogData"" WHERE ""Timestamp"" < ?", t);
+                cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteOperation"" WHERE ""Timestamp"" < ?", t);
+
+                tr.Commit();
+            }
+            using(var cmd = m_connection.CreateCommand())
+                cmd.ExecuteNonQuery("VACUUM");
+        }
         
         public virtual void Dispose()
         {

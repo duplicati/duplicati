@@ -786,6 +786,30 @@ namespace Duplicati.Server.Database
             ticks -= ticks % TimeSpan.TicksPerSecond;
             return new DateTime(ticks, DateTimeKind.Utc);
         }
+
+        public void PurgeLogData(DateTime purgeDate)
+        {
+            var t = NormalizeDateTimeToEpochSeconds(purgeDate);
+
+            using(var tr = m_connection.BeginTransaction())
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = tr;
+                cmd.CommandText = @"DELETE FROM ""ErrorLog"" WHERE ""Timestamp"" < ?";
+                cmd.Parameters.Add(cmd.CreateParameter());
+                ((System.Data.IDataParameter)cmd.Parameters[0]).Value = t;
+                cmd.ExecuteNonQuery();
+
+                tr.Commit();
+            }
+
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.CommandText = "VACUUM";
+                cmd.ExecuteNonQuery();
+            }
+
+        }
         
         private static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
@@ -869,7 +893,6 @@ namespace Duplicati.Server.Database
 
             return @default;
         }
-
                         
         private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)                        
         {

@@ -23,7 +23,8 @@ Error message: {0}", error); }
         public static string WebserverPasswordDescription { get { return LC.L(@"The password required to access the webserver. This option is saved so you do not need to set it on each run. Setting an empty value disables the password."); } }
         public static string PingpongkeepaliveShort { get { return LC.L(@"Enables the ping-pong responder"); } }
         public static string PingpongkeepaliveLong { get { return LC.L(@"When running as a server, the service daemon must verify that the process is responding. If this option is enabled, the server reads stdin and writes a reply to each line read"); } }
-
+        public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
+        public static string LogretentionLong { get { return LC.L(@"Set the time after which log data will be purged from the database."); } }
     }
     internal static class TaskType {
         public static string FullBackup { get { return LC.L(@"Full backup"); } }

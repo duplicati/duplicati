@@ -400,6 +400,12 @@ namespace Duplicati.Server
                         Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) => {
                             Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex); 
                         });
+
+                        string pts;
+                        if (!commandlineOptions.TryGetValue("log-retention", out pts))
+                            pts = DEFAULT_LOG_RETENTION;
+
+                        Program.DataConnection.PurgeLogData(Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true));
                     }
                     catch (Exception ex)
                     {
@@ -654,6 +660,11 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// The default log retention
+        /// </summary>
+        private static string DEFAULT_LOG_RETENTION = "30D";
+
+        /// <summary>
         /// Gets a list of all supported commandline options
         /// </summary>
         public static Library.Interface.ICommandLineArgument[] SupportedCommands
@@ -671,6 +682,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
                     new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
+                    new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                 };
             }
         }
