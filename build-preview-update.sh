@@ -112,12 +112,13 @@ aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.manifest"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/rene/latest.manifest"
 
+ZIP_MD5=`md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}'`
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 git checkout "Duplicati/License/VersionTag.txt"
 git add "Updates/build_version.txt"
 git add "${RELEASE_CHANGELOG_FILE}"
 git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
-git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"
+git tag "v${RELEASE_VERSION}-${RELEASE_NAME}" -m "md5 sum: ${ZIP_MD5}"
 
 echo
 echo "Built PREVIEW version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
