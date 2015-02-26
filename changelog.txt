@@ -1,3 +1,7 @@
+2015-02-26
+==========
+* Added XSRF protection
+
 2015-02-15
 ==========
 * Fixed an issue with many warnings
