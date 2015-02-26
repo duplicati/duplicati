@@ -29,6 +29,7 @@ $(document).ready(function() {
                     'onlyfolders': true,
                     'path': path
                 },
+                headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
                 'dataType': 'json'
             }).done(function(data, status, xhr) {
                 for(var i = 0; i < data.length; i++) {

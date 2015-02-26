@@ -30,6 +30,8 @@ namespace Duplicati.Server.WebServer
         private delegate void ProcessSub(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter writer);
         private readonly Dictionary<string, ProcessSub> SUPPORTED_METHODS;
 
+        public const string CONTROL_HANDLER_URI = "/control.cgi";
+
         public ControlHandler()
         {
             SUPPORTED_METHODS = new Dictionary<string, ProcessSub>(System.StringComparer.InvariantCultureIgnoreCase);
@@ -80,7 +82,7 @@ namespace Duplicati.Server.WebServer
         {
             //We use the fake entry point /control.cgi to listen for requests
             //This ensures that the rest of the webserver can just serve plain files
-            if (!request.Uri.AbsolutePath.Equals("/control.cgi", StringComparison.InvariantCultureIgnoreCase))
+            if (!request.Uri.AbsolutePath.Equals(CONTROL_HANDLER_URI, StringComparison.InvariantCultureIgnoreCase))
                 return false;
 
             HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;

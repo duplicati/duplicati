@@ -280,6 +280,7 @@ $(document).ready(function() {
 
         $.ajax({
             url: APP_CONFIG.server_url,
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             type: method,
             dataType: 'json',
             data: data
@@ -498,6 +499,16 @@ $(document).ready(function() {
             state.retryTimer = null;
         }
 
+        if (APP_DATA.xsrf_token == null) {
+            var cookies = document.cookie.split(';');
+            for(var c in cookies) {
+                if (cookies[c].trim().toLowerCase().indexOf('xsrf-token=') == 0) {
+                    APP_DATA.xsrf_token = decodeURIComponent(cookies[c].trim().substr('xsrf-token='.length));
+                    break;
+                }
+            }
+        }
+
         state.polling = true;
 
         var req = { action: 'get-current-state', longpoll: true, lastEventId: state.eventId };
@@ -513,6 +524,7 @@ $(document).ready(function() {
             url: APP_CONFIG.server_url,
             type: 'GET',
             timeout: timeout,
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             dataType: 'json',
             data: req
         })
@@ -592,7 +604,11 @@ $(document).ready(function() {
         })
         .fail(function(data) {
             if (data.status == 401)
-                window.location = '/login.html';
+                window.location = APP_CONFIG.login_url;
+
+            // XSRF token expired
+            if (data.status == 400 && data.statusText.toUpperCase().indexOf('XSRF') >= 0)
+                location.reload();
 
             state.polling = false;
             if (!state.failed) {
@@ -750,6 +766,7 @@ $(document).ready(function() {
         $.ajax({
             url: APP_CONFIG.server_url,
             type: 'GET',
+            headers: {'X-XSRR-Token': APP_DATA.xsrf_token},
             timeout: 5000,
             dataType: 'json',
             data: req
@@ -1161,7 +1178,8 @@ $(document).ready(function() {
     APP_DATA.downloadBugReport = function(id) {
         var sendobj = {
             'action': 'download-bug-report', 
-            'id': id
+            'id': id,
+            'x-xsrf-token': APP_DATA.xsrf_token
         };
 
         var completed = false;
@@ -1827,8 +1845,12 @@ $(document).ready(function() {
                         alert(message);
                 };
 
+                var url = APP_CONFIG.server_url;
+                url += (url.indexOf('?') > -1) ? '&' : '?';
+                url += $.param({'x-xsrf-token': APP_DATA.xsrf_token});
+
                 $('#import-dialog-form')
-                    .attr('action', APP_CONFIG.server_url)
+                    .attr('action', url)
                     .attr('target', uid);
 
                 $('#import-dialog-callback').val(callback);
@@ -1873,7 +1895,8 @@ $(document).ready(function() {
                     'action': 'export-backup', 
                     'id': $('#export-dialog').data('backupid'),
                     'cmdline': $('#export-type-commandline').is(':checked'),
-                    'passphrase': $('#export-encryption-password').val()
+                    'passphrase': $('#export-encryption-password').val(),
+                    'x-xsrf-token': APP_DATA.xsrf_token
                 };
 
                 if ($('#export-type-file').is(':checked')) {

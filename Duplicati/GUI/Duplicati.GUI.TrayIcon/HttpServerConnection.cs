@@ -13,6 +13,9 @@ namespace Duplicati.GUI.TrayIcon
         private const string LOGIN_SCRIPT = "login.cgi";
         private const string STATUS_WINDOW = "index.html";
         private const string EDIT_WINDOW = "edit-window.html";
+
+        private const string XSRF_COOKIE = "xsrf-token";
+        private const string XSRF_HEADER = "X-XSRF-Token";
         private const string AUTH_COOKIE = "session-auth";
         
         private Uri m_controlUri;
@@ -20,6 +23,7 @@ namespace Duplicati.GUI.TrayIcon
         private string m_password;
         private bool m_saltedpassword;
         private string m_authtoken;
+        private string m_xsrftoken;
         private static readonly System.Text.Encoding ENCODING = System.Text.Encoding.GetEncoding("utf-8");
 
         public delegate void StatusUpdateDelegate(IServerStatus status);
@@ -245,26 +249,75 @@ namespace Duplicati.GUI.TrayIcon
             return PerformLogin(pwd, salt_nonce.Nonce);
         }
 
+        private string GetXSRFToken()
+        {
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + STATUS_WINDOW);
+            req.Method = "GET";
+            req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (req.CookieContainer == null)
+                req.CookieContainer = new System.Net.CookieContainer();
+
+            //Wrap it all in async stuff
+            Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
+            using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
+                if (r.StatusCode == System.Net.HttpStatusCode.OK)
+                    return (r.Cookies[XSRF_COOKIE] ?? r.Cookies[Library.Utility.Uri.UrlEncode(XSRF_COOKIE)]).Value;
+
+            return null;
+
+        }
 
         private T PerformRequest<T>(Dictionary<string, string> queryparams)
         {
-            try
+            var hasTriedXSRF = false;
+            var hasTriedPassword = false;
+
+            while (true)
             {
-                return PerformRequestInternal<T>(queryparams);
-            }
-            catch (System.Net.WebException wex)
-            {
-                if (
-                    wex.Status == System.Net.WebExceptionStatus.ProtocolError && 
-                    ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.Unauthorized &&
-                    !string.IsNullOrWhiteSpace(m_password)
-                )
+                try
                 {
-                    m_authtoken = GetAuthToken();
                     return PerformRequestInternal<T>(queryparams);
                 }
-                else
-                    throw;
+                catch (System.Net.WebException wex)
+                {
+                    var httpex = wex.Response as System.Net.HttpWebResponse;
+                    if (httpex == null)
+                        throw;
+
+                    if (
+                        !hasTriedXSRF &&
+                        wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
+                        httpex.StatusCode == System.Net.HttpStatusCode.BadRequest &&
+                        httpex.StatusDescription.IndexOf("XSRF", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    {
+                        hasTriedXSRF = true;
+                        string t = null;
+                        try 
+                        { 
+                            var c = httpex.Cookies[XSRF_COOKIE];
+                            if (c != null)
+                                t = c.Value;
+                        }
+                        catch
+                        {
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(t))
+                            m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(t);
+                        else
+                            m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(GetXSRFToken());
+                    }
+                    else if (
+                        !hasTriedPassword &&
+                        wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
+                        httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized &&
+                        !string.IsNullOrWhiteSpace(m_password))
+                    {
+                        m_authtoken = GetAuthToken();
+                    }
+                    else
+                        throw;
+                }
             }
         }
 
@@ -280,14 +333,17 @@ namespace Duplicati.GUI.TrayIcon
             req.ContentLength = data.Length;
             req.ContentType = "application/x-www-form-urlencoded ; charset=" + ENCODING.BodyName;
             req.Headers.Add("Accept-Charset", ENCODING.BodyName);
+            if (m_xsrftoken != null)
+                req.Headers.Add(XSRF_HEADER, m_xsrftoken);
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (req.CookieContainer == null)
+                req.CookieContainer = new System.Net.CookieContainer();
+
             if (m_authtoken != null)
-            {   
-                if (req.CookieContainer == null)
-                    req.CookieContainer = new System.Net.CookieContainer();
                 req.CookieContainer.Add(new System.Net.Cookie(AUTH_COOKIE, m_authtoken, "/", req.RequestUri.Host));
-            }
-            
+            if (m_xsrftoken != null)
+                req.CookieContainer.Add(new System.Net.Cookie(XSRF_COOKIE, m_xsrftoken, "/", req.RequestUri.Host));
+
             //Wrap it all in async stuff
             Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
 

@@ -373,6 +373,7 @@ $(document).ready(function() {
 
         $.ajax({
             'url': APP_CONFIG.server_url,
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             'data': {
                 'action': 'search-backup-files',
                 'id': backupId,
@@ -449,6 +450,7 @@ $(document).ready(function() {
                 'filter': node.id === '#' ? '*' : node.original.filepath,
                 'Prefix': node.id === '#' ? '' : node.original.filepath
             },
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             'dataType': 'json'
         })
         .done(function(data, status, xhr) {
