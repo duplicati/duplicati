@@ -240,7 +240,11 @@ namespace Duplicati.Server.WebServer
             if (ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
             {
                 if (xsrf_token != null && m_activexsrf.ContainsKey(xsrf_token))
-                    m_activexsrf[xsrf_token] = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
+                {
+                    var expires = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
+                    m_activexsrf[xsrf_token] = expires;
+                    response.Cookies.Add(new ResponseCookie(XSRF_COOKIE_NAME, xsrf_token, expires));
+                }
                 else
                 {
                     response.Status = System.Net.HttpStatusCode.BadRequest;

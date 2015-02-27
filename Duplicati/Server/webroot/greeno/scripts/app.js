@@ -766,7 +766,7 @@ $(document).ready(function() {
         $.ajax({
             url: APP_CONFIG.server_url,
             type: 'GET',
-            headers: {'X-XSRR-Token': APP_DATA.xsrf_token},
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             timeout: 5000,
             dataType: 'json',
             data: req
