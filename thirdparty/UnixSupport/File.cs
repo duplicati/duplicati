@@ -190,7 +190,14 @@ namespace UnixSupport
             string[] values;
             var size = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
             if (size < 0)
+            {
+                // In case the underlying filesystem does not support extended attributes,
+                // we simply return that there are no attributes
+                if (Syscall.GetLastError() == Errno.EOPNOTSUPP)
+                    return null;
+
                 throw new FileAccesException(path, "llistxattr");
+            }
             
             var dict = new Dictionary<string, byte[]>();
             foreach(var s in values)

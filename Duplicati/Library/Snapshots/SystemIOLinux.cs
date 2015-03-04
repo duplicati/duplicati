@@ -173,10 +173,12 @@ namespace Duplicati.Library.Snapshots
         public Dictionary<string, string> GetMetadata(string file)
         {
             var f = file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file;
-            var n = UnixSupport.File.GetExtendedAttributes(f);
             var dict = new Dictionary<string, string>();
-            foreach(var x in n)
-                dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
+
+            var n = UnixSupport.File.GetExtendedAttributes(f);
+            if (n != null)
+                foreach(var x in n)
+                    dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
             var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
