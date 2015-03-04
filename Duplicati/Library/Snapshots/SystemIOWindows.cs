@@ -423,6 +423,50 @@ namespace Duplicati.Library.Snapshots
 
         }
 
+        private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.File.GetAccessControl(path); }
+            catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.GetAccessControl(PrefixWithUNC(path));
+        }
+
+        private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
+        {
+            if (!IsPathTooLong(path))
+                try { return System.IO.Directory.GetAccessControl(path); }
+            catch (System.IO.PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.Directory.GetAccessControl(PrefixWithUNC(path));
+        }
+
+        private void SetAccessControlFile(string path, FileSecurity rules)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    System.IO.File.SetAccessControl(path, rules); 
+                    return;
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            Alphaleonis.Win32.Filesystem.File.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
+        }
+
+        private void SetAccessControlDir(string path, DirectorySecurity rules)
+        {
+            if (!IsPathTooLong(path))
+                try 
+                { 
+                    System.IO.Directory.SetAccessControl(path, rules); 
+                    return;
+                }
+                catch (System.IO.PathTooLongException) { }
+
+            Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
+        }
+
         public Dictionary<string, string> GetMetadata(string path)
         {
             var isDirTarget = path.EndsWith(DIRSEP);
@@ -432,9 +476,9 @@ namespace Duplicati.Library.Snapshots
             System.Security.AccessControl.FileSystemSecurity rules;
 
             if (isDirTarget)
-                rules = System.IO.Directory.GetAccessControl(targetpath);
+                rules = GetAccessControlDir(targetpath);
             else
-                rules = System.IO.File.GetAccessControl(targetpath);
+                rules = GetAccessControlFile(targetpath);
 
             var objs = new List<FileSystemAccess>();
             foreach(var f in rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier)))
@@ -444,7 +488,7 @@ namespace Duplicati.Library.Snapshots
 
             return dict;
         }
-
+            
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
             var isDirTarget = path.EndsWith(DIRSEP);
@@ -453,9 +497,9 @@ namespace Duplicati.Library.Snapshots
             System.Security.AccessControl.FileSystemSecurity rules;
 
             if (isDirTarget)
-                rules = System.IO.Directory.GetAccessControl(targetpath);
+                rules = GetAccessControlDir(targetpath);                
             else
-                rules = System.IO.File.GetAccessControl(targetpath);
+                rules = GetAccessControlFile(targetpath);
 
             if (restorePermissions && data.ContainsKey("win-ext:accessrules"))
             {
@@ -481,6 +525,11 @@ namespace Duplicati.Library.Snapshots
 
                 if (ex != null)
                     throw ex;
+
+                if (isDirTarget)
+                    SetAccessControlDir(targetpath, (DirectorySecurity)rules);
+                else
+                    SetAccessControlFile(targetpath, (FileSecurity)rules);
             }
         }
 
