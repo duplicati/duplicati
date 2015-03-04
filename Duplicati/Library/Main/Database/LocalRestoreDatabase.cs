@@ -318,6 +318,7 @@ namespace Duplicati.Library.Main.Database
             string Path { get; }
             string Hash { get; }
             long ID { get; }
+            long Length { get; }
         }
 
         public interface IPatchBlock
@@ -677,21 +678,23 @@ namespace Duplicati.Library.Main.Database
 			public string Path { get; private set; }
 			public string Hash { get; private set; }
 			public long ID { get; private set; }
+            public long Length { get; private set; }
 			
-			public FileToRestore(long id, string path, string hash)
+            public FileToRestore(long id, string path, string hash, long length)
 			{
 				this.ID = id;
 				this.Path = path;
 				this.Hash = hash;
+                this.Length = length;
 			}
 		}
 
         public IEnumerable<IFileToRestore> GetFilesToRestore()
         {
             using(var cmd = m_connection.CreateCommand())
-            using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
+            using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
                 while (rd.Read())
-                    yield return new FileToRestore(rd.GetInt64(0), rd.GetString(1), rd.GetString(2));
+                    yield return new FileToRestore(rd.GetInt64(0), rd.GetString(1), rd.GetString(2), rd.GetInt64(3));
         }
 
         public void DropRestoreTable()

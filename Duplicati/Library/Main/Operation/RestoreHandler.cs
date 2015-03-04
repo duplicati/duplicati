@@ -108,65 +108,71 @@ namespace Duplicati.Library.Main.Operation
                 // that have been previously handled. A local blockvolume cache can reduce this issue
                 using(var database = new LocalRestoreDatabase(tmpdb, m_options.Blocksize))
                 {
-                    var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                    var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
-                    if (blockhasher == null)
-                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
-                    if (!blockhasher.CanReuseTransform)
-                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
-    
-                    if (filehasher == null)
-                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
-                    if (!filehasher.CanReuseTransform)
-                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
-    
-                    bool first = true;
-                    RecreateDatabaseHandler.BlockVolumePostProcessor localpatcher =
-                        (key, rd) =>
-                        {
-                            if (first)
+                    using(var metadatastorage = new RestoreHandlerMetadataStorage())
+                    {
+                        var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                        var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                        if (blockhasher == null)
+                            throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                        if (!blockhasher.CanReuseTransform)
+                            throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+        
+                        if (filehasher == null)
+                            throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                        if (!filehasher.CanReuseTransform)
+                            throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+        
+                        bool first = true;
+                        RecreateDatabaseHandler.BlockVolumePostProcessor localpatcher =
+                            (key, rd) =>
                             {
-                                //Figure out what files are to be patched, and what blocks are needed
-                                PrepareBlockAndFileList(database, m_options, filter, m_result);
+                                if (first)
+                                {
+                                    //Figure out what files are to be patched, and what blocks are needed
+                                    PrepareBlockAndFileList(database, m_options, filter, m_result);
 
-                                // Don't run this again
-                                first = false;
-                            }
-                            else
-                            {
-                                // Patch the missing blocks list to include the newly discovered blocklists
-                                //UpdateMissingBlocksTable(key);
-                            }
+                                    // Don't run this again
+                                    first = false;
+                                }
+                                else
+                                {
+                                    // Patch the missing blocks list to include the newly discovered blocklists
+                                    //UpdateMissingBlocksTable(key);
+                                }
 
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                return;
+                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    return;
 
-                            CreateDirectoryStructure(database, m_options, m_result);
+                                CreateDirectoryStructure(database, m_options, m_result);
 
-                            //If we are patching an existing target folder, do not touch stuff that is already updated
-                            ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result);
+                                //If we are patching an existing target folder, do not touch stuff that is already updated
+                                ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result);
 
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                return;
+                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    return;
 
-                            // If other local files already have the blocks we want, we use them instead of downloading
-                            if (!m_options.NoLocalBlocks)
-                                ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result);
+                                // If other local files already have the blocks we want, we use them instead of downloading
+                                if (!m_options.NoLocalBlocks)
+                                    ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result, metadatastorage);
+                                
+                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    return;
                             
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                return;
-                        
-                            //Update files with data
-                            PatchWithBlocklist(database, rd, m_options, m_result, m_blockbuffer);
-                        };
+                                //Update files with data
+                                PatchWithBlocklist(database, rd, m_options, m_result, m_blockbuffer, metadatastorage);
+                            };
 
-                    // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher can be activated
-                    // and this will reduce the need for multiple downloads of the same volume
-                    // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
-                    m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-                    using(new Logging.Timer("Recreate temporary database for restore"))
-                        new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                            .DoRun(database, filter, filelistfilter, /*localpatcher*/null);
+                        // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher can be activated
+                        // and this will reduce the need for multiple downloads of the same volume
+                        // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
+                        m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
+                        using(new Logging.Timer("Recreate temporary database for restore"))
+                            new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                                .DoRun(database, filter, filelistfilter, /*localpatcher*/null);
+
+                        if (!m_options.SkipMetadata)
+                            ApplyStoredMetadata(database, m_options, m_result, metadatastorage);
+                    }
 
                     //If we have --version set, we need to adjust, as the db has only the required versions
                     //TODO: Bit of a hack to set options that way
@@ -178,7 +184,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
         
-        private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer)
+        private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage)
         {
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
@@ -251,56 +257,32 @@ namespace Duplicati.Library.Main.Operation
                     foreach(var restoremetadata in volumekeeper.MetadataWithMissingBlocks)
                     {
                         var targetpath = restoremetadata.Path;
-                        result.AddVerboseMessage("Patching metadata with remote data: {0}", targetpath);
+                        result.AddVerboseMessage("Recording metadata from remote data: {0}", targetpath);
                     
-                        if (options.Dryrun)
+                        try
                         {
-                            result.AddDryrunMessage(string.Format("Would patch metadata with remote data: {0}", targetpath));
-                        }
-                        else
-                        {               
-                            try
+                            // TODO: When we support multi-block metadata this needs to deal with it
+                            using(var ms = new System.IO.MemoryStream())
                             {
-                                // TODO: We can end up in a situation where the file is not created yet,
-                                // but we get the metadata anyway.
-                                // This could be handled by creating an empty file and applying metadata to it
-                                // Another solution is to store the metadata stream in a temporary
-                                // file, and then applying the metadata when/before verifying
-
-                                // TODO: Another issue is that we may end up writing to a file after applying
-                                // metadata, which will change the file timestamp
-                                // This can be solved by keeping a table with timestamps read from
-                                // metadata and then applying this when verifying the files
-
-                                var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
-                                if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
+                                foreach(var targetblock in restoremetadata.Blocks)
                                 {
-                                    result.AddWarning(string.Format("Creating missing folder {0} for target {1}", folderpath, targetpath), null);
-                                    m_systemIO.DirectoryCreate(folderpath);
-                                }
-                                
-                                // TODO: When we support multi-block metadata this needs to deal with it
-                                using(var ms = new System.IO.MemoryStream())
-                                {
-                                    foreach(var targetblock in restoremetadata.Blocks)
+                                    ms.Position = targetblock.Offset;
+                                    var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                                    if (targetblock.Size == size)
                                     {
-                                        ms.Position = targetblock.Offset;
-                                        var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
-                                        if (targetblock.Size == size)
-                                        {
-                                            ms.Write(blockbuffer, 0, size);
-                                            blockmarker.SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true);
-                                        }   
-                                    }
-
-                                    ms.Position = 0;
-                                    ApplyMetadata(targetpath, ms, options.RestorePermissions);
+                                        ms.Write(blockbuffer, 0, size);
+                                        blockmarker.SetBlockRestored(restoremetadata.FileID, targetblock.Offset / blocksize, targetblock.Key, size, true);
+                                    }   
                                 }
+
+                                ms.Position = 0; 
+                                metadatastorage.Add(targetpath, ms);
+                                //blockmarker.RecordMetadata(restoremetadata.FileID, ms);
                             }
-                            catch (Exception ex)
-                            {
-                                result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to record metadata for file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
                         }
                     }
                 }
@@ -310,12 +292,45 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        private static void ApplyStoredMetadata(LocalRestoreDatabase database, Options options, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
+        {
+            foreach(var metainfo in metadatastorage.Records)
+            {
+                var targetpath = metainfo.Key;
+                result.AddVerboseMessage("Patching metadata with remote data: {0}", targetpath);
+
+                if (options.Dryrun)
+                {
+                    result.AddDryrunMessage(string.Format("Would patch metadata with remote data: {0}", targetpath));
+                }
+                else
+                {               
+                    try
+                    {
+                        var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                        if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
+                        {
+                            result.AddWarning(string.Format("Creating missing folder {0} for target {1}", folderpath, targetpath), null);
+                            m_systemIO.DirectoryCreate(folderpath);
+                        }
+
+                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions);
+                    }
+                    catch (Exception ex)
+                    {
+                        result.AddWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                    }
+                }
+            }
+        }
+
         private void DoRun(LocalDatabase dbparent, Library.Utility.IFilter filter, RestoreResults result)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
             using(var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
             using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
+            using(var metadatastorage = new RestoreHandlerMetadataStorage())
             {
                 database.SetResult(m_result);
                 Utility.VerifyParameters(database, m_options);
@@ -372,7 +387,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
                     using(new Logging.Timer("PatchWithLocalBlocks"))
-                        ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result);
+                        ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result, metadatastorage);
                 }
 
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
@@ -402,7 +417,7 @@ namespace Duplicati.Library.Main.Operation
                     
 						using(var tmpfile = blockvolume.TempFile)
 						using(var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
-							PatchWithBlocklist(database, blocks, m_options, result, m_blockbuffer);
+                            PatchWithBlocklist(database, blocks, m_options, result, m_blockbuffer, metadatastorage);
 					}
 					catch (Exception ex)
 					{
@@ -411,6 +426,33 @@ namespace Duplicati.Library.Main.Operation
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
 					}
+
+                // Enforce the length of restored files
+                foreach(var file in database.GetFilesToRestore())
+                {
+                    try
+                    {
+                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        {
+                            backend.WaitForComplete(database, null);
+                            return;
+                        }
+
+                        // Fix the length
+                        using(var fs = m_systemIO.FileOpenWrite(file.Path))
+                            fs.SetLength(file.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        result.AddWarning(ex.Message, ex);
+                        if (ex is System.Threading.ThreadAbortException)
+                            throw;
+                    }
+                }
+
+                // Apply metadata
+                if (!m_options.SkipMetadata)
+                    ApplyStoredMetadata(database, m_options, m_result, metadatastorage);
                 
                 // Reset the filehasher if it was used to verify existing files
                 filehasher.Initialize();
@@ -617,7 +659,7 @@ namespace Duplicati.Library.Main.Operation
         }
 
 
-        private static void ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result)
+        private static void ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
         {
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
@@ -677,7 +719,7 @@ namespace Duplicati.Library.Main.Operation
     						                            	if (!options.Dryrun)
                                                             {
                                                                 if (targetblock.IsMetadata)
-                                                                    ApplyMetadata(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size), options.RestorePermissions);
+                                                                    metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
                                                                 else
     	                                                            file.Write(blockbuffer, 0, size);
                                                             }
