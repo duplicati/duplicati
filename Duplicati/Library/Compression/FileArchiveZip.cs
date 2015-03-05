@@ -112,6 +112,27 @@ namespace Duplicati.Library.Compression
         private string m_filename;
 
         /// <summary>
+        /// The reflection entry used to manipulate the defalte level on the compressor
+        /// </summary>
+        private static readonly System.Reflection.FieldInfo _deflateLevelField;
+
+        /// <summary>
+        /// Static initializer to read the deflateLevelField
+        /// </summary>
+        static FileArchiveZip()
+        {
+            System.Reflection.FieldInfo fi = null;
+
+            try { fi = typeof(ZipWriter).GetField("deflateCompressionLevel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); }
+            catch { }
+
+            _deflateLevelField = fi;
+
+            if (fi == null)
+                Logging.Log.WriteMessage("DeflateCompressionLevel is not supported, please report to developers", Duplicati.Library.Logging.LogMessageType.Warning);
+        }
+
+        /// <summary>
         /// Default constructor, used to read file extension and supported commands
         /// </summary>
         public FileArchiveZip() { }
@@ -311,8 +332,16 @@ namespace Duplicati.Library.Compression
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
             m_compressionInfo.DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressor.Deflate.CompressionLevel.None : m_defaultCompressionLevel;
+            SetStreamCompressionLevel();
             return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null);
 
+        }
+
+        private void SetStreamCompressionLevel()
+        {
+            if (_deflateLevelField != null)
+                try { _deflateLevelField.SetValue(m_writer, m_compressionInfo.DeflateCompressionLevel); }
+                catch { }
         }
 
         /// <summary>
