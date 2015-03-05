@@ -21,6 +21,8 @@ namespace Duplicati.Library.Compression
         private int m_threadCount;
         private bool m_lowOverheadMode;
 
+        private ManagedLzma.LZMA.Master.LZMA.CLzma2EncProps m_encoderProps;
+
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="Duplicati.Library.Compression.SevenZipCompression"/>
         /// is in low overhead mode.
@@ -70,7 +72,20 @@ namespace Duplicati.Library.Compression
 
                 m_threadCount = threadCountValue;
             }
+                
+            string cplvl;
+            int tmplvl;
+            if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out cplvl) && int.TryParse(cplvl, out tmplvl))
+                tmplvl = Math.Max(Math.Min(9, tmplvl), 0);
+            else
+                tmplvl = DEFAULT_COMPRESSION_LEVEL;
 
+            m_encoderProps = new ManagedLzma.LZMA.Master.LZMA.CLzma2EncProps();
+            m_encoderProps.Lzma2EncProps_Init();
+
+            m_encoderProps.mLzmaProps.mLevel = tmplvl;
+            m_encoderProps.mLzmaProps.mAlgo = Library.Utility.Utility.ParseBoolOption(options, COMPRESSION_FASTALGO_OPTION) ? 0 : 1;
+                
             var file = new FileInfo(filename);
             if(file.Exists && file.Length > 0)
                 InitializeArchiveReader(filename);
@@ -254,7 +269,7 @@ namespace Duplicati.Library.Compression
                     if(m_lowOverheadMode)
                         m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.LzmaEncoder();
                     else
-                        m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.Lzma2Encoder(m_threadCount);
+                        m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.Lzma2Encoder(m_threadCount, m_encoderProps);
 
                     m_lzma2Encoder.OnOutputThresholdReached += mLzma2Encoder_OnOutputThresholdReached;
                     m_lzma2Encoder.SetOutputThreshold(kStreamThreshold);
@@ -340,6 +355,26 @@ namespace Duplicati.Library.Compression
         private static readonly int DEFAULT_THREAD_COUNT = Environment.ProcessorCount;
 
         /// <summary>
+        /// The commandline option for toggling the compression level
+        /// </summary>
+        private const string COMPRESSION_LEVEL_OPTION = "7z-compression-level";
+
+        /// <summary>
+        /// The default compression level
+        /// </summary>
+        private const int DEFAULT_COMPRESSION_LEVEL = 5;
+
+        /// <summary>
+        /// The commandline option for toggling the compression algorithm
+        /// </summary>
+        private const string COMPRESSION_FASTALGO_OPTION = "7z-compression-fast-algorithm";
+
+        /// <summary>
+        /// The default setting for the fast-algorithm option
+        /// </summary>
+        private const bool DEFAULT_FASTALGO = false;
+
+        /// <summary>
         /// Arbitrary limit to avoid problems with unreasonable user input.
         /// </summary>
         private const int MAX_THREAD_COUNT = 64;
@@ -354,7 +389,23 @@ namespace Duplicati.Library.Compression
                         CommandLineArgument.ArgumentType.Integer,
                         Strings.SevenZipCompression.ThreadcountShort,
                         Strings.SevenZipCompression.ThreadcountLong,
-                        DEFAULT_THREAD_COUNT.ToString())
+                        DEFAULT_THREAD_COUNT.ToString()),
+
+                    new CommandLineArgument(
+                        COMPRESSION_LEVEL_OPTION, 
+                        CommandLineArgument.ArgumentType.Enumeration, 
+                        Strings.SevenZipCompression.CompressionlevelShort, 
+                        Strings.SevenZipCompression.CompressionlevelLong,
+                        DEFAULT_COMPRESSION_LEVEL.ToString(), 
+                        null, 
+                        new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}),
+
+                    new CommandLineArgument(
+                        COMPRESSION_FASTALGO_OPTION,
+                        CommandLineArgument.ArgumentType.Boolean,
+                        Strings.SevenZipCompression.FastalgoShort,
+                        Strings.SevenZipCompression.FastalgoLong,
+                        DEFAULT_FASTALGO.ToString()),
                 };
             }
         }
