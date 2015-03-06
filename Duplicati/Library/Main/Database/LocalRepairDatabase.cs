@@ -115,9 +115,8 @@ namespace Duplicati.Library.Main.Database
 		public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name)
 		{
 			using(var cmd = m_connection.CreateCommand())
-			    return 
-                    from rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name)
-                    select new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
+                foreach(var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name))
+                    yield return new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
 		}
         
         public interface IMissingBlockList : IDisposable
@@ -186,10 +185,8 @@ namespace Duplicati.Library.Main.Database
             public IEnumerable<KeyValuePair<string, long>> GetMissingBlocks()
             {
                 using(var cmd = m_connection.CreateCommand(m_transaction.Parent))
-                    return 
-                        from rd in
-                        cmd.ExecuteReaderEnumerable(string.Format(@"SELECT ""{0}"".""Hash"", ""{0}"".""Size"" FROM ""{0}"" WHERE ""{0}"".""Restored"" = ? ", m_tablename), 0)
-                        select new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
+                    foreach(var rd in cmd.ExecuteReaderEnumerable(string.Format(@"SELECT ""{0}"".""Hash"", ""{0}"".""Size"" FROM ""{0}"" WHERE ""{0}"".""Restored"" = ? ", m_tablename), 0))
+                        yield return new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
             }
             
             public IEnumerable<IRemoteVolume> GetFilesetsUsingMissingBlocks()
@@ -200,17 +197,15 @@ namespace Duplicati.Library.Main.Database
                 var cmdtxt = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""FilesetEntry"", ""Fileset"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""RemoteVolume"".""Type"" = ? AND ""FilesetEntry"".""FileID"" IN  (SELECT DISTINCT ""ID"" FROM ( " + blocks + " UNION " + blocklists + " ))";
             
                 using(var cmd = m_connection.CreateCommand(m_transaction.Parent))
-                    return
-                        from rd in cmd.ExecuteReaderEnumerable(string.Format(cmdtxt, m_tablename), RemoteVolumeType.Files.ToString())
-                        select new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
+                    foreach(var rd in cmd.ExecuteReaderEnumerable(string.Format(cmdtxt, m_tablename), RemoteVolumeType.Files.ToString()))
+                        yield return new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
             }
             
             public IEnumerable<IRemoteVolume> GetMissingBlockSources()
             {
                 using(var cmd = m_connection.CreateCommand(m_transaction.Parent))
-                    return 
-                        from rd in cmd.ExecuteReaderEnumerable(string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"", ""{0}"" WHERE ""Block"".""Hash"" = ""{0}"".""Hash"" AND ""Block"".""Size"" = ""{0}"".""Size"" AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Remotevolume"".""Name"" != ? ", m_tablename), m_volumename)
-                        select new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
+                    foreach(var rd in cmd.ExecuteReaderEnumerable(string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"", ""{0}"" WHERE ""Block"".""Hash"" = ""{0}"".""Hash"" AND ""Block"".""Size"" = ""{0}"".""Size"" AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Remotevolume"".""Name"" != ? ", m_tablename), m_volumename))
+                        yield return new RemoteVolume(rd.GetString(0), rd.GetString(1), rd.GetInt64(2));
             }
             
             public void Dispose()
