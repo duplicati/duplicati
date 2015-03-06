@@ -320,7 +320,7 @@ namespace Duplicati.Server
                     cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
 
             if (bf != null)
-                foreach(var f in cf)
+                foreach(var f in bf)
                     cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
 
             return cmd.ToString();
