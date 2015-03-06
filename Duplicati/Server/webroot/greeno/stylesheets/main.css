@@ -304,12 +304,6 @@ div.main-icon-restore {
     border-bottom-left-radius: 0px;
 }
 
-textarea.pre-style-text, .pre-style-text {
-    white-space: nowrap; 
-    overflow: auto;
-    font-family: "Courier New", Courier, monospace;
-}
-
 #click-intercept {
     position: absolute;
     top: 0;

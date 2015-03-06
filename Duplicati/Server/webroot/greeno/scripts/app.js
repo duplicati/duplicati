@@ -205,6 +205,8 @@ $(document).ready(function() {
 
     $('.button').button();
 
+    $('textarea.pre-style-text').each(function(i, e) {  e.wrap = "off"; });
+
     $('#main-list-container > div.main-backup-entry').remove();
     $('#loading-dialog').dialog({modal: true}).show();
 
