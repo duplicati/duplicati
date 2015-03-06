@@ -18,6 +18,8 @@ namespace Duplicati.Library.Backend
         private const string ROOT_FOLDER_ID = "me/skydrive";
         private const string FOLDER_TEMPLATE = "{0}/files";
 
+        private const int FILE_LIST_PAGE_SIZE = 100;
+
         private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
         private string m_authid;
@@ -269,22 +271,38 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, FolderID), Library.Utility.Uri.UrlEncode(AccessToken));
+            int offset = 0;
+            int count = FILE_LIST_PAGE_SIZE;
 
-            var res = GetJSONData<WLID_DataItem>(url);
             var files = new List<IFileEntry>();
 
             m_fileidCache.Clear();
 
-            if (res != null && res.data != null)
-                foreach (var r in res.data)
-                {
-                    m_fileidCache.Add(r.name, r.id);
+            while(count == FILE_LIST_PAGE_SIZE)
+            {
+                var url = string.Format("{0}/{1}?access_token={2}&limit={3}&offset={4}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, FolderID), Library.Utility.Uri.UrlEncode(AccessToken), FILE_LIST_PAGE_SIZE, offset);
+                var res = GetJSONData<WLID_DataItem>(url);
 
-                    var fe = new FileEntry(r.name, r.size, r.updated_time, r.updated_time);
-                    fe.IsFolder = string.Equals(r.type, "folder", StringComparison.InvariantCultureIgnoreCase);
-                    files.Add(fe);
+                if (res != null && res.data != null)
+                {
+                    count = res.data.Length;
+                    foreach(var r in res.data)
+                    {
+                        m_fileidCache.Add(r.name, r.id);
+
+                        var fe = new FileEntry(r.name, r.size, r.updated_time, r.updated_time);
+                        fe.IsFolder = string.Equals(r.type, "folder", StringComparison.InvariantCultureIgnoreCase);
+                        files.Add(fe);
+                    }
                 }
+                else
+                {
+                    count = 0;
+                }
+
+                offset += count;
+
+            }
 
             return files;
         }
