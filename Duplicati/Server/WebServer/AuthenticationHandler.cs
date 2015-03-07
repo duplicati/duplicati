@@ -108,12 +108,12 @@ namespace Duplicati.Server.WebServer
 
             if (m_activexsrf.ContainsKey(value))
             {
-                m_activexsrf[value] = DateTime.Now.AddMinutes(XSRF_TIMEOUT_MINUTES);
+                m_activexsrf[value] = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
                 return true;
             }
             else if (m_activexsrf.ContainsKey(Library.Utility.Uri.UrlDecode(value)))
             {
-                m_activexsrf[Library.Utility.Uri.UrlDecode(value)] = DateTime.Now.AddMinutes(XSRF_TIMEOUT_MINUTES);
+                m_activexsrf[Library.Utility.Uri.UrlDecode(value)] = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
                 return true;
             }
 
