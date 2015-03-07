@@ -314,6 +314,7 @@ $(document).ready(function() {
         failed: false,
         dataEventId: -1,
         notificationId: -1,
+        xsrf_error: false,
 
         retryTimer: null,
         pauseUpdateTimer: null,
@@ -610,7 +611,15 @@ $(document).ready(function() {
 
             // XSRF token expired
             if (data.status == 400 && data.statusText.toUpperCase().indexOf('XSRF') >= 0)
-                location.reload();
+            {
+                PRIVATE_DATA.xsrf_error = true;
+                $('#connection-lost-dialog-error').text('Invalid or expired XSRF token, try reloading the page');
+            }
+            else
+            {
+                PRIVATE_DATA.xsrf_error = false;
+                $('#connection-lost-dialog-error').text('');
+            }
 
             state.polling = false;
             if (!state.failed) {
@@ -621,10 +630,15 @@ $(document).ready(function() {
             state.retryStartTime = new Date();
             var updateTimer = function() {
                 var n = new Date() - state.retryStartTime;
-                var left = Math.max(0, 15000 - n);
+                var left = Math.max(0, (PRIVATE_DATA.xsrf_error ? 5000 : 15000) - n);
                 $(document).trigger('server-state-countdown', {millisecondsLeft: left});
                 if (left <= 0)
+                {
                     PRIVATE_DATA.long_poll_for_status();
+
+                    if (PRIVATE_DATA.xsrf_error)
+                        location.reload();
+                }
             }
 
             state.retryTimer = setInterval(updateTimer, 500);
