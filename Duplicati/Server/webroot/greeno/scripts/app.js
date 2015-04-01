@@ -1231,6 +1231,9 @@ $(document).ready(function() {
         if (top + menuheight > $(document).outerHeight())
             top -= menuheight;
 
+        if (top < 0)
+            top = 0;
+
         if (menu.is(':visible')) {
             menu.css({
                 position: 'absolute',
