@@ -94,6 +94,7 @@
 .png #Portable Network Graphic
 .pspimage #PaintShopPro Image
 .tif #TIFF image
+.dng #Adobe Digital Negative
 
 
 # Compressed Font files
