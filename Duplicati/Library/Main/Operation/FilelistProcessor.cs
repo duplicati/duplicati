@@ -242,8 +242,15 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
-                            database.RemoveRemoteVolume(i.Name, null);
+                            if (i.deleteGracePeriod > DateTime.UtcNow)
+                            {
+                                log.AddMessage(string.Format("keeping delete request for {0} until {1}", i.Name, i.deleteGracePeriod.ToLocalTime()));
+                            }
+                            else
+                            {
+                                log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
+                                database.RemoveRemoteVolume(i.Name, null);
+                            }
                         }
                         break;
                     case RemoteVolumeState.Uploading:
@@ -256,7 +263,8 @@ namespace Duplicati.Library.Main.Operation
                         {
                             log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
                             database.RemoveRemoteVolume(i.Name, null);
-                            database.RegisterRemoteVolume(i.Name, i.Type, RemoteVolumeState.Deleting, null);
+                            database.RegisterRemoteVolume(i.Name, i.Type, RemoteVolumeState.Deleting, TimeSpan.FromHours(2), null);
+                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, null);
                         }
                         else
                         {

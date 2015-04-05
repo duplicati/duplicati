@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.CommandText = @"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?";
             m_updateremotevolumeCommand.AddParameters(5);
 
-            m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume""";
+            m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
             m_selectremotevolumeCommand.CommandText = @"SELECT ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_selectremotevolumeCommand.AddParameter();
@@ -118,8 +118,8 @@ namespace Duplicati.Library.Main.Database
 
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
-			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"") VALUES (?, ?, ?, ?, ?); SELECT last_insert_rowid();";
-            m_createremotevolumeCommand.AddParameters(5);
+			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (?, ?, ?, ?, ?, ?); SELECT last_insert_rowid();";
+            m_createremotevolumeCommand.AddParameters(6);
 
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
@@ -269,9 +269,10 @@ namespace Duplicati.Library.Main.Database
                     yield return new RemoteVolumeEntry(
                         rd.GetValue(0).ToString(),
                         (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
-                        (rd.GetValue(2) == null || rd.GetValue(2) == DBNull.Value) ? -1 : rd.GetInt64(2),
+                        rd.ConvertValueToInt64(2, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString())
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
                     );
                 }
             }
@@ -351,7 +352,17 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery("VACUUM");
         }
 
-		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state)
+        {
+            return RegisterRemoteVolume(name, type, state, new TimeSpan(0), null);
+        }
+
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction)
+        {
+            return RegisterRemoteVolume(name, type, state, new TimeSpan(0), transaction);
+        }
+            
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
 		{
         	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
         	{
@@ -360,6 +371,12 @@ namespace Duplicati.Library.Main.Database
                 m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
                 m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
                 m_createremotevolumeCommand.SetParameterValue(4, 0);
+
+                if (deleteGraceTime.Ticks <= 0)
+                    m_createremotevolumeCommand.SetParameterValue(5, 0);
+                else
+                    m_createremotevolumeCommand.SetParameterValue(5, (DateTime.UtcNow + deleteGraceTime).Ticks);
+                
                 m_createremotevolumeCommand.Transaction = tr.Parent;
                 var r = m_createremotevolumeCommand.ExecuteScalarInt64();
                 tr.Commit();

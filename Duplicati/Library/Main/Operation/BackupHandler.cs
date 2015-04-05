@@ -397,6 +397,7 @@ namespace Duplicati.Library.Main.Operation
 
                 foreach(var blockfile in m_database.GetMissingIndexFiles())
                 {
+                    m_result.AddMessage(string.Format("Re-creating missing index file for {0}", blockfile));
                     var w = new IndexVolumeWriter(m_options);
                     w.VolumeID = m_database.RegisterRemoteVolume(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
 

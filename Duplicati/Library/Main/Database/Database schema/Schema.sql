@@ -22,7 +22,8 @@ CREATE TABLE "Remotevolume" (
 	"Size" INTEGER NULL,
 	"Hash" TEXT NULL,
 	"State" TEXT NOT NULL,
-	"VerificationCount" INTEGER NOT NULL
+	"VerificationCount" INTEGER NOT NULL,
+	"DeleteGraceTime" INTEGER NOT NULL
 );
 
 /* Index for detecting broken states */
@@ -219,4 +220,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (2);
+INSERT INTO "Version" ("Version") VALUES (3);
