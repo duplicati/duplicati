@@ -21,8 +21,8 @@ textarea.pre-style-text, .pre-style-text {
 
 .content-wrap {
     margin: 0 auto;
-    max-width: 700px;
     box-sizing: border-box;
+    max-width: 1100px
 }
 
 .content-wrap.padded {

@@ -80,10 +80,16 @@
 .main-backup-entry, #main-newbackup, #main-restorebackup {
     margin-top: 20px;
     clear: both;
+    display: inline-block;
+    height: 150px;
+    width: 350px;
+    vertical-align: top;
 }
 
-#main-restorebackup {
+#main-restorebackup, #main-newbackup {
     margin-top: 0px;
+    width: 1000px;
+    height: auto;
 }
 
 .main-backup-entry .action-links {
