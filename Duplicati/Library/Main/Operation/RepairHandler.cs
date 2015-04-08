@@ -79,9 +79,11 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (f != null && System.IO.File.Exists(f))
                     System.IO.File.Delete(f);
-                    
+                
+                var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
+
                 new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                        .Run(m_options.Dryrun ? (string)f : m_options.Dbpath);
+                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, filter, filelistfilter);
             }
         }
 
