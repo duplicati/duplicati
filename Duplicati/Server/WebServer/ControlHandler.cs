@@ -51,6 +51,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("add-backup", AddBackup);
             SUPPORTED_METHODS.Add("update-backup", UpdateBackup);
             SUPPORTED_METHODS.Add("delete-backup", DeleteBackup);
+            SUPPORTED_METHODS.Add("copy-backup-to-temp", CopyBackupToTemporary);
             SUPPORTED_METHODS.Add("validate-path", ValidatePath);
             SUPPORTED_METHODS.Add("list-tags", ListTags);
             SUPPORTED_METHODS.Add("test-backend", TestBackend);
@@ -672,6 +673,28 @@ namespace Duplicati.Server.WebServer
                 else
                     ReportError(response, bw, string.Format("Unable to save settings: {0}", ex.Message));
             }
+
+        }
+
+        private void CopyBackupToTemporary(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            var bk = Program.DataConnection.GetBackup(input["id"].Value);
+            if (bk == null)
+            {
+                ReportError(response, bw, "Invalid or missing backup id");
+                return;
+            }
+
+            //var ipx = new Database.Backup();
+            //Newtonsoft.Json.JsonConvert.PopulateObject(Newtonsoft.Json.JsonConvert.SerializeObject(bk), ipx);
+            var ipx = Serializer.Deserialize<Database.Backup>(new StringReader(Newtonsoft.Json.JsonConvert.SerializeObject(bk)));
+
+            using(var tf = new Duplicati.Library.Utility.TempFile())
+                ipx.DBPath = tf;
+            ipx.ID = null;
+
+            bw.OutputOK(new { status = "OK", ID = Program.DataConnection.RegisterTemporaryBackup(ipx) });
 
         }
             
