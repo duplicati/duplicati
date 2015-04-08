@@ -206,6 +206,14 @@ namespace Duplicati.Library.Main
                     h.Run(t[0], filter, filelistfilter);
             });
         }
+
+        public Duplicati.Library.Interface.IRecreateDatabaseResults UpdateDatabaseWithVersions(Library.Utility.IFilter filter = null)
+        {
+            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
+
+            return RunAction(new RecreateDatabaseResults(), (result) => {
+                using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
+                    h.RunUpdate(filter, filelistfilter);
             });
         }
 

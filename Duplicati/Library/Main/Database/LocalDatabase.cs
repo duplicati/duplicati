@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-		public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null)
+        public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null, bool singleTimeMatch = false)
 		{
 			var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
 			string query = "";
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main.Database
                     if (time.Kind == DateTimeKind.Unspecified)
                         throw new Exception("Invalid DateTime given, must be either local or UTC");
             
-                    query += @" ""Timestamp"" <= ?";
+                    query += singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?";
                     // Make sure the resolution is the same (i.e. no milliseconds)
                     args.Add(NormalizeDateTimeToEpochSeconds(time));
                     hasTime = true;
@@ -421,6 +421,25 @@ namespace Duplicati.Library.Main.Database
                 return res;
             }
         }
+
+        public IEnumerable<long> FindMatchingFilesets(DateTime restoretime, long[] versions)
+        {
+            if (restoretime.Kind == DateTimeKind.Unspecified)
+                throw new Exception("Invalid DateTime given, must be either local or UTC");
+
+            var tmp = GetFilelistWhereClause(restoretime, versions, singleTimeMatch: true);
+            string query = tmp.Item1;
+            var args = tmp.Item2;
+
+            var res = new List<long>();
+            using(var cmd = m_connection.CreateCommand())
+            using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" " + query  + @" ORDER BY ""Timestamp"" DESC", args))
+                while (rd.Read())
+                    res.Add(rd.GetInt64(0));
+
+            return res;
+        }
+
 
         public System.Data.IDbTransaction BeginTransaction()
         {

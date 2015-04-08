@@ -435,7 +435,13 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Repair:
                             {
-                                var r = controller.Repair();
+                                var r = controller.Repair(data.FilterStrings == null ? null : new Library.Utility.FilterExpression(data.FilterStrings));
+                                UpdateMetadata(backup, r);
+                                return r;
+                            }
+                        case DuplicatiOperation.RepairUpdate:
+                            {
+                                var r = controller.UpdateDatabaseWithVersions();
                                 UpdateMetadata(backup, r);
                                 return r;
                             }

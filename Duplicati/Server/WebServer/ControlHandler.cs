@@ -306,6 +306,8 @@ namespace Duplicati.Server.WebServer
             extra["list-sets-only"] = "true";
             if (input["include-metadata"].Value != null)
                 extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value, false)).ToString();
+            if (input["from-remote-only"].Value != null)
+                extra["no-local-db"] = Library.Utility.Utility.ParseBool(input["from-remote-only"].Value, false).ToString();
 
             var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk, extra), false) as Duplicati.Library.Interface.IListResults;
 
@@ -1175,6 +1177,7 @@ namespace Duplicati.Server.WebServer
                     }
                     return;
 
+                case "run-repair-update":
                 case "run-repair":
                     {
                         var backup = Program.DataConnection.GetBackup(input["id"].Value);
@@ -1184,7 +1187,18 @@ namespace Duplicati.Server.WebServer
                             return;
                         }
 
-                        var task = Runner.CreateTask(DuplicatiOperation.Repair, backup);
+                        string[] filters = null;
+                        var extra = new Dictionary<string, string>();
+                        if (input["only-paths"].Value != null)
+                            extra["repair-only-paths"] = (Library.Utility.Utility.ParseBool(input["only-paths"].Value, false)).ToString();
+                        if (input["time"].Value != null)
+                            extra["time"] = input["time"].Value;
+                        if (input["version"].Value != null)
+                            extra["version"] = input["version"].Value;
+                        if (input["paths"].Value != null)
+                            filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+
+                        var task = Runner.CreateTask(command.ToLowerInvariant() == "run-repair" ? DuplicatiOperation.Repair : DuplicatiOperation.RepairUpdate, backup, extra, filters);
                         Program.WorkThread.AddTask(task);
                         Program.StatusEventNotifyer.SignalNewEvent();
 

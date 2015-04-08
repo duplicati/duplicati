@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Operation
             return tmp.CompressionModule;
         }
 
-        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate FilterNumberedFilelist(DateTime time, long[] versions)
+        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate FilterNumberedFilelist(DateTime time, long[] versions, bool singleTimeMatch = false)
         {
             if (time.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Unspecified datetime instance, must be either local or UTC");
@@ -58,11 +58,11 @@ namespace Duplicati.Library.Main.Operation
 
                     if (time.Ticks > 0 && versions != null && versions.Length > 0)
                         return from n in numbers
-                            where n.Value.Time <= time && versions.Contains(n.Key)
+                            where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time) && versions.Contains(n.Key)
                             select n;
                     else if (time.Ticks > 0)
                         return from n in numbers
-                            where n.Value.Time <= time
+                            where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time)
                             select n;
                     else if (versions != null && versions.Length > 0)
                         return from n in numbers
@@ -171,7 +171,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                         using(new Logging.Timer("Recreate temporary database for restore"))
                             new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                                .DoRun(database, filter, filelistfilter, /*localpatcher*/null);
+                                .DoRun(database, false, filter, filelistfilter, /*localpatcher*/null);
 
                         if (!m_options.SkipMetadata)
                             ApplyStoredMetadata(database, m_options, m_result, metadatastorage);
