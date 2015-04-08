@@ -12,6 +12,9 @@ $(document).ready(function() {
     var searchTrees = {};
     var commonPrefix = [];
 
+    var dbversions = {};
+    var isDirectRestore = false;
+
     var includeMap = null;
 
     var performRestore = function(tasks) {
@@ -115,8 +118,6 @@ $(document).ready(function() {
             }
 
             var task = tasks[curTask];
-            task['action'] = 'restore-files';
-            task['HTTP_METHOD'] = 'POST';
             curTask++;
 
             APP_DATA.callServer(task, function(data) {
@@ -166,7 +167,9 @@ $(document).ready(function() {
                     var tasks = [];
                     for(var n in includeMap) {
                         var t = {
+                            'action': 'restore-files',
                             time: $('#restore-version').val(),
+                            'HTTP_METHOD': 'POST',
                             id: backupId,
                             'restore-path': restorePath,
                             'overwrite': overwrite,
@@ -188,7 +191,37 @@ $(document).ready(function() {
                         }
                     }
 
-                    performRestore(tasks);
+                    if (isDirectRestore) {
+
+                        var backupid = null;
+
+                        var dlg = APP_UTIL.create_modal_task_wait('Creating database', 'Building local database ... ', function(cancelled, taskid) {
+                            if (!cancelled)
+                                performRestore(tasks);
+                        });
+
+                        APP_DATA.callServer({ action: 'copy-backup-to-temp', 'id': backupId }, function(data) {
+                            var bkid = data.ID;
+                            for(var n in tasks)
+                                tasks[n].id = bkid;
+
+                            APP_DATA.callServer({ action: 'send-command', command: 'run-repair', 'id': bkid, 'time':  $('#restore-version').val(), 'paths': tasks[0].paths, 'HTTP_METHOD': 'POST' }, function(data) {
+                                dlg.register_updates(data.ID);
+                            }, function(a,b,msg) {
+                                alert('Failed to connect: ' + msg);
+                                dlg.dialog('close');
+                                dlg.remove();
+                            });                            
+                        }, function(a,b,msg) {
+                            alert('Failed to connect: ' + msg);
+                            dlg.dialog('close');
+                            dlg.remove();
+                        });                        
+
+
+                    } else {
+                        performRestore(tasks);
+                    }
                 } else {
                     var els = 0;
                     includeMap = buildIncludeMap();
@@ -556,10 +589,13 @@ $(document).ready(function() {
         return m;
     };
 
-    $('#restore-dialog').on('setup-dialog', function(e, id) {
-        backupId = id;
+    $('#restore-dialog').on('setup-dialog', function(e, data) {
+        backupId = data.id;
+        isDirectRestore = data.isDirectRestore;
         trees = { };
         searchdata = { };
+        dbversions = { };
+
         $('#restore-files-tree').empty();
         $('#restore-search-loader').hide();
         $('#restore-form').each(function(i, e) { e.reset(); });
@@ -576,13 +612,17 @@ $(document).ready(function() {
             dirSep = serverdata.DirectorySeparator;
             pathSep = serverdata.PathSeparator;
 
-            APP_DATA.callServer({ 'action': 'list-backup-sets', id: id }, function(data, success, message) {
+            APP_DATA.callServer({ 'action': 'list-backup-sets', id: backupId, 'from-remote-only': isDirectRestore }, function(data, success, message) {
                     $('#restore-version').empty();
 
                     if (data == null || data.length == 0) {
                         alert('Failed to get list of backup times');
                         $('#restore-dialog').dialog('close');
                     }
+
+                    for(var n in data)
+                        dbversions[data[n].Time] = isDirectRestore ? n : true;
+                    dbversions[data[0].Time] = true;
 
                     var latest_group = $('<optgroup></optgroup>').attr('label', 'Newest - ' + $.timeago(data[0].Time));
                     latest_group.append($("<option></option>").attr("value", data[0].Time).text($.toDisplayDateAndTime($.parseDate(data[0].Time))));
@@ -713,7 +753,29 @@ $(document).ready(function() {
 
     $('#restore-version').change(function() {
         $('#restore-search').val('');
-        setupTree($('#restore-version').val());
+
+        var selectedversion = $('#restore-version').val();
+
+        if (dbversions[selectedversion] !== true) {
+            // Need to patch the db with data
+
+            var dlg = APP_UTIL.create_modal_task_wait('Updating database', 'Updating local database ... ', function(cancelled, taskid) {
+                if (!cancelled) {
+                    dbversions[selectedversion] = true;
+                    setupTree(selectedversion);
+                }
+            });
+
+            APP_DATA.callServer({ action: 'send-command', command: 'run-repair-update', 'only-paths': true, 'id': backupId, 'time': selectedversion }, function(data) {
+                dlg.register_updates(data.ID);
+            }, function(a,b,msg) {
+                alert('Failed to connect: ' + msg);
+                dlg.dialog('close');
+                dlg.remove();
+            });           
+        } else {
+            setupTree(selectedversion);
+        }
     });
     
     $('#restore-target-path').keypress(function() { $('#restore-overwrite-target-other').each(function(i,e) { e.checked = true; }); });
@@ -784,77 +846,27 @@ $(document).ready(function() {
                 };
 
                 var self = this;
-
                 var backupid = null;
-                var taskid = null;
 
-                var isTaskActive = false;
-
-                var handler_for_event;
-                var handler_for_progress;
-
-                var pg = $('<div></div>');
-                pg.progressbar({ value: false });
-
-                var dlg = APP_UTIL.create_modal_wait('Creating database', 'Building local database ... ', function() {
-                    if (confirm('Stop the process ?')) {
-                        APP_DATA.stopTask(taskid, true);
-                        $(document).off('server-state-updated', handler_for_event);
-                        $(document).off('server-progress-updated', handler_for_progress);
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-
-                pg.insertAfter(dlg.pgtxt);
-
-                handler_for_progress = function(ev, data) {
-                    if (data.TaskID == taskid) {
-                        pg.progressbar('option', 'value', parseInt(data.OverallProgress * 100));
-                    } else {
-                        pg.progressbar('option', 'value', false);
-                    }
-                };
-
-
-                handler_for_event = function(ev, data) {
-
-                    isTaskActive = data.ActiveTask != null && data.ActiveTask.Item1 == taskid;
-
-                    var active = isTaskActive;
-                    if (!active && data.SchedulerQueueIds)
-                        for(var n in data.SchedulerQueueIds)
-                            active = active || (data.SchedulerQueueIds[n].Item1 == taskid);                
-
-                    if (!active) {
-                        handler_for_progress(null, {OverallProgress: 1, TaskID: taskid});
-
-                        $(document).off('server-state-updated', handler_for_event);
-                        $(document).off('server-progress-updated', handler_for_progress);
-                        APP_DATA.restoreBackup(backupid);
-
-                        dlg.dialog('close');
-                        dlg.remove();
+                var dlg = APP_UTIL.create_modal_task_wait('Creating database', 'Building local database ... ', function(cancelled, taskid) {
+                    if (!cancelled) {
+                        APP_DATA.restoreBackup(backupid, true);
                         $(self).dialog('close');
                     }
-                };
+                });
 
                 APP_DATA.testConnection(uri, function() {
                     APP_DATA.addBackup(item, function(data) {
                         backupid = data.ID;
 
-                        APP_DATA.runRepair(backupid, function(data) {
-                            taskid = data.ID;
-                            $(document).on('server-state-updated', handler_for_event);
-                            $(document).on('server-progress-updated', handler_for_progress);
+                        APP_DATA.callServer({ action: 'send-command', command: 'run-repair', 'only-paths': true, 'id': backupid, 'version': 0 }, function(data) {
+                            dlg.register_updates(data.ID);
 
                         }, function(a,b,msg) {
                             alert('Failed to connect: ' + msg);
                             dlg.dialog('close');
                             dlg.remove();
-                        });
-
+                        });                            
                     }, function(a,b,msg) {
                         alert('Failed to create a backup set: ' + msg);
                         dlg.dialog('close');

@@ -1051,13 +1051,13 @@ $(document).ready(function() {
         );
     };
 
-    APP_DATA.restoreBackup = function(id) {
+    APP_DATA.restoreBackup = function(id, isFromDirect) {
         APP_DATA.isBackupActive(id, function(active) {
             if (active) {
                 alert('Cannot start restore while the backup is active.');
             } else {
                 $('#restore-dialog').dialog('open');
-                $('#restore-dialog').trigger('setup-dialog', id);
+                $('#restore-dialog').trigger('setup-dialog', {id: id, isDirectRestore: isFromDirect});
             }
         });
 
