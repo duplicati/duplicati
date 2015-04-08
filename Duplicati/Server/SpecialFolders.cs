@@ -114,6 +114,9 @@ namespace Duplicati.Server
         {
             var systemIO = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO;
 
+            if (backup.Sources == null || backup.Sources.Length == 0)
+                return new Dictionary<string, string>();
+
             var sources = backup.Sources.Distinct().Select(x =>
             {
                 var sp = SpecialFolders.TranslateToDisplayString(x);
