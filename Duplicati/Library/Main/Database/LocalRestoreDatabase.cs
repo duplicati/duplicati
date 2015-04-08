@@ -10,21 +10,18 @@ namespace Duplicati.Library.Main.Database
     {
         protected string m_tempfiletable;
         protected string m_tempblocktable;
-        protected long m_blocksize;
         protected DateTime m_restoreTime;
 
 		public DateTime RestoreTime { get { return m_restoreTime; } } 
 
-        public LocalRestoreDatabase(string path, long blocksize)
-            : this(new LocalDatabase(path, "Restore"), blocksize)
+        public LocalRestoreDatabase(string path)
+            : this(new LocalDatabase(path, "Restore"))
         {
         }
 
-        public LocalRestoreDatabase(LocalDatabase dbparent, long blocksize)
+        public LocalRestoreDatabase(LocalDatabase dbparent)
             : base(dbparent)
         {
-            //TODO: Should read this from DB?
-            m_blocksize = blocksize;
         }
 
         public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
@@ -501,9 +498,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata)
+        public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
         {
-            return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, m_blocksize, skipMetadata);
+            return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
         }
 
         public IEnumerable<IRemoteVolume> GetMissingVolumes()
@@ -668,9 +665,9 @@ namespace Duplicati.Library.Main.Database
             public string Tablename { get { return m_tmptable; } }
         }
 
-        public IFilesAndMetadata GetMissingBlockData(BlockVolumeReader curvolume)
+        public IFilesAndMetadata GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
         {
-            return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, m_blocksize, curvolume);
+            return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
         }
 
 		private class FileToRestore : IFileToRestore
@@ -951,7 +948,7 @@ namespace Duplicati.Library.Main.Database
 			}
 		}
 
-		public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast()
+        public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
 		{
             var whereclause = string.Format(@" ""{0}"".""ID"" = ""{1}"".""FileID"" AND ""{1}"".""Restored"" = 0 AND ""{1}"".""Metadata"" = 0 AND ""{0}"".""TargetPath"" != ""{0}"".""Path"" ", m_tempfiletable, m_tempblocktable);		
 			var sourepaths = string.Format(@"SELECT DISTINCT ""{0}"".""Path"" FROM ""{0}"", ""{1}"" WHERE " + whereclause, m_tempfiletable, m_tempblocktable);
@@ -965,7 +962,7 @@ namespace Duplicati.Library.Main.Database
 					var more = false;
 					do
 					{
-						var n = new FastSource(rd, m_blocksize);
+						var n = new FastSource(rd, blocksize);
 						var tid = n.TargetFileID;
 						yield return n;
 						

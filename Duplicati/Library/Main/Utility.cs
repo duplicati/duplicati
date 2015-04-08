@@ -96,14 +96,27 @@ namespace Duplicati.Library.Main
         {
             return new Metahash(values, options);
         }
-            
-        internal static void VerifyParameters(LocalDatabase db, Options options)
+
+        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        {
+            string n = null;
+            var opts = db.GetDbOptions(transaction);
+            if(opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
+                options.RawOptions["blocksize"] = opts["blocksize"] + "b";
+
+            if (opts.ContainsKey("blockhash") && (!options.RawOptions.TryGetValue("block-hash-algorithm", out n) || string.IsNullOrEmpty(n)))
+                options.RawOptions["block-hash-algorithm"] = opts["blockhash"];
+            if (opts.ContainsKey("filehash") && (!options.RawOptions.TryGetValue("file-hash-algorithm", out n) || string.IsNullOrEmpty(n)))
+                options.RawOptions["file-hash-algorithm"] = opts["filehash"];
+        }
+
+        internal static void VerifyParameters(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
         {
             var newDict = new Dictionary<string, string>();
             newDict.Add("blocksize", options.Blocksize.ToString());
             newDict.Add("blockhash", options.BlockHashAlgorithm);
             newDict.Add("filehash", options.FileHashAlgorithm);
-            var opts = db.GetDbOptions();
+            var opts = db.GetDbOptions(transaction);
             
             if (options.NoEncryption)
             {
@@ -159,7 +172,7 @@ namespace Duplicati.Library.Main
                 throw new Exception("Unsupported block-size change detected");
         
             if (needsUpdate)
-                db.SetDbOptions(newDict);               
+                db.SetDbOptions(newDict, transaction);               
         }    
     }
 }

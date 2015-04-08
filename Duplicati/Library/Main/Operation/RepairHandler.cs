@@ -23,11 +23,11 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
         }
         
-        public void Run()
+        public void Run(Library.Utility.IFilter filter = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
             {
-                RunRepairLocal();
+                RunRepairLocal(filter);
                 RunRepairCommon();
                 return;
             }
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Main.Operation
                     System.IO.File.Move(m_options.Dbpath, baseName);
                 }
                 
-                RunRepairLocal();
+                RunRepairLocal(filter);
                 RunRepairCommon();
             }
             else
@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main.Operation
 
         }
         
-        public void RunRepairLocal()
+        public void RunRepairLocal(Library.Utility.IFilter filter = null)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using(new Logging.Timer("Recreate database for repair"))
@@ -96,6 +96,7 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);
+                Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);

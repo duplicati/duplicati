@@ -21,9 +21,6 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_backendurl = backendurl;
             m_result = result;
-
-            m_blockbuffer = new byte[m_options.Blocksize];
-
         }
 
         /// <summary>
@@ -85,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
 			
             if (!m_options.NoLocalDb && m_systemIO.FileExists(m_options.Dbpath))
             {
-                using(var db = new LocalRestoreDatabase(m_options.Dbpath, m_options.Blocksize))
+                using(var db = new LocalRestoreDatabase(m_options.Dbpath))
                 {
                     db.SetResult(m_result);
                     DoRun(db, filter, m_result);
@@ -106,30 +103,36 @@ namespace Duplicati.Library.Main.Operation
                 // Simultaneously with downloading blocklists, we patch as much as we can from the blockvolumes
                 // This prevents repeated downloads, except for cases where the blocklists refer blocks
                 // that have been previously handled. A local blockvolume cache can reduce this issue
-                using(var database = new LocalRestoreDatabase(tmpdb, m_options.Blocksize))
+                using(var database = new LocalRestoreDatabase(tmpdb))
                 {
                     using(var metadatastorage = new RestoreHandlerMetadataStorage())
                     {
-                        var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                        var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
-                        if (blockhasher == null)
-                            throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
-                        if (!blockhasher.CanReuseTransform)
-                            throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
-        
-                        if (filehasher == null)
-                            throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
-                        if (!filehasher.CanReuseTransform)
-                            throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
-        
+                        System.Security.Cryptography.HashAlgorithm blockhasher = null;
+                        System.Security.Cryptography.HashAlgorithm filehasher = null;
+
                         bool first = true;
                         RecreateDatabaseHandler.BlockVolumePostProcessor localpatcher =
                             (key, rd) =>
                             {
                                 if (first)
                                 {
+                                    Utility.UpdateOptionsFromDb(database, m_options);
+                                    m_blockbuffer = new byte[m_options.Blocksize];
+
                                     //Figure out what files are to be patched, and what blocks are needed
                                     PrepareBlockAndFileList(database, m_options, filter, m_result);
+
+                                    blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                                    filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                                    if (blockhasher == null)
+                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                                    if (!blockhasher.CanReuseTransform)
+                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+
+                                    if (filehasher == null)
+                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                                    if (!filehasher.CanReuseTransform)
+                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                                     // Don't run this again
                                     first = false;
@@ -192,7 +195,7 @@ namespace Duplicati.Library.Main.Operation
             var blockhasher = fullblockverification ? System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
 
             using(var blockmarker = database.CreateBlockMarker())
-            using(var volumekeeper = database.GetMissingBlockData(blocks))
+            using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
             {
                 foreach(var restorelist in volumekeeper.FilesWithMissingBlocks)
                 {
@@ -328,12 +331,14 @@ namespace Duplicati.Library.Main.Operation
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
-            using(var database = new LocalRestoreDatabase(dbparent, m_options.Blocksize))
+            using(var database = new LocalRestoreDatabase(dbparent))
             using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
             using(var metadatastorage = new RestoreHandlerMetadataStorage())
             {
                 database.SetResult(m_result);
+                Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyParameters(database, m_options);
+                m_blockbuffer = new byte[m_options.Blocksize];
 	        	
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
@@ -561,7 +566,7 @@ namespace Duplicati.Library.Main.Operation
             using (var blockmarker = database.CreateBlockMarker())
             {
                 var updateCount = 0L;
-            	foreach(var entry in database.GetFilesAndSourceBlocksFast())
+                foreach(var entry in database.GetFilesAndSourceBlocksFast(options.Blocksize))
             	{
                     var targetpath = entry.TargetPath;
                     var targetfileid = entry.TargetFileID;
@@ -658,14 +663,13 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-
         private static void ScanForExistingSourceBlocks(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
         {
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
             {
                 var updateCount = 0L;
-                foreach (var restorelist in database.GetFilesAndSourceBlocks(options.SkipMetadata))
+                foreach (var restorelist in database.GetFilesAndSourceBlocks(options.SkipMetadata, options.Blocksize))
                 {
                     var targetpath = restorelist.TargetPath;
                     var targetfileid = restorelist.TargetFileID;

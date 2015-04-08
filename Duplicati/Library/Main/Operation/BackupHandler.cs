@@ -15,10 +15,10 @@ namespace Duplicati.Library.Main.Operation
         private BackendManager m_backend;
         private string m_backendurl;
 
-        private readonly byte[] m_blockbuffer;
-        private readonly byte[] m_blocklistbuffer;
-        private readonly System.Security.Cryptography.HashAlgorithm m_blockhasher;
-        private readonly System.Security.Cryptography.HashAlgorithm m_filehasher;
+        private byte[] m_blockbuffer;
+        private byte[] m_blocklistbuffer;
+        private System.Security.Cryptography.HashAlgorithm m_blockhasher;
+        private System.Security.Cryptography.HashAlgorithm m_filehasher;
 
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Operation
         // Speed up things by caching these
         private readonly FileAttributes m_attributeFilter;
         private readonly Options.SymlinkStrategy m_symlinkPolicy;
-        private readonly int m_blocksize;
+        private int m_blocksize;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -56,23 +56,6 @@ namespace Duplicati.Library.Main.Operation
 
             m_attributeFilter = m_options.FileAttributeFilter;
             m_symlinkPolicy = m_options.SymlinkPolicy;
-            m_blocksize = m_options.Blocksize;
-
-            m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
-            m_blocklistbuffer = new byte[m_options.Blocksize];
-
-            m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-            m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
-
-			if (m_blockhasher == null)
-				throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
-			if (m_filehasher == null)
-				throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
-
-            if (!m_blockhasher.CanReuseTransform)
-                throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
-            if (!m_filehasher.CanReuseTransform)
-                throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
                 
             if (options.AllowPassphraseChange)
                 throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
@@ -437,8 +420,28 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.SetDatabase(m_database);
                 m_result.Dryrun = m_options.Dryrun;
-                
+
+                Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
+
+                m_blocksize = m_options.Blocksize;
+
+                m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
+                m_blocklistbuffer = new byte[m_options.Blocksize];
+
+                m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+
+                if (m_blockhasher == null)
+                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                if (m_filehasher == null)
+                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+
+                if (!m_blockhasher.CanReuseTransform)
+                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                if (!m_filehasher.CanReuseTransform)
+                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+
                 m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included

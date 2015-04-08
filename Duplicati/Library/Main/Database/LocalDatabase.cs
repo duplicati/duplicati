@@ -528,17 +528,17 @@ namespace Duplicati.Library.Main.Database
             	yield return new LocalFileEntry(rd);
         }
 
-		private IEnumerable<KeyValuePair<string, string>> GetDbOptionList()
+        private IEnumerable<KeyValuePair<string, string>> GetDbOptionList(System.Data.IDbTransaction transaction = null)
 		{
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             using(var rd = cmd.ExecuteReader(@"SELECT ""Key"", ""Value"" FROM ""Configuration"" "))
             while(rd.Read())
             	yield return new KeyValuePair<string, string>(rd.GetValue(0).ToString(), rd.GetValue(1).ToString());
 		}
-		
-		public IDictionary<string, string> GetDbOptions()
+            		
+        public IDictionary<string, string> GetDbOptions(System.Data.IDbTransaction transaction = null)
 		{
-			return GetDbOptionList().ToDictionary(x => x.Key, x => x.Value);	
+            return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);	
 		}
 		
 		public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)

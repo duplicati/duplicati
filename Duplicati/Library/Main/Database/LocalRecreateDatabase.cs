@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Database
             @" ORDER BY ""A"".""BlockListHash"", ""A"".""Index"" ";
 
         public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
-            : base(parentdb, options.Blocksize)
+            : base(parentdb)
         {
             m_tempblocklist = "TempBlocklist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                         
@@ -159,20 +159,20 @@ namespace Duplicati.Library.Main.Database
                 m_filesetLookup = new PathLookupHelper<PathEntryKeeper>();
         }
 
-        public void FindMissingBlocklistHashes(long hashsize, System.Data.IDbTransaction transaction)
+        public void FindMissingBlocklistHashes(long hashsize, long blocksize, System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = transaction;
                 
                 //Update all small blocklists and matching blocks
-                var selectSmallBlocks = string.Format(@"SELECT ""Blockset"".""Fullhash"", ""Blockset"".""Length"" FROM ""Blockset"" WHERE ""Blockset"".""Length"" <= {0}", m_blocksize);
+                var selectSmallBlocks = string.Format(@"SELECT ""Blockset"".""Fullhash"", ""Blockset"".""Length"" FROM ""Blockset"" WHERE ""Blockset"".""Length"" <= {0}", blocksize);
             
                 var selectBlockHashes = string.Format(
                     @"SELECT ""BlockHash"" AS ""FullHash"", ""BlockSize"" AS ""Length"" FROM ( " +
                     SELECT_BLOCKLIST_ENTRIES +
                     @" )",
-                    m_blocksize,
+                    blocksize,
                     hashsize,
                     m_tempblocklist
                 );
@@ -211,14 +211,14 @@ namespace Duplicati.Library.Main.Database
                     @"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( " +
                     SELECT_BLOCKLIST_ENTRIES +
                     @") D, ""BlocklistHash"" E, ""Block"" F WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
-                    m_blocksize,
+                    blocksize,
                     hashsize,
                     m_tempblocklist
                     );
                     
                 var selectBlocksetEntries = string.Format(
                     @"SELECT ""Blockset"".""ID"" AS ""BlocksetID"", 0 AS ""Index"", ""Block"".""ID"" AS ""BlockID"" FROM ""Blockset"", ""Block"" WHERE ""Blockset"".""Fullhash"" = ""Block"".""Hash"" AND ""Blockset"".""Length"" <= {0} ",
-                    m_blocksize
+                    blocksize
                     );
                     
                 var selectAllBlocksetEntries =

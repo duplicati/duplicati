@@ -45,6 +45,7 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
             {
                 db.SetResult(m_results);
+                Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
                 
                 if (!m_options.NoBackendverification)

@@ -44,7 +44,8 @@ namespace Duplicati.Library.Main.Operation
             using(var tr = db.BeginTransaction())
             {
                 m_result.SetDatabase(db);
-                
+
+                Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
                 
                 DoRun(db, tr, false, false);
