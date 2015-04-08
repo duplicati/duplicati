@@ -172,6 +172,71 @@ APP_UTIL = {
         dlg.pgtxt = pgtxt;
 
         return dlg;
+    },
+
+    create_modal_task_wait: function(title, text, complete_callback) {
+        var handler_for_event = null;
+        var handler_for_progress = null;
+        var cancelled = false;
+        var taskid = null;
+
+        var pg = $('<div></div>');
+        pg.progressbar({ value: false });
+
+        var dlg = APP_UTIL.create_modal_wait(title, text, function() {
+            if (confirm('Stop the process ?')) {
+                APP_DATA.stopTask(taskid, true);
+                $(document).off('server-state-updated', handler_for_event);
+                $(document).off('server-progress-updated', handler_for_progress);
+                cancelled = true;
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        pg.insertAfter(dlg.pgtxt);
+
+        handler_for_progress = function(ev, data) {
+            if (taskid == null)
+                return;
+            
+            if (data.TaskID == taskid) {
+                pg.progressbar('option', 'value', parseInt(data.OverallProgress * 100));
+            } else {
+                pg.progressbar('option', 'value', false);
+            }
+        };
+
+        handler_for_event = function(ev, data) {
+            if (taskid == null)
+                return;
+
+            var active = data.ActiveTask != null && data.ActiveTask.Item1 == taskid;
+
+            if (!active && data.SchedulerQueueIds)
+                for(var n in data.SchedulerQueueIds)
+                    active = active || (data.SchedulerQueueIds[n].Item1 == taskid);                
+
+            if (!active) {
+                handler_for_progress(null, {OverallProgress: 1, TaskID: taskid});
+
+                $(document).off('server-state-updated', handler_for_event);
+                $(document).off('server-progress-updated', handler_for_progress);
+
+                dlg.dialog('close');
+                dlg.remove();
+                complete_callback(cancelled, taskid);
+            }
+        };
+
+        dlg.register_updates = function(id) {
+            taskid = id;
+            $(document).on('server-state-updated', handler_for_event);
+            $(document).on('server-progress-updated', handler_for_progress);
+        }
+
+        return dlg;    
     }
 };
 
