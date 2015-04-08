@@ -384,7 +384,7 @@ namespace Duplicati.CommandLine
                 return PrintWrongNumberOfArguments(args, 1);
 
             using(var i = new Duplicati.Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
-                i.Repair();
+                i.Repair(filter);
 
             return 0;
         }

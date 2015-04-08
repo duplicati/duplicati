@@ -507,6 +507,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
 
+                    new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                 });
 
                 return lst;
@@ -1727,6 +1728,14 @@ namespace Duplicati.Library.Main
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-block-verification"); }
         }
 
+        /// <summary>
+        /// Gets a flag indicating if the repair process will only restore paths
+        /// </summary>
+        /// <value><c>true</c> if only paths are restored; otherwise, <c>false</c>.</value>
+        public bool RepairOnlyPaths
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-only-paths"); }
+        }
 
         /// <summary>
         /// Gets the threshold for when log data should be cleaned

@@ -157,10 +157,10 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IRepairResults Repair()
+        public Duplicati.Library.Interface.IRepairResults Repair(Library.Utility.IFilter filter = null)
         {
             return RunAction(new RepairResults(), (result) => {
-                new Operation.RepairHandler(m_backend, m_options, result).Run();
+                new Operation.RepairHandler(m_backend, m_options, result).Run(filter);
             });
         }
         
@@ -195,13 +195,17 @@ namespace Duplicati.Library.Main
             });
         }
         
-        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath)
+        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath, Library.Utility.IFilter filter = null)
         {
             var t = new string[] { string.IsNullOrEmpty(targetpath) ? m_options.Dbpath : targetpath };
-            
+
+            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
+
             return RunAction(new RecreateDatabaseResults(), ref t, (result) => {
                 using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
-                    h.Run(t[0]);
+                    h.Run(t[0], filter, filelistfilter);
+            });
+        }
             });
         }
 

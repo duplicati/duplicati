@@ -201,7 +201,9 @@ namespace Duplicati.Library.Main.Strings
         public static string FullblockverificationLong { get { return LC.L(@"Use this option to increase verification by checking the hash of blocks read from a volume before patching restored files with the data."); } }
         public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
         public static string LogretentionLong { get { return LC.L(@"Set the time after which log data will be purged from the database."); } }
-    }
+        public static string RepaironlypathsShort { get { return LC.L(@"Repair database with paths"); } }
+        public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
+            }
 
     internal static class Foresthash 
     {
