@@ -90,6 +90,24 @@ namespace Duplicati.Library.Backend.AzureBlob
                     var containerSegment = string.Concat("/", _containerName, "/");
                     var blobName = absolutePath.Substring(absolutePath.IndexOf(
                         containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
+
+                    try
+                    {
+                        if (x is CloudBlockBlob)
+                        {
+                            var cb = (CloudBlockBlob)x;
+                            var modified = cb.Properties.LastModified;
+                            var lastModified = new System.DateTime();
+                            if (cb.Properties.LastModified != null)
+                                lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
+                            return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
+                        }
+                    }
+                    catch
+                    { 
+                        // If the metadata fails to parse, return the basic entry
+                    }
+
                     return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
                 })
                 .Cast<IFileEntry>()
