@@ -61,6 +61,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Duplic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -230,6 +232,12 @@ Global
 		{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{ECB63D1C-1724-442D-9228-DEABF14F2EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECB63D1C-1724-442D-9228-DEABF14F2EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECB63D1C-1724-442D-9228-DEABF14F2EA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECB63D1C-1724-442D-9228-DEABF14F2EA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECB63D1C-1724-442D-9228-DEABF14F2EA3}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECB63D1C-1724-442D-9228-DEABF14F2EA3}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Release|Any CPU.ActiveCfg = Release|Any CPU

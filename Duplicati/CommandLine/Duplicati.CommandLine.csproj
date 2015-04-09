@@ -29,7 +29,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Commandlineparameters>UNITTEST ~/testdata/DSMCBE/r50 ~/testdata/DSMCBE/r100 ~/testdata/DSMCBE/r150 --no-encryption --debug-output</Commandlineparameters>
     <EnvironmentVariables>
       <EnvironmentVariables>
         <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
@@ -57,7 +56,6 @@
     <Compile Include="Help.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UnitTest.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="ConsoleOutput.cs" />
     <Compile Include="Strings.cs" />

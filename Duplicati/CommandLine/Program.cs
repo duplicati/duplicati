@@ -110,28 +110,6 @@ namespace Duplicati.CommandLine
                     );
                 }
 
-#if DEBUG
-                if (cargs.Count > 1 && cargs[0].ToLower() == "unittest")
-                {
-                    //The unit test is only enabled in DEBUG builds
-                    //it works by getting a list of folders, and treats them as 
-                    //if they have the same data, but on different times
-
-                    //The first folder is used to make a full backup,
-                    //and each subsequent folder is used to make an incremental backup
-
-                    //After all backups are made, the files are restored and verified against
-                    //the original folders.
-
-                    //The best way to test it, is to use SVN checkouts at different
-                    //revisions, as this is how a regular folder would evolve
-
-                    cargs.RemoveAt(0);
-                    UnitTest.RunTest(cargs.ToArray(), options);
-                    return 0;
-                }
-#endif
-
                 if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
