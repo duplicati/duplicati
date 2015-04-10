@@ -66,26 +66,7 @@ namespace Duplicati.UnitTest
                 base.WriteMessage(this.Backupset + ", " + message, type, exception);
             }
         }
-
-        /// <summary>
-        /// Running the unit test confirms the correctness of duplicati
-        /// </summary>
-        /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
-        public static void RunTest(string[] folders, Dictionary<string, string> options)
-        {
-            //Place a file called "unittest_target.txt" in the bin folder, and enter a connection string like "ftp://username:password@example.com"
-
-            string auth_password = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_authpassword.txt");
-            if (System.IO.File.Exists(auth_password))
-                options["auth-password"] = System.IO.File.ReadAllText(auth_password).Trim();
-
-            string alttarget = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_target.txt");
-            if (System.IO.File.Exists(alttarget))
-                RunTest(folders, options, System.IO.File.ReadAllText(alttarget).Trim());
-            else
-                RunTest(folders, options, null);
-        }
-
+            
         /// <summary>
         /// Running the unit test confirms the correctness of duplicati
         /// </summary>
@@ -196,9 +177,11 @@ namespace Duplicati.UnitTest
                     tmp["force"] = "";
                     tmp["allow-full-removal"] = "";
 
-                    using (new Timer("Cleaning up any existing backups")) 
-                    using(var i = new Duplicati.Library.Main.Controller(target, tmp, new CommandLine.ConsoleOutput(options)))
-                        i.Delete();
+                    using(new Timer("Cleaning up any existing backups"))
+                    using(var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
+                        foreach(var f in bk.List())
+                            if (!f.IsFolder)
+                                bk.Delete(f.Name);
                 }
 
                 log.Backupset = "Backup " + folders[0];
@@ -211,7 +194,7 @@ namespace Duplicati.UnitTest
                     if (usingFHWithRestore)
                     {
                         fhtempsource = fhsourcefolder;
-                        CopyDirectoryRecursive(folders[0], fhsourcefolder);
+                        TestUtils.CopyDirectoryRecursive(folders[0], fhsourcefolder);
                     }
 
                     RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
@@ -226,7 +209,7 @@ namespace Duplicati.UnitTest
                         if (usingFHWithRestore)
                         {
                             System.IO.Directory.Delete(fhsourcefolder, true);
-                            CopyDirectoryRecursive(folders[i], fhsourcefolder);
+                            TestUtils.CopyDirectoryRecursive(folders[i], fhsourcefolder);
                         }
                         
                         //Call function to simplify profiling
@@ -432,7 +415,7 @@ namespace Duplicati.UnitTest
                             throw new Exception("Unittest is broken");
                         }
 
-                        if (!CompareFiles(sourcename, restoredname, s, verifymetadata))
+                        if (!TestUtils.CompareFiles(sourcename, restoredname, s, verifymetadata))
                         {
                             Log.WriteMessage("Partial restore file differs: " + s, LogMessageType.Error);
                             Console.WriteLine("Partial restore file differs: " + s);
@@ -446,7 +429,7 @@ namespace Duplicati.UnitTest
             using (new Timer("Verification of " + source))
             {
                 for (int j = 0; j < actualfolders.Length; j++)
-                    VerifyDir(actualfolders[j], restorefoldernames[j], verifymetadata);
+                    TestUtils.VerifyDir(actualfolders[j], restorefoldernames[j], verifymetadata);
             }
         }
 
@@ -475,160 +458,5 @@ namespace Duplicati.UnitTest
             using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(options)))
                 Log.WriteMessage(i.Restore(files).ToString(), LogMessageType.Information);
         }
-
-        /// <summary>
-        /// Returns the index of a given string, using the file system case sensitivity
-        /// </summary>
-        /// <returns>The index of the entry or -1 if no entry was found</returns>
-        /// <param name='lst'>The list to search</param>
-        /// <param name='m'>The string to find</param>
-        private static int IndexOf(List<string> lst, string m)
-        {
-            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparision;
-            for(int i = 0; i < lst.Count; i++)
-                if (lst[i].Equals(m, sc))
-                    return i;
-            
-            return -1;
-        }
-        
-        /// <summary>
-        /// Verifies the existence of all files and folders, and ensures that all
-        /// files are binary equal.
-        /// </summary>
-        /// <param name="f1">One folder</param>
-        /// <param name="f2">Another folder</param>
-        private static void VerifyDir(string f1, string f2, bool verifymetadata)
-        {
-            f1 = Utility.AppendDirSeparator(f1);
-            f2 = Utility.AppendDirSeparator(f2);
-
-            var folders1 = Utility.EnumerateFolders(f1);
-            var folders2 = Utility.EnumerateFolders(f2).ToList();
-
-            foreach (string s in folders1)
-            {
-                string relpath = s.Substring(f1.Length);
-                string target = System.IO.Path.Combine(f2, relpath);
-                int ix = IndexOf(folders2, target);
-                if (ix < 0)
-                {
-                    Log.WriteMessage("Missing folder: " + relpath, LogMessageType.Error);
-                    Console.WriteLine("Missing folder: " + relpath);
-                }
-                else
-                    folders2.RemoveAt(ix);
-            }
-
-            foreach (string s in folders2)
-            {
-                Log.WriteMessage("Extra folder: " + s.Substring(f2.Length), LogMessageType.Error);
-                Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
-            }
-
-            var files1 = Utility.EnumerateFiles(f1);
-            var files2 = Utility.EnumerateFiles(f2).ToList();
-            foreach (string s in files1)
-            {
-                string relpath = s.Substring(f1.Length);
-                string target = System.IO.Path.Combine(f2, relpath);
-                int ix = IndexOf(files2, target);
-                if (ix < 0)
-                {
-                    Log.WriteMessage("Missing file: " + relpath, LogMessageType.Error);
-                    Console.WriteLine("Missing file: " + relpath);
-                }
-                else
-                {
-                    files2.RemoveAt(ix);
-                    if (!CompareFiles(s, target, relpath, verifymetadata))
-                    {
-                        Log.WriteMessage("File differs: " + relpath, LogMessageType.Error);
-                        Console.WriteLine("File differs: " + relpath);
-                    }
-                }
-            }
-
-            foreach (string s in files2)
-            {
-                Log.WriteMessage("Extra file: " + s.Substring(f2.Length), LogMessageType.Error);
-                Console.WriteLine("Extra file: " + s.Substring(f2.Length));
-            }
-        }
-
-        /// <summary>
-        /// Compares two files by reading all bytes, and comparing one by one
-        /// </summary>
-        /// <param name="f1">One file</param>
-        /// <param name="f2">Another file</param>
-        /// <param name="display">File display name</param>
-        /// <returns>True if they are equal, false otherwise</returns>
-        private static bool CompareFiles(string f1, string f2, string display, bool verifymetadata)
-        {
-            using (System.IO.FileStream fs1 = System.IO.File.OpenRead(f1))
-            using (System.IO.FileStream fs2 = System.IO.File.OpenRead(f2))
-                if (fs1.Length != fs2.Length)
-                {
-                    Log.WriteMessage("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString(), LogMessageType.Error);
-                    Console.WriteLine("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString());
-                    return false;
-                }
-                else
-                {
-                    long len = fs1.Length;
-                    for (long l = 0; l < len; l++)
-                        if (fs1.ReadByte() != fs2.ReadByte())
-                        {
-                            Log.WriteMessage("Mismatch in byte " + l.ToString() + " in file " + display, LogMessageType.Error);
-                            Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
-                            return false;
-                        }
-                }
-
-            if (verifymetadata)
-            {
-                if (System.IO.File.GetLastWriteTime(f1) != System.IO.File.GetLastWriteTime(f2))
-                {
-                    Log.WriteMessage("Mismatch in lastmodified for " + f2 + ", " + System.IO.File.GetLastWriteTimeUtc(f1) + " vs. " + System.IO.File.GetLastWriteTimeUtc(f2), LogMessageType.Warning);
-                    Console.WriteLine("Mismatch in lastmodified for " + f2 + ", " + System.IO.File.GetLastWriteTimeUtc(f1) + " vs. " + System.IO.File.GetLastWriteTimeUtc(f2));
-                }
-
-                if (System.IO.File.GetCreationTimeUtc(f1) != System.IO.File.GetCreationTimeUtc(f2))
-                {
-                    Log.WriteMessage("Mismatch in create-time for " + f2 + ", " + System.IO.File.GetCreationTimeUtc(f1) + " vs. " + System.IO.File.GetCreationTimeUtc(f2), LogMessageType.Warning);
-                    Console.WriteLine("Mismatch in create-time for " + f2 + ", " + System.IO.File.GetCreationTimeUtc(f1) + " vs. " + System.IO.File.GetCreationTimeUtc(f2));
-                }
-            }
-
-
-            return true;
-        }
-        
-        /// <summary>
-        /// Recursively copy a directory to another location.
-        /// </summary>
-        /// <param name="source">Source directory path</param>
-        /// <param name="dest">Destination directory path</param>
-        private static void CopyDirectoryRecursive(string source, string dest)
-        {
-            if (!System.IO.Directory.Exists(dest))
-                System.IO.Directory.CreateDirectory(dest);
-            
-            foreach(var file in System.IO.Directory.GetFiles(source))
-            {
-                var t = System.IO.Path.Combine(dest, System.IO.Path.GetFileName(file));
-                System.IO.File.Copy(file, t, false);
-                System.IO.File.SetCreationTimeUtc(t, System.IO.File.GetCreationTimeUtc(file));
-                System.IO.File.SetLastWriteTimeUtc(t, System.IO.File.GetLastWriteTimeUtc(file));
-            }
-            
-            foreach(var folder in System.IO.Directory.GetDirectories(source))
-            {
-                var t = System.IO.Path.Combine(dest, System.IO.Path.GetFileName(folder));
-                CopyDirectoryRecursive(folder, t);
-                System.IO.Directory.SetCreationTimeUtc(t, System.IO.Directory.GetCreationTimeUtc(folder));
-                System.IO.Directory.SetLastWriteTimeUtc(t, System.IO.Directory.GetLastWriteTimeUtc(folder));
-            }
-        }        
     }
 }

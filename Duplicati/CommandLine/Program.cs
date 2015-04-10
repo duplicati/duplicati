@@ -25,7 +25,7 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.CommandLine
 {
-    class Program
+    public class Program
     {
     	private class FilterCollector
 		{

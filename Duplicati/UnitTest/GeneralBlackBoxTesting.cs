@@ -15,16 +15,16 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using NUnit.Framework;using System.Linq;using System.IO;
-using System;using System.Collections.Generic;
+using System;using System.Collections.Generic;using System.Reflection;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture()]
+    [TestFixture]
     public class GeneralBlackBoxTesting
-    {        private const string SOURCE_FOLDERS = "~/testdata/DSMCBE";        //private static readonly Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(new Dictionary<string, string>());        private static readonly string HOME_PATH = (Environment.OSVersion.Platform == PlatformID.Unix ||                Environment.OSVersion.Platform == PlatformID.MacOSX)                ? Environment.GetEnvironmentVariable("HOME")                : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");        private static string ExpandString(string str)        {            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));        }        private IEnumerable<string> TestFolders        {            get            {                var rx = new System.Text.RegularExpressions.Regex("r(?<number>\\d+)");                return                     from n in Directory.EnumerateDirectories(ExpandString(SOURCE_FOLDERS))                    let m = rx.Match(n)                        where m.Success                    orderby int.Parse(m.Groups["number"].Value)                    select n;            }        }        private Dictionary<string, string> TestOptions        {            get            {                return new Dictionary<string, string>();            }        }
-        [Test()]
+    {        private static readonly string SOURCE_FOLDERS = TestUtils.ExpandString(Path.Combine("~", "testdata", "DSMCBE"));        protected IEnumerable<string> TestFolders        {            get            {                var rx = new System.Text.RegularExpressions.Regex("r(?<number>\\d+)");                return                     from n in Directory.EnumerateDirectories(SOURCE_FOLDERS)                    let m = rx.Match(n)                        where m.Success                    orderby int.Parse(m.Groups["number"].Value)                    select n;            }        }        protected Dictionary<string, string> TestOptions        {            get            {                return TestUtils.DefaultOptions;            }        }        protected string TestTarget         {            get            {                var x = TestUtils.GetDefaultTarget("x");                return x == "x" ? null : x;            }        }
+        [Test]
         public void TestWithSVNShort()
-        {            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions);        }
-    }
+        {            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);        }
+        [Test]        public void TestWithSVNLong()        {            SVNCheckoutTest.RunTest(TestFolders.ToArray(), TestOptions, TestTarget);        }        [Test]        public void TestWithErrors()        {            var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());            RandomErrorBackend.WrappedBackend = u.Scheme;            var target = u.SetScheme(new RandomErrorBackend().ProtocolKey).ToString();            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);        }    }
 }
 

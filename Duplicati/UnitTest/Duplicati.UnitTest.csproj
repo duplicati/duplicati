@@ -38,6 +38,9 @@
   <ItemGroup>
     <Compile Include="SVNCheckoutsTest.cs" />
     <Compile Include="GeneralBlackBoxTesting.cs" />
+    <Compile Include="CommandLineOperationsTests.cs" />
+    <Compile Include="TestUtils.cs" />
+    <Compile Include="RandomErrorBackend.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
