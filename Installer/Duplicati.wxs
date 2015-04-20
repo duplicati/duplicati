@@ -12,54 +12,33 @@
 		<?define SoftwareKeyX86 = "Software\Wow6432Node" ?>
 		<?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
 		<?define ProgramFilesFolderX86 = "ProgramFilesFolder" ?>
-		<?define DisplayName = "Duplicati (x64)" ?>
+		<?define DisplayName = "Duplicati 2 (x64)" ?>
 	<?else?>
 		<?define SystemFolder = "SystemFolder" ?>
 		<?define SystemFolderX86 = "SystemFolder" ?>
 		<?define SoftwareKey = "Software" ?>
 		<?define SoftwareKeyX86 = "Software" ?>
 		<?define ProgramFilesFolder = "ProgramFilesFolder" ?>
-		<?define DisplayName = "Duplicati" ?>
+		<?define DisplayName = "Duplicati 2" ?>
 	<?endif?>
 	
   <Product Id="$(var.ProductCode)" Name="$(var.DisplayName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
-	<Package InstallerVersion="200" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" />
-	<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+	  <Package InstallerVersion="200" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" />
+	  <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <PropertyRef Id="NETFRAMEWORK20"/>
-    <Condition Message="The .NET Framework 2.0 must be installed ([NETFRAMEWORK20])">
-      Installed OR NETFRAMEWORK20
+    <PropertyRef Id="NETFRAMEWORK45"/>
+    <Condition Message="The .NET Framework 4.5 must be installed ([NETFRAMEWORK45])">
+      <![CDATA[Installed OR NETFRAMEWORK45]]>
     </Condition>
 
     <Property Id="ALLUSERS">1</Property>
-    
-    
 
     <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="Resources/InstallerSmall.bmp" />
     <WixVariable Id="WixUIDialogBmp" Value="Resources/InstallerLarge.bmp" />
 
     <UI>
-      <!-- <UIRef Id="WixUI_Mondo"/> -->
-      <!-- <UIRef Id="WixUI_InstallDir"/> -->
       <UIRef Id="WixUI_FeatureTree"/>
-      <!-- <UIRef Id="WixUI_Advanced"/> -->
-      <!-- <UIRef Id="WixUI_Minimal"/> -->
-      
-      <!-- <Dialog Id="ExtraOptionsDialog" Width="370" Height="270" Title="Duplicati options">
-        <Control Id="StartWithWindows"
-                 Type="CheckBox"
-                 X="10" Y="10" Width="100" Height="17"
-                 Text="Start Duplicati when Windows starts" Property="STARTWITHWINDOWS"/>
-        <Control Id="DesktopShortcut"
-                 Type="CheckBox"
-                 X="10" Y="40" Width="100" Height="17"
-                 Text="Start Duplicati when Windows starts" Property="INSTALLDESKTOPSHORTCUT" />
-        <Control Id="QuickLauncShortcut"
-                 Type="CheckBox"
-                 X="10" Y="70" Width="100" Height="17"
-                 Text="Start Duplicati when Windows starts"  Property="INSTALLQUICKLAUNCHSHORTCUT"/>
-      </Dialog> -->
       
       <Publish Dialog="ExitDialog"
         Control="Finish"
@@ -73,7 +52,7 @@
       <Directory Id="DesktopFolder" Name="Desktop"/>
 	  
   	  <Directory Id="$(var.ProgramFilesFolder)">
-	    <Directory Id="INSTALLLOCATION" Name="Duplicati" />
+	    <Directory Id="INSTALLLOCATION" Name="Duplicati 2" />
 	  </Directory>
 		
     </Directory>
@@ -82,7 +61,7 @@
 
     <!-- TODO: Make expanded -->
     <Feature Id="ProductFeature" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
-      <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="0" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+      <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
         <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
       </Feature>
 
@@ -95,39 +74,6 @@
     <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
       <ComponentRef Id="StartupMenuItem"/>
     </Feature>
-
-    <!-- <Feature Id="LanguageFeature" Title="Duplicati translations" Level="1" Description="Installs user interface translations for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
-      <Feature Id="da_DK_LanguageFeature" Title="Danish translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Danish (da-DK)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_da_DK" />
-      </Feature>
-      <Feature Id="pt_BR_LanguageFeature" Title="Portugese Brazilian translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Portugese Brazilian (pt-BR)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_pt_BR" />
-      </Feature>
-      <Feature Id="fr_FR_LanguageFeature" Title="French translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in French (fr-FR)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_fr_FR" />
-      </Feature>
-      <Feature Id="de_DE_LanguageFeature" Title="German translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in German (de-DE)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_de_DE" />
-      </Feature>
-      <Feature Id="es_ES_LanguageFeature" Title="Spanish translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Spanish (es-ES)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_es_ES" />
-      </Feature>
-      <Feature Id="it_IT_LanguageFeature" Title="Italian translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Italian (it-IT)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_it_IT" />
-      </Feature>
-      <Feature Id="zh_CN_LanguageFeature" Title="Chinese translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Chinese (zh-CN)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_zh_CN" />
-      </Feature>
-      <Feature Id="ru_RU_LanguageFeature" Title="Russian translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Russian (ru-RU)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_ru_RU" />
-      </Feature>
-      <Feature Id="zh_HK_LanguageFeature" Title="Chinese translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Chinese (zh-HK)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_zh_HK" />
-      </Feature>
-      <Feature Id="cs_CZ_LanguageFeature" Title="Czech translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Czech (cs-CZ)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
-        <ComponentGroupRef Id="DUPLICATI_LANG_cs_CZ" />
-      </Feature>
-    </Feature> -->
 
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
@@ -144,7 +90,7 @@
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
     <Upgrade Id="$(var.UpgradeCode)">
-      <UpgradeVersion Minimum="1.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
+      <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
     </Upgrade>
     
   </Product>
