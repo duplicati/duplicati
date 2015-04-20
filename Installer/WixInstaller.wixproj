@@ -9,7 +9,7 @@
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
-    <HeatDefinitions>HarvestPath=..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\Release</HeatDefinitions>
+    <HeatDefinitions>HarvestPath=bin\$(Platform)\$(Configuration)\Duplicati\</HeatDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -65,9 +65,15 @@
       <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
     </WixExtension>
   </ItemGroup>
+  <ItemGroup>
+    <BinFiles Include="..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\Release\**\*.*" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*" />
+    <WebFiles Include="..\Duplicati\Server\webroot\**\*.*" />
+  </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
-	<Target Name="BeforeBuild">
-    <HeatDirectory Directory="..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\Release" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
+  <Target Name="BeforeBuild">
+    <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles->'bin\$(Platform)\$(Configuration)\Duplicati\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(WebFiles)" DestinationFiles="@(WebFiles->'bin\$(Platform)\$(Configuration)\Duplicati\webroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <HeatDirectory Directory="bin\$(Platform)\$(Configuration)\Duplicati\" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
 	</Target>
 	<Target Name="AfterBuild">
 	</Target>
