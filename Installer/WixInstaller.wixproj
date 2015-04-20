@@ -9,11 +9,12 @@
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <HeatDefinitions>HarvestPath=..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\Release</HeatDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;Win64=no</DefineConstants>
+    <DefineConstants>Debug;Win64=no;$(HeatDefinitions)</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
@@ -22,7 +23,7 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
-    <DefineConstants>Win64=no</DefineConstants>
+    <DefineConstants>Win64=no;$(HeatDefinitions)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug;Win64=yes</DefineConstants>
@@ -30,13 +31,14 @@
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
+    <DefineConstants>Debug;Win64=yes;$(HeatDefinitions)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
-    <DefineConstants>Win64=yes</DefineConstants>
+    <DefineConstants>Win64=yes;$(HeatDefinitions)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Duplicati.wxs" />
@@ -64,12 +66,9 @@
     </WixExtension>
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
-  <!--
-	To modify your build process, add your task inside one of the targets below and uncomment it.
-	Other similar extension points exist, see Wix.targets.
 	<Target Name="BeforeBuild">
+    <HeatDirectory Directory="..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\Release" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
 	</Target>
 	<Target Name="AfterBuild">
 	</Target>
-	-->
 </Project>
