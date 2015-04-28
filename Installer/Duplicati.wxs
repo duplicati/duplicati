@@ -4,34 +4,32 @@
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <!-- Various nice-to-have shorthands for x64/x32 -->
-	<?if $(var.Platform) = "x64" ?>
-		<?define SystemFolder = "System64Folder" ?>
-		<?define SystemFolderX86 = "SystemFolder" ?>
-		<?define SoftwareKey = "Software" ?>
-		<?define SoftwareKeyX86 = "Software\Wow6432Node" ?>
-		<?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
-		<?define ProgramFilesFolderX86 = "ProgramFilesFolder" ?>
-		<?define DisplayName = "Duplicati 2 (x64)" ?>
-	<?else?>
-		<?define SystemFolder = "SystemFolder" ?>
-		<?define SystemFolderX86 = "SystemFolder" ?>
-		<?define SoftwareKey = "Software" ?>
-		<?define SoftwareKeyX86 = "Software" ?>
-		<?define ProgramFilesFolder = "ProgramFilesFolder" ?>
-		<?define DisplayName = "Duplicati 2" ?>
-	<?endif?>
-	
+  <!-- Various nice-to-have shorthands for x64/x32 -->
+  <?if $(var.Platform) = "x64" ?>
+    <?define SystemFolder = "System64Folder" ?>
+    <?define SystemFolderX86 = "SystemFolder" ?>
+    <?define SoftwareKey = "Software" ?>
+    <?define SoftwareKeyX86 = "Software\Wow6432Node" ?>
+    <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define ProgramFilesFolderX86 = "ProgramFilesFolder" ?>
+  <?else?>
+    <?define SystemFolder = "SystemFolder" ?>
+    <?define SystemFolderX86 = "SystemFolder" ?>
+    <?define SoftwareKey = "Software" ?>
+    <?define SoftwareKeyX86 = "Software" ?>
+    <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?endif?>
+
+  <?define DisplayName = "Duplicati 2" ?>
+
   <Product Id="$(var.ProductCode)" Name="$(var.DisplayName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
-	  <Package InstallerVersion="200" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" />
-	  <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+    <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" InstallScope="perMachine" />
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
     <PropertyRef Id="NETFRAMEWORK45"/>
     <Condition Message="The .NET Framework 4.5 must be installed ([NETFRAMEWORK45])">
       <![CDATA[Installed OR NETFRAMEWORK45]]>
     </Condition>
-
-    <Property Id="ALLUSERS">1</Property>
 
     <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="Resources/InstallerSmall.bmp" />
@@ -41,20 +39,21 @@
       <UIRef Id="WixUI_FeatureTree"/>
       
       <Publish Dialog="ExitDialog"
-        Control="Finish"
-        Event="DoAction"
-        Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX and NOT Installed</Publish>
+          Control="Finish"
+          Event="DoAction"
+          Value="LaunchApplication">
+        <![CDATA[WIXUI_EXITDIALOGOPTIONALCHECKBOX and NOT Installed]]>
+      </Publish>
     </UI>
 
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder" Name="Programs"/>
       <Directory Id="DesktopFolder" Name="Desktop"/>
-	  
-  	  <Directory Id="$(var.ProgramFilesFolder)">
-	    <Directory Id="INSTALLLOCATION" Name="Duplicati 2" />
-	  </Directory>
-		
+    
+      <Directory Id="$(var.ProgramFilesFolder)">
+        <Directory Id="INSTALLLOCATION" Name="Duplicati 2" />
+      </Directory>
     </Directory>
 
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
@@ -65,7 +64,7 @@
         <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
       </Feature>
 
-      <Feature Id="DuplicatiProgramFilesShortCutFeature" Title="Program Files Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program Files menu" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+      <Feature Id="DuplicatiProgramMenuShortCutFeature" Title="Program Menu Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program menu" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
         <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
       </Feature>
       <ComponentGroupRef Id="DUPLICATIBIN" />
