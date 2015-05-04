@@ -46,6 +46,7 @@ In the message body, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
 %REMOTEURL% - Remote server url
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
+%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
 All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
@@ -90,6 +91,7 @@ In the message, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
 %REMOTEURL% - Remote server url
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
+%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
 All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendxmppusernameShort { get { return LC.L(@"The XMPP username"); } }

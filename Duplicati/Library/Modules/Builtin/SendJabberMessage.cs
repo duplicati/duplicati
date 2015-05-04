@@ -92,6 +92,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The cached set of options
         /// </summary>
         private IDictionary<string, string> m_options; 
+        /// <summary>
+        /// The parsed result level if the operation is a backup, empty otherwise
+        /// </summary>
+        private string m_parsedresultlevel = string.Empty;
 
         /// <summary>
         /// The server username
@@ -249,6 +253,8 @@ namespace Duplicati.Library.Modules.Builtin
                     //Check if this level should send mail
                     if ((m_level & level) == 0)
                         return;
+
+                    m_parsedresultlevel = level.ToString();
                 }
             }
 
@@ -358,6 +364,7 @@ namespace Duplicati.Library.Modules.Builtin
             input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
                 using (TempFile tf = new TempFile())
                 {
