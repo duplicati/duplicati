@@ -424,7 +424,7 @@ $(document).ready(function() {
         }
     };
 
-    $('#backup-name').watermark('Photos 2014');
+    $('#backup-name').watermark('Photos 2015');
 //    $('#backup-labels').watermark('work, docs, s3, movies, other');
     $('#backup-uri').watermark('webdavs://user:pass@example.com:995/backup?option=true');
     $('#encryption-password').watermark('Long and secret passphrase');

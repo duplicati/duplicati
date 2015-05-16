@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.Backend.WEBDAV")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2014")]
+[assembly: AssemblyCopyright("Copyright © HexaD 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
