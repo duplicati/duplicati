@@ -1,18 +1,20 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>3.0</ProductVersion>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProductVersion>3.9</ProductVersion>
     <ProjectGuid>{ab757800-a4cb-478b-a359-33786d0e8a9c}</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>Duplicati</OutputName>
     <OutputType>Package</OutputType>
-    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.0\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <HeatDefinitions>HarvestPath=bin\$(Configuration)\Duplicati\</HeatDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;Win64=no</DefineConstants>
+    <DefineConstants>Debug;Win64=no;$(HeatDefinitions)</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
@@ -21,7 +23,7 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
-    <DefineConstants>Win64=no</DefineConstants>
+    <DefineConstants>Win64=no;$(HeatDefinitions)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug;Win64=yes</DefineConstants>
@@ -29,13 +31,14 @@
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
+    <DefineConstants>Debug;Win64=yes;$(HeatDefinitions)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
-    <DefineConstants>Win64=yes</DefineConstants>
+    <DefineConstants>Win64=yes;$(HeatDefinitions)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Duplicati.wxs" />
@@ -62,13 +65,16 @@
       <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
     </WixExtension>
   </ItemGroup>
+  <ItemGroup>
+    <BinFiles Include="..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\$(Configuration)\**\*.*" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*" />
+    <WebFiles Include="..\Duplicati\Server\webroot\**\*.*" />
+  </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
-  <!--
-	To modify your build process, add your task inside one of the targets below and uncomment it.
-	Other similar extension points exist, see Wix.targets.
-	<Target Name="BeforeBuild">
+  <Target Name="BeforeBuild">
+    <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles->'bin\$(Configuration)\Duplicati\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(WebFiles)" DestinationFiles="@(WebFiles->'bin\$(Configuration)\Duplicati\webroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <HeatDirectory Directory="bin\$(Configuration)\Duplicati\" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
 	</Target>
 	<Target Name="AfterBuild">
 	</Target>
-	-->
 </Project>
