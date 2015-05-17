@@ -426,19 +426,19 @@ namespace Duplicati.Library.Snapshots
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.File.GetAccessControl(path); }
+                try { return System.IO.Directory.GetAccessControl(path); }
             catch (System.IO.PathTooLongException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.GetAccessControl(PrefixWithUNC(path));
+            return Alphaleonis.Win32.Filesystem.Directory.GetAccessControl(PrefixWithUNC(path));
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.Directory.GetAccessControl(path); }
+                try { return System.IO.File.GetAccessControl(path); }
             catch (System.IO.PathTooLongException) { }
 
-            return Alphaleonis.Win32.Filesystem.Directory.GetAccessControl(PrefixWithUNC(path));
+            return Alphaleonis.Win32.Filesystem.File.GetAccessControl(PrefixWithUNC(path));
         }
 
         private void SetAccessControlFile(string path, FileSecurity rules)
