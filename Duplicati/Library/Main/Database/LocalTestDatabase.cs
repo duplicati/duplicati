@@ -51,9 +51,9 @@ namespace Duplicati.Library.Main.Database
             {
                 this.ID = rd.GetInt64(0);
                 this.Name = rd.GetString(1);
-                this.Size = rd.GetInt64(2);
-                this.Hash = rd.GetString(3);
-                this.VerificationCount = rd.GetInt64(4);
+                this.Size = rd.ConvertValueToInt64(2);
+                this.Hash = rd.ConvertValueToString(3);
+                this.VerificationCount = rd.ConvertValueToInt64(4);
             }
         }
         

@@ -558,7 +558,7 @@ namespace Duplicati.Library.Main.Database
                             
                             yield return new RemoteVolume(
                                 rd.GetString(0),
-                                rd.GetString(1),
+                                rd.ConvertValueToString(1),
                                 rd.ConvertValueToInt64(2, -1)
                             );
                         }
