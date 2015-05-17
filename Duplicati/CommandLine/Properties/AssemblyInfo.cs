@@ -27,9 +27,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Duplicati.CommandLine")]
 [assembly: AssemblyDescription("A commandline version of Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.CommandLine")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2015")]
+[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

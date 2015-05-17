@@ -27,9 +27,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("File")]
 [assembly: AssemblyDescription("A file backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Backend.File")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2015")]
+[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Duplicati.Library.Backend.AzureBlob")]
 [assembly: AssemblyDescription("An Azure blob storage backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Backend.S3")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2015")]
+[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

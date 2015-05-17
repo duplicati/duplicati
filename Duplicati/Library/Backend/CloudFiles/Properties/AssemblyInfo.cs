@@ -27,9 +27,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("CloudFiles")]
 [assembly: AssemblyDescription("A CloudFiles backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Backend.CloudFiles")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2015")]
+[assembly: AssemblyCopyright("Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

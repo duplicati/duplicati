@@ -13,7 +13,7 @@
                   IconIndex="0"
                   Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
                   />
-        <RegistryKey Root="HKCU" Key="Software\HexaD\Duplicati\ProgramMenuShortcut">
+        <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\ProgramMenuShortcut">
           <RegistryValue
                   Value="Installed"
                   Type="string"
@@ -33,7 +33,7 @@
                   IconIndex="0"
                   Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
                 />
-        <RegistryKey Root="HKCU" Key="Software\HexaD\Duplicati\DesktopFolderShortcut">
+        <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\DesktopFolderShortcut">
           <RegistryValue
                   Value="Installed"
                   Type="string"
@@ -55,7 +55,7 @@
                     Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
                 />
           
-          <RegistryKey Root="HKCU" Key="Software\HexaD\Duplicati\StartupShortcut">
+          <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\StartupShortcut">
             <RegistryValue
                     Value="Installed"
                     Type="string"

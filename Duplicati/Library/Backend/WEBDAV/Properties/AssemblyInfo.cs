@@ -27,9 +27,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Duplicati.Library.Backend.WEBDAV")]
 [assembly: AssemblyDescription("A WEBDAV backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Backend.WEBDAV")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2015")]
+[assembly: AssemblyCopyright("Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
