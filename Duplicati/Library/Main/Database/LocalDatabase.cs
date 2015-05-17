@@ -808,6 +808,10 @@ namespace Duplicati.Library.Main.Database
                 var type = Library.Utility.FilterType.Regexp;
                 if (filter is Library.Utility.FilterExpression)
                 	type = ((Library.Utility.FilterExpression)filter).Type;
+
+                // Bugfix: SQLite does not handle case-insensitive LIKE with non-ascii characters
+                if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
+                    type = Library.Utility.FilterType.Regexp;
                 
                 if (type == Library.Utility.FilterType.Regexp)
                 {
