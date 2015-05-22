@@ -226,6 +226,59 @@ $(document).ready(function() {
         hideserverandport: true
     }
 
+	APP_DATA.plugins.backend['gs'] = {
+		//hideserverandport: true,
+		usernamelabel: 'Email address',
+		passwordlabel: 'Key file',
+        usernamewatermark: 'GS service account email address',
+        passwordwatermark: 'Key file name (in Duplicati program folder)',
+		bucket_field: null,
+		project_field: null,
+		setup: function(dlg, div) {
+			var self = this;
+            $('#server-name-and-port-label').hide();
+			$('#server-name-and-port').hide();
+			$("#server-password").attr("type","text");
+            $('#server-username').attr('placeholder', this.usernamewatermark);
+            $('#server-password').attr('placeholder', this.passwordwatermark);
+			$('#server-path-label').html("Path in bucket")
+            var bucketfield = EDIT_URI.createFieldset({label: 'GS Bucket name', name: 'gs-bucket', after: $('#server-name-and-port'), title: '', watermark: 'Enter bucket name'});
+            var projectfield = EDIT_URI.createFieldset({label: 'GS Project name', name: 'gs-project', after: $('#server-name-and-port'), title: 'Your project name is defined in Developer Console', watermark: 'Enter project name'});
+			this.bucket_field = bucketfield.field;
+			this.project_field = projectfield.field;
+
+		},
+
+        cleanup: function(dlg, div) {
+            $('#server-name-and-port-label').show();
+			$('#server-name-and-port').show();
+            this.bucket_field = null;
+            this.project_field = null;
+        },
+		
+        validate: function(dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return;
+
+			if (values['gs-bucket'] == '')
+				return EDIT_URI.validation_error(this.bucket_field, 'You must enter a bucket name');
+			if (values['server-name'] == '')
+				return EDIT_URI.validation_error(this.bucket_field, 'You must enter a project name');
+
+            return true;
+        },
+		
+        fill_form_map: {
+            '--gs-project': 'gs-project',
+            'server-name': 'gs-bucket'
+        },
+
+        fill_dict_map: {
+            'gs-project': '--gs-project',
+            'gs-bucket': 'server-name'
+        }
+
+	}
 
     APP_DATA.plugins.backend['s3'] = {
 
