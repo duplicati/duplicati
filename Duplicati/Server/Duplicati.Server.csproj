@@ -168,10 +168,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati.Library.Backend.GoogleCloudstore\Duplicati.Library.Backend.GoogleCloudstore.csproj">
-      <Project>{f06689f1-4e60-4883-bd31-f86b6a90c0aa}</Project>
-      <Name>Duplicati.Library.Backend.GoogleCloudstore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
       <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
       <Name>Duplicati.CommandLine.BackendTester</Name>
@@ -195,6 +191,10 @@
     <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleCloudstore\Duplicati.Library.Backend.GoogleCloudstore.csproj">
+      <Project>{f06689f1-4e60-4883-bd31-f86b6a90c0aa}</Project>
+      <Name>Duplicati.Library.Backend.GoogleCloudstore</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>

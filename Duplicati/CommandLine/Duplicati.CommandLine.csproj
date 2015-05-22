@@ -117,10 +117,6 @@
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati.Library.Backend.GoogleCloudstore\Duplicati.Library.Backend.GoogleCloudstore.csproj">
-      <Project>{f06689f1-4e60-4883-bd31-f86b6a90c0aa}</Project>
-      <Name>Duplicati.Library.Backend.GoogleCloudstore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>
@@ -128,6 +124,10 @@
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleCloudstore\Duplicati.Library.Backend.GoogleCloudstore.csproj">
+      <Project>{f06689f1-4e60-4883-bd31-f86b6a90c0aa}</Project>
+      <Name>Duplicati.Library.Backend.GoogleCloudstore</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>

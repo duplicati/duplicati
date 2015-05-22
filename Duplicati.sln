@@ -65,7 +65,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleCloudstore", "Duplicati.Library.Backend.GoogleCloudstore\Duplicati.Library.Backend.GoogleCloudstore.csproj", "{F06689F1-4E60-4883-BD31-F86B6A90C0AA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleCloudstore", "Duplicati\Library\Backend\GoogleCloudstore\Duplicati.Library.Backend.GoogleCloudstore.csproj", "{F06689F1-4E60-4883-BD31-F86B6A90C0AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
