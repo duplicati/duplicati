@@ -229,8 +229,8 @@ namespace Duplicati.Library.Main.Database
         private class Filelist : Basiclist, IFilelist
         {
             protected override string TABLE_PREFIX { get { return "Filelist"; } }
-            protected override string TABLEFORMAT { get { return @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)"; } }
-            protected override string INSERTCOMMAND { get { return @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)"; } }
+            protected override string TABLEFORMAT { get { return @"(""PathEntryID"" INTEGER NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)"; } }
+            protected override string INSERTCOMMAND { get { return @"(""PathEntryID"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)"; } }
             protected override int INSERTARGUMENTS { get { return 5; } }
 
             public Filelist(System.Data.IDbConnection connection, string volumename)
@@ -238,9 +238,9 @@ namespace Duplicati.Library.Main.Database
             { 
             }
             
-            public void Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
+            public void Add(long pathentryid, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time)
             {
-                m_insertCommand.SetParameterValue(0, path);
+                m_insertCommand.SetParameterValue(0, pathentryid);
                 m_insertCommand.SetParameterValue(1, hash == null ? - 1: size);
                 m_insertCommand.SetParameterValue(2, hash);
                 m_insertCommand.SetParameterValue(3, metasize);
@@ -250,12 +250,15 @@ namespace Duplicati.Library.Main.Database
             
             public IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
             {
+                Console.WriteLine("TEST ME!!!");
+
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
-                var create = @"CREATE TEMPORARY TABLE ""{1}"" AS SELECT ""A"".""Path"" AS ""Path"", CASE WHEN ""B"".""Fullhash"" IS NULL THEN -1 ELSE ""B"".""Length"" END AS ""Size"", ""B"".""Fullhash"" AS ""Hash"", ""C"".""Length"" AS ""Metasize"", ""C"".""Fullhash"" AS ""Metahash"" FROM (SELECT ""File"".""Path"", ""File"".""BlocksetID"" AS ""FileBlocksetID"", ""Metadataset"".""BlocksetID"" AS ""MetadataBlocksetID"" from ""Remotevolume"", ""Fileset"", ""FilesetEntry"", ""File"", ""Metadataset"" WHERE ""Remotevolume"".""Name"" = ? AND ""Fileset"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"") A LEFT OUTER JOIN ""Blockset"" B ON ""B"".""ID"" = ""A"".""FileBlocksetID"" LEFT OUTER JOIN ""Blockset"" C ON ""C"".""ID""=""A"".""MetadataBlocksetID"" ";
-                var extra = @"SELECT ? AS ""Type"", ""{0}"".""Path"" AS ""Path"" FROM ""{0}"" WHERE ""{0}"".""Path"" NOT IN ( SELECT ""Path"" FROM ""{1}"" )";
-                var missing = @"SELECT ? AS ""Type"", ""Path"" AS ""Path"" FROM ""{1}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{0}"")";
-                var modified = @"SELECT ? AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ";
+                var create = @"CREATE TEMPORARY TABLE ""{1}"" AS SELECT ""A"".""PathEntryID"" AS ""Path"", CASE WHEN ""B"".""Fullhash"" IS NULL THEN -1 ELSE ""B"".""Length"" END AS ""Size"", ""B"".""Fullhash"" AS ""Hash"", ""C"".""Length"" AS ""Metasize"", ""C"".""Fullhash"" AS ""Metahash"" FROM (SELECT ""File"".""PathEntryID"", ""File"".""BlocksetID"" AS ""FileBlocksetID"", ""Metadataset"".""BlocksetID"" AS ""MetadataBlocksetID"" from ""Remotevolume"", ""Fileset"", ""FilesetEntry"", ""File"", ""Metadataset"" WHERE ""Remotevolume"".""Name"" = ? AND ""Fileset"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"") A LEFT OUTER JOIN ""Blockset"" B ON ""B"".""ID"" = ""A"".""FileBlocksetID"" LEFT OUTER JOIN ""Blockset"" C ON ""C"".""ID""=""A"".""MetadataBlocksetID"" ";
+                var extra = @"SELECT ? AS ""Type"", ""{0}"".""PathEntryID"" AS ""PathEntryID"" FROM ""{0}"" WHERE ""{0}"".""PathEntryID"" NOT IN ( SELECT ""PathEntryID"" FROM ""{1}"" )";
+                var missing = @"SELECT ? AS ""Type"", ""PathEntryID"" AS ""PathEntryID"" FROM ""{1}"" WHERE ""PathEntryID"" NOT IN (SELECT ""PathEntryID"" FROM ""{0}"")";
+                var modified = @"SELECT ? AS ""Type"", ""E"".""PathEntryID"" AS ""PathEntryID"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""PathEntryID"" = ""E"".""PathEntryID"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ";
+                var combined = @"SELECT ""N"".""Type"", ""M"".""PathX"" FROM (" + extra + " UNION " + missing + " UNION " + modified + @") ""N"", ""FullPathEntry"" ""M"" WHERE ""N"".""PathEntryID"" = ""M"".""ID""";
                 var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
                 
                 using(var cmd = m_connection.CreateCommand())
@@ -265,7 +268,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
-                        using(var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        using(var rd = cmd.ExecuteReader(string.Format(combined, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while(rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
                         

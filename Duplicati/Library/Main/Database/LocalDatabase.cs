@@ -542,7 +542,7 @@ namespace Duplicati.Library.Main.Database
         public IEnumerable<ILocalFileEntry> GetFiles(long filesetId)
         {
             using(var cmd = m_connection.CreateCommand())
-            using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""Path"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D, ""FilesetEntry"" E WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""ID"" = ""E"".""FileID"" AND ""E"".""FilesetID"" = ? ", filesetId))
+            using(var rd = cmd.ExecuteReader(@"SELECT ""F"".""PathX"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D, ""FilesetEntry"" E, ""FullPathEntry"" ""F"" WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""ID"" = ""E"".""FileID"" AND ""A"".""PathEntryID"" = ""F"".""ID"" AND ""E"".""FilesetID"" = ? ", filesetId))
             while(rd.Read())
             	yield return new LocalFileEntry(rd);
         }
@@ -589,7 +589,7 @@ namespace Duplicati.Library.Main.Database
                 // Calculate the lengths for each blockset                
                 var combinedLengths = @"SELECT ""BlocksetEntry"".""BlocksetID"" AS ""BlocksetID"", SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""BlocksetEntry"".""BlocksetID""";
                 // For each blockset with wrong lengths, fetch the file path
-                var reportDetails = @"SELECT ""CalcLen"", ""Length"", ""A"".""BlocksetID"", ""File"".""Path"" FROM (" + combinedLengths + @") A, ""File"" WHERE ""A"".""BlocksetID"" = ""File"".""BlocksetID"" AND ""A"".""CalcLen"" != ""A"".""Length"" ";
+                var reportDetails = @"SELECT ""A"".""CalcLen"", ""B"".""Length"", ""A"".""BlocksetID"", ""C"".""PathX"" FROM (" + combinedLengths + @") A, ""File"" ""B"", ""FullPathEntry"" ""C"" WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""A"".""CalcLen"" != ""A"".""Length"" AND ""B"".""PathEntryID"" = ""C"".""ID"" ";
                 
                 using(var rd = cmd.ExecuteReader(reportDetails))
                 	if (rd.Read())
@@ -744,7 +744,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
             	cmd.Transaction = transaction;
-                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Lastmodified"" FROM ""FilesetEntry"" A, ""File"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""FilesetID"" = ? ";
+                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""E"".""PathX"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Lastmodified"" FROM ""FilesetEntry"" A, ""File"" B, ""Metadataset"" C, ""Blockset"" D, ""FullPathEntry"" E WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""B"".""PathEntryID"" = ""E"".""ID"" AND ""A"".""FilesetID"" = ? ";
                 cmd.AddParameter(FOLDER_BLOCKSET_ID);
                 cmd.AddParameter(SYMLINK_BLOCKSET_ID);
                 cmd.AddParameter(filesetId);
@@ -763,7 +763,7 @@ namespace Duplicati.Library.Main.Database
                         filesetvolume.AddSymlink(path, metahash, metalength);
                 }
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Lastmodified"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Lastmodified"" AS ""Lastmodified"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                cmd.CommandText = @"SELECT ""F"".""PathX"", ""F"".""Lastmodified"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""H"".""PathX"" AS ""PathX"", ""D"".""Lastmodified"" AS ""Lastmodified"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E, ""FullPathEntry"" H WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"" AND ""A"".""PathEntryID"" = ""H"".""ID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""PathX"", ""G"".""Index"" ";
                 cmd.Parameters.Clear();
                 cmd.AddParameter(filesetId);
 
@@ -794,7 +794,7 @@ namespace Duplicati.Library.Main.Database
         }
         
         /// <summary>
-        /// Keeps a list of filenames in a temporary table with a single columne Path
+        /// Keeps a list of filenames in a temporary table with a single column PathEntryID
         ///</summary>
         public class FilteredFilenameTable : IDisposable
         {
@@ -818,20 +818,20 @@ namespace Duplicati.Library.Main.Database
                     using(var cmd = m_connection.CreateCommand())
                     {
                         cmd.Transaction = transaction;
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""PathEntryID"" INTEGER NOT NULL)", Tablename));
                         using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                         {
                             cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", Tablename);
                             cmd.AddParameter();
                             cmd.Transaction = tr.Parent;
                             using(var c2 = m_connection.CreateCommand())
-                            using(var rd = c2.ExecuteReader(@"SELECT DISTINCT ""Path"" FROM ""File"" "))
+                            using(var rd = c2.ExecuteReader(@"SELECT ""PathX"", ""ID"" FROM ""FullPathEntry"" "))
                                 while(rd.Read())
                                 {
                                     var p = rd.GetValue(0).ToString();
                                     if(Library.Utility.FilterExpression.Matches(filter, p))
                                     {
-                                        cmd.SetParameterValue(0, p);
+                                        cmd.SetParameterValue(0, rd.ConvertValueToInt64(1));
                                         cmd.ExecuteNonQuery();
                                     }
                                 }
@@ -849,12 +849,12 @@ namespace Duplicati.Library.Main.Database
                     {
                         if (f.Contains('*') || f.Contains('?'))
                         {
-                            sb.Append(@"""Path"" LIKE ? OR ");
+                            sb.Append(@"""PathX"" LIKE ? OR ");
                             args.Add(f.Replace('*', '%').Replace('?', '_'));
                         }
                         else
                         {
-                            sb.Append(@"""Path"" = ? OR ");
+                            sb.Append(@"""PathX"" = ? OR ");
                             args.Add(f);
                         }
                     }
@@ -865,8 +865,8 @@ namespace Duplicati.Library.Main.Database
                     using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                     {
                         cmd.Transaction = tr.Parent;
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""PathEntryID"" INTEGER NOT NULL)", Tablename));
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""ID"" FROM ""FullPathEntry"" WHERE " + sb.ToString(), Tablename), args.ToArray());
                         tr.Commit();
                     }
                 }

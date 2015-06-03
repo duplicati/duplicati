@@ -67,19 +67,42 @@ CREATE TABLE "FilesetEntry" (
 );
 
 /*
-The FileEntry contains an ID
+The PathEntry contains a
+record for each unique path.
+The 
+*/
+CREATE TABLE "PathEntry" (
+	"ID" INTEGER PRIMARY KEY,
+	"PathKey" INTEGER NOT NULL,
+	"PathEntryID" INTEGER NOT NULL,
+	"FilenameX" TEXT NOT NULL
+);
+
+/* Lookup index definitions */
+CREATE UNIQUE INDEX "PathEntryLookup" ON "PathEntry" ("FilenameX", "PathEntryID");
+CREATE UNIQUE INDEX "PathEntryFilename" ON "PathEntry" ("FilenameX");
+CREATE INDEX "PathEntryKey" ON "PathEntry" ("PathKey");
+
+/*
+The File table contains an ID
 for each path and each version
 of the data and metadata
 */
 CREATE TABLE "File" (
 	"ID" INTEGER PRIMARY KEY,
-	"Path" TEXT NOT NULL,
+	"PathEntryID" INTEGER NOT NULL,
 	"BlocksetID" INTEGER NOT NULL,
 	"MetadataID" INTEGER NOT NULL
 );
 
-/* Fast path based lookup */
-CREATE UNIQUE INDEX "FilePath" ON "File" ("Path", "BlocksetID", "MetadataID");
+/* Covering index */
+CREATE UNIQUE INDEX "FilePath" ON "File" ("PathEntryID", "BlocksetID", "MetadataID");
+
+/*
+A helper view that merges paths from PathEntry 
+to present a single full path
+*/
+CREATE VIEW "FullPathEntry" AS SELECT "X0"."ID", CASE WHEN "X1"."FilenameX" IS NULL THEN "" ELSE "X1"."FilenameX" END CASE || "X0"."FilenameX" AS "PathX" FROM "PathEntry" "X0" LEFT OUTER JOIN "PathEntry" "X1" ON "X0"."PathEntryID" = "X1"."ID";
 
 /*
 The blocklist hashes are hashes of
@@ -220,4 +243,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (3);
+INSERT INTO "Version" ("Version") VALUES (4);
