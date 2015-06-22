@@ -49,8 +49,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server.Serializat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDocs", "Duplicati\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj", "{42C91180-11EB-4590-82EA-80FE9D4DEBEC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
@@ -62,6 +60,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDrive", "Duplicati\Library\Backend\GoogleDrive\Duplicati.Library.Backend.GoogleDrive.csproj", "{487B2558-13BA-4A7C-A617-669F7B2F6D74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.OAuthHelper", "Duplicati\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj", "{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -124,12 +126,12 @@ Global
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.Build.0 = Debug|Any CPU
-		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|Any CPU.ActiveCfg = Debug|Any CPU
-		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -208,6 +210,12 @@ Global
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -359,7 +359,7 @@ $(document).ready(function() {
                 }
             }
 
-            for (var i in { 's3': 0, 'azure': 0, 'googledocs': 0, 'onedrive': 0, 'cloudfiles': 0 }) {
+            for (var i in { 's3': 0, 'azure': 0, 'googledrive': 0, 'onedrive': 0, 'cloudfiles': 0 }) {
                 if (BACKEND_STATE.module_lookup[i]) {
                     used[i] = true;
                     group_prop.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));

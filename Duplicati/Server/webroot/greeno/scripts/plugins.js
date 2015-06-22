@@ -222,10 +222,7 @@ $(document).ready(function() {
         }
     }
 
-    APP_DATA.plugins.backend['googledocs'] = {
-        hideserverandport: true
-    }
-
+    APP_DATA.plugins.backend['googledrive'] = APP_DATA.plugins.backend['onedrive'];
 
     APP_DATA.plugins.backend['s3'] = {
 

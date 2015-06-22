@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.CommandLine</RootNamespace>
     <AssemblyName>Duplicati.CommandLine</AssemblyName>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
     <FileUpgradeFlags>
@@ -137,10 +137,6 @@
       <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
       <Name>Duplicati.CommandLine.BackendTester</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
@@ -152,6 +148,10 @@
     <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleDrive\Duplicati.Library.Backend.GoogleDrive.csproj">
+      <Project>{487B2558-13BA-4A7C-A617-669F7B2F6D74}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDrive</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

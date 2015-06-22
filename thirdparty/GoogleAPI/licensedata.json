@@ -1,0 +1,7 @@
+{
+    "name": "Google Drive v2 Client",
+    "description": "Google APIs Client Library for working with Drive v2",
+    "link": "https://code.google.com/p/google-api-dotnet-client/",
+    "license": "Apache 2.0",
+    "notes": ""
+}
