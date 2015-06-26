@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Backend.GoogleDrive</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.GoogleDrive</AssemblyName>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
@@ -33,25 +33,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Google.Apis.Auth">
-      <HintPath>..\..\..\..\thirdparty\GoogleAPI\Google.Apis.Auth.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Auth.PlatformServices">
-      <HintPath>..\..\..\..\thirdparty\GoogleAPI\Google.Apis.Auth.PlatformServices.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Apis.Core">
-      <HintPath>..\..\..\..\thirdparty\GoogleAPI\Google.Apis.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Apis">
-      <HintPath>..\..\..\..\thirdparty\GoogleAPI\Google.Apis.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Apis.Drive.v2">
-      <HintPath>..\..\..\..\thirdparty\GoogleAPI\Google.Apis.Drive.v2.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Apis.PlatformServices">
-      <HintPath>..\..\..\..\thirdparty\GoogleAPI\Google.Apis.PlatformServices.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />

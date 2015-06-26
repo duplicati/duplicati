@@ -222,15 +222,6 @@
       <Link>licenses\SharpAESCrypt\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\GoogleAPI\download.txt">
-      <Link>licenses\GoogleAPI\download.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\GoogleAPI\license.txt">
-      <Link>licenses\GoogleAPI\license.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\GoogleAPI\licensedata.json">
-      <Link>licenses\GoogleAPI\licensedata.json</Link>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -253,8 +244,5 @@
   <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="licenses\GoogleAPI\" />
   </ItemGroup>
 </Project>
