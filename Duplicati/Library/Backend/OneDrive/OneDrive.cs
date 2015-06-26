@@ -18,8 +18,8 @@ namespace Duplicati.Library.Backend
 
         private const int FILE_LIST_PAGE_SIZE = 100;
 
-        private const long BITS_FILE_SIZE_LIMIT = 1024 * 1024 * 1;
-        private const long BITS_CHUNK_SIZE = 1024 * 1024 * 1;
+        private const long BITS_FILE_SIZE_LIMIT = 1024 * 1024 * 15;
+        private const long BITS_CHUNK_SIZE = 1024 * 1024 * 10;
 
         private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
@@ -469,7 +469,10 @@ namespace Duplicati.Library.Backend
 
                         // Retry with exponential backoff
                         if (retry && retries < 5)
+                        {
                             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                            retries++;
+                        }
                         else
                             throw;
                     }
