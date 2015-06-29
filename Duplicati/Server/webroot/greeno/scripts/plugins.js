@@ -420,4 +420,136 @@ $(document).ready(function() {
             'azure-container': 'server-name'
         }
     }
+
+    var tmp_gcs = $.extend(true, {
+        locationdrop_field: null,
+        known_locations: null,
+        storage_class_field: null,
+        known_storage_classes: null,
+
+        setup_locations_after_config: function() {
+            if (this.known_locations != null && this.locationdrop_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_locations)
+                    servers.push({label: k + ' (' + this.known_locations[k] + ')', value: this.known_locations[k]});
+
+                this.locationdrop_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.locationdrop_field.click(function() {  
+                    self.locationdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup_storage_classes_after_config: function() {
+            if (this.known_storage_classes != null && this.storage_class_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_storage_classes)
+                    servers.push({label: k + ' (' + this.known_storage_classes[k] + ')', value: this.known_storage_classes[k]});
+
+                this.storage_class_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.storage_class_field.click(function() {  
+                    self.storage_class_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup_gcs: function()
+        {
+            var locationdrop = EDIT_URI.createFieldset({label: 'Bucket create location', name: 'gcs-location', before: $('#server-options-label'), watermark: 'Click for a list of locations', title: 'Note that location is only used when creating buckets'});
+            var storageclassdrop = EDIT_URI.createFieldset({label: 'Bucket storage class', name: 'gcs-storage-class', before: $('#server-options-label'), watermark: 'Click for a list of storage classes', title: 'Note that storage class is only used when creating buckets'});
+            var projectidfield = EDIT_URI.createFieldset({label: 'GCS Project ID', name: 'gcs-project', before: $('#server-options-label'), title: 'Supply the project ID', watermark: 'Enter project ID'});
+
+            this.locationdrop_field = locationdrop.field;
+            this.storage_class_field = storageclassdrop.field;
+            this.projectid_field = projectidfield.field;
+
+            this.prevsettings = {
+                placeholder: $('#server-path').attr('placeholder'),
+                text: $('#server-path-label').text()
+            };
+
+            $('#server-path').attr('placeholder', 'bucket/folder/subfolder');
+            $('#server-path-label').text('Bucket name');
+
+
+            var self = this;
+
+            if (self.known_locations == null) {
+                APP_DATA.callServer({action: 'send-command', command: 'gcs-getconfig', 'gcs-config': 'Locations'}, function(data) {
+                    self.known_locations = data.Result;
+                    self.setup_locations_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get GCS config: ' + message);
+                });
+            } else {
+                this.setup_locations_after_config();
+            }
+
+            if (self.known_storage_classes == null) {
+                APP_DATA.callServer({action: 'send-command', command: 'gcs-getconfig', 'gcs-config': 'StorageClasses'}, function(data) {
+                    self.known_storage_classes = data.Result;
+                    self.setup_storage_classes_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get GCS config: ' + message);
+                });
+            } else {
+                this.setup_storage_classes_after_config();
+            } 
+        },
+
+        cleanup_gcs: function() {
+            this.locationdrop_field = null;
+            this.regiondrop_field = null;
+            this.projectid_field = null;
+
+            if (this.prevsettings != null) {
+                $('#server-path').attr('placeholder', this.prevsettings.placeholder);
+                $('#server-path-label').text(this.prevsettings.text);
+                this.prevsettings = null;
+            }
+
+        },
+
+        fill_form_map: {
+            '--gcs-location': 'gcs-location',
+            '--gcs-storage-class': 'gcs-storage-class',
+            '--gcs-project': 'gcs-project'
+        },
+
+        fill_dict_map: {
+            'gcs-location': '--gcs-location',
+            'gcs-storage-class': '--gcs-storage-class',
+            'gcs-project': '--gcs-project'
+        }
+
+    }, APP_DATA.plugins.backend['onedrive']);
+
+    tmp_gcs.setup_auth = tmp_gcs.setup;
+    tmp_gcs.cleanup_auth = tmp_gcs.cleanup;
+
+    tmp_gcs.setup = function() {
+        this.setup_auth();
+        this.setup_gcs();
+    };
+
+    tmp_gcs.cleanup = function() {
+        this.cleanup_auth();
+        this.cleanup_gcs();
+    };
+
+    APP_DATA.plugins.backend['gcs'] = tmp_gcs;
+    delete tmp_gcs;
+
 });

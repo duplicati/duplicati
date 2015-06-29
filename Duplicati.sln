@@ -61,9 +61,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDrive", "Duplicati\Library\Backend\GoogleDrive\Duplicati.Library.Backend.GoogleDrive.csproj", "{487B2558-13BA-4A7C-A617-669F7B2F6D74}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.OAuthHelper", "Duplicati\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj", "{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleServices", "Duplicati\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj", "{5489181D-950C-44AF-873C-45EB0A3B6BD2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -126,12 +126,6 @@ Global
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.Build.0 = Debug|Any CPU
-		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Release|Any CPU.Build.0 = Release|Any CPU
-		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Test|Any CPU.ActiveCfg = Debug|Any CPU
-		{487B2558-13BA-4A7C-A617-669F7B2F6D74}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -144,6 +138,12 @@ Global
 		{52826615-7964-47FE-B4B3-1B2DBDF605B9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{52826615-7964-47FE-B4B3-1B2DBDF605B9}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{52826615-7964-47FE-B4B3-1B2DBDF605B9}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{7E119745-1F62-43F0-936C-F312A1912C0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7E119745-1F62-43F0-936C-F312A1912C0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E119745-1F62-43F0-936C-F312A1912C0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
