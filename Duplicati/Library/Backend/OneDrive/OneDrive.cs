@@ -7,7 +7,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class SkyDrive : IBackend, IStreamingBackend
+    public class OneDrive : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
 
@@ -34,9 +34,9 @@ namespace Duplicati.Library.Backend
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
-        public SkyDrive() { }
+        public OneDrive() { }
 
-        public SkyDrive(string url, Dictionary<string, string> options)
+        public OneDrive(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
 
