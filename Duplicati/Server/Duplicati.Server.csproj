@@ -217,6 +217,10 @@
       <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
       <Name>Duplicati.Library.Backend.GoogleServices</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
+      <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
+      <Name>Duplicati.Library.Backend.OpenStack</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
