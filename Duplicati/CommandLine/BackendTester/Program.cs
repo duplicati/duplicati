@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using System.Linq;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -59,6 +60,22 @@ namespace Duplicati.CommandLine.BackendTester
         {
             try
             {
+                if (_args.Length == 1)
+                {
+                    try
+                    {
+                        var p = Environment.ExpandEnvironmentVariables(_args[0].Replace("~", "%HOME%"));
+                        if (System.IO.File.Exists(p))
+                            _args = (from x in System.IO.File.ReadLines(p)
+                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#")
+                                select x.Trim()
+                            ).ToArray();
+                    }
+                    catch
+                    {
+                    }
+                }
+
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
