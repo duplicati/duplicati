@@ -223,6 +223,7 @@ $(document).ready(function() {
     }
 
     APP_DATA.plugins.backend['googledrive'] = APP_DATA.plugins.backend['onedrive'];
+    APP_DATA.plugins.backend['hubic'] = APP_DATA.plugins.backend['onedrive'];
 
     APP_DATA.plugins.backend['s3'] = {
 

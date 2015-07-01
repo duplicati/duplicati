@@ -157,6 +157,10 @@
       <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
       <Name>Duplicati.Library.Backend.OpenStack</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
+      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
+      <Name>Duplicati.Library.Backend.HubiC</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />

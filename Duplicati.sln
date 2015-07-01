@@ -67,6 +67,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -218,6 +220,12 @@ Global
 		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
