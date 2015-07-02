@@ -1,3 +1,20 @@
+2015-07-02
+==========
+* Added handling for WebDAV timeouts
+* Updated list of compressed file extensions
+* Improved speed of searching without a local database
+* Improved speed of restore without a local database
+* Improved Web UI
+* Fixed issues with loading SQLite on newer versions of Mono
+* Added status code to email and XMPP messages
+* Fixed an issue with non-ascii filenames
+* Fixed an issue with crashes caused by incomplete remote file data
+* Added Google Drive backend and removed Google Docs backend
+* Added BITS transfer of large files to OneDrive
+* Added Google Cloud Storage backend
+* Added an OpenStack backend
+* Added HubiC backend
+
 2015-03-07
 ==========
 * Fixed an issue with file-length not being set correctly when restoring into an existing file
