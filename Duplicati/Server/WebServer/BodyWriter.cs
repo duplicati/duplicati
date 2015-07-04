@@ -20,7 +20,7 @@ using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server.WebServer
 {
-    internal class BodyWriter : System.IO.StreamWriter, IDisposable
+    public class BodyWriter : System.IO.StreamWriter, IDisposable
     {
         private HttpServer.IHttpResponse m_resp;
         private static object SUCCESS_RESPONSE = new { Status = "OK" };

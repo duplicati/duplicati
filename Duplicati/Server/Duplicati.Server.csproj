@@ -98,6 +98,16 @@
     <Compile Include="Database\TempFile.cs" />
     <Compile Include="Serializable\ImportExportStructure.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="WebServer\RESTHandler.cs" />
+    <Compile Include="WebServer\RESTMethods\IRESTMethod.cs" />
+    <Compile Include="WebServer\RESTMethods\SystemInfo.cs" />
+    <Compile Include="WebServer\RESTMethods\RequestInfo.cs" />
+    <Compile Include="WebServer\RESTMethods\Backups.cs" />
+    <Compile Include="WebServer\RESTMethods\ServerState.cs" />
+    <Compile Include="WebServer\RESTMethods\ProgressState.cs" />
+    <Compile Include="WebServer\RESTMethods\Help.cs" />
+    <Compile Include="WebServer\RESTMethods\ServerSettings.cs" />
+    <Compile Include="WebServer\RESTMethods\SystemWideSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -228,6 +238,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
+    <Folder Include="WebServer\RESTMethods\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

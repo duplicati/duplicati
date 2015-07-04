@@ -413,38 +413,7 @@ namespace Duplicati.Server.WebServer
 
         private void ListSystemInfo(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.OutputOK(new
-            {
-                APIVersion = 1,
-                PasswordPlaceholder = Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER,
-                ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                ServerVersionName = Duplicati.License.VersionNumbers.Version,
-                ServerTime = DateTime.Now,
-                OSType = Library.Utility.Utility.IsClientLinux ? (Library.Utility.Utility.IsClientOSX ? "OSX" : "Linux") : "Windows",
-                DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
-                PathSeparator = System.IO.Path.PathSeparator,
-                CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
-                MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
-                MachineName = System.Environment.MachineName,
-                NewLine = System.Environment.NewLine,
-                CLRVersion = System.Environment.Version.ToString(),
-                CLROSInfo = new
-                {
-                    Platform = System.Environment.OSVersion.Platform.ToString(),
-                    ServicePack = System.Environment.OSVersion.ServicePack,
-                    Version = System.Environment.OSVersion.Version.ToString(),
-                    VersionString = System.Environment.OSVersion.VersionString
-                },
-                Options = Serializable.ServerSettings.Options,
-                CompressionModules =  Serializable.ServerSettings.CompressionModules,
-                EncryptionModules = Serializable.ServerSettings.EncryptionModules,
-                BackendModules = Serializable.ServerSettings.BackendModules,
-                GenericModules = Serializable.ServerSettings.GenericModules,
-                WebModules = Serializable.ServerSettings.WebModules,
-                ConnectionModules = Serializable.ServerSettings.ConnectionModules,
-                UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
-                LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))
-            });
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.SystemInfo));
         }
 
         private void ListSupportedActions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -454,19 +423,7 @@ namespace Duplicati.Server.WebServer
 
         private void ListBackups (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            var schedules = Program.DataConnection.Schedules;
-            var backups = Program.DataConnection.Backups;
-
-            var all = from n in backups
-                select new AddOrUpdateBackupData() {
-                Backup = (Database.Backup)n,
-                Schedule = 
-                    (from x in schedules
-                        where x.Tags != null && x.Tags.Contains("ID=" + n.ID)
-                        select (Database.Schedule)x).FirstOrDefault()
-                };
-
-            bw.OutputOK(all.ToArray());
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.Backups));
         }
 
         private void ListTags(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -550,42 +507,22 @@ namespace Duplicati.Server.WebServer
 
         private void GetProgressState(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            if (Program.GenerateProgressState == null)
-            {
-                ReportError(response, bw, "No active backup");
-            }
-            else
-            {
-                var ev = Program.GenerateProgressState();
-                bw.OutputOK(ev);
-            }
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.ProgressState));
         }
 
         private void GetCurrentState (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bool isError;
-            long id = 0;
-            if (LongPollCheck(request, response, bw, Program.StatusEventNotifyer, ref id, out isError))
-            {
-                //Make sure we do not report a higher number than the eventnotifyer says
-                var st = new Serializable.ServerStatus();
-                st.LastEventID = id;
-                bw.OutputOK(st);
-            }
-            else if (!isError)
-            {
-                bw.OutputOK(new Serializable.ServerStatus());
-            }
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.ServerState));
         }
 
         private void ListCoreOptions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.OutputOK(new Duplicati.Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.ServerSettings));
         }
 
         private void ListApplicationSettings(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.OutputOK(Program.DataConnection.ApplicationSettings);
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.SystemWideSettings));
         }
 
         private void DownloadBugReport(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
