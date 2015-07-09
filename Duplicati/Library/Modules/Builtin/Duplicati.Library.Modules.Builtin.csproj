@@ -77,6 +77,10 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+      <Project>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</Project>
+      <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
