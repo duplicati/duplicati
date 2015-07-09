@@ -29,11 +29,13 @@ namespace Duplicati.Library.Modules.Builtin
         private const string OPTION_DISABLE_NAGLING = "disable-nagling";
         private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash";
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate";
+        private const string OPTION_OAUTH_URL = "oauth-url";
 
         private IDisposable m_certificateValidator;
         private bool m_useNagle;
         private bool m_useExpect;
         private bool m_dispose;
+        private string m_oauthurl;
 
         #region IGenericModule Members
 
@@ -65,6 +67,7 @@ namespace Duplicati.Library.Modules.Builtin
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_NAGLING, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableNagleShort, Strings.HttpOptions.DisableNagleLong, "false"),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.DescriptionAcceptHashShort, Strings.HttpOptions.DescriptionAcceptHashLong2),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DescriptionAcceptAnyCertificateShort, Strings.HttpOptions.DescriptionAcceptAnyCertificateLong),
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_OAUTH_URL, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.OauthurlShort, Strings.HttpOptions.OauthurlLong, OAuthHelper.DUPLICATI_OAUTH_SERVICE)
                 }); 
             }
         }
@@ -88,6 +91,11 @@ namespace Duplicati.Library.Modules.Builtin
 
             System.Net.ServicePointManager.UseNagleAlgorithm = !disableNagle;
             System.Net.ServicePointManager.Expect100Continue = !disableExpect100;
+
+            string url;
+            commandlineOptions.TryGetValue(OPTION_OAUTH_URL, out url);
+            OAuthHelper.OAUTH_SERVER = url;
+
         }
 
         #endregion
@@ -104,6 +112,7 @@ namespace Duplicati.Library.Modules.Builtin
                 if (m_certificateValidator != null)
                     m_certificateValidator.Dispose();
                 m_certificateValidator = null;
+                OAuthHelper.OAUTH_SERVER = null;
             }
         }
 

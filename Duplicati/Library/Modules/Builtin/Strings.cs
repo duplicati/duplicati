@@ -19,6 +19,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string DisableNagleLong { get { return LC.L(@"By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more effeciently."); } }
         public static string DisableNagleShort { get { return LC.L(@"Disable nagling"); } }
         public static string DisplayName { get { return LC.L(@"Configure http requests"); } }
+        public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
+        public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh url."); } }
     }
     internal static class RunScript {
         public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
