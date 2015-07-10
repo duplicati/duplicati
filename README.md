@@ -4,6 +4,7 @@ Store securely encrypted backups on cloud storage services!
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/pr)](http://www.issuestats.com/github/duplicati/duplicati/)
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
 
+
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
   * Amazon S3
   * OneDrive
@@ -18,12 +19,22 @@ Duplicati is a free, open source, backup client that securely stores encrypted, 
 
 Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 4.5+ or Mono required). 
 
+Download
+========
+
+The latest version of Duplicati is a preview for the Duplicati 2.0 release. 
+
+[Click here to download the latest Duplicati 2.0 preview release.](http://updates.duplicati.com/preview/latest.zip)
+
+The preview release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
+
 Features
 ========
 
   * Duplicati uses AES-256 encryption (or GNU Privacy Guard) to secure all data before it is uploaded.
   * Duplicati uploads a full backup initially and stores smaller, incremental updates afterwards to save bandwidth and storage space.
   * A scheduler keeps backups up-to-date automatically.
+  * Integrated updater notifies you when a new release is out
   * Encrypted backup files are transferred to targets like FTP, Cloudfiles, WebDAV, SSH (SFTP), Amazon S3 and others.
   * Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules. 
   * Duplicati is available as application with an easy-to-use user interface and as command line tool.
