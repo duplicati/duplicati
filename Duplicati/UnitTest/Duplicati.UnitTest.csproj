@@ -41,6 +41,7 @@
     <Compile Include="CommandLineOperationsTests.cs" />
     <Compile Include="TestUtils.cs" />
     <Compile Include="RandomErrorBackend.cs" />
+    <Compile Include="Issue1410.cs" />
     <Compile Include="BasicSetupHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
