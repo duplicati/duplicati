@@ -163,10 +163,10 @@ namespace Duplicati.Library.Snapshots
         public System.IO.Stream FileOpenRead(string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.File.OpenRead(path); }
+                try { return System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite); }
                 catch (System.IO.PathTooLongException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.OpenRead(PrefixWithUNC(path));
+            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), Alphaleonis.Win32.Filesystem.FileMode.Open, Alphaleonis.Win32.Filesystem.FileAccess.Read, Alphaleonis.Win32.Filesystem.FileShare.ReadWrite);
         }
 
         public System.IO.Stream FileOpenWrite(string path)
