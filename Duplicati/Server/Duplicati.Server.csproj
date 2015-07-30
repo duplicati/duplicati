@@ -85,13 +85,6 @@
     <Compile Include="WebServer\BodyWriter.cs" />
     <Compile Include="WebServer\IndexHtmlHandler.cs" />
     <Compile Include="WebServer\ControlHandler.cs" />
-    <Compile Include="WebServer\ControlMethods\ListFolderAsNodes.cs" />
-    <Compile Include="WebServer\ControlMethods\ReadLogData.cs" />
-    <Compile Include="WebServer\ControlMethods\SearchBackupFiles.cs" />
-    <Compile Include="WebServer\ControlMethods\GetFolderContents.cs" />
-    <Compile Include="WebServer\ControlMethods\DeleteBackup.cs" />
-    <Compile Include="WebServer\ControlMethods\AddOrUpdateBackup.cs" />
-    <Compile Include="WebServer\ControlMethods\GetBackup.cs" />
     <Compile Include="UpdatePollThread.cs" />
     <Compile Include="LogWriteHandler.cs" />
     <Compile Include="Database\Notification.cs" />
@@ -108,6 +101,25 @@
     <Compile Include="WebServer\RESTMethods\Help.cs" />
     <Compile Include="WebServer\RESTMethods\ServerSettings.cs" />
     <Compile Include="WebServer\RESTMethods\SystemWideSettings.cs" />
+    <Compile Include="WebServer\RESTMethods\Backup.cs" />
+    <Compile Include="WebServer\RESTMethods\Acknowledgements.cs" />
+    <Compile Include="WebServer\RESTMethods\Changelog.cs" />
+    <Compile Include="WebServer\RESTMethods\Tags.cs" />
+    <Compile Include="WebServer\RESTMethods\ServerSetting.cs" />
+    <Compile Include="WebServer\RESTMethods\Localizations.cs" />
+    <Compile Include="WebServer\RESTMethods\Filesystem.cs" />
+    <Compile Include="WebServer\RESTMethods\LogData.cs" />
+    <Compile Include="WebServer\RESTMethods\RemoteOperation.cs" />
+    <Compile Include="WebServer\RESTMethods\BugReport.cs" />
+    <Compile Include="WebServer\RESTMethods\Notifications.cs" />
+    <Compile Include="WebServer\RESTMethods\Notification.cs" />
+    <Compile Include="WebServer\RESTMethods\UISettings.cs" />
+    <Compile Include="WebServer\RESTMethods\BackupDefaults.cs" />
+    <Compile Include="WebServer\RESTMethods\Updates.cs" />
+    <Compile Include="WebServer\RESTMethods\Tasks.cs" />
+    <Compile Include="WebServer\RESTMethods\Task.cs" />
+    <Compile Include="WebServer\RESTMethods\WebModule.cs" />
+    <Compile Include="WebServer\RESTMethods\WebModules.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -239,6 +251,7 @@
   <ItemGroup>
     <Folder Include="webroot\" />
     <Folder Include="WebServer\RESTMethods\" />
+    <Folder Include="WebServer\ControlMethods\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

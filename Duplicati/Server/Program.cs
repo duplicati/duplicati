@@ -417,7 +417,7 @@ namespace Duplicati.Server
                 {
                     PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
                 } 
-                catch (ArgumentOutOfRangeException aex)
+                catch (ArgumentOutOfRangeException)
                 {
                     //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
                     PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));

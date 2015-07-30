@@ -18,7 +18,8 @@ using System;using System.Collections.Generic;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public interface IRESTMethod
-    {    }    public interface IRESTMethodDocumented    {        string Description { get; }        IEnumerable<KeyValuePair<string, Type>> Types { get; }    }    public interface IRESTMethodGET : IRESTMethod    {        void GET(string key, RequestInfo info);    }
-    public interface IRESTMethodPUT : IRESTMethod    {        void PUT(string key, RequestInfo info);    }    public interface IRESTMethodPOST : IRESTMethod    {        void POST(string key, RequestInfo info);    }    public interface IRESTMethodDELETE : IRESTMethod    {        void DELETE(string key, RequestInfo info);    }    public interface IRESTMethodPATCH : IRESTMethod    {        void PATCH(string key, RequestInfo info);    }}
+    public class Localizations : IRESTMethodGET, IRESTMethodDocumented
+    {
+        public void GET(string key, RequestInfo info)        {            info.OutputOK(new Dictionary<string, string>());        }        public string Description { get { return "Returns a list of localizable strings."; } }        public IEnumerable<KeyValuePair<string, Type>> Types        {            get            {                return new KeyValuePair<string, Type>[] {                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(Dictionary<string, string>))                };            }        }        }
+}
 

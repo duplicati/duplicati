@@ -18,7 +18,7 @@ using System;using System.Collections.Generic;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public interface IRESTMethod
-    {    }    public interface IRESTMethodDocumented    {        string Description { get; }        IEnumerable<KeyValuePair<string, Type>> Types { get; }    }    public interface IRESTMethodGET : IRESTMethod    {        void GET(string key, RequestInfo info);    }
-    public interface IRESTMethodPUT : IRESTMethod    {        void PUT(string key, RequestInfo info);    }    public interface IRESTMethodPOST : IRESTMethod    {        void POST(string key, RequestInfo info);    }    public interface IRESTMethodDELETE : IRESTMethod    {        void DELETE(string key, RequestInfo info);    }    public interface IRESTMethodPATCH : IRESTMethod    {        void PATCH(string key, RequestInfo info);    }}
+    public class Tasks : IRESTMethodGET
+    {        public void GET(string key, RequestInfo info)        {            var cur = Program.WorkThread.CurrentTask;            var n = Program.WorkThread.CurrentTasks;            if (cur != null)                n.Insert(0, cur);            info.OutputOK(n);        }    }
+}
 
