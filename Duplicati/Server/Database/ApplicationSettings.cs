@@ -66,7 +66,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public void UpdateSettings(Dictionary<string, string> newsettings)
+        public void UpdateSettings(Dictionary<string, string> newsettings, bool clearExisting)
         {
             if (newsettings == null)
                 throw new ArgumentNullException();
@@ -74,7 +74,8 @@ namespace Duplicati.Server.Database
             lock(m_connection.m_lock)
             {
                 m_latestUpdate = null;
-                m_values.Clear();
+                if (clearExisting)
+                    m_values.Clear();
 
                 foreach(var k in newsettings)
                     m_values[k.Key] = newsettings[k.Key];
@@ -85,7 +86,7 @@ namespace Duplicati.Server.Database
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();
         }
-        
+            
         private void SaveSettings()
         {
             m_connection.SetSettings(
