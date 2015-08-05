@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@ using System;using Duplicati.Library.Interface;using System.Collections.Generi
 namespace Duplicati.Library.Backend.GoogleServices
 {
     public class GCSConfig : IWebModule
-    {        private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Locations;        private static readonly string DEFAULT_CONFIG_TYPE_STR = Enum.GetName(typeof(ConfigType), DEFAULT_CONFIG_TYPE);        private const string KEY_CONFIGTYPE = "gcs-config";        public enum ConfigType        {            Locations,            StorageClasses        }
+    {        private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Locations;        private static readonly string DEFAULT_CONFIG_TYPE_STR = Enum.GetName(typeof(ConfigType), DEFAULT_CONFIG_TYPE);        private const string KEY_CONFIGTYPE = "gcs-config";        public enum ConfigType        {            Locations,            StorageClasses        }
         public GCSConfig()
         {
         }
