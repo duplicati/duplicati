@@ -787,6 +787,7 @@ $(document).ready(function() {
         $.browseForFolder({
             title: 'Select restore folder',
             resolvePath: true,
+            multiSelect: false,
             callback: function(path, display) {
                 $('#restore-target-path').val(path);
                 $('#restore-overwrite-target-other').each(function(i, e) { e.checked = true; });
