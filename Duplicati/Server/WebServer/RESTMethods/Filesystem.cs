@@ -77,7 +77,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 {
                     try
                     {
-                        if (System.IO.Path.IsPathRooted(path) && System.IO.Directory.Exists(path))
+                        if (System.IO.Path.IsPathRooted(path) && (System.IO.Directory.Exists(path) || System.IO.File.Exists(path)))
                         {
                             info.OutputOK();
                             return;
