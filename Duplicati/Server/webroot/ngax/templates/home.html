@@ -1,0 +1,53 @@
+<div class="home">
+    <div class="state" ng-controller="StateController">
+        <div ng-hide="state.programState == 'Running'">
+            <strong>Backups are currently paused, </strong>
+            <a href ng-click="sendResume()">click to resume</a>
+        </div>
+
+        <div ng-hide="state.ActiveTask == null">
+            <strong>Current task:</strong>
+            {{task}}
+        </div>
+
+        <div ng-show="state.ActiveTask == null">
+            <strong>Next task:</strong>
+            {{nexttask}}
+        </div>
+
+        <div>LastEventID: {{state.lastEventId}}</div>
+
+
+
+    </div>
+    <div class="tasks" ng-controller="HomeController">
+        <div class="tasklist">
+            <h3><p ng-if="backups.length > 0">Scheduled backups:</p></h3>
+            <div ng-repeat="item in backups" class="task">
+                <a href="#/edit/{{item.Backup.ID}}">{{item.Backup.Name}}</a>
+                <dl>
+                    <dt>Last successful run:</dt>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}}</dd>
+                    <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
+                    Never - <a href="#c" class="action-link">Run now</a>
+                    </dd>
+
+                    <div ng-hide="item.Schedule == null">
+                        <dt>Next run:</dt>
+                        <dd>{{item.Schedule.Time | date :'medium'}}</dd>
+                    </div>
+                    <div ng-hide="item.Backup.Metadata == null">
+                        <div ng-hide="item.Backup.Metadata.SourceSizeString == null">
+                            <dt>Source:</dt>
+                            <dd>{{item.Backup.Metadata.SourceSizeString}}</dd>
+                        </div>
+                        <div ng-hide="item.Backup.Metadata.SourceSizeString == null">
+                            <dt>Backup:</dt>
+                            <dd>{{item.Backup.Metadata.TargetSizeString}}</dd>
+                        </div>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

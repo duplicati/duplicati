@@ -1,0 +1,76 @@
+<div class="restore">
+    <h1>Restore files</h1>
+    <form action="#" id="restore" class="styled">
+        <div class="input textarea">
+            <label for="source"><a href="#" class="remodalLink" id="restoreSource" data-remodal-target="target">Restore from...</a></label>
+            <textarea id="source" name="source" placeholder="webdavs://user:pass@example.com:995/backup?option=true"></textarea>
+        </div>
+        <div class="input password">
+            <label for="password">Passphrase</label>
+            <input type="password" id="password" name="password" placeholder="Enter backup passphrase, if any" />
+        </div>
+        <div class="input textarea">
+            <label for="options">Advanced Options<span class="info">i</span></label>
+            <textarea id="options" name="options" placeholder="Enter one option per line in command-line format, eg. --prefix=backup"></textarea>
+        </div>
+        <div class="buttons">
+            <a href="#" id="cancel" class="submit">Cancel</a>
+            <input type="button" id="save" class="submit" value="Connect" />
+        </div>
+    </form>
+</div>
+
+<!-- dialogs/static popups -->
+<div class="remodal target-popup" data-remodal-id="target">
+    <div class="box">
+        <h2>Connection URI</h2>
+        <form class="styled target-form">
+            <div class="input select">
+                <label for="type">Target Type</label>
+                <select id="type" name="type">
+                    <optgroup label="Standard protocols">
+                        <option value="ftp">FTP</option>
+                        <option value="ssh">SFTP (SSH)</option>
+                        <option value="webdav">WebDAV</option>
+                        <option value="s3">S3 compatible</option>
+                    </optgroup>
+                    <optgroup label="Local storage">
+                        <option value="file">Local folder or drive</option>
+                    </optgroup>
+                    <optgroup label="Proprietary">
+                        <option value="s3">Amazon S3</option>
+                        <option value="azure">Azure blob</option>
+                        <option value="googledocs">Google Docs</option>
+                        <option value="onedrive">Microsoft OneDrive</option>
+                        <option value="cloudfiles">Rackspace CloudFiles</option>
+                    </optgroup>
+                    <optgroup label="Others">
+                        <option value="tahoe">Tahoe-LAFS</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="input multiple mixed">
+                <label for="targetPath">Path on server</label>
+                <input type="text" id="targetPath" placeholder="mybackup" />
+                <input type="button" value="..." id="targetRestorePath" />
+            </div>
+            <div class="input text">
+                <label for="targetUsername">Username</label>
+                <input type="text" id="targetUsername" name="targetUsername" placeholder="Username for authentication" />
+            </div>
+            <div class="input password">
+                <label for="targetPassword">Password</label>
+                <input type="text" id="targetPassword" name="targetPassword" placeholder="Password for authentication" />
+            </div>
+            <div class="input textarea">
+                <label for="targetOptions">Options<span class="info">i</span></label>
+                <textarea id="targetOptions" name="targetOptions" placeholder="Enter connection options here"></textarea>
+            </div>
+            <div class="buttons">
+                <a href="#" class="submit" id="targetCancel">Cancel</a>
+                <input type="button" id="targetConnect" value="Test connection" />
+                <input type="button" id="url" value="Create URI" />
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+<div ng-show="SupportsSSL" class="input checkbox multple">
+    <input type="checkbox" id="s3_ssl" ng-model="$parent.UseSSL" />
+    <label for="s3_ssl">Use SSL</label>
+</div >
+
+<div class="input text">
+    <label for="generic_server">Server and port</label>
+    <input type="text" name="generic_server" id="generic_server" ng-model="$parent.Server" placeholder="Server hostname or IP" />
+    <input type="text" name="generic_port" id="generic_port" ng-model="$parent.Port" placeholder="Server port" />
+</div>
+
+<div class="input text">
+    <label for="generic_path">Path on server</label>
+    <input type="text" name="generic_path" id="generic_path" ng-model="$parent.Path" placeholder="Enter the destination path" />
+</div>
+
+<div class="input text">
+    <label for="generic_username">Username</label>
+    <input type="text" name="generic_username" id="generic_username" ng-model="$parent.Username" />
+</div>
+<div class="input password">
+    <label for="generic_password">Password</label>
+    <input type="text" name="generic_password" id="generic_password" ng-model="$parent.Password" />
+</div>
