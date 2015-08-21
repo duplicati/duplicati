@@ -46,7 +46,6 @@
       </EnvironmentVariables>
     </EnvironmentVariables>
     <Prefer32Bit>false</Prefer32Bit>
-    <Commandlineparameters>--webservice-webroot=/Users/kenneth/Udvikler/my-new-angular-app</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release</OutputPath>
