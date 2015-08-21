@@ -69,6 +69,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -130,6 +132,12 @@ Global
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Any CPU.ActiveCfg = Release|Any CPU

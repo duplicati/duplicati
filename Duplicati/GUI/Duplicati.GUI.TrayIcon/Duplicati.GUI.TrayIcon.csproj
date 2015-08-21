@@ -46,6 +46,7 @@
       </EnvironmentVariables>
     </EnvironmentVariables>
     <Prefer32Bit>false</Prefer32Bit>
+    <Commandlineparameters>--webservice-webroot=/Users/kenneth/Udvikler/my-new-angular-app</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release</OutputPath>
@@ -275,6 +276,10 @@
     <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
       <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
       <Name>Duplicati.Library.Backend.HubiC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+      <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>
+      <Name>Duplicati.CommandLine.RecoveryTool</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -68,6 +68,7 @@
     <Compile Include="FileBackedList.cs" />
     <Compile Include="JoinedFilterExpression.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="FilterCollector.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

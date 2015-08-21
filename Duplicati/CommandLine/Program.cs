@@ -27,51 +27,6 @@ namespace Duplicati.CommandLine
 {
     public class Program
     {
-    	private class FilterCollector
-		{
-			private List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
-			private Library.Utility.IFilter Filter 
-            { 
-                get 
-                { 
-                    if (m_filters.Count == 0)
-                        return new Library.Utility.FilterExpression();
-                    else if (m_filters.Count == 1)
-                        return m_filters[0];
-                    else 
-                        return m_filters.Aggregate((a,b) => Library.Utility.JoinedFilterExpression.Join(a, b)); 
-                }
-            }
-			
-			private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
-			{
-                return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
-                	if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
-                	{
-                		m_filters.Add(new Library.Utility.FilterExpression(value, true));
-                		return false;
-                	}
-                	else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
-                	{
-                        m_filters.Add(new Library.Utility.FilterExpression(value, false));
-                		return false;
-                	}
-                	
-                	if (callbackHandler != null)
-                		return callbackHandler(key, value);
-                	
-                	return true;
-                });
-			}
-			
-			public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
-			{
-				var fc = new FilterCollector();
-				var opts = fc.DoExtractOptions(args, callbackHandler);
-				return new Tuple<Dictionary<string, string>, Library.Utility.IFilter>(opts, fc.Filter);
-			}
-		}
-    
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -89,7 +44,7 @@ namespace Duplicati.CommandLine
             {
             	List<string> cargs = new List<string>(args);
 
-				var tmpparsed = FilterCollector.ExtractOptions(cargs);
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
 				var options = tmpparsed.Item1;
 				var filter = tmpparsed.Item2;
 				
@@ -300,7 +255,7 @@ namespace Duplicati.CommandLine
                 var newsource = new List<string>();
                 string newtarget = null;
 
-				var tmpparsed = FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
 					if (key.Equals("source", StringComparison.InvariantCultureIgnoreCase))
 					{
 						newsource.Add(value);
