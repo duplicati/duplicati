@@ -38,6 +38,14 @@ namespace Duplicati.Server.Serializable
         /// Gets or sets the current path, if the item is a symbolic path
         /// </summary>
         public string resolvedpath { get; set; }
+        /// <summary>
+        /// True if the element is hidden
+        /// </summary>
+        public bool hidden { get; set; }
+        /// <summary>
+        /// True if the element is a symlink
+        /// </summary>
+        public bool symlink { get; set; }
 
         /// <summary>
         /// Constructs a new TreeNode

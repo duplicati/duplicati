@@ -1,0 +1,74 @@
+﻿Duplicati Recovery Tool
+=======================
+
+This tool performs a recovery of as much data as possible in small steps that must be performed in order.
+We recommend that you use Duplicati.CommandLine.exe to do the restore, and rely only on this tool if all else fails.
+
+
+The steps to perform are:
+-------------------------
+
+1: Download
+  Download files from the remote store and keep them unencrypted on a location available in the local filesystem.
+
+2: Index
+  Builds an index file to figure out what data is contained inside the files downloaded
+
+3: Restore
+  Restores the files to a destination you choose
+
+
+Optionally you can also run:
+----------------------------
+
+4: List
+  Shows what files are available and tests filters
+
+
+
+Command descriptions:
+=====================
+
+
+Download
+--------
+
+Usage:
+Duplicati.RecoveryTool.exe download <remoteurl> <localfolder> [options]
+
+Downloads all files matching the Duplicati filenames from <remoteurl> to <localfolder>, and decrypts them in the process.
+The remote url must be one supported by Duplicati.
+Use `Duplicati.CommandLine.exe help backends` to see backends and options.
+
+
+
+Index
+-----
+Duplicati.RecoveryTool.exe index <localfolder> [options]
+
+Examines all files found in localfolder and produces an index.txt file, which is a list of all block hashes found in the files.
+The index file can be rather large. It defaults to being stored in <localfolder> but can be specified with --indexfile.
+Some files are created in the system temporary folder, use --tempdir to set an alternative temporary folder location.
+
+
+
+Restore
+-------
+Duplicati.RecoveryTool.exe index <localfolder> [version] [options]
+
+Restores all files to their respective destinations. Use --targetpath to choose another folder where the files are restored into.
+Use the filters, --exclude, to perform a partial restore.
+Version can be either a number, a filename or a date. If omitted the most recent backup is used.
+
+
+
+List
+----
+Duplicati.RecoveryTool.exe list <localfolder> [version] [options]
+
+Lists contents of <localfolder> backups.
+Version can be either a number, a filename or a date. 
+If [version] is omitted a list of backup versions are shown, if [version] is supplied, files from that version are listed.
+Use the filters, --exclude, to show a subset of files.
+
+

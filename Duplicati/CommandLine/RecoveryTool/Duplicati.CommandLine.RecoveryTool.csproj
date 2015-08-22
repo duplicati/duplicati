@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Duplicati.CommandLine.RecoveryTool</RootNamespace>
+    <AssemblyName>Duplicati.CommandLine.RecoveryTool</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <EnvironmentVariables>
+      <EnvironmentVariables>
+        <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
+      </EnvironmentVariables>
+    </EnvironmentVariables>
+    <Commandlineparameters>index /Users/kenneth/testdata/recovery --targetpath=/Users/kenneth/testdata/recovery-restored</Commandlineparameters>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Download.cs" />
+    <Compile Include="Help.cs" />
+    <Compile Include="Index.cs" />
+    <Compile Include="List.cs" />
+    <Compile Include="Restore.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
+      <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
+      <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
+      <Name>Duplicati.Library.Backend.AzureBlob</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
+      <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
+      <Name>Duplicati.Library.Backend.CloudFiles</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
+      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
+      <Name>Duplicati.Library.Backend.File</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
+      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
+      <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj">
+      <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
+      <Name>Duplicati.Library.Backend.GoogleServices</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
+      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
+      <Name>Duplicati.Library.Backend.HubiC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
+      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
+      <Name>Duplicati.Library.Backend.OneDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
+      <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
+      <Name>Duplicati.Library.Backend.OpenStack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
+      <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
+      <Name>Duplicati.Library.Backend.S3</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
+      <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>
+      <Name>Duplicati.Library.Backend.SSHv2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
+      <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
+      <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
+      <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
+      <Name>Duplicati.Library.Backend.WEBDAV</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj">
+      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
+      <Name>Duplicati.Library.Main</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="help.txt" />
+  </ItemGroup>
+</Project>
