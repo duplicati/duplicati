@@ -827,6 +827,7 @@ $(document).ready(function() {
     var browsePath =  function() {
         $.browseForFolder({
             title: 'Select folder to back up',
+            multiSelect: true,
             callback: function(path, disp) {
                 disp = (disp || path).split(dirSep);
                 addSourceFolder(path, disp[disp.length - 1]);
