@@ -1,3 +1,13 @@
+2015-08-24
+==========
+* Fixes to improve the use of the OAuth handler
+* Added a REST API
+* Changed access mode when reading files to not prevent concurrent write access
+* Added a recovery tool as a slower, but more robust restore method
+* Fixed an issue with recreating a partial database that would record missing file sizes in the database.
+* Fixed an issue where a recreated database would miss some files and repair for an extensive period of time.
+* Fixed an issue where repair would fail if the files were decrypted
+
 2015-07-02
 ==========
 * Added handling for WebDAV timeouts

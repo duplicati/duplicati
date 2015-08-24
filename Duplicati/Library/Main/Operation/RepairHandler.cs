@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                         
                             if (!m_options.Dryrun)
                             {
-                                db.RegisterRemoteVolume(n.File.Name, n.FileType, RemoteVolumeState.Deleting);								
+                                db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
                                 backend.Delete(n.File.Name, n.File.Size);
                             }
                             else

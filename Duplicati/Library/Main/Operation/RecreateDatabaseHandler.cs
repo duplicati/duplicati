@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // If we are updating, all files should be accounted for
                 foreach(var fl in remotefiles)
-                    volumeIds[fl.File.Name] = updating ? restoredb.GetRemoteVolumeID(fl.File.Name) : restoredb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
+                    volumeIds[fl.File.Name] = updating ? restoredb.GetRemoteVolumeID(fl.File.Name) : restoredb.RegisterRemoteVolume(fl.File.Name, fl.FileType, fl.File.Size, RemoteVolumeState.Uploaded);
 
                 var hasUpdatedOptions = false;
 
@@ -263,12 +263,28 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         foreach(var a in svr.Volumes)
                                         {
-                                            var volumeID = restoredb.GetRemoteVolumeID(a.Filename);
+                                            var filename = a.Filename;
+                                            var volumeID = restoredb.GetRemoteVolumeID(filename);
+
+                                            // No such file
+                                            if (volumeID < 0)
+                                                volumeID = ProbeForMatchingFilename(ref filename, restoredb);
+
+                                            // Still broken, register a missing item
+                                            if (volumeID < 0)
+                                            {
+                                                var p = VolumeBase.ParseFilename(filename);
+                                                if (p == null)
+                                                    throw new Exception(string.Format("Unable to parse filename: {0}", filename));
+                                                m_result.AddError(string.Format("Remote file referenced as {0}, but not found in list, registering a missing remote file", filename), null);
+                                                volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Verified, tr);
+                                            }
+                                            
                                             //Add all block/volume mappings
                                             foreach(var b in a.Blocks)
                                                 restoredb.UpdateBlock(b.Key, b.Value, volumeID, tr);
 
-                                            restoredb.UpdateRemoteVolume(a.Filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
+                                            restoredb.UpdateRemoteVolume(filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
                                             restoredb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Name), volumeID, tr);
                                         }
                                 
@@ -374,6 +390,34 @@ namespace Duplicati.Library.Main.Operation
                 // except to continue a backup
                 restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
             }
+        }
+
+        /// <summary>
+        /// Look in the database for filenames similar to the current filename, but with a different compression and encryption module
+        /// </summary>
+        /// <returns>The volume id of the item</returns>
+        /// <param name="filename">The filename read and written</param>
+        /// <param name="restoredb">The database to query</param>
+        public long ProbeForMatchingFilename(ref string filename, LocalRestoreDatabase restoredb)
+        {
+            var p = VolumeBase.ParseFilename(filename);
+            if (p != null)
+            {
+                foreach(var compmodule in Library.DynamicLoader.CompressionLoader.Keys)
+                    foreach(var encmodule in Library.DynamicLoader.EncryptionLoader.Keys.Union(new string[] { "" }))
+                    {
+                        var testfilename = VolumeBase.GenerateFilename(p.FileType, p.Prefix, p.Guid, p.Time, compmodule, encmodule);
+                        var tvid = restoredb.GetRemoteVolumeID(testfilename);
+                        if (tvid >= 0)
+                        {
+                            m_result.AddWarning(string.Format("Unable to find volume {0}, but mapping to matching file {1}", filename, testfilename), null);
+                            filename = testfilename;
+                            return tvid;
+                        }
+                    }
+            }
+
+            return -1;
         }
 
         public void Dispose()
