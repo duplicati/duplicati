@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // If we are updating, all files should be accounted for
                 foreach(var fl in remotefiles)
-                    volumeIds[fl.File.Name] = updating ? restoredb.GetRemoteVolumeID(fl.File.Name) : restoredb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
+                    volumeIds[fl.File.Name] = updating ? restoredb.GetRemoteVolumeID(fl.File.Name) : restoredb.RegisterRemoteVolume(fl.File.Name, fl.FileType, fl.File.Size, RemoteVolumeState.Uploaded);
 
                 var hasUpdatedOptions = false;
 
