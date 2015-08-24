@@ -228,6 +228,11 @@ namespace Duplicati.Server
                 commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
             }
 #endif
+            // Allow override of the environment variables from the commandline
+            if (commandlineOptions.ContainsKey("server-datafolder"))
+                Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, commandlineOptions["server-datafolder"]);
+            if (commandlineOptions.ContainsKey("server-encryption-key"))
+                Environment.SetEnvironmentVariable(DB_KEY_ENV_NAME, commandlineOptions["server-encryption-key"]);
 
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
@@ -648,6 +653,9 @@ namespace Duplicati.Server
             }
         }
 
+        /// <summary>
+        /// Simple method for tracking if the server has crashed
+        /// </summary>
         private static void PingPongMethod()
         {
             var rd = new System.IO.StreamReader(Console.OpenStandardInput());
@@ -671,7 +679,7 @@ namespace Duplicati.Server
         {
             get
             {
-                return new Duplicati.Library.Interface.ICommandLineArgument[] {
+                var lst = new List<Duplicati.Library.Interface.ICommandLineArgument> (new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
@@ -683,7 +691,13 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                     new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
-                };
+                    new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
+                });
+
+                if (!Duplicati.Library.Utility.Utility.IsClientLinux)
+                    lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42"));
+
+                return lst.ToArray();
             }
         }
     }
