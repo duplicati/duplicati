@@ -129,8 +129,14 @@ namespace Duplicati.Library.Main.Operation
                     orderby n.Time descending
                     select n;
 
+                if (filelists.Count() <= 0)
+                    throw new Exception(string.Format("No filelists found on the remote destinatio"));
+                
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
+
+                if (filelists.Count() <= 0)
+                    throw new Exception(string.Format("No filelists"));
 
                 // If we are updating, all files should be accounted for
                 foreach(var fl in remotefiles)
