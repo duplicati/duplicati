@@ -138,7 +138,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
             AddOrUpdateBackupData data = null;
             try
             {
-                data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(info.Request.Form["data"].Value));
+                var str = info.Request.Form["data"].Value;
+                if (string.IsNullOrWhiteSpace(str))
+                    str = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8).ReadToEnd();
+
+                data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
                 if (data.Backup == null)
                 {
                     info.ReportClientError("Data object had no backup entry");
