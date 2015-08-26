@@ -9,7 +9,7 @@ backupApp.service('AppService', function($http) {
         options.xsrfCookieName = 'xsrf-token';
         options.headers = options.headers || {};
 
-        if (method == "POST" && options.headers['Content-Type'] == null && data != null && typeof(data) != typeof('')) {
+        if ((method == "POST" || method == "PATCH" || method == "PUT") && options.headers['Content-Type'] == null && data != null && typeof(data) != typeof('')) {
 			options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
 			options.transformRequest = function(obj) {
 		        var str = [];
@@ -35,6 +35,11 @@ backupApp.service('AppService', function($http) {
     this.post = function(url, data, options) {
         var rurl = this.apiurl + url;
         return $http.post(rurl, data, setupConfig('POST', options, data));
+    };
+
+    this.put = function(url, data, options) {
+        var rurl = this.apiurl + url;
+        return $http.put(rurl, data, setupConfig('PUT', options, data));
     };
 
 });

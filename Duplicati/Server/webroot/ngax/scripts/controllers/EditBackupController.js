@@ -20,16 +20,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     	{name: 'Temporary files', value: 'temporary'}
 	];
 
-    $scope.daysOfWeek = [
-    	{name: 'Mon', value: 'mon'}, 
-    	{name: 'Tue', value: 'tue'}, 
-    	{name: 'Wed', value: 'wed'}, 
-    	{name: 'Thu', value: 'thu'}, 
-    	{name: 'Fri', value: 'fri'}, 
-    	{name: 'Sat', value: 'sat'}, 
-    	{name: 'Sun', value: 'sun'}
-	];
-
 	var scope = $scope;
 
 	function computePassPhraseStrength() {
@@ -72,10 +62,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 	$scope.prevPage = function() {
 		$scope.CurrentStep = Math.max(0, $scope.CurrentStep - 1);
 
-	};
-
-	$scope.save = function() {
-		alert('Save me!');
 	};
 
 	$scope.HideEditUri = function() {
@@ -148,14 +134,83 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			lst.push(value);
 	};
 
+	$scope.save = function() {
+		var result = {
+			Backup: angular.copy($scope.Backup),
+			Schedule: angular.copy($scope.Schedule)
+		};
+
+		var opts = angular.copy($scope.Options);
+
+		if (!$scope.ExcludeLargeFiles)
+			delete opts['--skip-files-larger-than'];
+
+		if (($scope.ExcludeAttributes || []).length > 0) {
+			opts['--exclude-files-attributes'] = $scope.ExcludeAttributes.join(',');
+			if (opts['--exclude-files-attributes'] == '')
+				delete opts['--exclude-files-attributes'];
+		}
+
+		if ((opts['encryption-module'] || '').length == 0)
+			opts['--no-encryption'] = 'true';
+
+		if (!AppUtils.parse_extra_options(scope.ExtendedOptions, opts))
+			return false;
+
+
+		result.Backup.Settings = [];
+		for(var k in opts) {
+			var origfilter = "";
+			var origarg = null;
+			for(var i in $scope.rawddata.Backup.Settings)
+				if ($scope.rawddata.Backup.Settings[i].Name == k) {
+					origfilter = $scope.rawddata.Backup.Settings[i].Filter;
+					origarg = $scope.rawddata.Backup.Settings[i].Argument;
+					break;
+				}
+
+			result.Backup.Settings.push({
+				Name: k,
+				Value: opts[k],
+				Filter: origfilter,
+				Argument: origarg
+			});
+		}
+
+		var filterstrings = result.Backup.Filters || [];
+		result.Backup.Filters = [];
+		for(var f in filterstrings)
+			result.Backup.Filters.push({
+				Order: result.Backup.Filters.length,
+				Include: filterstrings[f].substr(0, 1) == '+',
+				Expression: filterstrings[f].substr(1)
+			});
+
+		if ($routeParams.backupid == null) {
+			AppService.post('/backups', result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+				$location.path('/');
+			}, AppUtils.connectionError);
+		} else {
+			AppService.put('/backup/' + $routeParams.backupid, result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+				$location.path('/');
+			}, AppUtils.connectionError);
+		}
+	};
+
+
 	function setupScope(data) {
 		$scope.Backup = angular.copy(data.Backup);
 		$scope.Schedule = angular.copy(data.Schedule);
 
 		$scope.Options = {};
+		var extopts = {};
+
 		for(var n in $scope.Backup.Settings) {
 			var e = $scope.Backup.Settings[n];
-			$scope.Options[e.Name] = e.Value;
+			if (e.Name.indexOf('--') == 0)
+				extopts[e.Name] = e.Value;
+			else
+				$scope.Options[e.Name] = e.Value;
 		}
 
 		var filters = $scope.Backup.Filters;
@@ -167,7 +222,43 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			$scope.Backup.Filters.push((filters[ix].Include ? '+' : '-') + filters[ix].Expression);
 
 		$scope.ExcludeLargeFiles = $scope.Options['--skip-files-larger-than'];
-		$scope.ExcludeAttributes = ($scope.Options['--exclude-files-attributes'] || '').split(',');		
+		$scope.ExcludeAttributes = ($scope.Options['--exclude-files-attributes'] || '').split(',');
+
+		delete extopts['--skip-files-larger-than'];
+		delete extopts['--exclude-files-attributes'];
+		delete extopts['--no-encryption'];
+
+		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptions(extopts);
+
+		var now = new Date();
+		if ($scope.Schedule != null) {
+			var time = AppUtils.parseDate($scope.Schedule.Time);
+            if (isNaN(time)) {
+                time = AppUtils.parseDate("1970-01-01T" + $scope.Schedule.Time);
+                if (!isNaN(time))
+                	time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), time.getHours(), time.getMinutes(), time.getSeconds());
+
+                if (time < now)
+                	time = new Date(time.setDate(time.getDate() + 1));
+            }
+
+            if (isNaN(time)) {
+                time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0, 0);
+                if (time < now)
+                	time = new Date(time.setDate(time.getDate() + 1));
+            }
+
+            $scope.Schedule.Time = time;
+		} else {
+            time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0, 0);
+            if (time < now)
+            	time = new Date(time.setDate(time.getDate() + 1));
+
+			oldSchedule = {
+				Repeat: '1D',
+				Time: time
+			};
+		}
 	}
 
 	if ($routeParams.backupid == null) {

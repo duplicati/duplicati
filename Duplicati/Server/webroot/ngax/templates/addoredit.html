@@ -1,25 +1,25 @@
 <div class="add" ng-controller="EditBackupController">
     <div class="steps">
-        <div class="step step1" ng-class="{active: CurrentStep == 0}">
+        <div class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
             <span>1</span>
         </div>
-        <div class="step step2" ng-class="{active: CurrentStep == 1}">
+        <div class="step step2" ng-class="{active: CurrentStep == 1}"  ng-click="CurrentStep = 1">
             <span>2</span>
         </div>
-        <div class="step step3" ng-class="{active: CurrentStep == 2}">
+        <div class="step step3" ng-class="{active: CurrentStep == 2}"  ng-click="CurrentStep = 2">
             <span>3</span>
         </div>
-        <div class="step step4" ng-class="{active: CurrentStep == 3}">
+        <div class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3">
             <span>4</span>
         </div>
     </div>
     <!-- .steps -->
     
     <ol class="steps-legend">
-        <li ng-class="{active: CurrentStep == 0}" class="step1">General</li>
-        <li ng-class="{active: CurrentStep == 1}" class="step2">Source Data</li>
-        <li ng-class="{active: CurrentStep == 2}" class="step3">Schedule</li>
-        <li ng-class="{active: CurrentStep == 3}" class="step4">Options</li>
+        <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0">General</li>
+        <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1">Source Data</li>
+        <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2">Schedule</li>
+        <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3">Options</li>
     </ol>
     <!-- .steps-legend -->
 
@@ -154,11 +154,7 @@
                     <label for="exclude-large-files">Files larger than:</label>
 
                     <input type="number" parse-size-number ng-model="Backup.Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" style="width: 50px" value="1" />
-                    <select parse-size-multiplier id="exclude-larger-than-multiplier" ng-model="Backup.Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" style="display: inline-block; float: none">
-                        <option value="kb">KByte</option>
-                        <option value="mb">MByte</option>
-                        <option value="gb">GByte</option>
-                        <option value="tb">TByte</option>
+                    <select parse-size-multiplier id="exclude-larger-than-multiplier" ng-model="Backup.Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" style="display: inline-block; float: none" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
                     </select>
 
                 </div>    
@@ -181,27 +177,22 @@
                 <div ng-hide="Schedule == null">
                     <div class="input text multiple">
                         <label for="nextRunTime">Next time</label>
-                        <input type="text" id="nextRunTime" value="12:00:00" />
-                        <input type="text" id="nextRunDate" value="2015-04-10" />
+                        <input type="time" ng-model="Schedule.Time" id="nextRunTime" />
+                        <input type="date" ng-model="Schedule.Time" id="nextRunDate" />
                     </div>
                     <div class="input text select multiple">
                         <label for="repeatRunNumber">Run again every</label>
-                        <input ng-hide="AppUtils.splitSizeString(Schedule.Repeat)[1] == null || AppUtils.splitSizeString(Schedule.Repeat)[1] == ''" type="number" parse-size-number ng-model="Schedule.Repeat" id="repeatRunNumber" />
-                        <select parse-size-multiplier ng-model="Schedule.Repeat" id="repeatRunMultiplier">
-                            <option value="h">hours</option>
-                            <option value="D">days</option>
-                            <option value="W">weeks</option>
-                            <option value="M">months</option>
-                            <option value="Y">years</option>
+                        <input ng-show="AppUtils.contains_key(AppUtils.timerangeMultipliers, AppUtils.splitSizeString(Schedule.Repeat)[1], 'value')" type="number" parse-size-number ng-model="Schedule.Repeat" id="repeatRunNumber" />
+                        <select parse-size-multiplier ng-model="Schedule.Repeat" id="repeatRunMultiplier" ng-options="item.value as item.name for item in AppUtils.timerangeMultipliers">
                             <option value="">custom</option>
                         </select>
 
-                        <input type="text" ng-show="(AppUtils.splitSizeString(Schedule.Repeat)[1] || '').length == 0" ng-model="Schedule.Repeat" ng-model-options="{updateOn: 'blur'}" />
+                        <input type="text" ng-show="!AppUtils.contains_key(AppUtils.timerangeMultipliers, AppUtils.splitSizeString(Schedule.Repeat)[1], 'value')" ng-model="Schedule.Repeat" ng-model-options="{updateOn: 'blur'}" />
                     </div>
                     <div class="input checkbox multiple">
                         <strong>Allowed days</strong>
 
-                        <div style="display: inline-block" ng-repeat="day in daysOfWeek">
+                        <div style="display: inline-block" ng-repeat="day in AppUtils.daysOfWeek">
                           <input
                             class="simple-checkbox"
                             id="dayofweek_{{day.value}}"
@@ -249,11 +240,12 @@
                         <option value="W">Weeks</option>
                         <option value="M">Months</option>
                         <option value="Y">Years</option>
+                        <option value="">custom</option>
                     </select>
                 </div>
                 <div class="input textarea">
-                    <label for="backupOptions"><a href="#" id="backupOptionsPopup" data-remodal-target="backupOptions">Options</a><span class="info">i</span></label>
-                    <textarea id="backupOptions" placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+                    <label for="backupOptions"><a href id="backupOptionsPopup" data-remodal-target="backupOptions">Options</a><span class="info">i</span></label>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
                 </div>
                 
                 <div class="buttons">

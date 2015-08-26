@@ -15,6 +15,34 @@ backupApp.service('AppUtils', function() {
         return val + ' ' + bytes;
     };
 
+    this.fileSizeMultipliers = [
+        {name: 'byte', value: ''},
+        {name: 'KByte', value: 'KB'},
+        {name: 'MByte', value: 'MB'},
+        {name: 'GByte', value: 'GB'},
+        {name: 'TByte', value: 'TB'}
+    ];
+
+    this.timerangeMultipliers = [
+        {name: 'Minute', value: 'm'},
+        {name: 'Hour', value: 'h'},
+        {name: 'Day', value: 'D'},
+        {name: 'Week', value: 'W'},
+        {name: 'Month', value: 'M'},
+        {name: 'Year', value: 'Y'}
+    ];
+
+    this.daysOfWeek = [
+        {name: 'Mon', value: 'mon'}, 
+        {name: 'Tue', value: 'tue'}, 
+        {name: 'Wed', value: 'wed'}, 
+        {name: 'Thu', value: 'thu'}, 
+        {name: 'Fri', value: 'fri'}, 
+        {name: 'Sat', value: 'sat'}, 
+        {name: 'Sun', value: 'sun'}
+    ];    
+
+
     this.splitSizeString = function(val) {
         var m = (/(\d*)(\w*)/mg).exec(val);
         var mul = null;
@@ -296,6 +324,15 @@ backupApp.service('AppUtils', function() {
 
         return false;
     };
+
+    this.contains_key = function(dict, key, keyname) {
+        for(var i in dict)
+            if (keyname == null ? i == key : dict[i][keyname] == key)
+                return true;
+
+        return false;
+    };
+
 
     this.removeEmptyEntries = function(x) {
         for (var i = x.length - 1; i >= 0; i--) {

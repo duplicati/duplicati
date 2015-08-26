@@ -34,8 +34,7 @@ backupApp.directive('parseSizeMultiplier', function(AppUtils) {
 			var number = null;
 
 			ctrl[0].$parsers.push(function(txt) {
-				txt = txt || '';
-				return (number || '0') + txt;
+				return (number || '0') + (txt || '');
 			});
 
 			ctrl[0].$formatters.push(function(src) {
