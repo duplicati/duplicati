@@ -404,6 +404,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             string str = info.Request.Form["data"].Value;
             if (string.IsNullOrWhiteSpace(str))
+                str = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8).ReadToEnd();
+
+            if (string.IsNullOrWhiteSpace(str))
             {
                 info.ReportClientError("Missing backup object");
                 return;

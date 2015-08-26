@@ -408,7 +408,7 @@ namespace Duplicati.Server.Database
                            
                             return new object[] {
                                 n.Name,
-                                string.Join(",", n.Tags),
+                                string.Join(",", n.Tags ?? new string[0]),
                                 n.TargetURL,
                                 update ? (object)item.ID : (object)n.DBPath 
                             };
