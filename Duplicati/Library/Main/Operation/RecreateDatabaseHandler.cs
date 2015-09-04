@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation
                     select n;
 
                 if (filelists.Count() <= 0)
-                    throw new Exception(string.Format("No filelists found on the remote destinatio"));
+                    throw new Exception(string.Format("No filelists found on the remote destination"));
                 
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
