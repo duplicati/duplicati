@@ -49,7 +49,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
+                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
 
                 var actions = new Dictionary<string, CommandRunner>(StringComparer.InvariantCultureIgnoreCase);
                 actions["download"] = Download.Run;

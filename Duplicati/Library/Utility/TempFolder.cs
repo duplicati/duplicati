@@ -96,5 +96,23 @@ namespace Duplicati.Library.Utility
                 m_system_temp_dir = value; 
             }
         }
+
+        /// <summary>
+        /// Sets the system temp path.
+        /// </summary>
+        /// <param name="path">Path.</param>
+        public static void SetSystemTempPath(string path)
+        {
+            SystemTempPath = path;
+            if (Utility.IsClientLinux)
+            {
+                Environment.SetEnvironmentVariable("TMPDIR", path);
+            }
+            else
+            {
+                Environment.SetEnvironmentVariable("TMP", path);
+                Environment.SetEnvironmentVariable("TEMP", path);
+            }
+        }
     }
 }
