@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -53,6 +56,16 @@ namespace Duplicati.Library.Main
         /// The thread running the current task
         /// </summary>
         private System.Threading.Thread m_currentTaskThread = null;
+
+        /// <summary>
+        /// Holds various keys that need to be reset after running the task
+        /// </summary>
+        private Dictionary<string, string> m_resetKeys = new Dictionary<string, string>();
+
+        /// <summary>
+        /// The thread priority to reset to
+        /// </summary>
+        private System.Threading.ThreadPriority? m_resetPriority;
 
         /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
@@ -324,6 +337,27 @@ namespace Duplicati.Library.Main
                 OperationRunning(false);
             }
 
+            if (m_resetPriority != null)
+            {
+                System.Threading.Thread.CurrentThread.Priority = m_resetPriority.Value;
+                m_resetPriority = null;
+            }
+
+            if (m_resetKeys != null)
+            {
+                var keys = m_resetKeys.Keys.ToArray();
+                foreach(var k in keys)
+                {
+                    try
+                    {
+                        Environment.SetEnvironmentVariable(k, m_resetKeys[k]);
+                    } 
+                    catch { }
+                    
+                    m_resetKeys.Remove(k);
+                }
+            }
+
             if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
             {
                 Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
@@ -390,10 +424,27 @@ namespace Duplicati.Library.Main
             result.VerboseOutput = m_options.Verbose;
 
             if (m_options.HasTempDir)
+            {
                 Library.Utility.TempFolder.SystemTempPath = m_options.TempDir;
+                if (Library.Utility.Utility.IsClientLinux)
+                {
+                    m_resetKeys["TMPDIR"] = Environment.GetEnvironmentVariable("TMPDIR");
+                    Environment.SetEnvironmentVariable("TMPDIR", m_options.TempDir);
+                }
+                else
+                {
+                    m_resetKeys["TMP"] = Environment.GetEnvironmentVariable("TMP");
+                    m_resetKeys["TEMP"] = Environment.GetEnvironmentVariable("TEMP");
+                    Environment.SetEnvironmentVariable("TMP", m_options.TempDir);
+                    Environment.SetEnvironmentVariable("TEMP", m_options.TempDir);
+                }
+            }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
+            {
+                m_resetPriority = System.Threading.Thread.CurrentThread.Priority;
                 System.Threading.Thread.CurrentThread.Priority = Library.Utility.Utility.ParsePriority(m_options.ThreadPriority);
+            }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
