@@ -395,8 +395,11 @@ Duplicati can send email notifications.
     Also send emails after other operations like restore etc.
 	
   Allowed placeholders are:
+    %PARSEDRESULT%
+      The parsed result op the operation: Success, Warning, Error
     %RESULT%
-	  The result/log of the backup
+	  When used in the body, this is the result/log of the backup, 
+      When used in the subject line, this is the same as %PARSEDRESULT%
     %OPERATIONNAME%
 	  The name of the operation, usually "backup", but could also be "restore" etc.
     %REMOTEURL%
