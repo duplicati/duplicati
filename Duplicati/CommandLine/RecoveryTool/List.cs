@@ -49,7 +49,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
             else
             {
-                var file = SelectListFile(args[2], args[1]);
+                var file = SelectListFile(args[2], folder);
 
                 var p = Library.Main.Volumes.VolumeBase.ParseFilename(file);
 
