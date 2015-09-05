@@ -83,7 +83,7 @@ namespace Duplicati.UnitTest
             //Filter empty entries, commonly occuring with copy/paste and newlines
             folders = (from x in folders 
                       where !string.IsNullOrWhiteSpace(x)
-                      select Environment.ExpandEnvironmentVariables(x)).ToArray();
+                      select Library.Utility.Utility.ExpandEnvironmentVariables(x)).ToArray();
 
             //Expand the tilde to home folder on Linux/OSX
             if (Utility.IsClientLinux)

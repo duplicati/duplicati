@@ -884,7 +884,7 @@ namespace Duplicati.Library.Utility
                     if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
                         try
                         {
-                            foreach(string sx in System.IO.Directory.GetFiles(Environment.ExpandEnvironmentVariables(s), filename))
+                            foreach(string sx in System.IO.Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
                                 return sx;
                         }
                         catch
@@ -896,6 +896,21 @@ namespace Duplicati.Library.Utility
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// The path to the users home directory
+        /// </summary>
+        private static readonly string HOME_PATH = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+
+        /// <summary>
+        /// Expands environment variables, including the tilde character
+        /// </summary>
+        /// <returns>The environment variables.</returns>
+        /// <param name="str">The string to expand.</param>
+        public static string ExpandEnvironmentVariables(string str)
+        {
+            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
         }
 
         /// <summary>
