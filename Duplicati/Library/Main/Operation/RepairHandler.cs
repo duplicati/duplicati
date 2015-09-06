@@ -23,11 +23,12 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
         }
         
-        public void Run()
+        public void Run(Library.Utility.IFilter filter = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
             {
-                RunRepairLocal();
+                RunRepairLocal(filter);
+                RunRepairCommon();
                 return;
             }
 
@@ -59,16 +60,18 @@ namespace Duplicati.Library.Main.Operation
                     System.IO.File.Move(m_options.Dbpath, baseName);
                 }
                 
-                RunRepairLocal();
+                RunRepairLocal(filter);
+                RunRepairCommon();
             }
             else
             {
+                RunRepairCommon();
                 RunRepairRemote();
             }
 
         }
         
-        public void RunRepairLocal()
+        public void RunRepairLocal(Library.Utility.IFilter filter = null)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using(new Logging.Timer("Recreate database for repair"))
@@ -76,9 +79,11 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (f != null && System.IO.File.Exists(f))
                     System.IO.File.Delete(f);
-                    
+                
+                var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
+
                 new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                        .Run(m_options.Dryrun ? (string)f : m_options.Dbpath);
+                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, filter, filelistfilter);
             }
         }
 
@@ -93,6 +98,7 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);
+                Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
@@ -101,30 +107,30 @@ namespace Duplicati.Library.Main.Operation
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 				
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
 
+                if (m_options.Dryrun)
+                {
+                    if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
+                    {
+                        if (tp.BackupPrefixes.Length == 1)
+                            throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
+                        else
+                            throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
+                    }
+                    else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
+                    {
+                        throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
+                    }
+                }
+
                 if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0 || tp.VerificationRequiredVolumes.Count() > 0)
                 {
-                    if (m_options.Dryrun)
-                    {
-                        if (!tp.BackupPrefixes.Contains(m_options.Prefix) && tp.ParsedVolumes.Count() > 0)
-                        {
-                            if (tp.BackupPrefixes.Length == 1)
-                                throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
-                            else
-                                throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
-                        }
-                        else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
-                        {
-                            throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
-                        }
-                    }
-
                     if (tp.VerificationRequiredVolumes.Any())
                     {
                         using(var testdb = new LocalTestDatabase(db))
@@ -182,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                         
                             if (!m_options.Dryrun)
                             {
-                                db.RegisterRemoteVolume(n.File.Name, n.FileType, RemoteVolumeState.Deleting);								
+                                db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
                                 backend.Delete(n.File.Name, n.File.Size);
                             }
                             else
@@ -372,8 +378,24 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(1);				
 				backend.WaitForComplete(db, null);
                 db.WriteResults();
-
 			}
+        }
+
+        public void RunRepairCommon()
+        {
+            if (!System.IO.File.Exists(m_options.Dbpath))
+                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+
+            m_result.OperationProgressUpdater.UpdateProgress(0);
+
+            using(var db = new LocalRepairDatabase(m_options.Dbpath))
+            {
+                db.SetResult(m_result);
+                db.FixDuplicateMetahash();
+                db.FixDuplicateFileentries();
+                db.FixDuplicateBlocklistHashes();
+                db.FixMissingBlocklistHashes(m_options.BlockHashAlgorithm, m_options.Blocksize);
+            }
         }
     }
 }

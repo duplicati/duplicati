@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Database
                 m_connection.Open();
 
             using (var cmd = m_connection.CreateCommand())
-                m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, NormalizeDateTimeToEpochSeconds(OperationTimestamp)));
+                m_operationid = cmd.ExecuteScalarInt64( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, NormalizeDateTimeToEpochSeconds(OperationTimestamp));
 		}
 		
 		private LocalDatabase(System.Data.IDbConnection connection)
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.CommandText = @"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?";
             m_updateremotevolumeCommand.AddParameters(5);
 
-            m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume""";
+            m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
             m_selectremotevolumeCommand.CommandText = @"SELECT ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_selectremotevolumeCommand.AddParameter();
@@ -118,8 +118,8 @@ namespace Duplicati.Library.Main.Database
 
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
-			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"") VALUES (?, ?, ?, ?, ?); SELECT last_insert_rowid();";
-            m_createremotevolumeCommand.AddParameters(5);
+			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (?, ?, ?, ?, ?, ?, ?); SELECT last_insert_rowid();";
+            m_createremotevolumeCommand.AddParameters(7);
 
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.SetParameterValue(4, name);
             var c = m_updateremotevolumeCommand.ExecuteNonQuery();
             if (c != 1)
-            	throw new Exception("Unexpected number of remote volumes detected!");
+                throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
             	
            	if (state == RemoteVolumeState.Deleted)
            		RemoveRemoteVolume(name, transaction);
@@ -178,11 +178,11 @@ namespace Duplicati.Library.Main.Database
                 using(var cmd = m_connection.CreateCommand())
                 using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
-                        yield return new KeyValuePair<long, DateTime>(Convert.ToInt64(rd.GetValue(0)), ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1))).ToLocalTime());
+                        yield return new KeyValuePair<long, DateTime>(rd.GetInt64(0), ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime());
             }
         }
 
-		public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null)
+        public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null, bool singleTimeMatch = false)
 		{
 			var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
 			string query = "";
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main.Database
                     if (time.Kind == DateTimeKind.Unspecified)
                         throw new Exception("Invalid DateTime given, must be either local or UTC");
             
-                    query += @" ""Timestamp"" <= ?";
+                    query += singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?";
                     // Make sure the resolution is the same (i.e. no milliseconds)
                     args.Add(NormalizeDateTimeToEpochSeconds(time));
                     hasTime = true;
@@ -237,11 +237,7 @@ namespace Duplicati.Library.Main.Database
         public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)
 		{
 			m_selectremotevolumeIdCommand.Transaction = transaction;
-			var o = m_selectremotevolumeIdCommand.ExecuteScalar(null, file);
-			if (o == null || o == DBNull.Value)
-				return -1;
-			else
-				return Convert.ToInt64(o);
+			return m_selectremotevolumeIdCommand.ExecuteScalarInt64(null, -1, file);
 		}
 
         public bool GetRemoteVolume(string file, out string hash, out long size, out RemoteVolumeType type, out RemoteVolumeState state)
@@ -251,7 +247,7 @@ namespace Duplicati.Library.Main.Database
                 if (rd.Read())
                 {
                     hash = (rd.GetValue(2) == null || rd.GetValue(2) == DBNull.Value) ? null : rd.GetValue(3).ToString();
-                    size = (rd.GetValue(1) == null || rd.GetValue(1) == DBNull.Value) ? -1 : Convert.ToInt64(rd.GetValue(2));
+                    size = (rd.GetValue(1) == null || rd.GetValue(1) == DBNull.Value) ? -1 : rd.GetInt64(2);
                     type = (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(0).ToString());
                     state = (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(3).ToString());
                     return true;
@@ -273,9 +269,10 @@ namespace Duplicati.Library.Main.Database
                     yield return new RemoteVolumeEntry(
                         rd.GetValue(0).ToString(),
                         (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
-                        (rd.GetValue(2) == null || rd.GetValue(2) == DBNull.Value) ? -1 : Convert.ToInt64(rd.GetValue(2)),
+                        rd.ConvertValueToInt64(2, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString())
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
                     );
                 }
             }
@@ -317,31 +314,31 @@ namespace Duplicati.Library.Main.Database
 
         public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
         {
-
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var deletecmd = m_connection.CreateCommand())
             {
                 deletecmd.Transaction = tr.Parent;
             	var volumeid = GetRemoteVolumeID(name, tr.Parent);
                 
-				// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
+				// If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? OR ""IndexVolumeID"" = ?", volumeid, volumeid);
 				
                 // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" = ?)", volumeid);
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""VolumeID"" = ?", volumeid);
                                                 
-				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
+                var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ? UNION SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?))";
 
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
-				
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery + @" OR ""MetadataID"" IN " + subQuery, volumeid, volumeid, volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
+
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?)", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
 
-                ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
+                m_removeremotevolumeCommand.SetParameterValue(0, name);
                 m_removeremotevolumeCommand.Transaction = tr.Parent;
                 m_removeremotevolumeCommand.ExecuteNonQuery();
 
@@ -355,7 +352,22 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery("VACUUM");
         }
 
-		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, long size, RemoteVolumeState state)
+        {
+            return RegisterRemoteVolume(name, type, state, size, new TimeSpan(0), null);
+        }
+
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction)
+        {
+            return RegisterRemoteVolume(name, type, state, new TimeSpan(0), transaction);
+        }
+
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
+        {
+            return RegisterRemoteVolume(name, type, state, -1, deleteGraceTime, transaction);
+        }
+            
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
 		{
         	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
         	{
@@ -363,9 +375,16 @@ namespace Duplicati.Library.Main.Database
                 m_createremotevolumeCommand.SetParameterValue(1, name);
                 m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
                 m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
-                m_createremotevolumeCommand.SetParameterValue(4, 0);
+                m_createremotevolumeCommand.SetParameterValue(4, size);
+                m_createremotevolumeCommand.SetParameterValue(5, 0);
+
+                if (deleteGraceTime.Ticks <= 0)
+                    m_createremotevolumeCommand.SetParameterValue(6, 0);
+                else
+                    m_createremotevolumeCommand.SetParameterValue(6, (DateTime.UtcNow + deleteGraceTime).Ticks);
+                
                 m_createremotevolumeCommand.Transaction = tr.Parent;
-                var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
+                var r = m_createremotevolumeCommand.ExecuteScalarInt64();
                 tr.Commit();
                 return r;
             }
@@ -390,14 +409,14 @@ namespace Duplicati.Library.Main.Database
             {            
                 using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" " + query  + @" ORDER BY ""Timestamp"" DESC", args))
                     while (rd.Read())
-                        res.Add(Convert.ToInt64(rd.GetValue(0)));
+                        res.Add(rd.GetInt64(0));
                         
                 if (res.Count == 0)
                 {
                     cmd.Parameters.Clear();
                     using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                     while (rd.Read())
-                        res.Add(Convert.ToInt64(rd.GetValue(0)));
+                            res.Add(rd.GetInt64(0));
                     
                     if (res.Count == 0)
                         throw new Exception("No backup at the specified date");
@@ -408,6 +427,25 @@ namespace Duplicati.Library.Main.Database
                 return res;
             }
         }
+
+        public IEnumerable<long> FindMatchingFilesets(DateTime restoretime, long[] versions)
+        {
+            if (restoretime.Kind == DateTimeKind.Unspecified)
+                throw new Exception("Invalid DateTime given, must be either local or UTC");
+
+            var tmp = GetFilelistWhereClause(restoretime, versions, singleTimeMatch: true);
+            string query = tmp.Item1;
+            var args = tmp.Item2;
+
+            var res = new List<long>();
+            using(var cmd = m_connection.CreateCommand())
+            using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" " + query  + @" ORDER BY ""Timestamp"" DESC", args))
+                while (rd.Read())
+                    res.Add(rd.GetInt64(0));
+
+            return res;
+        }
+
 
         public System.Data.IDbTransaction BeginTransaction()
         {
@@ -480,10 +518,7 @@ namespace Duplicati.Library.Main.Database
             {
                 get
                 {
-                    var c = m_reader.GetValue(1);
-                    if (c == null || c == DBNull.Value)
-                        return -1;
-                    return Convert.ToInt64(c);
+                    return m_reader.ConvertValueToInt64(1);;
                 }
             }
 
@@ -518,17 +553,17 @@ namespace Duplicati.Library.Main.Database
             	yield return new LocalFileEntry(rd);
         }
 
-		private IEnumerable<KeyValuePair<string, string>> GetDbOptionList()
+        private IEnumerable<KeyValuePair<string, string>> GetDbOptionList(System.Data.IDbTransaction transaction = null)
 		{
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             using(var rd = cmd.ExecuteReader(@"SELECT ""Key"", ""Value"" FROM ""Configuration"" "))
             while(rd.Read())
             	yield return new KeyValuePair<string, string>(rd.GetValue(0).ToString(), rd.GetValue(1).ToString());
 		}
-		
-		public IDictionary<string, string> GetDbOptions()
+            		
+        public IDictionary<string, string> GetDbOptions(System.Data.IDbTransaction transaction = null)
 		{
-			return GetDbOptionList().ToDictionary(x => x.Key, x => x.Value);	
+            return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);	
 		}
 		
 		public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
@@ -548,10 +583,10 @@ namespace Duplicati.Library.Main.Database
 		public long GetBlocksLargerThan(long fhblocksize)
 		{
             using(var cmd = m_connection.CreateCommand())
-            	return Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", fhblocksize));
+            	return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", -1, fhblocksize);
 		}
 
-        public void VerifyConsistency(System.Data.IDbTransaction transaction)
+        public void VerifyConsistency(System.Data.IDbTransaction transaction, long blocksize, long hashsize)
         {
             using (var cmd = m_connection.CreateCommand())
             {
@@ -579,8 +614,20 @@ namespace Duplicati.Library.Main.Database
                 		if (c > 0)
                 			sb.AppendFormat("... and {0} more", c);
                 		
+                        sb.Append(". Run repair to fix it.");
 	                    throw new InvalidDataException(sb.ToString());
                 	}
+
+                var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
+                var unique_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
+
+                if (real_count != unique_count)
+                    throw new InvalidDataException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count, unique_count));
+
+                var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual"")", blocksize / hashsize), 0);
+                if (itemswithnoblocklisthash != 0)
+                    throw new InvalidDataException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
+
             }
         }
 
@@ -607,7 +654,7 @@ namespace Duplicati.Library.Main.Database
 			using(var cmd = m_connection.CreateCommand())
 			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid))
 				while (rd.Read())
-					yield return new Block(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
+                    yield return new Block(rd.GetValue(0).ToString(), rd.GetInt64(1));
 		}
 
         private class BlocklistHashEnumerable : IEnumerable<string>
@@ -703,7 +750,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
             	cmd.Transaction = transaction;
-                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Scantime"" FROM ""FilesetEntry"" A, ""File"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""FilesetID"" = ? ";
+                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Lastmodified"" FROM ""FilesetEntry"" A, ""File"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""FilesetID"" = ? ";
                 cmd.AddParameter(FOLDER_BLOCKSET_ID);
                 cmd.AddParameter(SYMLINK_BLOCKSET_ID);
                 cmd.AddParameter(filesetId);
@@ -711,10 +758,10 @@ namespace Duplicati.Library.Main.Database
                 using (var rd = cmd.ExecuteReader())
                 while(rd.Read())
                 {
-                    var blocksetID = Convert.ToInt64(rd.GetValue(0));
-                    var path = rd.GetValue(2).ToString();
-                    var metalength = Convert.ToInt64(rd.GetValue(3));
-                    var metahash = rd.GetValue(4).ToString();
+                        var blocksetID = rd.GetInt64(0);
+                        var path = rd.GetValue(2).ToString();
+                        var metalength = rd.GetInt64(3);
+                        var metahash = rd.GetValue(4).ToString();
 
                     if (blocksetID == FOLDER_BLOCKSET_ID)
                         filesetvolume.AddDirectory(path, metahash, metalength);
@@ -722,7 +769,7 @@ namespace Duplicati.Library.Main.Database
                         filesetvolume.AddSymlink(path, metahash, metalength);
                 }
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Lastmodified"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Lastmodified"" AS ""Lastmodified"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
                 cmd.Parameters.Clear();
                 cmd.AddParameter(filesetId);
 
@@ -734,14 +781,14 @@ namespace Duplicati.Library.Main.Database
                     {
                         var path = rd.GetValue(0).ToString();
                         var filehash = rd.GetValue(3).ToString();
-                        var size = Convert.ToInt64(rd.GetValue(2));
-                        var scantime = ParseFromEpochSeconds(Convert.ToInt64(rd.GetValue(1)));
+                        var size = rd.ConvertValueToInt64(2);
+                        var lastmodified = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
                         var metahash = rd.GetValue(4).ToString();
-                        var metasize = Convert.ToInt64(rd.GetValue(5));
+                        var metasize = rd.ConvertValueToInt64(5, -1);
                         var p = rd.GetValue(6);
                         var blrd = (p == null || p == DBNull.Value) ? null : new BlocklistHashEnumerable(rd);
 
-                        filesetvolume.AddFile(path, filehash, size, scantime, metahash, metasize, blrd);
+                        filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, blrd);
                         if (blrd == null)
                             more = rd.Read();
                         else
@@ -767,6 +814,10 @@ namespace Duplicati.Library.Main.Database
                 var type = Library.Utility.FilterType.Regexp;
                 if (filter is Library.Utility.FilterExpression)
                 	type = ((Library.Utility.FilterExpression)filter).Type;
+
+                // Bugfix: SQLite does not handle case-insensitive LIKE with non-ascii characters
+                if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
+                    type = Library.Utility.FilterType.Regexp;
                 
                 if (type == Library.Utility.FilterType.Regexp)
                 {
@@ -875,7 +926,7 @@ namespace Duplicati.Library.Main.Database
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 cmd.Transaction = tr.Parent;                
-                var id = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", m_operationid, NormalizeDateTimeToEpochSeconds(timestamp), volumeid));
+                var id = cmd.ExecuteScalarInt64(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", -1, m_operationid, NormalizeDateTimeToEpochSeconds(timestamp), volumeid);
                 tr.Commit();
                 return id;
             }
@@ -887,6 +938,62 @@ namespace Duplicati.Library.Main.Database
             m_insertIndexBlockLink.SetParameterValue(0, indexVolumeID);
             m_insertIndexBlockLink.SetParameterValue(1, blockVolumeID);
             m_insertIndexBlockLink.ExecuteNonQuery();
+        }
+
+        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            {
+                var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " + 
+                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = 5) A, " + 
+                    @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " + 
+                    @" ""B"".""Index"" >= (""A"".""Index"" * ({0}/{1})) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * ({0}/{1})) AND ""C"".""ID"" = ""B"".""BlockID"" " + 
+                    @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
+                    blocksize,
+                    hashsize
+                );
+
+                string curHash = null;
+                int index = 0;
+                byte[] buffer = new byte[blocksize];
+
+                using(var rd = cmd.ExecuteReader(sql))
+                    while (rd.Read())
+                    {
+                        var blockhash = rd.GetValue(0).ToString();
+                        if (blockhash != curHash && curHash != null)
+                        {
+                            yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                            curHash = null;
+                            index = 0;
+                        }
+
+                        var hash = Convert.FromBase64String(rd.GetValue(1).ToString());
+                        Array.Copy(hash, 0, buffer, index, hashsize);
+                        curHash = blockhash;
+                        index += hashsize;
+                    }
+
+                if (curHash != null)                    
+                    yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+
+
+            }
+        }
+
+        public void PurgeLogData(DateTime threshold)
+        {
+            using(var tr = m_connection.BeginTransaction())
+            using(var cmd = m_connection.CreateCommand(tr))
+            {
+                var t = NormalizeDateTimeToEpochSeconds(threshold);
+                cmd.ExecuteNonQuery(@"DELETE FROM ""LogData"" WHERE ""Timestamp"" < ?", t);
+                cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteOperation"" WHERE ""Timestamp"" < ?", t);
+
+                tr.Commit();
+            }
+            using(var cmd = m_connection.CreateCommand())
+                cmd.ExecuteNonQuery("VACUUM");
         }
         
         public virtual void Dispose()

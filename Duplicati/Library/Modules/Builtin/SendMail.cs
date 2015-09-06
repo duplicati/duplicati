@@ -107,7 +107,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The cached set of options
         /// </summary>
-        private IDictionary<string, string> m_options; 
+        private IDictionary<string, string> m_options;
+        /// <summary>
+        /// The parsed result level if the operation is a backup, empty otherwise
+        /// </summary>
+        private string m_parsedresultlevel = string.Empty;
 
         /// <summary>
         /// The server url to use
@@ -183,12 +187,12 @@ namespace Duplicati.Library.Modules.Builtin
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionRecipientShort, Strings.SendMail.OptionRecipientLong),
                     new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
-                    new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, string.Format(Strings.SendMail.OptionSubjectLong, DEFAULT_SUBJECT, OPTION_BODY)),
+                    new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, Strings.SendMail.OptionSubjectLong(OPTION_BODY), DEFAULT_SUBJECT),
                     new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, Strings.SendMail.OptionBodyLong, DEFAULT_BODY),
                     new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, string.Format(Strings.SendMail.OptionSendlevelLong, MailLevels.Success, MailLevels.Warning, MailLevels.Error, MailLevels.All), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(MailLevels.Success.ToString(), MailLevels.Warning.ToString(), MailLevels.Error.ToString(), MailLevels.All.ToString()), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
                 });
             }
@@ -287,6 +291,8 @@ namespace Duplicati.Library.Modules.Builtin
                     //Check if this level should send mail
                     if ((m_level & level) == 0)
                         return;
+                    
+                    m_parsedresultlevel = level.ToString();
                 }
             }
 
@@ -297,8 +303,8 @@ namespace Duplicati.Library.Modules.Builtin
                 if (body != DEFAULT_BODY && System.IO.File.Exists(body))
                     body = System.IO.File.ReadAllText(body);
 
-                body = ReplaceTemplate(body, result);
-                subject = ReplaceTemplate(subject, result);
+                body = ReplaceTemplate(body, result, false);
+                subject = ReplaceTemplate(subject, result, true);
 
                 var message = new MailMessage();
                 foreach(string s in m_to.Split(new [] { "," }, StringSplitOptions.RemoveEmptyEntries))
@@ -356,7 +362,7 @@ namespace Duplicati.Library.Modules.Builtin
 
                     servers = dnslite.getMXRecords(message.To[0].Host).OfType<MXRecord>().OrderBy(record => record.preference).Select(x => "smtp://" +  x.exchange).Distinct().ToList();
                     if (servers.Count == 0)
-                        throw new IOException(string.Format(Strings.SendMail.FailedToLookupMXServer, OPTION_SERVER));
+                        throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
                 }
                 else 
                 {
@@ -372,7 +378,7 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach(var server in servers)
                 {
                     if (lastEx != null)
-                        Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailFailedRetryError, lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
+                        Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
                 
                     lastServer = server;
                     try
@@ -391,7 +397,7 @@ namespace Duplicati.Library.Modules.Builtin
         
                         client.Send(message);
                         lastEx = null;
-                        Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailSuccess, server), LogMessageType.Information);
+                        Logging.Log.WriteMessage(Strings.SendMail.SendMailSuccess(server), LogMessageType.Information);
                         break;
                     }
                     catch (Exception ex)
@@ -415,29 +421,37 @@ namespace Duplicati.Library.Modules.Builtin
                     top = top.InnerException;
                 }
 
-                Logging.Log.WriteMessage(string.Format(Strings.SendMail.SendMailFailedError, sb.ToString()), LogMessageType.Warning, ex);
+                Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedError(sb.ToString()), LogMessageType.Warning, ex);
             }
         }
 
         #endregion
 
-        private string ReplaceTemplate(string input, object result)
+        private string ReplaceTemplate(string input, object result, bool subjectline)
         {
             input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                using (TempFile tf = new TempFile())
-                {
-                    RunScript.SerializeResult(tf, result);
-                    input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                }
+            input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            if (subjectline)
+            {
+                input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            }
+            else
+            {
+                if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    using(TempFile tf = new TempFile())
+                    {
+                        RunScript.SerializeResult(tf, result);
+                        input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    }
+            }
 
             foreach (KeyValuePair<string, string> kv in m_options)
                 input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
             if (!m_options.ContainsKey("backup-name"))
-                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
             input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
             return input;

@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -40,6 +40,7 @@ namespace Duplicati.Server.Database
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
+            public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
         }
         
         private Dictionary<string, string> m_values;
@@ -65,7 +66,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public void UpdateSettings(Dictionary<string, string> newsettings)
+        public void UpdateSettings(Dictionary<string, string> newsettings, bool clearExisting)
         {
             if (newsettings == null)
                 throw new ArgumentNullException();
@@ -73,7 +74,8 @@ namespace Duplicati.Server.Database
             lock(m_connection.m_lock)
             {
                 m_latestUpdate = null;
-                m_values.Clear();
+                if (clearExisting)
+                    m_values.Clear();
 
                 foreach(var k in newsettings)
                     m_values[k.Key] = newsettings[k.Key];
@@ -84,7 +86,7 @@ namespace Duplicati.Server.Database
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();
         }
-        
+            
         private void SaveSettings()
         {
             m_connection.SetSettings(
@@ -394,6 +396,24 @@ namespace Duplicati.Server.Database
                 SaveSettings();
             }
         }
+
+        public bool FixedInvalidBackupId
+        {
+            get
+            {
+                if (m_values.ContainsKey(CONST.HAS_FIXED_INVALID_BACKUPID) && string.IsNullOrWhiteSpace(m_values[CONST.HAS_FIXED_INVALID_BACKUPID]))
+                    return false;
+                else
+                    return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_FIXED_INVALID_BACKUPID);
+            }
+            set
+            {
+                lock(m_connection.m_lock)
+                    m_values[CONST.HAS_FIXED_INVALID_BACKUPID] = value.ToString();
+                SaveSettings();
+            }
+        }
+
     }
 }
 

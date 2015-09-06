@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -349,7 +349,7 @@ namespace Duplicati.CommandLine
             
 			if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
 			{
-				Console.WriteLine(string.Format(Strings.Program.DeleteCommandNeedsOptions, "delete", string.Join(",", requiredOptions))); 
+				Console.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
 				return 200;
 			}
         
@@ -384,7 +384,7 @@ namespace Duplicati.CommandLine
                 return PrintWrongNumberOfArguments(args, 1);
 
             using(var i = new Duplicati.Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
-                i.Repair();
+                i.Repair(filter);
 
             return 0;
         }
@@ -464,6 +464,9 @@ namespace Duplicati.CommandLine
                     
                         if (output.VerboseOutput)
                             Library.Utility.Utility.PrintSerializeObject(res, Console.Out);
+
+                        if (res.Warnings.Count() > 0)
+                            return 2;
                     }
                 }
             
@@ -630,13 +633,13 @@ namespace Duplicati.CommandLine
                 
         private static int PrintWrongNumberOfArguments(List<string> args, int expected)
         {
-            Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
+            Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2(args.Count, expected, args.Select(n => "\"" + n + "\"").ToArray()));
             return 200;
         }
 
         public static int PrintInvalidCommand(string command, List<string> args)
         {
-            Console.WriteLine(Strings.Program.InvalidCommandError, command);
+            Console.WriteLine(Strings.Program.InvalidCommandError(command));
             return 200;
         }
 

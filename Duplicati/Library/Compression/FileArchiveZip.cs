@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -112,6 +112,27 @@ namespace Duplicati.Library.Compression
         private string m_filename;
 
         /// <summary>
+        /// The reflection entry used to manipulate the defalte level on the compressor
+        /// </summary>
+        private static readonly System.Reflection.FieldInfo _deflateLevelField;
+
+        /// <summary>
+        /// Static initializer to read the deflateLevelField
+        /// </summary>
+        static FileArchiveZip()
+        {
+            System.Reflection.FieldInfo fi = null;
+
+            try { fi = typeof(ZipWriter).GetField("deflateCompressionLevel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); }
+            catch { }
+
+            _deflateLevelField = fi;
+
+            if (fi == null)
+                Logging.Log.WriteMessage("DeflateCompressionLevel is not supported, please report to developers", Duplicati.Library.Logging.LogMessageType.Warning);
+        }
+
+        /// <summary>
         /// Default constructor, used to read file extension and supported commands
         /// </summary>
         public FileArchiveZip() { }
@@ -197,8 +218,8 @@ namespace Duplicati.Library.Compression
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}),
-                    new CommandLineArgument(COMPRESSION_LEVEL_OPTION_ALIAS, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, string.Format(Strings.FileArchiveZip.CompressionlevelDeprecated, COMPRESSION_LEVEL_OPTION)),
-                    new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, string.Format(Strings.FileArchiveZip.CompressionmethodLong, COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, Enum.GetNames(typeof(CompressionType)))
+                    new CommandLineArgument(COMPRESSION_LEVEL_OPTION_ALIAS, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, Strings.FileArchiveZip.CompressionlevelDeprecated(COMPRESSION_LEVEL_OPTION)),
+                    new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, Strings.FileArchiveZip.CompressionmethodLong(COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, Enum.GetNames(typeof(CompressionType)))
                 });
             }
         }
@@ -311,8 +332,16 @@ namespace Duplicati.Library.Compression
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
             m_compressionInfo.DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressor.Deflate.CompressionLevel.None : m_defaultCompressionLevel;
+            SetStreamCompressionLevel();
             return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null);
 
+        }
+
+        private void SetStreamCompressionLevel()
+        {
+            if (_deflateLevelField != null)
+                try { _deflateLevelField.SetValue(m_writer, m_compressionInfo.DeflateCompressionLevel); }
+                catch { }
         }
 
         /// <summary>
@@ -367,7 +396,7 @@ namespace Duplicati.Library.Compression
                     return DateTime.MinValue;
             }
 
-            throw new FileNotFoundException(string.Format(Strings.FileArchiveZip.FileNotFoundError, file));
+            throw new FileNotFoundException(Strings.FileArchiveZip.FileNotFoundError(file));
         }
 
         #endregion

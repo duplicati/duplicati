@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -49,9 +49,9 @@ namespace Duplicati.Library.Main
                 m_values = values;
                 var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
                 if (hasher == null)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(options.BlockHashAlgorithm));
                 if (!hasher.CanReuseTransform)
-                    throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(options.BlockHashAlgorithm));
                     
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
@@ -96,14 +96,27 @@ namespace Duplicati.Library.Main
         {
             return new Metahash(values, options);
         }
-            
-        internal static void VerifyParameters(LocalDatabase db, Options options)
+
+        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        {
+            string n = null;
+            var opts = db.GetDbOptions(transaction);
+            if(opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
+                options.RawOptions["blocksize"] = opts["blocksize"] + "b";
+
+            if (opts.ContainsKey("blockhash") && (!options.RawOptions.TryGetValue("block-hash-algorithm", out n) || string.IsNullOrEmpty(n)))
+                options.RawOptions["block-hash-algorithm"] = opts["blockhash"];
+            if (opts.ContainsKey("filehash") && (!options.RawOptions.TryGetValue("file-hash-algorithm", out n) || string.IsNullOrEmpty(n)))
+                options.RawOptions["file-hash-algorithm"] = opts["filehash"];
+        }
+
+        internal static void VerifyParameters(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
         {
             var newDict = new Dictionary<string, string>();
             newDict.Add("blocksize", options.Blocksize.ToString());
             newDict.Add("blockhash", options.BlockHashAlgorithm);
             newDict.Add("filehash", options.FileHashAlgorithm);
-            var opts = db.GetDbOptions();
+            var opts = db.GetDbOptions(transaction);
             
             if (options.NoEncryption)
             {
@@ -159,7 +172,7 @@ namespace Duplicati.Library.Main
                 throw new Exception("Unsupported block-size change detected");
         
             if (needsUpdate)
-                db.SetDbOptions(newDict);               
+                db.SetDbOptions(newDict, transaction);               
         }    
     }
 }

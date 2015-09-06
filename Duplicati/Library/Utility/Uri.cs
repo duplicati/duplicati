@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Utility
                     catch
                     {
                     }
-                throw new ArgumentException(string.Format(Strings.Uri.UriParseError, url), "url");
+                throw new ArgumentException(Strings.Uri.UriParseError(url), "url");
             }
                 
             this.Scheme = m.Groups["scheme"].Value;
@@ -225,7 +225,7 @@ namespace Duplicati.Library.Utility
         public void RequireHost()
         {
             if (string.IsNullOrEmpty(Host))
-                throw new ArgumentException(string.Format(Strings.Uri.NoHostname, OriginalUri));
+                throw new ArgumentException(Strings.Uri.NoHostname(OriginalUri));
         }
         
         /// <summary>

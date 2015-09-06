@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -25,53 +25,8 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.CommandLine
 {
-    class Program
+    public class Program
     {
-    	private class FilterCollector
-		{
-			private List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
-			private Library.Utility.IFilter Filter 
-            { 
-                get 
-                { 
-                    if (m_filters.Count == 0)
-                        return new Library.Utility.FilterExpression();
-                    else if (m_filters.Count == 1)
-                        return m_filters[0];
-                    else 
-                        return m_filters.Aggregate((a,b) => Library.Utility.JoinedFilterExpression.Join(a, b)); 
-                }
-            }
-			
-			private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
-			{
-                return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
-                	if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
-                	{
-                		m_filters.Add(new Library.Utility.FilterExpression(value, true));
-                		return false;
-                	}
-                	else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
-                	{
-                        m_filters.Add(new Library.Utility.FilterExpression(value, false));
-                		return false;
-                	}
-                	
-                	if (callbackHandler != null)
-                		return callbackHandler(key, value);
-                	
-                	return true;
-                });
-			}
-			
-			public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
-			{
-				var fc = new FilterCollector();
-				var opts = fc.DoExtractOptions(args, callbackHandler);
-				return new Tuple<Dictionary<string, string>, Library.Utility.IFilter>(opts, fc.Filter);
-			}
-		}
-    
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -89,7 +44,7 @@ namespace Duplicati.CommandLine
             {
             	List<string> cargs = new List<string>(args);
 
-				var tmpparsed = FilterCollector.ExtractOptions(cargs);
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
 				var options = tmpparsed.Item1;
 				var filter = tmpparsed.Item2;
 				
@@ -110,28 +65,6 @@ namespace Duplicati.CommandLine
                     );
                 }
 
-#if DEBUG
-                if (cargs.Count > 1 && cargs[0].ToLower() == "unittest")
-                {
-                    //The unit test is only enabled in DEBUG builds
-                    //it works by getting a list of folders, and treats them as 
-                    //if they have the same data, but on different times
-
-                    //The first folder is used to make a full backup,
-                    //and each subsequent folder is used to make an incremental backup
-
-                    //After all backups are made, the files are restored and verified against
-                    //the original folders.
-
-                    //The best way to test it, is to use SVN checkouts at different
-                    //revisions, as this is how a regular folder would evolve
-
-                    cargs.RemoveAt(0);
-                    UnitTest.RunTest(cargs.ToArray(), options);
-                    return 0;
-                }
-#endif
-
                 if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
@@ -142,7 +75,7 @@ namespace Duplicati.CommandLine
                 foreach (string internaloption in Library.Main.Options.InternalOptions)
                     if (options.ContainsKey(internaloption))
                     {
-                        Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
+                        Console.WriteLine(Strings.Program.InternalOptionUsedError(internaloption));
                         return 200;
                     }
                 
@@ -156,10 +89,15 @@ namespace Duplicati.CommandLine
                         filename = options["parameters-file"];
                         options.Remove("parameters-file");
                     }
-                    else
+                    else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
                     {
                         filename = options["parameter-file"];
                         options.Remove("parameter-file");
+                    }
+                    else
+                    {
+                        filename = options["parameterfile"];
+                        options.Remove("parameterfile");
                     }
 
                     if (!ReadOptionsFromFile(filename, ref filter, cargs, options))
@@ -284,13 +222,13 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    Console.Error.WriteLine(Strings.Program.UnhandledException, ex.ToString());
+                    Console.Error.WriteLine(Strings.Program.UnhandledException(ex.ToString()));
 
                     while (ex.InnerException != null)
                     {
                         ex = ex.InnerException;
                         Console.Error.WriteLine();
-                        Console.Error.WriteLine(Strings.Program.UnhandledInnerException, ex.ToString());
+                        Console.Error.WriteLine(Strings.Program.UnhandledInnerException(ex.ToString()));
                     }
                 }
 
@@ -318,11 +256,11 @@ namespace Duplicati.CommandLine
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(filename).Replace("\r", "").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
 
-				var tmpparsed = FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
 					if (key.Equals("source", StringComparison.InvariantCultureIgnoreCase))
 					{
 						newsource.Add(value);
@@ -365,7 +303,7 @@ namespace Duplicati.CommandLine
             }
             catch (Exception e)
             {
-                Console.WriteLine(Strings.Program.FailedToParseParametersFileError, filename, e.Message);
+                Console.WriteLine(Strings.Program.FailedToParseParametersFileError(filename, e.Message));
                 return false;
             }
         }

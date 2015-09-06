@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -130,7 +130,7 @@ namespace Duplicati.Library.DynamicLoader
                             }
                             catch (Exception ex)
                             {
-                                Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicTypeLoadError, t.FullName, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
+                                Duplicati.Library.Logging.Log.WriteMessage(Strings.DynamicLoader.DynamicTypeLoadError(t.FullName, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
                             }
                     }
                 }

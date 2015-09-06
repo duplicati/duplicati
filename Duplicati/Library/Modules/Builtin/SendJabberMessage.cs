@@ -13,7 +13,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Net.NetworkInformation;
-using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -93,6 +92,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The cached set of options
         /// </summary>
         private IDictionary<string, string> m_options; 
+        /// <summary>
+        /// The parsed result level if the operation is a backup, empty otherwise
+        /// </summary>
+        private string m_parsedresultlevel = string.Empty;
 
         /// <summary>
         /// The server username
@@ -132,12 +135,12 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// A localized string describing the module with a friendly name
         /// </summary>
-        public string DisplayName { get { return LC.L("XMPP report module");} }
+        public string DisplayName { get { return Strings.SendJabberMessage.DisplayName;} }
 
         /// <summary>
         /// A localized description of the module
         /// </summary>
-        public string Description { get { return LC.L("This module provides support for sending status reports via XMPP messages"); } }
+        public string Description { get { return Strings.SendJabberMessage.Description; } }
 
         /// <summary>
         /// A boolean value that indicates if the module should always be loaded.
@@ -154,12 +157,12 @@ namespace Duplicati.Library.Modules.Builtin
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, LC.L("XMPP recipient email"), LC.L("The users who should have the messages sent, specify multiple users seperated with commas")),
-                    new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, LC.L("The message template"), LC.L("This value can be a filename. If a the file exists, the file contents will be used as the message.\n\nIn the message, certain tokens are replaced:\n%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n%REMOTEURL% - Remote server url\n%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n\nAll commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."), DEFAULT_MESSAGE),
-                    new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, LC.L("The XMPP username"), LC.L("The username for the account that will send the message, including the hostname. I.e. \"account@jabber.org/Home\"")),
-                    new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, LC.L("The XMPP password"), LC.L("The password for the account that will send the message")),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, LC.L("The messages to send"), LC.L("You can specify one of \"{0}\", \"{1}\", \"{2}\". \nYou can supply multiple options with a comma seperator, e.g. \"{0},{1}\". The special value \"{3}\" is a shorthand for \"{0},{1},{2}\" and will cause all backup operations to send a message.", ReportLevels.Success, ReportLevels.Warning, ReportLevels.Error, ReportLevels.All), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(ReportLevels))),
-                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, LC.L("Send messages for all operations"), LC.L("By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations")),
+                    new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpptoShort, Strings.SendJabberMessage.SendxmpptoLong),
+                    new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppmessageShort, Strings.SendJabberMessage.SendxmppmessageLong, DEFAULT_MESSAGE),
+                    new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppusernameShort, Strings.SendJabberMessage.SendxmppusernameLong),
+                    new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpppasswordShort, Strings.SendJabberMessage.SendxmpppasswordLong),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendJabberMessage.SendxmpplevelShort, Strings.SendJabberMessage.SendxmpplevelLong(ReportLevels.Success.ToString(), ReportLevels.Warning.ToString(), ReportLevels.Error.ToString(), ReportLevels.All.ToString()), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(ReportLevels))),
+                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendJabberMessage.SendxmppanyoperationShort, Strings.SendJabberMessage.SendxmppanyoperationLong),
                 });
             }
         }
@@ -250,6 +253,8 @@ namespace Duplicati.Library.Modules.Builtin
                     //Check if this level should send mail
                     if ((m_level & level) == 0)
                         return;
+
+                    m_parsedresultlevel = level.ToString();
                 }
             }
 
@@ -275,7 +280,7 @@ namespace Duplicati.Library.Modules.Builtin
                     top = top.InnerException;
                 }
 
-                Logging.Log.WriteMessage(LC.L("Failed to send jabber message: {0}", sb.ToString()), LogMessageType.Warning, ex);
+                Logging.Log.WriteMessage(Strings.SendJabberMessage.SendMessageError(sb.ToString()), LogMessageType.Warning, ex);
             }
         }
 
@@ -351,7 +356,7 @@ namespace Duplicati.Library.Modules.Builtin
             if (ex != null)
                 throw ex;
             if (timeout)
-                throw new TimeoutException(LC.L("Timeout occured while logging in to jabber server"));
+                throw new TimeoutException(Strings.SendJabberMessage.LoginTimeoutError);
         }
 
         private string ReplaceTemplate(string input, object result)
@@ -359,6 +364,7 @@ namespace Duplicati.Library.Modules.Builtin
             input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
                 using (TempFile tf = new TempFile())
                 {
@@ -370,7 +376,7 @@ namespace Duplicati.Library.Modules.Builtin
                 input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
             if (!m_options.ContainsKey("backup-name"))
-                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
             input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
             return input;

@@ -11,6 +11,9 @@
     <RootNamespace>Duplicati.Server</RootNamespace>
     <AssemblyName>Duplicati.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -24,6 +27,7 @@
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
     <Commandlineparameters>--webservice-port=8200,8201,8202</Commandlineparameters>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -35,9 +39,7 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
@@ -68,31 +70,6 @@
     <Compile Include="Scheduler.cs" />
     <Compile Include="Serializable\TreeNode.cs" />
     <Compile Include="SingleInstance.cs" />
-    <Compile Include="Strings\DuplicatiRunner.Designer.cs">
-      <DependentUpon>DuplicatiRunner.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\DynamicSetupHelper.Designer.cs">
-      <DependentUpon>DynamicSetupHelper.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\Program.Designer.cs">
-      <DependentUpon>Program.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\Scheduler.Designer.cs">
-      <DependentUpon>Scheduler.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <Compile Include="Strings\TaskType.Designer.cs">
-      <DependentUpon>TaskType.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Serializable\ServerStatus.cs" />
     <Compile Include="Database\Backup.cs" />
     <Compile Include="Serializable\ServerSettings.cs" />
@@ -108,17 +85,41 @@
     <Compile Include="WebServer\BodyWriter.cs" />
     <Compile Include="WebServer\IndexHtmlHandler.cs" />
     <Compile Include="WebServer\ControlHandler.cs" />
-    <Compile Include="WebServer\ControlMethods\ListFolderAsNodes.cs" />
-    <Compile Include="WebServer\ControlMethods\ReadLogData.cs" />
-    <Compile Include="WebServer\ControlMethods\SearchBackupFiles.cs" />
-    <Compile Include="WebServer\ControlMethods\GetFolderContents.cs" />
-    <Compile Include="WebServer\ControlMethods\DeleteBackup.cs" />
-    <Compile Include="WebServer\ControlMethods\AddOrUpdateBackup.cs" />
-    <Compile Include="WebServer\ControlMethods\GetBackup.cs" />
     <Compile Include="UpdatePollThread.cs" />
     <Compile Include="LogWriteHandler.cs" />
     <Compile Include="Database\Notification.cs" />
     <Compile Include="Database\TempFile.cs" />
+    <Compile Include="Serializable\ImportExportStructure.cs" />
+    <Compile Include="Strings.cs" />
+    <Compile Include="WebServer\RESTHandler.cs" />
+    <Compile Include="WebServer\RESTMethods\IRESTMethod.cs" />
+    <Compile Include="WebServer\RESTMethods\SystemInfo.cs" />
+    <Compile Include="WebServer\RESTMethods\RequestInfo.cs" />
+    <Compile Include="WebServer\RESTMethods\Backups.cs" />
+    <Compile Include="WebServer\RESTMethods\ServerState.cs" />
+    <Compile Include="WebServer\RESTMethods\ProgressState.cs" />
+    <Compile Include="WebServer\RESTMethods\Help.cs" />
+    <Compile Include="WebServer\RESTMethods\ServerSettings.cs" />
+    <Compile Include="WebServer\RESTMethods\SystemWideSettings.cs" />
+    <Compile Include="WebServer\RESTMethods\Backup.cs" />
+    <Compile Include="WebServer\RESTMethods\Acknowledgements.cs" />
+    <Compile Include="WebServer\RESTMethods\Changelog.cs" />
+    <Compile Include="WebServer\RESTMethods\Tags.cs" />
+    <Compile Include="WebServer\RESTMethods\ServerSetting.cs" />
+    <Compile Include="WebServer\RESTMethods\Localizations.cs" />
+    <Compile Include="WebServer\RESTMethods\Filesystem.cs" />
+    <Compile Include="WebServer\RESTMethods\LogData.cs" />
+    <Compile Include="WebServer\RESTMethods\RemoteOperation.cs" />
+    <Compile Include="WebServer\RESTMethods\BugReport.cs" />
+    <Compile Include="WebServer\RESTMethods\Notifications.cs" />
+    <Compile Include="WebServer\RESTMethods\Notification.cs" />
+    <Compile Include="WebServer\RESTMethods\UISettings.cs" />
+    <Compile Include="WebServer\RESTMethods\BackupDefaults.cs" />
+    <Compile Include="WebServer\RESTMethods\Updates.cs" />
+    <Compile Include="WebServer\RESTMethods\Tasks.cs" />
+    <Compile Include="WebServer\RESTMethods\Task.cs" />
+    <Compile Include="WebServer\RESTMethods\WebModule.cs" />
+    <Compile Include="WebServer\RESTMethods\WebModules.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -226,10 +227,6 @@
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
@@ -238,36 +235,26 @@
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\DuplicatiRunner.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DuplicatiRunner.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DynamicSetupHelper.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DynamicSetupHelper.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\Program.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Program.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\Scheduler.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Scheduler.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\TaskType.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>TaskType.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
+    <ProjectReference Include="..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj">
+      <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
+      <Name>Duplicati.Library.Backend.GoogleServices</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
+      <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
+      <Name>Duplicati.Library.Backend.OpenStack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
+      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
+      <Name>Duplicati.Library.Backend.HubiC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+      <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>
+      <Name>Duplicati.CommandLine.RecoveryTool</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
-    <Folder Include="Database\" />
-    <Folder Include="Database\Database schema\" />
-    <Folder Include="WebServer\" />
+    <Folder Include="WebServer\RESTMethods\" />
     <Folder Include="WebServer\ControlMethods\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

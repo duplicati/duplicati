@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -117,6 +117,16 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
+        /// Gets the last write time of a given file in UTC
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The last write time of the file</returns>
+        public virtual DateTime GetCreationTimeUtc(string file)
+        {
+            return System.IO.File.GetCreationTimeUtc(file);
+        }
+
+        /// <summary>
         /// Opens a file for reading
         /// </summary>
         /// <param name="file">The full path to the file in non-snapshot format</param>
@@ -162,7 +172,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="file">The file or folder to examine</param>
         public abstract Dictionary<string, string> GetMetadata(string file);
-        
+
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>

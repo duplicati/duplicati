@@ -4,35 +4,39 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Net;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend
 {
-    public class SkyDrive : IBackend, IStreamingBackend
+    public class OneDrive : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
-
-        private const string WLID_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
-        private const string WLID_LOGIN = "https://duplicati-oauth-handler.appspot.com/";
 
         private const string WLID_SERVER = "https://apis.live.net/v5.0";
         private const string ROOT_FOLDER_ID = "me/skydrive";
         private const string FOLDER_TEMPLATE = "{0}/files";
+        private const string ONEDRIVE_SERVICE_URL = "https://api.onedrive.com/v1.0";
+
+        private const int FILE_LIST_PAGE_SIZE = 100;
+
+        private const long BITS_FILE_SIZE_LIMIT = 1024 * 1024 * 15;
+        private const long BITS_CHUNK_SIZE = 1024 * 1024 * 10;
 
         private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
-        private string m_authid;
         private string m_rootfolder;
         private string m_prefix;
-        private string m_token;
-        private DateTime m_tokenExpires = DateTime.UtcNow;
+        private string m_userid;
         private WLID_FolderItem m_folderid;
+
+        private OAuthHelper m_oauth;
 
         private Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 
-        public SkyDrive() { }
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
-        public SkyDrive(string url, Dictionary<string, string> options)
+        public OneDrive() { }
+
+        public OneDrive(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
 
@@ -41,11 +45,11 @@ namespace Duplicati.Library.Backend
             if (!m_prefix.EndsWith("/"))
                 m_prefix += "/";
 
+            string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
-                m_authid = options[AUTHID_OPTION];
+                authid = options[AUTHID_OPTION];
 
-            if (string.IsNullOrEmpty(m_authid))
-                throw new Exception(string.Format(LC.L("You need an AuthID, you can get it from: {0}"), WLID_LOGIN));
+            m_oauth = new OAuthHelper(authid, this.ProtocolKey);
         }
 
         private class WLID_Service_Response
@@ -82,58 +86,24 @@ namespace Duplicati.Library.Backend
             public string description;
         }
 
-        private T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null)
+        private class WLID_ContinuationResponse
         {
-            var req = (HttpWebRequest)System.Net.WebRequest.Create(url);
-            req.UserAgent = USER_AGENT;
-
-            if (setup != null)
-                setup(req);
-
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-
-            using(var resp = (HttpWebResponse)areq.GetResponse())
-            using(var rs = areq.GetResponseStream())
-            using(var tr = new System.IO.StreamReader(rs))
-            using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);
+            [Newtonsoft.Json.JsonProperty("uploadUrl")]
+            public string UploadUrl { get; set; }
+            [Newtonsoft.Json.JsonProperty("expirationDateTime", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+            public DateTime Expires { get; set; } 
+            [Newtonsoft.Json.JsonProperty("nextExpectedRanges")]
+            public string[] NextRanges { get; set; }
         }
 
-        private string AccessToken
+        private class WLID_UserInfo
         {
-            get
-            {
-                if (m_token == null || m_tokenExpires < DateTime.UtcNow)
-                {
-                    try
-                    {
-                        var res = GetJSONData<WLID_Service_Response>(WLID_SERVICE, (req) => {
-                            req.Headers.Add("X-AuthID", m_authid);
-                        });
-
-                        m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
-                        m_token = res.access_token;
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = ex.Message;
-                        if (ex is WebException)
-                        {
-                            var resp = ((WebException)ex).Response as HttpWebResponse;
-                            if (resp != null)
-                            {
-                                msg = resp.Headers["X-Reason"];
-                                if (string.IsNullOrWhiteSpace(msg))
-                                    msg = resp.StatusDescription;
-                            }
-                        }
-
-                        throw new Exception(LC.L("Failed to authorize using the WLID service: {0}. If the problem persists, try generating a new authid token from: {1}", msg, WLID_LOGIN), ex);
-                    }
-                }
-
-                return m_token;
-            }
+            public string id { get; set; }
+            public string first_name { get; set; }
+            public string last_name { get; set; }
+            public string name { get; set; }
+            public string gender { get; set; }
+            public string locale { get; set; }
         }
 
         private WLID_FolderItem FindFolder(string folder, string parentfolder = null)
@@ -141,8 +111,8 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(parentfolder))
                 parentfolder = ROOT_FOLDER_ID;
             
-            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, parentfolder), Library.Utility.Uri.UrlEncode(AccessToken));
-            var res = GetJSONData<WLID_DataItem>(url);
+            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, parentfolder), Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
+            var res = m_oauth.GetJSONData<WLID_DataItem>(url);
 
             if (res == null || res.data == null)
                 return null;
@@ -159,8 +129,8 @@ namespace Duplicati.Library.Backend
             var folders = (m_rootfolder + '/' + m_prefix).Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             if (folders.Length == 0)
             {
-                var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, ROOT_FOLDER_ID, Library.Utility.Uri.UrlEncode(AccessToken));
-                return GetJSONData<WLID_FolderItem>(url);
+                var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, ROOT_FOLDER_ID, Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
+                return m_oauth.GetJSONData<WLID_FolderItem>(url);
             }
 
             WLID_FolderItem cur = null;
@@ -171,7 +141,7 @@ namespace Duplicati.Library.Backend
                 {
                     if (autocreate)
                     {
-                        var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, cur == null ? ROOT_FOLDER_ID : cur.id, Library.Utility.Uri.UrlEncode(AccessToken));
+                        var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, cur == null ? ROOT_FOLDER_ID : cur.id, Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
                         var req = (HttpWebRequest)WebRequest.Create(url);
                         req.UserAgent = USER_AGENT;
                         req.Method = "POST";
@@ -183,7 +153,7 @@ namespace Duplicati.Library.Backend
                         {
                             new Newtonsoft.Json.JsonSerializer().Serialize(sw, new WLID_CreateFolderData() {
                                 name = f,
-                                description = LC.L("Autocreated folder")
+                                description = Strings.OneDrive.AutoCreatedFolderLabel
                             });
 
                             sw.Flush();
@@ -193,7 +163,7 @@ namespace Duplicati.Library.Backend
                             req.ContentType = "application/json";
 
                             using (var reqs = areq.GetRequestStream())
-                                Utility.Utility.CopyStream(ms, reqs);
+                                Utility.Utility.CopyStream(ms, reqs, true, m_copybuffer);
                         }
 
                         using (var resp = (HttpWebResponse)areq.GetResponse())
@@ -202,12 +172,12 @@ namespace Duplicati.Library.Backend
                         using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
                             if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
-                                throw new ProtocolViolationException(string.Format(LC.L("Unexpected error code: {0} - {1}"), resp.StatusCode, resp.StatusDescription));
+                                throw new ProtocolViolationException(Strings.OneDrive.UnexpectedError(resp.StatusCode, resp.StatusDescription));
                             cur = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_FolderItem>(jr);
                         }
                     }
                     else
-                        throw new FolderMissingException(LC.L("Missing the folder: {0}", f));
+                        throw new FolderMissingException(Strings.OneDrive.MissingFolderError(f));
                 }
                 else
                     cur = n;
@@ -238,7 +208,7 @@ namespace Duplicati.Library.Backend
                 m_fileidCache.TryGetValue(name, out id);
 
                 if (string.IsNullOrWhiteSpace(id) && throwIfMissing)
-                    throw new System.IO.FileNotFoundException(LC.L("File not found"), name);
+                    throw new System.IO.FileNotFoundException(Strings.OneDrive.FileNotFoundError, name);
             }
 
             return id;
@@ -258,7 +228,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return LC.L("Microsoft OneDrive"); }
+            get { return Strings.OneDrive.DisplayName; }
         }
 
         public string ProtocolKey
@@ -268,22 +238,38 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, FolderID), Library.Utility.Uri.UrlEncode(AccessToken));
+            int offset = 0;
+            int count = FILE_LIST_PAGE_SIZE;
 
-            var res = GetJSONData<WLID_DataItem>(url);
             var files = new List<IFileEntry>();
 
             m_fileidCache.Clear();
 
-            if (res != null && res.data != null)
-                foreach (var r in res.data)
-                {
-                    m_fileidCache.Add(r.name, r.id);
+            while(count == FILE_LIST_PAGE_SIZE)
+            {
+                var url = string.Format("{0}/{1}?access_token={2}&limit={3}&offset={4}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, FolderID), Library.Utility.Uri.UrlEncode(m_oauth.AccessToken), FILE_LIST_PAGE_SIZE, offset);
+                var res = m_oauth.GetJSONData<WLID_DataItem>(url);
 
-                    var fe = new FileEntry(r.name, r.size, r.updated_time, r.updated_time);
-                    fe.IsFolder = string.Equals(r.type, "folder", StringComparison.InvariantCultureIgnoreCase);
-                    files.Add(fe);
+                if (res != null && res.data != null)
+                {
+                    count = res.data.Length;
+                    foreach(var r in res.data)
+                    {
+                        m_fileidCache.Add(r.name, r.id);
+
+                        var fe = new FileEntry(r.name, r.size, r.updated_time, r.updated_time);
+                        fe.IsFolder = string.Equals(r.type, "folder", StringComparison.InvariantCultureIgnoreCase);
+                        files.Add(fe);
+                    }
                 }
+                else
+                {
+                    count = 0;
+                }
+
+                offset += count;
+
+            }
 
             return files;
         }
@@ -302,17 +288,30 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            var id = GetFileID(remotename);
-            var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(AccessToken));
-            var req = (HttpWebRequest)WebRequest.Create(url);
-            req.Method = "DELETE";
-
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var resp = (HttpWebResponse)areq.GetResponse())
+            try
             {
-                if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
-                    throw new ProtocolViolationException(string.Format(LC.L("Unexpected error code: {0} - {1}"), resp.StatusCode, resp.StatusDescription));
-                m_fileidCache.Remove(remotename);
+                var id = GetFileID(remotename);
+                var url = string.Format("{0}/{1}?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "DELETE";
+
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    if ((int)resp.StatusCode < 200 || (int)resp.StatusCode > 299)
+                        throw new ProtocolViolationException(Strings.OneDrive.UnexpectedError(resp.StatusCode, resp.StatusDescription));
+                    m_fileidCache.Remove(remotename);
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
             }
         }        
             
@@ -321,14 +320,14 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, LC.L("The authorization code"), string.Format(LC.L("The authorization token retrieved from {0}", WLID_LOGIN))),
+                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OneDrive.AuthidShort, Strings.OneDrive.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("onedrive"))),
                 });
             }
         }
 
         public string Description
         {
-            get { return LC.L("Stores files on Microsoft OneDrive. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})",
+            get { return Strings.OneDrive.Description(
                     "Microsoft Service Agreement",
                     "http://explore.live.com/microsoft-service-agreement",
                     "Microsoft Online Privacy Statement", 
@@ -347,51 +346,199 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
+        private string UserID
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_userid))
+                {
+                    var url = string.Format("{0}/me?access_token={1}", WLID_SERVER, Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+                    var areq = new Utility.AsyncHttpRequest(req);
+
+                    using(var resp = (HttpWebResponse)areq.GetResponse())
+                    using(var rs = areq.GetResponseStream())
+                    using(var tr = new System.IO.StreamReader(rs))
+                    using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                        m_userid = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_UserInfo>(jr).id;
+                }
+
+                return m_userid;
+            }
+        }
+
         #region IStreamingBackend Members
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            var url = string.Format("{0}/{1}/files/{2}?access_token={3}", WLID_SERVER, FolderID, Utility.Uri.UrlPathEncode(remotename),  Library.Utility.Uri.UrlEncode(AccessToken));
-            var req = (HttpWebRequest)WebRequest.Create(url);
-            req.UserAgent = USER_AGENT;
-            req.Method = "PUT";
-
-            try
+            if (stream.Length > BITS_FILE_SIZE_LIMIT)
             {
-                req.ContentLength = stream.Length;
+                // Get extra info for BITS
+                var uid = UserID;
+                var fid = FolderID.Split('.')[2];
+
+                // Create a session
+                var url = string.Format("https://cid-{0}.users.storage.live.com/items/{1}/{2}?access_token={3}", uid, fid, Utility.Uri.UrlPathEncode(remotename), Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
+
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.UserAgent = USER_AGENT;
+                req.Method = "POST";
+                req.ContentType = "application/json";
+
+                req.Headers.Add("X-Http-Method-Override", "BITS_POST");
+                req.Headers.Add("BITS-Packet-Type", "Create-Session");
+                req.Headers.Add("BITS-Supported-Protocols", "{7df0354d-249b-430f-820d-3d2a9bef4931}");
+                req.ContentLength = 0;
+
+                var areq = new Utility.AsyncHttpRequest(req);
+
+                string sessionid;
+
+                using(var resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    var packtype = resp.Headers["BITS-Packet-Type"];
+                    if (!packtype.Equals("Ack", StringComparison.InvariantCultureIgnoreCase))
+                        throw new Exception(string.Format("Unable to create BITS transfer, got status: {0}", packtype));
+                    
+                    sessionid = resp.Headers["BITS-Session-Id"];
+                }
+
+                if (string.IsNullOrEmpty(sessionid))
+                    throw new Exception("BITS session-id was missing");
+                
+                // Session is now created, start uploading chunks
+
+                var offset = 0L;
+                var retries = 0;
+
+                while (offset < stream.Length)
+                {
+                    try
+                    {
+                        var bytesInChunk = Math.Min(BITS_CHUNK_SIZE, stream.Length - offset);
+
+                        req = (HttpWebRequest)WebRequest.Create(url);
+                        req.UserAgent = USER_AGENT;
+                        req.Method = "POST";
+                        req.Headers.Add("X-Http-Method-Override", "BITS_POST");
+                        req.Headers.Add("BITS-Packet-Type", "Fragment");
+                        req.Headers.Add("BITS-Session-Id", sessionid);
+                        req.Headers.Add("Content-Range", string.Format("bytes {0}-{1}/{2}", offset, offset + bytesInChunk - 1, stream.Length));
+
+                        req.ContentLength = bytesInChunk;
+
+                        if (stream.Position != offset)
+                            stream.Position = offset;
+                        
+                        areq = new Utility.AsyncHttpRequest(req);
+                        var remaining = (int)bytesInChunk;
+                        using(var reqs = areq.GetRequestStream())
+                        {
+                            int read;
+                            while ((read = stream.Read(m_copybuffer, 0, Math.Min(m_copybuffer.Length, remaining))) != 0)
+                            {
+                                reqs.Write(m_copybuffer, 0, read);
+                                remaining -= read;
+                            }
+                        }
+
+                        using(var resp = (HttpWebResponse)areq.GetResponse())
+                        {
+                            if (resp.StatusCode != HttpStatusCode.OK)
+                                throw new WebException("Invalid partial upload response", null, WebExceptionStatus.UnknownError, resp);
+                        }
+
+                        offset += bytesInChunk;
+                        retries = 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        var retry = false;
+
+                        // If we get a 5xx error, or some network issue, we retry
+                        if (ex is WebException && ((WebException)ex).Response is HttpWebResponse)
+                        {
+                            var code = (int)((HttpWebResponse)((WebException)ex).Response).StatusCode;
+                            retry = code >= 500 && code <= 599;
+                        }
+                        else if (ex is System.Net.Sockets.SocketException || ex is System.IO.IOException || ex.InnerException is System.Net.Sockets.SocketException || ex.InnerException is System.IO.IOException)
+                        {
+                            retry = true;
+                        }
+
+
+                        // Retry with exponential backoff
+                        if (retry && retries < 5)
+                        {
+                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                            retries++;
+                        }
+                        else
+                            throw;
+                    }
+                }
+
+                // Transfer completed, now commit the upload and close the session
+
+                req = (HttpWebRequest)WebRequest.Create(url);
+                req.UserAgent = USER_AGENT;
+                req.Method = "POST";
+                req.Headers.Add("X-Http-Method-Override", "BITS_POST");
+                req.Headers.Add("BITS-Packet-Type", "Close-Session");
+                req.Headers.Add("BITS-Session-Id", sessionid);
+                req.ContentLength = 0;
+
+                areq = new Utility.AsyncHttpRequest(req);
+                using(var resp = (HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode != HttpStatusCode.OK)
+                        throw new Exception("Invalid partial upload commit response");
+                }
             }
-            catch
+            else
             {
-            }
+                var url = string.Format("{0}/{1}/files/{2}?access_token={3}", WLID_SERVER, FolderID, Utility.Uri.UrlPathEncode(remotename), Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.UserAgent = USER_AGENT;
+                req.Method = "PUT";
 
-            // Docs says not to set this ?
-            //req.ContentType = "application/octet-stream";
+                try
+                {
+                    req.ContentLength = stream.Length;
+                }
+                catch
+                {
+                }
 
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var reqs = areq.GetRequestStream())
-                Utility.Utility.CopyStream(stream, reqs);
+                // Docs says not to set this ?
+                //req.ContentType = "application/octet-stream";
 
-            using (var resp = (HttpWebResponse)areq.GetResponse())
-            using (var rs = areq.GetResponseStream())
-            using (var tr = new System.IO.StreamReader(rs))
-            using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
-            {
-                var nf = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_FolderItem>(jr);
-                m_fileidCache[remotename] = nf.id;
+                var areq = new Utility.AsyncHttpRequest(req);
+                using(var reqs = areq.GetRequestStream())
+                    Utility.Utility.CopyStream(stream, reqs, true, m_copybuffer);
+
+                using(var resp = (HttpWebResponse)areq.GetResponse())
+                using(var rs = areq.GetResponseStream())
+                using(var tr = new System.IO.StreamReader(rs))
+                using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                {
+                    var nf = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_FolderItem>(jr);
+                    m_fileidCache[remotename] = nf.id;
+                }
             }
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             var id = GetFileID(remotename);
-            var url = string.Format("{0}/{1}/content?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(AccessToken));
+            var url = string.Format("{0}/{1}/content?access_token={2}", WLID_SERVER, id,  Library.Utility.Uri.UrlEncode(m_oauth.AccessToken));
             var req = (HttpWebRequest)WebRequest.Create(url);
             req.UserAgent = USER_AGENT;
 
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, stream);
+                Utility.Utility.CopyStream(rs, stream, true, m_copybuffer);
         }
 
         #endregion

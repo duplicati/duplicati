@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -26,6 +26,8 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public class NoSnapshotLinux : NoSnapshot
     {
+        private readonly SystemIOLinux _sysIO = new SystemIOLinux();
+
         public NoSnapshotLinux(string[] sourcefolders)
             : base(sourcefolders)
         {
@@ -56,16 +58,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public override Dictionary<string, string> GetMetadata(string file)
         {
-            var f = file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file;
-            var n = UnixSupport.File.GetExtendedAttributes(f);
-            var dict = new Dictionary<string, string>();
-            foreach(var x in n)
-                dict[x.Key] = Convert.ToBase64String(x.Value);
-            
-            var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
-            dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
-            
-            return dict;
+            return _sysIO.GetMetadata(file);
         }
         
         /// <summary>

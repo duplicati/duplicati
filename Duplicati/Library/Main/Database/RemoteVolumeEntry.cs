@@ -12,20 +12,23 @@ namespace Duplicati.Library.Main.Database
     	private readonly long m_size;
     	private readonly RemoteVolumeType m_type;
     	private readonly RemoteVolumeState m_state;
+        private readonly DateTime m_deleteGracePeriod;
     	
         public string Name { get { return m_name; } }
         public string Hash { get { return m_hash; } }
         public long Size { get { return m_size; } }
         public RemoteVolumeType Type { get { return m_type; } }
         public RemoteVolumeState State { get { return m_state; } }
+        public DateTime deleteGracePeriod { get { return m_deleteGracePeriod; } }
 
-        public RemoteVolumeEntry(string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state)
+        public RemoteVolumeEntry(string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod)
         {
             m_name = name;
             m_size = size;
             m_type = type;
             m_state = state;
             m_hash = hash;
+            m_deleteGracePeriod = deleteGracePeriod;
         }
     }
 }

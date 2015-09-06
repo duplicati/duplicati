@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility
             public SslPolicyErrors SslError { get { return m_errors; } }
 
             public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(string.Format(Strings.SslCertificateValidator.VerifyCertificateException, error, certificate))
+                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate))
             {
                 m_certificate = certificate;
                 m_errors = error;
@@ -98,7 +98,7 @@ namespace Duplicati.Library.Utility
             }
             catch (Exception ex)
             {
-                throw new Exception(string.Format(Strings.SslCertificateValidator.VerifyCertificateHashError, ex, sslPolicyErrors), ex);
+                throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
             }
 
             m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);

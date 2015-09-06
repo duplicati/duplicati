@@ -1,1 +1,1 @@
-http://code.google.com/p/managed-lzma
+https://github.com/weltkante/managed-lzma

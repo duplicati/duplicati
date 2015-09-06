@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Modules.Builtin
                     psi.EnvironmentVariables["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
 
                 if (!options.ContainsKey("backup-name"))
-                    psi.EnvironmentVariables["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
+                    psi.EnvironmentVariables["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
 
                 psi.EnvironmentVariables["DUPLICATI__EVENTNAME"] = eventname;
                 psi.EnvironmentVariables["DUPLICATI__OPERATIONNAME"] = operationname;
@@ -212,9 +212,9 @@ namespace Duplicati.Library.Modules.Builtin
                     if (requiredScript)
                     {
                         if (!p.HasExited)
-                            throw new Exception(string.Format(Strings.RunScript.ScriptTimeoutError, scriptpath));
+                            throw new Exception(Strings.RunScript.ScriptTimeoutError(scriptpath));
                         else if (p.ExitCode != 0)
-                            throw new Exception(string.Format(Strings.RunScript.InvalidExitCodeError, scriptpath, p.ExitCode));
+                            throw new Exception(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
                     }
 
                     if (p.HasExited)
@@ -222,16 +222,16 @@ namespace Duplicati.Library.Modules.Builtin
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
                         if (p.ExitCode != 0)
-                            Logging.Log.WriteMessage(string.Format(Strings.RunScript.InvalidExitCodeError, scriptpath, p.ExitCode), Duplicati.Library.Logging.LogMessageType.Warning);
+                            Logging.Log.WriteMessage(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), Duplicati.Library.Logging.LogMessageType.Warning);
                     }
                     else
                     {
-                        Logging.Log.WriteMessage(string.Format(Strings.RunScript.ScriptTimeoutError, scriptpath), Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage(Strings.RunScript.ScriptTimeoutError(scriptpath), Duplicati.Library.Logging.LogMessageType.Warning);
                     }
                 }
 
                 if (!string.IsNullOrEmpty(stderr))
-                    Logging.Log.WriteMessage(string.Format(Strings.RunScript.StdErrorReport, scriptpath, stderr), Duplicati.Library.Logging.LogMessageType.Warning);
+                    Logging.Log.WriteMessage(Strings.RunScript.StdErrorReport(scriptpath, stderr), Duplicati.Library.Logging.LogMessageType.Warning);
 
                 //We only allow setting parameters on startup
                 if (eventname == "BEFORE" && stdout != null)
@@ -289,7 +289,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteMessage(string.Format(Strings.RunScript.ScriptExecuteError, scriptpath, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                Logging.Log.WriteMessage(Strings.RunScript.ScriptExecuteError(scriptpath, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                 if (requiredScript)
                     throw;
             }

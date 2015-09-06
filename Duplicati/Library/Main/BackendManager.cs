@@ -6,6 +6,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main
 {
@@ -481,7 +482,7 @@ namespace Duplicati.Library.Main
                             if (!recovered)
                             {
                                 try { m_backend.Dispose(); }
-                                catch(Exception dex) { m_statwriter.AddWarning(string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
+                                catch(Exception dex) { m_statwriter.AddWarning(LC.L("Failed to dispose backend instance: {0}", ex.Message), dex); }
     
                                 m_backend = null;
                                 
@@ -492,6 +493,23 @@ namespace Duplicati.Library.Main
                         
 
                     } while (retries < m_options.NumberOfRetries);
+
+                    if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
+                    {
+                        m_statwriter.AddMessage(LC.L("Failed to delete file {0}, testing if file exists", item.RemoteFilename));
+                        try
+                        {
+                            if (!m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename))
+                            {
+                                lastException = null;
+                                m_statwriter.AddMessage(LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            m_statwriter.AddWarning(LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
+                        }
+                    }
 
                     if (lastException != null)
                     {
@@ -599,15 +617,20 @@ namespace Duplicati.Library.Main
             m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
+            var begin = DateTime.Now;
+
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
+
+            var duration = DateTime.Now - begin;
+            Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
 
             if (!item.NotTrackedInDb)
 			    m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
@@ -633,17 +656,22 @@ namespace Duplicati.Library.Main
 
             try
             {
+                var begin = DateTime.Now;
+
                 tmpfile = new Library.Utility.TempFile();
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
-                    using (var ts = new ThrottledStream(fs, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                    using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                     using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }
                 else
                     m_backend.Get(item.RemoteFilename, tmpfile);
-                
+
+                var duration = DateTime.Now - begin;
+                Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
+
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = CalculateFileHash(tmpfile) }));
                 m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
@@ -653,7 +681,7 @@ namespace Duplicati.Library.Main
                     if (item.Size >= 0)
                     {
                         if (nl != item.Size)
-                            throw new Exception(string.Format(Strings.Controller.DownloadedFileSizeError, item.RemoteFilename, nl, item.Size));
+                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, nl, item.Size));
                     }
                     else
                     	item.Size = nl;
@@ -662,7 +690,7 @@ namespace Duplicati.Library.Main
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (nh != item.Hash)
-                            throw new HashMismathcException(string.Format(Strings.Controller.HashMismatchError, tmpfile, item.Hash, nh));
+                            throw new HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, nh));
                     }
                     else
                     	item.Hash = nh;
@@ -738,7 +766,24 @@ namespace Duplicati.Library.Main
             try
             {
                 m_backend.Delete(item.RemoteFilename);
-            } 
+            }
+            catch (Duplicati.Library.Interface.FileMissingException fex)
+            {
+                m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), fex);
+                bool success = false;
+                try
+                {
+                    success = !m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename);
+                }
+                catch
+                {
+                }
+
+                if (success)
+                    m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                else
+                    throw;
+            }
             catch (Exception ex)
             {
                 result = ex.ToString();
@@ -802,7 +847,6 @@ namespace Duplicati.Library.Main
 				throw m_lastException;
             
 			item.Close();
-			m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 			var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, null);
 			req.LocalTempfile = item.TempFile;
 						
@@ -813,13 +857,14 @@ namespace Duplicati.Library.Main
             
             // As the network link is the bottleneck,
             // we encrypt the dblock volume before the
-            // upload is enqueue (i.e. on the worker thread)
+            // upload is enqueued (i.e. on the worker thread)
             if (m_encryption != null)
                 lock (m_encryptionLock)
                     req.Encrypt(m_encryption, m_statwriter);
                     
             req.UpdateHashAndSize(m_options);
-            
+            m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, req.Size, req.Hash);
+
             // We do not encrypt the dindex volume, because it is small,
             // and may need to be re-written if the dblock upload is retried
 			if (indexfile != null)
@@ -829,6 +874,8 @@ namespace Duplicati.Library.Main
 				req2.LocalTempfile = indexfile.TempFile;
                 req.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, req2);
             }
+
+            m_db.FlushDbMessages(true);
             
             if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
             {

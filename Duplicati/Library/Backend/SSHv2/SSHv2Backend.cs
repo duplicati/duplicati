@@ -1,6 +1,6 @@
 ﻿#region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
 using Renci.SshNet;
+using Renci.SshNet.Common;
 
 namespace Duplicati.Library.Backend
 {
@@ -117,7 +118,15 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            CreateConnection(true).DeleteFile(remotename);
+            try
+            {
+                CreateConnection(true).DeleteFile(remotename);
+            }
+            catch (SftpPathNotFoundException ex)
+            {
+                throw new FileMissingException(ex);
+            }
+                
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -128,7 +137,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
-                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, string.Format(Strings.SSHv2Backend.DescriptionSshkeyLong, KEYFILE_URI)),
+                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
                 });
 
             }
@@ -205,7 +214,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                throw new Interface.FolderMissingException(string.Format(Strings.SSHv2Backend.FolderNotFoundManagedError, m_path, ex.Message), ex);
+                throw new Interface.FolderMissingException(Strings.SSHv2Backend.FolderNotFoundManagedError(m_path, ex.Message), ex);
             }
 			
 			if (changeDir)

@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -53,6 +56,16 @@ namespace Duplicati.Library.Main
         /// The thread running the current task
         /// </summary>
         private System.Threading.Thread m_currentTaskThread = null;
+
+        /// <summary>
+        /// Holds various keys that need to be reset after running the task
+        /// </summary>
+        private Dictionary<string, string> m_resetKeys = new Dictionary<string, string>();
+
+        /// <summary>
+        /// The thread priority to reset to
+        /// </summary>
+        private System.Threading.ThreadPriority? m_resetPriority;
 
         /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
@@ -98,13 +111,13 @@ namespace Duplicati.Library.Main
 					}
 					catch (Exception ex)
 					{
-						throw new ArgumentException(string.Format(Strings.Controller.InvalidPathError, sources[i], ex.Message), ex);
+						throw new ArgumentException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
 					}
                 	
                     var fi = new System.IO.FileInfo(sources[i]);
                     var di = new System.IO.DirectoryInfo(sources[i]);
                     if (!(fi.Exists || di.Exists) && !m_options.AllowMissingSource)
-                        throw new System.IO.IOException(String.Format(Strings.Controller.SourceIsMissingError, sources[i]));
+                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(sources[i]));
                     
                     if (!fi.Exists)
     					sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
@@ -157,10 +170,10 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IRepairResults Repair()
+        public Duplicati.Library.Interface.IRepairResults Repair(Library.Utility.IFilter filter = null)
         {
             return RunAction(new RepairResults(), (result) => {
-                new Operation.RepairHandler(m_backend, m_options, result).Run();
+                new Operation.RepairHandler(m_backend, m_options, result).Run(filter);
             });
         }
         
@@ -195,13 +208,25 @@ namespace Duplicati.Library.Main
             });
         }
         
-        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath)
+        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath, Library.Utility.IFilter filter = null)
         {
             var t = new string[] { string.IsNullOrEmpty(targetpath) ? m_options.Dbpath : targetpath };
-            
+
+            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
+
             return RunAction(new RecreateDatabaseResults(), ref t, (result) => {
                 using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
-                    h.Run(t[0]);
+                    h.Run(t[0], filter, filelistfilter);
+            });
+        }
+
+        public Duplicati.Library.Interface.IRecreateDatabaseResults UpdateDatabaseWithVersions(Library.Utility.IFilter filter = null)
+        {
+            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
+
+            return RunAction(new RecreateDatabaseResults(), (result) => {
+                using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
+                    h.RunUpdate(filter, filelistfilter);
             });
         }
 
@@ -312,6 +337,27 @@ namespace Duplicati.Library.Main
                 OperationRunning(false);
             }
 
+            if (m_resetPriority != null)
+            {
+                System.Threading.Thread.CurrentThread.Priority = m_resetPriority.Value;
+                m_resetPriority = null;
+            }
+
+            if (m_resetKeys != null)
+            {
+                var keys = m_resetKeys.Keys.ToArray();
+                foreach(var k in keys)
+                {
+                    try
+                    {
+                        Environment.SetEnvironmentVariable(k, m_resetKeys[k]);
+                    } 
+                    catch { }
+                    
+                    m_resetKeys.Remove(k);
+                }
+            }
+
             if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
             {
                 Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
@@ -378,17 +424,34 @@ namespace Duplicati.Library.Main
             result.VerboseOutput = m_options.Verbose;
 
             if (m_options.HasTempDir)
+            {
                 Library.Utility.TempFolder.SystemTempPath = m_options.TempDir;
+                if (Library.Utility.Utility.IsClientLinux)
+                {
+                    m_resetKeys["TMPDIR"] = Environment.GetEnvironmentVariable("TMPDIR");
+                    Environment.SetEnvironmentVariable("TMPDIR", m_options.TempDir);
+                }
+                else
+                {
+                    m_resetKeys["TMP"] = Environment.GetEnvironmentVariable("TMP");
+                    m_resetKeys["TEMP"] = Environment.GetEnvironmentVariable("TEMP");
+                    Environment.SetEnvironmentVariable("TMP", m_options.TempDir);
+                    Environment.SetEnvironmentVariable("TEMP", m_options.TempDir);
+                }
+            }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
+            {
+                m_resetPriority = System.Threading.Thread.CurrentThread.Priority;
                 System.Threading.Thread.CurrentThread.Priority = Library.Utility.Utility.ParsePriority(m_options.ThreadPriority);
+            }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
             ValidateOptions(result);
 
-            Library.Logging.Log.WriteMessage(string.Format(Strings.Controller.StartingOperationMessage, m_options.MainAction), Logging.LogMessageType.Information);
+            Library.Logging.Log.WriteMessage(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
         }
 
         /// <summary>
@@ -452,7 +515,7 @@ namespace Duplicati.Library.Main
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
                         if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
-                            log.AddWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, a.Name), null);
+                            log.AddWarning(Strings.Controller.DuplicateOptionNameWarning(a.Name), null);
 
                         supportedOptions[a.Name] = a;
 
@@ -460,7 +523,7 @@ namespace Duplicati.Library.Main
                             foreach (string s in a.Aliases)
                             {
                                 if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
-                                    log.AddWarning(string.Format(Strings.Controller.DuplicateOptionNameWarning, s), null);
+                                    log.AddWarning(Strings.Controller.DuplicateOptionNameWarning(s), null);
 
                                 supportedOptions[s] = a;
                             }
@@ -479,7 +542,7 @@ namespace Duplicati.Library.Main
                                     if (a.Name != s)
                                         optname += " (" + s + ")";
 
-                                    log.AddWarning(string.Format(Strings.Controller.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage), null);
+                                    log.AddWarning(Strings.Controller.DeprecatedOptionUsedWarning(optname, a.DeprecationMessage), null);
                                 }
 
                         }
@@ -490,9 +553,9 @@ namespace Duplicati.Library.Main
             foreach (string s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
                     if (disabledModuleOptions.ContainsKey(s))
-                        log.AddWarning(string.Format(Strings.Controller.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]), null);
+                        log.AddWarning(Strings.Controller.UnsupportedOptionDisabledModuleWarning(s, disabledModuleOptions[s]), null);
                     else
-                        log.AddWarning(string.Format(Strings.Controller.UnsupportedOptionWarning, s), null);
+                        log.AddWarning(Strings.Controller.UnsupportedOptionWarning(s), null);
 
             //Look at the value supplied for each argument and see if is valid according to its type
             foreach (string s in ropts.Keys)
@@ -529,25 +592,25 @@ namespace Duplicati.Library.Main
                     }
 
                 if (!found)
-                    return string.Format(Strings.Controller.UnsupportedEnumerationValue, optionname, value, string.Join(", ", arg.ValidValues ?? new string[0]));
+                    return Strings.Controller.UnsupportedEnumerationValue(optionname, value, arg.ValidValues ?? new string[0]);
 
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
             {
                 if (!string.IsNullOrEmpty(value) && Library.Utility.Utility.ParseBool(value, true) != Library.Utility.Utility.ParseBool(value, false))
-                    return string.Format(Strings.Controller.UnsupportedBooleanValue, optionname, value);
+                    return Strings.Controller.UnsupportedBooleanValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
             {
                 long l;
                 if (!long.TryParse(value, out l))
-                    return string.Format(Strings.Controller.UnsupportedIntegerValue, optionname, value);
+                    return Strings.Controller.UnsupportedIntegerValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)
             {
                 foreach (string p in value.Split(System.IO.Path.DirectorySeparatorChar))
                     if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
-                        return string.Format(Strings.Controller.UnsupportedPathValue, optionname, p);
+                        return Strings.Controller.UnsupportedPathValue(optionname, p);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Size)
             {
@@ -557,7 +620,7 @@ namespace Duplicati.Library.Main
                 }
                 catch
                 {
-                    return string.Format(Strings.Controller.UnsupportedSizeValue, optionname, value);
+                    return Strings.Controller.UnsupportedSizeValue(optionname, value);
                 }
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
@@ -568,7 +631,7 @@ namespace Duplicati.Library.Main
                 }
                 catch
                 {
-                    return string.Format(Strings.Controller.UnsupportedTimeValue, optionname, value);
+                    return Strings.Controller.UnsupportedTimeValue(optionname, value);
                 }
             }
 

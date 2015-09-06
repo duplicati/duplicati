@@ -45,6 +45,31 @@ namespace Duplicati.Library.Main
         }
         
         /// <summary>
+        /// Adds the specified hash and value to the lookup,
+        /// if not already found.
+        /// </summary>
+        /// <param name="hash">The hash to add</param>
+        /// <param name="value">The value assocated with the hash</param>
+        /// <returns>>True if the value was added, false otherwise</returns>
+        public bool TryAdd(string hash, long size, T value)
+        {
+            var key = DecodeBase64Hash(hash) % m_entries;
+            var lst = m_lookup[key];
+            if (lst == null)
+                lst = m_lookup[key] = new SortedList<string, T>(1);
+            
+            T tmp;
+            if (!lst.TryGetValue(hash + ':' + size.ToString(), out tmp))
+            {
+                lst.Add(hash + ':' + size.ToString(), value);
+                return true;
+            }
+
+            //
+            return false;
+        }
+
+        /// <summary>
         /// Adds the specified hash and value to the lookup
         /// </summary>
         /// <param name="hash">The hash to add</param>

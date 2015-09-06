@@ -352,6 +352,11 @@ $(document).ready(function() {
                 group_basic.append($("<option></option>").attr("value", 's3').text('S3 compatible'));
             }
 
+            if (BACKEND_STATE.module_lookup['openstack']) {
+                used['openstack'] = true;
+                group_basic.append($("<option></option>").attr("value", 'openstack').text('OpenStack Object Storage/ Swift'));
+            }
+
             for(var i in {'file':0}) {
                 if (BACKEND_STATE.module_lookup[i]) {
                     used[i] = true;
@@ -359,7 +364,7 @@ $(document).ready(function() {
                 }
             }
 
-            for (var i in { 's3': 0, 'azure': 0, 'googledocs': 0, 'onedrive': 0, 'cloudfiles': 0 }) {
+            for (var i in { 's3': 0, 'azure': 0, 'googledrive': 0, 'onedrive': 0, 'cloudfiles': 0, 'gcs': 0, 'openstack': 0, 'hubic': 0 }) {
                 if (BACKEND_STATE.module_lookup[i]) {
                     used[i] = true;
                     group_prop.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));

@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -50,8 +50,8 @@ namespace Duplicati.CommandLine.BackendTool
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
-                
+                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
+
                 debugoutput = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 
                 string command = null;

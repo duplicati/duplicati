@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using System.Linq;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -59,6 +60,22 @@ namespace Duplicati.CommandLine.BackendTester
         {
             try
             {
+                if (_args.Length == 1)
+                {
+                    try
+                    {
+                        var p = Library.Utility.Utility.ExpandEnvironmentVariables(_args[0]);
+                        if (System.IO.File.Exists(p))
+                            _args = (from x in System.IO.File.ReadLines(p)
+                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#")
+                                select x.Trim()
+                            ).ToArray();
+                    }
+                    catch
+                    {
+                    }
+                }
+
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -69,8 +86,7 @@ namespace Duplicati.CommandLine.BackendTester
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
-
+                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
 
                 if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
                 {

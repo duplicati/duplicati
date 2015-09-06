@@ -15,10 +15,10 @@ namespace Duplicati.Library.Main.Operation
         private BackendManager m_backend;
         private string m_backendurl;
 
-        private readonly byte[] m_blockbuffer;
-        private readonly byte[] m_blocklistbuffer;
-        private readonly System.Security.Cryptography.HashAlgorithm m_blockhasher;
-        private readonly System.Security.Cryptography.HashAlgorithm m_filehasher;
+        private byte[] m_blockbuffer;
+        private byte[] m_blocklistbuffer;
+        private System.Security.Cryptography.HashAlgorithm m_blockhasher;
+        private System.Security.Cryptography.HashAlgorithm m_filehasher;
 
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Operation
         // Speed up things by caching these
         private readonly FileAttributes m_attributeFilter;
         private readonly Options.SymlinkStrategy m_symlinkPolicy;
-        private readonly int m_blocksize;
+        private int m_blocksize;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -56,23 +56,6 @@ namespace Duplicati.Library.Main.Operation
 
             m_attributeFilter = m_options.FileAttributeFilter;
             m_symlinkPolicy = m_options.SymlinkPolicy;
-            m_blocksize = m_options.Blocksize;
-
-            m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
-            m_blocklistbuffer = new byte[m_options.Blocksize];
-
-            m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-            m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
-
-			if (m_blockhasher == null)
-				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.BlockHashAlgorithm));
-			if (m_filehasher == null)
-				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FileHashAlgorithm));
-
-            if (!m_blockhasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.BlockHashAlgorithm));
-            if (!m_filehasher.CanReuseTransform)
-                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FileHashAlgorithm));
                 
             if (options.AllowPassphraseChange)
                 throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
@@ -83,7 +66,8 @@ namespace Duplicati.Library.Main.Operation
         {
             private Snapshots.ISnapshotService m_snapshot;
             private FileAttributes m_attributeFilter;
-            private Duplicati.Library.Utility.IFilter m_filter;
+            private Duplicati.Library.Utility.IFilter m_enumeratefilter;
+            private Duplicati.Library.Utility.IFilter m_emitfilter;
             private Options.SymlinkStrategy m_symlinkPolicy;
             private Options.HardlinkStrategy m_hardlinkPolicy;
             private ILogWriter m_logWriter;
@@ -96,12 +80,23 @@ namespace Duplicati.Library.Main.Operation
                 m_snapshot = snapshot;
                 m_attributeFilter = attributeFilter;
                 m_sourcefilter = sourcefilter;
-                m_filter = filter;
+                m_emitfilter = filter;
                 m_symlinkPolicy = symlinkPolicy;
                 m_hardlinkPolicy = hardlinkPolicy;
                 m_logWriter = logWriter;
                 m_hardlinkmap = new Dictionary<string, string>();
                 m_mixinqueue = new Queue<string>();
+
+                bool includes;
+                bool excludes;
+                Library.Utility.FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                if (includes && !excludes)
+                {
+                    m_enumeratefilter = Library.Utility.FilterExpression.Combine(filter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
+                }
+                else
+                    m_enumeratefilter = m_emitfilter;
+
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -177,7 +172,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                             
                 Library.Utility.IFilter match;
-                if (!Library.Utility.FilterExpression.Matches(m_filter, path, out match))
+                if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
                 {
                     if (m_logWriter != null)
                         m_logWriter.AddVerboseMessage("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
@@ -209,12 +204,16 @@ namespace Duplicati.Library.Main.Operation
                 return true;
             }
 
-            public IEnumerable<string> EnumerateFilesAndFolders(Snapshots.ISnapshotService snapshot)
+            public IEnumerable<string> EnumerateFilesAndFolders()
             {
-                foreach(var s in snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
                 {
                     while (m_mixinqueue.Count > 0)
                         yield return m_mixinqueue.Dequeue();
+
+                    Library.Utility.IFilter m;
+                    if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
+                        continue;
 
                     yield return s;
                 }
@@ -223,7 +222,7 @@ namespace Duplicati.Library.Main.Operation
                     yield return m_mixinqueue.Dequeue();
             }
 
-            public IEnumerable<string> Mixin(IEnumerable<string> list, Snapshots.ISnapshotService snapshot)
+            public IEnumerable<string> Mixin(IEnumerable<string> list)
             {
                 foreach(var s in list.Where(x => {
                     var fa = FileAttributes.Normal;
@@ -242,7 +241,6 @@ namespace Duplicati.Library.Main.Operation
                 while (m_mixinqueue.Count > 0)
                     yield return m_mixinqueue.Dequeue();
             }
-
         }
 
 
@@ -259,7 +257,7 @@ namespace Duplicati.Library.Main.Operation
                     throw;
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
-                    log.AddWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()), ex);
+                    log.AddWarning(Strings.RSyncDir.SnapshotFailedError(ex.ToString()), ex);
                 }
             }
 
@@ -276,7 +274,7 @@ namespace Duplicati.Library.Main.Operation
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders(m_snapshot))
+            foreach(var path in new FilterHandler(m_snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders())
             {
                 var fa = FileAttributes.Normal;
                 try { fa = m_snapshot.GetAttributes(path); }
@@ -299,6 +297,121 @@ namespace Duplicati.Library.Main.Operation
             
         }
 
+        private void UploadSyntheticFilelist() 
+        {
+            var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();                        
+            if (incompleteFilesets.Length != 0)
+            {
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
+                m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
+                using(var trn = m_database.BeginTransaction())
+                {
+                    var incompleteSet = incompleteFilesets.Last();
+                    var badIds = from n in incompleteFilesets select n.Key;
+
+                    var prevs = (from n in m_database.FilesetTimes 
+                        where 
+                        n.Key < incompleteSet.Key
+                        &&
+                        !badIds.Contains(n.Key)
+                        orderby n.Key                                                
+                        select n.Key).ToArray();
+
+                    var prevId = prevs.Length == 0 ? -1 : prevs.Last();
+
+                    FilesetVolumeWriter fsw = null;
+                    try
+                    {
+                        var s = 1;
+                        var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
+                        var oldFilesetID = incompleteSet.Key;
+
+                        // Probe for an unused filename
+                        while (s < 60)
+                        {
+                            var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
+                            if (id < 0)
+                                break;
+
+                            fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
+                        }
+
+                        fsw = new FilesetVolumeWriter(m_options, fileTime);
+                        fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+
+                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                            foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                                m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                        var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
+                        m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
+                        m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
+
+                        m_database.WriteFileset(fsw, trn, newFilesetID);
+
+                        if (m_options.Dryrun)
+                        {
+                            m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
+                        }
+                        else
+                        {
+                            m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
+
+                            using(new Logging.Timer("CommitUpdateFilelistVolume"))
+                                trn.Commit();
+
+                            m_backend.Put(fsw);
+                            fsw = null;
+                        }
+                    }
+                    finally
+                    {
+                        if (fsw != null)
+                            try { fsw.Dispose(); }
+                        catch { fsw = null; }
+                    }                          
+                }
+            }
+
+            if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+            {
+                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var hashsize = blockhasher.HashSize / 8;
+
+                foreach(var blockfile in m_database.GetMissingIndexFiles())
+                {
+                    m_result.AddMessage(string.Format("Re-creating missing index file for {0}", blockfile));
+                    var w = new IndexVolumeWriter(m_options);
+                    w.VolumeID = m_database.RegisterRemoteVolume(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
+
+                    var blockvolume = m_database.GetRemoteVolumeFromName(blockfile);
+                    w.StartVolume(blockvolume.Name);
+                    var volumeid = m_database.GetRemoteVolumeID(blockvolume.Name);
+
+                    foreach(var b in m_database.GetBlocks(volumeid))
+                        w.AddBlock(b.Hash, b.Size);
+
+                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+
+                    if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                        foreach(var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+
+                    w.Close();
+
+                    m_database.AddIndexBlockLink(w.VolumeID, volumeid, null);
+
+                    if (m_options.Dryrun)
+                        m_result.AddDryrunMessage(string.Format("would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize)));
+                    else
+                    {
+                        m_database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                        m_backend.Put(w);
+                    }
+                }
+            }
+        }
+
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
@@ -307,9 +420,29 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.SetDatabase(m_database);
                 m_result.Dryrun = m_options.Dryrun;
-                
+
+                Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
-                m_database.VerifyConsistency(null);
+
+                m_blocksize = m_options.Blocksize;
+
+                m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
+                m_blocklistbuffer = new byte[m_options.Blocksize];
+
+                m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+
+                if (m_blockhasher == null)
+                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                if (m_filehasher == null)
+                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+
+                if (!m_blockhasher.CanReuseTransform)
+                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                if (!m_filehasher.CanReuseTransform)
+                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+
+                m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
                 m_filter = filter ?? new Library.Utility.FilterExpression();
@@ -337,100 +470,35 @@ namespace Duplicati.Library.Main.Operation
                     using(m_backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(m_filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
-                        var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();                        
-                        if (incompleteFilesets.Length != 0)
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
+                        using(new Logging.Timer("PreBackupVerify"))
                         {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                            m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
-                            using(var trn = m_database.BeginTransaction())
+                            try
                             {
-                                var incompleteSet = incompleteFilesets.Last();
-                                var badIds = from n in incompleteFilesets select n.Key;
-                                
-                                var prevs = (from n in m_database.FilesetTimes 
-                                            where 
-                                                n.Key < incompleteSet.Key
-                                                &&
-                                                !badIds.Contains(n.Key)
-                                            orderby n.Key                                                
-                                            select n.Key).ToArray();
-                                            
-                                var prevId = prevs.Length == 0 ? -1 : prevs.Last();
-
-                                FilesetVolumeWriter fsw = null;
-                                try
-                                {
-                                    var s = 1;
-                                    var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                                    var oldFilesetID = incompleteSet.Key;
-                                    
-                                    // Probe for an unused filename
-                                    while (s < 60)
-                                    {
-                                        var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
-                                        if (id < 0)
-                                            break;
-
-                                        fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                                    }
-                                    
-                                    fsw = new FilesetVolumeWriter(m_options, fileTime);
-                                    fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                                    var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
-                                    m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
-                                    m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
-                                    
-                                    m_database.WriteFileset(fsw, trn, newFilesetID);
-                                    
-                                    if (m_options.Dryrun)
-                                    {
-                                        m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
-                                    }
-                                    else
-                                    {
-                                        m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
-                                        
-                                        using(new Logging.Timer("CommitUpdateFilelistVolume"))
-                                            trn.Commit();
-                                        
-                                        m_backend.Put(fsw);
-                                        fsw = null;
-                                    }
-                                }
-                                finally
-                                {
-                                    if (fsw != null)
-                                        try { fsw.Dispose(); }
-                                        catch { fsw = null; }
-                                }                          
+                                if (m_options.NoBackendverification) 
+                                    FilelistProcessor.VerifyLocalList(m_backend, m_options, m_database, m_result.BackendWriter);
+                                else
+                                    FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_result.BackendWriter);
                             }
-                        }
-
-                        if (!m_options.NoBackendverification)
-                        {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
-                            using(new Logging.Timer("PreBackupVerify"))
+                            catch (Exception ex)
                             {
-                                try
+                                if (m_options.AutoCleanup)
                                 {
+                                    m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
+                                    m_result.RepairResults = new RepairResults(m_result);
+                                    new RepairHandler(m_backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
+
+                                    m_result.AddMessage("Backend cleanup finished, retrying verification");
                                     FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_result.BackendWriter);
                                 }
-                                catch (Exception ex)
-                                {
-                                    if (m_options.AutoCleanup)
-                                    {
-                                        m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
-                                        m_result.RepairResults = new RepairResults(m_result);
-                                        new RepairHandler(m_backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
-        		            			
-                                        m_result.AddMessage("Backend cleanup finished, retrying verification");
-                                        FilelistProcessor.VerifyRemoteList(m_backend, m_options, m_database, m_result.BackendWriter);
-                                    }
-                                    else
-                                        throw;
-                                }
+                                else
+                                    throw;
                             }
                         }
+
+                        // Verify before uploading a synthetic list
+                        m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+                        UploadSyntheticFilelist();
 
                         m_database.BuildLookupTable(m_options);
                         m_transaction = m_database.BeginTransaction();
@@ -457,7 +525,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
                                 m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
                                 
-                                foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist, m_snapshot))
+                                foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist))
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
@@ -479,7 +547,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {                                    
-                                foreach(var path in filterhandler.EnumerateFilesAndFolders(m_snapshot))
+                                foreach(var path in filterhandler.EnumerateFilesAndFolders())
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
@@ -535,13 +603,17 @@ namespace Duplicati.Library.Main.Operation
                                     m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
                                     m_blockvolume.Close();
                                     UpdateIndexVolume();
-        	                		
+
                                     using(new Logging.Timer("CommitUpdateRemoteVolume"))
                                         m_transaction.Commit();
                                     m_transaction = m_database.BeginTransaction();
-        	                		
+
                                     m_backend.Put(m_blockvolume, m_indexvolume);
-                                    
+
+                                    using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                                        m_transaction.Commit();
+                                    m_transaction = m_database.BeginTransaction();
+
                                     m_blockvolume = null;
                                     m_indexvolume = null;
                                 }
@@ -557,7 +629,7 @@ namespace Duplicati.Library.Main.Operation
                         using(new Logging.Timer("UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
                         using(new Logging.Timer("VerifyConsistency"))
-                            m_database.VerifyConsistency(m_transaction);
+                            m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize);
     
     
                         var changeCount = 
@@ -582,12 +654,17 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+
+                                    using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                                        m_transaction.Commit();
+                                    m_transaction = m_database.BeginTransaction();
+
+                                    m_backend.Put(m_filesetvolume);
         
                                     using(new Logging.Timer("CommitUpdateRemoteVolume"))
                                         m_transaction.Commit();
                                     m_transaction = m_database.BeginTransaction();
         
-                                    m_backend.Put(m_filesetvolume);
                                 }
                             }
                         }
@@ -665,6 +742,7 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         m_database.WriteResults();                    
+                        m_database.PurgeLogData(m_options.LogRetention);
                         return;
                     }
                 }
@@ -694,6 +772,59 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
         }
+
+        private Dictionary<string, string> GenerateMetadata(string path, System.IO.FileAttributes attributes)
+        {
+            try
+            {
+                Dictionary<string, string> metadata;
+
+                if (m_options.StoreMetadata)
+                {
+                    metadata = m_snapshot.GetMetadata(path);
+                    if (metadata == null)
+                        metadata = new Dictionary<string, string>();
+
+                    if (!metadata.ContainsKey("CoreAttributes"))
+                        metadata["CoreAttributes"] = attributes.ToString();
+
+                    if (!metadata.ContainsKey("CoreLastWritetime"))
+                    {
+                        try
+                        {
+                            metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                        }
+                        catch (Exception ex)
+                        {
+                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                        }
+                    }
+
+                    if (!metadata.ContainsKey("CoreCreatetime"))
+                    {
+                        try
+                        {
+                            metadata["CoreCreatetime"] = m_snapshot.GetCreationTimeUtc(path).Ticks.ToString();
+                        }
+                        catch (Exception ex)
+                        {
+                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                        }
+                    }
+                }
+                else
+                {
+                    metadata = new Dictionary<string, string>();
+                }
+
+                return metadata;
+            }
+            catch(Exception ex)
+            {
+                m_result.AddWarning(string.Format("Failed to process metadata for \"{0}\", storing empty metadata", path), ex);
+                return new Dictionary<string, string>();
+            }
+        }
         
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)
         {
@@ -710,6 +841,16 @@ namespace Duplicati.Library.Main.Operation
                     m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                     m_backend.FlushDbMessages(m_database, null);
                 }
+
+                DateTime lastwrite = new DateTime(0, DateTimeKind.Utc);
+                try 
+                { 
+                    lastwrite = m_snapshot.GetLastWriteTimeUtc(path); 
+                }
+                catch (Exception ex) 
+                {
+                    m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                }
                                             
                 if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
@@ -721,23 +862,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                     {
-                        Dictionary<string, string> metadata;
-    
-                        if (m_options.StoreMetadata)
-                        {
-                            metadata = m_snapshot.GetMetadata(path);
-                            if (metadata == null)
-                                metadata = new Dictionary<string, string>();
-    
-                            if (!metadata.ContainsKey("CoreAttributes"))
-                                metadata["CoreAttributes"] = attributes.ToString();
-                            if (!metadata.ContainsKey("CoreLastWritetime"))
-                                metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
-                        }
-                        else
-                        {
-                            metadata = new Dictionary<string, string>();
-                        }
+                        Dictionary<string, string> metadata = GenerateMetadata(path, attributes);
     
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
@@ -757,15 +882,7 @@ namespace Duplicati.Library.Main.Operation
     
                     if (m_options.StoreMetadata)
                     {
-                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
-                        if (metadata == null)
-                            metadata = new Dictionary<string, string>();
-    
-                        if (!metadata.ContainsKey("CoreAttributes"))
-                            metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
-                        metahash = Utility.WrapMetadata(metadata, m_options);
+                        metahash = Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options);
                     }
                     else
                     {
@@ -773,7 +890,7 @@ namespace Duplicati.Library.Main.Operation
                     }
     
                     m_result.AddVerboseMessage("Adding directory {0}", path);
-                    AddFolderToOutput(path, DateTime.UtcNow, metahash);
+                    AddFolderToOutput(path, lastwrite, metahash);
                     return true;
                 }
     
@@ -781,39 +898,31 @@ namespace Duplicati.Library.Main.Operation
                 
                 bool changed = false;
                 
-                // The time we scan
-                DateTime scantime = DateTime.UtcNow;
                 // Last scan time
-                DateTime oldScanned;
-                // Last file modification
-                DateTime lastModified = m_snapshot.GetLastWriteTimeUtc(path);
-                var oldId = m_database.GetFileEntry(path, out oldScanned);
+                DateTime oldModified;
+                long lastFileSize = -1;
+                string oldMetahash;
+                long oldMetasize;
+                var oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
 
-                long filestatsize = m_snapshot.GetFileSize(path);
-                if ((oldId < 0 || m_options.DisableFiletimeCheck || LocalDatabase.NormalizeDateTime(lastModified) >= oldScanned) && (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || filestatsize < m_options.SkipFilesLargerThan))
+                long filestatsize = -1;
+                try { filestatsize = m_snapshot.GetFileSize(path); }
+                catch { }
+
+                IMetahash metahashandsize = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(path, attributes), m_options) : EMPTY_METADATA;
+
+                var timestampChanged = lastwrite != oldModified || lastwrite.Ticks == 0 || oldModified.Ticks == 0;
+                var filesizeChanged = filestatsize < 0 || lastFileSize < 0 || filestatsize != lastFileSize;
+                var tooLargeFile = m_options.SkipFilesLargerThan != long.MaxValue && m_options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > m_options.SkipFilesLargerThan;
+                var metadatachanged = !m_options.SkipMetadata && (metahashandsize.Size != oldMetasize || metahashandsize.Hash != oldMetahash);
+
+                if ((oldId < 0 || m_options.DisableFiletimeCheck || timestampChanged || filesizeChanged || metadatachanged) && !tooLargeFile)
                 {
-                    m_result.AddVerboseMessage("Checking file for changes {0}", path);
+                    m_result.AddVerboseMessage("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", path, oldId <= 0, timestampChanged, filesizeChanged, metadatachanged, lastwrite, oldModified);
+
                     m_result.OpenedFiles++;
                     
                     long filesize = 0;
-                    IMetahash metahashandsize;
-                    if (m_options.StoreMetadata)
-                    {
-                        Dictionary<string, string> metadata = m_snapshot.GetMetadata(path);
-                        if (metadata == null)
-                            metadata = new Dictionary<string, string>();
-
-                        if (!metadata.ContainsKey("CoreAttributes"))
-                            metadata["CoreAttributes"] = attributes.ToString();
-                        if (!metadata.ContainsKey("CoreLastWritetime"))
-                            metadata["CoreLastWritetime"] = lastModified.Ticks.ToString();
-
-                        metahashandsize = Utility.WrapMetadata(metadata, m_options);
-                    }
-                    else
-                    {
-                        metahashandsize = EMPTY_METADATA;
-                    }
 
                     var hint = m_options.GetCompressionHintFromFilename(path);
                     var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);
@@ -907,15 +1016,22 @@ namespace Duplicati.Library.Main.Operation
 					            	m_result.AddDryrunMessage(string.Format("Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
                             }
 
-                            AddFileToOutput(path, filesize, scantime, metahashandsize, hashcollector, filekey, blocklisthashes);
+                            AddFileToOutput(path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
+                            changed = true;
+                        }
+                        else if (metadatachanged)
+                        {
+                            m_result.AddVerboseMessage("File has only metadata changes {0}", path);
+                            AddFileToOutput(path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
                             changed = true;
                         }
                         else
                         {
-                            // When we write the file to output, update the scan time
-                            oldScanned = scantime;
+                            // When we write the file to output, update the last modified time
+                            oldModified = lastwrite;
                             m_result.AddVerboseMessage("File has not changed {0}", path);
                         }
+
                     }
                 }
                 else
@@ -927,7 +1043,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (!changed)
-                    AddUnmodifiedFile(oldId, oldScanned);
+                    AddUnmodifiedFile(oldId, lastwrite);
 
                 m_result.SizeOfExaminedFiles += filestatsize;
                 if (filestatsize != 0)
@@ -997,12 +1113,17 @@ namespace Duplicati.Library.Main.Operation
         				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
 
                         using(new Logging.Timer("CommitAddBlockToOutputFlush"))
+                            m_transaction.Commit();
+                        m_transaction = m_database.BeginTransaction();
+
+                        m_backend.Put(m_blockvolume, m_indexvolume);
+                        m_blockvolume = null;
+                        m_indexvolume = null;
+
+                        using(new Logging.Timer("CommitAddBlockToOutputFlush"))
 	                    	m_transaction.Commit();
 	                	m_transaction = m_database.BeginTransaction();
 	                	
-	                    m_backend.Put(m_blockvolume, m_indexvolume);
-	                    m_blockvolume = null;
-	                    m_indexvolume = null;
 	                }
                     
                     m_blockvolume = new BlockVolumeWriter(m_options);
@@ -1021,9 +1142,9 @@ namespace Duplicati.Library.Main.Operation
             return false;
         }
 
-        private void AddUnmodifiedFile(long oldId, DateTime scantime)
+        private void AddUnmodifiedFile(long oldId, DateTime lastModified)
         {
-            m_database.AddUnmodifiedFile(oldId, scantime, m_transaction);
+            m_database.AddUnmodifiedFile(oldId, lastModified, m_transaction);
         }
 
 
@@ -1036,16 +1157,18 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private bool AddFolderToOutput(string filename, DateTime scantime, IMetahash meta)
+        private bool AddFolderToOutput(string filename, DateTime lastModified, IMetahash meta)
         {
             long metadataid;
             bool r = false;
 
-            //TODO: If meta.Size > blocksize...
+            if (meta.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
-            m_database.AddDirectoryEntry(filename, metadataid, scantime, m_transaction);
+            m_database.AddDirectoryEntry(filename, metadataid, lastModified, m_transaction);
             return r;
         }
 
@@ -1058,16 +1181,18 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private bool AddSymlinkToOutput(string filename, DateTime scantime, IMetahash meta)
+        private bool AddSymlinkToOutput(string filename, DateTime lastModified, IMetahash meta)
         {
             long metadataid;
             bool r = false;
 
-            //TODO: If meta.Size > blocksize...
+            if (meta.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             r |= AddBlockToOutput(meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
             r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
-            m_database.AddSymlinkEntry(filename, metadataid, scantime, m_transaction);
+            m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction);
             return r;
         }
 
@@ -1080,19 +1205,20 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private void AddFileToOutput(string filename, long size, DateTime scantime, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes)
+        private void AddFileToOutput(string filename, long size, DateTime lastmodified, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes)
         {
             long metadataid;
             long blocksetid;
             
-            //TODO: If metadata.Size > blocksize...
+            if (metadata.Size > m_blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+
             AddBlockToOutput(metadata.Hash, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
             m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
             m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
 
-            //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
-            m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);
+            m_database.AddFile(filename, lastmodified, blocksetid, metadataid, m_transaction);
         }
 
 

@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                         
                     using(var cs = new System.IO.StreamWriter(cm.CreateFile("system-info.txt", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow)))
                     {
-                        cs.WriteLine("Duplicati: {0} ({1})", System.Reflection.Assembly.GetEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
+                        cs.WriteLine("Duplicati: {0} ({1})", Duplicati.Library.Utility.Utility.getEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
                         cs.WriteLine("OS: {0}", Environment.OSVersion);
                         cs.WriteLine("Uname: {0}", Duplicati.Library.Utility.Utility.UnameAll);
                         

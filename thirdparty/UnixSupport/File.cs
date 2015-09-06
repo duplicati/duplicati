@@ -190,7 +190,14 @@ namespace UnixSupport
             string[] values;
             var size = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
             if (size < 0)
+            {
+                // In case the underlying filesystem does not support extended attributes,
+                // we simply return that there are no attributes
+                if (Syscall.GetLastError() == Errno.EOPNOTSUPP)
+                    return null;
+
                 throw new FileAccesException(path, "llistxattr");
+            }
             
             var dict = new Dictionary<string, byte[]>();
             foreach(var s in values)
@@ -203,6 +210,17 @@ namespace UnixSupport
             
             return dict;
         }
+
+        /// <summary>
+        /// Sets an extended attribute.
+        /// </summary>
+        /// <param name="path">The full path to set the values for</param>
+        /// <param name="key">The extended attribute key</param>
+        /// <param name="value">The value to set</param>
+        public static void SetExtendedAttribute(string path, string key, byte[] value)
+        {
+            Mono.Unix.Native.Syscall.setxattr(path, key, value);
+        }
         
         /// <summary>
         /// Describes the basic user/group/perm tuplet for a file or folder
@@ -212,12 +230,16 @@ namespace UnixSupport
             public readonly long UID;
             public readonly long GID;
             public readonly long Permissions;
-            
+            public readonly string OwnerName;
+            public readonly string GroupName;
+
             internal FileInfo(Mono.Unix.UnixFileSystemInfo fse)
             {
-                UID = fse.OwnerUser.UserId;
+                UID = fse.OwnerUserId;
                 GID = fse.OwnerGroupId;
                 Permissions = (long)fse.FileAccessPermissions;
+                OwnerName = fse.OwnerUser.UserName;
+                GroupName = fse.OwnerGroup.GroupName;
             }
         }
         
@@ -230,7 +252,40 @@ namespace UnixSupport
         {
             return new FileInfo(Mono.Unix.UnixFileInfo.GetFileSystemEntry(path));
         }
-        
+
+        /// <summary>
+        /// Sets the basic user/group/perm tuplet for a file or folder
+        /// </summary>
+        /// <param name="path">The full path to look up</param>
+        /// <param name="uid">The owner user id to set</param>
+        /// <param name="gid">The owner group id to set</param>
+        /// <param name="permissions">The file access permissions to set</param>
+        public static void SetUserGroupAndPermissions(string path, long uid, long gid, long permissions)
+        {
+            Mono.Unix.UnixFileInfo.GetFileSystemEntry(path).SetOwner(uid, gid);
+            Mono.Unix.UnixFileInfo.GetFileSystemEntry(path).FileAccessPermissions = (Mono.Unix.FileAccessPermissions)permissions;
+        }
+
+        /// <summary>
+        /// Gets the UID from a user name
+        /// </summary>
+        /// <returns>The user ID.</returns>
+        /// <param name="name">The user name.</param>
+        public static long GetUserID(string name)
+        {
+            return new Mono.Unix.UnixUserInfo(name).UserId;
+        }
+
+        /// <summary>
+        /// Gets the GID from a group name
+        /// </summary>
+        /// <returns>The user ID.</returns>
+        /// <param name="name">The group name.</param>
+        public static long GetGroupID(string name)
+        {
+            return new Mono.Unix.UnixGroupInfo(name).GroupId;
+        }
+
         /// <summary>
         /// Gets the number of hard links for a file
         /// </summary>

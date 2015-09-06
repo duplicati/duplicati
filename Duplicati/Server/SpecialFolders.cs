@@ -1,6 +1,6 @@
-﻿//  Copyright (C) 2011, Kenneth Skovhede
+﻿//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -26,12 +26,12 @@ namespace Duplicati.Server
         public static readonly Serializable.TreeNode[] Nodes;
         private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         private static readonly Dictionary<string, string> DisplayMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-        
+
         public static string ExpandEnvironmentVariables(string path)
         {
             foreach(var n in Nodes)
                 path = path.Replace(n.id, n.resolvedpath);
-            return System.Environment.ExpandEnvironmentVariables(path);
+            return Library.Utility.Utility.ExpandEnvironmentVariables(path);
         }
         
         public static string TranslateToPath(string str) 
@@ -108,6 +108,48 @@ namespace Duplicati.Server
             TryAdd(lst, Library.Utility.Utility.IsClientLinux ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%"), "%HOME%", "Home");
             
             Nodes = lst.ToArray();
+        }
+
+        internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
+        {
+            var systemIO = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO;
+
+            if (backup.Sources == null || backup.Sources.Length == 0)
+                return new Dictionary<string, string>();
+
+            var sources = backup.Sources.Distinct().Select(x =>
+            {
+                var sp = SpecialFolders.TranslateToDisplayString(x);
+                if (sp != null)
+                    return new KeyValuePair<string, string>(x, sp);
+
+                x = SpecialFolders.ExpandEnvironmentVariables(x);
+                try
+                {
+                    var nx = x;
+                    if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                        nx = nx.Substring(0, nx.Length - 1);
+                    var n = systemIO.PathGetFileName(nx);
+                    if (!string.IsNullOrWhiteSpace(n))
+                        return new KeyValuePair<string, string>(x, n);
+                }
+                catch
+                {
+                }
+
+                if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
+                    return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/") + 1));
+                else
+                    return new KeyValuePair<string, string>(x, x);
+
+            });
+
+            // Handle duplicates
+            var result = new Dictionary<string, string>();
+            foreach(var x in sources)
+                result[x.Key] = x.Value;
+
+            return result;
         }
     }
 }

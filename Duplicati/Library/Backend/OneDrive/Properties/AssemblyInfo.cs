@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("OneDrive")]
 [assembly: AssemblyDescription("A Duplicati Backend for OneDrive")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Library.Backend.OneDrive")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2014")]
+[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

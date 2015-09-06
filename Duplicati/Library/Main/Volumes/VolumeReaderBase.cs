@@ -44,6 +44,27 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
+        public static void UpdateOptionsFromManifest(string compressor, string file, Options options)
+        {
+            using(var c = LoadCompressor(compressor, file, options))
+            using (var s = c.OpenRead(MANIFEST_FILENAME))
+            using (var fs = new StreamReader(s, ENCODING))
+            {
+                var d = JsonConvert.DeserializeObject<ManifestData>(fs.ReadToEnd());
+                if (d.Version > ManifestData.VERSION)
+                    throw new InvalidManifestException("Version", d.Version.ToString(), ManifestData.VERSION.ToString());
+
+                string n;
+
+                if (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n))
+                    options.RawOptions["blocksize"] = d.Blocksize.ToString() + "b";
+                if (!options.RawOptions.TryGetValue("block-hash-algorithm", out n) || string.IsNullOrEmpty(n))
+                    options.RawOptions["block-hash-algorithm"] = d.BlockHash;
+                if (!options.RawOptions.TryGetValue("file-hash-algorithm", out n) || string.IsNullOrEmpty(n))
+                    options.RawOptions["file-hash-algorithm"] = d.FileHash;
+            }
+        }
+
         private void VerifyManifest()
         {
         }

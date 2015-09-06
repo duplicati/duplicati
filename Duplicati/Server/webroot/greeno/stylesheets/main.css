@@ -15,12 +15,13 @@
 #main-list {
     padding-top: 82px;
     overflow: auto;
+    padding-bottom: 60px;
 }
 
 #main-list-container {
     background-color: #f3f3f3;
     overflow: hidden;
-    min-height: calc(100vh - 82px);
+    /*min-height: calc(100vh - 82px);*/
 }
 
 #main-appname {
@@ -79,10 +80,16 @@
 .main-backup-entry, #main-newbackup, #main-restorebackup {
     margin-top: 20px;
     clear: both;
+    display: inline-block;
+    height: 150px;
+    width: 350px;
+    vertical-align: top;
 }
 
-#main-restorebackup {
+#main-restorebackup, #main-newbackup {
     margin-top: 0px;
+    width: 1000px;
+    height: auto;
 }
 
 .main-backup-entry .action-links {
@@ -211,6 +218,11 @@ div.main-icon-restore {
     margin-left: 42px;
 }
 
+.main-backup-action-buttons > .caption-text {
+    font-size: 14pt;
+    margin-top: 4px;
+}
+
 .main-button-add-text {
     display: inline-block;
     vertical-align: top;
@@ -296,12 +308,6 @@ div.main-icon-restore {
 .ui-dialog-titlebar {
     border-bottom-right-radius: 0px;
     border-bottom-left-radius: 0px;
-}
-
-textarea.pre-style-text, .pre-style-text {
-    white-space: nowrap; 
-    overflow: auto;
-    font-family: "Courier New", Courier, monospace;
 }
 
 #click-intercept {
@@ -460,3 +466,49 @@ textarea.pre-style-text, .pre-style-text {
     margin-top: 10px;
 }
 
+#backup-context-menu > li > u {
+    text-decoration: none;
+}
+
+#backup-context-menu > li > u > b {
+    padding: 0.4em;
+    padding-top: 2px;
+    color: #7f7f7f;
+}
+
+/* 
+*	custom CSS
+*/
+
+header {
+    position: fixed;
+    width: 100%;
+    z-index: 100;
+}
+
+footer{
+	height: 50px;
+	width: 100%;
+	background-color: #3A5E30;
+	color: #F0F0F0;
+	bottom:0px;
+	position:fixed;
+	border-top: 10px solid #91AA8A;
+    z-index: 100;
+}
+
+a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern:link {
+	color: #F0F0F0;
+}
+
+div.box-duplicati-copy{
+	float:left;
+	margin-left:5px; 
+	text-align: left; 
+}
+
+div.box-visit-us{
+	float:right; 
+	margin-right: 5px;
+	text-align: right;
+}

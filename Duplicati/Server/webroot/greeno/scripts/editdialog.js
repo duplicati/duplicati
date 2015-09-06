@@ -417,11 +417,14 @@ $(document).ready(function() {
                     delete dict['Backup']['Settings']['keep-versions'];
                     delete dict['Backup']['Settings']['keep-time'];
                 }
+            },
+            'store-task-config': function(dict, key, el, cfgel) {
+                dict['Backup']['Settings']['store-task-config'] = $(el).val();
             }
         }
     };
 
-    $('#backup-name').watermark('Photos 2014');
+    $('#backup-name').watermark('Photos 2015');
 //    $('#backup-labels').watermark('work, docs, s3, movies, other');
     $('#backup-uri').watermark('webdavs://user:pass@example.com:995/backup?option=true');
     $('#encryption-password').watermark('Long and secret passphrase');

@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -90,6 +90,24 @@ namespace Duplicati.Library.Backend.AzureBlob
                     var containerSegment = string.Concat("/", _containerName, "/");
                     var blobName = absolutePath.Substring(absolutePath.IndexOf(
                         containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
+
+                    try
+                    {
+                        if (x is CloudBlockBlob)
+                        {
+                            var cb = (CloudBlockBlob)x;
+                            var modified = cb.Properties.LastModified;
+                            var lastModified = new System.DateTime();
+                            if (cb.Properties.LastModified != null)
+                                lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
+                            return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
+                        }
+                    }
+                    catch
+                    { 
+                        // If the metadata fails to parse, return the basic entry
+                    }
+
                     return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
                 })
                 .Cast<IFileEntry>()

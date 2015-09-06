@@ -22,8 +22,12 @@ CREATE TABLE "Remotevolume" (
 	"Size" INTEGER NULL,
 	"Hash" TEXT NULL,
 	"State" TEXT NOT NULL,
-	"VerificationCount" INTEGER NOT NULL
+	"VerificationCount" INTEGER NOT NULL,
+	"DeleteGraceTime" INTEGER NOT NULL
 );
+
+/* Index for detecting broken states */
+CREATE UNIQUE INDEX "RemotevolumeName" ON "Remotevolume" ("Name", "State");
 
 /*
 The index-block table contains
@@ -59,7 +63,7 @@ scanned in UNIX EPOCH format
 CREATE TABLE "FilesetEntry" (
 	"FilesetID" INTEGER NOT NULL,
 	"FileID" INTEGER NOT NULL,
-	"Scantime" INTEGER NOT NULL
+	"Lastmodified" INTEGER NOT NULL
 );
 
 /*
@@ -73,6 +77,9 @@ CREATE TABLE "File" (
 	"BlocksetID" INTEGER NOT NULL,
 	"MetadataID" INTEGER NOT NULL
 );
+
+/* Fast path based lookup */
+CREATE UNIQUE INDEX "FilePath" ON "File" ("Path", "BlocksetID", "MetadataID");
 
 /*
 The blocklist hashes are hashes of
@@ -103,6 +110,8 @@ CREATE TABLE "Blockset" (
 	"FullHash" TEXT NOT NULL
 );
 
+CREATE UNIQUE INDEX "BlocksetFullHash" ON "Blockset" ("FullHash", "Length");
+
 /*
 The elements of a blocklist,
 the hash is the block hash,
@@ -115,17 +124,23 @@ CREATE TABLE "BlocksetEntry" (
 	"BlockID" INTEGER NOT NULL
 );
 
+/* As this table is a cross table we need fast lookup */
+CREATE INDEX "BlocksetEntryIds_Forward" ON "BlocksetEntry" ("BlocksetID", "BlockID");
+CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID", "BlocksetID");
+
 /*
 The individual block hashes,
-mapped to the containing file
+mapped to the containing remote volume
 */
-
 CREATE TABLE "Block" (
 	"ID" INTEGER PRIMARY KEY,
     "Hash" TEXT NOT NULL,
 	"Size" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL
 );
+
+/* This is the most performance critical part of the database */
+CREATE UNIQUE INDEX "BlockHashSize" ON Block ("Hash", "Size");
 
 /*
 The deleted block hashes,
@@ -157,6 +172,8 @@ CREATE TABLE "Metadataset" (
 	"ID" INTEGER PRIMARY KEY,
 	"BlocksetID" INTEGER NOT NULL
 );
+
+CREATE INDEX "MetadatasetBlocksetID" ON "Metadataset" ("BlocksetID");
 
 /*
 Operations performed on the backend,
@@ -203,4 +220,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (0);
+INSERT INTO "Version" ("Version") VALUES (3);

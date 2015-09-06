@@ -1,6 +1,6 @@
-﻿//  Copyright (C) 2014, Kenneth Skovhede
+﻿//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -41,7 +41,7 @@ namespace Duplicati.Library.AutoUpdater
         internal static readonly string INSTALLDIR;
 
         private static readonly string INSTALLED_BASE_DIR = string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) ?
-                                                        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location)
+                                                        System.IO.Path.GetDirectoryName( Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
                                                         : System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME));
 
         private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
@@ -106,7 +106,7 @@ namespace Duplicati.Library.AutoUpdater
             UpdateInfo selfVersion = null;
             try
             {
-                selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location));
+                selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location));
             }
             catch
             {

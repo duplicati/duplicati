@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -107,8 +107,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         while(this.More && this.Path == m_reader.GetValue(0).ToString())
                         {
-                            var val = m_reader.GetValue(1);
-                            yield return val == null || val == DBNull.Value ? -1 : Convert.ToInt64(val);
+                            yield return m_reader.ConvertValueToInt64(1, -1);
                             this.More = m_reader.Read();
                         }
                     }
@@ -137,7 +136,7 @@ namespace Duplicati.Library.Main.Database
                         maxpath = v0.ToString();
     
                     cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", tmpnames.Tablename);
-                    var filecount = Convert.ToInt64(cmd.ExecuteScalar());
+                    var filecount = cmd.ExecuteScalarInt64(0);
                     long foundfiles = -1;
     
                     //TODO: Handle FS case-sensitive?
@@ -150,7 +149,7 @@ namespace Duplicati.Library.Main.Database
                         var mp = Library.Utility.Utility.AppendDirSeparator(maxpath);
                         cmd.SetParameterValue(0, mp.Length);
                         cmd.SetParameterValue(1, mp);
-                        foundfiles = Convert.ToInt64(cmd.ExecuteScalar());
+                        foundfiles = cmd.ExecuteScalarInt64(0);
     
                         if (filecount != foundfiles)
                         {
@@ -324,7 +323,7 @@ namespace Duplicati.Library.Main.Database
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ", m_tablename)))
                         while (rd.Read())
                         {
-                            var id = Convert.ToInt64(rd.GetValue(0));
+                            var id = rd.GetInt64(0);
                             var e = dict[id];
                             
                             yield return new Fileset(e, m_filesets[e].Value, -1L, -1L);
@@ -346,16 +345,12 @@ namespace Duplicati.Library.Main.Database
                     using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""A"".""FilesetID"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{0}"" A LEFT OUTER JOIN ( " + summation + @" ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ", m_tablename)))
                         while(rd.Read())
                         {
-                            var id = Convert.ToInt64(rd.GetValue(0));
+                            var id = rd.GetInt64(0);
                             var e = dict[id];
                             
-                            var filecount = -1L;
-                            var filesizes = -1L;
-                            if (rd.GetValue(1) != null && rd.GetValue(1) != DBNull.Value) 
-                                filecount = Convert.ToInt64(rd.GetValue(1));
-                            if (rd.GetValue(2) != null && rd.GetValue(2) != DBNull.Value) 
-                                filesizes = Convert.ToInt64(rd.GetValue(2));
-                            
+                            var filecount = rd.ConvertValueToInt64(1, -1L);
+                            var filesizes = rd.ConvertValueToInt64(2, -1L);
+
                             yield return new Fileset(e, m_filesets[e].Value, filecount, filesizes);
                         }
                     

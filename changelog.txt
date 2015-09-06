@@ -1,3 +1,127 @@
+2015-08-24
+==========
+* Fixes to improve the use of the OAuth handler
+* Added a REST API
+* Changed access mode when reading files to not prevent concurrent write access
+* Added a recovery tool as a slower, but more robust restore method
+* Fixed an issue with recreating a partial database that would record missing file sizes in the database.
+* Fixed an issue where a recreated database would miss some files and repair for an extensive period of time.
+* Fixed an issue where repair would fail if the files were decrypted
+
+2015-07-02
+==========
+* Added handling for WebDAV timeouts
+* Updated list of compressed file extensions
+* Improved speed of searching without a local database
+* Improved speed of restore without a local database
+* Improved Web UI
+* Fixed issues with loading SQLite on newer versions of Mono
+* Added status code to email and XMPP messages
+* Fixed an issue with non-ascii filenames
+* Fixed an issue with crashes caused by incomplete remote file data
+* Added Google Drive backend and removed Google Docs backend
+* Added BITS transfer of large files to OneDrive
+* Added Google Cloud Storage backend
+* Added an OpenStack backend
+* Added HubiC backend
+
+2015-03-07
+==========
+* Fixed an issue with file-length not being set correctly when restoring into an existing file
+* Fixed an issue where metadata was attempted applied before the file was created
+* Fixed an issue where repair failed
+* Now suppressing error messages about extended attributes not being supported on Linux
+* Fixed reading metadata for long paths on Windows
+* Fixed an issue where the Zip compression did not honor the compressed extensions exclusion list
+* Updated 7z to support the --7z-compression-level option
+* Fixed some issues where options and filters were displayed incorrectly in IE and Firefox
+* Fixed an issue where filters were not exported to the commandline
+* Added paging to OneDrive file-lists so large OneDrive folders can now be listed
+* Fixed an issue with constant reloading due to a missing XSRF token
+
+2015-02-26
+==========
+* Added XSRF protection
+
+2015-02-15
+==========
+* Fixed an issue with many warnings
+* Fixed an issue where new backups were incorrectly saved
+* Added automatic log purging
+
+2015-02-04
+==========
+* Change the scanning method to look at the current timestamp instead of the last scantime
+* Added a delay for deleting partial remote files to work around a strange Apache bug
+* Removed .pdf from the list of compressed extensions
+* Various fixes for storing/restoring metadata
+* Fixed the errorlevel/exit code for restore with warnings
+* Exposed the --no-local-blocks option to release builds
+* Added a --full-block-verification option to help trace the cause of incorrect blocks
+* Added a new consistency check for missing BlocklistHash entries
+* Added a new repair method for recovering from missing BlocklistHash entries
+* Fixed an issue when multiple source folders resolves to the same path
+* Added control files to synthetic filelist uploads
+
+2015-01-19
+==========
+* Fixed an issue with multiple file prefixes
+* Change the UI to simplify restoring permissions
+* Updated AWSSDK and added the dinCloud provider
+* Fixed an issue where interrupted upload requires a repair
+
+2015-01-05
+==========
+* Added option to avoid verifying restored files
+* Various fixes to prevent broken databases and remote files during interrupted backups
+* Improved the use of uploaded files after an interrupted backup
+* Fixed the throttle-upload and throttle-download options
+* Improved robustness for uses with no remote backend verification
+* Improved recreate database for setups with no dindex files
+* Added automatic generation of missing dindex files
+* Reduced attempts to delete non-existing files
+* Added a checkbox to control restore of permissions in the GUI
+
+2014-12-01
+==========
+* Improved metadata collection to include more timestamps and permissions
+* Implemented metadata restore
+* Fixed an issue with interrupted backups attempting to delete a non-existing file
+* Fixed a unique constraint violation on repair
+* Improved the filter rules to prevent including empty folders
+* Fixed an issue where a restore would create empty folders
+
+2014-11-11
+==========
+* Fixed another broken SQL
+* Reduced memory allocations
+
+2014-11-06
+==========
+* Fixed a broken SQL
+
+2014-10-31
+==========
+* Fixed the display of restore times so it no longer shows todays backups as last week
+* Updated the login page with something fancier, thanks to @sfahrenholz!
+* Improved handling of files and folders with no date information
+* Fixed a few bugs related to storing metadata
+* Added some auto-healing routines to the repair command
+* Added some better error messages with correction suggestions
+* Improved the speed of backups and restores by a factor of 30
+* Default is now no in-memory lookups with same speed and lower memory footprint
+
+
+2014-10-14
+==========
+* Improved symlink handling
+* Fixed a warning with --send-mail-level
+* Improved support for portable installs
+* Fixed the issue with failed backups due to file://
+* Fixed a problem with recreating the local database
+* Adjusted display to use fixed header and footer
+
+
 2014-08-26
 ==========
 * Added an updater tool to allow manual update control for the commandline interface

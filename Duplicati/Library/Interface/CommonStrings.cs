@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -44,12 +44,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         ///   Looks up a localized string similar to Connection Failed: {0}.
         /// </summary>
-        public static string ConnectionFailure
+        public static string ConnectionFailure(string message)
         {
-            get
-            {
-                return Strings.Common.ConnectionFailure;
-            }
+            return Strings.Common.ConnectionFailure(message);
         }
 
         /// <summary>
@@ -143,12 +140,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         ///   Looks up a localized string similar to The configuration for the backend is not valid, it is missing the {0} field.
         /// </summary>
-        public static string ConfigurationIsMissingItemError
+        public static string ConfigurationIsMissingItemError(string fieldname)
         {
-            get
-            {
-                return Strings.Common.ConfigurationIsMissingItemError;
-            }
+            return Strings.Common.ConfigurationIsMissingItemError(fieldname);
         }
 
         /// <summary>
@@ -189,12 +183,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         ///   Looks up a localized string similar to The server name &quot;{0}&quot; is not valid.
         /// </summary>
-        public static string InvalidServernameError
+        public static string InvalidServernameError(string servername)
         {
-            get
-            {
-                return Strings.Common.InvalidServernameError;
-            }
+            return Strings.Common.InvalidServernameError(servername);
         }
     }
 }

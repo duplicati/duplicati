@@ -172,6 +172,71 @@ APP_UTIL = {
         dlg.pgtxt = pgtxt;
 
         return dlg;
+    },
+
+    create_modal_task_wait: function(title, text, complete_callback) {
+        var handler_for_event = null;
+        var handler_for_progress = null;
+        var cancelled = false;
+        var taskid = null;
+
+        var pg = $('<div></div>');
+        pg.progressbar({ value: false });
+
+        var dlg = APP_UTIL.create_modal_wait(title, text, function() {
+            if (confirm('Stop the process ?')) {
+                APP_DATA.stopTask(taskid, true);
+                $(document).off('server-state-updated', handler_for_event);
+                $(document).off('server-progress-updated', handler_for_progress);
+                cancelled = true;
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        pg.insertAfter(dlg.pgtxt);
+
+        handler_for_progress = function(ev, data) {
+            if (taskid == null)
+                return;
+            
+            if (data.TaskID == taskid) {
+                pg.progressbar('option', 'value', parseInt(data.OverallProgress * 100));
+            } else {
+                pg.progressbar('option', 'value', false);
+            }
+        };
+
+        handler_for_event = function(ev, data) {
+            if (taskid == null)
+                return;
+
+            var active = data.ActiveTask != null && data.ActiveTask.Item1 == taskid;
+
+            if (!active && data.SchedulerQueueIds)
+                for(var n in data.SchedulerQueueIds)
+                    active = active || (data.SchedulerQueueIds[n].Item1 == taskid);                
+
+            if (!active) {
+                handler_for_progress(null, {OverallProgress: 1, TaskID: taskid});
+
+                $(document).off('server-state-updated', handler_for_event);
+                $(document).off('server-progress-updated', handler_for_progress);
+
+                dlg.dialog('close');
+                dlg.remove();
+                complete_callback(cancelled, taskid);
+            }
+        };
+
+        dlg.register_updates = function(id) {
+            taskid = id;
+            $(document).on('server-state-updated', handler_for_event);
+            $(document).on('server-progress-updated', handler_for_progress);
+        }
+
+        return dlg;    
     }
 };
 
@@ -204,6 +269,8 @@ $(document).ready(function() {
     }
 
     $('.button').button();
+
+    $('textarea.pre-style-text').each(function(i, e) {  e.wrap = "off"; });
 
     $('#main-list-container > div.main-backup-entry').remove();
     $('#loading-dialog').dialog({modal: true}).show();
@@ -280,6 +347,7 @@ $(document).ready(function() {
 
         $.ajax({
             url: APP_CONFIG.server_url,
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             type: method,
             dataType: 'json',
             data: data
@@ -311,6 +379,7 @@ $(document).ready(function() {
         failed: false,
         dataEventId: -1,
         notificationId: -1,
+        xsrf_error: false,
 
         retryTimer: null,
         pauseUpdateTimer: null,
@@ -498,6 +567,16 @@ $(document).ready(function() {
             state.retryTimer = null;
         }
 
+        if (APP_DATA.xsrf_token == null) {
+            var cookies = document.cookie.split(';');
+            for(var c in cookies) {
+                if (cookies[c].trim().toLowerCase().indexOf('xsrf-token=') == 0) {
+                    APP_DATA.xsrf_token = decodeURIComponent(cookies[c].trim().substr('xsrf-token='.length));
+                    break;
+                }
+            }
+        }
+
         state.polling = true;
 
         var req = { action: 'get-current-state', longpoll: true, lastEventId: state.eventId };
@@ -513,6 +592,7 @@ $(document).ready(function() {
             url: APP_CONFIG.server_url,
             type: 'GET',
             timeout: timeout,
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             dataType: 'json',
             data: req
         })
@@ -592,7 +672,19 @@ $(document).ready(function() {
         })
         .fail(function(data) {
             if (data.status == 401)
-                window.location = '/login.html';
+                window.location = APP_CONFIG.login_url;
+
+            // XSRF token expired
+            if (data.status == 400 && data.statusText.toUpperCase().indexOf('XSRF') >= 0)
+            {
+                PRIVATE_DATA.xsrf_error = true;
+                $('#connection-lost-dialog-error').text('Invalid or expired XSRF token, try reloading the page');
+            }
+            else
+            {
+                PRIVATE_DATA.xsrf_error = false;
+                $('#connection-lost-dialog-error').text('');
+            }
 
             state.polling = false;
             if (!state.failed) {
@@ -603,10 +695,15 @@ $(document).ready(function() {
             state.retryStartTime = new Date();
             var updateTimer = function() {
                 var n = new Date() - state.retryStartTime;
-                var left = Math.max(0, 15000 - n);
+                var left = Math.max(0, (PRIVATE_DATA.xsrf_error ? 5000 : 15000) - n);
                 $(document).trigger('server-state-countdown', {millisecondsLeft: left});
                 if (left <= 0)
+                {
                     PRIVATE_DATA.long_poll_for_status();
+
+                    if (PRIVATE_DATA.xsrf_error)
+                        location.reload();
+                }
             }
 
             state.retryTimer = setInterval(updateTimer, 500);
@@ -750,6 +847,7 @@ $(document).ready(function() {
         $.ajax({
             url: APP_CONFIG.server_url,
             type: 'GET',
+            headers: {'X-XSRF-Token': APP_DATA.xsrf_token},
             timeout: 5000,
             dataType: 'json',
             data: req
@@ -953,13 +1051,13 @@ $(document).ready(function() {
         );
     };
 
-    APP_DATA.restoreBackup = function(id) {
+    APP_DATA.restoreBackup = function(id, isFromDirect) {
         APP_DATA.isBackupActive(id, function(active) {
             if (active) {
                 alert('Cannot start restore while the backup is active.');
             } else {
                 $('#restore-dialog').dialog('open');
-                $('#restore-dialog').trigger('setup-dialog', id);
+                $('#restore-dialog').trigger('setup-dialog', {id: id, isDirectRestore: isFromDirect});
             }
         });
 
@@ -1161,7 +1259,8 @@ $(document).ready(function() {
     APP_DATA.downloadBugReport = function(id) {
         var sendobj = {
             'action': 'download-bug-report', 
-            'id': id
+            'id': id,
+            'x-xsrf-token': APP_DATA.xsrf_token
         };
 
         var completed = false;
@@ -1196,6 +1295,9 @@ $(document).ready(function() {
             left -= menuwidth;
         if (top + menuheight > $(document).outerHeight())
             top -= menuheight;
+
+        if (top < 0)
+            top = 0;
 
         if (menu.is(':visible')) {
             menu.css({
@@ -1827,8 +1929,12 @@ $(document).ready(function() {
                         alert(message);
                 };
 
+                var url = APP_CONFIG.server_url;
+                url += (url.indexOf('?') > -1) ? '&' : '?';
+                url += $.param({'x-xsrf-token': APP_DATA.xsrf_token});
+
                 $('#import-dialog-form')
-                    .attr('action', APP_CONFIG.server_url)
+                    .attr('action', url)
                     .attr('target', uid);
 
                 $('#import-dialog-callback').val(callback);
@@ -1873,7 +1979,8 @@ $(document).ready(function() {
                     'action': 'export-backup', 
                     'id': $('#export-dialog').data('backupid'),
                     'cmdline': $('#export-type-commandline').is(':checked'),
-                    'passphrase': $('#export-encryption-password').val()
+                    'passphrase': $('#export-encryption-password').val(),
+                    'x-xsrf-token': APP_DATA.xsrf_token
                 };
 
                 if ($('#export-type-file').is(':checked')) {

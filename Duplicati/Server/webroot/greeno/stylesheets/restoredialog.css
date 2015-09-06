@@ -54,3 +54,7 @@ a.restore-current-time {
     margin-left: 10px;
 }
 
+#restore-hint-overwrite, #restore-hint-metadata {
+    margin-top: 20px;
+}
+

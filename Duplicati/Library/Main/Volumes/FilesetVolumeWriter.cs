@@ -25,17 +25,17 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WriteStartArray();
         }
 
-        public void AddFile(string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.File, name, filehash, size, scantime, metahash, metasize, blocklisthashes);
+            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, blocklisthashes);
         }
 
-        public void AddAlternateStream(string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, scantime, metahash, metasize, blocklisthashes);
+            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, blocklisthashes);
         }
 
-        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WritePropertyName("size");
             m_writer.WriteValue(size);
             m_writer.WritePropertyName("time");
-            m_writer.WriteValue(Library.Utility.Utility.SerializeDateTime(scantime));
+            m_writer.WriteValue(Library.Utility.Utility.SerializeDateTime(lastmodified));
             if (metahash != null)
             {
                 m_writer.WritePropertyName("metahash");

@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,9 @@ namespace Duplicati.Library.Backend
         private bool m_moveFile;
         private bool m_hasAutenticated;
         private bool m_forceReauth;
+
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
 
         public File()
         {
@@ -109,7 +112,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 if (m_path == null)
-                    throw new Exception(string.Format(Strings.FileBackend.NoDestinationWithMarkerFileError, markerfile, string.Join(System.IO.Path.PathSeparator.ToString(), paths.ToArray())));
+                    throw new Exception(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()));
             }
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
@@ -139,7 +142,7 @@ namespace Duplicati.Library.Backend
             PreAuthenticate();
 
             if (!System.IO.Directory.Exists(m_path))
-                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
             return System.IO.Path.Combine(m_path, remotename);
         }
@@ -168,7 +171,7 @@ namespace Duplicati.Library.Backend
             PreAuthenticate();
 
             if (!System.IO.Directory.Exists(m_path))
-                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
             foreach (string s in System.IO.Directory.GetFiles(m_path))
             {
@@ -202,14 +205,14 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, System.IO.Stream stream)
         {
             using(System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Utility.Utility.CopyStream(stream, writestream);
+                Utility.Utility.CopyStream(stream, writestream, true, m_copybuffer);
         }
 #endif
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             using (System.IO.FileStream readstream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Utility.Utility.CopyStream(readstream, stream);
+                Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
         public void Put(string remotename, string filename)
@@ -243,8 +246,8 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionAuthPasswordShort, Strings.FileBackend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionAuthUsernameShort, Strings.FileBackend.DescriptionAuthUsernameLong),
-                    new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, string.Format(Strings.FileBackend.AlternateDestinationMarkerLong, OPTION_ALTERNATE_PATHS)),
-                    new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, string.Format(Strings.FileBackend.AlternateTargetPathsLong, OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
+                    new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, Strings.FileBackend.AlternateDestinationMarkerLong(OPTION_ALTERNATE_PATHS)),
+                    new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                     new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
                 });

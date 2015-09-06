@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Encryption
                 {
                     string errmsg = m_p.StandardError.ReadToEnd();
                     if (errmsg.Contains("decryption failed:"))
-                        throw new System.Security.Cryptography.CryptographicException(string.Format(Strings.GPGStreamWrapper.DecryptionError, errmsg));
+                        throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(errmsg));
                 }
 
                 m_p.Dispose();

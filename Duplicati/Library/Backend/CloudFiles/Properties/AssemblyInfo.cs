@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -27,9 +27,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("CloudFiles")]
 [assembly: AssemblyDescription("A CloudFiles backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Backend.CloudFiles")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2014")]
+[assembly: AssemblyCopyright("Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

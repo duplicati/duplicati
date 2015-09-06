@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The prefix applied to all temporary files
         /// </summary>
-        public static string APPLICATION_PREFIX = System.Reflection.Assembly.GetEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
         
         private string m_path;
         private bool m_protect;

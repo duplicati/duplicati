@@ -199,7 +199,28 @@ namespace Duplicati.Library.Utility
                     if (m_timedout)
                         m_exception = new WebException(string.Format("{0} timed out", m_isRequest ? "GetRequestStream" : "GetResponse"), ex, WebExceptionStatus.Timeout, ex is WebException ? ((WebException)ex).Response : null);
                     else
-                        m_exception = ex;
+                    {
+                        // Workaround for: https://bugzilla.xamarin.com/show_bug.cgi?id=28287
+                        var wex = ex;
+                        if (ex is WebException && ((WebException)ex).Response == null)
+                        {
+                            WebResponse resp = null;
+
+                            try { resp = (WebResponse)r.GetType().GetProperty("Response", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(r); }
+                            catch {}
+
+                            if (resp == null)
+                                try { resp = (WebResponse)m_owner.m_request.GetType().GetField("webResponse", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(m_owner.m_request); }
+                                catch { }
+
+                            if (resp != null)
+                                wex = new WebException(ex.Message, ex.InnerException, ((WebException)ex).Status, resp);
+                        }
+
+                        m_exception = wex;
+
+
+                    }
                 }
                 finally
                 {

@@ -1,6 +1,6 @@
-//  Copyright (C) 2011, Kenneth Skovhede
+//  Copyright (C) 2015, The Duplicati Team
 
-//  http://www.hexad.dk, opensource@hexad.dk
+//  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU Lesser General Public License as
@@ -222,15 +222,7 @@ namespace Duplicati.Library.Main.Database
                     string.Format(@"SELECT ""{0}"".""Path"" FROM ""{0}"",""{1}"" WHERE {2} ""{0}"".""Path"" = ""{1}"".""Path"" AND (""{0}"".""FileHash"" != ""{1}"".""FileHash"" OR ""{0}"".""MetaHash"" != ""{1}"".""MetaHash"" OR ""{0}"".""Type"" != ""{1}"".""Type"") ", m_currentTable, m_previousTable, string.Format(allTypes ? "" : @" ""{0}"".""Type"" = ? AND ", m_currentTable))
                 );
             }
-            
-            private static long ToInt64(object value)
-            {
-                if (value == null || value == DBNull.Value)
-                    return 0;
-                else
-                    return Convert.ToInt64(value);
-            }
-            
+
             public IChangeSizeReport CreateChangeSizeReport()
             {
                 var sqls = GetSqls(true);
@@ -244,11 +236,11 @@ namespace Duplicati.Library.Main.Database
                     
                     var result = new ChangeSizeReport();
                     
-                    result.PreviousSize = ToInt64(cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_previousTable)));
-                    result.CurrentSize = ToInt64(cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_currentTable)));
+                    result.PreviousSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_previousTable), 0);
+                    result.CurrentSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_currentTable), 0);
                     
-                    result.AddedSize = ToInt64(cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" WHERE ""{0}"".""Path"" IN ({1}) ", m_currentTable, added)));
-                    result.DeletedSize = ToInt64(cmd.ExecuteScalar(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" WHERE ""{0}"".""Path"" IN ({1}) ", m_previousTable, deleted)));
+                    result.AddedSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" WHERE ""{0}"".""Path"" IN ({1}) ", m_currentTable, added), 0);
+                    result.DeletedSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" WHERE ""{0}"".""Path"" IN ({1}) ", m_previousTable, deleted), 0);
                     
                     return result;
                 }
@@ -266,17 +258,17 @@ namespace Duplicati.Library.Main.Database
                     cmd.Transaction = m_transaction;
                     
                     var result = new ChangeCountReport();
-                    result.AddedFolders = ToInt64(cmd.ExecuteScalar(added, (int)Library.Interface.ListChangesElementType.Folder));
-                    result.AddedSymlinks = ToInt64(cmd.ExecuteScalar(added, (int)Library.Interface.ListChangesElementType.Symlink));
-                    result.AddedFiles = ToInt64(cmd.ExecuteScalar(added, (int)Library.Interface.ListChangesElementType.File));
+                    result.AddedFolders = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Folder);
+                    result.AddedSymlinks = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Symlink);
+                    result.AddedFiles = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.File);
 
-                    result.DeletedFolders = ToInt64(cmd.ExecuteScalar(deleted, (int)Library.Interface.ListChangesElementType.Folder));
-                    result.DeletedSymlinks = ToInt64(cmd.ExecuteScalar(deleted, (int)Library.Interface.ListChangesElementType.Symlink));
-                    result.DeletedFiles = ToInt64(cmd.ExecuteScalar(deleted, (int)Library.Interface.ListChangesElementType.File));
+                    result.DeletedFolders = cmd.ExecuteScalarInt64(deleted, 0, (int)Library.Interface.ListChangesElementType.Folder);
+                    result.DeletedSymlinks = cmd.ExecuteScalarInt64(deleted, 0, (int)Library.Interface.ListChangesElementType.Symlink);
+                    result.DeletedFiles = cmd.ExecuteScalarInt64(deleted, 0, (int)Library.Interface.ListChangesElementType.File);
                     
-                    result.ModifiedFolders = ToInt64(cmd.ExecuteScalar(modified, (int)Library.Interface.ListChangesElementType.Folder));
-                    result.ModifiedSymlinks = ToInt64(cmd.ExecuteScalar(modified, (int)Library.Interface.ListChangesElementType.Symlink));
-                    result.ModifiedFiles = ToInt64(cmd.ExecuteScalar(modified, (int)Library.Interface.ListChangesElementType.File));
+                    result.ModifiedFolders = cmd.ExecuteScalarInt64(modified, 0, (int)Library.Interface.ListChangesElementType.Folder);
+                    result.ModifiedSymlinks = cmd.ExecuteScalarInt64(modified, 0, (int)Library.Interface.ListChangesElementType.Symlink);
+                    result.ModifiedFiles = cmd.ExecuteScalarInt64(modified, 0, (int)Library.Interface.ListChangesElementType.File);
                     
                     return result;
                 }                

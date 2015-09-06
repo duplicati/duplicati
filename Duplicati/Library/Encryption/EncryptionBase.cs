@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,8 @@ namespace Duplicati.Library.Encryption
     /// </summary>
     public abstract class EncryptionBase : IEncryption
     {
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
         #region IEncryption Members
 
         public abstract IList<ICommandLineArgument> SupportedCommands { get; }
@@ -47,7 +49,7 @@ namespace Duplicati.Library.Encryption
         public virtual void Encrypt(System.IO.Stream input, System.IO.Stream output)
         {
             using (System.IO.Stream cs = Encrypt(output))
-                Utility.Utility.CopyStream(input, cs);
+                Utility.Utility.CopyStream(input, cs, true, m_copybuffer);
         }
 
         public abstract System.IO.Stream Encrypt(System.IO.Stream input);
@@ -90,12 +92,12 @@ namespace Duplicati.Library.Encryption
             try
             {
                 using (System.IO.Stream cs = Decrypt(input))
-                    Utility.Utility.CopyStream(cs, output);
+                    Utility.Utility.CopyStream(cs, output, true, m_copybuffer);
             }
             catch (System.Security.Cryptography.CryptographicException cex)
             {
                 //Better error message than "Padding is invalid and cannot be removed" :)
-                throw new System.Security.Cryptography.CryptographicException(string.Format(Strings.EncryptionBase.DecryptionError, cex.Message), cex);
+                throw new System.Security.Cryptography.CryptographicException(Strings.EncryptionBase.DecryptionError(cex.Message), cex);
             }
         }
 

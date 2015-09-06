@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
+using System.Linq;
 
 namespace Duplicati.Library.Backend
 {
@@ -34,6 +35,8 @@ namespace Duplicati.Library.Backend
         private readonly bool m_defaultPassive = true;
         private readonly bool m_passive = false;
         private readonly bool m_listVerify = true;
+
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         public FTP()
         {
@@ -199,7 +202,7 @@ namespace Duplicati.Library.Backend
             catch (System.Net.WebException wex)
             {
                 if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
-                    throw new Interface.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
+                    throw new Interface.FolderMissingException(Strings.FTPBackend.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
                 else
                     throw;
             }
@@ -220,31 +223,28 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream rs = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(input, rs, true);
+                    Utility.Utility.CopyStream(input, rs, true, m_copybuffer);
                 
                 if (m_listVerify) 
                 {
                     List<IFileEntry> files = List(remotename);
-                    StringBuilder sb = new StringBuilder();
                     foreach(IFileEntry fe in files)
                         if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename) || fe.Name.EndsWith("\\" + remotename)) 
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
                                 return;
                         
-                            throw new Exception(string.Format(Strings.FTPBackend.ListVerifySizeFailure, remotename, fe.Size, streamLen));
+                            throw new Exception(Strings.FTPBackend.ListVerifySizeFailure(remotename, fe.Size, streamLen));
                         } 
-                        else
-                            sb.AppendLine(fe.Name);
-                    
-                    throw new Exception(string.Format(Strings.FTPBackend.ListVerifyFailure, remotename, sb.ToString()));
+
+                    throw new Exception(Strings.FTPBackend.ListVerifyFailure(remotename, files.Select(n => n.Name)));
                 }
                 
             }
             catch (System.Net.WebException wex)
             {
                 if (req != null && wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
-                    throw new Interface.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
+                    throw new Interface.FolderMissingException(Strings.FTPBackend.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
                 else
                     throw;
             }
@@ -265,7 +265,7 @@ namespace Duplicati.Library.Backend
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.WebResponse resp = areq.GetResponse())
             using (System.IO.Stream rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, output, false);
+                Utility.Utility.CopyStream(rs, output, false, m_copybuffer);
         }
 
         public void Get(string remotename, string localname)

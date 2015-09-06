@@ -49,12 +49,7 @@ namespace Duplicati.Library.Main.Database
 		
 		private long GetLastFilesetID(System.Data.IDbCommand cmd)
 		{
-			long id = -1;
-			var r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1");
-			if (r != null && r != DBNull.Value)
-				id = Convert.ToInt64(r);
-				
-			return id;
+			return cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1", -1);
 		}
 		
 		/// <summary>
@@ -102,7 +97,7 @@ namespace Duplicati.Library.Main.Database
 	
 				using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
 				while (rd.Read())
-					yield return new KeyValuePair<string, long>(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
+                    yield return new KeyValuePair<string, long>(rd.GetString(0), rd.ConvertValueToInt64(1));
 			}
 		}
 
@@ -121,14 +116,6 @@ namespace Duplicati.Library.Main.Database
 				this.CompressedSize = compressedsize;
 			}
 		}
-        
-        private static long ToInt64(object v)
-        {
-            if (v == null || v == DBNull.Value)
-                return 0;
-            else
-                return Convert.ToInt64(v);
-        }
 
 		/// <summary>
 		/// Returns the number of bytes stored in each volume,
@@ -141,16 +128,16 @@ namespace Duplicati.Library.Main.Database
 			var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             
             var usedBlocks = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Block"".""ID"" NOT IN (SELECT ""Block"".""ID"" FROM ""Block"",""DeletedBlock"" WHERE ""Block"".""Hash"" = ""DeletedBlock"".""Hash"" AND ""Block"".""Size"" = ""DeletedBlock"".""Size"") GROUP BY ""Block"".""VolumeID"" ";
-            var scantimeFile = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""FilesetEntry"".""Scantime"" AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ";
-            var scantimeMetadata = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""FilesetEntry"".""Scantime"" AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ";
-            var scantime = @"SELECT ""VolumeID"" AS ""VolumeID"", MIN(""SortScantime"") AS ""SortScantime"" FROM (" + scantimeFile + @" UNION " + scantimeMetadata + @") GROUP BY ""VolumeID"" ";
-            var active = @"SELECT ""A"".""ActiveSize"" AS ""ActiveSize"",  0 AS ""InactiveSize"", ""A"".""VolumeID"" AS ""VolumeID"", CASE WHEN ""B"".""SortScantime"" IS NULL THEN 0 ELSE ""B"".""SortScantime"" END AS ""SortScantime"" FROM (" + usedBlocks + @") A LEFT OUTER JOIN (" + scantime + @") B ON ""B"".""VolumeID"" = ""A"".""VolumeID"" ";
+            var lastmodifiedFile = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""Fileset"".""Timestamp"" AS ""Sorttime"" FROM ""Fileset"", ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" ";
+            var lastmodifiedMetadata = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""Fileset"".""Timestamp"" AS ""Sorttime"" FROM ""Fileset"", ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" ";
+            var scantime = @"SELECT ""VolumeID"" AS ""VolumeID"", MIN(""Sorttime"") AS ""Sorttime"" FROM (" + lastmodifiedFile + @" UNION " + lastmodifiedMetadata + @") GROUP BY ""VolumeID"" ";
+            var active = @"SELECT ""A"".""ActiveSize"" AS ""ActiveSize"",  0 AS ""InactiveSize"", ""A"".""VolumeID"" AS ""VolumeID"", CASE WHEN ""B"".""Sorttime"" IS NULL THEN 0 ELSE ""B"".""Sorttime"" END AS ""Sorttime"" FROM (" + usedBlocks + @") A LEFT OUTER JOIN (" + scantime + @") B ON ""B"".""VolumeID"" = ""A"".""VolumeID"" ";
             
 			var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
             var empty = @"SELECT 0 AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Remotevolume"".""ID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""Remotevolume"" WHERE ""Remotevolume"".""Type"" = ? AND ""Remotevolume"".""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block"") ";
 			
 			var combined = active + " UNION " + inactive + " UNION " + empty;
-			var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""SortScantime"") AS ""SortScantime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
+			var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""Sortime"") AS ""Sorttime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
 			var createtable = @"CREATE TEMPORARY TABLE """ + tmptablename + @""" AS " + collected;
 						
 			using (var cmd = m_connection.CreateCommand())
@@ -159,9 +146,9 @@ namespace Duplicati.Library.Main.Database
 				try
 				{
 					cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString());
-					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
+					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ", tmptablename)))
 						while (rd.Read())
-							yield return new VolumeUsage(rd.GetValue(0).ToString(), ToInt64(rd.GetValue(1)) + ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(2)), ToInt64(rd.GetValue(3)));
+                            yield return new VolumeUsage(rd.GetValue(0).ToString(), rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(3, 0));
 				}
 				finally 
 				{
@@ -299,8 +286,8 @@ namespace Duplicati.Library.Main.Database
 					using(var reader = m_command.ExecuteReader(@"SELECT ""Hash"", ""Size"" FROM ""Block"" "))
 					while (reader.Read())
 					{
-						var hash = reader.GetValue(0).ToString();
-						var size = Convert.ToInt64(reader.GetValue(1));
+                        var hash = reader.GetString(0);
+                        var size = reader.GetInt64(1);
 						m_lookup.Add(hash, size, size);
 					}
 				}
@@ -384,7 +371,7 @@ namespace Duplicati.Library.Main.Database
 							lookupBlock.Add(name, indexfileList);
 						}
 						
-						var v = new RemoteVolume(rd.GetValue(1).ToString(), rd.GetValue(2).ToString(), Convert.ToInt64(rd.GetValue(3)));
+                        var v = new RemoteVolume(rd.GetString(1), rd.GetString(2), rd.GetInt64(3));
 						indexfileList.Add(v);
 
 						List<string> blockList;

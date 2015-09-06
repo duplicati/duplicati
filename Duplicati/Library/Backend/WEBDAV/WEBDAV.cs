@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,7 @@ namespace Duplicati.Library.Backend
         private bool m_forceDigestAuthentication = false;
         private bool m_useSSL = false;
         private string m_debugPropfindFile = null;
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         /// <summary>
         /// A list of files seen in the last List operation.
@@ -126,19 +127,19 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            System.Net.HttpWebRequest req = CreateRequest("");
-
-            req.Method = "PROPFIND";
-            req.Headers.Add("Depth", "1");
-            req.ContentType = "text/xml";
-            req.ContentLength = PROPFIND_BODY.Length;
-
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.IO.Stream s = areq.GetRequestStream())
-                s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
-
             try
             {
+                System.Net.HttpWebRequest req = CreateRequest("");
+
+                req.Method = "PROPFIND";
+                req.Headers.Add("Depth", "1");
+                req.ContentType = "text/xml";
+                req.ContentLength = PROPFIND_BODY.Length;
+
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.IO.Stream s = areq.GetRequestStream())
+                    s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
+                
                 System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -149,7 +150,7 @@ namespace Duplicati.Library.Backend
                     if (!string.IsNullOrEmpty(m_debugPropfindFile))
                     {
                         using (System.IO.FileStream fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            Utility.Utility.CopyStream(areq.GetResponseStream(), fs, false);
+                            Utility.Utility.CopyStream(areq.GetResponseStream(), fs, false, m_copybuffer);
 
                         doc.Load(m_debugPropfindFile);
                     }
@@ -232,7 +233,7 @@ namespace Duplicati.Library.Backend
             {
                 if (wex.Response as System.Net.HttpWebResponse != null &&
                         ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict))
-                    throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                    throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                 throw;
             }
@@ -252,14 +253,27 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename);
-            req.Method = "DELETE";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            try
             {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                System.Net.HttpWebRequest req = CreateRequest(remotename);
+                req.Method = "DELETE";
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new FileMissingException();
+
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                }
+            } 
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+                else
+                    throw;
             }
         }
 
@@ -354,7 +368,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, s);
+                    Utility.Utility.CopyStream(stream, s, true, m_copybuffer);
 
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -368,7 +382,7 @@ namespace Duplicati.Library.Backend
                 //Convert to better exception
                 if (wex.Response as System.Net.HttpWebResponse != null)
                     if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                        throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                 throw;
             }
@@ -389,7 +403,7 @@ namespace Duplicati.Library.Backend
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
                     using (System.IO.Stream s = areq.GetResponseStream())
-                        Utility.Utility.CopyStream(s, stream);
+                        Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
                 }
             }
             catch (System.Net.WebException wex)
@@ -397,7 +411,7 @@ namespace Duplicati.Library.Backend
                 if (wex.Response as System.Net.HttpWebResponse != null)
                 {
                     if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict)
-                        throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                        throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                     if
                     (
@@ -407,7 +421,7 @@ namespace Duplicati.Library.Backend
                         &&
                         m_filenamelist.Contains(remotename)
                     )
-                        throw new Exception(string.Format(Strings.WEBDAV.SeenThenNotFoundError, m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
+                        throw new Exception(Strings.WEBDAV.SeenThenNotFoundError(m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
                 }
 
                 throw;

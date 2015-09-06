@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -61,25 +61,30 @@ namespace Duplicati.Library.SQLiteHelper
                     } else {
                         //On Mono, we try to find the Mono version of SQLite
                         
-                        //This secret commandline variable can be used to support older installations
-                        if (System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE") == null)
+                        //This secret environment variable can be used to support older installations
+                        var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
+                        if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
                         {
-                            try 
+                            foreach(var asmversion in new string[] {"4.0.0.0", "2.0.0.0"})
                             {
-                                Type t = System.Reflection.Assembly.Load("Mono.Data.Sqlite, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756").GetType("Mono.Data.Sqlite.SqliteConnection");
-                                if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
+                                try 
                                 {
-                                    Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
-                                    if (v >= new Version(3, 6, 3))
+                                    Type t = System.Reflection.Assembly.Load(string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion)).GetType("Mono.Data.Sqlite.SqliteConnection");
+                                    if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
                                     {
-                                        m_type = t;
-                                        return m_type;
+                                        Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
+                                        if (v >= new Version(3, 6, 3))
+                                        {
+                                            m_type = t;
+                                            return m_type;
+                                        }
                                     }
+                                    
+                                } catch {
                                 }
-                                
-                            } catch (Exception ex){
-                                Console.WriteLine(string.Format("Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.{0} Error message: {1}", Environment.NewLine, ex.ToString()));
                             }
+
+                            Console.WriteLine("Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
                         }
                     }
 

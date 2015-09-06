@@ -1,6 +1,6 @@
 #region Disclaimer / License
-// Copyright (C) 2011, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -79,15 +79,15 @@ namespace Duplicati.Library.Utility
         /// <param name="source">The stream to read from</param>
         /// <param name="target">The stream to write to</param>
         /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
-        public static void CopyStream(System.IO.Stream source, System.IO.Stream target, bool tryRewindSource)
+        public static void CopyStream(System.IO.Stream source, System.IO.Stream target, bool tryRewindSource, byte[] buf = null)
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
                 catch { }
 
-            byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
-            int read;
+            buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
+            int read;
             while ((read = source.Read(buf, 0, buf.Length)) != 0)
                 target.Write(buf, 0, read);
         }
@@ -539,15 +539,15 @@ namespace Duplicati.Library.Utility
         public static string FormatSizeString(long size)
         {
             if (size >= 1024 * 1024 * 1024 * 1024L)
-                return string.Format(Strings.Utility.FormatStringTB, (double)size / (1024 * 1024 * 1024 * 1024L));
+                return Strings.Utility.FormatStringTB((double)size / (1024 * 1024 * 1024 * 1024L));
             else if (size >= 1024 * 1024 * 1024)
-                return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024 * 1024));
+                return Strings.Utility.FormatStringGB((double)size / (1024 * 1024 * 1024));
             else if (size >= 1024 * 1024)
-                return string.Format(Strings.Utility.FormatStringMB, (double)size / (1024 * 1024));
+                return Strings.Utility.FormatStringMB((double)size / (1024 * 1024));
             else if (size >= 1024)
-                return string.Format(Strings.Utility.FormatStringKB, (double)size / 1024);
+                return Strings.Utility.FormatStringKB((double)size / 1024);
             else
-                return string.Format(Strings.Utility.FormatStringB, size);
+                return Strings.Utility.FormatStringB(size);
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
@@ -884,7 +884,7 @@ namespace Duplicati.Library.Utility
                     if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
                         try
                         {
-                            foreach(string sx in System.IO.Directory.GetFiles(Environment.ExpandEnvironmentVariables(s), filename))
+                            foreach(string sx in System.IO.Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
                                 return sx;
                         }
                         catch
@@ -896,6 +896,21 @@ namespace Duplicati.Library.Utility
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// The path to the users home directory
+        /// </summary>
+        private static readonly string HOME_PATH = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+
+        /// <summary>
+        /// Expands environment variables, including the tilde character
+        /// </summary>
+        /// <returns>The environment variables.</returns>
+        /// <param name="str">The string to expand.</param>
+        public static string ExpandEnvironmentVariables(string str)
+        {
+            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
         }
 
         /// <summary>
@@ -935,7 +950,7 @@ namespace Duplicati.Library.Utility
         {
             DateTime dt;
             if (!DateTime.TryParseExact(str, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
-                throw new Exception(string.Format(Strings.Utility.InvalidDateError, str));
+                throw new Exception(Strings.Utility.InvalidDateError(str));
 
             return dt;
         }

@@ -94,6 +94,8 @@
 .png #Portable Network Graphic
 .pspimage #PaintShopPro Image
 .tif #TIFF image
+.dng #Adobe Digital Negative
+.cr2 #Canon RAW Image Format
 
 
 # Compressed Font files
@@ -125,7 +127,6 @@
 .ots #OpenDocument Spreadsheet Template
 .ott #OpenDocument Text Document Template
 .pages #Apple iWork Document
-.pdf #Portable Document Format
 .pptx #Microsoft PowerPoint Presentation
 .pptm #Microsoft PowerPoint Presentation (macros enabled)
 .stw #OpenOffice.org Text Document Template	
