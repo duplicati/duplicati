@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
+    <Compile Include="DateTimeInvariant.cs" />
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />

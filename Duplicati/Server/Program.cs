@@ -237,7 +237,9 @@ namespace Duplicati.Server
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
             {
-#if DEBUG
+                //Add DEBUG_USE_RELEASE_HOMEFOLDER to Conditional compilation symbols in the Duplicati.Server project settings
+                //to use release home folder while debugging
+#if DEBUG && !DEBUG_USE_RELEASE_HOMEFOLDER
                 //debug mode uses a lock file located in the app folder
                 Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, StartupPath);
 #else

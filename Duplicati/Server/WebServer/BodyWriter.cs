@@ -52,7 +52,17 @@ namespace Duplicati.Server.WebServer
                 m_resp.ContentLength = base.BaseStream.Length;
                 m_resp.Send();
             }
-            base.Dispose(disposing);
+#if DEBUG
+            try
+            {
+#endif
+                base.Dispose(disposing);
+#if DEBUG
+            }
+            catch (Exception)
+            {
+            }
+#endif
         }
 
         public void SetOK()
