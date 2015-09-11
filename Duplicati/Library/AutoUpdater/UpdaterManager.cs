@@ -38,7 +38,7 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly string[] MANIFEST_URLS = AutoUpdateSettings.URLs;
         private static readonly string APPNAME = AutoUpdateSettings.AppName;
 
-        internal static readonly string INSTALLDIR;
+        public static readonly string INSTALLDIR;
 
         private static readonly string INSTALLED_BASE_DIR = string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) ?
                                                         System.IO.Path.GetDirectoryName( Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
@@ -161,7 +161,7 @@ namespace Duplicati.Library.AutoUpdater
 
         private static bool TestDirectoryIsWriteable(string path)
         {
-            var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT));
+            var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture));
             var probe = System.IO.Directory.Exists(path) ? p2 : path;
 
             if (!System.IO.Directory.Exists(probe))

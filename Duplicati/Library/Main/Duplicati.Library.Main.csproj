@@ -108,6 +108,7 @@
     <Compile Include="Database\LocalListAffectedDatabase.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
+    <Compile Include="Operation\SystemInfoHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

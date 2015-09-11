@@ -149,6 +149,7 @@ namespace Duplicati.CommandLine
                 knownCommands["verify"] = Commands.Test;
                 knownCommands["test-filters"] = Commands.TestFilters;
                 knownCommands["affected"] = Commands.Affected;
+                knownCommands["system-info"] = Commands.SystemInfo;
 
                 if (!isHelp && verbose)
                 {

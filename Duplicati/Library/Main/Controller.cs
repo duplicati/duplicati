@@ -272,6 +272,13 @@ namespace Duplicati.Library.Main
                 new Operation.TestFilterHandler(m_options, result).Run(paths, filter);
             });
         }
+
+        public Library.Interface.ISystemInfoResults SystemInfo()
+        {
+            return RunAction(new SystemInfoResults(), result => {
+                Operation.SystemInfoHandler.Run(result);
+            });
+        }
         
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
