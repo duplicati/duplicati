@@ -938,7 +938,7 @@ namespace Duplicati.Library.Utility
         public static string SerializeDateTime(DateTime dt)
         {
             //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
-            return dt.ToUniversalTime().ToString("yyyyMMdd'T'HHmmssK");
+            return dt.ToUniversalTime().ToStringInvariant();
         }
 
         /// <summary>
@@ -949,7 +949,7 @@ namespace Duplicati.Library.Utility
         public static DateTime DeserializeDateTime(string str)
         {
             DateTime dt;
-            if (!DateTime.TryParseExact(str, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
+            if (!DateTimeInvariant.TryParseExact(str, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
                 throw new Exception(Strings.Utility.InvalidDateError(str));
 
             return dt;

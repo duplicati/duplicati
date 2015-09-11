@@ -56,9 +56,9 @@ namespace Duplicati.Library.Utility
 			foreach(var f in st.GetFrames())
 				if (f.GetMethod().DeclaringType.Assembly != typeof(TempFile).Assembly)
 				{
-					var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssK"), Guid.NewGuid().ToString().Substring(0, 8));
+					var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, DateTime.UtcNow.ToStringInvariant(), Guid.NewGuid().ToString().Substring(0, 8));
 					if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
-						n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssK"), Guid.NewGuid().ToString().Substring(0, 8));
+						n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, DateTime.UtcNow.ToStringInvariant(), Guid.NewGuid().ToString().Substring(0, 8));
 					if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0)
 					{
 						lock(m_lock)

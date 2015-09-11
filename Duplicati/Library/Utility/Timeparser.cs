@@ -62,7 +62,7 @@ namespace Duplicati.Library.Utility
             if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.AssumeLocal, out t))
                 return t;
             
-            if (DateTime.TryParseExact(datestring, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out t))
+            if (DateTimeInvariant.TryParseExact(datestring, System.Globalization.DateTimeStyles.AssumeUniversal, out t))
                 return t;
 
             char[] separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
