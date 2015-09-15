@@ -931,14 +931,29 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// The format string for a DateTime
+        /// </summary>
+        //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
+        public static string SERIALIZED_DATE_TIME_FORMAT = "yyyyMMdd'T'HHmmssK";
+
+        /// <summary>
         /// Returns a string representation of a <see cref="System.DateTime"/> in UTC format
         /// </summary>
         /// <param name="dt">The <see cref="System.DateTime"/> instance</param>
         /// <returns>A string representing the time</returns>
         public static string SerializeDateTime(DateTime dt)
         {
-            //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
-            return dt.ToUniversalTime().ToString("yyyyMMdd'T'HHmmssK");
+            return dt.ToUniversalTime().ToString(SERIALIZED_DATE_TIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Parses a serialized <see cref="System.DateTime"/> instance
+        /// </summary>
+        /// <param name="str">The string to parse</param>
+        /// <returns>The parsed <see cref="System.DateTime"/> instance</returns>
+        public static bool TryDeserializeDateTime(string str, out DateTime dt)
+        {
+            return DateTime.TryParseExact(str, SERIALIZED_DATE_TIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out dt);
         }
 
         /// <summary>
@@ -949,7 +964,7 @@ namespace Duplicati.Library.Utility
         public static DateTime DeserializeDateTime(string str)
         {
             DateTime dt;
-            if (!DateTime.TryParseExact(str, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
+            if (!TryDeserializeDateTime(str, out dt))
                 throw new Exception(Strings.Utility.InvalidDateError(str));
 
             return dt;

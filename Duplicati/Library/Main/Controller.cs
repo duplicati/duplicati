@@ -68,6 +68,21 @@ namespace Duplicati.Library.Main
         private System.Threading.ThreadPriority? m_resetPriority;
 
         /// <summary>
+        /// The localization culture to reset to
+        /// </summary>
+        private System.Globalization.CultureInfo m_resetLocale;
+
+        /// <summary>
+        /// The localization UI culture to reset to
+        /// </summary>
+        private System.Globalization.CultureInfo m_resetLocaleUI;
+
+        /// <summary>
+        /// True if the locale should be reset
+        /// </summary>
+        private bool m_doResetLocale;
+
+        /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
         /// </summary>
         /// <param name="isRunning">Flag indicating execution state</param>
@@ -272,6 +287,13 @@ namespace Duplicati.Library.Main
                 new Operation.TestFilterHandler(m_options, result).Run(paths, filter);
             });
         }
+
+        public Library.Interface.ISystemInfoResults SystemInfo()
+        {
+            return RunAction(new SystemInfoResults(), result => {
+                Operation.SystemInfoHandler.Run(result);
+            });
+        }
         
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
@@ -341,6 +363,14 @@ namespace Duplicati.Library.Main
             {
                 System.Threading.Thread.CurrentThread.Priority = m_resetPriority.Value;
                 m_resetPriority = null;
+            }
+
+            if (m_doResetLocale)
+            {
+                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = m_resetLocale;
+                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = m_resetLocaleUI;
+                m_doResetLocale = false;
+                m_resetLocale = null;
             }
 
             if (m_resetKeys != null)
@@ -438,6 +468,16 @@ namespace Duplicati.Library.Main
                     Environment.SetEnvironmentVariable("TMP", m_options.TempDir);
                     Environment.SetEnvironmentVariable("TEMP", m_options.TempDir);
                 }
+            }
+
+            if (m_options.HasForcedLocale)
+            {
+                var locale = m_options.ForcedLocale;
+                m_resetLocale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
+                m_resetLocaleUI = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
+                m_doResetLocale = true;
+                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = locale;
+                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = locale;
             }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
