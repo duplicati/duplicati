@@ -10,6 +10,7 @@ Software Development:
   Don Lockhart
   Sebastian Fahrenholz
   Malte Neumann
+  Mostafa Aghajani
   
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
