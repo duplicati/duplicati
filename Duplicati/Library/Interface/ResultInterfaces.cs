@@ -275,6 +275,11 @@ namespace Duplicati.Library.Interface
         long FileSize { get; set; }
         long FileCount { get; set; }
     }
-    
+
+    public interface ISystemInfoResults : IBasicResults
+    {
+        IEnumerable<string> Lines { get; }
+    }
+
 }
 

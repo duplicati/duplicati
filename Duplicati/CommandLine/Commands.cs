@@ -805,6 +805,22 @@ namespace Duplicati.CommandLine
             
             return 0;
         }
+
+        public static int SystemInfo(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args != null && args.Count != 0)
+            {
+                Console.WriteLine("Command takes no arguments");
+                return 200;
+            }
+
+            using(var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(options)))
+                foreach(var line in i.SystemInfo().Lines)
+                    Console.WriteLine(line);    
+
+            return 0;
+        }
+
     }
 }
 

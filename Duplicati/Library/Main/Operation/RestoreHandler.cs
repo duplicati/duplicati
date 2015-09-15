@@ -43,7 +43,8 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception("Unspecified datetime instance, must be either local or UTC");
 
             // Make sure the resolution is the same (i.e. no milliseconds)
-            time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
+            if (time.Ticks > 0)
+                time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
 
             return 
                 _lst =>

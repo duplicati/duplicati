@@ -508,6 +508,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
+                    new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
                 });
 
                 return lst;
@@ -682,6 +683,32 @@ namespace Duplicati.Library.Main
                     return System.IO.Path.GetTempPath();
                 else
                     return m_options["tempdir"];
+            }
+        }
+
+
+        /// <summary>
+        /// Gets a value indicating whether a temporary folder has been specified
+        /// </summary>
+        public bool HasForcedLocale { get { return m_options.ContainsKey("force-locale"); } }
+
+        /// <summary>
+        /// Gets the folder where temporary files are stored
+        /// </summary>
+        public System.Globalization.CultureInfo ForcedLocale
+        {
+            get
+            {
+                if (!m_options.ContainsKey("force-locale"))
+                    return System.Threading.Thread.CurrentThread.CurrentCulture;
+                else
+                {
+                    var localestring = m_options["force-locale"];
+                    if (string.IsNullOrWhiteSpace(localestring))
+                        return System.Globalization.CultureInfo.InvariantCulture;
+                    else
+                        return new System.Globalization.CultureInfo(localestring);
+                }
             }
         }
 

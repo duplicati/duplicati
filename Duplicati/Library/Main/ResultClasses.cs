@@ -878,6 +878,11 @@ namespace Duplicati.Library.Main
 
     }
 
+    internal class SystemInfoResults : BasicResults, ISystemInfoResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.SystemInfo; } }
+        public IEnumerable<string> Lines { get; set; }
+    }
 
 }
 
