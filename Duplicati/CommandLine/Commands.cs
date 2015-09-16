@@ -409,6 +409,11 @@ namespace Duplicati.CommandLine
             for (var ix = 0; ix < args.Count; ix++)
                 if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("["))
                     args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
+
+            // suffix all folders with "*" so we restore all contents in the folder
+            for (var ix = 0; ix < args.Count; ix++)
+                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[") && args[ix].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                    args[ix] += "*";
             
             var output = new ConsoleOutput(options);
             output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));
