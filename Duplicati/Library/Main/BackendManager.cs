@@ -795,25 +795,33 @@ namespace Duplicati.Library.Main
             {
                 m_backend.Delete(item.RemoteFilename);
             }
-            catch (Duplicati.Library.Interface.FileMissingException fex)
-            {
-                m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), fex);
-                bool success = false;
-                try
-                {
-                    success = !m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename);
-                }
-                catch
-                {
-                }
-
-                if (success)
-                    m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
-                else
-                    throw;
-            }
             catch (Exception ex)
             {
+                var isFileMissingException = ex is Library.Interface.FileMissingException;
+                var wex = ex as System.Net.WebException;
+                var wr = ex as System.Net.WebException == null ? null : (ex as System.Net.WebException).Response as System.Net.HttpWebResponse;
+
+                if (ex is Library.Interface.FileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
+                {
+                    m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex);
+                    bool success = false;
+
+                    try
+                    {
+                        success = !m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename);
+                    }
+                    catch
+                    {
+                    }
+
+                    if (success)
+                    {
+                        m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                        return;
+                    }
+                    
+                }
+
                 result = ex.ToString();
                 throw;
             }
