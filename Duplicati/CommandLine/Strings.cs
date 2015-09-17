@@ -30,5 +30,6 @@ namespace Duplicati.CommandLine.Strings {
         public static string ControlFilesOptionLong { get { return LC.L(@"Use control files"); } }
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
         public static string QuietConsoleOptionShort { get { return LC.L(@"Disable console output"); } }
+        public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored"; } }
     }
 }

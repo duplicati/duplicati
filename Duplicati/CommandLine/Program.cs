@@ -297,8 +297,11 @@ namespace Duplicati.CommandLine
                		else
                			cargs[1] = newtarget;
                	}
-               	
-               	cargs.AddRange(newsource);
+
+                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.InvariantCultureIgnoreCase))
+                   	cargs.AddRange(newsource);
+                else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
+                    Console.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 
                 return true;
             }
