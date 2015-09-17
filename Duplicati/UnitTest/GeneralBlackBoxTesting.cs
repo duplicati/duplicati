@@ -79,6 +79,16 @@ namespace Duplicati.UnitTest
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
         }
 
+        [Test]
+        public void TestWithoutSizeInfo()
+        {
+            var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
+            SizeOmittingBackend.WrappedBackend = u.Scheme;
+            var target = u.SetScheme(new SizeOmittingBackend().ProtocolKey).ToString();
+
+            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
+        }
+
     }
 }
 

@@ -178,10 +178,16 @@ namespace Duplicati.UnitTest
                     tmp["allow-full-removal"] = "";
 
                     using(new Timer("Cleaning up any existing backups"))
-                    using(var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                        foreach(var f in bk.List())
-                            if (!f.IsFolder)
-                                bk.Delete(f.Name);
+                    try
+                    {
+                        using(var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
+                            foreach(var f in bk.List())
+                                if (!f.IsFolder)
+                                    bk.Delete(f.Name);
+                    }
+                    catch(Duplicati.Library.Interface.FolderMissingException)
+                    {
+                    }
                 }
 
                 log.Backupset = "Backup " + folders[0];
