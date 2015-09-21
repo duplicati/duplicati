@@ -51,6 +51,30 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
 
+                bool isHelp = args.Count == 0 || (args.Count >= 1 && string.Equals(args[0], "help", StringComparison.InvariantCultureIgnoreCase));
+                if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
+                {
+                    string filename;
+                    if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
+                    {
+                        filename = options["parameters-file"];
+                        options.Remove("parameters-file");
+                    }
+                    else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
+                    {
+                        filename = options["parameter-file"];
+                        options.Remove("parameter-file");
+                    }
+                    else
+                    {
+                        filename = options["parameterfile"];
+                        options.Remove("parameterfile");
+                    }
+
+                    if (!ReadOptionsFromFile(filename, ref filter, args, options))
+                        return 100;
+                }
+
                 var actions = new Dictionary<string, CommandRunner>(StringComparer.InvariantCultureIgnoreCase);
                 actions["download"] = Download.Run;
                 actions["index"] = Index.Run;
@@ -70,6 +94,42 @@ namespace Duplicati.CommandLine.RecoveryTool
             {
                 Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex.ToString());
                 return 200;
+            }
+        }
+
+        private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)
+        {
+            try
+            {
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs);
+
+                var opt = tmpparsed.Item1;
+                var newfilter = tmpparsed.Item2;
+
+                // If the user specifies parameters-file, all filters must be in the file.
+                // Allowing to specify some filters on the command line could result in wrong filter ordering
+                if (!filter.Empty && !newfilter.Empty)
+                    throw new Exception("Filters cannot be specified on the commandline if filters are also present in the parameter file");
+
+                if (!newfilter.Empty)
+                    filter = newfilter;
+
+                foreach(KeyValuePair<String, String> keyvalue in opt)
+                    options[keyvalue.Key] = keyvalue.Value;
+
+                cargs.AddRange(
+                    from c in fargs
+                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#") && !c.StartsWith("!") && !c.StartsWith("REM ", StringComparison.InvariantCultureIgnoreCase)
+                    select c
+                );
+                    
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(@"Unable to read the parameters file ""{0}"", reason: {1}", filename, e.Message);
+                return false;
             }
         }
     }

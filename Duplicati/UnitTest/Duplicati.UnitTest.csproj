@@ -43,6 +43,7 @@
     <Compile Include="RandomErrorBackend.cs" />
     <Compile Include="Issue1410.cs" />
     <Compile Include="BasicSetupHelper.cs" />
+    <Compile Include="SizeOmittingBackend.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

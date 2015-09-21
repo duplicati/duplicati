@@ -128,7 +128,7 @@ namespace Duplicati.Library.Main.Operation
                     
                 long flindex = 1;
                 foreach(var flentry in filteredList)
-                    using(var tmpfile = backend.Get(flentry.Value.File.Name, -1, null))
+                    using(var tmpfile = backend.Get(flentry.Value.File.Name, flentry.Value.File == null ? -1 : flentry.Value.File.Size, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)

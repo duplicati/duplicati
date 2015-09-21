@@ -89,10 +89,15 @@ namespace Duplicati.CommandLine
                         filename = options["parameters-file"];
                         options.Remove("parameters-file");
                     }
-                    else
+                    else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
                     {
                         filename = options["parameter-file"];
                         options.Remove("parameter-file");
+                    }
+                    else
+                    {
+                        filename = options["parameterfile"];
+                        options.Remove("parameterfile");
                     }
 
                     if (!ReadOptionsFromFile(filename, ref filter, cargs, options))
@@ -144,6 +149,7 @@ namespace Duplicati.CommandLine
                 knownCommands["verify"] = Commands.Test;
                 knownCommands["test-filters"] = Commands.TestFilters;
                 knownCommands["affected"] = Commands.Affected;
+                knownCommands["system-info"] = Commands.SystemInfo;
 
                 if (!isHelp && verbose)
                 {
@@ -251,7 +257,7 @@ namespace Duplicati.CommandLine
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(filename).Replace("\r", "").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
 
@@ -291,8 +297,11 @@ namespace Duplicati.CommandLine
                		else
                			cargs[1] = newtarget;
                	}
-               	
-               	cargs.AddRange(newsource);
+
+                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.InvariantCultureIgnoreCase))
+                   	cargs.AddRange(newsource);
+                else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
+                    Console.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 
                 return true;
             }

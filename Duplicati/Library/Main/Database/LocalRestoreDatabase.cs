@@ -62,9 +62,11 @@ namespace Duplicati.Library.Main.Database
                         cmd.AddParameter(filesetId);
                         cmd.ExecuteNonQuery();
                     }
-                    else if (filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
+                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
                     {
                         // If we get a list of filenames, the lookup table is faster
+                        // unfortunately we cannot do this if the filesystem is case sensitive as
+                        // SQLite only supports ASCII compares
                         using(var tr = m_connection.BeginTransaction())
                         {
                             var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
@@ -80,7 +82,6 @@ namespace Duplicati.Library.Main.Database
                                 cmd.ExecuteNonQuery();
                             }
                             
-                            //TODO: Handle case-insensitive filename lookup
                             cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
                             cmd.SetParameterValue(0, filesetId);
                             var c = cmd.ExecuteNonQuery();

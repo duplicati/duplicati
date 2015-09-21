@@ -707,7 +707,35 @@ namespace Duplicati.Library.Main
                             { 
                             	tmpfile = new Library.Utility.TempFile();
                                 lock(m_encryptionLock)
-                            	    m_encryption.Decrypt(tmpfile2, tmpfile);
+                                {
+                                    // Auto-guess the encryption module
+                                    var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
+                                    if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                                    {
+                                        // Check if the file is encrypted with something else
+                                        if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                        {
+                                            m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
+                                            using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
+                                                (encmodule ?? m_encryption).Decrypt(tmpfile2, tmpfile);
+                                        }
+                                        // Check if the file is not encrypted
+                                        else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                        {
+                                            m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
+                                        }
+                                        // Fallback, lets see what happens...
+                                        else
+                                        {
+                                            m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
+                                            m_encryption.Decrypt(tmpfile2, tmpfile);
+                                        }
+                                    }
+                                    else
+                                    {
+                                	    m_encryption.Decrypt(tmpfile2, tmpfile);
+                                    }
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -767,25 +795,33 @@ namespace Duplicati.Library.Main
             {
                 m_backend.Delete(item.RemoteFilename);
             }
-            catch (Duplicati.Library.Interface.FileMissingException fex)
-            {
-                m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), fex);
-                bool success = false;
-                try
-                {
-                    success = !m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename);
-                }
-                catch
-                {
-                }
-
-                if (success)
-                    m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
-                else
-                    throw;
-            }
             catch (Exception ex)
             {
+                var isFileMissingException = ex is Library.Interface.FileMissingException;
+                var wex = ex as System.Net.WebException;
+                var wr = ex as System.Net.WebException == null ? null : (ex as System.Net.WebException).Response as System.Net.HttpWebResponse;
+
+                if (ex is Library.Interface.FileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
+                {
+                    m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex);
+                    bool success = false;
+
+                    try
+                    {
+                        success = !m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename);
+                    }
+                    catch
+                    {
+                    }
+
+                    if (success)
+                    {
+                        m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                        return;
+                    }
+                    
+                }
+
                 result = ex.ToString();
                 throw;
             }

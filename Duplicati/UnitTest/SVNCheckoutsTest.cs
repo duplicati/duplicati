@@ -83,7 +83,7 @@ namespace Duplicati.UnitTest
             //Filter empty entries, commonly occuring with copy/paste and newlines
             folders = (from x in folders 
                       where !string.IsNullOrWhiteSpace(x)
-                      select Environment.ExpandEnvironmentVariables(x)).ToArray();
+                      select Library.Utility.Utility.ExpandEnvironmentVariables(x)).ToArray();
 
             //Expand the tilde to home folder on Linux/OSX
             if (Utility.IsClientLinux)
@@ -178,10 +178,16 @@ namespace Duplicati.UnitTest
                     tmp["allow-full-removal"] = "";
 
                     using(new Timer("Cleaning up any existing backups"))
-                    using(var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                        foreach(var f in bk.List())
-                            if (!f.IsFolder)
-                                bk.Delete(f.Name);
+                    try
+                    {
+                        using(var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
+                            foreach(var f in bk.List())
+                                if (!f.IsFolder)
+                                    bk.Delete(f.Name);
+                    }
+                    catch(Duplicati.Library.Interface.FolderMissingException)
+                    {
+                    }
                 }
 
                 log.Backupset = "Backup " + folders[0];

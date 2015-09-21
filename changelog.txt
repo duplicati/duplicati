@@ -1,3 +1,17 @@
+2015-09-15
+==========
+* Improved use of non-default --oauth-url
+* Bugfixes to the REST API
+* Improved checks when repairing the database
+* Improved handling of tmpdir
+* Improved handling the tilde charater in input paths
+* Fixed a bug with relative paths and the recovery tool
+* Improved handling of RESULT template item in email templates
+* Fixed multiple locations where the system calendar was affecting the date format
+* Added more system info, and a system-info CLI command
+* Added a --force-locale option to force another locale
+* Fixed an issue with restoring, which would give "No filesets found on remote target"
+
 2015-08-24
 ==========
 * Fixes to improve the use of the OAuth handler
