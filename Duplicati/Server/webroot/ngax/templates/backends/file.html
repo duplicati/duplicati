@@ -1,7 +1,21 @@
-<div class="input text overlayButton">
+<div ng-init="HideFolderBrowser = ($parent.Path || '') != ''"></div>
+
+<div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
     <label for="file_path">Folder path</label>
     <input type="text" name="file_path" id="file_path" ng-model="$parent.Path" placeholder="Enter the destination path" />
-    <a href id="file_targetFolderPathAdd" class="button">Browse</a>
+    <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false">Browse</a>
+</div>
+
+<div class="input text" ng-hide="HideFolderBrowser">
+
+	<div class="input" style="padding-bottom: 0px">
+        <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">{{ShowHiddenFolders ? 'Hide' : 'Show'}} hidden folders</a>
+
+        <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;">Manually type path</a>
+    </div>
+	
+    <label for="folder_path_picker">Folder path</label>
+	<destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="$parent.Path" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
 </div>
 
 <div class="input text">

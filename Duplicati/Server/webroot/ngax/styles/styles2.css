@@ -240,7 +240,7 @@
 	display: block;
 }
 
-.step2 source-folder-picker {
+.step2 source-folder-picker, #folder_path_picker {
   max-height: 200px;
   overflow: auto;
   display: block;
