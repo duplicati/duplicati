@@ -12,18 +12,22 @@ backupApp.directive('backupEditUri', function() {
 		var backenddataloaders = angular.copy(EditUriBackendConfig.loaders);
 
 		var builduri = function() {
-			var validater = EditUriBackendConfig.validaters[scope.Backend.Key];
-			if (validater == null)
-				validater = EditUriBackendConfig.defaultvalidater;
 
-			if (!validater(scope))
-				return;
+			if (EditUriBackendConfig.validaters[scope.Backend.Key] == null) {
+				
+				if (!EditUriBackendConfig.defaultvalidater(scope))
+					return;
 
-			var builder = EditUriBackendConfig.builders[scope.Backend.Key];
-			if (builder == null)
-				builder = EditUriBackendConfig.defaultbuilder;
+			} else {
+				
+				if (!EditUriBackendConfig.validaters[scope.Backend.Key](scope))
+					return;
+			}
 
-			return builder(scope);
+			if (EditUriBackendConfig.builders[scope.Backend.Key] == null)
+				return EditUriBackendConfig.defaultbuilder(scope);
+			else
+				return EditUriBackendConfig.builders[scope.Backend.Key](scope);
 		}
 
 		$scope.testConnection = function() {
@@ -102,12 +106,10 @@ backupApp.directive('backupEditUri', function() {
 			if (scope.TemplateUrl == null)
 				scope.TemplateUrl = EditUriBackendConfig.defaulttemplate;
 
-			var loader = backenddataloaders[scope.Backend.Key];
-			if (loader == null)
+			if (backenddataloaders[scope.Backend.Key] == null)
 				return;
 
-			backenddataloaders[scope.Backend.Key] = null;
-			loader(scope);
+			backenddataloaders[scope.Backend.Key](scope);
 		});
 
 		var reparseuri = function() {
