@@ -23,7 +23,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 		var opts = {};
 		self.merge_in_advanced_options(scope, opts);
 
-		var url = AppUtils.format('{0}{1}://{2}{3}{4}{5}',
+		var url = AppUtils.format('{0}{1}://{2}{3}/{4}{5}',
 			scope.Backend.Key,
 			(scope.SupportsSSL && scope.UseSSL) ? 's' : '',
 			scope.Server || '',
