@@ -9,7 +9,6 @@ backupApp.directive('backupEditUri', function() {
     controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, EditUriBuiltins) {
 
 		var scope = $scope;
-		var backenddataloaders = angular.copy(EditUriBackendConfig.loaders);
 
 		var builduri = function() {
 
@@ -106,10 +105,10 @@ backupApp.directive('backupEditUri', function() {
 			if (scope.TemplateUrl == null)
 				scope.TemplateUrl = EditUriBackendConfig.defaulttemplate;
 
-			if (backenddataloaders[scope.Backend.Key] == null)
+			if (EditUriBackendConfig.loaders[scope.Backend.Key] == null)
 				return;
 
-			backenddataloaders[scope.Backend.Key](scope);
+			EditUriBackendConfig.loaders[scope.Backend.Key](scope);
 		});
 
 		var reparseuri = function() {
