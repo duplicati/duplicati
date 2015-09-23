@@ -1,8 +1,9 @@
 <div class="home">
-    <div class="state" ng-controller="StateController">
+    <div class="state" ng-controller="StateController" ng-hide="state.programState == 'Running' &amp;&amp; state.ActiveTask == null &amp;&amp; (state.SchedulerQueueIds == null || state.SchedulerQueueIds.length == 0)">
         <div ng-hide="state.programState == 'Running'">
-            <strong>Backups are currently paused, </strong>
-            <a href ng-click="sendResume()">click to resume</a>
+            <strong style="margin-right: 0px;">Backups are currently paused,</strong>
+            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">resuming in {{state.pauseTimeRemain | timeremaining}}</div>
+            <a href ng-click="sendResume()">click to resume now</a>
         </div>
 
         <div ng-hide="state.ActiveTask == null">
@@ -10,16 +11,12 @@
             {{task}}
         </div>
 
-        <div ng-show="state.ActiveTask == null">
+        <div ng-show="state.ActiveTask == null &amp;&amp; state.SchedulerQueueIds != null &amp;&amp; state.SchedulerQueueIds.length > 0">
             <strong>Next task:</strong>
             {{nexttask}}
         </div>
-
-        <div>LastEventID: {{state.lastEventId}}</div>
-
-
-
     </div>
+
     <div class="tasks" ng-controller="HomeController">
         <div class="tasklist">
             <h3><p ng-if="backups.length > 0">Scheduled backups:</p></h3>

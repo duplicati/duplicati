@@ -1,4 +1,4 @@
-backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppService) {
+backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppService, AppUtils) {
 
     var polltime = 5 * 60 * 1000;
 
@@ -60,6 +60,24 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         }, 500);
     };
 
+    var updatepausetimer = null;
+    function pauseTimerUpdater(skipNotify) {
+        var prev = state.pauseTimeRemain;
+
+        state.pauseTimeRemain = Math.max(0, AppUtils.parseDate(state.estimatedPauseEnd) - new Date());
+        if (state.pauseTimeRemain > 0 && updatepausetimer == null) {
+            updatepausetimer = setInterval(pauseTimerUpdater, 500);
+        } else if (state.pauseTimeRemain <= 0 && updatepausetimer != null) {
+            clearInterval(updatepausetimer);
+            updatepausetimer = null;
+        }
+
+        if (prev != state.pauseTimeRemain && !skipNotify)
+            $rootScope.$broadcast('serverstatechanged.pauseTimeRemain', state.pauseTimeRemain);
+
+        return prev != state.pauseTimeRemain;
+    }
+
     var notifyIfChanged = function (data, dataname, varname) {
         if (data[dataname] != null) {
             if (state[varname] != data[dataname]) {
@@ -91,7 +109,8 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                     notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
                     notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
                     notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
-                    notifyIfChanged(response.data, 'ProgramState', 'programState');
+                    notifyIfChanged(response.data, 'ProgramState', 'programState') |
+                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd');
 
 
                 if (state.connectionState != 'connected') {
@@ -100,8 +119,11 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                     anychanged = true;
                 }
 
+                anychanged |= pauseTimerUpdater(true);
+
                 if (anychanged)
                     $rootScope.$broadcast('serverstatechanged');
+
 
                 poll();
             },
@@ -115,9 +137,8 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                     poll();
                 } else {
 
-                    // TODO: First request should not long-poll ....
-
                     // Real failure, start countdown
+                    state.lastEventId = -1;
                     state.connectionState = 'disconnected';
 
                     countdownForForRePoll(poll);
