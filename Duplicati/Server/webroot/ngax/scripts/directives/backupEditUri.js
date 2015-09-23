@@ -6,7 +6,7 @@ backupApp.directive('backupEditUri', function() {
     	hide: '=hide'
     },
     templateUrl: 'templates/edituri.html',
-    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig) {
+    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, EditUriBuiltins) {
 
 		var scope = $scope;
 		var backenddataloaders = angular.copy(EditUriBackendConfig.loaders);
