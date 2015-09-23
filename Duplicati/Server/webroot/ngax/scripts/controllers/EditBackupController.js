@@ -224,6 +224,8 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		$scope.ExcludeLargeFiles = $scope.Options['--skip-files-larger-than'];
 		$scope.ExcludeAttributes = ($scope.Options['--exclude-files-attributes'] || '').split(',');
 
+		$scope.RepeatPasshrase = $scope.Options['passphrase'];
+
 		delete extopts['--skip-files-larger-than'];
 		delete extopts['--exclude-files-attributes'];
 		delete extopts['--no-encryption'];
