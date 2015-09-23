@@ -19,6 +19,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['onedrive']    = 'templates/backends/oauth.html';
 	EditUriBackendConfig.templates['openstack']   = 'templates/backends/openstack.html';
 	EditUriBackendConfig.templates['azure']       = 'templates/backends/azure.html';
+	EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
 
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
@@ -111,6 +112,36 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		}
 	};
 
+	EditUriBackendConfig.loaders['gcs'] = function(scope) {
+		if (scope.gcs_locations == null) {
+			AppService.post('/webmodule/gcs-getconfig', {'gcs-config': 'Locations'}).then(function(data) {
+				scope.gcs_locations = data.data.Result;
+				for(var k in scope.gcs_locations)
+					if (scope.gcs_locations[k] === null)
+						scope.gcs_locations[k] = '';
+
+				if (scope.gcs_location == undefined && scope.gcs_location_custom == undefined)
+					scope.gcs_location = '';
+
+			}, AppUtils.connectionError);
+		}
+
+		if (scope.gcs_storageclasses == null) {
+			AppService.post('/webmodule/gcs-getconfig', {'gcs-config': 'StorageClasses'}).then(function(data) {
+				scope.gcs_storageclasses = data.data.Result;
+				for(var k in scope.gcs_storageclasses)
+					if (scope.gcs_storageclasses[k] === null)
+						scope.gcs_storageclasses[k] = '';
+
+				if (scope.gcs_storageclass == undefined && scope.gcs_storageclass == undefined)
+					scope.gcs_storageclass = '';
+
+			}, AppUtils.connectionError);
+		}
+
+		this['oauth-base'].apply(this, arguments);
+	};
+
 
 	// Parsers take a decomposed uri input and sets up the scope variables
 	EditUriBackendConfig.parsers['file'] = function(scope, module, server, port, path, options) {
@@ -181,7 +212,18 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		EditUriBackendConfig.mergeServerAndPath(scope);
 	};
 
+	EditUriBackendConfig.parsers['gcs'] = function(scope, module, server, port, path, options) {
 
+		scope.gcs_location = scope.gcs_location_custom = options['--gcs-location'];
+		scope.gcs_storageclass = scope.gcs_storageclass_custom = options['--gcs-storage-class'];
+		scope.gcs_projectid = options['--gcs-project'];
+
+		var nukeopts = ['--gcs-location', '--gcs-storage-class', '--gcs-project'];
+		for(var x in nukeopts)
+			delete options[nukeopts[x]];
+
+		this['oauth-base'].apply(this, arguments);
+	};
 
 
 	// Builders take the scope and produce the uri output
@@ -275,6 +317,32 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		var url = AppUtils.format('{0}://{1}{2}',
 			'azure',
 			scope.Path,
+			AppUtils.encodeDictAsUrl(opts)
+		);
+
+		return url;
+	};
+
+	EditUriBackendConfig.builders['gcs'] = function(scope) {
+		var opts = {
+			'gcs-location': AppUtils.contains_value(scope.gcs_locations, scope.gcs_location) ? scope.gcs_location : scope.gcs_location_custom,
+			'gcs-storage-class': AppUtils.contains_value(scope.gcs_storageclasses, scope.gcs_storageclass) ? scope.gcs_storageclass : scope.gcs_storageclass_custom,
+			'authid': scope.AuthID,
+			'gcs-project': scope.gcs_projectid
+		}
+
+		if ((opts['gcs-location'] || '') == '')
+			delete opts['gcs-location'];
+		if ((opts['gcs-storage-class'] || '') == '')
+			delete opts['gcs-storage-class'];
+		if ((opts['gcs-project'] || '') == '')
+			delete opts['gcs-project'];
+
+		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+		var url = AppUtils.format('{0}://{1}{2}',
+			scope.Backend.Key,
+			scope.Path || '',
 			AppUtils.encodeDictAsUrl(opts)
 		);
 
