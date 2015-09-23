@@ -12,14 +12,26 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if (scope.s3_providers == null) {
 			AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Providers'}).then(function(data) {
 				scope.s3_providers = data.data.Result;
+				if (scope.s3_server == undefined && scope.s3_server_custom == undefined)
+					scope.s3_server = 's3.amazonaws.com';
+
 			}, AppUtils.connectionError);
+		} else {
+			if (scope.s3_server == undefined && scope.s3_server_custom == undefined)
+				scope.s3_server = 's3.amazonaws.com';
 		}
 
 		if (scope.s3_regions == null) {
 			AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Regions'}).then(function(data) {
 				scope.s3_regions = data.data.Result;
+				if (scope.s3_region == null  && scope.s3_region_custom == undefined)
+					scope.s3_region = '';
 			}, AppUtils.connectionError);
+		} else {
+			if (scope.s3_region == null  && scope.s3_region_custom == undefined)
+				scope.s3_region = '';
 		}
+
 	};
 
 	EditUriBackendConfig.loaders['oauth-base'] = function(scope) {
