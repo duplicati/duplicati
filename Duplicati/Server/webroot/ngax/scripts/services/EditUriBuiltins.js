@@ -17,6 +17,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['googledrive'] = 'templates/backends/oauth.html';
 	EditUriBackendConfig.templates['hubic']       = 'templates/backends/oauth.html';
 	EditUriBackendConfig.templates['onedrive']    = 'templates/backends/oauth.html';
+	EditUriBackendConfig.templates['openstack']   = 'templates/backends/openstack.html';
 
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
@@ -100,6 +101,15 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.loaders['hubic']       = function() { return this['oauth-base'].apply(this, arguments); },
 	EditUriBackendConfig.loaders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); },
 
+	EditUriBackendConfig.loaders['openstack'] = function(scope) {
+		if (scope.openstack_providers == null) {
+			AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function(data) {
+				scope.openstack_providers = data.data.Result;
+
+			}, AppUtils.connectionError);
+		}
+	};
+
 
 	// Parsers take a decomposed uri input and sets up the scope variables
 	EditUriBackendConfig.parsers['file'] = function(scope, module, server, port, path, options) {
@@ -152,6 +162,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.parsers['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); },
 	EditUriBackendConfig.parsers['hubic']       = function() { return this['oauth-base'].apply(this, arguments); },
 	EditUriBackendConfig.parsers['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); }
+
+	EditUriBackendConfig.parsers['openstack'] = function(scope, module, server, port, path, options) {
+		scope.openstack_server = scope.openstack_server_custom = options['--openstack-authuri'];
+		scope.openstack_tenantname = options['--openstack-tenant-name'];
+		scope.openstack_apikey = options['--openstack-apikey'];
+		scope.openstack_region = options['--openstack-region'];
+
+		var nukeopts = ['--openstack-authuri', '--openstack-tenant-name', '--openstack-apikey', '--openstack-region'];
+		for(var x in nukeopts)
+			delete options[nukeopts[x]];
+
+		EditUriBackendConfig.mergeServerAndPath(scope);		
+	};
+
 
 
 	// Builders take the scope and produce the uri output
@@ -209,6 +233,33 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.builders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); },
 	EditUriBackendConfig.builders['hubic']       = function() { return this['oauth-base'].apply(this, arguments); },
 	EditUriBackendConfig.builders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); }
+
+
+	EditUriBackendConfig.builders['openstack'] = function(scope) {
+		var opts = {
+			'openstack-authuri': AppUtils.contains_value(scope.openstack_providers, scope.openstack_server) ? scope.openstack_server : scope.openstack_server_custom,
+			'openstack-tenant-name': scope.openstack_tenantname,
+			'openstack-apikey': scope.openstack_apikey,
+			'openstack-region': scope.openstack_region
+		};
+
+		if ((opts['openstack-tenant-name'] || '') == '')
+			delete opts['openstack-tenant-name'];
+		if ((opts['openstack-apikey'] || '') == '')
+			delete opts['openstack-apikey'];
+		if ((opts['openstack-region'] || '') == '')
+			delete opts['openstack-region'];
+
+		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+		var url = AppUtils.format('{0}://{1}{2}',
+			'openstack',
+			scope.Path,
+			AppUtils.encodeDictAsUrl(opts)
+		);
+
+		return url;
+	};
 
 	//EditUriBackendConfig.validaters['file'] = function(scope) { };
 
