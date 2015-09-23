@@ -1,5 +1,16 @@
 backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, EditUriBackendConfig, $http) {
 
+	EditUriBackendConfig.mergeServerAndPath = function(scope) {
+		if ((scope.Server || '') != '') {
+			var p = scope.Path;
+			scope.Path = scope.Server;
+			if ((p || '') != '') 
+				scope.Path += '/' + p;
+
+			delete scope.Server;
+		}
+	};
+
 	// All backends with a custom UI must register here
 	EditUriBackendConfig.templates['file']        = 'templates/backends/file.html';
 	EditUriBackendConfig.templates['s3']          = 'templates/backends/s3.html';
@@ -135,14 +146,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
 		delete options['--authid'];
 
-		if ((scope.Server || '') != '') {
-			var p = scope.Path;
-			scope.Path = scope.Server;
-			if ((p || '') != '') 
-				scope.Path += '/' + p;
-
-			delete scope.Server;
-		}
+		EditUriBackendConfig.mergeServerAndPath(scope);
 	};
 
 	EditUriBackendConfig.parsers['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); },
