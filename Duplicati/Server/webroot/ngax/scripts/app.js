@@ -32,6 +32,9 @@ backupApp.config(['$routeProvider',
             when('/api', {
                 templateUrl: 'templates/api.html'
             }).
+			when('/pause', {
+				templateUrl: 'templates/pause.html'
+			}).
 			otherwise({
 				templateUrl: 'templates/home.html'
 				//redirectTo: '/home'

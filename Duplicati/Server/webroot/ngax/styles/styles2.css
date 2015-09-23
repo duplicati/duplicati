@@ -272,4 +272,12 @@
 	color: #ff0000;
 }
 
+.pause a {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  display: block;
+  font-weight: 300;
+  font-size: 24px;
+}
+
 
