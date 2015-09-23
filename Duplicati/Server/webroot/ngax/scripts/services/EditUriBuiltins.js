@@ -18,6 +18,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['hubic']       = 'templates/backends/oauth.html';
 	EditUriBackendConfig.templates['onedrive']    = 'templates/backends/oauth.html';
 	EditUriBackendConfig.templates['openstack']   = 'templates/backends/openstack.html';
+	EditUriBackendConfig.templates['azure']       = 'templates/backends/azure.html';
 
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
@@ -176,6 +177,11 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		EditUriBackendConfig.mergeServerAndPath(scope);		
 	};
 
+	EditUriBackendConfig.parsers['azure'] = function(scope, module, server, port, path, options) {
+		EditUriBackendConfig.mergeServerAndPath(scope);
+	};
+
+
 
 
 	// Builders take the scope and produce the uri output
@@ -260,6 +266,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
 		return url;
 	};
+
+	EditUriBackendConfig.builders['azure'] = function(scope) {
+		var opts = { };
+
+		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+		var url = AppUtils.format('{0}://{1}{2}',
+			'azure',
+			scope.Path,
+			AppUtils.encodeDictAsUrl(opts)
+		);
+
+		return url;
+	};	
 
 	//EditUriBackendConfig.validaters['file'] = function(scope) { };
 
