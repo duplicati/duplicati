@@ -4,12 +4,12 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
 
         $scope.rawdata = data.data;
 
-        $scope.requireRemotePassword = data[''] != null && data.WebserverPassword != '';
-        $scope.remotePassword = data.WebserverPassword;
-        $scope.allowRemoteAccess = data['server-listen-interface'] != 'loopback';
-        $scope.startupDelayDurationValue = data['startup-delay'].substr(0, data['startup-delay'].length - 1);
-        $scope.startupDelayDurationMultiplier = data['startup-delay'].substr(-1);
-        $scope.advancedOptions = AppUtils.serializeAdvancedOptions(data);
+        $scope.requireRemotePassword = data.data[''] != null && data.data.WebserverPassword != '';
+        $scope.remotePassword = data.data.WebserverPassword;
+        $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
+        $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
+        $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
+        $scope.advancedOptions = AppUtils.serializeAdvancedOptions(data.data);
     }, AppUtils.connectionError);
 
 
