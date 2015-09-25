@@ -11,13 +11,13 @@
         <option value="">Custom server url ({{s3_server_custom}})</option>
     </select>
 
-    <input ng-hide="contains_value(s3_providers, s3_server)" type="text" id="s3_server_custom" ng-model="$parent.s3_server_custom" />
+    <input ng-hide="contains_value(s3_providers, s3_server)" type="text" id="s3_server_custom" ng-model="$parent.s3_server_custom" placeholder="Custom S3 endpoint"/>
 
 </div>
 
 <div class="input text">
     <label for="s3_bucket">Bucket name</label>
-    <input type="text" id="s3_bucket" ng-model="$parent.Server" />
+    <input type="text" id="s3_bucket" ng-model="$parent.Server" placeholder="Bucket name" />
 </div>
 
 
@@ -25,29 +25,29 @@
 
     <label for="s3_region">Bucket create region</label>
 
-    <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k">
+    <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k" title="The region parameter is only applied when creating a new bucket">
         <option value="">Custom region value</option>
     </select>
 
-    <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom" ng-model="$parent.s3_region_custom" />
+    <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom" ng-model="$parent.s3_region_custom" placeholder="Custom region for creating buckets"/>
 
 </div>
 
 <div class="input checkbox multple">
-    <input type="checkbox" id="s3_rrs" ng-model="$parent.s3_rrs" />
+    <input type="checkbox" id="s3_rrs" ng-model="$parent.s3_rrs" placeholder="Use S# Reduced Redundancy Storage" title="RRS reduces reliability for stored data, but at a cheaper cost" />
     <label for="s3_rrs">Use RRS</label>
 </div >
 
 <div class="input text">
     <label for="s3_path">Folder path</label>
-    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.Path" />
+    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.Path" placeholder="Path or subfolder in the bucket" />
 </div>
 
 <div class="input text">
     <label for="s3_username">AWS Access ID</label>
-    <input type="text" name="s3_username" id="s3_username" ng-model="$parent.Username" />
+    <input type="text" name="s3_username" id="s3_username" ng-model="$parent.Username" placeholder="AWS Access ID" />
 </div>
 <div class="input password">
     <label for="s3_password">AWS Access Key</label>
-    <input type="text" name="s3_password" id="s3_password" ng-model="$parent.Password" />
+    <input type="text" name="s3_password" id="s3_password" ng-model="$parent.Password" placeholder="AWS Access Key" />
 </div>

@@ -4,36 +4,36 @@
 </div>
 
 <div class="input text">
-    <label for="openstack_server">OpenStack Authuri</label>
+    <label for="openstack_server">OpenStack AuthURI</label>
 
     <select name="openstack_server" id="openstack_server" ng-model="$parent.openstack_server" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_providers | orderBy: k">
         <option value="">Custom server url ({{openstack_server_custom}})</option>
     </select>
 
-    <input ng-hide="contains_value(openstack_providers, openstack_server)" type="text" id="openstack_server_custom" ng-model="$parent.openstack_server_custom" />
+    <input ng-hide="contains_value(openstack_providers, openstack_server)" type="text" id="openstack_server_custom" ng-model="$parent.openstack_server_custom" placeholder="Custom authentication url" />
 
 </div>
 
 <div class="input text">
     <label for="openstack_username">Username</label>
-    <input type="text" name="openstack_username" id="openstack_username" ng-model="$parent.Username" />
+    <input type="text" name="openstack_username" id="openstack_username" ng-model="$parent.Username" placeholder="Authentication username"  />
 </div>
 <div class="input password">
     <label for="openstack_password">Password</label>
-    <input type="text" name="openstack_password" id="openstack_password" ng-model="$parent.Password" />
+    <input type="text" name="openstack_password" id="openstack_password" ng-model="$parent.Password" placeholder="Authentication password"  />
 </div>
 
 <div class="input text">
     <label for="openstack_tenantname">Tenant Name</label>
-    <input type="text" name="openstack_tenantname" id="openstack_tenantname" ng-model="$parent.openstack_tenantname" placeholder="optional tenant name" />
+    <input type="text" name="openstack_tenantname" id="openstack_tenantname" ng-model="$parent.openstack_tenantname" placeholder="optional tenant name" title="If you do not enter an API Key, the tenant name is required"/>
 </div>
 
 <div class="input text">
     <label for="openstack_apikey">API Key</label>
-    <input type="text" name="openstack_apikey" id="openstack_apikey" ng-model="$parent.openstack_apikey" placeholder="optional api key" />
+    <input type="text" name="openstack_apikey" id="openstack_apikey" ng-model="$parent.openstack_apikey" placeholder="optional api key" title="Some OpenStack providers allow an API key instead of a password and tenant name" />
 </div>
 
 <div class="input text">
     <label for="openstack_region">Container region</label>
-    <input type="text" name="openstack_region" id="openstack_region" ng-model="$parent.openstack_region" placeholder="optional region" />
+    <input type="text" name="openstack_region" id="openstack_region" ng-model="$parent.openstack_region" placeholder="optional region" title="The region parameter is only used when creating a bucket"/>
 </div>

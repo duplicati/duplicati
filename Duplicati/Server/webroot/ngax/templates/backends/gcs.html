@@ -18,7 +18,7 @@
         <option value="">Custom location ({{gcs_server_custom}})</option>
     </select>
 
-    <input ng-hide="contains_value(gcs_locations, gcs_location)" type="text" id="gcs_location_custom" ng-model="$parent.gcs_location_custom" />
+    <input ng-hide="contains_value(gcs_locations, gcs_location)" type="text" id="gcs_location_custom" ng-model="$parent.gcs_location_custom" placeholder="Location where buckets are created"/>
 
 </div>
 
@@ -29,13 +29,13 @@
         <option value="">Custom storage class ({{gcs_storageclass_custom}})</option>
     </select>
 
-    <input ng-hide="contains_value(gcs_storageclasses, gcs_storageclass)" type="text" id="gcs_storageclass_custom" ng-model="$parent.gcs_storageclass_custom" />
+    <input ng-hide="contains_value(gcs_storageclasses, gcs_storageclass)" type="text" id="gcs_storageclass_custom" ng-model="$parent.gcs_storageclass_custom" placeholder="Storage class for creating a bucket"/>
 
 </div>
 
 
 <div class="input text">
     <label for="gcs_path">GCS Project ID</label>
-    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.gcs_projectid" />
+    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.gcs_projectid" placeholder="ProjectID is optional if the bucket exist" />
 </div>
 
