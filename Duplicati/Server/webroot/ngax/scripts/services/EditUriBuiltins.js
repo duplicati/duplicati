@@ -349,7 +349,104 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		return url;
 	};	
 
-	//EditUriBackendConfig.validaters['file'] = function(scope) { };
+	EditUriBackendConfig.validaters['file'] = function(scope) {
+		return EditUriBackendConfig.require_path(scope);
+	};
+
+	EditUriBackendConfig.validaters['ftp'] = function(scope) {
+		var res = 
+			EditUriBackendConfig.require_server(scope) &&
+			EditUriBackendConfig.require_field(scope, 'Username', 'username') &&
+			EditUriBackendConfig.recommend_path(scope);
+
+		if (res && (scope.Password || '').trim().length == 0)
+			res = EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?');
+
+		return res;
+	};
+
+	EditUriBackendConfig.validaters['ssh'] = function(scope) {
+		var res =
+			EditUriBackendConfig.require_server(scope) &&
+			EditUriBackendConfig.require_username_and_password(scope) &&
+			EditUriBackendConfig.recommend_path(scope);
+
+		return res;
+	};
+
+	EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['ssh'];
+	EditUriBackendConfig.validaters['cloudfiles'] = EditUriBackendConfig.validaters['ssh'];
+	EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
+
+
+	EditUriBackendConfig.validaters['onedrive'] = function(scope) {
+		var res =
+			EditUriBackendConfig.require_field(scope, 'AuthID', 'AuthID') &&
+			EditUriBackendConfig.recommend_path(scope);
+
+		return res;
+	};
+
+	EditUriBackendConfig.validaters['hubic'] = EditUriBackendConfig.validaters['onedrive'];
+	EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['onedrive'];
+	EditUriBackendConfig.validaters['gcs'] = EditUriBackendConfig.validaters['onedrive'];
+
+	EditUriBackendConfig.validaters['azure'] = function(scope) {
+		var res =
+			EditUriBackendConfig.require_field(scope, 'Username', 'Account name') &&
+			EditUriBackendConfig.require_field(scope, 'Password', 'Access Key') &&
+			EditUriBackendConfig.require_field(scope, 'Path', 'Container name');
+
+		return res;
+	};
+
+	EditUriBackendConfig.validaters['openstack'] = function(scope) {
+		var res =
+			EditUriBackendConfig.require_field(scope, 'Username', 'username') &&
+			EditUriBackendConfig.require_field(scope, 'Path', 'bucket name');
+
+		if (res && (scope['openstack_server'] || '').trim().length == 0 && (scope['openstack_server_custom'] || '').trim().length == 0)
+			res = EditUriBackendConfig.show_error_dialog('You must select or fill in the AuthURI');
+
+		if (((scope.openstack_apikey) || '').trim().length == 0) {
+
+			if (res && (scope.Password || '').trim().length == 0)
+				res = EditUriBackendConfig.show_error_dialog('You must enter either a password or an API Key');
+
+			if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
+				res = EditUriBackendConfig.show_error_dialog('You must enter a tenant name if you do not provide an API Key');
+
+		} else {
+			if (res && (scope.Password || '').trim().length != 0)
+				res = EditUriBackendConfig.show_error_dialog('You must enter either a password or an API Key, not both');
+		}
+
+		return res;
+	};
+
+	EditUriBackendConfig.validaters['s3'] = function(scope) {
+		var res =
+			EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
+			EditUriBackendConfig.require_field(scope, 'Username', 'AWS Access ID') &&
+			EditUriBackendConfig.require_field(scope, 'Password', 'AWS Access Key');
+
+		if (res && (scope['s3_server'] || '').trim().length == 0 && (scope['s3_server_custom'] || '').trim().length == 0)
+			res = EditUriBackendConfig.show_error_dialog('You must select or fill in the server');
+
+		if (res && scope.Server.toLowerCase() != scope.Server) {
+			if (EditUriBackendConfig.show_warning_dialog('The bucket name should be all lower-case, convert automatically?'))
+				scope.Server = scope.Server.toLowerCase();
+			else
+				res = false;
+		}
+
+		if (res && scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0) {
+			if (EditUriBackendConfig.show_warning_dialog('The bucket name should start with your username, prepend automatically?'))
+				scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
+		}
+
+		return res;
+	};
 
 
 
