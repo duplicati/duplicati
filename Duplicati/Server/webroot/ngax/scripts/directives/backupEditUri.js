@@ -75,7 +75,12 @@ backupApp.directive('backupEditUri', function() {
                         }
                     }
                     else
+                    {
+                    	if (data.data != null && data.data.Message != null)
+                    		message = data.data.Message;
+                    	
                         alert('Failed to connect: ' + message);
+                    }
                 }
 
                 testConnection();
