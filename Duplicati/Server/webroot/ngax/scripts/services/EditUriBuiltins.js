@@ -242,8 +242,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		var url = AppUtils.format('{0}{1}://{2}/{3}{4}',
 			's3',
 			scope.UseSSL ? 's' : '',
-			scope.Server,
-			scope.Path,
+			scope.Server || '',
+			scope.Path || '',
 			AppUtils.encodeDictAsUrl(opts)
 		);
 
