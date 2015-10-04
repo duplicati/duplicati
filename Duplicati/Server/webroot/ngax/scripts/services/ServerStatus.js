@@ -1,6 +1,8 @@
 backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppService, AppUtils) {
 
-    var polltime = 5 * 60 * 1000;
+    var longpolltime = 5 * 60 * 1000;
+
+    var waitingfortask = {};
 
     var state = {
         lastEventId: -1,
@@ -12,10 +14,41 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         lastErrorMessage: null,
         connectionState: 'connected',
         xsfrerror: false,
-        connectionAttemptTimer: 0
+        connectionAttemptTimer: 0,
+        lastPgEvent: null
     };
 
     this.state = state;
+
+    this.progress_state_text = {
+        'Backup_Begin': 'Starting ...',
+        'Backup_PreBackupVerify': 'Verifying backend data ...',
+        'Backup_PostBackupTest': 'Verifying remote data ...',
+        'Backup_PreviousBackupFinalize': 'Completing previous backup ...',
+        'Backup_ProcessingFiles': null,
+        'Backup_Finalize': 'Completing backup ...',
+        'Backup_WaitForUpload': 'Waiting for upload ...',
+        'Backup_Delete': 'Deleting unwanted files ...',
+        'Backup_Compact': 'Compacting remote data ...',
+        'Backup_VerificationUpload': 'Uploadind verification file ...',
+        'Backup_PostBackupVerify': 'Verifying backend data ...',
+        'Backup_Complete': 'Finished!',
+        'Restore_Begin': 'Starting ...',
+        'Restore_RecreateDatabase': 'Rebuilding local database ...',
+        'Restore_PreRestoreVerify': 'Verifying remote data ...',
+        'Restore_CreateFileList': 'Building list of files to restore ...',
+        'Restore_CreateTargetFolders': 'Creating target folders ...',
+        'Restore_ScanForExistingFiles': 'Scanning existing files ...',
+        'Restore_ScanForLocalBlocks': 'Scanning for local blocks ...',
+        'Restore_PatchWithLocalBlocks': 'Patching files with local blocks ...',
+        'Restore_DownloadingRemoteFiles': 'Downloading files ...',
+        'Restore_PostRestoreVerify': 'Verifying restored files ...',
+        'Restore_Complete': 'Finished!',
+        'Recreate_Running': 'Recreating database ...',
+        'Repair_Running': 'Reparing ...',
+        'Verify_Running': 'Verifying ...',
+        'Error': 'Error!'
+    };
 
     this.watch = function(scope, m) {
         scope.$on('serverstatechanged', function() {
@@ -37,19 +70,72 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
     };
 
-    var retryTimer = null;
+    this.callWhenTaskCompletes = function(taskid, callback) {
+        if (waitingfortask[taskid] == null)
+            waitingfortask[taskid] = [];
+        waitingfortask[taskid].push(callback);
+    };
 
-    var countdownForForRePoll = function(m) {
-        if (retryTimer != null) {
-            window.clearInterval(retryTimer);
-            retryTimer = null;
+    var lastTaskId = null;
+    $rootScope.$on('serverstatechanged.activeTask', function() {
+        if (lastTaskId != null && waitingfortask[lastTaskId] != null) {
+            for(var i in waitingfortask[lastTaskId])
+                waitingfortask[lastTaskId][i]();
+            delete waitingfortask[lastTaskId];
+        }
+        if (state.activeTask == null)
+            lastTaskId = null;
+        else
+            lastTaskId = state.activeTask.Item1;
+    });
+
+    var progressPollTimer = null;
+    var progressPollInProgress = false;
+    var progressPollWait = 2000;
+
+    function startUpdateProgressPoll() {
+        if (progressPollInProgress)
+            return;
+
+        if (state.activeTask == null) {
+            if (progressPollTimer != null)
+                clearTimeout(progressPollTimer);
+            progressPollTimer = null;
+            state.lastPgEvent = null;
+        } else {
+            progressPollInProgress = true;
+
+            if (progressPollTimer != null)
+                clearTimeout(progressPollTimer);
+            progressPollTimer = null;
+
+            AppService.get('/progressstate').then(
+                function(resp) {
+                    state.lastPgEvent = resp.data;
+                    progressPollInProgress = false;
+                    progressPollTimer = setTimeout(startUpdateProgressPoll, progressPollWait);
+                },
+
+                function(resp) {
+                    progressPollInProgress = false;
+                    progressPollTimer = setTimeout(startUpdateProgressPoll, progressPollWait);
+                }
+            );
+        }
+    };
+
+    var longPollRetryTimer = null;
+    var countdownForForReLongPoll = function(m) {
+        if (longPollRetryTimer != null) {
+            window.clearInterval(longPollRetryTimer);
+            longPollRetryTimer = null;
         }
 
         var retryAt = new Date(new Date().getTime() + (state.xsfrerror ? 5000 : 15000));
         state.connectionAttemptTimer = new Date() - retryAt;
         $rootScope.$broadcast('serverstatechanged');
 
-        retryTimer = window.setInterval(function() {
+        longPollRetryTimer = window.setInterval(function() {
             state.connectionAttemptTimer = retryAt - new Date();
             if (state.connectionAttemptTimer <= 0)
                 m();
@@ -79,21 +165,19 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
     }
 
     var notifyIfChanged = function (data, dataname, varname) {
-        if (data[dataname] != null) {
-            if (state[varname] != data[dataname]) {
-                state[varname] = data[dataname];
-                $rootScope.$broadcast('serverstatechanged.' + varname, state[varname]);
-                return true;
-            }
+        if (state[varname] != data[dataname]) {
+            state[varname] = data[dataname];
+            $rootScope.$broadcast('serverstatechanged.' + varname, state[varname]);
+            return true;
         }
 
         return false;
     }
 
-    var poll = function() {
-        if (retryTimer != null) {
-            window.clearInterval(retryTimer);
-            retryTimer = null;
+    var longpoll = function() {
+        if (longPollRetryTimer != null) {
+            window.clearInterval(longPollRetryTimer);
+            longPollRetryTimer = null;
         }
 
         if (state.connectionState != 'connected') {
@@ -101,8 +185,8 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
             $rootScope.$broadcast('serverstatechanged');
         }
 
-        var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (state.lastEventId > 0 ? 'true' : 'false') + '&duration=' + parseInt((polltime-1000) / 1000) + 's';
-        AppService.get(url, {timeout: state.lastEventId > 0 ? polltime : 5000}).then(
+        var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (state.lastEventId > 0 ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
+        AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
             function (response) {
                 var anychanged =
                     notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
@@ -124,8 +208,11 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                 if (anychanged)
                     $rootScope.$broadcast('serverstatechanged');
 
+                if (state.activeTask != null)
+                    startUpdateProgressPoll();
 
-                poll();
+
+                longpoll();
             },
 
             function(respone) {
@@ -134,14 +221,14 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                     state.connectionState = 'connecting';
 
                     // Try again
-                    poll();
+                    longpoll();
                 } else {
 
                     // Real failure, start countdown
                     state.lastEventId = -1;
                     state.connectionState = 'disconnected';
 
-                    countdownForForRePoll(poll);
+                    countdownForForReLongPoll(longpoll);
                 }
 
                 // Notify
@@ -151,5 +238,5 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         );
     };
 
-    poll();
+    longpoll();
 });
