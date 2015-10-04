@@ -1,25 +1,49 @@
 <div class="restore" ng-controller="RestoreController">
     <form id="restore" class="styled">
-        <backup-edit-uri uri="TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
+        <div ng-show="restore_step == 0">
+            <backup-edit-uri uri="TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
 
-        <div ng-hide="EditUriState">
-            <h1>Restore files</h1>
-                <div class="input textarea linklabel">
-                    <label for="target"><a href class="target" ng-click="EditUriState = true">Connect to &gt;</a></label>
-                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Connect to&gt;' link"></textarea>
+            <div ng-hide="EditUriState">
+                <h1>Restore files</h1>
+                    <div class="input textarea linklabel">
+                        <label for="target"><a href class="target" ng-click="EditUriState = true">Connect to &gt;</a></label>
+                        <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Connect to&gt;' link"></textarea>
+                    </div>
+                <div class="input password">
+                    <label for="password">Passphrase</label>
+                    <input type="password" id="password" name="password" ng-model="EncryptionPassphrase" placeholder="Enter backup passphrase, if any" />
                 </div>
-            <div class="input password">
-                <label for="password">Passphrase</label>
-                <input type="password" id="password" name="password" placeholder="Enter backup passphrase, if any" />
+                <div class="input textarea">
+                    <label for="options">Advanced Options<span class="info">i</span></label>
+                    <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="Enter one option per line in command-line format, eg. --prefix=backup"></textarea>
+                </div>
+                <div class="buttons" ng-hide="connecting">
+                    <a href="#" id="cancel" class="submit">Cancel</a>
+                    <input type="button" id="save" class="submit" value="Connect" ng-click="doConnect()" />
+                </div>
+                <div ng-show="connecting">
+                    {{ConnectionProgress}}
+                </div>
             </div>
-            <div class="input textarea">
-                <label for="options">Advanced Options<span class="info">i</span></label>
-                <textarea id="options" name="options" placeholder="Enter one option per line in command-line format, eg. --prefix=backup"></textarea>
+        </div>
+
+        <div ng-show="restore_step == 1">
+            <h1>Restore files</h1>
+            <div class="input timestamp">
+                <label for="restoreversion">Restore from</label>
+
+                <select name="restoreversion" id="restoreversion" ng-model="RestoreVersion" ng-options="fs.Version as fs.DisplayLabel group by fs.GroupLabel for fs in Filesets | orderBy: ['Version']">
+                    
+                </select>
             </div>
-            <div class="buttons">
-                <a href="#" id="cancel" class="submit">Cancel</a>
-                <input type="button" id="save" class="submit" value="Connect" />
-            </div>
+
+
+        </div>
+
+        <div ng-show="restore_step == 2">
+        </div>
+
+        <div ng-show="restore_step == 3">
         </div>
     </form>
 </div>
