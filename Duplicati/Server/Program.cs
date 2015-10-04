@@ -58,6 +58,16 @@ namespace Duplicati.Server
         public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread;
 
         /// <summary>
+        /// List of completed task results
+        /// </summary>
+        public static List<KeyValuePair<long, Exception>> TaskResultCache = new List<KeyValuePair<long, Exception>>();
+
+        /// <summary>
+        /// The maximum number of completed task results to keep in memory
+        /// </summary>
+        private static int MAX_TASK_RESULT_CACHE_SIZE = 100;
+
+        /// <summary>
         /// The thread running the ping-pong handler
         /// </summary>
         public static System.Threading.Thread PingPongThread;
@@ -444,6 +454,28 @@ namespace Duplicati.Server
                 Program.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
                 Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task == null ? null : task.BackupID, "Error in worker", exception); };
+
+                Action<long, Exception> registerTaskResult = (id, ex) => {
+                    lock(Program.MainLock) {
+                        
+                        // If the new results says it crashed, we store that instead of success
+                        if (Program.TaskResultCache.Count > 0 && Program.TaskResultCache.Last().Key == id)
+                        {
+                            if (ex != null && Program.TaskResultCache.Last().Value == null)
+                                Program.TaskResultCache.RemoveAt(Program.TaskResultCache.Count - 1);
+                            else
+                                return;
+                        }
+                        
+                        Program.TaskResultCache.Add(new KeyValuePair<long, Exception>(id, ex));
+                        while(Program.TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
+                            Program.TaskResultCache.RemoveAt(0);
+                    }
+                };
+
+                Program.WorkThread.CompletedWork += (worker, task) => { registerTaskResult(task.TaskID, null); };
+                Program.WorkThread.OnError += (worker, task, exception) => { registerTaskResult(task.TaskID, exception); };
+
 
                 Program.WebServer = new WebServer.Server(commandlineOptions);
 
