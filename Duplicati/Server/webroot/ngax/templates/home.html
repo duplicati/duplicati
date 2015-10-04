@@ -1,20 +1,35 @@
 <div class="home">
-    <div class="state" ng-controller="StateController" ng-hide="state.programState == 'Running' &amp;&amp; state.ActiveTask == null &amp;&amp; (state.SchedulerQueueIds == null || state.SchedulerQueueIds.length == 0)">
+    <div class="state" ng-controller="StateController">
+
         <div ng-hide="state.programState == 'Running'">
             <strong style="margin-right: 0px;">Backups are currently paused,</strong>
             <div style="display: inline" ng-show="state.pauseTimeRemain > 0">resuming in {{state.pauseTimeRemain | timeremaining}}</div>
             <a href ng-click="sendResume()">click to resume now</a>
         </div>
 
-        <div ng-hide="state.ActiveTask == null">
-            <strong>Current task:</strong>
-            {{task}}
+        <div ng-hide="activeBackup == null">
+            <strong>Running backup</strong>
+            {{activeBackup.Backup.Name}}
+
+            <div class="progress" style="min-height: 30px; border: 1px solid;">
+                <span>{{ServerStatus.progress_state_text[state.lastPgEvent.Phase] || state.lastPgEvent.Phase}}</span>
+
+                <div class="progress-bar progress-bar-striped" ng-class="{active: state.lastPgEvent.OverallProgress <= 0}" role="progressbar" aria-valuenow="{{state.lastPgEvent.OverallProgress * 100}}" aria-valuemin="0" aria-valuemax="100" style="width:{{state.lastPgEvent.OverallProgress * 100}}%">
+                </div>
+            </div>
         </div>
 
-        <div ng-show="state.ActiveTask == null &amp;&amp; state.SchedulerQueueIds != null &amp;&amp; state.SchedulerQueueIds.length > 0">
+        <div ng-show="activeBackup == null &amp;&amp; state.activeTask != null">
+            <strong>Running task</strong>
+        </div>
+
+        <div ng-show="state.activeTask == null &amp;&amp; state.SchedulerQueueIds != null &amp;&amp; state.SchedulerQueueIds.length > 0">
             <strong>Next task:</strong>
             {{nexttask}}
         </div>
+
+        <div ng-show="state.activeTask == null &amp;&amp; (state.SchedulerQueueIds == null || state.SchedulerQueueIds.length == 0)">No scheduled tasks, you can manually start a task</div>
+
     </div>
 
     <div class="tasks" ng-controller="HomeController">
@@ -26,7 +41,7 @@
                     <dt>Last successful run:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}}</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
-                    Never - <a href="#c" class="action-link">Run now</a>
+                    Never - <a href class="action-link" ng-click="runBackup(item.Backup.ID)">Run now</a>
                     </dd>
 
                     <div ng-hide="item.Schedule == null">
