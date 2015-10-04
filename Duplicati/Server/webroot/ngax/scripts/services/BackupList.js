@@ -3,7 +3,7 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService) {
     var lookup = {};
 
     this.list = list;
-    this.lookup = {};
+    this.lookup = lookup;
 
     this.watch = function(scope, m) {
         scope.$on('backuplistchanged', function() {
@@ -28,7 +28,7 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService) {
 
             for (var i = 0; i < data.data.length; i++) {
                 list.push(data.data[i]);
-                lookup[data.data[i].ID] = data.data[i];
+                lookup[data.data[i].Backup.ID] = data.data[i];
             }
 
             $rootScope.$broadcast('backuplistchanged');
