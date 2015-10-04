@@ -156,6 +156,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     using(var tf = new Duplicati.Library.Utility.TempFile())
                         data.Backup.DBPath = tf;
 
+                    data.Backup.Filters = data.Backup.Filters ?? new Duplicati.Server.Serialization.Interface.IFilter[0];
+                    data.Backup.Settings = data.Backup.Settings ?? new Duplicati.Server.Serialization.Interface.ISetting[0];
+
                     Program.DataConnection.RegisterTemporaryBackup(data.Backup);
 
                     info.OutputOK(new { status = "OK", ID = data.Backup.ID });

@@ -297,7 +297,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     switch (operation)
                     {
                         case "files":
-                            SearchFiles(bk, parts.Last().Split(new char[] { '/' }, 2).LastOrDefault(), info);
+                            SearchFiles(bk, parts.Last().Split(new char[] { '/' }, 2).Skip(1).FirstOrDefault(), info);
                             return;
                         case "log":
                             FetchLogData(bk, info);
