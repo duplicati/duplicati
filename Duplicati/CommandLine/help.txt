@@ -12,7 +12,7 @@
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
   Commands: backup, find, restore, delete, compact, test, compare, repair
-  Debugging: debug, logging, create-report, test-filters
+  Debugging: debug, logging, create-report, test-filters, system-info
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
@@ -31,6 +31,14 @@ Show the last changes to Duplicati
   
   %MONO%"%APP_PATH%" changelog
 
+# =============================================================================
+> duplicati.commandline.exe help system-info
+
+Show system information as seen by Duplicati
+==================================
+  Issue the following command to see a variety of system information relevant to Duplicati. 
+  
+  %MONO%"%APP_PATH%" system-info
 
 > duplicati.commandline.exe help example
 > duplicati.commandline.exe help examples
@@ -395,8 +403,11 @@ Duplicati can send email notifications.
     Also send emails after other operations like restore etc.
 	
   Allowed placeholders are:
+    %PARSEDRESULT%
+      The parsed result op the operation: Success, Warning, Error
     %RESULT%
-	  The result/log of the backup
+	  When used in the body, this is the result/log of the backup, 
+      When used in the subject line, this is the same as %PARSEDRESULT%
     %OPERATIONNAME%
 	  The name of the operation, usually "backup", but could also be "restore" etc.
     %REMOTEURL%

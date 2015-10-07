@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main.Operation
                     long discardedBlocks = 0;
                     long discardedSize = 0;
                     byte[] buffer = new byte[m_options.Blocksize];
-                    var remoteList = db.GetRemoteVolumes().ToArray();
+                    var remoteList = db.GetRemoteVolumes().Where(n => n.State == RemoteVolumeState.Uploaded || n.State == RemoteVolumeState.Verified).ToArray();
 					
                     //These are for bookkeeping
                     var uploadedVolumes = new List<KeyValuePair<string, long>>();
@@ -216,9 +216,9 @@ namespace Duplicati.Library.Main.Operation
 					
 					deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, transaction));
 										
-					var downloadSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
-					var deletedSize = deletedVolumes.Aggregate(0L, (a,x) => a + x.Value);
-					var uploadSize = uploadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
+                    var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
+                    var deletedSize = deletedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
+                    var uploadSize = uploadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
 					
                     m_result.DeletedFileCount = deletedVolumes.Count;
                     m_result.DownloadedFileCount = downloadedVolumes.Count;

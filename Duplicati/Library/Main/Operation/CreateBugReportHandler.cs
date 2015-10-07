@@ -65,32 +65,8 @@ namespace Duplicati.Library.Main.Operation
                         Library.Utility.Utility.CopyStream(fs, cs);
                         
                     using(var cs = new System.IO.StreamWriter(cm.CreateFile("system-info.txt", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow)))
-                    {
-                        cs.WriteLine("Duplicati: {0} ({1})", Duplicati.Library.Utility.Utility.getEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
-                        cs.WriteLine("OS: {0}", Environment.OSVersion);
-                        cs.WriteLine("Uname: {0}", Duplicati.Library.Utility.Utility.UnameAll);
-                        
-                        cs.WriteLine("64bit: {0} ({1})", Environment.Is64BitOperatingSystem, Environment.Is64BitProcess);
-                        cs.WriteLine("Machinename: {0}", Environment.MachineName);
-                        cs.WriteLine("Processors: {0}", Environment.ProcessorCount);
-                        cs.WriteLine(".Net Version: {0}", Environment.Version);
-                        cs.WriteLine("Mono: {0} ({1}) ({2})", Duplicati.Library.Utility.Utility.IsMono, Duplicati.Library.Utility.Utility.MonoVersion, Duplicati.Library.Utility.Utility.MonoDisplayVersion);
-                        cs.WriteLine("Locale: {0}, {1}", System.Threading.Thread.CurrentThread.CurrentCulture, System.Threading.Thread.CurrentThread.CurrentUICulture);
-
-                        Type sqlite = null;
-                        string sqliteversion = "";
-
-                        try { sqlite = Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType; }
-                        catch { }
-                        
-                        if (sqlite != null)
-                        {
-                            try { sqliteversion = (string)sqlite.GetProperty("SQLiteVersion").GetValue(null, null); }
-                            catch { }
-                            
-                            cs.WriteLine("SQLite: {0} - {1}", sqliteversion, sqlite.FullName);
-                        }
-                    }
+                        foreach(var line in SystemInfoHandler.GetSystemInfo())
+                            cs.WriteLine(line);
                 }
 
                 m_result.TargetPath = m_targetpath;

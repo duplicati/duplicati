@@ -172,7 +172,7 @@ namespace Duplicati.Server.WebServer
 
             module = module.Trim('/');
 
-            var key = string.Join("/", request.Uri.Segments.Skip(API_URI_SEGMENTS + 1)).Trim('/');
+            var key = string.Join("", request.Uri.Segments.Skip(API_URI_SEGMENTS + 1)).Trim('/');
 
             var method = request.Method;
             if (!string.IsNullOrWhiteSpace(request.Headers["X-HTTP-Method-Override"]))

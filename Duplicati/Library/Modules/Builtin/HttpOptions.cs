@@ -35,7 +35,6 @@ namespace Duplicati.Library.Modules.Builtin
         private bool m_useNagle;
         private bool m_useExpect;
         private bool m_dispose;
-        private string m_oauthurl;
 
         #region IGenericModule Members
 

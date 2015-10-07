@@ -297,7 +297,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     switch (operation)
                     {
                         case "files":
-                            SearchFiles(bk, parts.Last().Split(new char[] { '/' }, 2).LastOrDefault(), info);
+                            SearchFiles(bk, parts.Last().Split(new char[] { '/' }, 2).Skip(1).FirstOrDefault(), info);
                             return;
                         case "log":
                             FetchLogData(bk, info);
@@ -403,6 +403,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
         public void PUT(string key, RequestInfo info)
         {
             string str = info.Request.Form["data"].Value;
+            if (string.IsNullOrWhiteSpace(str))
+                str = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8).ReadToEnd();
+
             if (string.IsNullOrWhiteSpace(str))
             {
                 info.ReportClientError("Missing backup object");

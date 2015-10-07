@@ -70,7 +70,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
             else
             {
-                filelist = List.SelectListFile(args[2], args[1]);
+                filelist = List.SelectListFile(args[2], folder);
             }
 
             Library.Main.Volumes.VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(filelist).Trim('.'), filelist, new Duplicati.Library.Main.Options(options));

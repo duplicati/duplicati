@@ -64,7 +64,7 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     try
                     {
-                        var p = Environment.ExpandEnvironmentVariables(_args[0].Replace("~", "%HOME%"));
+                        var p = Library.Utility.Utility.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
                                 where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#")
@@ -86,8 +86,7 @@ namespace Duplicati.CommandLine.BackendTester
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
-
+                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
 
                 if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
                 {

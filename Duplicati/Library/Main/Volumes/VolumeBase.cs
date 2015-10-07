@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main.Volumes
                     Prefix = m.Groups["prefix"].Value,
                     FileType = t,
                     Guid = m.Groups["guid"].Success ? m.Groups["guid"].Value : null,
-                    Time = m.Groups["time"].Success ? DateTime.ParseExact(m.Groups["time"].Value, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal).ToUniversalTime() : new DateTime(0, DateTimeKind.Utc),
+                    Time = m.Groups["time"].Success ? Library.Utility.Utility.DeserializeDateTime(m.Groups["time"].Value).ToUniversalTime() : new DateTime(0, DateTimeKind.Utc),
                     CompressionModule = m.Groups["compression"].Value,
                     EncryptionModule = m.Groups["encryption"].Success ? m.Groups["encryption"].Value : null,
                     File = file

@@ -43,7 +43,8 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception("Unspecified datetime instance, must be either local or UTC");
 
             // Make sure the resolution is the same (i.e. no milliseconds)
-            time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
+            if (time.Ticks > 0)
+                time = Library.Utility.Utility.DeserializeDateTime(Library.Utility.Utility.SerializeDateTime(time)).ToUniversalTime();
 
             return 
                 _lst =>
@@ -930,7 +931,7 @@ namespace Duplicati.Library.Main.Operation
                             ext = "." + ext;
                         
                         // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = m_systemIO.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd");
+                        var newname = m_systemIO.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
                         var tr = newname + ext;
                         var c = 0;
                         while (m_systemIO.FileExists(tr) && c < 1000)

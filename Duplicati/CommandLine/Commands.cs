@@ -278,13 +278,14 @@ namespace Duplicati.CommandLine
                 options.Remove("control-files");
                 
                 var res = controlFiles ? i.ListControlFiles(args, filter) : i.List(args, filter);
-                
+
                 //If there are no files matching, and we are looking for one or more files, 
                 // try again with all-versions set
+                var compareFilter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(args), filter);
                 var isRequestForFiles = 
                     !controlFiles && res.Filesets.Count() != 0 && 
                     (res.Files == null || res.Files.Count() == 0) && 
-                    !filter.Empty;
+                    !compareFilter.Empty;
                 
                 if (isRequestForFiles && !Library.Utility.Utility.ParseBoolOption(options, "all-versions"))
                 {
@@ -294,8 +295,8 @@ namespace Duplicati.CommandLine
                     options.Remove("version");
                     res = i.List(args, filter);
                 }
-                
-                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && filter.Empty)
+
+                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && compareFilter.Empty)
                 {
                     Console.WriteLine("Listing filesets:");
                     
@@ -306,6 +307,10 @@ namespace Duplicati.CommandLine
                         else
                             Console.WriteLine("{0}\t: {1}", e.Version, e.Time);
                     }
+                }
+                else if (isRequestForFiles)
+                {
+                    Console.WriteLine("No files matched expression");
                 }
                 else
                 {
@@ -404,6 +409,11 @@ namespace Duplicati.CommandLine
             for (var ix = 0; ix < args.Count; ix++)
                 if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("["))
                     args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
+
+            // suffix all folders with "*" so we restore all contents in the folder
+            for (var ix = 0; ix < args.Count; ix++)
+                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[") && args[ix].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                    args[ix] += "*";
             
             var output = new ConsoleOutput(options);
             output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));
@@ -805,6 +815,22 @@ namespace Duplicati.CommandLine
             
             return 0;
         }
+
+        public static int SystemInfo(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args != null && args.Count != 0)
+            {
+                Console.WriteLine("Command takes no arguments");
+                return 200;
+            }
+
+            using(var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(options)))
+                foreach(var line in i.SystemInfo().Lines)
+                    Console.WriteLine(line);    
+
+            return 0;
+        }
+
     }
 }
 

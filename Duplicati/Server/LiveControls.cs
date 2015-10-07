@@ -229,9 +229,9 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// Pauses the backups until resumed
+        /// Internal helper to set the pause mode
         /// </summary>
-        public void Pause()
+        private void SetPauseMode()
         {
             lock (m_lock)
             {
@@ -245,6 +245,24 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Pauses the backups until resumed
+        /// </summary>
+        public void Pause()
+        {
+            lock(m_lock)
+            {
+                var fireEvent = m_waitTimeExpiration.Ticks != 0 && m_state == LiveControlState.Paused && StateChanged != null;
+
+                ResetTimer(null);
+
+                if (fireEvent)
+                    StateChanged(this, null);
+                else
+                    SetPauseMode();
+            }
+        }
+
+        /// <summary>
         /// Resumes a backups to the running state
         /// </summary>
         public void Resume()
@@ -254,8 +272,7 @@ namespace Duplicati.Server
                 if (m_state == LiveControlState.Paused)
                 {
                     //Make sure that the timer is cleared
-                    m_waitTimeExpiration = new DateTime(0);
-                    m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+                    ResetTimer(null);
 
                     m_state = LiveControlState.Running;
                     if (StateChanged != null)
@@ -281,13 +298,14 @@ namespace Duplicati.Server
         {
             lock (m_lock)
             {
+                m_waitTimeExpiration = DateTime.Now.AddMilliseconds((long)timeout.TotalMilliseconds);
+                m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
+
                 //We change the time, so we issue a new event
                 if (m_state == LiveControlState.Paused && StateChanged != null)
                     StateChanged(this, null);
-
-                Pause();
-                m_waitTimeExpiration = DateTime.Now.AddMilliseconds((long)timeout.TotalMilliseconds);
-                m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
+                else
+                    SetPauseMode();
             }
         }
 
@@ -328,7 +346,7 @@ namespace Duplicati.Server
                 //If we are running, register as being paused due to suspending
                 if (this.m_state == LiveControlState.Running)
                 {
-                    this.Pause();
+                    this.SetPauseMode();
                     m_pausedForSuspend = true;
                     m_suspendMinimumPause = new DateTime(0);
                 }

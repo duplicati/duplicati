@@ -72,3 +72,11 @@ If [version] is omitted a list of backup versions are shown, if [version] is sup
 Use the filters, --exclude, to show a subset of files.
 
 
+Supported Options
+-----------------
+The backend modules support all their normal options.
+To see what options a specific backend supports, type:
+  Duplicati.CommandLine.exe help <backend>
+
+The environment variables AUTH_USERNAME and AUTH_PASSWORD are supported.
+The options --parameters-file and --tempdir are supported.
