@@ -1,4 +1,4 @@
-backupApp.controller('RestoreController', function ($scope, $routeParams, $location, AppService, AppUtils, SystemInfo) {
+backupApp.controller('RestoreController', function ($scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus) {
 
 	$scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -7,12 +7,13 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
     $scope.connecting = false;
     $scope.isTemporaryBackup = true;
 
-    $scope.TargetURL = 'file:///Users/kenneth/Udvikler/duplicati-git/Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug/testtarget';
-
     var filesetsBuilt = {};
     var filesetsRepaired = {};
     var filesetStamps = {};
     var inProgress = {};
+
+    $scope.filesetStamps = filesetStamps;
+    $scope.treedata = {};
 
     function createGroupLabel(dt) {
         var dateStamp = function(a) { return a.getFullYear() * 10000 + a.getMonth() * 100 + a.getDate(); }
@@ -90,7 +91,8 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 			function(resp) {
 				$scope.Filesets = resp.data;
 
-				filesetStamps = {};
+				for(var n in filesetStamps)
+					delete filesetStamps[n];
 
 				for(var n in $scope.Filesets) {
 					var item = $scope.Filesets[n];
@@ -132,14 +134,41 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 				$scope.ConnectionProgress = 'Fetching path information ...';
 				inProgress[version] = true;
 
-				AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'version': version}).then(
+				AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
 					function(resp) {
-						delete inProgress[version];
-						$scope.connecting = false;
-						$scope.ConnectionProgress = '';
 
-						filesetsRepaired[version] = true;
-						$scope.fetchPathInformation();
+						var taskid = resp.data.ID;
+						inProgress[version] = taskid;
+						$scope.taskid = taskid;
+
+						ServerStatus.callWhenTaskCompletes(taskid, function() {
+
+							AppService.get('/task/' + taskid).then(function(resp) {
+								delete inProgress[version];
+								$scope.connecting = false;
+								$scope.ConnectionProgress = '';
+
+								if (resp.data.Status == 'Completed')
+								{
+									filesetsRepaired[version] = true;
+									$scope.fetchPathInformation();
+								}
+								else
+								{
+									alert('Failed to fetch path information: ' + resp.data.ErrorMessage);
+								}
+
+							}, function(resp) {
+								delete inProgress[version];
+								$scope.connecting = false;
+								$scope.ConnectionProgress = '';
+
+				            	var message = resp.statusText;
+				            	if (resp.data != null && resp.data.Message != null)
+				            		message = resp.data.Message;
+								alert('Failed to fetch path information: ' + message);
+							});
+						});
 					},
 					function(resp) {
 						delete inProgress[version];
@@ -166,7 +195,7 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 						$scope.connecting = false;
 						$scope.ConnectionProgress = '';
 
-						filesetsBuilt[version] = resp.data;
+						filesetsBuilt[version] = resp.data.Files;
 						$scope.Paths = filesetsBuilt[version];
 					},
 					function(resp) {
@@ -188,5 +217,13 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 	};
 
 	$scope.$watch('RestoreVersion', function() { $scope.fetchPathInformation(); });
+
+	$scope.onClickNext = function() {
+		var results =  $scope.treedata.allSelected();
+		if (results.length == 0) {
+			alert('No items to restore, please select one or more items');
+			return;
+		}
+	}
 
 });

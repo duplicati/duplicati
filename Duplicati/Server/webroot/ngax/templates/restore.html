@@ -1,6 +1,7 @@
 <div class="restore" ng-controller="RestoreController">
     <form id="restore" class="styled">
-        <div ng-show="restore_step == 0">
+
+        <div ng-show="restore_step == 0 &amp;&amp; connecting == false">
             <backup-edit-uri uri="TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
 
             <div ng-hide="EditUriState">
@@ -18,8 +19,8 @@
                     <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="Enter one option per line in command-line format, eg. --prefix=backup"></textarea>
                 </div>
                 <div class="buttons" ng-hide="connecting">
-                    <a href="#" id="cancel" class="submit">Cancel</a>
-                    <input type="button" id="save" class="submit" value="Connect" ng-click="doConnect()" />
+                    <a href="#" class="submit">Cancel</a>
+                    <a href ng-click="doConnect()">Connect</a>
                 </div>
                 <div ng-show="connecting">
                     {{ConnectionProgress}}
@@ -27,7 +28,7 @@
             </div>
         </div>
 
-        <div ng-show="restore_step == 1">
+        <div ng-show="restore_step == 1 &amp;&amp; connecting == false">
             <h1>Restore files</h1>
             <div class="input timestamp">
                 <label for="restoreversion">Restore from</label>
@@ -37,13 +38,28 @@
                 </select>
             </div>
 
+            <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata">
+            </restore-file-picker>
+
+            <div class="buttons">
+                <a href class="submit" ng-click="onClickNext()">Continue</a>
+                <a href class="submit" ng-click="restore_step = 0">Back</a>
+            </div>
 
         </div>
 
-        <div ng-show="restore_step == 2">
+        <div ng-show="restore_step == 2 &amp;&amp; connecting == false">
         </div>
 
-        <div ng-show="restore_step == 3">
+        <div ng-show="restore_step == 3 &amp;&amp; connecting == false">
+        </div>
+
+        <div ng-show="connecting == true &amp;&amp; taskid != null">
+            <wait-area taskid="taskid" text="ConnectionProgress" ></wait-area taskid="taskid" text="ConnectionProgress">
+        </div>
+        
+        <div ng-show="connecting == true &amp;&amp; taskid == null">
+            {{ConnectionProgress}}
         </div>
     </form>
 </div>

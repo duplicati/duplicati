@@ -78,15 +78,15 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
 
     var lastTaskId = null;
     $rootScope.$on('serverstatechanged.activeTask', function() {
-        if (lastTaskId != null && waitingfortask[lastTaskId] != null) {
+        var currentTaskId = state.activeTask == null ? null : state.activeTask.Item1;
+
+        if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null) {
             for(var i in waitingfortask[lastTaskId])
                 waitingfortask[lastTaskId][i]();
             delete waitingfortask[lastTaskId];
         }
-        if (state.activeTask == null)
-            lastTaskId = null;
-        else
-            lastTaskId = state.activeTask.Item1;
+
+        lastTaskId = currentTaskId;
     });
 
     var progressPollTimer = null;
