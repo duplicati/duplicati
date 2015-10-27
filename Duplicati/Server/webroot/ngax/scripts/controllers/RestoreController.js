@@ -14,6 +14,7 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 
     $scope.filesetStamps = filesetStamps;
     $scope.treedata = {};
+    $scope.Selected = [];
 
     function createGroupLabel(dt) {
         var dateStamp = function(a) { return a.getFullYear() * 10000 + a.getMonth() * 100 + a.getDate(); }

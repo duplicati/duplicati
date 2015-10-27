@@ -1,0 +1,312 @@
+backupApp.directive('restoreFilePicker', function() {
+  	return {
+	    restrict: 'E',
+	    require: ['ngSources', 'ngFilters', 'ngBackupId', 'ngTimestamp', 'ngSelected'],
+	    scope: {
+	        ngSources: '=',
+	        ngFilters: '=',
+            ngBackupId: '=',
+            ngTimestamp: '=',
+            treedata: '=',
+            ngSelected: '='
+	    },
+	    templateUrl: 'templates/restorefilepicker.html',
+
+	    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils) {
+
+		    var scope = $scope;
+	    	$scope.systeminfo = SystemInfo.watch($scope);
+            $scope.treedata = [];
+
+            function compareablePath(path) {
+                return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
+            };
+
+            $scope.toggleExpanded = function(node) {
+                node.expanded = !node.expanded;
+
+                if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked')
+                    return;
+
+                if (!node.children && !node.loading) {
+                    node.loading = true;
+
+                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp)).then(function(data) {
+                        var children = []
+                        var dirsep = scope.systeminfo.DirectorySeparator || '/';
+
+                         for(var n in data.data.Files)
+                         {
+                            var disp = data.data.Files[n].Path.substr(node.id.length);
+                            var leaf = true;
+                            if (disp.substr(disp.length - 1, 1) == dirsep) {
+                                disp = disp.substr(0, disp.length - 1);
+                                leaf = false;
+                            }
+
+                            children.push({
+                                text: disp,
+                                id: data.data.Files[n].Path,
+                                size: data.data.Files[n].Sizes[0],
+                                leaf: leaf
+                            });
+                        }
+
+
+                        node.children = children;
+                        node.loading = false;
+
+                        propagateCheckDown(node);
+                        
+                    }, function() {
+                        node.loading = false;
+                        node.expanded = false;
+                        AppUtils.connectionError.apply(AppUtils, arguments);
+                    });
+                }
+            };
+
+            $scope.toggleSelected = function(node) {
+                if (scope.selectednode != null)
+                    scope.selectednode.selected = false;
+
+                scope.selectednode = node;
+                scope.selectednode.selected = true;
+            };
+
+            function forAllChildren(node, callback) {
+                var q = [node];
+                while(q.length > 0) {
+                    var x = q.pop();
+                    if (x.children != null)
+                        for(var c in x.children) {
+                            q.push(x.children[c]);
+                            callback(x.children[c]);
+                        }
+                }
+            };
+
+            function propagateCheckDown(node) {
+                forAllChildren(node, function(n) { n.include = node.include; });
+            };
+
+            function findParent(node) {
+                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
+                var e = [];
+                e.push.apply(e, $scope.treedata.children);
+                var p = compareablePath(node.id);
+
+                while(e.length > 0) {
+                    var el = e.pop();
+                    if (p.length > el.id.length && el.id.substr(el.length - 1, 1) == dirsep && el.children != null) {
+                        if (p.indexOf(compareablePath(el.id)) == 0) {
+                            for(var n in el.children) {
+                                if (el.children[n] == node)
+                                    return el;
+                                else
+                                    e.push(el.children[n]);
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            };
+
+            function propagateCheckUp(node) {
+                var p = findParent(node);
+                while(p != null) {
+                    var all = true;
+                    var any = false;
+                    for(var i in p.children) {
+                        if (p.children[i].include != '+')
+                            all = false;
+                        if (p.children[i].include == '+' || p.children[i].include == ' ')
+                            any = true;
+
+                        if (all == false && any == true)
+                            break;
+                    }
+
+                    if (all) {
+                        p.include = '+';
+                    } else if (any) {
+                        p.include = ' ';
+                    } else {
+                        p.include = '';
+                    }
+
+                    p = findParent(p);
+                }
+            };
+
+            function buildSelectedMap() {
+                var map = {};
+                for (var i = $scope.ngSelected.length - 1; i >= 0; i--)
+                    map[compareablePath($scope.ngSelected[i])] = true;
+                return map;                
+            };
+
+            function buildPartialMap() {
+                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
+                var map = {};
+                for (var i = $scope.ngSelected.length - 1; i >= 0; i--) {
+                    var is_dir = $scope.ngSelected[i].substr($scope.ngSelected[i].length - 1, 1) == dirsep;
+                    var parts = $scope.ngSelected[i].split(dirsep);
+                    var cur = '';
+                    for (var j = 0; j < parts.length; j++) {
+                        cur += parts[j];
+                        if (j != parts.length - 1 || is_dir)
+                            cur += '/';
+
+                        map[compareablePath(cur)] = true;
+                    };
+                }
+                return map;
+            };
+
+            function removePathFromArray(arr, path) {
+                path = compareablePath(path);
+
+                for (var i = arr.length - 1; i >= 0; i--) {
+                    var n = compareablePath(arr[i]);
+                    if (n == path)
+                        arr.splice(i, 1);
+                };                
+            };
+
+            $scope.toggleCheck = function(node) {
+                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
+
+                if (node.include != '+') {
+                    var p = findParent(node) || node;
+
+                    var cur = node;
+                    while(p != null) {
+                        // Remove path and all sub-paths
+
+                        var c = compareablePath(cur.id);
+                        var is_dir = c.substr(c.length - 1, 1) == dirsep;
+
+                        for (var i = $scope.ngSelected.length - 1; i >= 0; i--) {
+                            var n = compareablePath($scope.ngSelected[i]);
+                            if (n == c || (n.indexOf(c) == 0 && is_dir))
+                                $scope.ngSelected.splice(i, 1);
+                        };
+
+                        var all = true;
+                        var pp = compareablePath(p.id);
+                        var map = buildSelectedMap();
+                        map[compareablePath(cur.id)] = true;
+
+                        for (var i = p.children.length - 1; i >= 0; i--)
+                            if (!map[compareablePath(p.children[i].id)]) {
+                                all = false;
+                                break;
+                            }
+
+                        if (!all  || p == node) {
+                            $scope.ngSelected.push(cur.id);
+                            break;
+                        }
+
+                        cur = p;
+                        p = findParent(p);
+                    }
+
+                } else {
+
+                    var map = buildSelectedMap();
+
+                    // This item is not included, include parents children
+
+                    var backtrace = [];
+
+                    var p = node;                        
+                    while(p != null && !map[compareablePath(p.id)]) {
+                        backtrace.push(p);
+                        p = findParent(p);
+                    }
+
+                    removePathFromArray($scope.ngSelected, p.id);
+
+                    while(backtrace.length > 0) {
+                        var t = backtrace.pop();
+                        for(var n in p.children)
+                            if (t != p.children[n]) {
+                                $scope.ngSelected.push(p.children[n].id);
+                            }
+
+                        p = t;
+                    }
+                }
+
+                //updateCheckState();
+            };
+
+            var updateCheckState = function() {
+                var map = buildSelectedMap();                
+                var partialmap = buildPartialMap();
+
+                var w = [];
+                w.push.apply(w, $scope.treedata.children);
+
+                while(w.length > 0) {
+                    var n = w.pop();
+                    var cp = compareablePath(n.id);
+
+                    if (map[cp]) {
+                        n.include = '+';
+                        propagateCheckDown(n);
+                    } else if (partialmap[cp]) {
+                        n.include = ' ';
+                        if (n.children != null)
+                            w.push.apply(w, n.children);
+                    }
+                    else {
+                        n.include = '';
+                        propagateCheckDown(n);
+                    }
+                }
+            };
+
+            var updateRoots = function()
+            {
+                var roots = [];
+                for(var n in $scope.ngSources)
+                    roots.push({
+                        text: $scope.ngSources[n].Path,
+                        expanded: false,
+                        id: $scope.ngSources[n].Path
+                    });
+
+                $scope.treedata = $scope.treedata || {};
+
+                $scope.treedata.children = roots;
+                $scope.treedata.forAll = function(callback) { forAllChildren(this, callback); };
+                $scope.treedata.allSelected = function() {
+                    var q = [];
+                    var r = [];
+                    q.push.apply(q, this.children);
+                    while(q.length > 0) {
+                        var n = q.pop();
+                        if (n.include == '+')
+                            r.push(n.id);
+                        else if (n.include == ' ')
+                            q.push.apply(q, n.children);
+                    }
+
+                    return r;
+                };
+                if (roots.length == 1)
+                     $scope.toggleExpanded(roots[0]);
+            };
+
+            //$scope.$watchCollection('ngSources', updateRoots);
+            updateRoots();
+
+            $scope.$watchCollection('ngSelected', updateCheckState)
+            
+	    }
+	};
+});
