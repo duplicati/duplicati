@@ -334,5 +334,10 @@ body .container .body .content .tasks .tasklist a.action-link {
   padding-top: 2px;
 }
 
+.ui-match {
+  font-weight: bold;
+  color: darkgreen;
+}
+
 
 

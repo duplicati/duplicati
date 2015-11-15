@@ -38,193 +38,212 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 
         for(var t in dateBuckets)
             if (stamp >= dateBuckets[t].stamp)
-            	return dateBuckets[t].text;
+                return dateBuckets[t].text;
 
         return dt.getFullYear() + '';
     };
 
-	$scope.HideEditUri = function() {
-		$scope.EditUriState = false;
-	};
+    $scope.HideEditUri = function() {
+        $scope.EditUriState = false;
+    };
 
-	$scope.doConnect = function() {
-		$scope.connecting = true;
-		$scope.ConnectionProgress = 'Registering temporary backup ...';
+    $scope.doConnect = function() {
+        $scope.connecting = true;
+        $scope.ConnectionProgress = 'Registering temporary backup ...';
 
-		var opts = {};
-		var obj = {'Backup': {'TargetURL':  $scope.TargetURL } };
+        var opts = {};
+        var obj = {'Backup': {'TargetURL':  $scope.TargetURL } };
 
-		if (($scope.EncryptionPassphrase || '') == '')
-			opts['--no-encryption'] = 'true';
-		else
-			opts['passphrase'] = $scope.EncryptionPassphrase;
+        if (($scope.EncryptionPassphrase || '') == '')
+            opts['--no-encryption'] = 'true';
+        else
+            opts['passphrase'] = $scope.EncryptionPassphrase;
 
-		if (!AppUtils.parse_extra_options($scope.ExtendedOptions, opts))
-			return false;
+        if (!AppUtils.parse_extra_options($scope.ExtendedOptions, opts))
+            return false;
 
-		obj.Backup.Settings = [];
-		for(var k in opts) {
-			obj.Backup.Settings.push({
-				Name: k,
-				Value: opts[k]
-			});
-		}
+        obj.Backup.Settings = [];
+        for(var k in opts) {
+            obj.Backup.Settings.push({
+                Name: k,
+                Value: opts[k]
+            });
+        }
 
-		AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
-			function(resp) {
-				$scope.ConnectionProgress = 'Listing backup dates ...';
-				$scope.BackupID = resp.data.ID;
-				$scope.fetchBackupTimes();
-			}, function(resp) {
-            	var message = resp.statusText;
-            	if (resp.data != null && resp.data.Message != null)
-            		message = resp.data.Message;
+        AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
+            function(resp) {
+                $scope.ConnectionProgress = 'Listing backup dates ...';
+                $scope.BackupID = resp.data.ID;
+                $scope.fetchBackupTimes();
+            }, function(resp) {
+                var message = resp.statusText;
+                if (resp.data != null && resp.data.Message != null)
+                    message = resp.data.Message;
 
-				$scope.connecting = false;
-				$scope.ConnectionProgress = '';
-				alert('Failed to connect: ' + message);
-			}
-		);
-	};
+                $scope.connecting = false;
+                $scope.ConnectionProgress = '';
+                alert('Failed to connect: ' + message);
+            }
+        );
+    };
 
-	$scope.fetchBackupTimes = function() {
-		AppService.get('/backup/' + $scope.BackupID + '/filesets').then(
-			function(resp) {
-				$scope.Filesets = resp.data;
+    $scope.fetchBackupTimes = function() {
+        AppService.get('/backup/' + $scope.BackupID + '/filesets').then(
+            function(resp) {
+                $scope.Filesets = resp.data;
 
-				for(var n in filesetStamps)
-					delete filesetStamps[n];
+                for(var n in filesetStamps)
+                    delete filesetStamps[n];
 
-				for(var n in $scope.Filesets) {
-					var item = $scope.Filesets[n];
-					item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
-					item.GroupLabel = n == 0 ? 'Latests' : createGroupLabel(AppUtils.parseDate(item.Time));
+                for(var n in $scope.Filesets) {
+                    var item = $scope.Filesets[n];
+                    item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
+                    item.GroupLabel = n == 0 ? 'Latests' : createGroupLabel(AppUtils.parseDate(item.Time));
 
-					filesetStamps[item.Version + ''] = item.Time;
-				}
+                    filesetStamps[item.Version + ''] = item.Time;
+                }
 
-				$scope.RestoreVersion = 0;
-				$scope.restore_step = 1;
-				$scope.connecting = false;
-				$scope.ConnectionProgress = '';
+                $scope.RestoreVersion = 0;
+                $scope.restore_step = 1;
+                $scope.connecting = false;
+                $scope.ConnectionProgress = '';
 
-				$scope.fetchPathInformation();
-			},
+                $scope.fetchPathInformation();
+            },
 
-			function(resp) {
-            	var message = resp.statusText;
-            	if (resp.data != null && resp.data.Message != null)
-            		message = resp.data.Message;
+            function(resp) {
+                var message = resp.statusText;
+                if (resp.data != null && resp.data.Message != null)
+                    message = resp.data.Message;
 
-				$scope.connecting = false;
-				$scope.ConnectionProgress = '';
-				alert('Failed to connect: ' + message);
-			}
-		);
-	};
+                $scope.connecting = false;
+                $scope.ConnectionProgress = '';
+                alert('Failed to connect: ' + message);
+            }
+        );
+    };
 
-	$scope.fetchPathInformation = function() {
-		var version = $scope.RestoreVersion + '';
+    $scope.fetchPathInformation = function() {
+        var version = $scope.RestoreVersion + '';
 
-		if (inProgress[version] || $scope.restore_step != 1)
-			return;
+        if (inProgress[version] || $scope.restore_step != 1)
+            return;
 
-		if (filesetsBuilt[version] == null) {
-			if ($scope.isTemporaryBackup && filesetsRepaired[version] == null) {
-				$scope.connecting = true;
-				$scope.ConnectionProgress = 'Fetching path information ...';
-				inProgress[version] = true;
+        if (filesetsBuilt[version] == null) {
+            if ($scope.isTemporaryBackup && filesetsRepaired[version] == null) {
+                $scope.connecting = true;
+                $scope.ConnectionProgress = 'Fetching path information ...';
+                inProgress[version] = true;
 
-				AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
-					function(resp) {
+                AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
+                    function(resp) {
 
-						var taskid = resp.data.ID;
-						inProgress[version] = taskid;
-						$scope.taskid = taskid;
+                        var taskid = resp.data.ID;
+                        inProgress[version] = taskid;
+                        $scope.taskid = taskid;
 
-						ServerStatus.callWhenTaskCompletes(taskid, function() {
+                        ServerStatus.callWhenTaskCompletes(taskid, function() {
 
-							AppService.get('/task/' + taskid).then(function(resp) {
-								delete inProgress[version];
-								$scope.connecting = false;
-								$scope.ConnectionProgress = '';
+                            AppService.get('/task/' + taskid).then(function(resp) {
+                                delete inProgress[version];
+                                $scope.connecting = false;
+                                $scope.ConnectionProgress = '';
 
-								if (resp.data.Status == 'Completed')
-								{
-									filesetsRepaired[version] = true;
-									$scope.fetchPathInformation();
-								}
-								else
-								{
-									alert('Failed to fetch path information: ' + resp.data.ErrorMessage);
-								}
+                                if (resp.data.Status == 'Completed')
+                                {
+                                    filesetsRepaired[version] = true;
+                                    $scope.fetchPathInformation();
+                                }
+                                else
+                                {
+                                    alert('Failed to fetch path information: ' + resp.data.ErrorMessage);
+                                }
 
-							}, function(resp) {
-								delete inProgress[version];
-								$scope.connecting = false;
-								$scope.ConnectionProgress = '';
+                            }, function(resp) {
+                                delete inProgress[version];
+                                $scope.connecting = false;
+                                $scope.ConnectionProgress = '';
 
-				            	var message = resp.statusText;
-				            	if (resp.data != null && resp.data.Message != null)
-				            		message = resp.data.Message;
-								alert('Failed to fetch path information: ' + message);
-							});
-						});
-					},
-					function(resp) {
-						delete inProgress[version];
+                                var message = resp.statusText;
+                                if (resp.data != null && resp.data.Message != null)
+                                    message = resp.data.Message;
+                                alert('Failed to fetch path information: ' + message);
+                            });
+                        });
+                    },
+                    function(resp) {
+                        delete inProgress[version];
 
-		            	var message = resp.statusText;
-		            	if (resp.data != null && resp.data.Message != null)
-		            		message = resp.data.Message;
+                        var message = resp.statusText;
+                        if (resp.data != null && resp.data.Message != null)
+                            message = resp.data.Message;
 
-						$scope.connecting = false;
-						$scope.ConnectionProgress = '';
-						alert('Failed to connect: ' + message);
-					}
-				);
+                        $scope.connecting = false;
+                        $scope.ConnectionProgress = '';
+                        alert('Failed to connect: ' + message);
+                    }
+                );
 
-			} else {
-				var stamp = filesetStamps[version];
-				$scope.connecting = true;
-				$scope.ConnectionProgress = 'Fetching path information ...';
-				inProgress[version] = true;
+            } else {
+                var stamp = filesetStamps[version];
+                $scope.connecting = true;
+                $scope.ConnectionProgress = 'Fetching path information ...';
+                inProgress[version] = true;
 
-				AppService.get('/backup/' + $scope.BackupID + '/files/*?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
-					function(resp) {
-						delete inProgress[version];
-						$scope.connecting = false;
-						$scope.ConnectionProgress = '';
+                AppService.get('/backup/' + $scope.BackupID + '/files/*?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
+                    function(resp) {
+                        delete inProgress[version];
+                        $scope.connecting = false;
+                        $scope.ConnectionProgress = '';
 
-						filesetsBuilt[version] = resp.data.Files;
-						$scope.Paths = filesetsBuilt[version];
-					},
-					function(resp) {
-						delete inProgress[version];
-		            	var message = resp.statusText;
-		            	if (resp.data != null && resp.data.Message != null)
-		            		message = resp.data.Message;
+                        filesetsBuilt[version] = resp.data.Files;
+                        $scope.Paths = filesetsBuilt[version];
+                    },
+                    function(resp) {
+                        delete inProgress[version];
+                        var message = resp.statusText;
+                        if (resp.data != null && resp.data.Message != null)
+                            message = resp.data.Message;
 
-						$scope.connecting = false;
-						$scope.ConnectionProgress = '';
-						alert('Failed to connect: ' + message);
-					}
-				);
-			}
+                        $scope.connecting = false;
+                        $scope.ConnectionProgress = '';
+                        alert('Failed to connect: ' + message);
+                    }
+                );
+            }
 
-		} else {
-			$scope.Paths = filesetsBuilt[version];
-		}
-	};
+        } else {
+            $scope.Paths = filesetsBuilt[version];
+        }
+    };
 
-	$scope.$watch('RestoreVersion', function() { $scope.fetchPathInformation(); });
+    $scope.$watch('RestoreVersion', function() { $scope.fetchPathInformation(); });
 
-	$scope.onClickNext = function() {
-		var results =  $scope.treedata.allSelected();
-		if (results.length == 0) {
-			alert('No items to restore, please select one or more items');
-			return;
-		}
-	}
+    $scope.onClickNext = function() {
+        var results =  $scope.treedata.allSelected();
+        if (results.length == 0) {
+            alert('No items to restore, please select one or more items');
+            return;
+        }
+    };
+
+    $scope.doSearch = function() {
+        var stamp = filesetStamps[$scope.RestoreVersion + ''];
+
+        AppService.get('/backup/' + $scope.BackupID + '/files/*' + $scope.SearchFilter + '*?prefix-only=false&time=' + encodeURIComponent(stamp)).then(
+            function(resp) {
+                //alert(resp.data.Files);
+            },
+            function(resp) {
+                var message = resp.statusText;
+                if (resp.data != null && resp.data.Message != null)
+                    message = resp.data.Message;
+
+                $scope.connecting = false;
+                $scope.ConnectionProgress = '';
+                alert('Failed to connect: ' + message);
+            }
+        );
+    };
 
 });

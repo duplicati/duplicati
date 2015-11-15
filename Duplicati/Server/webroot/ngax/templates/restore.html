@@ -6,10 +6,10 @@
 
             <div ng-hide="EditUriState">
                 <h1>Restore files</h1>
-                    <div class="input textarea linklabel">
-                        <label for="target"><a href class="target" ng-click="EditUriState = true">Connect to &gt;</a></label>
-                        <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Connect to&gt;' link"></textarea>
-                    </div>
+                <div class="input textarea linklabel">
+                    <label for="target"><a href class="target" ng-click="EditUriState = true">Connect to &gt;</a></label>
+                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Connect to&gt;' link"></textarea>
+                </div>
                 <div class="input password">
                     <label for="password">Passphrase</label>
                     <input type="password" id="password" name="password" ng-model="EncryptionPassphrase" placeholder="Enter backup passphrase, if any" />
@@ -38,9 +38,14 @@
                 </select>
             </div>
 
-            <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected">
-            </restore-file-picker>
+            <div class="input text search overlayButton multiple" style="max-width: none">
+                <label for="searchfilter">Search for files</label>
+                <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="Type to highlight files" />
+                <a href id="searchfiltersubmit" class="button" ng-click="doSearch()">Search</a>
+            </div>
 
+            <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected" ng-search-filter="SearchFilter">
+            </restore-file-picker>
             <div class="buttons">
                 <a href class="submit" ng-click="onClickNext()">Continue</a>
                 <a href class="submit" ng-click="restore_step = 0">Back</a>

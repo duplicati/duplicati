@@ -3,7 +3,8 @@ var backupApp = angular.module(
     [
         'ngRoute', 
         'btford.modal', 
-        'dotjem.angular.tree'
+        'dotjem.angular.tree',
+        'ngSanitize'
     ]
 );
 

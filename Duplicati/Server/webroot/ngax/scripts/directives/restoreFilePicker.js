@@ -8,7 +8,8 @@ backupApp.directive('restoreFilePicker', function() {
             ngBackupId: '=',
             ngTimestamp: '=',
             treedata: '=',
-            ngSelected: '='
+            ngSelected: '=',
+            ngSearchFilter: '='
 	    },
 	    templateUrl: 'templates/restorefilepicker.html',
 
