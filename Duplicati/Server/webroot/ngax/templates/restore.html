@@ -54,7 +54,61 @@
 
         </div>
 
-        <div ng-show="restore_step == 2 &amp;&amp; connecting == false">
+        <div ng-show="restore_step == 2 &amp;&amp; connecting == false" width="auto">
+            <h1>Restore options</h1>
+
+            <h2>Where do you want to restore the files to?</h2>
+            <div class="input checkbox multiple leftflush">
+                <input id="restoretooriginalpath" type="radio" name="restorelocation" ng-model="RestoreLocation" value="direct" />
+                <label for="restoretooriginalpath">Original location</label>
+            </div>
+            <div class="input checkbox multiple leftflush">
+                <input id="restoretonewpath" type="radio" name="restorelocation" ng-model="RestoreLocation" value="custom" />
+                <label for="restoretonewpath">Pick location</label>
+            </div>
+
+            <div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
+                <label for="restore_path">Folder path</label>
+                <input type="text" name="restore_path" id="restore_path" ng-model="RestorePath" placeholder="Enter the destination path" />
+                <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false">Browse</a>
+            </div>
+
+            <div class="input text" ng-hide="HideFolderBrowser">
+
+                <div class="input" style="padding-bottom: 0px">
+                    <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">{{ShowHiddenFolders ? 'Hide' : 'Show'}} hidden folders</a>
+
+                    <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;">Manually type path</a>
+                </div>
+                
+                <label for="folder_path_picker">Folder path</label>
+                <destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="RestorePath" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
+            </div>
+
+            <h2>How do you want to handle existing files?</h2>
+            <div class="input checkbox multiple leftflush">
+                <input type="radio" id="restoreoverwrite" name="restoreoverwrite" ng-model="RestoreMode" value="overwrite" />
+                <label for="restoreoverwrite">Overwrite</label>
+            </div>
+            <div class="input checkbox multiple leftflush">
+                <input type="radio" id="restorenewcopy" name="restoreoverwrite" ng-model="RestoreMode" value="copy"  />
+                <label for="restorenewcopy">Save different versions with timestamp in file name</label>
+            </div>
+
+
+
+            <h2>Permissions</h2>
+            <div class="input checkbox leftflush">
+                <input type="checkbox" id="readwritepermissions" />
+                <label for="readwritepermissions">Restore read/write permissions</label>
+                
+            </div>
+
+            <div class="buttons">
+                <a href class="submit" ng-click="onStartRestore()">Restore</a>
+                <a href class="submit" ng-click="restore_step = 1">Back</a>
+            </div>
+
         </div>
 
         <div ng-show="restore_step == 3 &amp;&amp; connecting == false">

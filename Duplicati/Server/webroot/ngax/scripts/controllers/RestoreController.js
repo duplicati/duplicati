@@ -6,6 +6,9 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
     $scope.restore_step = 0;
     $scope.connecting = false;
     $scope.isTemporaryBackup = true;
+    $scope.HideFolderBrowser = true;
+    $scope.RestoreLocation = 'direct';
+    $scope.RestoreMode = 'overwrite';
 
     var filesetsBuilt = {};
     var filesetsRepaired = {};
@@ -227,11 +230,20 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 
     $scope.$watch('RestoreVersion', function() { $scope.fetchPathInformation(); });
 
+    $scope.$watch('RestorePath', function() {
+        if (($scope.RestorePath || '').trim().length == 0)
+            $scope.RestoreLocation = 'direct';
+        else
+            $scope.RestoreLocation = 'custom';
+    });
+
     $scope.onClickNext = function() {
-        var results =  $scope.Selected();
+        var results =  $scope.Selected;
         if (results.length == 0) {
             alert('No items to restore, please select one or more items');
             return;
+        } else {
+            $scope.restore_step = 2;
         }
     };
 

@@ -340,4 +340,13 @@ body .container .body .content .tasks .tasklist a.action-link {
 }
 
 
+form.styled div.leftflush input {
+  width: auto;
+  margin-top: 10px;
+}
+
+form.styled div.leftflush label {
+  width: auto;
+  min-width: 190px;
+}
 
