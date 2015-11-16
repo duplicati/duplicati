@@ -66,6 +66,9 @@ CREATE TABLE "FilesetEntry" (
 	"Lastmodified" INTEGER NOT NULL
 );
 
+/* Improved lookup for joining Fileset and File table */
+CREATE UNIQUE INDEX "FilesetentryIndex" on "FilesetEntry" ("FilesetID", "FileID");
+
 /*
 The FileEntry contains an ID
 for each path and each version
@@ -220,4 +223,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (3);
+INSERT INTO "Version" ("Version") VALUES (4);

@@ -69,7 +69,10 @@ namespace Duplicati.Library.Main.Database
 				var args = tmp.Item2;
                 
                 using(var cmd = m_connection.CreateCommand())
+                {
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FilesetIDTimestampIndex"" ON ""{0}"" (""FilesetID"", ""Timestamp"" DESC)", m_tablename));
+                }
             }
             
             private class Fileset : IFileset
@@ -232,6 +235,8 @@ namespace Duplicati.Library.Main.Database
                                 c2.SetParameterValue(0, n);
                                 c2.ExecuteNonQuery();
                             }
+
+                            c2.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_PathIndex"" ON ""{0}"" (""Path"")", tbname));
                         }
                         
                         //Then we select the matching results
