@@ -54,7 +54,12 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempblocktable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_tempblocktable));
-                        
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_Index"" ON ""{0}"" (""TargetPath"")", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_tempblocktable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_IndexIndex"" ON ""{0}"" (""Index"")", m_tempblocktable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_RestoredMetadataIndex"" ON ""{0}"" (""Restored"", ""Metadata"")", m_tempblocktable));
+
+
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, restore everything
@@ -553,6 +558,7 @@ namespace Duplicati.Library.Main.Database
                     c.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ( ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL )", m_tmptable);
                     c.ExecuteNonQuery();
 
+
                     c.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Hash"", ""Size"") VALUES (?,?)", m_tmptable);
                     c.AddParameters(2);
                     foreach (var s in curvolume.Blocks)
@@ -561,6 +567,11 @@ namespace Duplicati.Library.Main.Database
                         c.SetParameterValue(1, s.Value);
                         c.ExecuteNonQuery();
                     }
+
+                    c.CommandText = string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_tmptable);
+                    c.Parameters.Clear();
+                    c.ExecuteNonQuery();
+
                 }
             }
 
@@ -758,6 +769,9 @@ namespace Duplicati.Library.Main.Database
                 m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
                 m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_updateTable));
+                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_updateTable));
+                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_IndexIndex"" ON ""{0}"" (""Index"")", m_updateTable));
+
                 m_insertblockCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Metadata"") VALUES (?, ?, ?, ?, ?) ", m_updateTable);
                 m_insertblockCommand.AddParameters(5);
                                 
