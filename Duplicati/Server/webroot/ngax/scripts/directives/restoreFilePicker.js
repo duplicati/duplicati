@@ -9,7 +9,8 @@ backupApp.directive('restoreFilePicker', function() {
             ngTimestamp: '=',
             treedata: '=',
             ngSelected: '=',
-            ngSearchFilter: '='
+            ngSearchFilter: '=',
+            ngSearchMode: '='
 	    },
 	    templateUrl: 'templates/restorefilepicker.html',
 
@@ -57,7 +58,7 @@ backupApp.directive('restoreFilePicker', function() {
                         node.children = children;
                         node.loading = false;
 
-                        propagateCheckDown(node);
+                        updateCheckState(children);
                         
                     }, function() {
                         node.loading = false;
@@ -206,7 +207,7 @@ backupApp.directive('restoreFilePicker', function() {
                                 break;
                             }
 
-                        if (!all  || p == node) {
+                        if (!all  || p == node || $scope.ngSearchMode) {
                             $scope.ngSelected.push(cur.id);
                             break;
                         }
@@ -245,9 +246,11 @@ backupApp.directive('restoreFilePicker', function() {
                 //updateCheckState();
             };
 
-            var updateCheckState = function() {
+            var updateCheckState = function(nodes) {
                 var map = buildSelectedMap();                
                 var partialmap = buildPartialMap();
+
+                nodes = nodes || $scope.treedata.children;
 
                 var w = [];
                 w.push.apply(w, $scope.treedata.children);
@@ -271,15 +274,39 @@ backupApp.directive('restoreFilePicker', function() {
                 }
             };
 
+            var buildnodes = function(items, parentpath) {
+                var res = [];
+                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
+
+                parentpath = parentpath || '';
+
+                for(var n in items) {
+                    var txt = items[n].Path.substr(parentpath.length);
+                    if (txt[txt.length] == dirsep)
+                        txt.length--;
+
+                    var rootnode = {
+                        text: txt,
+                        expanded: items[n].expanded,
+                        iconCls: items[n].iconCls,
+                        leaf: items[n].leaf,
+                        id: items[n].Path
+                    };
+                    
+                    if (items[n].Children) {
+                        rootnode.children = buildnodes(items[n].Children, items[n].Path);
+                        delete items[n].Children;
+                    }
+
+                    res.push(rootnode);
+                }
+
+                return res;
+            };
+
             var updateRoots = function()
             {
-                var roots = [];
-                for(var n in $scope.ngSources)
-                    roots.push({
-                        text: $scope.ngSources[n].Path,
-                        expanded: false,
-                        id: $scope.ngSources[n].Path
-                    });
+                var roots = buildnodes($scope.ngSources) ;
 
                 $scope.treedata = $scope.treedata || {};
 
@@ -301,9 +328,11 @@ backupApp.directive('restoreFilePicker', function() {
                 };
                 if (roots.length == 1)
                      $scope.toggleExpanded(roots[0]);
+
+                 updateCheckState();
             };
 
-            //$scope.$watchCollection('ngSources', updateRoots);
+            $scope.$watchCollection('ngSources', updateRoots);
             updateRoots();
 
             $scope.$watchCollection('ngSelected', updateCheckState)

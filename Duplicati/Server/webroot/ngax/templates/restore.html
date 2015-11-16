@@ -40,12 +40,13 @@
 
             <div class="input text search overlayButton multiple" style="max-width: none">
                 <label for="searchfilter">Search for files</label>
-                <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="Type to highlight files" />
-                <a href id="searchfiltersubmit" class="button" ng-click="doSearch()">Search</a>
+                <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="Type to highlight files" ng-on-enter-press="doSearch()" ng-on-escape-press="clearSearch()" />
+                <a href id="searchfiltersubmit" class="button" ng-click="doSearch()" ng-cancelsearch="clearSearch()" ng-enabled="!Searching">{{ Searching ? 'Busy...' : 'Search' }}</a>
             </div>
 
-            <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected" ng-search-filter="SearchFilter">
+            <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected" ng-search-filter="SearchFilter" ng-search-mode="InSearchMode">
             </restore-file-picker>
+            <!-- <div ng-repeat="value in Selected" >{{value}}</div> -->
             <div class="buttons">
                 <a href class="submit" ng-click="onClickNext()">Continue</a>
                 <a href class="submit" ng-click="restore_step = 0">Back</a>

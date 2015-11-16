@@ -1,6 +1,6 @@
 backupApp.controller('RestoreController', function ($scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus) {
 
-	$scope.SystemInfo = SystemInfo.watch($scope);
+    $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
 
     $scope.restore_step = 0;
@@ -72,6 +72,14 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 
         AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
             function(resp) {
+
+                // Reset current state
+                filesetsBuilt = {};
+                filesetsRepaired = {};
+                filesetStamps = {};
+                inProgress = {};
+                $scope.filesetStamps = filesetStamps;
+
                 $scope.ConnectionProgress = 'Listing backup dates ...';
                 $scope.BackupID = resp.data.ID;
                 $scope.fetchBackupTimes();
@@ -220,21 +228,96 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
     $scope.$watch('RestoreVersion', function() { $scope.fetchPathInformation(); });
 
     $scope.onClickNext = function() {
-        var results =  $scope.treedata.allSelected();
+        var results =  $scope.Selected();
         if (results.length == 0) {
             alert('No items to restore, please select one or more items');
             return;
         }
     };
 
+    $scope.clearSearch = function() {
+        $scope.InSearchMode = false;
+        $scope.fetchPathInformation();
+    };
+
     $scope.doSearch = function() {
-        var stamp = filesetStamps[$scope.RestoreVersion + ''];
+        if ($scope.Searching || $scope.restore_step != 1)
+            return;
+
+        if (($scope.SearchFilter || '').trim().length == 0) {
+            $scope.clearSearch();
+            return;
+        }
+
+        $scope.Searching = true;
+
+        var version = $scope.RestoreVersion + '';
+        var stamp = filesetStamps[version];
 
         AppService.get('/backup/' + $scope.BackupID + '/files/*' + $scope.SearchFilter + '*?prefix-only=false&time=' + encodeURIComponent(stamp)).then(
             function(resp) {
-                //alert(resp.data.Files);
+                $scope.Searching = false;
+                var searchNodes = [];
+                var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
+
+                function compareablePath(path) {
+                    return $scope.SystemInfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
+                };
+    
+                for(var i in filesetsBuilt[version])
+                    searchNodes[i] = { Path: filesetsBuilt[version][i].Path };
+
+                var files = resp.data.Files;
+                for(var i in files) {
+                    var p = files[i].Path;
+                    var cp = compareablePath(p);
+                    var isdir = p[p.length - 1] == dirsep;
+
+                    for(var j in searchNodes) {
+                        var sn = searchNodes[j];
+                        if (cp.indexOf(compareablePath(sn.Path)) == 0) {
+                            var curpath = sn.Path;
+                            var parts = p.substr(sn.Path.length).split(dirsep);
+                            var col = sn;
+
+                            for(var k in parts) {
+                                var found = false;
+                                curpath += parts[k];
+                                if (isdir || k != parts.length - 1)
+                                    curpath += dirsep;
+
+                                if (!col.Children)
+                                    col.Children = [];
+
+                                for(var m in col.Children) {
+                                    if (compareablePath(col.Children[m].Path) == compareablePath(curpath)) {
+                                        found = true;
+                                        col = col.Children[m];                                    
+                                    }
+                                }
+
+                                if (!found) {
+                                    var n = { Path: curpath, expanded: true };
+                                    if (!isdir && k == parts.length - 1) {
+                                        n.iconCls = 'x-tree-icon-leaf';
+                                        n.leaf = true;
+                                    }
+
+                                    col.Children.push(n);
+                                    col = n;
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                $scope.Paths = searchNodes;
+                $scope.InSearchMode = true;
             },
             function(resp) {
+                $scope.Searching = false;
                 var message = resp.statusText;
                 if (resp.data != null && resp.data.Message != null)
                     message = resp.data.Message;
