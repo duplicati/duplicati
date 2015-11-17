@@ -1,12 +1,15 @@
 using Duplicati.Library.Localization.Short;
+using System;
+
+
 namespace Duplicati.Library.Utility.Strings {
     internal static class Sizeparser {
         public static string InvalidSizeValueError(string value) { return LC.L(@"Invalid size value: {0}", value); }
     }
     internal static class SslCertificateValidator {
         public static string InvalidCallSequence { get { return LC.L(@"The SSL certificate validator was called in an incorrect order"); } }
-        public static string VerifyCertificateException(System.Net.Security.SslPolicyErrors error, string hash) { return LC.L(@"The server certificate had the error {0} and the hash {1}
-Use the commandline option --accept-specified-ssl-hash={1} to accept the server certificate anyway", error, hash); }
+        public static string MonoHelpSSL { get { return LC.L(@"{0}You may want to import a set of trusted certificates into the Mono certificate store.{0}Use the command:{0}    mozroots --import --sync{0}Read more: {1}", Environment.NewLine, "http://manpages.ubuntu.com/manpages/natty/man1/mozroots.1.html"); } }
+        public static string VerifyCertificateException(System.Net.Security.SslPolicyErrors error, string hash) { return LC.L(@"The server certificate had the error {0} and the hash {1}{2}If you trust this certificate, use the commandline option --accept-specified-ssl-hash={1} to accept the server certificate anyway.{2}You can also attempt to import the server certificate into your operating systems trust pool.", error, hash, Environment.NewLine); }
         public static string VerifyCertificateHashError(System.Exception exception, System.Net.Security.SslPolicyErrors error) { return LC.L(@"Failed while validating certificate hash, error message: {0}, Ssl error name: {1}", exception, error); }
     }
     internal static class TempFolder {
