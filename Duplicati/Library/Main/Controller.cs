@@ -150,9 +150,22 @@ namespace Duplicati.Library.Main
                         }
 						else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                         {
-                            result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
-                            filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
-                            
+                            bool includes;
+                            bool excludes;
+
+                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+
+                            // If there are no excludes, there is no need to keep the folder as a filter
+                            if (excludes)
+                            {
+                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                            }
+                            else
+                            {
+                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
+                            }
+
                             sources.RemoveAt(i);
                             i--;
                             break;
