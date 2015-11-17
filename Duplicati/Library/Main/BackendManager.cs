@@ -797,11 +797,10 @@ namespace Duplicati.Library.Main
             }
             catch (Exception ex)
             {
-                var isFileMissingException = ex is Library.Interface.FileMissingException;
-                var wex = ex as System.Net.WebException;
+                var isFileMissingException = ex is Library.Interface.FileMissingException || ex is System.IO.FileNotFoundException;
                 var wr = ex as System.Net.WebException == null ? null : (ex as System.Net.WebException).Response as System.Net.HttpWebResponse;
 
-                if (ex is Library.Interface.FileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
+                if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
                     m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex);
                     bool success = false;
