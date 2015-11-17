@@ -46,7 +46,8 @@ namespace Duplicati.Library.Main
             List,
             Delete,
             CreateFolder,
-            Terminate
+            Terminate,
+            Nothing
         }
 
         public interface IDownloadWaitHandle
@@ -437,6 +438,9 @@ namespace Duplicati.Library.Main
                                         break;
                                     case OperationType.Terminate:
                                         m_queue.SetCompleted();
+                                        break;
+                                    case OperationType.Nothing:
+                                        item.SignalComplete();
                                         break;
                                 }
 
@@ -1037,6 +1041,22 @@ namespace Duplicati.Library.Main
                 item.WaitForComplete();
 
         	m_db.FlushDbMessages(db, transation);
+
+            if (m_lastException != null)
+                throw m_lastException;
+        }
+
+        public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)
+        {
+            m_db.FlushDbMessages(db, transation);
+            if (m_lastException != null)
+                throw m_lastException;
+
+            var item = new FileEntryItem(OperationType.Nothing, null);
+            if (m_queue.Enqueue(item))
+                item.WaitForComplete();
+
+            m_db.FlushDbMessages(db, transation);
 
             if (m_lastException != null)
                 throw m_lastException;
