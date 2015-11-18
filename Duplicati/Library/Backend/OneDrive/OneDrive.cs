@@ -208,7 +208,7 @@ namespace Duplicati.Library.Backend
                 m_fileidCache.TryGetValue(name, out id);
 
                 if (string.IsNullOrWhiteSpace(id) && throwIfMissing)
-                    throw new System.IO.FileNotFoundException(Strings.OneDrive.FileNotFoundError, name);
+                    throw new FileMissingException(Strings.OneDrive.FileNotFoundError(name));
             }
 
             return id;

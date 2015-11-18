@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Database
 				
 		public interface IBlockQuery : IDisposable
 		{
-			bool UseBlock(string hash, long size);
+            bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction);
 		}
 		
 		private class BlockQuery : IBlockQuery
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main.Database
 				m_command.AddParameters(2);
 			}
 			
-			public bool UseBlock(string hash, long size)
+            public bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction)
 			{
 				if (m_lookup != null)
 				{
@@ -308,6 +308,7 @@ namespace Duplicati.Library.Main.Database
                         return false;
 				}
 				
+                m_command.Transaction = transaction;
 				m_command.SetParameterValue(0, hash);	
 				m_command.SetParameterValue(1, size);
 				var r = m_command.ExecuteScalar();

@@ -46,7 +46,8 @@ namespace Duplicati.Library.Main
             List,
             Delete,
             CreateFolder,
-            Terminate
+            Terminate,
+            Nothing
         }
 
         public interface IDownloadWaitHandle
@@ -438,6 +439,9 @@ namespace Duplicati.Library.Main
                                     case OperationType.Terminate:
                                         m_queue.SetCompleted();
                                         break;
+                                    case OperationType.Nothing:
+                                        item.SignalComplete();
+                                        break;
                                 }
 
                             lastException = null;
@@ -797,11 +801,10 @@ namespace Duplicati.Library.Main
             }
             catch (Exception ex)
             {
-                var isFileMissingException = ex is Library.Interface.FileMissingException;
-                var wex = ex as System.Net.WebException;
+                var isFileMissingException = ex is Library.Interface.FileMissingException || ex is System.IO.FileNotFoundException;
                 var wr = ex as System.Net.WebException == null ? null : (ex as System.Net.WebException).Response as System.Net.HttpWebResponse;
 
-                if (ex is Library.Interface.FileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
+                if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
                     m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex);
                     bool success = false;
@@ -1038,6 +1041,22 @@ namespace Duplicati.Library.Main
                 item.WaitForComplete();
 
         	m_db.FlushDbMessages(db, transation);
+
+            if (m_lastException != null)
+                throw m_lastException;
+        }
+
+        public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)
+        {
+            m_db.FlushDbMessages(db, transation);
+            if (m_lastException != null)
+                throw m_lastException;
+
+            var item = new FileEntryItem(OperationType.Nothing, null);
+            if (m_queue.Enqueue(item))
+                item.WaitForComplete();
+
+            m_db.FlushDbMessages(db, transation);
 
             if (m_lastException != null)
                 throw m_lastException;

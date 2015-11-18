@@ -1,4 +1,7 @@
 using Duplicati.Library.Localization.Short;
+using System;
+
+
 namespace Duplicati.Library.Modules.Builtin.Strings {
     internal static class ConsolePasswordInput {
         public static string ConfirmPassphrasePrompt { get { return LC.L(@"Confirm encryption passphrase"); } }
@@ -7,6 +10,11 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string EmptyPassphraseError { get { return LC.L(@"Empty passphrases are not allowed"); } }
         public static string EnterPassphrasePrompt { get { return LC.L(@"Enter encryption passphrase"); } }
         public static string PassphraseMismatchError { get { return LC.L(@"The passphrases do not match"); } }
+    }
+    internal static class CheckMonoSSL {
+        public static string Description { get { return LC.L(@"When running with Mono, this module will check if any certificates are installed and suggest installing them otherwise"); } }
+        public static string Displayname { get { return LC.L(@"Check for SSL certificates"); } }
+        public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with this command:{0}    mozroots --import --sync{0}Read more: {1}", Environment.NewLine, "http://manpages.ubuntu.com/manpages/natty/man1/mozroots.1.html"); } }
     }
     internal static class HttpOptions {
         public static string Description { get { return LC.L(@"This module exposes a number of properties that can be used to change the way http requests are issued"); } }
