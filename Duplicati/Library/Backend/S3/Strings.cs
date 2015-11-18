@@ -32,5 +32,9 @@ namespace Duplicati.Library.Backend.Strings {
         public static string S3NewStyleDeprecation { get { return LC.L(@"The subdomain calling option does nothing, the library will pick the right calling convention"); } }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this flag to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
+
+        public static string S3StorageclassDescriptionLong { get { return LC.L(@"Use this option to specify a storage class. If this option is not used, the server will choose a default storage class."); } }
+        public static string S3StorageclassDescriptionShort { get { return LC.L(@"Specify storage class"); } }
+        public static string S3RRSDeprecationDescription(string optionname, string optionvalue) { return LC.L(@"Please use --{0}={1} instead", optionname, optionvalue); }
     }
 }

@@ -33,7 +33,8 @@ namespace Duplicati.Library.Backend
         {
             Providers,
             Regions,
-            RegionHosts
+            RegionHosts,
+            StorageClasses
         }
 
         public S3Config()
@@ -59,6 +60,8 @@ namespace Duplicati.Library.Backend
                     return S3.DEFAULT_S3_LOCATION_BASED_HOSTS.ToDictionary((x) => x.Key, (y) => y.Value);
                 case ConfigType.Regions:
                     return S3.KNOWN_S3_LOCATIONS.ToDictionary((x) => x.Key, (y) => y.Value);
+                case ConfigType.StorageClasses:
+                    return S3.KNOWN_S3_STORAGE_CLASSES.ToDictionary((x) => x.Key, (y) => y.Value);
                 default:
                     return S3.KNOWN_S3_PROVIDERS.ToDictionary((x) => x.Key, (y) => y.Value);
             }
