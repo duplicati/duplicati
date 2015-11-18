@@ -18,6 +18,7 @@
 // 
 #endregion
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,6 +29,7 @@ namespace Duplicati.Library.Backend
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         public const string RRS_OPTION = "s3-use-rrs";
+        public const string STORAGECLASS_OPTION = "s3-storage-class";
         public const string EU_BUCKETS_OPTION = "s3-european-buckets";
         public const string SERVER_NAME = "s3-server-name";
         public const string LOCATION_OPTION = "s3-location-constraint";
@@ -65,14 +67,55 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
             new KeyValuePair<string, string>("ap-northeast-1", "s3-ap-northeast-1.amazonaws.com"),
             new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
-
         };
+
+        public static readonly KeyValuePair<string, string>[] KNOWN_S3_STORAGE_CLASSES;
+
+        static S3() {
+            var ns = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("Standard", "STANDARD"),
+                new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
+                new KeyValuePair<string, string>("Glacier", "GLACIER"),
+                new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),
+            };
+
+            try
+            {
+                foreach(var sc in ReadStorageClasses())
+                    if (!ns.Select(x => x.Value).Contains(sc.Value))
+                        ns.Add(sc);
+            }
+            catch
+            {
+            }
+
+            KNOWN_S3_STORAGE_CLASSES = ns.ToArray();
+        }
+
+        /// <summary>
+        /// Fetch storage classes from the API through reflection so we are always updated
+        /// </summary>
+        /// <returns>The storage classes.</returns>
+        private static IEnumerable<KeyValuePair<string, string>> ReadStorageClasses()
+        {
+            foreach(var f in typeof(Amazon.S3.S3StorageClass).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public))
+            {
+                if (f.FieldType == typeof(Amazon.S3.S3StorageClass))
+                {
+                    var name = new Regex("([a-z])([A-Z])").Replace(f.Name, "$1 $2");
+                    var prop = f.GetValue(null) as Amazon.S3.S3StorageClass;
+                    if (prop != null && prop.Value != null)
+                        yield return new KeyValuePair<string, string>(name, prop.Value);
+                }
+            }
+        }
 
         private string m_bucket;
         private string m_prefix;
 
         public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
         public const string S3_EU_REGION_NAME = "eu-west-1";
+        public const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
 
         private Dictionary<string, string> m_options;
 
@@ -126,6 +169,11 @@ namespace Duplicati.Library.Backend
 
             if (euBuckets)
                 locationConstraint = S3_EU_REGION_NAME;
+
+            string storageClass;
+            options.TryGetValue(STORAGECLASS_OPTION, out storageClass);
+            if (string.IsNullOrWhiteSpace(storageClass) && useRRS)
+                storageClass = S3_RRS_CLASS_NAME;
 
             string s3host;
             options.TryGetValue(SERVER_NAME, out s3host);
@@ -194,7 +242,7 @@ namespace Duplicati.Library.Backend
             if (m_prefix.Length != 0 && !m_prefix.EndsWith("/"))
                 m_prefix += "/";
 
-            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, useRRS, useSSL);
+            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL);
         }
 
         public static bool IsValidHostname(string bucketname)
@@ -322,7 +370,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"auth-password"}, null),
                     new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
                     new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false", null, null, Strings.S3Backend.S3EurobucketDeprecationDescription(LOCATION_OPTION, S3_EU_REGION_NAME)),
-                    new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false"),
+                    new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false", null, null, Strings.S3Backend.S3RRSDeprecationDescription(STORAGECLASS_OPTION, S3_RRS_CLASS_NAME)),
+                    new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3StorageclassDescriptionShort, Strings.S3Backend.S3StorageclassDescriptionLong),
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),

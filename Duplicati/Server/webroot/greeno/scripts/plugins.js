@@ -237,9 +237,12 @@ $(document).ready(function() {
         passwordwatermark: 'AWS Secret Key',
         serverdrop_field: null,
         regiondrop_field: null,
+        storageclassdrop_field: null,        
         bucket_field: null,
+
         known_hosts: null,
         known_regions: null,
+        known_storage_classes: null,
 
         setup_hosts_after_config: function() {
             if (this.known_hosts != null && this.serverdrop_field != null)
@@ -276,6 +279,23 @@ $(document).ready(function() {
             }
         },
 
+        setup_storage_classes_after_config: function() {
+            if (this.known_storage_classes != null && this.storageclassdrop_field != null) {
+                var buckets = [];
+                for (var k in this.known_storage_classes)
+                    buckets.push({label: k + ' (' + this.known_storage_classes[k] + ')', value: this.known_storage_classes[k]});
+                
+                this.storageclassdrop_field.autocomplete({
+                    minLength: 0,
+                    source: buckets, 
+                });
+                var self = this;
+                this.storageclassdrop_field.click(function() {  
+                    self.storageclassdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
         setup: function(dlg, div) {
             var self = this;
 
@@ -285,7 +305,7 @@ $(document).ready(function() {
             var serverdrop = EDIT_URI.createFieldset({label: 'S3 servername', name: 's3-server', after: $('#server-path'), watermark: 'Click for a list of providers'});
             var bucketfield = EDIT_URI.createFieldset({label: 'S3 Bucket name', name: 's3-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
             var regiondrop = EDIT_URI.createFieldset({label: 'Bucket create region', name: 's3-region', before: $('#server-options-label'), watermark: 'Click for a list of regions', title: 'Note that region is only used when creating buckets'});
-            var rrscheck = EDIT_URI.createFieldset({'label': 'Use RRS', name: 's3-rrs', type: 'checkbox', before: $('#server-options-label'), title: 'Reduced Redundancy Storage is cheaper, but less reliable'});
+            var storageclassdrop = EDIT_URI.createFieldset({label: 'Storage class', name: 's3-storage-class', after: regiondrop.outer, watermark: 'Click for a list of storage classes'});
             var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: this.PLUGIN_S3_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
 
             signuplink.outer.css('margin-bottom', '10px');
@@ -293,6 +313,8 @@ $(document).ready(function() {
             this.serverdrop_field = serverdrop.field;
             this.regiondrop_field = regiondrop.field;
             this.bucket_field = bucketfield.field;
+            this.storageclassdrop_field = storageclassdrop.field;
+
 
             if (self.known_hosts == null) {
                 APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Providers'}, function(data) {
@@ -317,6 +339,19 @@ $(document).ready(function() {
             } else {
                 this.setup_regions_after_config();
             }            
+
+            if (self.known_storage_classes == null) {
+                APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'StorageClasses'}, function(data) {
+                    self.known_storage_classes = data.Result;
+                    self.setup_storage_classes_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get S3 config: ' + message);
+                });
+            } else {
+                this.setup_storage_classes_after_config();
+            }            
+
         },
 
         cleanup: function(dlg, div) {
@@ -324,7 +359,18 @@ $(document).ready(function() {
             $('#server-path').show();
             this.serverdrop_field = null;
             this.regiondrop_field = null;
+            this.storageclassdrop_field = null;
             this.bucket_field = null;
+        },
+
+        fill_form: function(el, cfg) {
+            // Upgrade from checkbox to string
+            if (APP_UTIL.parseBoolOption(cfg['--s3-use-rrs']) && !cfg['--s3-location-constraint']) {
+                delete cfg['--s3-use-rrs'];
+                cfg['--s3-location-constraint'] = 'REDUCED_REDUNDANCY';
+            }
+
+            EDIT_URI.fill_form(el, cfg);
         },
 
         validate: function(dlg, values) {
@@ -356,14 +402,14 @@ $(document).ready(function() {
         fill_form_map: {
             'server-path': 's3-bucket',
             '--s3-server-name': 's3-server',
-            '--s3-use-rrs': 's3-rrs',
+            '--s3-storage-class': 's3-storage-class',
             '--s3-location-constraint': 's3-region'
         },
 
         fill_dict_map: {
             's3-bucket': 'server-path',
             's3-server': '--s3-server-name',
-            's3-rrs': '--s3-use-rrs',
+            's3-storage-class': '--s3-storage-class',
             's3-region': '--s3-location-constraint'
         }
     }
