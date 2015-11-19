@@ -16,7 +16,7 @@ GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest"
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
-XBUILD=/usr/bin/xbuild
+XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
 
 if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
 	echo "Changelog file is missing..."

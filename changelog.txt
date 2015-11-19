@@ -1,3 +1,19 @@
+2015-11-18
+==========
+* Improved CLI output when there are no results
+* Fixed a filtering issue with case-sensitive systems
+* Improved restore by guessing the encryption and compression modules based on their filenames
+* Improved robustness by checking if a file really exists when the server returns 404
+* Fixed an issue where a deleted file would be repeatedly attempted verified
+* Improvements to various CLI inputs
+* Added a fix for a bug where pausing the server would keep it paused
+* Bugfixes for the REST API
+* Added some indexes to speed up the restore process
+* Fixed a bug where backing up a folder and a subfolder would lead to all files being excluded
+* Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
+* Added mentions of the mozroots utility on Linux in various places
+* Added the storage-class option to S3
+
 2015-09-15
 ==========
 * Improved use of non-default --oauth-url
