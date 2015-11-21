@@ -302,7 +302,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             'time': stamp,
             'restore-path': $scope.RestoreLocation == 'custom' ? $scope.RestorePath : null,
             'overwrite': $scope.RestoreMode == 'overwrite',
-            'permissions': $scope.RestorePermissions
+            'permissions': $scope.RestorePermissions == null ? false : $scope.RestorePermissions
         };
 
         var paths = [];
