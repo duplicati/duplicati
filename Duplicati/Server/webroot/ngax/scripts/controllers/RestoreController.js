@@ -1,4 +1,4 @@
-backupApp.controller('RestoreController', function ($scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus) {
+backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -46,79 +46,32 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
         return dt.getFullYear() + '';
     };
 
-    $scope.HideEditUri = function() {
-        $scope.EditUriState = false;
-    };
+    $scope.parseBackupTimesData = function() {
+        for(var n in filesetStamps)
+            delete filesetStamps[n];
 
-    $scope.doConnect = function() {
-        $scope.connecting = true;
-        $scope.ConnectionProgress = 'Registering temporary backup ...';
+        for(var n in $scope.Filesets) {
+            var item = $scope.Filesets[n];
+            item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
+            item.GroupLabel = n == 0 ? 'Latests' : createGroupLabel(AppUtils.parseDate(item.Time));
 
-        var opts = {};
-        var obj = {'Backup': {'TargetURL':  $scope.TargetURL } };
-
-        if (($scope.EncryptionPassphrase || '') == '')
-            opts['--no-encryption'] = 'true';
-        else
-            opts['passphrase'] = $scope.EncryptionPassphrase;
-
-        if (!AppUtils.parse_extra_options($scope.ExtendedOptions, opts))
-            return false;
-
-        obj.Backup.Settings = [];
-        for(var k in opts) {
-            obj.Backup.Settings.push({
-                Name: k,
-                Value: opts[k]
-            });
+            filesetStamps[item.Version + ''] = item.Time;
         }
 
-        AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
-            function(resp) {
-
-                // Reset current state
-                filesetsBuilt = {};
-                filesetsRepaired = {};
-                filesetStamps = {};
-                inProgress = {};
-                $scope.filesetStamps = filesetStamps;
-
-                $scope.ConnectionProgress = 'Listing backup dates ...';
-                $scope.BackupID = resp.data.ID;
-                $scope.fetchBackupTimes();
-            }, function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
-
-                $scope.connecting = false;
-                $scope.ConnectionProgress = '';
-                alert('Failed to connect: ' + message);
-            }
-        );
+        $scope.RestoreVersion = 0;
     };
 
     $scope.fetchBackupTimes = function() {
-        AppService.get('/backup/' + $scope.BackupID + '/filesets').then(
+        $scope.connecting = true;
+
+        var qp = '';
+        if ($scope.IsBackupTemporary)
+            qp += '?from-remote-only=true';
+
+        AppService.get('/backup/' + $scope.BackupID + '/filesets' + qp).then(
             function(resp) {
                 $scope.Filesets = resp.data;
-
-                for(var n in filesetStamps)
-                    delete filesetStamps[n];
-
-                for(var n in $scope.Filesets) {
-                    var item = $scope.Filesets[n];
-                    item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
-                    item.GroupLabel = n == 0 ? 'Latests' : createGroupLabel(AppUtils.parseDate(item.Time));
-
-                    filesetStamps[item.Version + ''] = item.Time;
-                }
-
-                $scope.RestoreVersion = 0;
-                $scope.restore_step = 1;
-                $scope.connecting = false;
-                $scope.ConnectionProgress = '';
-
+                $scope.parseBackupTimesData();
                 $scope.fetchPathInformation();
             },
 
@@ -137,8 +90,23 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
     $scope.fetchPathInformation = function() {
         var version = $scope.RestoreVersion + '';
 
-        if (inProgress[version] || $scope.restore_step != 1)
+        if (inProgress[version] || $scope.restore_step != 0)
             return;
+
+        if (!$scope.IsBackupTemporary && $scope.temporaryDB == null) {
+            // TODO: Register a temporary db here
+        }
+
+        function handleError(resp) {
+            delete inProgress[version];
+            $scope.connecting = false;
+            $scope.ConnectionProgress = '';
+
+            var message = resp.statusText;
+            if (resp.data != null && resp.data.Message != null)
+                message = resp.data.Message;
+            alert('Failed to fetch path information: ' + message);
+        };
 
         if (filesetsBuilt[version] == null) {
             if ($scope.isTemporaryBackup && filesetsRepaired[version] == null) {
@@ -170,30 +138,10 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
                                     alert('Failed to fetch path information: ' + resp.data.ErrorMessage);
                                 }
 
-                            }, function(resp) {
-                                delete inProgress[version];
-                                $scope.connecting = false;
-                                $scope.ConnectionProgress = '';
+                            }, handleError);
 
-                                var message = resp.statusText;
-                                if (resp.data != null && resp.data.Message != null)
-                                    message = resp.data.Message;
-                                alert('Failed to fetch path information: ' + message);
-                            });
                         });
-                    },
-                    function(resp) {
-                        delete inProgress[version];
-
-                        var message = resp.statusText;
-                        if (resp.data != null && resp.data.Message != null)
-                            message = resp.data.Message;
-
-                        $scope.connecting = false;
-                        $scope.ConnectionProgress = '';
-                        alert('Failed to connect: ' + message);
-                    }
-                );
+                    }, handleError);
 
             } else {
                 var stamp = filesetStamps[version];
@@ -209,20 +157,8 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
 
                         filesetsBuilt[version] = resp.data.Files;
                         $scope.Paths = filesetsBuilt[version];
-                    },
-                    function(resp) {
-                        delete inProgress[version];
-                        var message = resp.statusText;
-                        if (resp.data != null && resp.data.Message != null)
-                            message = resp.data.Message;
-
-                        $scope.connecting = false;
-                        $scope.ConnectionProgress = '';
-                        alert('Failed to connect: ' + message);
-                    }
-                );
+                    }, handleError);
             }
-
         } else {
             $scope.Paths = filesetsBuilt[version];
         }
@@ -243,9 +179,14 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
             alert('No items to restore, please select one or more items');
             return;
         } else {
-            $scope.restore_step = 2;
+            $scope.restore_step = 1;
         }
     };
+
+    $scope.onClickBack = function() {
+        $location.path('/restoredirect')
+    };
+
 
     $scope.clearSearch = function() {
         $scope.InSearchMode = false;
@@ -340,5 +281,121 @@ backupApp.controller('RestoreController', function ($scope, $routeParams, $locat
             }
         );
     };
+
+    $scope.onStartRestore = function() {
+        var version = $scope.RestoreVersion + '';
+        var stamp = filesetStamps[version];
+        var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
+        var pathSep = $scope.SystemInfo.PathSeparator || '/';            
+
+        function handleError(resp) {
+            var message = resp.statusText;
+            if (resp.data != null && resp.data.Message != null)
+                message = resp.data.Message;
+
+            $scope.connecting = false;
+            $scope.ConnectionProgress = '';
+            alert('Failed to connect: ' + message);
+        };
+
+        var p = {
+            'time': stamp,
+            'restore-path': $scope.RestoreLocation == 'custom' ? $scope.RestorePath : null,
+            'overwrite': $scope.RestoreMode == 'overwrite',
+            'permissions': $scope.RestorePermissions
+        };
+
+        var paths = [];
+        for(var n in $scope.Selected) {
+            var item = $scope.Selected[n];
+            if (item.substr(item.length - 1) == dirsep)
+                paths.push(item + '*');
+            else
+                paths.push(item);
+        }
+
+        if (paths.length > 0)
+            p.paths = paths.join(pathSep);
+
+        if ($scope.IsBackupTemporary) {
+
+            $scope.connecting = true;
+
+            AppService.post('/backup/' + $scope.BackupID + '/copytotemp').then(function(resp) {
+                var backupid = resp.data.ID;
+
+                AppService.post('/backup/' + backupid + '/repair', p).then(function(resp) {
+                    var taskid = $scope.taskid = resp.data.ID;
+                    ServerStatus.callWhenTaskCompletes(taskid, function() {
+                        AppService.get('/task/' + taskid).then(function(resp) {
+
+                            if (resp.data.Status == 'Completed')
+                            {
+                                AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
+                                    var t2 = $scope.taskid = resp.data.TaskID;
+                                    ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
+                                }, handleError);
+                            }
+                            else
+                            {
+                                alert('Failed to build temporary database: ' + resp.data.ErrorMessage);
+                                $scope.connecting = false;
+                                $scope.ConnectionProgress = '';
+                            }
+                        }, handleError);
+                    });
+                }, handleError);
+
+            }, handleError);
+
+        } else {
+            AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
+                var t2 = $scope.taskid = resp.data.TaskID;
+                ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
+            }, handleError);
+        }
+    };
+
+    $scope.onRestoreComplete = function(taskid) {
+        AppService.get('/task/' + taskid).then(function(resp) {
+            $scope.connecting = false;
+            $scope.ConnectionProgress = '';
+
+            if (resp.data.Status == 'Completed')
+            {
+                $scope.restore_step = 2;
+            }
+            else
+            {
+                alert('Failed to build restore files: ' + resp.data.ErrorMessage);
+            }
+        }, function(resp) {
+            var message = resp.statusText;
+            if (resp.data != null && resp.data.Message != null)
+                message = resp.data.Message;
+
+            $scope.connecting = false;
+            $scope.ConnectionProgress = '';
+            alert('Failed to connect: ' + message);
+        });
+    };
+
+    $scope.onClickComplete = function () {
+        $location.path('/');
+    }
+
+    $scope.BackupID = $routeParams.backupid;
+    $scope.IsBackupTemporary = parseInt($scope.BackupID) != $scope.BackupID;
+
+    // We pass in the filelist through a global variable
+    // ... bit ugly, but we do not want to do two remote queries,
+    // ... nor do we want to pass the information through the url
+    if ($rootScope.filesets && $rootScope.filesets[$scope.BackupID]) {
+        $scope.Filesets = $rootScope.filesets[$scope.BackupID];
+        $scope.parseBackupTimesData();
+        $scope.fetchPathInformation();
+    } else {
+        $scope.fetchBackupTimes();
+    }
 
 });

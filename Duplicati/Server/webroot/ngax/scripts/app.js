@@ -20,7 +20,10 @@ backupApp.config(['$routeProvider',
 			when('/edit/:backupid', {
 				templateUrl: 'templates/addoredit.html'
 			}).
-			when('/restore', {
+			when('/restoredirect', {
+				templateUrl: 'templates/restoredirect.html'
+			}).
+			when('/restore/:backupid', {
 				templateUrl: 'templates/restore.html'
 			}).
 			when('/settings', {
