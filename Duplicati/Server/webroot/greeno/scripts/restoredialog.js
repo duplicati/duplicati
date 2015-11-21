@@ -176,7 +176,7 @@ $(document).ready(function() {
                             'permissions': restore_permissions,
                             'skip-metadata': skip_metadata,
                             paths: []
-                        }
+                        };
                         for(var p in includeMap[n]) {
                             if (p.lastIndexOf(dirSep) == p.length -1)
                                 t.paths.push(p + '*');
