@@ -33,10 +33,17 @@
 
 </div>
 
-<div class="input checkbox multple">
-    <input type="checkbox" id="s3_rrs" ng-model="$parent.s3_rrs" placeholder="Use S# Reduced Redundancy Storage" title="RRS reduces reliability for stored data, but at a cheaper cost" />
-    <label for="s3_rrs">Use RRS</label>
-</div >
+<div class="input select">
+
+    <label for="s3_storageclass">Storage class</label>
+
+    <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclass | orderBy: k" title="The storage class affects the availability and price for a stored file">
+        <option value="">Custom storage class</option>
+    </select>
+
+    <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom" ng-model="$parent.s3_storageclass_custom" placeholder="Custom region for creating buckets"/>
+
+</div>
 
 <div class="input text">
     <label for="s3_path">Folder path</label>

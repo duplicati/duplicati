@@ -46,6 +46,17 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 				scope.s3_region = '';
 		}
 
+		if (scope.s3_storageclasses == null) {
+			AppService.post('/webmodule/s3-getconfig', {'s3-config': 'StorageClasses'}).then(function(data) {
+				scope.s3_storageclasses = data.data.Result;
+				if (scope.s3_storageclass == null  && scope.s3_storageclass_custom == undefined)
+					scope.s3_storageclass = '';
+			}, AppUtils.connectionError);
+		} else {
+			if (scope.s3_storageclass == null  && scope.s3_storageclass_custom == undefined)
+				scope.s3_storageclass = '';
+		}
+
 	};
 
 	EditUriBackendConfig.loaders['oauth-base'] = function(scope) {
@@ -173,11 +184,16 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if (options['--aws_secret_access_key'])
 			scope.Password = options['--aws_secret_access_key'];
 
-		scope.s3_rrs = options['--s3-use-rrs'];
+		if (options['--s3-use-rrs'] && !options['--s3-storage-class']) {
+			delete options['--s3-use-rrs'];
+			options['--s3-storage-class'] = 'REDUCED_REDUNDANCY';
+		}
+
 		scope.s3_server = scope.s3_server_custom = options['--s3-server-name'];
 		scope.s3_region = scope.s3_region_custom = options['--s3-location-constraint'];
+		scope.s3_storageclass = scope.s3_storageclass_custom = options['--s3-storage-class'];
 
-		var nukeopts = ['--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint'];
+		var nukeopts = ['--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class'];
 		for(var x in nukeopts)
 			delete options[nukeopts[x]];
 	};
@@ -234,8 +250,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
 		if (scope.s3_region != null)
 			opts['s3-location-constraint'] = AppUtils.contains_value(scope.s3_regions, scope.s3_region) ? scope.s3_region : scope.s3_region_custom;
-		if (scope.s3_rrs)
-			opts['s3-use-rrs'] = true;
+		if (scope.s3_storageclass != null)
+			opts['s3-storage-class'] = AppUtils.contains_value(scope.s3_storageclasses, scope.s3_storageclass) ? scope.s3_storageclass : scope.s3_storageclass_custom;
 
 		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
