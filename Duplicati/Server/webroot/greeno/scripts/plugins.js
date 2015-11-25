@@ -75,6 +75,7 @@ $(document).ready(function() {
             this.btnel.click(function() {
                 $.browseForFolder({
                     title: 'Select target folder',
+                    multiSelect: false,
                     resolvePath: true,            
                     callback: function(path, display) {
                         $('#server-path').val(path);
