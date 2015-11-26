@@ -97,7 +97,7 @@
         </div>
 
         <div ng-show="connecting == true &amp;&amp; taskid != null">
-            <wait-area taskid="taskid" text="ConnectionProgress" ></wait-area taskid="taskid" text="ConnectionProgress">
+            <wait-area taskid="taskid" text="ConnectionProgress" allow-cancel="true"></wait-area>
         </div>
         
         <div ng-show="connecting == true &amp;&amp; taskid == null">

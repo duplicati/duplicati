@@ -322,6 +322,7 @@ body .container .body .content .tasks .tasklist a.action-link {
 
 .progress {
   position: relative;
+  min-height: 25px;
 }
 .progress > span {
   position: absolute;
@@ -350,3 +351,15 @@ form.styled div.leftflush label {
   min-width: 190px;
 }
 
+wait-area {
+  min-width: 350px;
+  text-align: center;
+  display: block;
+}
+
+.contextmenu p {
+  display: inline;
+    margin-right: 10px;
+    color: #65b1dd;
+    cursor: pointer;
+}

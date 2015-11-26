@@ -36,7 +36,37 @@
         <div class="tasklist">
             <h3><p ng-if="backups.length > 0">Scheduled backups:</p></h3>
             <div ng-repeat="item in backups" class="task">
-                <a href="#/edit/{{item.Backup.ID}}">{{item.Backup.Name}}</a>
+                <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}</a>
+
+                <dl class="contextmenu" ng-show="$parent.ContextMenuID == item.Backup.ID">
+                    <dt>Operations:</dt>
+                    <dd>
+                        <p ng-click="doRun(item.Backup.ID)">Run now</p>
+                        <p ng-click="doRestore(item.Backup.ID)">Restore files ...</p>
+                    </dd>
+
+                    <dt>Configuration:</dt>
+                    <dd>
+                        <p ng-click="doEdit(item.Backup.ID)">Edit ...</p>
+                        <p ng-click="doExport(item.Backup.ID)">Export ...</p>
+                        <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)">Delete</p>
+                        
+                    </dd>
+
+                    <dt>Advanced:</dt>
+                    <dd>
+                        <p ng-click="doDeleteLocalDb(item.Backup.ID, item.Backup.Name)">Delete local database</p>
+                        <p ng-click="doRepairLocalDb(item.Backup.ID)">Repair local database</p>
+                        <p ng-click="doVerifyRemote(item.Backup.ID)">Verify backup files</p>
+                    </dd>
+
+                    <dt>Reporting:</dt>
+                    <dd>
+                        <p ng-click="doShowLog(item.Backup.ID)">Show log ...</p>
+                        <p ng-click="doCreateBugReport(item.Backup.ID)">Create bug report ...</p>
+                    </dd>
+                </dl>
+
                 <dl>
                     <dt>Last successful run:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}}</dd>

@@ -320,18 +320,22 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if ($scope.IsBackupTemporary) {
 
             $scope.connecting = true;
+            $scope.ConnectionProgress = 'Creating temporary backup ...';
 
             AppService.post('/backup/' + $scope.BackupID + '/copytotemp').then(function(resp) {
                 var backupid = resp.data.ID;
 
+                $scope.ConnectionProgress = 'Building partial temporary database ...';
                 AppService.post('/backup/' + backupid + '/repair', p).then(function(resp) {
                     var taskid = $scope.taskid = resp.data.ID;
                     ServerStatus.callWhenTaskCompletes(taskid, function() {
                         AppService.get('/task/' + taskid).then(function(resp) {
 
+                            $scope.ConnectionProgress = 'Starting the restore process ...';
                             if (resp.data.Status == 'Completed')
                             {
                                 AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
+                                    $scope.ConnectionProgress = 'Restoring files ...';
                                     var t2 = $scope.taskid = resp.data.TaskID;
                                     ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
                                 }, handleError);
@@ -349,7 +353,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             }, handleError);
 
         } else {
+            $scope.ConnectionProgress = 'Starting the restore process ...';
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
+                $scope.ConnectionProgress = 'Restoring files ...';
                 var t2 = $scope.taskid = resp.data.TaskID;
                 ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
             }, handleError);
