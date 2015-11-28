@@ -438,7 +438,7 @@ namespace Duplicati.Library.Main.Database
 
         }
 
-        public void FixDuplicateBlocklistHashes()
+        public void FixDuplicateBlocklistHashes(long blocksize, long hashsize)
         {
             using(var tr = m_connection.BeginTransaction())
             using(var cmd = m_connection.CreateCommand(tr))
@@ -475,6 +475,15 @@ namespace Duplicati.Library.Main.Database
 
                     if (real_count != unique_count)
                         throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
+
+                    try
+                    {
+                        VerifyConsistency(tr, blocksize, hashsize);
+                    }
+                    catch(Exception ex)
+                    {
+                        throw new Exception("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
+                    }
 
                     m_result.AddMessage("Duplicate blocklisthashes repaired succesfully");
                     tr.Commit();
