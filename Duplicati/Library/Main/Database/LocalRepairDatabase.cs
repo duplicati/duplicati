@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.Database
 
                     itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                     if (itemswithnoblocklisthash != 0)
-                        throw new Exception(string.Format("Failed to repair, after reapir {0} blocklisthashes were missing", itemswithnoblocklisthash));
+                        throw new Exception(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
 
                     m_result.AddMessage("Missing blocklisthashes repaired succesfully");
                     tr.Commit();
