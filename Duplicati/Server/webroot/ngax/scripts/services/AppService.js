@@ -49,5 +49,12 @@ backupApp.service('AppService', function($http, $cookies) {
 
         return rurl;
     }
+    this.get_import_url = function(passphrase) {
+        var rurl = this.apiurl + '/backups/import?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+        if ((passphrase || '').trim().length > 0)
+            rurl += '&passphrase=' + encodeURIComponent(passphrase);
+
+        return rurl;
+    };
 
 });

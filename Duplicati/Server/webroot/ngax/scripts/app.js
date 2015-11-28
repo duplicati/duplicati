@@ -41,6 +41,9 @@ backupApp.config(['$routeProvider',
 			when('/export/:backupid', {
 				templateUrl: 'templates/export.html'
 			}).
+			when('/import', {
+				templateUrl: 'templates/import.html'
+			}).
             when('/test', {
                 templateUrl: 'templates/test.html',
                 controller: 'testController'
