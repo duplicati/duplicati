@@ -42,13 +42,20 @@ backupApp.service('AppService', function($http, $cookies) {
         return $http.put(rurl, data, setupConfig('PUT', options, data));
     };
 
+    this.delete = function(url, options) {
+        var rurl = this.apiurl + url;
+        return $http.delete(rurl, setupConfig('DELETE', options));
+    };
+
+
     this.get_export_url = function(backupid, passphrase) {
         var rurl = this.apiurl + '/backup/' + backupid + '/export?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
         if ((passphrase || '').trim().length > 0)
             rurl += '&passphrase=' + encodeURIComponent(passphrase);
 
         return rurl;
-    }
+    };
+
     this.get_import_url = function(passphrase) {
         var rurl = this.apiurl + '/backups/import?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
         if ((passphrase || '').trim().length > 0)
