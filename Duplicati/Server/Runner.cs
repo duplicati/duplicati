@@ -654,7 +654,7 @@ namespace Duplicati.Server
             
             return options;
         }
-        
+
         private static Duplicati.Library.Utility.IFilter ApplyFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Duplicati.Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
@@ -662,7 +662,10 @@ namespace Duplicati.Server
             {
                 var nf =
                     (from n in f2
-                    let exp = Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
+                    let exp = 
+                        n.Expression.StartsWith("[") && n.Expression.EndsWith("]")
+                        ? Library.Utility.Utility.ExpandEnvironmentVariablesRegexp(n.Expression)
+                        : Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
                     orderby n.Order
                     select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                     .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
