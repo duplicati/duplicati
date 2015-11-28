@@ -231,7 +231,7 @@ namespace Duplicati.Server.WebServer
 
         private void GetLicenseData(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
-            bw.OutputOK(Duplicati.License.LicenseReader.ReadLicenses(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), "licenses")));
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.Licenses));
         }
 
         private void RestoreFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)

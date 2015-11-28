@@ -120,6 +120,7 @@
     <Compile Include="WebServer\RESTMethods\Task.cs" />
     <Compile Include="WebServer\RESTMethods\WebModule.cs" />
     <Compile Include="WebServer\RESTMethods\WebModules.cs" />
+    <Compile Include="WebServer\RESTMethods\Licenses.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

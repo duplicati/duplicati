@@ -906,11 +906,38 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Expands environment variables, including the tilde character
         /// </summary>
-        /// <returns>The environment variables.</returns>
+        /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
         public static string ExpandEnvironmentVariables(string str)
         {
             return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
+        }
+
+        /// <summary>
+        /// Regexp for matching environment variables on Windows (%VAR%)
+        /// </summary>
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<name>\w+)\%");
+
+        /// <summary>
+        /// Regexp for matching environment variables on Linux ($VAR or ${VAR})
+        /// </summary>
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_LINUX = new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})");
+
+        /// <summary>
+        /// Expands environment variables, including the tilde character, in a RegExp safe format
+        /// </summary>
+        /// <returns>The expanded string.</returns>
+        /// <param name="str">The string to expand.</param>
+        public static string ExpandEnvironmentVariablesRegexp(string str)
+        {
+            return
+
+                // TODO: Should we switch to using the native format, instead of following the Windows scheme?
+                //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+
+                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+                    .Replace(str.Replace("~", Regex.Escape(HOME_PATH)), (m) => 
+                        Regex.Escape(Environment.GetEnvironmentVariable(m.Groups["name"].Value)));
         }
 
         /// <summary>
