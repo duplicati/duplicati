@@ -3,6 +3,7 @@ var backupApp = angular.module(
     [
         'ngRoute', 
         'dotjem.angular.tree',
+        'ngCookies',
         'ngSanitize'
     ]
 );
@@ -36,6 +37,9 @@ backupApp.config(['$routeProvider',
 			}).
 			when('/log', {
 				templateUrl: 'templates/log.html'
+			}).
+			when('/export/:backupid', {
+				templateUrl: 'templates/export.html'
 			}).
             when('/test', {
                 templateUrl: 'templates/test.html',

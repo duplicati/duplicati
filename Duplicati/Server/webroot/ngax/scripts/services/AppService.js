@@ -1,4 +1,4 @@
-backupApp.service('AppService', function($http) {
+backupApp.service('AppService', function($http, $cookies) {
     this.apiurl = '/api/v1';
 
     var setupConfig = function (method, options, data) {
@@ -41,5 +41,13 @@ backupApp.service('AppService', function($http) {
         var rurl = this.apiurl + url;
         return $http.put(rurl, data, setupConfig('PUT', options, data));
     };
+
+    this.get_export_url = function(backupid, passphrase) {
+        var rurl = this.apiurl + '/backup/' + backupid + '/export?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+        if ((passphrase || '').trim().length > 0)
+            rurl += '&passphrase=' + encodeURIComponent(passphrase);
+
+        return rurl;
+    }
 
 });

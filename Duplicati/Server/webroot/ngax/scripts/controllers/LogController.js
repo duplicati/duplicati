@@ -4,7 +4,7 @@ backupApp.controller('LogController', function($scope,$routeParams, SystemInfo, 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
     var liveRefreshTimer = null;
-    var PAGE_SIZE = 10;
+    var PAGE_SIZE = 100;
 
     function updateLivePoll() {
     	if ($scope.LiveRefreshing) {

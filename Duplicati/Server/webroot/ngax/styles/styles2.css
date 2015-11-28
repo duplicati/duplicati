@@ -434,3 +434,13 @@ ul.tabs > li.active, ul.tabs > li.active > a {
   color: white;
   cursor: pointer;
 }
+
+.exportpage .checkbox input {
+  width: auto;
+  margin-top: 10px;
+}
+
+.exportpage .commandline div {
+  background-color: lightgray;
+  color: black;  
+}
