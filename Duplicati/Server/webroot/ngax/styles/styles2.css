@@ -363,3 +363,74 @@ wait-area {
     color: #65b1dd;
     cursor: pointer;
 }
+
+.prewrapped-text {
+  white-space: pre-wrap;
+}
+
+.exceptiontext {
+  background-color: lightgray;
+  color: black;
+}
+
+
+ul.tabs {
+  margin-bottom: 10px;
+}
+
+ul.tabs > li {
+  display: inline;
+  margin-right: 10px;
+  border: 1px solid #65b1dd;
+  padding: 5px;
+}
+
+ul.tabs > li.active, ul.tabs > li.active > a {
+  background-color: #65b1dd;
+  color: white;
+
+}
+
+.licenses > ul {
+  list-style: initial;
+  margin: 10px;
+  margin-left: 20px;
+}
+
+.licenses li {
+  margin-bottom: 10px;
+}
+
+.licenses a.itemlink {
+  font-weight: bold;
+}
+
+.logpage ul.entries {
+  list-style: initial;
+  margin: 10px;
+  margin-left: 20px;
+}
+
+.logpage .entries div.entryline {
+  cursor: pointer;
+}
+
+.logpage .entries.livedata li {
+  height: 1.2em;
+  overflow: hidden;
+}
+
+.logpage .entries.livedata li.expanded {
+  height: auto;
+  overflow: auto;
+}
+
+.logpage .button {
+  text-align: center;
+  margin-right: 10px;
+  border: 1px solid #65b1dd;
+  padding: 5px;
+  background-color: #65b1dd;
+  color: white;
+  cursor: pointer;
+}

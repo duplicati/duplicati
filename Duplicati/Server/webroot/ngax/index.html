@@ -43,6 +43,7 @@
 	<script type="text/javascript" src="scripts/services/EditUriBuiltins.js"></script>
 
 	<script type="text/javascript" src="scripts/controllers/AppController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/AboutController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/StateController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/SystemSettingsController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/HomeController.js"></script>
@@ -50,10 +51,12 @@
 	<script type="text/javascript" src="scripts/controllers/PauseController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/RestoreController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/RestoreDirectController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/LogController.js"></script>
 
 	<script type="text/javascript" src="scripts/filters/localize.js"></script>
 	<script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
 	<script type="text/javascript" src="scripts/filters/highlight.js"></script>
+	<script type="text/javascript" src="scripts/filters/parsetimestamp.js"></script>
 
 	<script type="text/javascript" src="scripts/directives/backupEditUri.js"></script>
 	<script type="text/javascript" src="scripts/directives/sourceFolderPicker.js"></script>
@@ -82,10 +85,10 @@
 	        <div class="about-header">
 	            <ul>
 	                <li>
-	                    <a href="http://www.duplicati.com/support">{{'Support' | localize}}</a>
+	                    <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank">{{'Support' | localize}}</a>
 	                </li>
 	                <li>
-	                    <a href data-page="about" class="about">{{'About' | localize}}</a>
+	                    <a href="#/about">{{'About' | localize}}</a>
 	                </li>
 	            </ul>
 	        </div>
@@ -96,19 +99,19 @@
 	        <div class="mainmenu menu" >
 	            <ul>
 	                <li>
-	                    <a href="#/add" data-page="add" class="add">{{'Add new backup' | localize}}</a>
+	                    <a href="#/add" class="add">{{'Add new backup' | localize}}</a>
 	                </li>
 	                <li>
-	                    <a href="#/restoredirect" data-page="restore" class="restore">{{'Restore backup' | localize}}</a>
+	                    <a href="#/restoredirect" class="restore">{{'Restore backup' | localize}}</a>
 	                </li>
 	                <li>
 	                    <a href="#/pause" id="pause" class="pause">{{'Pause' | localize}}</a>
 	                </li>
 	                <li>
-	                    <a href="#/settings" data-page="settings" class="settings">{{'Settings' | localize}}</a>
+	                    <a href="#/settings" class="settings">{{'Settings' | localize}}</a>
 	                </li>
 	                <li>
-	                    <a href="#/log" data-page="log" class="log">{{'Show log' | localize}}</a>
+	                    <a href="#/log" class="log">{{'Show log' | localize}}</a>
 	                </li>
 
 	            </ul>
@@ -122,10 +125,10 @@
 	        <div class="about-footer">
 	            <ul>
 	                <li>
-	                    <a href="http://www.duplicati.com/support">{{'Support' | localize}}</a>
+	                    <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank">{{'Support' | localize}}</a>
 	                </li>
 	                <li>
-	                    <a href="about.htm">{{'About' | localize}}</a>
+	                    <a href="#/about">{{'About' | localize}}</a>
 	                </li>
 	            </ul>
 	        </div>

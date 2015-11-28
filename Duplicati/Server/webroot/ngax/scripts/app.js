@@ -28,6 +28,15 @@ backupApp.config(['$routeProvider',
 			when('/settings', {
 				templateUrl: 'templates/settings.html'
 			}).
+			when('/about', {
+				templateUrl: 'templates/about.html'
+			}).
+			when('/log/:backupid', {
+				templateUrl: 'templates/log.html'
+			}).
+			when('/log', {
+				templateUrl: 'templates/log.html'
+			}).
             when('/test', {
                 templateUrl: 'templates/test.html',
                 controller: 'testController'
