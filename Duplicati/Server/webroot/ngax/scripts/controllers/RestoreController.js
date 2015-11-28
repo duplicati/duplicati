@@ -145,6 +145,10 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
             } else {
                 var stamp = filesetStamps[version];
+                // In case the times are not loaded yet
+                if (stamp == null)
+                    return;
+
                 $scope.connecting = true;
                 $scope.ConnectionProgress = 'Fetching path information ...';
                 inProgress[version] = true;
@@ -396,7 +400,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     // We pass in the filelist through a global variable
     // ... bit ugly, but we do not want to do two remote queries,
     // ... nor do we want to pass the information through the url
-    if ($rootScope.filesets && $rootScope.filesets[$scope.BackupID]) {
+    if ($scope.IsBackupTemporary && $rootScope.filesets && $rootScope.filesets[$scope.BackupID]) {
         $scope.Filesets = $rootScope.filesets[$scope.BackupID];
         $scope.parseBackupTimesData();
         $scope.fetchPathInformation();
