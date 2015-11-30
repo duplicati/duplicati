@@ -26,7 +26,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var parts = (key ?? "").Split(new char[] { '/' }, 2);
             long taskid;
-            if (parts.Length == 2 && long.TryParse(parts.First(), out taskid))
+            if (long.TryParse(parts.FirstOrDefault(), out taskid))
             {
                 var task = Program.WorkThread.CurrentTask;
                 var tasks = Program.WorkThread.CurrentTasks;

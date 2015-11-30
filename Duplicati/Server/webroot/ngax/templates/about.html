@@ -1,0 +1,32 @@
+<div ng-controller="AboutController" title="About">
+    <h1>About {{appName}}</h1>
+    <ul class="tabs">
+        <li ng-class="{active: Page=='general'}"><a href ng-click="Page='general'">General</a></li>
+        <li ng-class="{active: Page=='changelog'}"><a href ng-click="Page='changelog'">Changelog</a></li>
+        <li ng-class="{active: Page=='licenses'}"><a href ng-click="Page='licenses'">Libraries</a></li>
+    </ul>
+
+    <div ng-show="Page == 'general'">
+        <div>{{appName}} was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. {{appName}} can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. {{appName}} is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.</div>
+
+        <div>&nbsp;</div>
+        <div>You are currently running {{appName}} {{sysinfo.ServerVersionName || 'unknown'}}</p></div>
+
+        <div class="prewrapped-text">{{Acknowledgements || 'Loading ...'}}</div>
+    </div>
+
+    <div ng-show="Page == 'changelog'">
+    	<div class="prewrapped-text">{{ChangeLog || 'Loading ...'}}</div>
+	</div>
+
+    <div ng-show="Page == 'licenses'" class="licenses">
+    	{{appName}} is using the following third party libraries:
+	    <ul>
+	        <li ng-show="Licenses == null">Loading ...</li>
+	        <li ng-repeat="item in Licenses" class="licenseentry">
+	        	<a target="_blank" href="{{item.link}}" class="itemlink">{{item.name}}</a>: {{item.description}}. <a class="licenselink" target="_blank" href="{{item.licenselink}}">{{item.license}} licensed</a>
+	        </li>
+	    </ul>
+    </div>
+
+</div>

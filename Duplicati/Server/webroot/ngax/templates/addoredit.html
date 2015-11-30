@@ -1,0 +1,261 @@
+<div class="add" ng-controller="EditBackupController">
+    <div class="steps">
+        <div class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
+            <span>1</span>
+        </div>
+        <div class="step step2" ng-class="{active: CurrentStep == 1}"  ng-click="CurrentStep = 1">
+            <span>2</span>
+        </div>
+        <div class="step step3" ng-class="{active: CurrentStep == 2}"  ng-click="CurrentStep = 2">
+            <span>3</span>
+        </div>
+        <div class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3">
+            <span>4</span>
+        </div>
+    </div>
+    <!-- .steps -->
+    
+    <ol class="steps-legend">
+        <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0">General</li>
+        <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1">Source Data</li>
+        <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2">Schedule</li>
+        <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3">Options</li>
+    </ol>
+    <!-- .steps-legend -->
+
+    <div class="steps-boxes">
+
+
+        <div class="step step1" ng-class="{active: CurrentStep == 0}">
+            <div class="form">
+                <form class="styled">
+                    <backup-edit-uri uri="Backup.TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
+
+                    <div ng-hide="EditUriState">
+                        <div class="input text">
+                            <label for="name">Name</label>
+                            <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="My Photos"/>
+                        </div>
+                        <div class="input textarea linklabel">
+                            <label for="target"><a href class="target" ng-click="EditUriState = true">Backup to &gt;</a></label>
+                            <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="Enter a url, or click the 'Backup to&gt;' link"></textarea>
+                        </div>
+                        <div class="input select">
+                            <label for="encryption">Encryption</label>
+                            <select name="encryption" id="encryption" ng-model="Options['encryption-module']" ng-options="module.Key as module.DisplayName for module in SystemInfo.EncryptionModules">
+                                <option value="">No encryption</option>
+                            </select>
+                        </div>
+
+                        <div class="input encryptionhint" ng-show="(Options['encryption-module'] || '').length == 0">
+                            <h3 class="warning">We recommend that you encrypt all backups stored outside your system</h3>
+                        </div>
+
+                        <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                            <label for="passphrase">Passphrase</label>
+                            <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
+                        </div>
+                        <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                            <label for="repeat-passphrase">Repeat Passphrase</label>
+                            <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
+                            
+                            <div class="tools">
+                                <ul>
+                                    <li>
+                                        <a href ng-click="togglePassphraseVisibility()">{{ShowPassphrase ? 'Hide' : 'Show'}}</a>
+                                    </li>
+                                    <li>|</li>
+                                    <li>
+                                        <a href ng-click="generatePassphrase()">Generate</a>
+                                    </li>
+                                    <li>|</li>
+                                    <li class="strength score-{{PassphraseScore}}">{{PassphraseScore != 'x' ?   'Strength: ' : ''}} {{PassphraseScoreString}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="buttons">
+                            <input class="submit next" type="button" id="nextStep1" ng-click="nextPage()" value="Next &gt;" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- .step1 -->
+        
+        <div class="step step2" ng-class="{active: CurrentStep == 1}">
+            <h2>Choose which folders to include in the backup:</h2>
+
+            <form class="styled">
+
+                <div class="input" style="padding-bottom: 0px">
+                    <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced" style="float: right">Show {{EditSourceAdvanced ? 'simple' : 'advanced'}} editor</p>
+
+                    <a href ng-hide="EditSourceAdvanced" ng-click="showhiddenfolders = !showhiddenfolders" style="float: right; margin-right: 10px;">{{showhiddenfolders ? 'Hide' : 'Show'}} hidden folders</a>
+                </div>
+
+                <source-folder-picker ng-show-hidden="showhiddenfolders" ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-hide="EditSourceAdvanced"></source-folder-picker>
+
+                <div class="input textarea" ng-show="EditSourceAdvanced">
+                    <label for="SourcePathList">Source folders</label>
+                    <textarea id="SourcePathList" string-array-as-text ng-model="Backup.Sources" ng-model-options="{updateOn: 'blur'}"></textarea>
+                </div>
+
+                <div class="input text overlayButton">
+                    <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
+                    <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">{{validatingSourcePath ? 'Validating ...' : 'Add path'}}</a>
+                </div>
+
+                <div class="input" style="float: right">
+                    <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced" style="float: right">Show {{EditFilterAdvanced ? 'simple' : 'advanced'}} editor</a>
+                </div>
+
+
+                <div class="input textarea" ng-show="EditFilterAdvanced">
+                    <label for="FilterList">Filters <span class="info">i</span></label>
+                    <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
+                </div>
+
+                <div class="input textarea" ng-hide="EditFilterAdvanced">
+                    <h3 for="simplefilterlist">Filters</h3>
+
+                    <ul id="simplefilterlist">
+                        <li ng-repeat="f in Backup.Filters track by $index" style="min-height: 35px;">
+                            <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
+                            </select>
+
+                            <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="Enter expression here"/>
+
+                            <a class="button" href title="Remove" ng-click="Backup.Filters.splice($index, 1)">X</a>
+                        </li>
+
+                    </ul>
+
+                    <a href ng-click="Backup.Filters.push('-*')">Add filter</a>
+                </div>
+
+                <h3>Also exclude:</h3>
+                <div class="input checkbox multiple">
+                    <div style="display: inline-block" ng-repeat="attr in fileAttributes">
+                      <input
+                        id="fileattr_{{attr.value}}"
+                        type="checkbox"
+                        name="fileattr_{{attr.value}}"
+                        value="{{attr.value}}"
+                        ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
+                        ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
+                      />
+                      <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
+                    </div>                
+                </div>
+
+                <div class="input text select multiple">
+                    <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
+                    <label for="exclude-large-files">Files larger than:</label>
+
+                    <input type="number" parse-size-number ng-model="Backup.Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" style="width: 50px" value="1" />
+                    <select parse-size-multiplier id="exclude-larger-than-multiplier" ng-model="Backup.Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" style="display: inline-block; float: none" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                    </select>
+
+                </div>    
+
+                
+                <div class="buttons">
+                    <input class="submit next" type="button" id="nextStep2" ng-click="nextPage()" value="Next &gt;" />
+                    <input class="submit prev" type="button" id="prevStep2" ng-click="prevPage()" value="&lt; Previous" />
+                </div>
+            </form>
+        </div>
+        <!-- .step2 -->
+        
+        <div class="step step3" ng-class="{active: CurrentStep == 2}">
+            <form class="styled">
+                <div class="input checkbox multiple">
+                    <input type="checkbox" id="useScheduleRun" ng-checked="Schedule != null" ng-click="toggleSchedule()" />
+                    <label for="useScheduleRun">If a date was missed, the job will run as soon as possible.</label>
+                </div>
+                <div ng-hide="Schedule == null">
+                    <div class="input text multiple">
+                        <label for="nextRunTime">Next time</label>
+                        <input type="time" ng-model="Schedule.Time" id="nextRunTime" />
+                        <input type="date" ng-model="Schedule.Time" id="nextRunDate" />
+                    </div>
+                    <div class="input text select multiple">
+                        <label for="repeatRunNumber">Run again every</label>
+                        <input ng-show="AppUtils.contains_key(AppUtils.timerangeMultipliers, AppUtils.splitSizeString(Schedule.Repeat)[1], 'value')" type="number" parse-size-number ng-model="Schedule.Repeat" id="repeatRunNumber" />
+                        <select parse-size-multiplier ng-model="Schedule.Repeat" id="repeatRunMultiplier" ng-options="item.value as item.name for item in AppUtils.timerangeMultipliers">
+                            <option value="">custom</option>
+                        </select>
+
+                        <input type="text" ng-show="!AppUtils.contains_key(AppUtils.timerangeMultipliers, AppUtils.splitSizeString(Schedule.Repeat)[1], 'value')" ng-model="Schedule.Repeat" ng-model-options="{updateOn: 'blur'}" />
+                    </div>
+                    <div class="input checkbox multiple">
+                        <strong>Allowed days</strong>
+
+                        <div style="display: inline-block" ng-repeat="day in AppUtils.daysOfWeek">
+                          <input
+                            class="simple-checkbox"
+                            id="dayofweek_{{day.value}}"
+                            type="checkbox"
+                            name="dayofweek_{{day.value}}"
+                            value="{{day.value}}"
+                            ng-checked="Schedule.AllowedDays.indexOf(day.value) > -1"
+                            ng-click="toggleArraySelection(Schedule.AllowedDays, day.value)"
+                          />
+                          <label for="dayofweek_{{day.value}}">{{day.name}}</label>
+                        </div>                
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="Next &gt;" />
+                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; Previous" />
+                </div>
+            </form>
+        </div>
+        <!-- .step3 -->
+        
+        <div class="step step4" ng-class="{active: CurrentStep == 3}">
+            <form class="styled">
+                <div class="input multiple text select">
+                    <label for="dblockSizeNumber">Max backup file size <span class="info">i</span></label>
+                    <input type="number" parse-size-number id="dblockSizeNumber" ng-model="Options['dblock-size']" />
+                    <select parse-size-multiplier id="dblockSizeMultiplier" ng-model="Options['dblock-size']">
+                        <option value="kb">KByte</option>
+                        <option value="mb">MByte</option>
+                        <option value="gb">GByte</option>
+                        <option value="tb">TByte</option>
+                    </select>
+                </div>
+                <div class="input multiple text select">
+                    <label for="keepTimeType">Keep backups<span class="info">i</span></label>
+                    <select id="keepTimeType">
+                        <option value="">forever</option>
+                        <option value="keep-time">for a specific time</option>
+                        <option value="keep-versions">a specific number</option>
+                    </select>
+                    <input type="number" id="keepTimeNumber" value="3" />
+                    <select id="keepTimeMultiplier">
+                        <option value="D">Days</option>
+                        <option value="W">Weeks</option>
+                        <option value="M">Months</option>
+                        <option value="Y">Years</option>
+                        <option value="">custom</option>
+                    </select>
+                </div>
+                <div class="input textarea">
+                    <label for="backupOptions"><a href id="backupOptionsPopup" data-remodal-target="backupOptions">Options</a><span class="info">i</span></label>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+                </div>
+                
+                <div class="buttons">
+                    <input class="submit save" type="submit" id="save" ng-click="save()" value="Save" />
+                    <input class="submit prev" type="button" id="prevStep4" ng-click="prevPage()" value="&lt; Previous" />
+                </div>
+            </form>
+        </div>
+        <!-- .step4 -->
+    </div>
+    <!-- .steps-boxes -->
+</div>
+<!-- .add -->

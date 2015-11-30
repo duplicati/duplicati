@@ -119,7 +119,7 @@ namespace Duplicati.Server
             var dict = new Dictionary<string, string>();
             dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
             if (!string.IsNullOrWhiteSpace(restoreTarget))
-                dict["restore-path"] = restoreTarget;
+                dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
             if (overwrite)
                 dict["overwrite"] = "true";
             if (restore_permissions)

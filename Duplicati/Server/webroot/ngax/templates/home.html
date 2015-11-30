@@ -1,0 +1,95 @@
+<div class="home">
+    <div class="state" ng-controller="StateController">
+
+        <div ng-hide="state.programState == 'Running'">
+            <strong style="margin-right: 0px;">Backups are currently paused,</strong>
+            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">resuming in {{state.pauseTimeRemain | timeremaining}}</div>
+            <a href ng-click="sendResume()">click to resume now</a>
+        </div>
+
+        <div ng-hide="activeBackup == null">
+            <strong>Running backup</strong>
+            {{activeBackup.Backup.Name}}
+
+            <div class="progress" style="border: 1px solid;">
+                <span>{{ServerStatus.progress_state_text[state.lastPgEvent.Phase] || state.lastPgEvent.Phase}}</span>
+
+                <div class="progress-bar progress-bar-striped" ng-class="{active: state.lastPgEvent.OverallProgress <= 0}" role="progressbar" aria-valuenow="{{state.lastPgEvent.OverallProgress * 100}}" aria-valuemin="0" aria-valuemax="100" style="width:{{state.lastPgEvent.OverallProgress * 100}}%">
+                </div>
+            </div>
+        </div>
+
+        <div ng-show="activeBackup == null &amp;&amp; state.activeTask != null">
+            <strong>Running task</strong>
+        </div>
+
+        <div ng-show="state.activeTask == null &amp;&amp; state.SchedulerQueueIds != null &amp;&amp; state.SchedulerQueueIds.length > 0">
+            <strong>Next task:</strong>
+            {{nexttask}}
+        </div>
+
+        <div ng-show="state.activeTask == null &amp;&amp; (state.SchedulerQueueIds == null || state.SchedulerQueueIds.length == 0)">No scheduled tasks, you can manually start a task</div>
+
+    </div>
+
+    <div class="tasks" ng-controller="HomeController">
+        <div class="tasklist">
+            <h3><p ng-if="backups.length > 0">Stored backup jobs:</p></h3>
+            <div ng-repeat="item in backups" class="task">
+                <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}</a>
+
+                <dl class="contextmenu" ng-show="$parent.ContextMenuID == item.Backup.ID">
+                    <dt>Operations:</dt>
+                    <dd>
+                        <p ng-click="doRun(item.Backup.ID)">Run now</p>
+                        <p ng-click="doRestore(item.Backup.ID)">Restore files ...</p>
+                    </dd>
+
+                    <dt>Configuration:</dt>
+                    <dd>
+                        <p ng-click="doEdit(item.Backup.ID)">Edit ...</p>
+                        <p ng-click="doExport(item.Backup.ID)">Export ...</p>
+                        <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)">Delete</p>
+                        
+                    </dd>
+
+                    <dt>Advanced:</dt>
+                    <dd>
+                        <p ng-click="doDeleteLocalDb(item.Backup.ID, item.Backup.Name)">Delete local database</p>
+                        <p ng-click="doRepairLocalDb(item.Backup.ID)">Repair local database</p>
+                        <p ng-click="doVerifyRemote(item.Backup.ID)">Verify backup files</p>
+                    </dd>
+
+                    <dt>Reporting:</dt>
+                    <dd>
+                        <p ng-click="doShowLog(item.Backup.ID)">Show log ...</p>
+                        <p ng-click="doCreateBugReport(item.Backup.ID)">Create bug report ...</p>
+                    </dd>
+                </dl>
+
+                <dl>
+                    <dt>Last successful run:</dt>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}}</dd>
+                    <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
+                    Never - <a href class="action-link" ng-click="runBackup(item.Backup.ID)">Run now</a>
+                    </dd>
+
+                    <div ng-hide="item.Schedule == null">
+                        <dt>Next run:</dt>
+                        <dd>{{item.Schedule.Time | date :'medium'}}</dd>
+                    </div>
+                    <div ng-hide="item.Backup.Metadata == null">
+                        <div ng-hide="item.Backup.Metadata.SourceSizeString == null">
+                            <dt>Source:</dt>
+                            <dd>{{item.Backup.Metadata.SourceSizeString}}</dd>
+                        </div>
+                        <div ng-hide="item.Backup.Metadata.SourceSizeString == null">
+                            <dt>Backup:</dt>
+                            <dd>{{item.Backup.Metadata.TargetSizeString}}</dd>
+                        </div>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
