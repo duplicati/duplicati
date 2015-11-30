@@ -44,13 +44,6 @@ backupApp.config(['$routeProvider',
 			when('/import', {
 				templateUrl: 'templates/import.html'
 			}).
-            when('/test', {
-                templateUrl: 'templates/test.html',
-                controller: 'testController'
-            }).
-            when('/api', {
-                templateUrl: 'templates/api.html'
-            }).
 			when('/pause', {
 				templateUrl: 'templates/pause.html'
 			}).
