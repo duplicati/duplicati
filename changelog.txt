@@ -1,3 +1,11 @@
+2015-11-30
+==========
+* Added a check after repairing to test if more damages are done than fixed
+* Implemented correct escaping of environment variables when used in regular expressions
+* Improved the Greeno WebUI when picking file paths
+* Added the new Angular code and the UI by Alexander
+* Added a theme switcher
+
 2015-11-18
 ==========
 * Improved CLI output when there are no results
