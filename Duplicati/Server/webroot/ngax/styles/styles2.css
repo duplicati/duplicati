@@ -444,3 +444,59 @@ ul.tabs > li.active, ul.tabs > li.active > a {
   background-color: lightgray;
   color: black;  
 }
+
+div.connection-lost, div.blocker {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  margin: auto;
+}
+
+div.connection-lost {
+  width: 250px;
+  height: 200px;
+}
+
+div.blocker {
+  background-color: #000000;
+  opacity: 0.65;
+}
+
+.connection-lost div.info {
+  display: inline-block;
+}
+
+.connection-lost div.title {
+  border: 1px solid #65b1dd;
+  background-color: #65b1dd;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  padding: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+  font-weight: bold;
+  color: lightgray;
+  width: 100%;
+  text-align: center;
+}
+
+.connection-lost div.content {
+  background-color: white;
+  border: 1px solid white;
+  padding: 20px;
+  width: 100%;
+  min-width: 250px;
+}
+
+.connection-lost div.content.buttons { 
+  padding-bottom: 45px;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+

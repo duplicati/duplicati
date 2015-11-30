@@ -34,7 +34,7 @@
 
     <div class="tasks" ng-controller="HomeController">
         <div class="tasklist">
-            <h3><p ng-if="backups.length > 0">Scheduled backups:</p></h3>
+            <h3><p ng-if="backups.length > 0">Stored backup jobs:</p></h3>
             <div ng-repeat="item in backups" class="task">
                 <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}</a>
 

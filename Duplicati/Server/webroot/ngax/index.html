@@ -16,7 +16,7 @@
 
     <!-- <script type="text/javascript" src="scripts/libs/jquery.min.js"></script> -->
 
-    <script type="text/javascript" src="scripts/angular/angular.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular.min.js"></script>
     <script type="text/javascript" src="scripts/angular/angular-route.min.js"></script>
 
     <script type="text/javascript" src="scripts/angular/angular-loader.min.js"></script>
@@ -76,9 +76,9 @@
 	</script>
 
 </head>
-<body>
+<body ng-controller="AppController">
      
-	<div class="container" ng-controller="AppController">
+	<div class="container">
 	    <div class="header">
 	        <div class="logo">
 	            <a href="#" data-page="home" class="home">{{appName}}</a>
@@ -152,6 +152,23 @@
 	    </div>
 	</div>
 
+	<div ng-show="state.connectionState != 'connected'" class="blocker"></div>
+
+	<div ng-show="state.connectionState != 'connected'" class="connection-lost">
+		<div class="info">
+			<div class="title">Connection lost</div>
+			<div class="content" ng-show="state.connectionState !='connecting'">
+				The connection to the server is lost, attempting again in {{ state.connectionAttemptTimer + 1000 | timeremaining }} ...
+			</div>
+			<div class="content" ng-hide="state.connectionState !='connecting'">
+				Connnecting to server ...
+			</div>
+			<div class="content buttons">
+				<a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button">Connect now</a>
+				<a href ng-hide="state.connectionState != 'connecting'" class="button" style="cursor: default;">Connecting...</a>
+			</div>
+		</div>
+	</div>
 
 
 </body>

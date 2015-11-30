@@ -48,6 +48,9 @@ backupApp.filter('timeremaining', function() {
 		r[i] = v;
 	};
 
+	if (r.length == 1)
+		r.unshift('0');
+
 	return r.join(':');
   }
 });

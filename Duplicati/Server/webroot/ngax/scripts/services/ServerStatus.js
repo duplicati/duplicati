@@ -15,6 +15,7 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         connectionState: 'connected',
         xsfrerror: false,
         connectionAttemptTimer: 0,
+        failedConnectionAttempts: 0,
         lastPgEvent: null
     };
 
@@ -143,7 +144,7 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                 $rootScope.$broadcast('serverstatechanged');
             }
 
-        }, 500);
+        }, 1000);
     };
 
     var updatepausetimer = null;
@@ -188,6 +189,7 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (state.lastEventId > 0 ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
         AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
             function (response) {
+                var oldEventId = state.lastEventId;
                 var anychanged =
                     notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
                     notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
@@ -196,11 +198,18 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                     notifyIfChanged(response.data, 'ProgramState', 'programState') |
                     notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd');
 
+                // Clear error indicators
+                state.failedConnectionAttempts = 0;
+                state.xsfrerror = false;
 
                 if (state.connectionState != 'connected') {
                     state.connectionState = 'connected';
                     $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
                     anychanged = true;
+
+                    // Reload page, server restarted
+                    if (oldEventId > state.lastEventId)
+                        location.reload(true);
                 }
 
                 anychanged |= pauseTimerUpdater(true);
@@ -215,20 +224,28 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
                 longpoll();
             },
 
-            function(respone) {
-                if (state.connectionState == 'connected') {
-                    // First failure, we ignore
-                    state.connectionState = 'connecting';
+            function(response) {
+
+                var oldxsfrstate = state.xsfrerror;
+                state.failedConnectionAttempts++;
+                state.xsfrerror = response.statusText.toLowerCase().indexOf('xsrf') >= 0;
+
+                // First failure, we ignore
+                if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
 
                     // Try again
                     longpoll();
                 } else {
 
-                    // Real failure, start countdown
-                    state.lastEventId = -1;
                     state.connectionState = 'disconnected';
 
-                    countdownForForReLongPoll(longpoll);
+                    //If we got a new XSRF token this time, quickly retry
+                    if (state.xsfrerror && !oldxsfrstate) {
+                        longpoll();    
+                    } else {
+                        // Otherwise, start countdown to next try
+                        countdownForForReLongPoll(longpoll);
+                    }
                 }
 
                 // Notify
@@ -237,6 +254,8 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
             }
         );
     };
+
+    this.reconnect = longpoll;
 
     longpoll();
 });
