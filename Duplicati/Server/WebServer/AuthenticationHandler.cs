@@ -239,12 +239,8 @@ namespace Duplicati.Server.WebServer
 
             var limitedAccess =
                 ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase)
-
-                // While the REST API is under development, it is nice to be able to access it directly
-#if !DEBUG
                 ||
                 request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
-#endif
             ;
 
             if (limitedAccess)
