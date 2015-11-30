@@ -5,9 +5,35 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9" />
 <title>Backup</title>
 
-    <script type="text/javascript">
-        window.location = 'greeno';
-    </script>
+<script type="text/javascript">
+    function parseCookies(){
+
+        var cookiestrings = document.cookie.split('; ');
+        var cookies = {};
+
+        for(var i=cookiestrings.length-1; i>=0; i--){
+           var parts = cookiestrings[i].split('=');
+           cookies[parts[0]] = parts[1];
+        }
+
+        return cookies;
+    }
+
+	function setCookieAndRun(theme) {
+	    var d = new Date();
+    	d.setTime(d.getTime() + (90*24*60*60*1000));
+
+		document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
+		window.location = theme;
+	}
+
+    var theme = parseCookies()['default-theme'];
+    if ((theme || '').trim().length == 0)
+    	theme = 'greeno';
+    
+	setCookieAndRun(theme); // Refresh
+
+</script>
 
 </body>
 </html>
