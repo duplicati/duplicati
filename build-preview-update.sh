@@ -16,7 +16,9 @@ GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest"
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
+GPG_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-gpgkey.key"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
+GPG=/usr/local/bin/gpg2
 
 if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
 	echo "Changelog file is missing..."
@@ -37,7 +39,7 @@ echo
 
 RELEASE_CHANGEINFO_NEWS=`cat ${RELEASE_CHANGELOG_NEWS_FILE}`
 
-git stash save "${GIT_STASH_NAME}"
+echo git stash save "${GIT_STASH_NAME}"
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
@@ -64,6 +66,9 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 mono "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 ${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+
+exit 1
+
 ${XBUILD} /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
@@ -96,26 +101,33 @@ rm -rf "${UPDATE_SOURCE}/"*.pdb;
 echo
 echo "Building signed package ..."
 
-mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/preview.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="$KEYFILE_PASSWORD"
+mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/preview.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
 mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
 mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
+mv "${UPDATE_TARGET}/package.zip.sig" "${UPDATE_TARGET}/latest.zip.sig"
+mv "${UPDATE_TARGET}/package.zip.sig.asc" "${UPDATE_TARGET}/latest.zip.sig.asc"
 cp "${UPDATE_TARGET}/latest.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
+cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
+cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
 echo "Uploading binaries"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
+aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig"
+aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig.asc"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.manifest"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/rene/latest.manifest"
 
 echo "To release, run:"
 echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/latest.manifest"
 echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/preview/latest.zip"
-
+echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/preview/latest.zip.sig"
+echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/preview/latest.zip.sig.asc"
 
 ZIP_MD5=`md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}'`
 ZIP_SHA1=`shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
