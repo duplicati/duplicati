@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7E119745-1F62-43F0-936C-F312A1912C0B}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Duplicati.Library.AutoUpdater</RootNamespace>
