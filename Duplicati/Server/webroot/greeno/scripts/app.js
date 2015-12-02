@@ -761,7 +761,7 @@ $(document).ready(function() {
                         if (self.Action == 'backup:show-log') {
                             buttons.push({
                                 text: 'Show',
-                                onClick: function($noty) { $.showBackupLog(self.BackupID); }
+                                onClick: function($noty) { $.showBackupLog(this.notification.BackupID); }
                             });
                         } else if (self.Action == 'update:new') {
                             buttons.push({
@@ -774,10 +774,10 @@ $(document).ready(function() {
                                 onClick: function($noty) { APP_DATA.installUpdate(); $noty.close(); }
                             });
                         } else if (self.Action != null && self.Action.indexOf('bug-report:created:') == 0) {
-                            var id = self.Action.substr('bug-report:created:'.length);
+                            self.bugreportid = self.Action.substr('bug-report:created:'.length);
                             buttons.push({
                                 text: 'Download',
-                                onClick: function($noty) { APP_DATA.downloadBugReport(id); $noty.close(); }
+                                onClick: function($noty) { APP_DATA.downloadBugReport(this.notification.bugreportid); $noty.close(); }
                             });
                         }
 
@@ -787,11 +787,13 @@ $(document).ready(function() {
                             type: self.Type.toLowerCase(),
                             callback: {
                                 afterClose: function() {
-                                    APP_DATA.callServer({'action': 'dismiss-notification', 'id': self.ID});                                    
+                                    APP_DATA.callServer({'action': 'dismiss-notification', 'id': this.notification.ID});                                    
                                 }
                             },
                             buttons: buttons
                         });
+
+                        self.noty.notification = self;
                     }
                 }
 
