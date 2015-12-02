@@ -1,4 +1,4 @@
-backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppService, AppUtils) {
+backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils) {
 
     var longpolltime = 5 * 60 * 1000;
 
@@ -189,7 +189,7 @@ backupApp.service('ServerStatus', function($http, $rootScope, $timeout, AppServi
         var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (state.lastEventId > 0 ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
         AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
             function (response) {
-                var oldEventId = state.lastEventId;
+                var oldEventId = state.lastEventId;                
                 var anychanged =
                     notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
                     notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
