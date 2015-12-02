@@ -21,7 +21,7 @@ backupApp.service('Localization', function($rootScope, $timeout, AppService, App
         });
 
         if (m) $timeout(m);
-    }
+    };
 
     this.setLocale = function(locale) {
         AppService.get('/localizations/' + locale).then(function(data) {
