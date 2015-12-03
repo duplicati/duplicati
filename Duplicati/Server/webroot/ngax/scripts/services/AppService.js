@@ -64,4 +64,9 @@ backupApp.service('AppService', function($http, $cookies) {
         return rurl;
     };
 
+    this.get_bugreport_url = function(reportid) {
+        return this.apiurl + '/bugreport/' + reportid + '?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+    };
+
+
 });

@@ -5,7 +5,7 @@ backupApp.service('AppUtils', function() {
     this.formatSizes = ['TB', 'GB', 'MB', 'KB'];
     this.formatSizeString = function(val) {
         val = parseInt(val || 0);
-        var max = formatSizes.length;
+        var max = this.formatSizes.length;
         for(var i = 0; i < this.formatSizes.length; i++) {
             var m = Math.pow(1024, max - i);
             if (val > m)

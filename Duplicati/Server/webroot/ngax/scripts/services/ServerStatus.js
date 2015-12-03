@@ -16,7 +16,11 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         xsfrerror: false,
         connectionAttemptTimer: 0,
         failedConnectionAttempts: 0,
-        lastPgEvent: null
+        lastPgEvent: null,
+        updaterState: 'Waiting',
+        updatedVersion: null,
+        updateReady: false,
+        updateDownloadProgress: 0
     };
 
     this.state = state;
@@ -196,7 +200,11 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
                     notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
                     notifyIfChanged(response.data, 'ProgramState', 'programState') |
-                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd');
+                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd')
+                    notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
+                    notifyIfChanged(response.data, 'UpdateReady', 'updateReady') |
+                    notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|
+                    notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
 
                 // Clear error indicators
                 state.failedConnectionAttempts = 0;
