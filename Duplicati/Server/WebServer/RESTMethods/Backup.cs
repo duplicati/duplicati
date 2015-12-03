@@ -287,7 +287,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var parts = (key ?? "").Split(new char[] { '/' }, 2);
             var bk = Program.DataConnection.GetBackup(parts.First());
             if (bk == null)
-                info.ReportClientError("Invalid or missing backup id");
+                info.ReportClientError("Invalid or missing backup id", System.Net.HttpStatusCode.NotFound);
             else
             {
                 if (parts.Length > 1)
