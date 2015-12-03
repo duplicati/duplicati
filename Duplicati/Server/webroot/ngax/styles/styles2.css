@@ -446,7 +446,7 @@ ul.tabs > li.active, ul.tabs > li.active > a {
 }
 
 div.connection-lost, div.blocker {
-  position: absolute;
+  position: fixed;
   top: 0px;
   left: 0px;
   right: 0px;
@@ -505,7 +505,7 @@ div.blocker {
 }
 
 ul.notification {
-    position: absolute;
+    position: fixed;
     bottom: 0px;
     left: 0px;
     right: 0px;
