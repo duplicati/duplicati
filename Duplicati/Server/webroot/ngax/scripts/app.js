@@ -38,6 +38,9 @@ backupApp.config(['$routeProvider',
 			when('/log', {
 				templateUrl: 'templates/log.html'
 			}).
+			when('/updatechangelog', {
+				templateUrl: 'templates/updatechangelog.html'
+			}).
 			when('/export/:backupid', {
 				templateUrl: 'templates/export.html'
 			}).
