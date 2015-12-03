@@ -1,7 +1,8 @@
-backupApp.controller('AboutController', function($scope, BrandingService, ServerStatus, AppService, SystemInfo) {
+backupApp.controller('AboutController', function($scope, $location, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils) {
     $scope.appName = BrandingService.appName;
     $scope.Page = 'general';
     $scope.sysinfo = SystemInfo.watch($scope);
+    $scope.state = ServerStatus.watch($scope);
 
     // Common licenses
     var licenses = {
@@ -40,5 +41,22 @@ backupApp.controller('AboutController', function($scope, BrandingService, Server
     		});
     	}
     });
+
+    $scope.doShowUpdateChangelog = function() {
+        $location.path('/updatechangelog');
+    };
+
+    $scope.doStartUpdateDownload = function() {
+        AppService.post('/updates/install');
+    };
+
+    $scope.doStartUpdateActivate = function() {
+        AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError('Activate failed: '));
+    };
+
+    $scope.doCheckForUpdates = function() {
+        AppService.post('/updates/check');
+
+    };
 
 });

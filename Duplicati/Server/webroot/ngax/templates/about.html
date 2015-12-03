@@ -10,7 +10,22 @@
         <div>{{appName}} was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. {{appName}} can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. {{appName}} is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.</div>
 
         <div>&nbsp;</div>
-        <div>You are currently running {{appName}} {{sysinfo.ServerVersionName || 'unknown'}}</p></div>
+        <div>You are currently running {{appName}} {{sysinfo.ServerVersionName || 'unknown'}}</div>
+
+        <div ng-show="state.updatedVersion != null &amp;&amp; !state.updateReady">
+            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href ng-click="doStartUpdateDownload()">download now</a>
+        </div>
+        <div ng-show="state.updatedVersion != null &amp;&amp; state.updateReady">
+            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is installed, <a href ng-click="doStartUpdateActivate()">activate now</a>
+        </div>
+
+        <a ng-show="state.updaterState == 'Waiting'" href ng-click="doCheckForUpdates()">Check for updates now</a>
+        <div ng-show="state.updaterState == 'Checking'" >Checking for updates ...</div>
+
+        <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update ...'", ng-progress="state.updateDownloadProgress">
+        </progress-bar>
+
+        <div>&nbsp;</div>
 
         <div class="prewrapped-text">{{Acknowledgements || 'Loading ...'}}</div>
     </div>
