@@ -17,5 +17,44 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     	ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };
 
+    function updateStateDisplay() {
+        var text = 'Running ...';
+        var pg = -1;
+        if ($scope.state.lastPgEvent != null)
+        {
+            text = ServerStatus.progress_state_text[$scope.state.lastPgEvent.Phase || ''] || $scope.state.lastPgEvent.Phase;
+
+
+            if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles') {
+                if ($scope.state.lastPgEvent.StillCounting) {
+                    text = 'Counting (' + $scope.state.lastPgEvent.TotalFileCount + ' files found, ' + AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize) + ')';
+                    pg = 0;
+                } else {
+                    var filesleft = $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount;
+                    var sizeleft = $scope.state.lastPgEvent.TotalFileSize - $scope.state.lastPgEvent.ProcessedFileSize;
+                    pg = $scope.state.lastPgEvent.ProcessedFileSize / $scope.state.lastPgEvent.TotalFileSize;
+
+                    if ($scope.state.lastPgEvent.ProcessedFileCount == 0)
+                        pg = 0;
+                    else if (pg >= 1)
+                        pg = 0.95;
+
+                    text = filesleft + ' files (' + AppUtils.formatSizeString(sizeleft) + ') to go';
+                }
+            }
+            else if ($scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload') {
+                pg = 1;
+            }
+            else if ($scope.state.lastPgEvent.OverallProgress > 0) {
+                pg = $scope.state.lastPgEvent.OverallProgress;
+            }
+        }
+
+        $scope.StateText = text;
+        $scope.Progress = pg;
+    };
+
+    $scope.$watch('state.lastPgEvent', updateStateDisplay, true);
+
 
 });
