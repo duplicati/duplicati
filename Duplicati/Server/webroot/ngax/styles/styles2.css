@@ -549,6 +549,10 @@ ul.notification {
   color: black;
 }
 
+.notification .buttons {
+  padding-top: 6px;
+}
+
 .notification .button {
   padding: 2px 10px;
 }
