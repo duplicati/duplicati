@@ -67,8 +67,6 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 mono "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 ${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
-exit 1
-
 ${XBUILD} /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
