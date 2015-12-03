@@ -7,9 +7,6 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
 
     $scope.connecting = false;
 
-    // DEBUG
-    $scope.TargetURL = 'file:///Users/kenneth/Udvikler/duplicati-git/Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug/testtarget';
-
     $scope.HideEditUri = function() {
         $scope.EditUriState = false;
     };
