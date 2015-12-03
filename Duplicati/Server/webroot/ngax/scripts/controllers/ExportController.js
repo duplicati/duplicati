@@ -30,6 +30,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
             );
         } else {
             $scope.DownloadURL = AppService.get_export_url($scope.BackupID, $scope.Passphrase);
+            document.getElementById('export-download-iframe').src = $scope.DownloadURL;
             $scope.Completed = true;
         }
 
