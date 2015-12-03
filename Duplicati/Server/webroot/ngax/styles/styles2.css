@@ -503,3 +503,69 @@ div.blocker {
 .themelink {
   margin-left: 20px;
 }
+
+ul.notification {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    margin: auto;
+    width: 300px;
+}
+
+.notification .title {
+  border: 1px solid #65b1dd;
+  background-color: #65b1dd;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  padding: 2px;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-weight: bold;
+  color: lightgray;
+  width: 100%;
+  text-align: center;
+  clear: both;
+}
+
+.notification .content {
+  background-color: white;
+  border: 1px solid #65b1dd;  
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  padding: 2px;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-bottom: 30px;
+  width: 100%;
+}
+
+.notification .message {
+  width: 100%;
+  color: black;
+}
+
+.notification .button {
+  padding: 2px 10px;
+}
+
+
+.notification .error .title, .notification .error .content, .notification .error .button {
+  border-color: red;
+}
+
+.notification .error .title, .notification .error .button {
+  background-color: red;
+}
+
+.notification .warning .title, .notification .warning .button {
+  background-color: orange;
+}
+
+.notification .warning .title, .notification .warning .content, .notification .warning .button {
+  border-color: orange;
+}
