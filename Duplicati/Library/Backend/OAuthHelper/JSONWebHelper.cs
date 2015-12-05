@@ -47,6 +47,59 @@ namespace Duplicati.Library
             return req;
         }
 
+        /// <summary>
+        /// Executes a web request and json-deserializes the results as the specified type
+        /// </summary>
+        /// <returns>The deserialized JSON data.</returns>
+        /// <param name="url">The remote URL</param>
+        /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
+        /// <param name="setupreq">A callback method that can be used to submit data into the body of the request.</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        public T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
+        {
+            var req = CreateRequest(url);
+
+            if (setup != null)
+                setup(req);
+
+            var areq = new AsyncHttpRequest(req);
+
+            if (setupreq != null)
+                setupreq(areq);
+
+            return ReadJSONResponse<T>(areq);
+        }
+
+        /// <summary>
+        /// Executes a web request by POST'ing the supplied object and json-deserializes the results as the specified type
+        /// </summary>
+        /// <returns>The deserialized JSON data.</returns>
+        /// <param name="url">The remote URL</param>
+        /// <param name="item">The data to json-serialize and POST in the request</param>
+        /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
+        /// <param name="setupreq">A callback method that can be used to submit data into the body of the request.</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        public T PostAndGetJSONData<T>(string url, object item, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
+        {
+            var data = JsonConvert.SerializeObject(item);
+
+            return GetJSONData(
+                url,
+                req =>
+                {
+                    req.Method = "POST";
+                    req.ContentType = "application/json; charset=utf-8";
+                    req.ContentLength = data.Length;
+                },
+
+                req =>
+                {
+                    using(var rs = req.GetRequestStream())
+                        rs.Write(data, 0, data.Length);
+                }
+            );
+        }
+
         public T ReadJSONResponse<T>(string url, object requestdata = null, string method = null)
         {
             if (requestdata is string)

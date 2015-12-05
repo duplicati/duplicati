@@ -57,21 +57,6 @@ namespace Duplicati.Library
                 throw new Exception(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl));
         }
 
-        public T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
-        {
-            var req = CreateRequest(url);
-
-            if (setup != null)
-                setup(req);
-
-            var areq = new AsyncHttpRequest(req);
-
-            if (setupreq != null)
-                setupreq(areq);
-
-            return ReadJSONResponse<T>(areq);
-        }
-
         public T GetTokenResponse<T>()
         {
             var req = CreateRequest(OAUTH_SERVER);
