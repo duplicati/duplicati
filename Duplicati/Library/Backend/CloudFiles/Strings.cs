@@ -22,7 +22,4 @@ namespace Duplicati.Library.Backend.Strings {
         public static string NoUserIDError { get { return LC.L(@"No CloudFiles userID given"); } }
         public static string UnexpectedResponseError { get { return LC.L(@"Unexpected CloudFiles response, perhaps the API has changed?"); } }
     }
-    internal static class MD5CalculatingStream {
-        public static string IncorrectUsageError { get { return LC.L(@"Cannot read and write on the same stream"); } }
-    }
 }

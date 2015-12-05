@@ -17,6 +17,8 @@
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -67,6 +69,7 @@
     <Compile Include="JoinedFilterExpression.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="FilterCollector.cs" />
+    <Compile Include="HashCalculatingStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -300,7 +300,7 @@ namespace Duplicati.Library.Backend
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (WebResponse resp = areq.GetResponse())
             using (System.IO.Stream s = areq.GetResponseStream())
-            using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
+            using (var mds = new Utility.MD5CalculatingStream(s))
             {
                 string md5Hash = resp.Headers["ETag"];
                 Utility.Utility.CopyStream(mds, stream, true, m_copybuffer);
@@ -348,7 +348,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
-                using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
+                using (var mds = new Utility.MD5CalculatingStream(s))
                 {
                     Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);
                     fileHash = mds.GetFinalHashString();

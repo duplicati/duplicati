@@ -32,4 +32,7 @@ namespace Duplicati.Library.Utility.Strings {
         public static string FormatStringTB(double size) { return LC.L(@"{0:N} TB", size); }
         public static string InvalidDateError(string data) { return LC.L(@"The string ""{0}"" could not be parsed into a date", data); }
     }
+    internal static class MD5CalculatingStream {
+        public static string IncorrectUsageError { get { return LC.L(@"Cannot read and write on the same stream"); } }
+    }
 }
