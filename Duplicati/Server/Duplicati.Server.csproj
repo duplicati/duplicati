@@ -252,6 +252,10 @@
       <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>
       <Name>Duplicati.CommandLine.RecoveryTool</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj">
+      <Project>{08D7E42D-285C-4010-9881-986125FE2F3E}</Project>
+      <Name>Duplicati.Library.Backend.AmazonCloudDrive</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />

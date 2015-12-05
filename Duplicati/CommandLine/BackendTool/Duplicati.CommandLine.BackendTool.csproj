@@ -119,6 +119,10 @@
       <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
       <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj">
+      <Project>{08D7E42D-285C-4010-9881-986125FE2F3E}</Project>
+      <Name>Duplicati.Library.Backend.AmazonCloudDrive</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
