@@ -712,4 +712,53 @@ $(document).ready(function() {
         }
     }    
 
+    APP_DATA.plugins.backend['b2'] = {
+
+        PLUGIN_B2_LINK: 'https://www.backblaze.com/b2/cloud-storage.html',
+
+        hasssl: false,
+        hideserverandport: true,
+        usernamelabel: 'B2 Account ID',
+        passwordlabel: 'B2 Application Key',
+        usernamewatermark: 'B2 Cloud Storage Account ID',
+        passwordwatermark: 'B2 Cloud Storage Application Key',
+
+        setup: function(dlg, div) {
+            var self = this;
+
+            $('#server-path-label').hide();
+            $('#server-path').hide();
+
+            var bucketfield = EDIT_URI.createFieldset({label: 'B2 Bucket name', name: 'b2-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
+            var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: this.PLUGIN_B2_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
+
+            signuplink.outer.css('margin-bottom', '10px');
+
+            this.bucket_field = bucketfield.field;
+        },
+
+        cleanup: function(dlg, div) {
+            $('#server-path-label').show();
+            $('#server-path').show();
+            this.bucket_field = null;
+        },
+
+        validate: function(dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return;
+
+            if (values['server-path'] == '')
+                return EDIT_URI.validation_error(this.bucket_field, 'You must enter a B2 bucket name');
+
+            return true;
+        },
+
+        fill_form_map: {
+            'server-path': 'b2-bucket'
+        },
+
+        fill_dict_map: {
+            'b2-bucket': 'server-path'
+        }
+    }
 });

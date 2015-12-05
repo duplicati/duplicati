@@ -21,6 +21,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['openstack']   = 'templates/backends/openstack.html';
 	EditUriBackendConfig.templates['azure']       = 'templates/backends/azure.html';
 	EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
+	EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
 
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
@@ -244,6 +245,16 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		this['oauth-base'].apply(this, arguments);
 	};
 
+	EditUriBackendConfig.parsers['b2'] = function(scope, module, server, port, path, options) {
+		if (options['--b2-accountid'])
+			scope.Username = options['--b2-accountid'];
+		if (options['--b2-applicationkey'])
+			scope.Password = options['--b2-applicationkey'];
+
+		var nukeopts = ['--b2-accountid', '--b2-applicationkey'];
+		for(var x in nukeopts)
+			delete options[nukeopts[x]];
+	};
 
 	// Builders take the scope and produce the uri output
 	EditUriBackendConfig.builders['s3'] = function(scope) {
@@ -469,6 +480,14 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		return res;
 	};
 
+	EditUriBackendConfig.validaters['b2'] = function(scope) {
+		var res =
+			EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
+			EditUriBackendConfig.require_field(scope, 'Username', 'B2 Cloud Storage Account ID') &&
+			EditUriBackendConfig.require_field(scope, 'Password', 'B2 Cloud Storage Application Key');
+
+		return res;
+	};
 
 
 });

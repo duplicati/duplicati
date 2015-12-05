@@ -4,9 +4,9 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, AppService, AppUt
 	this.state = state;
 
 	var backendgroups = {
-		std: {'ftp': null, 'ssh': null, 'webdav': null, 'openstack': 'OpenStack Object Storage/ Swift', 's3': 'S3 Compatible'},
+		std: {'ftp': null, 'ssh': null, 'webdav': null, 'openstack': 'OpenStack Object Storage / Swift', 's3': 'S3 Compatible'},
 		local: {'file': null},
-		prop: { 's3': null, 'azure': null, 'googledrive': null, 'onedrive': null, 'cloudfiles': null, 'gcs': null, 'openstack': null, 'hubic': null }
+		prop: { 's3': null, 'azure': null, 'googledrive': null, 'onedrive': null, 'cloudfiles': null, 'gcs': null, 'openstack': null, 'hubic': null, 'amzcd': null, 'b2': null }
 	}
 
 	this.backendgroups = backendgroups;
