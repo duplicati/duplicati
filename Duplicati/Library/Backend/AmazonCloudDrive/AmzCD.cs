@@ -286,7 +286,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                     }
                 );
 
-                FileCache[item.Name] = item.ID;
+                if (m_filecache != null)
+                    m_filecache[item.Name] = item.ID;
             }
             catch(Exception ex)
             {
@@ -350,7 +351,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 // Docs say to check for empty response ...
                 //if (lst.Count < PAGE_SIZE)
                 //    break;
-            } while(nextToken != null)
+            } while(nextToken != null);
 
             m_filecache = cache;
             return res;
