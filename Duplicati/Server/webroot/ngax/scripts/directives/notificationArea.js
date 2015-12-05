@@ -35,8 +35,8 @@ backupApp.directive('notificationArea', function() {
             AppService.post('/updates/install');
         };
 
-        $scope.doActivateUpdate = function() {
-            AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError('Activate failed: '));
+        $scope.doActivateUpdate = function(id) {
+            AppService.post('/updates/activate').then(function() { $scope.doDismiss(id); }, AppUtils.connectionError('Activate failed: '));
         };
 
         $scope.doShowUpdate = function(id) {

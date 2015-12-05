@@ -1,36 +1,4 @@
 <ul class="notification">
-	<!-- <li ng-show="state.updaterState != 'Waiting' || state.updatedVersion != null">
-		<div class="title">Updates</div>
-		<div class="content">
-
-			<div ng-show="state.updaterState == 'Checking'">
-				<div class="message">Checking for updates ...</div>
-			</div>
-			
-			<div xng-show="state.updaterState == 'Downloading'">
-				<div class="message">
-		            <progress-bar ng-text="Downloading update..." ng-progress="state.updateDownloadProgress"></progress-bar>
-	            </div>
-			</div>
-
-			<div ng-show="state.updaterState == 'Waiting' &amp;&amp; state.updateReady">
-				<div class="message">Update <a href ng-click="doShowUpdate()">{{state.updatedVersion}}</a> is installed</div>
-
-				<div class="buttons">
-					<a href ng-click="doActivateUpdate()" class="button activateupdate">Activate</a>
-
-				</div>
-			</div>
-
-			<div ng-show="state.updaterState == 'Waiting' &amp;&amp; !state.updateReady &amp;&amp; state.updatedVersion != null">
-				<div class="message">Update <a href ng-click="doShowUpdate()">{{state.updatedVersion}}</a> is available</div>
-				<div class="buttons">
-					<a href ng-click="doInstallUpdate()" class="button installupdate">Install</a>
-				</div>
-			</div>
-		</div>		
-	</li> -->
-
 	<li ng-repeat="item in Notifications track by item.ID" ng-show="$index < 4" class="{{item.Type.toLowerCase()}}">
 		<div class="title">{{item.Title}}</div>
 		<div class="content">
