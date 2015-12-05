@@ -55,7 +55,7 @@ namespace Duplicati.Library
         /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
         /// <param name="setupreq">A callback method that can be used to submit data into the body of the request.</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
-        public T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
+        public virtual T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
         {
             var req = CreateRequest(url);
 
@@ -79,11 +79,11 @@ namespace Duplicati.Library
         /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
         /// <param name="setupreq">A callback method that can be used to submit data into the body of the request.</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
-        public T PostAndGetJSONData<T>(string url, object item, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
+        public virtual T PostAndGetJSONData<T>(string url, object item, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
         {
-            var data = JsonConvert.SerializeObject(item);
+            var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
 
-            return GetJSONData(
+            return GetJSONData<T>(
                 url,
                 req =>
                 {
@@ -100,7 +100,7 @@ namespace Duplicati.Library
             );
         }
 
-        public T ReadJSONResponse<T>(string url, object requestdata = null, string method = null)
+        public virtual T ReadJSONResponse<T>(string url, object requestdata = null, string method = null)
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
@@ -111,23 +111,32 @@ namespace Duplicati.Library
             return ReadJSONResponse<T>(CreateRequest(url, method), requestdata);
         }
 
-        public T ReadJSONResponse<T>(HttpWebRequest req, object requestdata = null)
+        public virtual T ReadJSONResponse<T>(HttpWebRequest req, object requestdata = null)
         {
             return ReadJSONResponse<T>(new AsyncHttpRequest(req), requestdata);   
         }
 
-        public T ReadJSONResponse<T>(AsyncHttpRequest req, object requestdata = null)
+        public virtual T ReadJSONResponse<T>(AsyncHttpRequest req, object requestdata = null)
         {
             using(var resp = GetResponse(req, requestdata))
                 return ReadJSONResponse<T>(resp);
         }
 
-        public T ReadJSONResponse<T>(HttpWebResponse resp)
+        public virtual T ReadJSONResponse<T>(HttpWebResponse resp)
         {
             using(var rs = resp.GetResponseStream())
             using(var tr = new System.IO.StreamReader(rs))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                 return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);
+        }
+
+        /// <summary>
+        /// Use this method to register an exception handler,
+        /// which can throw another, more meaningfull exception
+        /// </summary>
+        /// <param name="ex">The exception being processed.</param>
+        protected virtual void ParseException(Exception ex)
+        {
         }
 
         public HttpWebResponse GetResponseWithoutException(string url, string method = null)
@@ -173,31 +182,38 @@ namespace Duplicati.Library
 
         public HttpWebResponse GetResponse(AsyncHttpRequest req, object requestdata = null)
         {
-            
-            if (requestdata != null)
+            try
             {
-                if (requestdata is System.IO.Stream)
+                if (requestdata != null)
                 {
-                    var stream = requestdata as System.IO.Stream;
-                    req.Request.ContentLength = stream.Length;
-                    if (string.IsNullOrEmpty(req.Request.ContentType))
-                        req.Request.ContentType = "application/octet-stream";
+                    if (requestdata is System.IO.Stream)
+                    {
+                        var stream = requestdata as System.IO.Stream;
+                        req.Request.ContentLength = stream.Length;
+                        if (string.IsNullOrEmpty(req.Request.ContentType))
+                            req.Request.ContentType = "application/octet-stream";
 
-                    using(var rs = req.GetRequestStream())
-                        Library.Utility.Utility.CopyStream(stream, rs);
-                }
-                else
-                {
-                    var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
-                    req.Request.ContentLength = data.Length;
-                    req.Request.ContentType = "application/json; charset=UTF-8";
+                        using(var rs = req.GetRequestStream())
+                            Library.Utility.Utility.CopyStream(stream, rs);
+                    }
+                    else
+                    {
+                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
+                        req.Request.ContentLength = data.Length;
+                        req.Request.ContentType = "application/json; charset=UTF-8";
 
-                    using(var rs = req.GetRequestStream())
-                        rs.Write(data, 0, data.Length);
+                        using(var rs = req.GetRequestStream())
+                            rs.Write(data, 0, data.Length);
+                    }
                 }
+
+                return (HttpWebResponse)req.GetResponse();
             }
-
-            return (HttpWebResponse)req.GetResponse();
+            catch(Exception ex)
+            {
+                ParseException(ex);
+                throw;
+            }
         }
     }
 }
