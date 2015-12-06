@@ -172,9 +172,11 @@
             <form class="styled">
                 <div class="input checkbox multiple">
                     <input type="checkbox" id="useScheduleRun" ng-checked="Schedule != null" ng-click="toggleSchedule()" />
-                    <label for="useScheduleRun">If a date was missed, the job will run as soon as possible.</label>
+                    <label for="useScheduleRun">Automatically run backups.</label>
                 </div>
                 <div ng-hide="Schedule == null">
+                    <div>If a date was missed, the job will run as soon as possible.</div>
+
                     <div class="input text multiple">
                         <label for="nextRunTime">Next time</label>
                         <input type="time" ng-model="Schedule.Time" id="nextRunTime" />
