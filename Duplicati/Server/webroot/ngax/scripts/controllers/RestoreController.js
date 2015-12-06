@@ -5,7 +5,6 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.restore_step = 0;
     $scope.connecting = false;
-    $scope.isTemporaryBackup = true;
     $scope.HideFolderBrowser = true;
     $scope.RestoreLocation = 'direct';
     $scope.RestoreMode = 'overwrite';
@@ -70,6 +69,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
         AppService.get('/backup/' + $scope.BackupID + '/filesets' + qp).then(
             function(resp) {
+                $scope.connecting = false;
                 $scope.Filesets = resp.data;
                 $scope.parseBackupTimesData();
                 $scope.fetchPathInformation();
@@ -90,6 +90,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     $scope.fetchPathInformation = function() {
         var version = $scope.RestoreVersion + '';
 
+        if ($scope.connecting)
+            return;
+
         if (inProgress[version] || $scope.restore_step != 0)
             return;
 
@@ -109,7 +112,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         };
 
         if (filesetsBuilt[version] == null) {
-            if ($scope.isTemporaryBackup && filesetsRepaired[version] == null) {
+            if ($scope.IsBackupTemporary && filesetsRepaired[version] == null) {
                 $scope.connecting = true;
                 $scope.ConnectionProgress = 'Fetching path information ...';
                 inProgress[version] = true;
