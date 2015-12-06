@@ -81,13 +81,17 @@ namespace Duplicati.Library.AutoUpdater
             string installdir = null;
             var attempts = new string[] {
                 System.IO.Path.Combine(InstalledBaseDir, "updates"),
-                System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), APPNAME, "updates"),
+
+                // Not defined on Non-Windows
+                string.IsNullOrWhiteSpace(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)) 
+                    ? null : System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), APPNAME, "updates"),
+
                 System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"),
                 System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"),
             };
 
             foreach(var p in attempts)
-                if (TestDirectoryIsWriteable(p))
+                if (!string.IsNullOrWhiteSpace(p) && TestDirectoryIsWriteable(p))
                 {
                     installdir = p;
                     break;
