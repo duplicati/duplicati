@@ -241,11 +241,12 @@
 }
 
 .step2 source-folder-picker, #folder_path_picker, #restore_file_picker {
-  max-height: 200px;
   overflow: auto;
   display: block;
   border: 1px solid lightgray;
-  padding: 2px
+  padding: 2px;
+  height: 100%;
+  overflow: auto;
 }
 
 .step1 li.strength.score-0 {
@@ -572,4 +573,12 @@ ul.notification {
 
 .notification .warning .title, .notification .warning .content, .notification .warning .button {
   border-color: orange;
+}
+
+.filepicker {
+  height: 200px;
+}
+
+.resizable {
+  margin-bottom: 6px;
 }

@@ -1,3 +1,5 @@
+<script>$(function() { $( ".resizable" ).resizable(); });</script>
+
 <div ng-init="HideFolderBrowser = ($parent.Path || '') != ''"></div>
 
 <div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
@@ -15,7 +17,9 @@
     </div>
 	
     <label for="folder_path_picker">Folder path</label>
-	<destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="$parent.Path" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
+    <div class="resizable filepicker">
+	   <destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="$parent.Path" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
+   </div>
 </div>
 
 <div class="input text">

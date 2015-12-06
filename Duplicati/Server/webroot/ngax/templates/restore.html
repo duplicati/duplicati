@@ -1,3 +1,5 @@
+<script>$(function() { $( ".resizable" ).resizable(); });</script>
+
 <div class="restore" ng-controller="RestoreController">
     <form id="restore" class="styled">
 
@@ -17,8 +19,9 @@
                 <a href id="searchfiltersubmit" class="button" ng-click="doSearch()" ng-cancelsearch="clearSearch()" ng-enabled="!Searching">{{ Searching ? 'Busy...' : 'Search' }}</a>
             </div>
 
-            <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected" ng-search-filter="SearchFilter" ng-search-mode="InSearchMode">
-            </restore-file-picker>
+            <div class="resizable filepicker">
+                <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected" ng-search-filter="SearchFilter" ng-search-mode="InSearchMode"></restore-file-picker>
+            </div>
             <!-- <div ng-repeat="value in Selected" >{{value}}</div> -->
             <div class="buttons">
                 <a href class="submit" ng-click="onClickNext()">Continue</a>
@@ -55,7 +58,9 @@
                 </div>
                 
                 <label for="folder_path_picker">Folder path</label>
-                <destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="RestorePath" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="false"></destination-folder-picker>
+                <div class="resizable filepicker" style="clear: both;">
+                    <destination-folder-picker id="folder_path_picker" ng-model="RestorePath" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="false"></destination-folder-picker>
+                </div>
             </div>
 
             <h2>How do you want to handle existing files?</h2>

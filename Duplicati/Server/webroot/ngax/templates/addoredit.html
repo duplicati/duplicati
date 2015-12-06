@@ -1,3 +1,5 @@
+<script>$(function() { $( ".resizable" ).resizable(); });</script>
+
 <div class="add" ng-controller="EditBackupController">
     <div class="steps">
         <div class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
@@ -94,7 +96,9 @@
                     <a href ng-hide="EditSourceAdvanced" ng-click="showhiddenfolders = !showhiddenfolders" style="float: right; margin-right: 10px;">{{showhiddenfolders ? 'Hide' : 'Show'}} hidden folders</a>
                 </div>
 
-                <source-folder-picker ng-show-hidden="showhiddenfolders" ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-hide="EditSourceAdvanced"></source-folder-picker>
+                <div class="resizable filepicker">
+                    <source-folder-picker ng-show-hidden="showhiddenfolders" ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-hide="EditSourceAdvanced"></source-folder-picker>
+                </div>
 
                 <div class="input textarea" ng-show="EditSourceAdvanced">
                     <label for="SourcePathList">Source folders</label>
