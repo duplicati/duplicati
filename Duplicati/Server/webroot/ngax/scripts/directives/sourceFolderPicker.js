@@ -109,7 +109,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     p.push(parts[pi]);
                     var r = p.join(dirsep);
                     var l = r.substr(r.length - 1, 1);
-                    if (l != dirsep && l != '%')
+                    if (l != dirsep)
                         r += dirsep;
                     map[r] = true;
                 }
