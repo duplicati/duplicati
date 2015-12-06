@@ -35,7 +35,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         'Backup_WaitForUpload': 'Waiting for upload ...',
         'Backup_Delete': 'Deleting unwanted files ...',
         'Backup_Compact': 'Compacting remote data ...',
-        'Backup_VerificationUpload': 'Uploadind verification file ...',
+        'Backup_VerificationUpload': 'Uploading verification file ...',
         'Backup_PostBackupVerify': 'Verifying backend data ...',
         'Backup_Complete': 'Finished!',
         'Restore_Begin': 'Starting ...',
