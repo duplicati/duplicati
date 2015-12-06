@@ -10,6 +10,7 @@
 	        	</div>
 	        </div>
 			<div ng-if="item.Action != 'update:new'" class="buttons">
+				<a href ng-click="doDismiss(item.ID)" class="button dismiss">Dismiss</a>
 
 				<a href ng-show="item.Action == 'backup:show-log'" ng-click="doShowLog(item.BackupID)" class="button showlog">Show</a>
 
