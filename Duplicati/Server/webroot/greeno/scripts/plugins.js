@@ -761,4 +761,70 @@ $(document).ready(function() {
             'b2-bucket': 'server-path'
         }
     }
+
+    APP_DATA.plugins.backend['mega'] = {
+
+        PLUGIN_MEGA_LINK: 'https://mega.co.nz',
+
+        hasssl: false,
+        hideserverandport: true,
+        usernamelabel: 'Username',
+        passwordlabel: 'Password',
+        usernamewatermark: 'Username',
+        passwordwatermark: 'Password',
+        path_field: null,
+
+        setup: function (dlg, div) {
+            $('#server-path-label').hide();
+            $('#server-path').hide();
+
+            $('#server-username').attr('placeholder', this.usernamewatermark);
+            $('#server-password').attr('placeholder', this.passwordwatermark);
+
+            var pathfield = EDIT_URI.createFieldset({ label: 'Path', name: 'mega-path', after: $('#server-username-and-password'), title: 'Path', watermark: 'Enter path' });
+            this.path_field = pathfield.field;
+
+            var signuplink = EDIT_URI.createFieldset({ 'label': '&nbsp;', href: this.PLUGIN_MEGA_LINK, type: 'link', before: $('#server-options-label'), 'title': 'Click here to sign in or register' });
+            signuplink.outer.css('margin-bottom', '10px');
+
+        },
+
+        cleanup: function (dlg, div) {
+            $('#server-path-label').show();
+            $('#server-path').show();
+            this.path_field = null;
+        },
+
+        validate: function (dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return false;
+
+            values['server-path'] = values["mega-path"].toLowerCase();
+            this.path_field.val(values['server-path']);
+
+            return true;
+        },
+
+        fill_form_map: {
+            'server-path': function(dict, key, el, cfgel) {
+                var p = [];
+                if (dict['server-name'] && dict['server-name'] != '')
+                    p.push(dict['server-name']);
+                if (dict['server-path'] && dict['server-path'] != '')
+                    p.push(dict['server-path']);
+
+                p = p.join('/');
+
+                $('#mega-path').val(p);
+            }
+        },
+
+        fill_dict_map: {
+            'mega-path': function(dict, key, el, cfgel) {
+                var p =  $(el).val();
+                dict['server-path'] = p;
+                dict['server-name'] = '';
+            }
+        }
+    }    
 });

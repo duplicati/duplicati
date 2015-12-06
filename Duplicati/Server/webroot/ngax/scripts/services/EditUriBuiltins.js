@@ -22,6 +22,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['azure']       = 'templates/backends/azure.html';
 	EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
 	EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
+	EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
 
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
@@ -256,6 +257,10 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 			delete options[nukeopts[x]];
 	};
 
+	EditUriBackendConfig.parsers['mega'] = function(scope, module, server, port, path, options) {
+		EditUriBackendConfig.mergeServerAndPath(scope);
+	};
+
 	// Builders take the scope and produce the uri output
 	EditUriBackendConfig.builders['s3'] = function(scope) {
 		var opts = {
@@ -380,6 +385,23 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		return url;
 	};	
 
+	EditUriBackendConfig.builders['mega'] = function(scope) {
+		var opts = { };
+
+		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+		// Slightly better error message
+		scope.Folder = scope.Path;
+
+		var url = AppUtils.format('{0}://{1}{2}',
+			'mega',
+			scope.Path,
+			AppUtils.encodeDictAsUrl(opts)
+		);
+
+		return url;
+	};
+
 	EditUriBackendConfig.validaters['file'] = function(scope) {
 		return EditUriBackendConfig.require_path(scope);
 	};
@@ -485,6 +507,15 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 			EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
 			EditUriBackendConfig.require_field(scope, 'Username', 'B2 Cloud Storage Account ID') &&
 			EditUriBackendConfig.require_field(scope, 'Password', 'B2 Cloud Storage Application Key');
+
+		return res;
+	};
+
+	EditUriBackendConfig.validaters['mega'] = function(scope) {
+		scope.Path = scope.Path || '';
+		var res =
+			EditUriBackendConfig.require_field(scope, 'Username', 'Username') &&
+			EditUriBackendConfig.require_field(scope, 'Password', 'Password');
 
 		return res;
 	};

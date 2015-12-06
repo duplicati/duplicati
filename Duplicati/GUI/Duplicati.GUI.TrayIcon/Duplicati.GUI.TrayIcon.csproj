@@ -288,6 +288,10 @@
       <Project>{61C43D61-4368-4942-84A3-1EB623F4EF2A}</Project>
       <Name>Duplicati.Library.Backend.Backblaze</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj">
+      <Project>{6643A5AE-AB38-453F-ADCE-408E35A81A83}</Project>
+      <Name>Duplicati.Library.Backend.Mega</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">

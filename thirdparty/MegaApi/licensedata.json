@@ -1,0 +1,7 @@
+{
+    "name": "MegaApi",
+    "description": "C# library to access http://mega.co.nz API",
+    "link": "https://github.com/gpailler/MegaApiClient",
+    "license": "MIT",
+    "notes": ""
+}

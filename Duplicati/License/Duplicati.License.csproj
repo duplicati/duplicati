@@ -222,6 +222,18 @@
       <Link>licenses\SharpAESCrypt\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\MegaApi\Homepage.txt">
+      <Link>licenses\MegaApi\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MegaApi\licensedata.json">
+      <Link>licenses\MegaApi\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MegaApi\license.txt">
+      <Link>licenses\MegaApi\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -244,5 +256,8 @@
   <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="licenses\MegaApi\" />
   </ItemGroup>
 </Project>
