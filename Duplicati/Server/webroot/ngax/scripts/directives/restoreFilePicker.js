@@ -50,6 +50,7 @@ backupApp.directive('restoreFilePicker', function() {
                                 text: disp,
                                 id: data.data.Files[n].Path,
                                 size: data.data.Files[n].Sizes[0],
+                                iconCls: leaf ? 'x-tree-icon-leaf' : '',
                                 leaf: leaf
                             });
                         }
