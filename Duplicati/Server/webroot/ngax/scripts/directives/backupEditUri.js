@@ -38,6 +38,7 @@ backupApp.directive('backupEditUri', function() {
 
                 var hasTriedCreate = false;
                 var hasTriedCert = false;
+                var hasTriedMozroots = false;
 
                 var testConnection = function() {
                 	scope.Testing = true;
@@ -51,6 +52,50 @@ backupApp.directive('backupEditUri', function() {
                 	scope.Testing = true;
                 	AppService.post('/remoteoperation/create', res).then(testConnection, handleError);
                 };
+
+                var appendApprovedCert = function(hash)
+                {
+                	for(var n in scope.AdvancedOptions) {
+                		if (scope.AdvancedOptions[n].indexOf('--accept-specified-ssl-hash=') == 0)
+                		{
+            				var certs = scope.AdvancedOptions[n].substr('--accept-specified-ssl-hash='.length).split(',');
+            				for(var i in certs)
+            					if (certs[i] == hash)
+            						return;
+
+            				scope.AdvancedOptions[n] += ',' + hash;
+        					return;
+                		}
+                	}
+
+                    scope.AdvancedOptions.push('--accept-specified-ssl-hash=' + hash);
+                }
+
+
+                var askApproveCert = function(hash) {
+                    if (confirm('The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ' + hash + '?' )) {
+                    	appendApprovedCert(hash);
+
+                        testConnection();
+                    }
+                };
+
+                var hasCertApproved = function(hash)
+                {
+                	for(var n in scope.AdvancedOptions) {
+                		if (scope.AdvancedOptions[n].indexOf('--accept-specified-ssl-hash=') == 0)
+                		{
+            				var certs = scope.AdvancedOptions[n].substr('--accept-specified-ssl-hash='.length).split(',');
+            				for(var i in certs)
+            					if (certs[i] == hash)
+            						return true;
+
+                			break;
+                		}
+                	}
+
+            		return false;
+                }
 
                 var handleError = function(data) {
 
@@ -66,13 +111,56 @@ backupApp.directive('backupEditUri', function() {
                     else if (!hasTriedCert && message.indexOf('incorrect-cert:') == 0)
                     {
                         var hash = message.substr('incorrect-cert:'.length);
-                        if (confirm('The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ' + hash + '?' )) {
-
-                            hasTriedCert = true;
-                            scope.AdvancedOptions.push('--accept-specified-ssl-hash=' + hash);
-
-                            testConnection();
+                        if (hasCertApproved(hash)) {
+	                    	if (data.data != null && data.data.Message != null)
+	                    		message = data.data.Message;
+	                    	
+	                        alert('Failed to connect: ' + message);
+							return;                        	
                         }
+
+                    	if ($scope.SystemInfo.MonoVersion != null && !hasTriedMozroots) {
+                    		
+                    		hasTriedMozroots = true;
+
+							AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'List'}).then(function(data) {
+								if (data.data.Result.count == 0) {
+									if (confirm('You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?'))
+									{
+										scope.Testing = true;
+										AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'Install'}).then(function(data) {
+											scope.Testing = false;
+											if (data.data.Result.count == 0) {
+												alert('Import completed, but no certificates were found after the import');
+											} else {
+												testConnection();
+											}
+										}, function(resp) {
+
+											scope.Testing = false;
+											message = resp.statusText;
+					                    	if (data.data != null && data.data.Message != null)
+					                    		message = data.data.Message;
+					                    	
+					                        alert('Failed to import: ' + message);
+
+										});
+									}
+									else
+									{
+										askApproveCert(hash);
+									}
+								} else {
+									askApproveCert(hash);
+								}
+
+							}, AppUtils.connectionError);
+
+                    	}
+                    	else
+                    	{
+                    		askApproveCert(hash);
+	                    }
                     }
                     else
                     {
