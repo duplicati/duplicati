@@ -390,6 +390,24 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		);
 
 		return url;
+	};
+
+	EditUriBackendConfig.builders['b2'] = function(scope) {
+		var opts = { };
+
+		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+		// Slightly better error message
+		scope.Folder = scope.Server;
+		
+		var url = AppUtils.format('{0}://{1}/{2}{3}',
+			scope.Backend.Key,
+			scope.Server || '',
+			scope.Path || '',
+			AppUtils.encodeDictAsUrl(opts)
+		);
+
+		return url;
 	};	
 
 	EditUriBackendConfig.builders['mega'] = function(scope) {
