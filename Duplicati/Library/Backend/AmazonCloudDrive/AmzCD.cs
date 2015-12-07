@@ -75,7 +75,6 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 m_labels = labels.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
 
             m_oauth = new OAuthHelper(authid, this.ProtocolKey) { AutoAuthHeader = true };
-            m_filecache = new Dictionary<string, string>();
             m_userid = authid.Split(new string[] {":"}, StringSplitOptions.RemoveEmptyEntries).First();
         }
             
@@ -227,63 +226,31 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #region IStreamingBackend implementation
         public void Put(string remotename, System.IO.Stream stream)
         {
-            var boundary = "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
-
-            var metadata = System.Text.Encoding.UTF8.GetBytes(
-                string.Format("--{0}\r\nContent-Disposition: form-data; name=\"metadata\"\r\n\r\n", boundary)
-                +
-                JsonConvert.SerializeObject(new CreateItemRequest(){
-                    Name = remotename,
-                    Kind = CONTENT_KIND_FILE,
-                    Labels = m_labels,
-                    Parents = new string[] { CurrentDirectory.ID }
-                }).Trim()
-                +
-                "\r\n"
-            );
-
-            var contentheader = System.Text.Encoding.UTF8.GetBytes(
-                string.Format("--{0}\r\nContent-Disposition: form-data; name=\"content\"; filename=\"{1}\"\r\nContent-Type: application/octet-stream\r\nContent-Length: {2}\r\n\r\n", boundary, remotename, stream.Length)
-            );
-
-            var bodyterminator = System.Text.Encoding.UTF8.GetBytes("\r\n--" + boundary + "--");
-
             var overwrite = FileCache.ContainsKey(remotename);
             var fileid = overwrite ? m_filecache[remotename] : null;
 
             var url = string.Format(overwrite ? "{0}/nodes/{1}/content?suppress=deduplication" : "{0}/nodes?suppress=deduplication", ContentUrl, fileid);
 
+            var createreq = new CreateItemRequest() {
+                Name = remotename,
+                Kind = CONTENT_KIND_FILE,
+                Labels = m_labels,
+                Parents = new string[] { CurrentDirectory.ID }
+            };
+
             try
             {
-                var item = m_oauth.GetJSONData<ResourceModel>(
+                var item = m_oauth.PostMultipartAndGetJSONData<ResourceModel>(
                     url,
 
-                    // Setup
                     req =>
                     {
                         req.Method = overwrite ? "PUT" : "POST";
-                        req.ContentType = "multipart/form-data; boundary=" + boundary;
-                        if (overwrite)
-                            req.ContentLength = contentheader.Length + stream.Length + bodyterminator.Length;
-                        else
-                            req.ContentLength = metadata.Length + contentheader.Length + stream.Length + bodyterminator.Length;
                     },
 
-                    // Transfer
-                    req =>
-                    {
-                        using(var rs = req.GetRequestStream())
-                        {
-                            if (!overwrite)
-                                rs.Write(metadata, 0, metadata.Length);
-                            
-                            rs.Write(contentheader, 0, contentheader.Length);
-                            
-                            Utility.Utility.CopyStream(stream, rs);
+                    new MultipartItem(createreq, name: "metadata"),
+                    new MultipartItem(stream, name: "content", filename: remotename)
 
-                            rs.Write(bodyterminator, 0, bodyterminator.Length);
-                        }
-                    }
                 );
 
                 if (m_filecache != null)
@@ -404,7 +371,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             }
         }
 
-        public System.Collections.Generic.IList<ICommandLineArgument> SupportedCommands
+        public IList<ICommandLineArgument> SupportedCommands
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
