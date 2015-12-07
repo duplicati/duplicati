@@ -32,12 +32,16 @@ namespace Duplicati.Library
             : this()
         {
             ContentType = contenttype;
-            if (!string.IsNullOrWhiteSpace(name))
-                SetContentDisposition(name, filename);
+            SetContentDisposition(name, filename);
         }
 
         public MultipartItem(object content, string contenttype = "application/json; charset=utf-8", string name = null, string filename = null)
-            : this(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content)), contenttype, name, filename)
+            : this(JsonConvert.SerializeObject(content), contenttype, name, filename)
+        {
+        }
+
+        public MultipartItem(string content, string contenttype = null, string name = null, string filename = null)
+            : this(System.Text.Encoding.UTF8.GetBytes(content), contenttype, name, filename)
         {
         }
 
@@ -49,13 +53,66 @@ namespace Duplicati.Library
             : this(contenttype, name, filename)
         {
             ContentData = content;
-            Headers["Content-Length"] = content.Length.ToString();
+            ContentLength = content.Length;
         }
 
-        public string ContentType { get { return Headers.ContainsKey("Content-Type") ? Headers["Content-Type"] : null; } set { Headers["Content-Type"] = value; } }
+        public string ContentType 
+        { 
+            get 
+            { 
+                return Headers.ContainsKey("Content-Type") ? Headers["Content-Type"] : null; 
+            } 
+            set 
+            { 
+                if (string.IsNullOrWhiteSpace(value))
+                    Headers.Remove("Content-Type");
+                else
+                    Headers["Content-Type"] = value; 
+            } 
+        }
+
         public Stream ContentData { get; set; }
         public Dictionary<string, string> Headers { get; set; }
-        public string ContentTypeName { set { Headers["Content-Disposition"] = string.Format("form-data; name=\"{0}\"", Library.Utility.Uri.UrlEncode(value)); } }
+        public string ContentTypeName 
+        {
+            get
+            {
+                string v;
+                Headers.TryGetValue("Content-Disposition", out v);
+                if (string.IsNullOrWhiteSpace(v))
+                    return null;
+                
+                var m = new System.Text.RegularExpressions.Regex("name=\"(?<name>[^\"]+)\"").Match(v);
+                return m.Success ? m.Groups["name"].Value : null;
+            }
+            set 
+            { 
+                if (string.IsNullOrWhiteSpace(value))
+                    Headers.Remove("Content-Disposition");
+                else
+                    Headers["Content-Disposition"] = string.Format("form-data; name=\"{0}\"", Library.Utility.Uri.UrlEncode(value)); 
+            }
+        }
+
+        public long ContentLength
+        {
+            get
+            {
+                string v;
+                Headers.TryGetValue("Content-Length", out v);
+                long s;
+                if (long.TryParse(v, out s))
+                    return s;
+
+                return -1;
+            }
+            set
+            {
+                if (value < 0)
+                    Headers.Remove("Content-Length");
+                Headers["Content-Length"] = value.ToString();
+            }
+        }
 
         public MultipartItem SetHeaderRaw(string key, string value)
         {
