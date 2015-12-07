@@ -36,7 +36,6 @@ namespace Duplicati.Library.Backend.Backblaze
 
         private string m_bucketname;
         private string m_prefix;
-        private string m_project;
         private string m_bucketType;
         private B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
