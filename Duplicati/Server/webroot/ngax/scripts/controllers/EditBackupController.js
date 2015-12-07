@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, AppService, AppUtils, SystemInfo) {
+backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo) {
 
 	$scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -233,7 +233,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		delete extopts['--exclude-files-attributes'];
 		delete extopts['--no-encryption'];
 
-		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptions(extopts);
+		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
 
 		var now = new Date();
 		if ($scope.Schedule != null) {
@@ -265,6 +265,27 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			};
 		}
 	}
+
+	function reloadOptionsList()
+	{
+		if ($scope.Options == null)
+			return;
+
+		var encmodule = $scope.Options['encryption-module'] || '';
+		var compmodule = $scope.Options['compression-module'] || $scope.Options['--compression-module'] || 'zip';
+		var backmodule = $scope.Backup.TargetURL || '';
+		var ix = backmodule.indexOf(':');
+		if (ix > 0)
+			backmodule = backmodule.substr(0, ix);
+
+		$scope.ExtendedOptionList = AppUtils.buildOptionList($scope.SystemInfo, encmodule, compmodule, backmodule);
+	};
+
+	$scope.$watch("Options['encryption-module']", reloadOptionsList);
+	$scope.$watch("Options['compression-module']", reloadOptionsList);
+	$scope.$watch("Options['--compression-module']", reloadOptionsList);
+	$scope.$watch("Backup.TargetURL", reloadOptionsList);
+	$scope.$on('systeminfochanged', reloadOptionsList);
 
 	if ($routeParams.backupid == null) {
 

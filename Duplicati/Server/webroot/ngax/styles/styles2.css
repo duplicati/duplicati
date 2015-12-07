@@ -582,3 +582,33 @@ ul.notification {
 .resizable {
   margin-bottom: 6px;
 }
+
+.advanced-toggle {
+  float: right;
+  margin-right: 25px;
+}
+
+.advancedoptions li {
+  clear: both; 
+}
+
+.advancedoptions .advancedentry {
+  margin-bottom: 10px;
+  padding-bottom: 4px; 
+  border-bottom: 1px lightgray solid;  
+}
+
+.advancedentry .multiple {
+  display: inline;
+}
+
+.advancedentry .shortname {
+  font-weight: bold;
+}
+
+.advancedentry .longdescription {
+  margin-left: 190px; 
+  clear: both;  
+  font-style: italic;
+}
+

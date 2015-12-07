@@ -40,7 +40,17 @@ backupApp.service('AppUtils', function() {
         {name: 'Fri', value: 'fri'}, 
         {name: 'Sat', value: 'sat'}, 
         {name: 'Sun', value: 'sun'}
-    ];    
+    ];
+
+    this.parseBoolString = function(txt, def) {
+        txt = (txt || '').toLowerCase();
+        if (txt == '0' || txt == 'false' || txt == 'off' || txt == 'no' || txt == 'f') 
+            return false;
+        else if (txt == '1' || txt == 'true' || txt == 'on' || txt == 'yes' || txt == 't')
+            return true;
+        else
+            return def === undefined ? false : def;
+    };
 
 
     this.splitSizeString = function(val) {
@@ -83,7 +93,14 @@ backupApp.service('AppUtils', function() {
 
     this.parseOptionStrings = function(val, dict, validateCallback) {
         dict = dict || {};
-        var lines = this.replace_all(val || '', '\r', '\n').split('\n');
+
+        var lines = null;
+
+        if (val != null && typeof(val) == typeof([]))
+            lines = val;
+        else
+            lines = this.replace_all(val || '', '\r', '\n').split('\n');
+
         for(var i in lines) {
             var line = lines[i].trim();
             if (line != '' && line[0] != '#') {
@@ -124,12 +141,16 @@ backupApp.service('AppUtils', function() {
     };
 
     this.serializeAdvancedOptions = function(opts) {
-        var advopts = '';
+        return this.serializeAdvancedOptionsToArray(opts).join('\n');
+    };
+
+    this.serializeAdvancedOptionsToArray = function(opts) {
+        var res = [];
         for(var n in opts)
             if (n.indexOf('--') == 0)
-                advopts += n + '=' + opts[n] + '\n';
+                res.push(n + '=' + opts[n]);
 
-        return advopts;
+        return res;
     };
 
     this.mergeAdvancedOptions = function(advStr, target, source) {
@@ -478,7 +499,7 @@ backupApp.service('AppUtils', function() {
         }
 
         return res;
-    }
+    };
 
     this.evalFilter = function(path, filters, include) {
         for(var i = 0; i < filters.length; i++) {
@@ -488,6 +509,40 @@ backupApp.service('AppUtils', function() {
         }
 
         return include === undefined ? true : include;
-    }
+    };
+
+    this.buildOptionList = function(sysinfo, encmodule, compmodule, backmodule) {
+        if (sysinfo == null || sysinfo.Options == null)
+            return null;
+
+        var items = angular.copy(sysinfo.Options);
+        for(var n in items)
+            items[n].Category = 'Core options';
+
+        function copyToList(lst, key) {
+            for(var n in lst)
+            {
+                if (key == null || key.toLowerCase() == lst[n].Key.toLowerCase())
+                {
+                    var m = angular.copy(lst[n].Options);
+                    for(var i in m)
+                        m[i].Category = lst[n].DisplayName;
+                    items.push.apply(items, m);
+                }
+            }
+        }
+
+        copyToList(sysinfo.GenericModules);
+        copyToList(sysinfo.ConnectionModules);
+
+        if (encmodule !== false)
+            copyToList(sysinfo.EncryptionModules, encmodule);
+        if (compmodule !== false)
+            copyToList(sysinfo.CompressionModules, compmodule);
+        if (backmodule !== false)
+            copyToList(sysinfo.BackendModules, backmodule);
+
+        return items;
+    };
 
 });

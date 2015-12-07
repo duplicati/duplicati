@@ -69,7 +69,7 @@ backupApp.directive('backupEditUri', function() {
                         if (confirm('The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ' + hash + '?' )) {
 
                             hasTriedCert = true;
-                            scope.AdvancedOptions += '\r\n--accept-specified-ssl-hash=' + hash;
+                            scope.AdvancedOptions.push('--accept-specified-ssl-hash=' + hash);
 
                             testConnection();
                         }
@@ -141,7 +141,7 @@ backupApp.directive('backupEditUri', function() {
 			delete parts['--auth-username'];
 			delete parts['--auth-password'];
 			delete parts['--use-ssl'];
-			scope.AdvancedOptions = AppUtils.serializeAdvancedOptions(parts);
+			scope.AdvancedOptions = AppUtils.serializeAdvancedOptionsToArray(parts);
 		};
 
 		$scope.SystemInfo = SystemInfo.watch($scope, function() {

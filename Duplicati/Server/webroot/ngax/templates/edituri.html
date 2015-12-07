@@ -17,10 +17,18 @@
     <h3>Chose a storage type to get started</h3>
 </div>
 
-<div class="input textarea">
-    <label for="targetOptions">Options<span class="info">i</span></label>
-    <textarea id="targetOptions" name="targetOptions" ng-model="AdvancedOptions"></textarea>
+<div class="input textarea" ng-show="ShowAdvancedTextArea">
+    <label for="targetOptions">Options</label>
+    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">Edit as list</a>
+    <textarea id="targetOptions" name="targetOptions" string-array-as-text ng-model="AdvancedOptions"></textarea>
 </div>
+
+<div class="input" ng-hide="ShowAdvancedTextArea">
+    <label for="backupOptions">Options</label>
+    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle">Edit as text</a>
+    <advanced-options-editor ng-option-list="Backend.Options" ng-model="AdvancedOptions"></advanced-options-editor>
+</div>
+
 <div class="buttons" ng-hide="Testing">
     <a href ng-click="save()" class="save">OK</a>
     <a href ng-click="testConnection()" class="test-connection" >Test connection</a>

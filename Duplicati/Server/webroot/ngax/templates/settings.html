@@ -12,8 +12,6 @@
             <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
             <label for="remote">Allow remote access (requires restart)</label>
         </div>
-
-
         
         <h2>Pause after startup or hibernation<span class="info">i</span></h2>
         <div class="input mixed multiple">
@@ -36,10 +34,17 @@
             </select>
         </div>
         
-        <h2>Advanced Options</h2>
-        <div class="input textarea">
-            <label for="options">Options<span class="info">i</span></label>
-            <textarea id="options" name="options" ng-model="advancedOptions"></textarea>
+        <h2>Default options</h2>
+        <div class="input textarea" ng-show="ShowAdvancedTextArea">
+            <label for="backupOptions">Options</label>
+            <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">Edit as list</a>
+            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+        </div>
+        
+        <div class="input" ng-hide="ShowAdvancedTextArea">
+            <label for="backupOptions">Options</label>
+            <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle">Edit as text</a>
+            <advanced-options-editor ng-option-list="advancedOptionList" ng-model="advancedOptions"></advanced-options-editor>
         </div>
         
         <div class="buttons">
