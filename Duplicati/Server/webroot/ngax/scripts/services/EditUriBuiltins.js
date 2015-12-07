@@ -278,7 +278,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
 		var url = AppUtils.format('{0}{1}://{2}/{3}{4}',
-			's3',
+			scope.Backend.Key,
 			scope.UseSSL ? 's' : '',
 			scope.Server || '',
 			scope.Path || '',
@@ -341,7 +341,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
 		var url = AppUtils.format('{0}://{1}{2}',
-			'openstack',
+			scope.Backend.Key,
 			scope.Path,
 			AppUtils.encodeDictAsUrl(opts)
 		);
@@ -354,8 +354,11 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
 		EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
+		// Slightly better error message
+		scope.Folder = scope.Path;
+
 		var url = AppUtils.format('{0}://{1}{2}',
-			'azure',
+			scope.Backend.Key,
 			scope.Path,
 			AppUtils.encodeDictAsUrl(opts)
 		);
@@ -398,7 +401,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		scope.Folder = scope.Path;
 
 		var url = AppUtils.format('{0}://{1}{2}',
-			'mega',
+			scope.Backend.Key,
 			scope.Path,
 			AppUtils.encodeDictAsUrl(opts)
 		);
