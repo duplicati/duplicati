@@ -15,10 +15,13 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 using System.Net;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System.Text;
+using System.IO;
+using System.Collections.Generic;
 
 namespace Duplicati.Library
 {
@@ -34,6 +37,7 @@ namespace Duplicati.Library
         {
             m_user_agent = useragent ?? USER_AGENT;
         }
+
         public virtual HttpWebRequest CreateRequest(string url, string method = null)
         {
             var req = (HttpWebRequest)WebRequest.Create(url);
@@ -46,6 +50,89 @@ namespace Duplicati.Library
 
             return req;
         }
+
+        /// <summary>
+        /// Performs a multipart post and parses the response as JSON
+        /// </summary>
+        /// <returns>The parsed JSON item.</returns>
+        /// <param name="url">The url to post to.</param>
+        /// <param name="parts">The multipart items.</param>
+        /// <typeparam name="T">The return type parameter.</typeparam>
+        public virtual T PostMultipartAndGetJSONData<T>(string url, params MultipartItem[] parts)
+        {
+            return ReadJSONResponse<T>(PostMultipart(url, null, parts));
+        }
+
+        /// <summary>
+        /// Performs a multipart post and parses the response as JSON
+        /// </summary>
+        /// <returns>The parsed JSON item.</returns>
+        /// <param name="url">The url to post to.</param>
+        /// <param name="parts">The multipart items.</param>
+        /// <param name="setup">The optional setup callback method.</param>
+        /// <typeparam name="T">The return type parameter.</typeparam>
+        public virtual T PostMultipartAndGetJSONData<T>(string url, Action<HttpWebRequest> setup = null, params MultipartItem[] parts)
+        {
+            return ReadJSONResponse<T>(PostMultipart(url, setup, parts));
+        }
+
+        /// <summary>
+        /// Performs a multipart post
+        /// </summary>
+        /// <returns>The response.</returns>
+        /// <param name="url">The url to post to.</param>
+        /// <param name="parts">The multipart items.</param>
+        /// <param name="setup">The optional setup callback method.</param>
+        public virtual HttpWebResponse PostMultipart(string url, Action<HttpWebRequest> setup = null, params MultipartItem[] parts)
+        {
+            var boundary = "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
+
+            var bodyterminator = System.Text.Encoding.UTF8.GetBytes("--" + boundary + "--");
+            var crlf = System.Text.Encoding.UTF8.GetBytes("\r\n");
+
+            var headers = 
+                (from p in parts
+                    select new {
+                        Header = System.Text.Encoding.UTF8.GetBytes(
+                            "--" + boundary + "\r\n" 
+                            + string.Join("", 
+                                from n in p.Headers 
+                                select string.Format("{0}: {1}\r\n", n.Key, n.Value)
+                            )
+                        + "\r\n"),
+                        Part = p
+                }).ToArray();
+
+            var envelopesize = headers.Sum(x => x.Header.Length + crlf.Length) + bodyterminator.Length;
+            var datasize = parts.Sum(x => x.ContentData.Length);
+
+            var req = CreateRequest(url);
+
+            req.Method = "POST";
+            req.ContentType = "multipart/form-data; boundary=" + boundary;
+            req.ContentLength = envelopesize + datasize;
+
+            if (setup != null)
+                setup(req);
+
+            var areq = new AsyncHttpRequest(req);
+
+            using(var rs = areq.GetRequestStream())
+            {
+
+                foreach(var p in headers)
+                {
+                    rs.Write(p.Header, 0, p.Header.Length);
+                    Utility.Utility.CopyStream(p.Part.ContentData, rs);
+                    rs.Write(crlf, 0, crlf.Length);
+                }
+
+                rs.Write(bodyterminator, 0, bodyterminator.Length);
+            }
+
+            return GetResponse(areq);
+        }
+
 
         /// <summary>
         /// Executes a web request and json-deserializes the results as the specified type
