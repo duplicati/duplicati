@@ -264,6 +264,10 @@
       <Project>{6643A5AE-AB38-453F-ADCE-408E35A81A83}</Project>
       <Name>Duplicati.Library.Backend.Mega</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj">
+      <Project>{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}</Project>
+      <Name>Duplicati.Library.Backend.Box</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />

@@ -77,6 +77,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Mega", "Duplicati\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj", "{6643A5AE-AB38-453F-ADCE-408E35A81A83}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -144,6 +146,12 @@ Global
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{33FD1D24-C28F-4C71-933F-98F1586EA76C}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
