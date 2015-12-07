@@ -234,6 +234,30 @@
       <Link>licenses\MegaApi\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\AngularJS\Homepage.txt">
+      <Link>licenses\AngularJS\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AngularJS\License.txt">
+      <Link>licenses\AngularJS\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AngularJS\licensedata.json">
+      <Link>licenses\AngularJS\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\jQuery\Homepage.txt">
+      <Link>licenses\jQuery\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\jQuery\License.txt">
+      <Link>licenses\jQuery\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\jQuery\licensedata.json">
+      <Link>licenses\jQuery\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -259,5 +283,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="licenses\MegaApi\" />
+    <Folder Include="licenses\AngularJS\" />
+    <Folder Include="licenses\jQuery\" />
   </ItemGroup>
 </Project>
