@@ -518,7 +518,7 @@ namespace Duplicati.Server.Database
                         NormalizeDateTimeToEpochSeconds(n.Time),
                         n.Repeat,
                         NormalizeDateTimeToEpochSeconds(n.LastRun),
-                        n.Rule,
+                        n.Rule ?? "",
                         update ? (object)item.ID : null
                     });
                     
