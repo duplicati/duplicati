@@ -177,14 +177,20 @@ backupApp.service('AppUtils', function(DialogService) {
         if (typeof(txt) == typeof('')) {
             if (msg == null)
                 return function(msg) {
-                    DialogService.dialog('Error', txt + msg.statusText);
+                    if (msg && msg.data && msg.data.Message)
+                        DialogService.dialog('Error', txt + msg.data.Message);
+                    else
+                        DialogService.dialog('Error', txt + msg.statusText);
                 };
         } else {
             msg = txt;
             txt = '';
         }
 
-        DialogService.dialog('Error', txt + msg.statusText);
+        if (msg && msg.data && msg.data.Message)
+            DialogService.dialog('Error', txt + msg.data.Message);
+        else
+            DialogService.dialog('Error', txt + msg.statusText);
     };
 
     this.generatePassphrase = function() {
