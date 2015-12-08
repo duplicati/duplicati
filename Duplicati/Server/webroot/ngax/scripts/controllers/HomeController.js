@@ -24,11 +24,8 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
         });
     };
 
-    $scope.doDeleteLocalDb = function(id, name) {
-        DialogService.dialog('Confirm delete', 'Do you really want to delete the local database for: ' + name, ['No', 'Yes'], function(ix) {
-            if (ix == 1)
-                AppService.post('/backup/' + id + '/deletedb');
-        });
+    $scope.doLocalDb = function(id) {
+        $location.path('/localdb/' + id);
     };
 
     $scope.doRepairLocalDb = function(id, name) {

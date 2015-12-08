@@ -47,6 +47,9 @@ backupApp.config(['$routeProvider',
 			when('/import', {
 				templateUrl: 'templates/import.html'
 			}).
+			when('/localdb/:backupid', {
+				templateUrl: 'templates/localdatabase.html'
+			}).
 			when('/pause', {
 				templateUrl: 'templates/pause.html'
 			}).

@@ -324,6 +324,17 @@ ul.tabs > li.active, ul.tabs > li.active > a {
 
 }
 
+ul.tabs > li.active.disabled {
+  border: 1px solid lightgray;
+}
+
+ul.tabs > li.active.disabled, ul.tabs > li.active.disabled > a {
+  background-color: lightgray;
+  color: grey;
+  cursor: default;
+
+}
+
 .licenses > ul {
   list-style: initial;
   margin: 10px;
@@ -547,4 +558,5 @@ ul.notification {
   clear: both;  
   font-style: italic;
 }
+
 
