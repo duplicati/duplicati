@@ -398,9 +398,14 @@ div.connection-lost, div.blocker, div.modal-dialog {
   margin: auto;
 }
 
-div.connection-lost, div.modal-dialog {
+div.connection-lost {
   width: 250px;
   height: 200px;
+}
+
+div.modal-dialog {
+  width: 350px;
+  height: 250px;
 }
 
 div.blocker {
@@ -437,11 +442,11 @@ div.blocker {
 }
 
 .connection-lost div.content.buttons, .modal-dialog div.content.buttons { 
-  padding-bottom: 45px;
   border-top-left-radius: 0px;
   border-top-right-radius: 0px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
+  overflow: auto;
 }
 
 .modal-dialog .content.buttons ul {
