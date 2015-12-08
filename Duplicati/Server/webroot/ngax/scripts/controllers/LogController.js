@@ -1,4 +1,4 @@
-backupApp.controller('LogController', function($scope,$routeParams, SystemInfo, ServerStatus, AppService, DialogService) {
+backupApp.controller('LogController', function($scope, $routeParams, SystemInfo, ServerStatus, AppService, DialogService) {
     $scope.state = ServerStatus.watch($scope);
     $scope.BackupID = $routeParams.backupid;
     $scope.SystemInfo = SystemInfo.watch($scope);
@@ -17,7 +17,7 @@ backupApp.controller('LogController', function($scope,$routeParams, SystemInfo, 
     		liveRefreshTimer = null;
     	}
 
-		if ($scope.Page != 'live' || $scope.LiveLogLevel == '')
+		if ($scope.Page != 'live' || ($scope.LiveLogLevel || '') == '')
 			return;
 
 		$scope.LiveRefreshPending = false;
