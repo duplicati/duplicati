@@ -197,9 +197,23 @@ backupApp.directive('backupEditUri', function() {
 		$scope.$watch('Backend', function() {
 			if (scope.Backend == null) {
 				$scope.TemplateUrl = null;
+				$scope.AdvanceOptionList = null;
 				return;
 			}
 
+			var opts = angular.copy(scope.Backend.Options);
+			for(var n in opts)
+				opts[n].Category = scope.Backend.DisplayName;
+
+			for(var m in SystemInfo.state.ConnectionModules)
+			{
+				var t = angular.copy(SystemInfo.state.ConnectionModules[m].Options);
+				for(var n in t)
+					t[n].Category = SystemInfo.state.ConnectionModules[m].DisplayName;
+				opts.push.apply(opts, t);
+			}
+
+			$scope.AdvanceOptionList = opts;
 			scope.SupportsSSL = false;
 			for(var n in scope.Backend.Options)
 				if (scope.Backend.Options[n].Name == 'use-ssl')
