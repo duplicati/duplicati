@@ -281,6 +281,29 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
         }
+
+        private void UpdateDatabasePath(IBackup backup, RequestInfo info, bool move)
+        {
+            var np = info.Request.Form["path"].Value;
+            if (string.IsNullOrWhiteSpace(np))
+                info.ReportClientError("No target path supplied");
+            else if (!Path.IsPathRooted(np))
+                info.ReportClientError("Target path is relative, please supply a fully qualified path");
+            else
+            {
+                if (move && (File.Exists(np) || Directory.Exists(np)))
+                    info.ReportClientError("A file already exists at the new location");
+                else
+                {
+                    if (move)
+                        File.Move(backup.DBPath, np);
+
+                    Program.DataConnection.UpdateBackupDBPath(backup, np);
+                }
+                    
+            }
+            
+        }
             
         public void GET(string key, RequestInfo info)
         {
@@ -356,6 +379,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "deletedb":
                             System.IO.File.Delete(bk.DBPath);
                             info.OutputOK();
+                            return;
+
+                        case "movedb":     
+                            UpdateDatabasePath(bk, info, true);
+                            return;
+
+                        case "updatedb":
+                            UpdateDatabasePath(bk, info, false);
                             return;
 
                         case "restore":
