@@ -202,9 +202,30 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			});
 
 		if ($routeParams.backupid == null) {
-			AppService.post('/backups', result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
-				$location.path('/');
-			}, AppUtils.connectionError);
+
+			function postDb() {
+				AppService.post('/backups', result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+					$location.path('/');
+				}, AppUtils.connectionError);								
+			};
+
+			AppService.post('/remoteoperation/dbpath', result.Backup.DBPath).then(
+				function(resp) {
+					if (resp.data.Exists) {
+						DialogService.dialog('Use existing database?', 'An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?', ['Cancel', 'Yes', 'No'], function(ix) {
+							if (ix == 2)
+								result.Backup.DBPath = resp.data.Path;
+
+							if (ix == 1 || ix == 2)
+								postDb();
+						});
+					}
+					else
+						postDb();
+
+				}, AppUtils.connectionError
+			);
+
 		} else {
 			AppService.put('/backup/' + $routeParams.backupid, result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
 				$location.path('/');
