@@ -2,7 +2,7 @@ backupApp.directive('notificationArea', function() {
   return {
     restrict: 'E',
     templateUrl: 'templates/notificationarea.html',
-    controller: function($scope, $location, $timeout, NotificationService, ServerStatus, AppService, AppUtils) {
+    controller: function($scope, $location, $timeout, NotificationService, ServerStatus, AppService, AppUtils, DialogService) {
     	$scope.Notifications = NotificationService.watch($scope);
         $scope.state = ServerStatus.watch($scope);
 
@@ -20,9 +20,9 @@ backupApp.directive('notificationArea', function() {
 
                     if (resp.status == 404) {
                         if ((parseInt(backupid) + '') != backupid)
-                            alert('The backup was temporary and does not exist anymore, so the log data is lost');
+                            DialogService.dialog('Error', 'The backup was temporary and does not exist anymore, so the log data is lost');
                         else
-                            alert('The backup is missing, has it been delete?');
+                            DialogService.dialog('Error', 'The backup is missing, has it been delete?');
                     } else {
                         AppUtils.connectionError('Failed to find backup: ', resp);
                     }

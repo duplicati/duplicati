@@ -1,4 +1,4 @@
-backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, EditUriBackendConfig, $http) {
+backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http) {
 
 	EditUriBackendConfig.mergeServerAndPath = function(scope) {
 		if ((scope.Server || '') != '') {
@@ -427,29 +427,32 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		return url;
 	};
 
-	EditUriBackendConfig.validaters['file'] = function(scope) {
-		return EditUriBackendConfig.require_path(scope);
+	EditUriBackendConfig.validaters['file'] = function(scope, continuation) {
+		if (EditUriBackendConfig.require_path(scope))
+			continuation();
 	};
 
-	EditUriBackendConfig.validaters['ftp'] = function(scope) {
+	EditUriBackendConfig.validaters['ftp'] = function(scope, continuation) {
 		var res = 
 			EditUriBackendConfig.require_server(scope) &&
-			EditUriBackendConfig.require_field(scope, 'Username', 'username') &&
-			EditUriBackendConfig.recommend_path(scope);
+			EditUriBackendConfig.require_field(scope, 'Username', 'username');
 
-		if (res && (scope.Password || '').trim().length == 0)
-			res = EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?');
-
-		return res;
+		if (res)
+			EditUriBackendConfig.recommend_path(scope, function() {
+				if ((scope.Password || '').trim().length == 0)
+					EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
+				else
+					continuation();
+			});
 	};
 
-	EditUriBackendConfig.validaters['ssh'] = function(scope) {
+	EditUriBackendConfig.validaters['ssh'] = function(scope, continuation) {
 		var res =
 			EditUriBackendConfig.require_server(scope) &&
-			EditUriBackendConfig.require_username_and_password(scope) &&
-			EditUriBackendConfig.recommend_path(scope);
+			EditUriBackendConfig.require_username_and_password(scope);
 
-		return res;
+		if (res)
+			EditUriBackendConfig.recommend_path(scope, continuation);
 	};
 
 	EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['ssh'];
@@ -457,12 +460,12 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
 
 
-	EditUriBackendConfig.validaters['onedrive'] = function(scope) {
+	EditUriBackendConfig.validaters['onedrive'] = function(scope, continuation) {
 		var res =
-			EditUriBackendConfig.require_field(scope, 'AuthID', 'AuthID') &&
-			EditUriBackendConfig.recommend_path(scope);
+			EditUriBackendConfig.require_field(scope, 'AuthID', 'AuthID');
 
-		return res;
+		if (res)
+			EditUriBackendConfig.recommend_path(scope, continuation);
 	};
 
 	EditUriBackendConfig.validaters['hubic']       = EditUriBackendConfig.validaters['onedrive'];
@@ -471,16 +474,17 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.validaters['amzcd']       = EditUriBackendConfig.validaters['onedrive'];
 	EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['onedrive'];
 
-	EditUriBackendConfig.validaters['azure'] = function(scope) {
+	EditUriBackendConfig.validaters['azure'] = function(scope, continuation) {
 		var res =
 			EditUriBackendConfig.require_field(scope, 'Username', 'Account name') &&
 			EditUriBackendConfig.require_field(scope, 'Password', 'Access Key') &&
 			EditUriBackendConfig.require_field(scope, 'Path', 'Container name');
 
-		return res;
+		if (res)
+			continuation();
 	};
 
-	EditUriBackendConfig.validaters['openstack'] = function(scope) {
+	EditUriBackendConfig.validaters['openstack'] = function(scope, continuation) {
 		var res =
 			EditUriBackendConfig.require_field(scope, 'Username', 'username') &&
 			EditUriBackendConfig.require_field(scope, 'Path', 'bucket name');
@@ -501,10 +505,11 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 				res = EditUriBackendConfig.show_error_dialog('You must enter either a password or an API Key, not both');
 		}
 
-		return res;
+		if (res)
+			continuation();
 	};
 
-	EditUriBackendConfig.validaters['s3'] = function(scope) {
+	EditUriBackendConfig.validaters['s3'] = function(scope, continuation) {
 		var res =
 			EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
 			EditUriBackendConfig.require_field(scope, 'Username', 'AWS Access ID') &&
@@ -513,37 +518,58 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if (res && (scope['s3_server'] || '').trim().length == 0 && (scope['s3_server_custom'] || '').trim().length == 0)
 			res = EditUriBackendConfig.show_error_dialog('You must select or fill in the server');
 
-		if (res && scope.Server.toLowerCase() != scope.Server) {
-			if (EditUriBackendConfig.show_warning_dialog('The bucket name should be all lower-case, convert automatically?'))
-				scope.Server = scope.Server.toLowerCase();
-			else
-				res = false;
-		}
 
-		if (res && scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0) {
-			if (EditUriBackendConfig.show_warning_dialog('The bucket name should start with your username, prepend automatically?'))
-				scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
-		}
+		if (res) {
 
-		return res;
+			function checkUsernamePrefix() {
+				if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0) {
+					DialogService.dialog('Adjust bucket name?', 'The bucket name should start with your username, prepend automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
+						if (ix == 2)
+							scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
+						if (ix == 1 || ix == 2)
+							continuation();
+					});
+				} else {
+					continuation();
+				}	
+			}
+
+			function checkLowerCase() {
+				if (scope.Server.toLowerCase() != scope.Server) {
+					DialogService.dialog('Adjust bucket name?', 'The bucket name should be all lower-case, convert automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
+						if (ix == 2)
+							scope.Server = scope.Server.toLowerCase();
+
+						if (ix == 1 || ix == 2)
+							checkUsernamePrefix();
+					});
+				} else {
+					checkUsernamePrefix();
+				}
+			};
+
+			checkLowerCase();
+		}
 	};
 
-	EditUriBackendConfig.validaters['b2'] = function(scope) {
+	EditUriBackendConfig.validaters['b2'] = function(scope, continuation) {
 		var res =
 			EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
 			EditUriBackendConfig.require_field(scope, 'Username', 'B2 Cloud Storage Account ID') &&
 			EditUriBackendConfig.require_field(scope, 'Password', 'B2 Cloud Storage Application Key');
 
-		return res;
+		if (res)
+			continuation();
 	};
 
-	EditUriBackendConfig.validaters['mega'] = function(scope) {
+	EditUriBackendConfig.validaters['mega'] = function(scope, continuation) {
 		scope.Path = scope.Path || '';
 		var res =
 			EditUriBackendConfig.require_field(scope, 'Username', 'Username') &&
 			EditUriBackendConfig.require_field(scope, 'Password', 'Password');
 
-		return res;
+		if (res)
+			continuation();
 	};
 
 

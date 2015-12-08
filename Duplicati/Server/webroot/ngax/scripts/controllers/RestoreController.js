@@ -1,4 +1,4 @@
-backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus) {
+backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus, DialogService) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -82,7 +82,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                alert('Failed to connect: ' + message);
+                DialogService.dialog('Error', 'Failed to connect: ' + message);
             }
         );
     };
@@ -108,7 +108,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             var message = resp.statusText;
             if (resp.data != null && resp.data.Message != null)
                 message = resp.data.Message;
-            alert('Failed to fetch path information: ' + message);
+            DialogService.dialog('Error', 'Failed to fetch path information: ' + message);
         };
 
         if (filesetsBuilt[version] == null) {
@@ -138,7 +138,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                 }
                                 else
                                 {
-                                    alert('Failed to fetch path information: ' + resp.data.ErrorMessage);
+                                    DialogService.dialog('Error', 'Failed to fetch path information: ' + resp.data.ErrorMessage);
                                 }
 
                             }, handleError);
@@ -183,8 +183,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     $scope.onClickNext = function() {
         var results =  $scope.Selected;
         if (results.length == 0) {
-            alert('No items to restore, please select one or more items');
-            return;
+            DialogService.dialog('No items selected', 'No items to restore, please select one or more items');
         } else {
             $scope.restore_step = 1;
         }
@@ -284,7 +283,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                alert('Failed to connect: ' + message);
+                DialogService.dialog('Error', 'Failed to connect: ' + message);
             }
         );
     };
@@ -302,7 +301,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
-            alert('Failed to connect: ' + message);
+            DialogService.dialog('Error', 'Failed to connect: ' + message);
         };
 
         var p = {
@@ -349,7 +348,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                             }
                             else
                             {
-                                alert('Failed to build temporary database: ' + resp.data.ErrorMessage);
+                                DialogService.dialog('Error', 'Failed to build temporary database: ' + resp.data.ErrorMessage);
                                 $scope.connecting = false;
                                 $scope.ConnectionProgress = '';
                             }
@@ -380,7 +379,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             }
             else
             {
-                alert('Failed to build restore files: ' + resp.data.ErrorMessage);
+                DialogService.dialog('Error', 'Failed to restore files: ' + resp.data.ErrorMessage);
             }
         }, function(resp) {
             var message = resp.statusText;
@@ -389,7 +388,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
-            alert('Failed to connect: ' + message);
+            DialogService.dialog('Error', 'Failed to connect: ' + message);
         });
     };
 

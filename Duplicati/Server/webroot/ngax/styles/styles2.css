@@ -446,7 +446,7 @@ ul.tabs > li.active, ul.tabs > li.active > a {
   color: black;  
 }
 
-div.connection-lost, div.blocker {
+div.connection-lost, div.blocker, div.modal-dialog {
   position: fixed;
   top: 0px;
   left: 0px;
@@ -455,7 +455,7 @@ div.connection-lost, div.blocker {
   margin: auto;
 }
 
-div.connection-lost {
+div.connection-lost, div.modal-dialog {
   width: 250px;
   height: 200px;
 }
@@ -465,11 +465,11 @@ div.blocker {
   opacity: 0.65;
 }
 
-.connection-lost div.info {
+.connection-lost div.info, .modal-dialog div.info {
   display: inline-block;
 }
 
-.connection-lost div.title {
+.connection-lost div.title, .modal-dialog div.title {
   border: 1px solid #65b1dd;
   background-color: #65b1dd;
   border-top-left-radius: 5px;
@@ -485,7 +485,7 @@ div.blocker {
   text-align: center;
 }
 
-.connection-lost div.content {
+.connection-lost div.content, .modal-dialog div.content {
   background-color: white;
   border: 1px solid white;
   padding: 20px;
@@ -493,12 +493,16 @@ div.blocker {
   min-width: 250px;
 }
 
-.connection-lost div.content.buttons { 
+.connection-lost div.content.buttons, .modal-dialog div.content.buttons { 
   padding-bottom: 45px;
   border-top-left-radius: 0px;
   border-top-right-radius: 0px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
+}
+
+.modal-dialog .content.buttons ul {
+  float: right;
 }
 
 .themelink {

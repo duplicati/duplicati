@@ -1,4 +1,4 @@
-backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemInfo) {
+backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemInfo, DialogService) {
 
 	var self = this;
 
@@ -55,16 +55,19 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 	};
 
 	this.show_error_dialog = function(msg) {
-		alert(msg);
+		DialogService.dialog('Error', msg);
 		return false;
 	}
 
-	this.show_warning_dialog = function(msg) {
-		return confirm(msg);
+	this.show_warning_dialog = function(msg, continuation) {
+		DialogService.dialog('Confirmation required', msg, ['No', 'Yes'], function(ix) {
+			if (ix == 1)
+				continuation();
+		});
 	}
 
-	this.defaultvalidater = function(scope) {
-		return true;
+	this.defaultvalidater = function(scope, continuation) {
+		continuation();
 	};
 
 	this.require_field = function(scope, field, label) {
@@ -88,11 +91,11 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 		return true;
 	};
 
-	this.recommend_path = function(scope) {
+	this.recommend_path = function(scope, continuation) {
 		if ((scope.Path || '').trim().length == 0)
-			return self.show_warning_dialog('If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?');
-
-		return true;
+			return self.show_warning_dialog('If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?', continuation);
+		else
+			continuation();
 	};
 
 	this.require_username_and_password = function(scope) {

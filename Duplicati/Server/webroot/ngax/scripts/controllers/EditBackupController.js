@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo) {
+backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService) {
 
 	$scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -102,29 +102,41 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         if (dirsep == '/') {
         	if (scope.manualSourcePath.substr(0, 1) != '/' && scope.manualSourcePath.substr(0, 1) != '%') {
-        		alert("The path must be an absolute path, i.e. it must start with a forward slash '/' ");
+        		DialogService.dialog('Relative paths not allowed', "The path must be an absolute path, i.e. it must start with a forward slash '/' ");
         		return;
         	}
         }
 
+        function continuation() {
+	        scope.validatingSourcePath = true;
+
+	        AppService.post('/filesystem/validate', {path: scope.manualSourcePath}).then(function() {
+	            scope.validatingSourcePath = false;
+	            scope.Backup.Sources.push(scope.manualSourcePath);
+	            scope.manualSourcePath = null;
+	        }, function() {
+	            scope.validatingSourcePath = false;
+
+	            DialogService.dialog('Path not found', 'The path does not appear to exist, do you want to add it anyway?', ['No', 'Yes'], function(ix) {
+	            	if (ix == 1) {
+		                scope.Backup.Sources.push(scope.manualSourcePath);
+		                scope.manualSourcePath = null;
+	            	}
+	            });
+	        })        	
+        };
+
         if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
-        	if (!confirm("The path does not end with a '" + dirsep + "' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?" ))
-        		return;
-        }
+        	DialogService.dialog('Include a file?', "The path does not end with a '" + dirsep + "' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", ['No', 'Yes'], function(ix) {
+        		if (ix == 1)
+        			continuation();
+        	});
+        } else {
+        	continuation();
+		}
 
-        scope.validatingSourcePath = true;
 
-        AppService.post('/filesystem/validate', {path: scope.manualSourcePath}).then(function() {
-            scope.validatingSourcePath = false;
-            scope.Backup.Sources.push(scope.manualSourcePath);
-            scope.manualSourcePath = null;
-        }, function() {
-            scope.validatingSourcePath = false;
-            if (confirm('The path does not appear to exist, do you want to add it anyway?')) {
-                scope.Backup.Sources.push(scope.manualSourcePath);
-                scope.manualSourcePath = null;
-            }
-        })
+
 
     };
 

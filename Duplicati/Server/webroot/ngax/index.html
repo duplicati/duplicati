@@ -45,6 +45,7 @@
 	<script type="text/javascript" src="scripts/services/EditUriBackendConfig.js"></script>
 	<script type="text/javascript" src="scripts/services/EditUriBuiltins.js"></script>
 	<script type="text/javascript" src="scripts/services/NotificationService.js"></script>
+	<script type="text/javascript" src="scripts/services/DialogService.js"></script>
 
 	<script type="text/javascript" src="scripts/controllers/AppController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/AboutController.js"></script>
@@ -59,6 +60,7 @@
 	<script type="text/javascript" src="scripts/controllers/ExportController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/ImportController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/UpdateChangelogController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/DialogController.js"></script>
 
 	<script type="text/javascript" src="scripts/filters/localize.js"></script>
 	<script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
@@ -165,7 +167,23 @@
 
 	<notification-area></notification-area>
 
-	<div ng-show="state.connectionState != 'connected'" class="blocker"></div>
+	<div ng-controller="DialogController">
+		<div ng-show="state.CurrentItem != null" class="blocker" ng-click=""></div>
+
+		<div ng-show="state.CurrentItem != null" class="modal-dialog">
+			<div class="info">
+				<div class="title">{{state.CurrentItem.title}}</div>
+				<div class="content">{{state.CurrentItem.message}}</div>
+				<div class="content buttons">
+					<ul>
+						<li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)" >{{btn}}</a></li>
+					</ul>
+				</div>
+			</div>			
+		</div>
+	</div>
+
+	<div ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
 
 	<div ng-show="state.connectionState != 'connected'" class="connection-lost">
 		<div class="info">

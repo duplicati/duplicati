@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function() {
+backupApp.service('AppUtils', function(DialogService) {
 
     var apputils = this;
 
@@ -132,7 +132,7 @@ backupApp.service('AppUtils', function() {
     this.parse_extra_options = function(str, dict) {
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
-                alert('Duplicate option ' + k);
+                DialogService.dialog('Error', 'Duplicate option ' + k);
                 return false;
             }
 
@@ -169,7 +169,7 @@ backupApp.service('AppUtils', function() {
     };
 
     this.notifyInputError = function(msg) {
-        alert(msg);
+        DialogService.dialog('Error', msg);
         return false;
     };
 
@@ -177,14 +177,14 @@ backupApp.service('AppUtils', function() {
         if (typeof(txt) == typeof('')) {
             if (msg == null)
                 return function(msg) {
-                    alert(txt + msg.statusText);
+                    DialogService.dialog('Error', txt + msg.statusText);
                 };
         } else {
             msg = txt;
             txt = '';
         }
 
-        alert(txt + msg.statusText);
+        DialogService.dialog('Error', txt + msg.statusText);
     };
 
     this.generatePassphrase = function() {

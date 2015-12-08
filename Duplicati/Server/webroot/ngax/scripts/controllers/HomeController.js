@@ -1,46 +1,50 @@
-backupApp.controller('HomeController', function ($scope, $location, BackupList, AppService) {
+backupApp.controller('HomeController', function ($scope, $location, BackupList, AppService, DialogService) {
     $scope.backups = BackupList.watch($scope);
 
     $scope.doRun = function(id) {
-    	AppService.post('/backup/' + id + '/run');
+        AppService.post('/backup/' + id + '/run');
     };
 
     $scope.doRestore = function(id) {
-    	$location.path('/restore/' + id);
+        $location.path('/restore/' + id);
     };
 
     $scope.doEdit = function(id) {
-    	$location.path('/edit/' + id);
+        $location.path('/edit/' + id);
     };
 
     $scope.doExport = function(id) {
-    	$location.path('/export/' + id);
+        $location.path('/export/' + id);
     };
 
     $scope.doDelete = function(id, name) {
-    	if (confirm('Do you really want to delete the backup: ' + name))
-    		AppService.delete('/backup/' + id);
+        DialogService.dialog('Confirm delete', 'Do you really want to delete the backup: ' + name, ['No', 'Yes'], function(ix) {
+            if (ix == 1)
+                AppService.delete('/backup/' + id);
+        });
     };
 
     $scope.doDeleteLocalDb = function(id, name) {
-    	if (confirm('Do you really want to delete the local database for: ' + name))
-    		AppService.post('/backup/' + id + '/deletedb');
+        DialogService.dialog('Confirm delete', 'Do you really want to delete the local database for: ' + name, ['No', 'Yes'], function(ix) {
+            if (ix == 1)
+                AppService.post('/backup/' + id + '/deletedb');
+        });
     };
 
     $scope.doRepairLocalDb = function(id, name) {
-		AppService.post('/backup/' + id + '/repair');
+        AppService.post('/backup/' + id + '/repair');
     };
 
     $scope.doVerifyRemote = function(id, name) {
-		AppService.post('/backup/' + id + '/verify');
+        AppService.post('/backup/' + id + '/verify');
     };
 
     $scope.doShowLog = function(id, name) {
-    	$location.path('/log/' + id);
+        $location.path('/log/' + id);
     };
 
     $scope.doCreateBugReport = function(id, name) {
-		AppService.post('/backup/' + id + '/createreport');
+        AppService.post('/backup/' + id + '/createreport');
     };
 
 });

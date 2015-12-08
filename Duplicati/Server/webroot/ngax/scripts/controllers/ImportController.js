@@ -1,4 +1,4 @@
-backupApp.controller('ImportController', function($scope, $routeParams, $location, AppService) {
+backupApp.controller('ImportController', function($scope, $routeParams, $location, AppService, DialogService) {
     $scope.Connecting = false;
     $scope.Completed = false;
     $scope.ImportURL = AppService.get_import_url();
@@ -11,7 +11,7 @@ backupApp.controller('ImportController', function($scope, $routeParams, $locatio
         if (message == 'OK')
             $location.path('/');
         else
-            alert(message);
+            DialogService.dialog('Error', message);
     };
 
     $scope.doSubmit = function() {

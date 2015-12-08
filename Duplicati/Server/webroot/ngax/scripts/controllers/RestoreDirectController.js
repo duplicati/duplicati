@@ -1,4 +1,4 @@
-backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $location, AppService, AppUtils, SystemInfo, ServerStatus) {
+backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $location, AppService, AppUtils, SystemInfo, ServerStatus, DialogService) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -47,7 +47,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                alert('Failed to connect: ' + message);
+                DialogService.dialog('Error', 'Failed to connect: ' + message);
             }
         );
     };
@@ -69,7 +69,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                alert('Failed to connect: ' + message);
+                DialogService.dialog('Error', 'Failed to connect: ' + message);
             }
         );
     };
