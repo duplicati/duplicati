@@ -1,3 +1,9 @@
+2015-12-08
+==========
+* New favicon
+* Numerous fixes to the ngax theme
+* Method for editing path to local database
+
 2015-12-07
 ==========
 * Added signed GPG signatures to each build
