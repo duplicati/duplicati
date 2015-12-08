@@ -123,7 +123,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		                scope.manualSourcePath = null;
 	            	}
 	            });
-	        })        	
+	        });
         };
 
         if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
