@@ -45,8 +45,7 @@ backupApp.directive('notificationArea', function() {
 
         $scope.doDownloadBugreport = function(item) {
             var id = item.Action.substr('bug-report:created:'.length);
-            item.DownloadLink = AppService.get_bugreport_url(id);
-            document.getElementById('notification-download-iframe').src = item.DownloadLink;
+            item.DownloadLink = $scope.DownloadLink = AppService.get_bugreport_url(id);
         };
     }
   }
