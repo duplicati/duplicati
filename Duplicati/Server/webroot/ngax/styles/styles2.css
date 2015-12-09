@@ -457,6 +457,23 @@ div.blocker {
   margin-left: 20px;
 }
 
+body .container .header .donate ul {
+  overflow: hidden;
+  float: right;
+  padding-left: 20px;
+  padding-right: 10px;
+}
+
+body .container .header .donate ul li {
+    float: right;
+    margin-right: 10px;
+    padding-top: 5px;
+  }
+
+.header .donate {
+  float: right;
+}
+
 ul.notification {
     position: fixed;
     bottom: 0px;
