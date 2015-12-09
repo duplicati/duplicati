@@ -63,7 +63,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The currently scheduled items
         /// </summary>
-        private ISchedule[] m_schedule;
+        private KeyValuePair<DateTime, ISchedule>[] m_schedule;
         
         /// <summary>
         /// List of update tasks, used to set the timestamp on the schedule once completed
@@ -81,7 +81,7 @@ namespace Duplicati.Server
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
             m_worker.CompletedWork += OnCompleted;
-            m_schedule = new ISchedule[0];
+            m_schedule = new KeyValuePair<DateTime, ISchedule>[0];
             m_terminate = false;
             m_event = new AutoResetEvent(false);
             m_updateTasks = new Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>>();
@@ -102,7 +102,7 @@ namespace Duplicati.Server
         /// <summary>
         /// A snapshot copy of the current schedule list
         /// </summary>
-        public List<ISchedule> Schedule 
+        public List<KeyValuePair<DateTime, ISchedule>> Schedule 
         { 
             get 
             {
@@ -281,13 +281,12 @@ namespace Duplicati.Server
                 }
 
                 var existing = lst.ToDictionary(x => x.ID);
-                Server.Serialization.Interface.ISchedule sc_tmp = null;
                 //Sort them, lock as we assign the m_schedule variable
                 lock(m_lock)
                     m_schedule = (from n in scheduled
-                        where existing.TryGetValue(n.Key, out sc_tmp)
+                        where existing.ContainsKey(n.Key)
                         orderby n.Value
-                        select existing[n.Key]).ToArray();
+                        select new KeyValuePair<DateTime, ISchedule>(n.Value, existing[n.Key])).ToArray();
 
                 // Remove unused entries                        
                 foreach(var c in (from n in scheduled where !existing.ContainsKey(n.Key) select n.Key).ToArray())
