@@ -3,7 +3,7 @@ backupApp.controller('UpdateChangelogController', function($scope, BrandingServi
     $scope.systeminfo = SystemInfo.watch($scope);
     $scope.serverstate = ServerStatus.watch($scope);
 
-    function reloadChangeLog() {
+    function reloadChangeLog() {        
         AppService.get('/changelog?from-update=true').then(function(resp) {
             $scope.Version =  resp.data.Version;
             $scope.ChangeLog =  resp.data.Changelog;
