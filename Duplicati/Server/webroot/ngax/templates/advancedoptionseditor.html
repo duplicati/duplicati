@@ -3,7 +3,7 @@
 		<div>			
 			<label class="shortname">{{getShortName(item)}}</label>
 
-			<select ng-if="getInputType(item) == 'enum'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option ></select>
+			<select ng-if="getInputType(item) == 'enum'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option="getEnumerations(item)" ></select>
 			<input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$index]" parse-advanced-option-bool ></input>
 			<input ng-if="getInputType(item) == 'password'" type="password" ng-model="$parent.ngModel[$index]" parse-advanced-option ></input>
 			<input ng-if="getInputType(item) == 'text'" type="text" ng-model="$parent.ngModel[$index]" parse-advanced-option ></input>

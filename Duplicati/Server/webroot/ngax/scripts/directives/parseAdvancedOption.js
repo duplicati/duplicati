@@ -5,6 +5,7 @@ backupApp.directive('parseAdvancedOption', function(AppUtils) {
 		link: function(scope, element, attr, ctrl) {
 
 			var name = null;
+			var sc = scope;
 
 			ctrl[0].$parsers.push(function(txt) {
 				if (name == null)
@@ -18,7 +19,18 @@ backupApp.directive('parseAdvancedOption', function(AppUtils) {
 				var ix = src.indexOf('=');
 				if (ix >= 0) {
 					name = src.substr(0, ix);
-					return src.substr(ix + 1);
+					val = src.substr(ix + 1);
+
+					if (attr.parseAdvancedOption != '') {
+						var items = sc.$eval(attr.parseAdvancedOption);
+						for(var x in items) {
+							if (items[x].toLowerCase() == val.toLowerCase())
+								return items[x];
+						}
+					}
+
+					return val;
+
 				}
 				else
 				{
