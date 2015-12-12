@@ -49,6 +49,9 @@
         <h2>System properties</h2>
         <ul>
             <li ng-repeat="(key,value) in sysinfo" ng-if="key != 'Options' &amp;&amp; key != 'CompressionModules' &amp;&amp; key != 'EncryptionModules' &amp;&amp; key != 'BackendModules' &amp;&amp; key != 'GenericModules' &amp;&amp; key != 'WebModules' &amp;&amp; key != 'ConnectionModules' &amp;&amp; key != 'GroupedBackendModules'">{{key}} : {{value}}</li>
+            <li>Backend modules: <p style="display: inline" ng-repeat="item in sysinfo.BackendModules">{{item.Key}} </p></li>
+            <li>Compression modules: <p style="display: inline" ng-repeat="item in sysinfo.CompressionModules">{{item.Key}} </p></li>
+            <li>Encryption modules: <p style="display: inline" ng-repeat="item in sysinfo.EncryptionModules">{{item.Key}} </p></li>
         </ul>
 
         <h2>Server state properties</h2>
