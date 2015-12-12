@@ -11,11 +11,16 @@
             <strong>Running backup</strong>
             {{activeBackup.Backup.Name}}
 
+            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop'}}</a>
+
             <progress-bar ng-text="StateText" ng-progress="Progress"></progress-bar>
+
         </div>
 
         <div ng-show="activeBackup == null &amp;&amp; state.activeTask != null">
             <strong>Running task</strong>
+
+            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop'}}</a>
         </div>
 
         <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">

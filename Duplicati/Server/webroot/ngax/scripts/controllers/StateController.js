@@ -59,5 +59,16 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
 
     $scope.$watch('state.lastPgEvent', updateStateDisplay, true);
 
+    $scope.stopTask = function() {
+        var taskId = $scope.state.activeTask.Item1;
+        if ($scope.StopReqId == taskId) {
+            AppService.post('/task/' + taskId + '/abort');
+        } else {
+            AppService.post('/task/' + taskId + '/stop');
+        }
+
+        $scope.StopReqId = taskId;
+    };
+
 
 });
