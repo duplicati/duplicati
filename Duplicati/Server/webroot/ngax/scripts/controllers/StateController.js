@@ -7,6 +7,9 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
 
     var updateActiveTask = function() {
         $scope.activeBackup = $scope.state.activeTask == null ? null : BackupList.lookup[$scope.state.activeTask.Item2];
+        $scope.nextTask = ($scope.state.schedulerQueueIds == null || $scope.state.schedulerQueueIds.length == 0) ? null : BackupList.lookup[$scope.state.schedulerQueueIds[0].Item2];
+        $scope.nextScheduledTask = ($scope.state.proposedSchedule == null || $scope.state.proposedSchedule.length == 0) ? null : BackupList.lookup[$scope.state.proposedSchedule[0].Item1];
+        $scope.nextScheduledTime = ($scope.state.proposedSchedule == null || $scope.state.proposedSchedule.length == 0) ? null : $scope.state.proposedSchedule[0].Item2;
     };
 
     $scope.$on('backuplistchanged', updateActiveTask);

@@ -20,7 +20,9 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         updaterState: 'Waiting',
         updatedVersion: null,
         updateReady: false,
-        updateDownloadProgress: 0
+        updateDownloadProgress: 0,
+        proposedSchedule: [],
+        schedulerQueueIds: []
     };
 
     this.state = state;
@@ -205,6 +207,21 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     notifyIfChanged(response.data, 'UpdateReady', 'updateReady') |
                     notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|
                     notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
+
+
+                if (!angular.equals(state.proposedSchedule, response.data.ProposedSchedule)) {
+                    state.proposedSchedule.length = 0;
+                    state.proposedSchedule.push.apply(state.proposedSchedule, response.data.ProposedSchedule);
+                    $rootScope.$broadcast('serverstatechanged.proposedSchedule', state.proposedSchedule);
+                    anychanged = true;
+                }
+
+                if (!angular.equals(state.schedulerQueueIds, response.data.SchedulerQueueIds)) {
+                    state.schedulerQueueIds.length = 0;
+                    state.schedulerQueueIds.push.apply(state.schedulerQueueIds, response.data.SchedulerQueueIds);
+                    $rootScope.$broadcast('serverstatechanged.schedulerQueueIds', state.schedulerQueueIds);
+                    anychanged = true;
+                }
 
                 // Clear error indicators
                 state.failedConnectionAttempts = 0;

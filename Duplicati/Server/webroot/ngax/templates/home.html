@@ -18,12 +18,14 @@
             <strong>Running task</strong>
         </div>
 
-        <div ng-show="state.activeTask == null &amp;&amp; state.SchedulerQueueIds != null &amp;&amp; state.SchedulerQueueIds.length > 0">
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">
             <strong>Next task:</strong>
-            {{nexttask}}
+            {{nextTask.Backup.Name}}
         </div>
 
-        <div ng-show="state.activeTask == null &amp;&amp; (state.SchedulerQueueIds == null || state.SchedulerQueueIds.length == 0)">No scheduled tasks, you can manually start a task</div>
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} at {{nextScheduledTime | date: 'medium'}}</div>
+
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null">No scheduled tasks, you can manually start a task</div>
 
     </div>
 
@@ -65,12 +67,12 @@
                     <dt>Last successful run:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}}</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
-                    Never - <a href class="action-link" ng-click="runBackup(item.Backup.ID)">Run now</a>
+                    Never - <a href class="action-link" ng-click="doRun(item.Backup.ID)">Run now</a>
                     </dd>
 
-                    <div ng-hide="item.Schedule == null">
-                        <dt>Next run:</dt>
-                        <dd>{{item.Schedule.Time | date :'medium'}}</dd>
+                    <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
+                        <dt>Next scheduled run:</dt>
+                        <dd>{{item.Backup.Metadata.NextScheduledRun | date :'medium'}}</dd>
                     </div>
                     <div ng-hide="item.Backup.Metadata == null">
                         <div ng-hide="item.Backup.Metadata.SourceSizeString == null">

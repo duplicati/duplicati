@@ -1,4 +1,4 @@
-backupApp.service('BackupList', function($rootScope, $timeout, AppService) {
+backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUtils, ServerStatus) {
     var list = [];
     var lookup = {};
 
@@ -18,6 +18,22 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService) {
         return list;
     }
 
+    function updateNextRunStamp() {
+        var schedule = ServerStatus.state.proposedSchedule || [];
+
+        for(var n in list) {
+            if (list[n].Backup.Metadata == null)
+                list[n].Backup.Metadata = {};
+            delete list[n].Backup.Metadata["NextScheduledRun"];
+        }
+
+        for(var n in schedule)
+            if (lookup[schedule[n].Item1])
+                lookup[schedule[n].Item1].Backup.Metadata["NextScheduledRun"] = schedule[n].Item2;
+
+        $rootScope.$broadcast('backuplistchanged');
+    };
+
     var reload = function() {
         AppService.get('/backups').then(function(data) {
             list.length = 0;
@@ -31,11 +47,13 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService) {
                 lookup[data.data[i].Backup.ID] = data.data[i];
             }
 
-            $rootScope.$broadcast('backuplistchanged');
+            updateNextRunStamp();
         });
     };
 
+
     $rootScope.$on('serverstatechanged.lastDataUpdateId', reload);
+    $rootScope.$on('serverstatechanged.proposedSchedule', updateNextRunStamp);
 
     reload();
 });
