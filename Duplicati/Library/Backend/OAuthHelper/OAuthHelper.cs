@@ -94,6 +94,7 @@ namespace Duplicati.Library
                         catch (Exception ex)
                         {
                             var msg = ex.Message;
+                            var clienterror = false;
                             if (ex is WebException)
                             {
                                 var resp = ((WebException)ex).Response as HttpWebResponse;
@@ -110,10 +111,13 @@ namespace Duplicati.Library
                                         else
                                             throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
                                     }
+
+                                    //Fail faster on client errors
+                                    clienterror = (int)resp.StatusCode >= 400 && (int)resp.StatusCode <= 499;
                                 }
                             }
 
-                            if (retries >= 5)
+                            if (retries >= (clienterror ? 1 : 5))
                                 throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
 
                             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));

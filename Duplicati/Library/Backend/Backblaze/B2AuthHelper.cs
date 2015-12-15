@@ -81,8 +81,24 @@ namespace Duplicati.Library.Backend.Backblaze
                         }
                         catch (Exception ex)
                         {
+                            
                             var msg = ex.Message;
-                            if (retries >= 5)
+                            var clienterror = false;
+
+                            try
+                            {
+                                // Only retry once on client errors
+                                if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
+                                {
+                                    var sc = (int)((ex as WebException).Response as HttpWebResponse).StatusCode;
+                                    clienterror = (sc >= 400 && sc <= 499);
+                                }
+                            }
+                            catch
+                            {
+                            }
+
+                            if (retries >= (clienterror ? 1 : 5))
                             {
                                 AttemptParseAndThrowException(ex);
                                 throw;
