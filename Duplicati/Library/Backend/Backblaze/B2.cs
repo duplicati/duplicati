@@ -286,6 +286,7 @@ namespace Duplicati.Library.Backend.Backblaze
             m_filecache = null;
             var cache = new Dictionary<string, List<FileEntity>>();
             string nextFileID = null;
+            string nextFileName = null;
             do
             {
                 var resp = m_helper.PostAndGetJSONData<ListFilesResponse>(
@@ -293,11 +294,13 @@ namespace Duplicati.Library.Backend.Backblaze
                     new ListFilesRequest() {
                         BucketID = Bucket.BucketID,
                         MaxFileCount = PAGE_SIZE,
-                        StartFileID = nextFileID
+                        StartFileID = nextFileID,
+                        StartFileName = nextFileName
                     }
                 );
 
                 nextFileID = resp.NextFileID;
+                nextFileName = resp.NextFileName;
 
                 if (resp.Files == null || resp.Files.Length == 0)
                     break;
@@ -315,7 +318,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     List<FileEntity> lst;
                     cache.TryGetValue(name, out lst);
                     if (lst == null)
-                        cache[name] = lst = new List<FileEntity>();
+                        cache[name] = lst = new List<FileEntity>(1);
                     lst.Add(f);
                 }
 
