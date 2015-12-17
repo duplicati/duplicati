@@ -684,6 +684,9 @@ namespace Duplicati.Library.Utility
         {
             get
             {
+                // Sadly, Mono returns Unix when running on OSX
+                //return Environment.OSVersion.Platform == PlatformID.MacOSX;
+
                 if (!IsClientLinux)
                     return false;
         
@@ -744,15 +747,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-#if __MonoCS__
-                if (Environment.OSVersion.Platform == PlatformID.Unix || (int)Environment.OSVersion.Platform == 6)
-                    return true;
-#else
-        if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
-			return true;
-#endif
-                return false;
-		
+                return Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
             }
         }
 
