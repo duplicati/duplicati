@@ -1,3 +1,8 @@
+2015-12-17
+==========
+* Bugfix for Backblaze backend
+* Added faster fail for OAuth backends with wrong credentials
+
 2015-12-14
 ==========
 * Fixed a few issues with the new theme
