@@ -185,7 +185,7 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        private static string InstallID
+        public static string InstallID
         {
             get
             { 
