@@ -101,6 +101,13 @@ echo "Building signed package ..."
 
 mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/preview.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
+if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
+	mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"	
+	
+	echo "Something went wrong while building the package, no output found"
+	exit 5
+fi
+
 echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
 mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
