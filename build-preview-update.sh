@@ -39,7 +39,7 @@ echo
 
 RELEASE_CHANGEINFO_NEWS=`cat ${RELEASE_CHANGELOG_NEWS_FILE}`
 
-echo git stash save "${GIT_STASH_NAME}"
+git stash save "${GIT_STASH_NAME}"
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
