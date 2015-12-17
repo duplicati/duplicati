@@ -258,6 +258,18 @@
       <Link>licenses\jQuery\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\CoCoL\download.txt">
+      <Link>licenses\CoCoL\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\CoCoL\license.txt">
+      <Link>licenses\CoCoL\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\CoCoL\licensedata.json">
+      <Link>licenses\CoCoL\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -285,5 +297,6 @@
     <Folder Include="licenses\MegaApi\" />
     <Folder Include="licenses\AngularJS\" />
     <Folder Include="licenses\jQuery\" />
+    <Folder Include="licenses\CoCoL\" />
   </ItemGroup>
 </Project>
