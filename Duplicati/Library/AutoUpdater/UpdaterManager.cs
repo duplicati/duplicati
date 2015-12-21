@@ -132,7 +132,7 @@ namespace Duplicati.Library.AutoUpdater
             SelfVersion = selfVersion;
         }
 
-        private static Version TryParseVersion(string str)
+        public static Version TryParseVersion(string str)
         {
             Version v;
             if (Version.TryParse(str, out v))
