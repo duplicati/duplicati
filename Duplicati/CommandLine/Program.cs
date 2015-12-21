@@ -38,6 +38,8 @@ namespace Duplicati.CommandLine
 
         public static int RealMain(string[] args)
         {
+            Library.UsageReporter.Reporter.Initialize();
+
             bool verboseErrors = false;
             bool verbose = false;
             try
@@ -210,6 +212,8 @@ namespace Duplicati.CommandLine
             }
             catch (Exception ex)
             {
+                Library.UsageReporter.Reporter.Report(ex);
+
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 

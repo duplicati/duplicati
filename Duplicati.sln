@@ -79,6 +79,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.UsageReporter", "Duplicati\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj", "{BB014EA5-CE2C-4444-8D30-38983A0E8553}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -224,6 +226,12 @@ Global
 		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{BB014EA5-CE2C-4444-8D30-38983A0E8553}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB014EA5-CE2C-4444-8D30-38983A0E8553}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB014EA5-CE2C-4444-8D30-38983A0E8553}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB014EA5-CE2C-4444-8D30-38983A0E8553}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB014EA5-CE2C-4444-8D30-38983A0E8553}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB014EA5-CE2C-4444-8D30-38983A0E8553}.Test|Any CPU.Build.0 = Debug|Any CPU
 		{C0270709-2A40-43B5-8CF1-69581B9FA2A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C0270709-2A40-43B5-8CF1-69581B9FA2A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0270709-2A40-43B5-8CF1-69581B9FA2A1}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -497,6 +497,7 @@ namespace Duplicati.Server
             {
                 Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
                 UpdateMetadataError(data.Backup, ex);
+                Library.UsageReporter.Reporter.Report(ex);
                 
                 if (!fromQueue)
                     throw;

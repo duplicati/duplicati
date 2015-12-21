@@ -110,6 +110,10 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
 		{
+            Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
+            Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
+            Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
+
             return RunAction(new BackupResults(), ref inputsources, (result) => {
             
 				if (inputsources == null || inputsources.Length == 0)
