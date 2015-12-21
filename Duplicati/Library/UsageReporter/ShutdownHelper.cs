@@ -30,7 +30,32 @@ namespace Duplicati.Library.UsageReporter
         /// <param name="item">The instance to examine.</param>
         public static void RetireAllChannels(object item)
         {
-            throw new MissingMethodException();
+            if (item == null)
+                return;
+            
+            foreach(var f in item.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy | System.Reflection.BindingFlags.Instance))
+                if (typeof(IRetireAbleChannel).IsAssignableFrom(f.FieldType))
+                {
+                    try
+                    {
+                        ((IRetireAbleChannel)f.GetValue(item)).Retire();
+                    }
+                    catch
+                    {
+                    }
+                }
+
+            foreach(var f in item.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy | System.Reflection.BindingFlags.Instance))
+                if (typeof(IRetireAbleChannel).IsAssignableFrom(f.PropertyType))
+                {
+                    try
+                    {
+                        ((IRetireAbleChannel)f.GetValue(item)).Retire();
+                    }
+                    catch
+                    {
+                    }
+                }            
         }
 
         /// <summary>
