@@ -57,7 +57,7 @@ namespace Duplicati.Library.UsageReporter
         public static void Report(string key, long count, ReportType type = ReportType.Information)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.TryWrite(new ReportItem(type, count, key, null)); }
+                try { _eventChannel.TryWrite(new ReportItem(type, count, key, count.ToString())); }
                 catch { }
         }
 

@@ -178,6 +178,10 @@ namespace Duplicati.Library.Main
 
                 using(var h = new Operation.BackupHandler(m_backend, m_options, result))
                     h.Run(sources.ToArray(), filter);
+
+                Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
+                Library.UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
+                Library.UsageReporter.Reporter.Report("BACKUP_DURATION", (long)result.Duration.TotalSeconds);
             });
         }
 
