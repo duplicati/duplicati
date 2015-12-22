@@ -112,7 +112,7 @@
 	            <a href="#/" class="home">{{appName}}</a>
 	        </div>
 	        
-	        <div class="donate">
+	        <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
 	            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank">{{'Donate' | localize}}</a>
 	            <ul>
 	                <li>

@@ -462,7 +462,7 @@ namespace Duplicati.CommandLine
                         output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.FilesRestored, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
                         output.MessageEvent(string.Format("Duration of restore: {0:hh\\:mm\\:ss}", res.Duration));
                         
-                        if (res.FilesRestored > 0)
+                        if (res.FilesRestored > 0 && !Library.Main.Utility.SuppressDonationMessages)
                         {
                             output.MessageEvent("***********************************************");
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation. We suggest 10€ for private use and 100€ for commercial use.");

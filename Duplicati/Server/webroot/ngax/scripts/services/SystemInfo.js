@@ -24,6 +24,10 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, AppService, AppUt
         return state;
     };
 
+    this.notifyChanged = function() {
+        $rootScope.$broadcast('systeminfochanged');
+    };
+
     AppService.get('/systeminfo').then(function(data) {
 
     	angular.copy(data.data, state);
