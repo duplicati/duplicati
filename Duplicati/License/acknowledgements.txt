@@ -12,6 +12,9 @@ Software Development:
   Malte Neumann
   Mostafa Aghajani
   
+The theme for Duplicati (ngax):
+  Alexander Franzelin
+  
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
   Chinese, zh-CN: Born Kanas
