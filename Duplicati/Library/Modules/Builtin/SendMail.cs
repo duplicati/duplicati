@@ -278,21 +278,21 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
             {
+                MailLevels level;
+                if (result is Exception)
+                    level = MailLevels.Error;
+                else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
+                    level = MailLevels.Warning;
+                else
+                    level = MailLevels.Success;
+                
+                m_parsedresultlevel = level.ToString();
+
                 if (m_level != MailLevels.All)
                 {
-                    MailLevels level;
-                    if (result is Exception)
-                        level = MailLevels.Error;
-                    else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
-                        level = MailLevels.Warning;
-                    else
-                        level = MailLevels.Success;
-
                     //Check if this level should send mail
                     if ((m_level & level) == 0)
                         return;
-                    
-                    m_parsedresultlevel = level.ToString();
                 }
             }
 
