@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
-            return RunAction(new BackupResults(), ref inputsources, (result) => {
+            return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
             
 				if (inputsources == null || inputsources.Length == 0)
 					throw new Exception(Strings.Controller.NoSourceFoldersError);
@@ -187,14 +187,14 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.IRestoreResults Restore(string[] paths, Library.Utility.IFilter filter = null)
 		{
-            return RunAction(new RestoreResults(), ref paths, (result) => {
+            return RunAction(new RestoreResults(), ref paths, ref filter, (result) => {
     			new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
             });
         }
 
         public Duplicati.Library.Interface.IRestoreControlFilesResults RestoreControlFiles(IEnumerable<string> files = null, Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RestoreControlFilesResults(), (result) => {
+            return RunAction(new RestoreControlFilesResults(), ref filter, (result) => {
                 new Operation.RestoreControlFilesHandler(m_backend, m_options, result).Run(files, filter);
             });
         }
@@ -208,7 +208,7 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IRepairResults Repair(Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RepairResults(), (result) => {
+            return RunAction(new RepairResults(), ref filter, (result) => {
                 new Operation.RepairHandler(m_backend, m_options, result).Run(filter);
             });
         }
@@ -225,14 +225,14 @@ namespace Duplicati.Library.Main
         
         public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
 		{
-            return RunAction(new ListResults(), (result) => {
+            return RunAction(new ListResults(), ref filter, (result) => {
     			new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
         
         public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
         {
-            return RunAction(new ListResults(), (result) => {
+            return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main
 
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
 
-            return RunAction(new RecreateDatabaseResults(), ref t, (result) => {
+            return RunAction(new RecreateDatabaseResults(), ref t, ref filter, (result) => {
                 using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
                     h.Run(t[0], filter, filelistfilter);
             });
@@ -260,7 +260,7 @@ namespace Duplicati.Library.Main
         {
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
 
-            return RunAction(new RecreateDatabaseResults(), (result) => {
+            return RunAction(new RecreateDatabaseResults(), ref filter, (result) => {
                 using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
                     h.RunUpdate(filter, filelistfilter);
             });
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main
         {
             var t = new string[] { baseVersion, targetVersion };
             
-            return RunAction(new ListChangesResults(), ref t, (result) => {
+            return RunAction(new ListChangesResults(), ref t, ref filter, (result) => {
                 new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter);
             });
         }
@@ -304,7 +304,7 @@ namespace Duplicati.Library.Main
             m_options.RawOptions["dry-run"] = "true";
             m_options.RawOptions["dbpath"] = "INVALID!";
             
-            return RunAction(new TestFilterResults(), ref paths, (result) => {
+            return RunAction(new TestFilterResults(), ref paths, ref filter, (result) => {
                 new Operation.TestFilterHandler(m_options, result).Run(paths, filter);
             });
         }
@@ -320,10 +320,25 @@ namespace Duplicati.Library.Main
             where T : ISetCommonOptions, ITaskControl
         {
             var tmp = new string[0];
-            return RunAction<T>(result, ref tmp, method);
+            IFilter tempfilter = null;
+            return RunAction<T>(result, ref tmp, ref tempfilter, method);
         }
-                
+
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
+            where T : ISetCommonOptions, ITaskControl
+        {
+            IFilter tempfilter = null;
+            return RunAction<T>(result, ref paths, ref tempfilter, method);
+        }
+
+        private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
+            where T : ISetCommonOptions, ITaskControl
+        {
+            var tmp = new string[0];
+            return RunAction<T>(result, ref tmp, ref filter, method);
+        }
+
+        private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
         {
             try
@@ -332,7 +347,7 @@ namespace Duplicati.Library.Main
                 m_currentTaskThread = System.Threading.Thread.CurrentThread;
                 using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
                 {
-                    SetupCommonOptions(result, ref paths);
+                    SetupCommonOptions(result, ref paths, ref filter);
                     OperationRunning(true);
     				
                     method(result);
@@ -418,7 +433,7 @@ namespace Duplicati.Library.Main
             }		
 		}
 
-        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths)
+        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
         {
             m_options.MainAction = result.MainOperation;
             result.MessageSink = m_messageSink;
@@ -446,6 +461,9 @@ namespace Duplicati.Library.Main
             foreach(var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
+            // Make the filter read-n-write able in the generic modules
+            var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
+
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
@@ -453,9 +471,14 @@ namespace Duplicati.Library.Main
                         mx.Value.Configure(conopts);
                     else
                         mx.Value.Configure(m_options.RawOptions);
+                    
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
+
+            // If the filters were changed, read them back in
+            if (pristinefilter != conopts["filter"])
+                filter = FilterExpression.Deserialize(conopts["filter"].Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
 
             OperationRunning(true);
 

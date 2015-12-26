@@ -247,7 +247,7 @@ namespace Duplicati.CommandLine
             get
             {
                 return new List<Library.Interface.ICommandLineArgument>(new Library.Interface.ICommandLineArgument[] {
-                    new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong, "", new string[] {"parameter-file", "parameterfile"}),
+                    new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
                     new Library.Interface.CommandLineArgument("include", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.IncludeShort, Strings.Program.IncludeLong),
                     new Library.Interface.CommandLineArgument("exclude", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
                     new Library.Interface.CommandLineArgument("control-files", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ControlFilesOptionShort, Strings.Program.ControlFilesOptionLong, "false"),
@@ -264,19 +264,37 @@ namespace Duplicati.CommandLine
                 List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
+                string prependfilter = null;
+                string appendfilter = null;
+                string replacefilter = null;
 
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
-					if (key.Equals("source", StringComparison.InvariantCultureIgnoreCase))
+                    if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
 					{
 						newsource.Add(value);
 						return false;
 					}
-					else if (key.Equals("target", StringComparison.InvariantCultureIgnoreCase))
+                    else if (key.Equals("target", StringComparison.OrdinalIgnoreCase))
 					{
 						newtarget = value;
 						return false;
 					}
-					
+                    else if (key.Equals("append-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        appendfilter = value;
+                        return false;
+                    }
+                    else if (key.Equals("prepend-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        prependfilter = value;
+                        return false;
+                    }
+                    else if (key.Equals("filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        replacefilter = value;
+                        return false;
+                    }
+
 					return true;
 				});
 				
@@ -286,10 +304,19 @@ namespace Duplicati.CommandLine
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Exception(Strings.Program.FiltersCannotBeUsedWithFileError);
+                    throw new Exception(Strings.Program.FiltersCannotBeUsedWithFileError2);
 
 				if (!newfilter.Empty)
                 	filter = newfilter;
+
+                if (!string.IsNullOrWhiteSpace(prependfilter))
+                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)), filter);
+
+                if (!string.IsNullOrWhiteSpace(appendfilter))
+                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)));
+
+                if (!string.IsNullOrWhiteSpace(replacefilter))
+                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
 
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
