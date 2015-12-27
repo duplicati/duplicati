@@ -289,7 +289,7 @@ namespace Duplicati.CommandLine
                         prependfilter = value;
                         return false;
                     }
-                    else if (key.Equals("filter", StringComparison.OrdinalIgnoreCase))
+                    else if (key.Equals("replace-filter", StringComparison.OrdinalIgnoreCase))
                     {
                         replacefilter = value;
                         return false;
