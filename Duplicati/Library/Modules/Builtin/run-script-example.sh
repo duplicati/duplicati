@@ -54,6 +54,21 @@
 # echo "Hello! -- test, this line is ignored"
 # echo "--new-option=\"This will be a setting\""
 
+# Filters are supplied in the DUPLICAT__FILTER variable.
+# The variable contains all filters supplied with --include and --exclude,
+# combined into a single string, separated with colon (:).
+# Filters set with --include will be prefixed with a plus (+),
+# and filters set with --exclude will be prefixed with a minus (-).
+#
+# Example:
+#     --include=*.txt --exclude=[.*\.abc] --include=*
+# 
+# Will be encoded as:
+#     DUPLICATI__FILTER=+*.txt:-[.*\.abc]:+*
+#
+# You can set the filters by writing --filter=<new filter> to stdout.
+# You may want to append to the existing filter like this:
+#     echo "--filter=+*.123:%DUPLICATI__FILTER%:-*.xyz"
 
 
 ###############################################################################
