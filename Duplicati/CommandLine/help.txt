@@ -111,7 +111,7 @@ Usage: restore <storage-URL> ["<filename>"] [<options>]
   
   Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
-  --overwrite=<boolen>
+  --overwrite=<boolean>
     Overwrites existing files.
   --restore-path=<string>
     Restores files to <restore-path> instead of their original destination. Top folders are removed if possible.
