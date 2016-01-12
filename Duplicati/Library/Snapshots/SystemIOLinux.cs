@@ -24,11 +24,6 @@ namespace Duplicati.Library.Snapshots
 {
     public struct SystemIOLinux : ISystemIO
     {
-        /// <summary>
-        /// A frequently used char-as-string
-        /// </summary>
-        private static readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
-
         #region ISystemIO implementation
         public void DirectoryDelete(string path)
         {
@@ -172,7 +167,7 @@ namespace Duplicati.Library.Snapshots
 
         public Dictionary<string, string> GetMetadata(string file)
         {
-            var f = file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file;
+            var f = System.IO.Path.GetFullPath(file);
             var dict = new Dictionary<string, string>();
 
             var n = UnixSupport.File.GetExtendedAttributes(f);
@@ -193,7 +188,7 @@ namespace Duplicati.Library.Snapshots
             if (data == null)
                 return;
 
-            var f = file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file;
+            var f = System.IO.Path.GetFullPath(file);
 
             foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:")).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);

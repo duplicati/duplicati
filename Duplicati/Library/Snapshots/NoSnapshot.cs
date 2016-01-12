@@ -38,11 +38,6 @@ namespace Duplicati.Library.Snapshots
         protected string[] m_sources;
 
         /// <summary>
-        /// A frequently used char-as-string
-        /// </summary>
-        protected readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
-
-        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
@@ -160,10 +155,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public virtual System.IO.FileAttributes GetAttributes(string file)
         {
-            if (file.EndsWith(DIR_SEP))
-                return System.IO.File.GetAttributes(file.Substring(0, file.Length - 1));
-            else
-                return System.IO.File.GetAttributes(file);
+            return System.IO.File.GetAttributes(System.IO.Path.GetFullPath(file));
         }
         
         /// <summary>

@@ -52,7 +52,7 @@ namespace UpdateVersionStamp
             if (!string.IsNullOrEmpty(opt.ignorefilter))
                 filter = new Duplicati.Library.Utility.FilterExpression(opt.ignorefilter, false);
             
-            Func<string, bool> isFile = (string x) => !x.EndsWith(DIR_SEP);
+            Func<string, bool> isFile = (string x) => !x.EndsWith(DIR_SEP); // TODO: fix this so that when x=="/" (i.e. unix root folder), isFile returns true
             
             var paths = Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(opt.sourcefolder, filter)
                 .Where(x => isFile(x) && FILEMAP.ContainsKey(Path.GetFileName(x)))
