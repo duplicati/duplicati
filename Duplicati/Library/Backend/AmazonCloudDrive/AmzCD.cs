@@ -47,7 +47,6 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         private string[] m_labels;
 
         private OAuthHelper m_oauth;
-        private string m_currentFolderId;
         private Dictionary<string, string> m_filecache;
         private string m_userid;
 
