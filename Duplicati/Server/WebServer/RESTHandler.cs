@@ -37,7 +37,7 @@ namespace Duplicati.Server.WebServer
         static RESTHandler()
         {
             var lst = 
-                from n in typeof(RESTHandler).Assembly.DefinedTypes
+                from n in typeof(RESTHandler).Assembly.GetTypes()
                 where
                     n.Namespace == typeof(IRESTMethod).Namespace
                     &&
