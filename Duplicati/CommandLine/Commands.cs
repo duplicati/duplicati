@@ -552,7 +552,7 @@ namespace Duplicati.CommandLine
             }
 
             if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
-                output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filter\" command");
+                output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
 
             output.MessageEvent("Backup completed successfully!");
             

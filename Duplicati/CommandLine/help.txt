@@ -209,6 +209,7 @@ Usage: test <storage-URL> [<samples>] [<options>]
   
 # =============================================================================
 > duplicati.commandline.exe help test-filters
+> duplicati.commandline.exe help test-filter
 
 Usage: test-filters <source-path> [<options>]
   
