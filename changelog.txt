@@ -1,3 +1,14 @@
+2016-01-12
+==========
+* Fixed the autoupdate popup
+* Added feature to suppress donation messages
+* Fixed an issue with PARSEDRESULT being empty in emails
+* Fixed an issue with paths that contains spaces not being listed for restore
+* Added support for modifying filters through scripts and the parameters file
+* Added check for duplicate files from the backend and updated Google Drive to not report multiple versions of the same file
+* Fixed an unhelpful error message when authid was not supplied
+* Added workaround for Mono 2.11 where get_DefinedTypes is missing
+
 2015-12-17
 ==========
 * Bugfix for Backblaze backend
