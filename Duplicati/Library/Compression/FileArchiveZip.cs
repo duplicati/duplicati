@@ -112,9 +112,9 @@ namespace Duplicati.Library.Compression
         private string m_filename;
 
         /// <summary>
-        /// The reflection entry used to manipulate the defalte level on the compressor
+        /// The reflection entry used to manipulate the deflate level on the compressor
         /// </summary>
-        private static readonly System.Reflection.FieldInfo _deflateLevelField;
+        private static readonly System.Reflection.FieldInfo _zipCompressionInfoField;
 
         /// <summary>
         /// Static initializer to read the deflateLevelField
@@ -123,10 +123,10 @@ namespace Duplicati.Library.Compression
         {
             System.Reflection.FieldInfo fi = null;
 
-            try { fi = typeof(ZipWriter).GetField("deflateCompressionLevel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); }
+            try { fi = typeof(ZipWriter).GetField("zipCompressionInfo", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); }
             catch { }
 
-            _deflateLevelField = fi;
+            _zipCompressionInfoField = fi;
 
             if (fi == null)
                 Logging.Log.WriteMessage("DeflateCompressionLevel is not supported, please report to developers", Duplicati.Library.Logging.LogMessageType.Warning);
@@ -236,15 +236,15 @@ namespace Duplicati.Library.Compression
             {
                 if (prefix == null)
                 {
-                    results.Add(e.FilePath);
+                    results.Add(e.Key);
                 }
                 else
                 {
-                    if (e.FilePath.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.FilePath);
+                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(e.Key);
                     //Some old archives may have been created with windows style paths
-                    else if (e.FilePath.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.FilePath);
+                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(e.Key);
                 }
             }
 
@@ -263,15 +263,15 @@ namespace Duplicati.Library.Compression
             {
                 if (prefix == null)
                 {
-                    results.Add(new KeyValuePair<string, long>(e.FilePath, e.Size));
+                    results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
                 }
                 else
                 {
-                    if (e.FilePath.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.FilePath, e.Size));
+                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
                     //Some old archives may have been created with windows style paths
-                    else if (e.FilePath.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.FilePath, e.Size));
+                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
                 }
             }
 
@@ -306,7 +306,7 @@ namespace Duplicati.Library.Compression
 			{
 				m_entryDict = new Dictionary<string, IArchiveEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
 	            foreach(IArchiveEntry en in Archive.Entries)
-	            	m_entryDict[en.FilePath] = en;
+	            	m_entryDict[en.Key] = en;
 			}
 
 			IArchiveEntry e;
@@ -333,14 +333,22 @@ namespace Duplicati.Library.Compression
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
             m_compressionInfo.DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressor.Deflate.CompressionLevel.None : m_defaultCompressionLevel;
             SetStreamCompressionLevel();
-            return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null);
+            return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null, m_compressionInfo);
 
         }
 
+        /// <summary>
+        /// Hack to set compression level for stream
+        /// </summary>
         private void SetStreamCompressionLevel()
         {
-            if (_deflateLevelField != null)
-                try { _deflateLevelField.SetValue(m_writer, m_compressionInfo.DeflateCompressionLevel); }
+            if (_zipCompressionInfoField != null)
+                try 
+                { 
+                    var compInstance = _zipCompressionInfoField.GetValue(m_writer);
+                    var prop = compInstance.GetType().GetProperty("DeflateCompressionLevel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                    prop.SetValue(compInstance, m_compressionInfo.DeflateCompressionLevel);
+                }
                 catch { }
         }
 

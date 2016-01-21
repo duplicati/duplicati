@@ -1,1 +1,1 @@
-http://sharpcompress.codeplex.com/
+https://github.com/adamhathcock/sharpcompress/
