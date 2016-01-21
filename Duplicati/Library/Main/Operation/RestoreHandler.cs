@@ -243,7 +243,11 @@ namespace Duplicati.Library.Main.Operation
                                             file.Write(blockbuffer, 0, size);
                                             blockmarker.SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false);
                                         }
-                                    }   
+                                    } 
+                                    else
+                                    {
+                                        result.AddWarning(string.Format("Block with hash {0} should have size {1} but has size {2}", targetblock.Key, targetblock.Size, size), null);
+                                    }
                                 }
                             
                             if (updateCounter++ % 20 == 0)
