@@ -5,6 +5,7 @@ install:
   - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
 script:
   - xbuild /p:Configuration=Release Duplicati.sln
+  - xbuild /p:Configuration=Test Duplicati.sln
   - mkdir ~/testdata
   - mkdir ~/testdata/data
   - mkdir ~/testdata/DSMCBE
