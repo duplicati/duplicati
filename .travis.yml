@@ -23,8 +23,9 @@ script:
   - svn checkout -q -r 258 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r258
   - svn checkout -q -r 259 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r259
   - wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip"
-  # bump to try travis again
   - unzip -q data.zip -d ~/testdata/
+  - chown -R travis ~/testdata/
+  - chmod -R 755 ~/testdata
   - ls -la ~/testdata
   - ls -la ~/testdata/data
   - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll

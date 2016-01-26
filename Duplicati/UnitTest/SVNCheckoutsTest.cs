@@ -74,6 +74,12 @@ namespace Duplicati.UnitTest
         /// <param name="target">The target destination for the backups</param>
         public static void RunTest(string[] folders, Dictionary<string, string> options, string target)
         {
+            var oldlog = Log.CurrentLog as IDisposable;
+            Log.CurrentLog = null;
+            if (oldlog != null)
+                try { oldlog.Dispose(); }
+                catch { }
+
             LogHelper log = new LogHelper(string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now)));
             Log.CurrentLog = log;
             Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;

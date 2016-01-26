@@ -68,6 +68,8 @@ namespace Duplicati.UnitTest
             var work = new Queue<string>();
             work.Enqueue(sourcefolder);
 
+            var timestampfailures = 0;
+
             while (work.Count > 0)
             {
                 var c = work.Dequeue();
@@ -77,21 +79,45 @@ namespace Duplicati.UnitTest
                 if (!Directory.Exists(t))
                     Directory.CreateDirectory(t);
                 
-                Directory.SetCreationTimeUtc(t, Directory.GetCreationTimeUtc(c));
-                Directory.SetLastWriteTimeUtc(t, Directory.GetLastWriteTimeUtc(c));
+                try { Directory.SetCreationTimeUtc(t, Directory.GetCreationTimeUtc(c)); }
+                catch(Exception ex) 
+                { 
+                    if (timestampfailures++ < 20)
+                        Console.WriteLine("Failed to set creation time on dir {0}: {1}", t, ex.Message); 
+                }
+
+                try { Directory.SetLastWriteTimeUtc(t, Directory.GetLastWriteTimeUtc(c)); }
+                catch(Exception ex) 
+                { 
+                    if (timestampfailures++ < 20)
+                        Console.WriteLine("Failed to set write time on dir {0}: {1}", t, ex.Message); 
+                }
 
                 
                 foreach(var n in Directory.EnumerateFiles(c))
                 {
                     var tf = Path.Combine(t, Path.GetFileName(n));
                     File.Copy(n, tf, true);
-                    File.SetCreationTimeUtc(tf, System.IO.File.GetCreationTimeUtc(n));
-                    File.SetLastWriteTimeUtc(tf, System.IO.File.GetLastWriteTimeUtc(n));
+                    try { File.SetCreationTimeUtc(tf, System.IO.File.GetCreationTimeUtc(n)); }
+                    catch(Exception ex)
+                    {
+                        if (timestampfailures++ < 20)
+                            Console.WriteLine("Failed to set creation time on file {0}: {1}", n, ex.Message); 
+                    }
+                    try { File.SetLastWriteTimeUtc(tf, System.IO.File.GetLastWriteTimeUtc(n)); }
+                    catch(Exception ex)
+                    {
+                        if (timestampfailures++ < 20)
+                            Console.WriteLine("Failed to set write time on file {0}: {1}", n, ex.Message); 
+                    }
                 }
 
                 foreach(var n in Directory.EnumerateDirectories(c))
                     work.Enqueue(n);
             }
+
+            if (timestampfailures > 20)
+                Console.WriteLine("Encountered additional {0} timestamp errors!", timestampfailures);
         }
 
         /// <summary>
