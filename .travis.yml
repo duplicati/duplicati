@@ -23,7 +23,7 @@ script:
   - svn checkout -r 258 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r258
   - svn checkout -r 259 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r259
   - wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip"
-  - unzip data.zip ~/testdata/
+  - unzip data.zip -d ~/testdata/
   - ls -la ~/testdata
   - ls -la ~/testdata/data
   - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
