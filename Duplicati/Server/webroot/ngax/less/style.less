@@ -1,0 +1,1278 @@
+// duplicati 2.0 less | Alex Franzelin 2015
+
+@import 'fonts.less';
+@import 'variables.less';
+@import 'form.less';
+
+*
+{
+    font-family: 'Clear Sans', sans-serif;
+}
+
+html,
+body
+{
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+h1,
+h2
+{
+    font-weight: 300;
+    color: @hColor;
+}
+
+h1
+{
+    margin: 10px 0;
+}
+
+h3
+{
+    font-weight: 400;
+}
+
+a
+{
+    text-decoration: none;
+}
+
+ul
+{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+a.button
+{
+    display: block;
+    background: @lColor;
+    color: white !important;
+    padding: 5px 15px;
+    float: right;
+    margin-left: 10px;
+    cursor: pointer;
+    width: auto;
+    border: none;
+    font-family: 'Clear Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    border-radius: 0;
+}
+
+a.button:hover
+{
+    background: darken(@lColor, 10%);
+}
+
+
+body
+{
+    color: @tColor;
+    
+    .container
+    {
+        min-height: 100%;
+        position: relative;
+        
+        .header
+        {
+            height: 70px;
+            line-height: 70px;
+            background: @headerBg;
+            overflow: hidden;
+            
+            a
+            {
+                color: @tColor;
+            }
+            
+            a:hover,
+            a.active
+            {
+                color: darken(@tColor, 25%);
+            }
+            
+            .logo
+            {
+                font-size: 30px;
+                font-weight: 700;
+                float: left;
+                padding-left: 50px;
+            }
+            
+            .about-header
+            {
+                float: right;
+                padding-right: 20px;
+                overflow: hidden;
+                
+                ul
+                {
+                    overflow: hidden;
+                    list-style: none;
+                    
+                    li
+                    {
+                        float: right;
+                        padding-right: 20px;
+                    }
+                }
+            }
+        }
+        
+        .body
+        {
+            width: 100%;
+            overflow: hidden;
+            min-height: 500px;
+            padding-top: 50px;
+            padding-bottom: 70px;
+            
+            a
+            {
+                color: @lColor;
+            }
+            
+            .mainmenu
+            {
+                width: 260px;
+                padding-left: 40px;
+                float: left;
+                
+                ul
+                {
+                    li
+                    {
+                        position: relative;
+                        
+                        a
+                        {
+                            font-size: 22px;
+                            font-weight: 300;
+                            padding: 5px 10px 5px 55px;
+                            display: block;
+                        }
+                        
+                        a:hover,
+                        a.active
+                        {
+                            color: white;
+                        }
+                        
+                        a.add
+                        {
+                            background: url('../img/mainmenu/add.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.restore
+                        {
+                            background: url('../img/mainmenu/restore.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.pause
+                        {
+                            background: url('../img/mainmenu/pause.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.settings
+                        {
+                            background: url('../img/mainmenu/settings.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.log
+                        {
+                            background: url('../img/mainmenu/log.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.add:hover,
+                        a.add.active
+                        {
+                            background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.restore:hover,
+                        a.restore.active
+                        {
+                            background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.pause:hover,
+                        a.pause.active
+                        {
+                            background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.settings:hover,
+                        a.settings.active
+                        {
+                            background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 11px;
+                        }
+                        
+                        a.log:hover,
+                        a.log.active
+                        {
+                            background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 11px;
+                        }
+                        
+                        ul
+                        {
+                            position: absolute;
+                            left: 200px;
+                            top: 25px;
+                            background: white;
+                            border: 1px @headerBg solid;
+                            box-shadow: 0px 7px 15px rgba(0,0,0,0.2);
+                            z-index: 200;
+                            
+                            li
+                            {
+                                a
+                                {
+                                    color: @tColor;
+                                    font-size: 15px;
+                                    font-weight: 400;
+                                    padding: 0;
+                                    display: block;
+                                    width: 205px;
+                                    padding: 4px 10px;
+                                }
+                                
+                                a:hover,
+                                a.active
+                                {
+                                    background: @lColor;
+                                    color: white;
+                                }
+                            }
+                        }
+                    }
+                    
+                    li.hr-top
+                    {
+                        padding-top: 25px;
+                        margin-top: 25px;
+                        border-top: 1px @headerBg solid;
+                    }
+                }
+            }
+            
+            .content
+            {
+                float: left;
+                padding-left: 50px;
+                padding-bottom: 50px;
+                max-width: 700px;
+                
+                .state
+                {
+                    color: @hColor;
+                    width: 575px;
+                    padding: 13px 15px;
+                    border: 1px @hColor solid;
+                    font-weight: 300;
+                    font-size: 18px;
+                    
+                    strong
+                    {
+                        display: inline-block;
+                        margin-right: 10px;
+                    }
+                }
+                
+                .tasks
+                {
+                    padding-top: 20px;
+                    
+                    .tasklist
+                    {
+                        .task
+                        {
+                            border-top: 1px solid #eee;
+                            padding-top: 20px;
+                            margin-bottom: 25px;
+                        }
+                        
+                        .task:last-child
+                        {
+                            border-bottom: 1px solid #eee;
+                            padding-bottom: 20px;
+                        }
+                        
+                        a
+                        {
+                            font-size: 30px;
+                            padding-left: 55px;
+                            background: url('../img/backup.png') no-repeat 5px 6px;
+                            font-weight: 300;
+                            display: inline-block;
+                        }
+                        
+                        a::after
+                        {
+                            content: " >";
+                        }
+                        
+                        dl
+                        {
+                            padding-left: 55px;
+                            overflow: hidden;
+                            font-size: 14px;
+                            
+                            dt,
+                            dd
+                            {
+                                display: block;
+                                float: left;
+                            }
+                            
+                            dt
+                            {
+                                clear: both;
+                                font-weight: 500;
+                                margin-bottom: 5px;
+                            }
+                            
+                            dd
+                            {
+                                margin-left: 10px;
+                            }
+                        }
+                        
+                        dl.contextmenu
+                        {
+                            dt
+                            {
+                                float: left;
+                                margin-right: 10px;
+                                padding: 5px 8px;
+                                color: @tColor;
+                                border-bottom: 1px @tColor solid;
+                                cursor: pointer;
+                                clear: none;
+                            }
+                            
+                            dt.active,
+                            dt:hover
+                            {
+                                //background: @lColor;
+                                //color: white;
+                            }
+                            
+                            dd
+                            {
+                                clear: both;
+                                float: none;
+                                padding-bottom: 8px;
+                            }
+                        }
+                    }
+                }
+                
+                div.add
+                {
+                    .steps
+                    {
+                        width: 100%;
+                        overflow: hidden;
+                        margin-left: 50px;
+                        
+                        .step
+                        {
+                            float: left;
+                            padding-left: 130px;
+                            background: url('../img/steps/line-out.png') no-repeat top left;
+                            color: #c7e5f6;
+                            
+                            span
+                            {
+                                display: block;
+                                border: 4px #c7e5f6 solid;
+                                background: white;
+                                border-radius: 50%;
+                                width: 35px;
+                                height: 35px;
+                                text-align: center;
+                                font-size: 22px;
+                                line-height: 35px;
+                                cursor: pointer;
+                            }
+                        }
+                        
+                        .step.active
+                        {
+                            color: @lColor;
+                            
+                            span
+                            {
+                                border: 4px @lColor solid;
+                                background: @lColor;
+                                color: white;
+                            }
+                            
+                            h2
+                            {
+                                color: @lColor;
+                            }
+                        }
+                        
+                        .step:first-child
+                        {
+                            padding-left: 0;
+                            background: transparent;
+                        }
+                    }
+                    
+                    .steps-boxes
+                    {
+                        padding-left: 40px;
+                        
+                        .step
+                        {
+                            display: none;
+                        }
+                        
+                        .step.active
+                        {
+                            display: block;
+                        }
+                    }
+                    
+                    .steps-legend
+                    {
+                        overflow: hidden;
+                        padding-bottom: 50px;
+                        list-style: none;
+                        padding-left: 0;
+                        margin: 0;
+                        
+                        li
+                        {
+                            color: #c7e5f6;
+                            font-size: 18px;
+                            text-align: center;
+                            float: left;
+                            width: 175px;
+                            padding-top: 10px;
+                            cursor: pointer;
+                        }
+                        
+                        li:first-child
+                        {
+                            width: 140px;
+                            padding-right: 15px;
+                        }
+                        
+                        li.active
+                        {
+                            color: @lColor;
+                        }
+                    }
+                    
+                    form
+                    {
+                        padding-bottom: 50px;
+                        overflow: hidden;
+                        
+                        .input.password
+                        {
+                            .tools
+                            {
+                                clear: both;
+                                padding-left: 190px;
+                                padding-top: 10px;
+                                
+                                ul
+                                {
+                                    overflow: hidden;
+                                    
+                                    li
+                                    {
+                                        float: left;
+                                        padding-right: 7px;
+                                    }
+                                    
+                                    li.strength.useless
+                                    {
+                                        color: red;
+                                    }
+                                    
+                                    li.strength.average
+                                    {
+                                        color: yellow;
+                                    }
+                                    
+                                    li.strength.good
+                                    {
+                                        color: @lColor;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        .input.multiple
+                        {
+                            input,
+                            select
+                            {
+                                width: auto;
+                                margin-right: 5px;
+                            }
+                            
+                            select
+                            {
+                                padding: 5px 12px;
+                            }
+                        }
+                        
+                        .input.overlayButton
+                        {
+                            overflow: hidden;
+                            position: relative;
+                            max-width: 446px;
+                            
+                            input
+                            {
+                                width: 347px;
+                            }
+                            
+                            a.button
+                            {
+                                position: absolute;
+                                top: 0;
+                                right: 0;
+                                padding: 7px 12px;
+                            }
+                        }
+                        
+                        .input.checkbox.multiple
+                        {
+                            strong
+                            {
+                                display: block;
+                                padding-bottom: 5px;
+                            }
+                            
+                            label
+                            {
+                                display: inline-block;
+                                float: none;
+                                width: auto;
+                                padding-right: 10px;
+                            }
+                            
+                            input
+                            {
+                                width: auto;
+                                display: inline-block;
+                                float: none;
+                            }
+                        }
+                        
+                        .buttons
+                        {
+                            float: none;
+                            width: 635px;
+                            padding-top: 30px;
+                        }
+                    }
+                }
+                
+                div.settings
+                {
+                    .input.mixed.multiple,
+                    .input.checkbox
+                    {
+                        input.checkbox
+                        {
+                            width: auto;
+                        }
+                        
+                        select
+                        {
+                            width: auto;
+                            margin-right: 5px;
+                        }
+                        
+                        label
+                        {
+                            line-height: normal;
+                            padding: 0 15px;
+                            width: auto;
+                        }
+                    }
+                }
+                
+                .logpage
+                {
+                    .tabs
+                    {
+                        padding: 15px 0;
+                    }
+                    
+                    ul.entries
+                    {
+                        li
+                        {
+                            padding-top: 15px;
+                        }
+                    }
+                }
+            }
+        }
+        
+        .footer
+        {
+            background: @headerBg;
+            min-height: 70px;
+            line-height: 70px;
+            overflow: hidden;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            
+            a
+            {
+                color: @tColor;
+            }
+            
+            .about-footer
+            {
+                float: left;
+                overflow: hidden;
+                padding-right: 20px;
+                
+                li
+                {
+                    float: left;
+                    padding-left: 20px;
+                }
+            }
+            
+            .donate
+            {
+                display: none;
+                float: left;
+                padding-right: 20px;
+                overflow: hidden;
+                
+                ul
+                {
+                    overflow: hidden;
+                    float: left;
+                    
+                    li
+                    {
+                        float: left;
+                        margin-left: 20px;
+                        
+                        a
+                        {
+                            img
+                            {
+                                margin-top: 24px;
+                                display: inline-block;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            .donate > a
+            {
+                float: left;
+            }
+            
+            .social
+            {
+                float: right;
+                
+                ul
+                {
+                    overflow: hidden;
+                    float: right;
+                    padding-left: 20px;
+                    padding-right: 10px;
+                    
+                    li
+                    {
+                        float: right;
+                        margin-right: 10px;
+                        padding-top: 5px;
+                    }
+                }
+            }
+            
+            .themelink
+            {
+                float: right;
+                padding-right: 20px;
+            }
+        }
+    }
+    
+    #modal-menu
+    {
+        max-width: 400px;
+        
+        a
+        {
+            color: @lColor;
+            font-size: 20px;
+            line-height: 40px;
+        }
+    }
+}
+
+// Modal windows
+.remodal
+{
+    padding: 30px;
+    box-shadow: 0px 2px 7px rgba(0,0,0,0.3);
+    background: white;
+    display: none;
+    
+    form
+    {
+        .buttons
+        {
+            float: none;
+        }
+    }
+}
+
+.remodal-wrapper .remodal
+{
+    display: block;
+}
+
+span.info
+{
+    font-size: 10px;
+    font-weight: 500;
+    display: inline-block;
+    background: @lColor;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    vertical-align: super;
+    color: white;
+    line-height: 15px;
+    margin-left: 5px;
+    text-align: center;
+}
+
+.hidden
+{
+    display: none;
+}
+
+.clear
+{
+    clear: both;
+}
+
+.nofloat
+{
+    float: none !important;
+}
+
+
+// Smaller screen sizes
+@media(max-width: 1100px)
+{
+    body
+    {
+        .container
+        {
+            .header
+            {
+                .donate
+                {
+                    display: none;
+                }
+                
+                .menubutton
+                {
+                    display: block;
+                    font-size: 18px;
+                    padding-right: 50px;
+                    margin-top: 5px;
+                    margin-right: 15px;
+                    background: url('../img/menu.png') no-repeat right top;
+                    position: relative;
+                    height: 40px;
+                    line-height: 40px;
+                    color: #8f8f8f;
+                    float: right;
+                    top: 10px;
+                    width: 80px;
+                    text-transform: uppercase;
+                    text-align: right;
+                }
+                
+                .menubutton.active
+                {
+                    background-image: url('../img/menu_active.png');
+                    color: @lColor;
+                }
+            }
+            
+            .body
+            {
+                position: relative;
+                padding-top: 0;
+                
+                .mainmenu
+                {
+                    display: none;
+                    position: absolute;
+                    background: none repeat scroll 0 0 white;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    left: 10px;
+                    padding: 20px;
+                    top: 60px;
+                }
+                
+                .mainmenu.mobile-open
+                {
+                    display: block;
+                    left: auto;
+                    right: 0;
+                    top: 0;
+                }
+                
+                .content
+                {
+                    float: none;
+                    padding: 50px 20px;
+                    margin: 0 auto;
+                    
+                    .state
+                    {
+                        width: auto;
+                    }
+                }
+            }
+            
+            .footer
+            {
+                .donate
+                {
+                    display: block;
+                }
+            }
+            
+            .mobileOpen
+            {
+                display: block !important;
+            }
+        }
+    }
+}
+
+@media(max-width: 768px)
+{
+    body
+    {
+        .container
+        {
+            .body
+            {
+                .content
+                {
+                    .tasks
+                    {
+                        .tasklist
+                        {
+                            a
+                            {
+                                font-size: 20px;
+                                background-size: 24px;
+                                background-position: 0 4px;
+                                padding-left: 35px;
+                            }
+                            
+                            dl
+                            {
+                                padding-left: 35px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    body
+    {
+        .container
+        {
+            .body
+            {
+                .content
+                {
+                    div.add,
+                    div.settings
+                    {
+                        .steps
+                        {
+                            display: none;
+                        }
+                        
+                        .steps-legend
+                        {
+                            list-style: decimal;
+                            padding-left: 20px;
+                            border-bottom: 1px solid #eee;
+                            margin-bottom: 30px;
+                            padding-bottom: 20px;
+                            
+                            li
+                            {
+                                float: none;
+                                font-weight: 500;
+                                width: auto !important;
+                                padding-right: 0 !important;
+                            }
+                        }
+                        
+                        .steps-boxes
+                        {
+                            padding-left: 0;
+                        }
+                        
+                        form.styled
+                        {
+                            .input
+                            {
+                                input,
+                                select,
+                                textarea
+                                {
+                                    max-width: 100%;
+                                    box-sizing: border-box;
+                                }
+                            }
+                            
+                            .input.select select
+                            {
+                                width: 420px;
+                            }
+                            
+                            .buttons
+                            {
+                                max-width: 100%;
+                                width: auto;
+                            }
+                            
+                            .tools
+                            {
+                                padding-left: 0 !important;
+                            }
+                            
+                            .input.checkbox.multiple
+                            {
+                                padding-bottom: 5px;
+                                
+                                input,
+                                label
+                                {
+                                    display: block !important;
+                                    float: left !important;
+                                    line-height: normal;
+                                }
+                                
+                                input
+                                {
+                                    clear: both;
+                                }
+                            }
+                            
+                            .input.text.multiple
+                            {
+                                input
+                                {
+                                    max-width: 48% !important;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media(max-width: 640px)
+{
+    body
+    {
+        h2
+        {
+            font-size: 20px;
+            text-align: center;
+        }
+        
+        .container
+        {
+            .body
+            {
+                padding-bottom: 0;
+                
+                .content
+                {
+                    div.add
+                    {
+                        form
+                        {
+                            .input.overlayButton
+                            {
+                                padding-top: 8px;
+                                padding-bottom: 30px;
+                                border-bottom: 1px #ddd solid;
+                                margin-bottom: 10px;
+                                
+                                a.button
+                                {
+                                    padding: 5px 10px;
+                                    right: 1px;
+                                    top: 9px;
+                                }
+                            }
+                            
+                            .input.checkbox.multiple
+                            {
+                                div
+                                {
+                                    display: block;
+                                }
+                            }
+                            
+                            .input.select.multiple
+                            {
+                                input#exclude-larger-than-number
+                                {
+                                    width: 75px;
+                                }
+                                
+                                select#exclude-larger-than-multiplier
+                                {
+                                    width: 140px;
+                                }
+                            }
+                            
+                            .filters
+                            {
+                                border-bottom: 1px #ddd solid;
+                                
+                                .input.link
+                                {
+                                    padding-bottom: 0;
+                                }
+                                
+                                .input.textarea
+                                {
+                                    padding-bottom: 10px;
+                                }
+                                
+                                h3
+                                {
+                                    margin: 5px 0;
+                                }
+                            }
+                            
+                            .input.text.select.multiple.repeat
+                            {
+                                label
+                                {
+                                    float: none;
+                                }
+                                
+                                input#repeatRunNumber
+                                {
+                                    width: 70px;
+                                }
+                                
+                                select#repeatRunMultiplier
+                                {
+                                    width: 100px;
+                                }
+                            }
+                            
+                            .input.multiple.text.select.maxSize
+                            {
+                                input
+                                {
+                                    width: 70px;
+                                }
+                                
+                                select
+                                {
+                                    width: 100px;
+                                }
+                            }
+                            
+                            .input.multiple.text.select.keepBackups
+                            {
+                                select
+                                {
+                                    width: 85px;
+                                    padding: 4px 6px;
+                                }
+                                
+                                input
+                                {
+                                    width: 60px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            .footer
+            {
+                position: static;
+                padding: 15px;
+                line-height: normal;
+                text-align: left;
+                box-sizing: border-box;
+                
+                *
+                {
+                    float: none !important;
+                    text-align: center;
+                    box-sizing: border-box;
+                }
+                
+                .about-footer
+                {
+                    padding-right: 0;
+                    
+                    li
+                    {
+                        padding-left: 0;
+                    }
+                }
+                
+                li,
+                .donate,
+                .social
+                {
+                    padding: 8px 0;
+                    border-bottom: 1px #ddd solid;
+                }
+                
+                .donate
+                {
+                    border-bottom: none;
+                    
+                    ul
+                    {
+                        border-top: 1px #ddd solid;
+                        
+                        li
+                        {
+                            margin-left: 0;
+                        }
+                    }
+                }
+                
+                .social
+                {
+                    li
+                    {
+                        display: inline-block;
+                        border: none;
+                    }
+                }
+                
+                .themelink
+                {
+                    padding: 5px 0;
+                }
+            }
+        }
+    }
+}
+
+@media(max-width: 480px)
+{
+    body
+    {
+        font-size: 15px;
+        
+        .container
+        {
+            .header
+            {
+                .logo
+                {
+                    padding-left: 20px;
+                }
+                
+                .menubutton
+                {
+                    margin-right: 5px;
+                    
+                }
+            }
+            
+            .body
+            {
+                .mainmenu
+                {
+                    width: 280px;
+                    box-sizing: border-box;
+                    
+                    ul
+                    {
+                        li
+                        {
+                            a
+                            {
+                                font-size: 22px;
+                            }
+                        }
+                    }
+                }
+                
+                .content
+                {
+                    padding: 50px 15px;
+                    
+                    div.add
+                    {
+                        form
+                        {
+                            .input.password
+                            {
+                                .tools
+                                {
+                                    ul li
+                                    {
+                                        font-size: 14px;
+                                    }
+                                }
+                            }
+                            
+                            .buttons
+                            {
+                                a
+                                {
+                                    float: none;
+                                    text-align: center;
+                                    margin-bottom: 5px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
