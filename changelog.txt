@@ -1,3 +1,11 @@
+2016-01-27
+==========
+- Added option for more thorough verification during remote volume test
+- Added support for backing up the filesystem root ( i.e. / ), thanks @mach-o
+- Added fixes to ensure that a failed rebuild of a database cannot be used
+- Added an update to SharpCompress to fix a special case where some bytes could be lost on extraction
+- Updated the NGAX UI with the latest fixes from Alexander
+
 2016-01-12
 ==========
 * Fixed the autoupdate popup
