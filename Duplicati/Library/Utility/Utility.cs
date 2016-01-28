@@ -684,6 +684,9 @@ namespace Duplicati.Library.Utility
         {
             get
             {
+                // Sadly, Mono returns Unix when running on OSX
+                //return Environment.OSVersion.Platform == PlatformID.MacOSX;
+
                 if (!IsClientLinux)
                     return false;
         
@@ -744,15 +747,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-#if __MonoCS__
-                if (Environment.OSVersion.Platform == PlatformID.Unix || (int)Environment.OSVersion.Platform == 6)
-                    return true;
-#else
-        if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
-			return true;
-#endif
-                return false;
-		
+                return Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
             }
         }
 
@@ -884,7 +879,7 @@ namespace Duplicati.Library.Utility
                     if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
                         try
                         {
-                            foreach(string sx in System.IO.Directory.GetFiles(Environment.ExpandEnvironmentVariables(s), filename))
+                            foreach(string sx in System.IO.Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
                                 return sx;
                         }
                         catch
@@ -896,6 +891,48 @@ namespace Duplicati.Library.Utility
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// The path to the users home directory
+        /// </summary>
+        private static readonly string HOME_PATH = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+
+        /// <summary>
+        /// Expands environment variables, including the tilde character
+        /// </summary>
+        /// <returns>The expanded string.</returns>
+        /// <param name="str">The string to expand.</param>
+        public static string ExpandEnvironmentVariables(string str)
+        {
+            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
+        }
+
+        /// <summary>
+        /// Regexp for matching environment variables on Windows (%VAR%)
+        /// </summary>
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<name>\w+)\%");
+
+        /// <summary>
+        /// Regexp for matching environment variables on Linux ($VAR or ${VAR})
+        /// </summary>
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_LINUX = new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})");
+
+        /// <summary>
+        /// Expands environment variables, including the tilde character, in a RegExp safe format
+        /// </summary>
+        /// <returns>The expanded string.</returns>
+        /// <param name="str">The string to expand.</param>
+        public static string ExpandEnvironmentVariablesRegexp(string str)
+        {
+            return
+
+                // TODO: Should we switch to using the native format, instead of following the Windows scheme?
+                //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+
+                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+                    .Replace(str.Replace("~", Regex.Escape(HOME_PATH)), (m) => 
+                        Regex.Escape(Environment.GetEnvironmentVariable(m.Groups["name"].Value)));
         }
 
         /// <summary>
@@ -916,14 +953,29 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// The format string for a DateTime
+        /// </summary>
+        //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
+        public static string SERIALIZED_DATE_TIME_FORMAT = "yyyyMMdd'T'HHmmssK";
+
+        /// <summary>
         /// Returns a string representation of a <see cref="System.DateTime"/> in UTC format
         /// </summary>
         /// <param name="dt">The <see cref="System.DateTime"/> instance</param>
         /// <returns>A string representing the time</returns>
         public static string SerializeDateTime(DateTime dt)
         {
-            //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
-            return dt.ToUniversalTime().ToString("yyyyMMdd'T'HHmmssK");
+            return dt.ToUniversalTime().ToString(SERIALIZED_DATE_TIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Parses a serialized <see cref="System.DateTime"/> instance
+        /// </summary>
+        /// <param name="str">The string to parse</param>
+        /// <returns>The parsed <see cref="System.DateTime"/> instance</returns>
+        public static bool TryDeserializeDateTime(string str, out DateTime dt)
+        {
+            return DateTime.TryParseExact(str, SERIALIZED_DATE_TIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out dt);
         }
 
         /// <summary>
@@ -934,7 +986,7 @@ namespace Duplicati.Library.Utility
         public static DateTime DeserializeDateTime(string str)
         {
             DateTime dt;
-            if (!DateTime.TryParseExact(str, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal, out dt))
+            if (!TryDeserializeDateTime(str, out dt))
                 throw new Exception(Strings.Utility.InvalidDateError(str));
 
             return dt;

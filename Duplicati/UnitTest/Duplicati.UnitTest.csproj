@@ -41,6 +41,9 @@
     <Compile Include="CommandLineOperationsTests.cs" />
     <Compile Include="TestUtils.cs" />
     <Compile Include="RandomErrorBackend.cs" />
+    <Compile Include="Issue1410.cs" />
+    <Compile Include="BasicSetupHelper.cs" />
+    <Compile Include="SizeOmittingBackend.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -82,10 +85,6 @@
     <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>

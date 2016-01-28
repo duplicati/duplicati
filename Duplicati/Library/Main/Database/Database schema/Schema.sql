@@ -66,6 +66,9 @@ CREATE TABLE "FilesetEntry" (
 	"Lastmodified" INTEGER NOT NULL
 );
 
+/* Improved lookup for joining Fileset and File table */
+CREATE UNIQUE INDEX "FilesetentryIndex" on "FilesetEntry" ("FilesetID", "FileID");
+
 /*
 The PathEntry contains a
 record for each unique path.

@@ -95,10 +95,6 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
-      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
-      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
@@ -110,6 +106,34 @@
     <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj">
+      <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
+      <Name>Duplicati.Library.Backend.GoogleServices</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
+      <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
+      <Name>Duplicati.Library.Backend.OpenStack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
+      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
+      <Name>Duplicati.Library.Backend.HubiC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj">
+      <Project>{08D7E42D-285C-4010-9881-986125FE2F3E}</Project>
+      <Name>Duplicati.Library.Backend.AmazonCloudDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj">
+      <Project>{61C43D61-4368-4942-84A3-1EB623F4EF2A}</Project>
+      <Name>Duplicati.Library.Backend.Backblaze</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj">
+      <Project>{6643A5AE-AB38-453F-ADCE-408E35A81A83}</Project>
+      <Name>Duplicati.Library.Backend.Mega</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj">
+      <Project>{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}</Project>
+      <Name>Duplicati.Library.Backend.Box</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

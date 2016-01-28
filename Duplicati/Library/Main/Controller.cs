@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Linq;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -55,6 +58,31 @@ namespace Duplicati.Library.Main
         private System.Threading.Thread m_currentTaskThread = null;
 
         /// <summary>
+        /// Holds various keys that need to be reset after running the task
+        /// </summary>
+        private Dictionary<string, string> m_resetKeys = new Dictionary<string, string>();
+
+        /// <summary>
+        /// The thread priority to reset to
+        /// </summary>
+        private System.Threading.ThreadPriority? m_resetPriority;
+
+        /// <summary>
+        /// The localization culture to reset to
+        /// </summary>
+        private System.Globalization.CultureInfo m_resetLocale;
+
+        /// <summary>
+        /// The localization UI culture to reset to
+        /// </summary>
+        private System.Globalization.CultureInfo m_resetLocaleUI;
+
+        /// <summary>
+        /// True if the locale should be reset
+        /// </summary>
+        private bool m_doResetLocale;
+
+        /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
         /// </summary>
         /// <param name="isRunning">Flag indicating execution state</param>
@@ -82,7 +110,11 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
 		{
-            return RunAction(new BackupResults(), ref inputsources, (result) => {
+            Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
+            Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
+            Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
+
+            return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
             
 				if (inputsources == null || inputsources.Length == 0)
 					throw new Exception(Strings.Controller.NoSourceFoldersError);
@@ -122,9 +154,22 @@ namespace Duplicati.Library.Main
                         }
 						else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                         {
-                            result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
-                            filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
-                            
+                            bool includes;
+                            bool excludes;
+
+                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+
+                            // If there are no excludes, there is no need to keep the folder as a filter
+                            if (excludes)
+                            {
+                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                            }
+                            else
+                            {
+                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
+                            }
+
                             sources.RemoveAt(i);
                             i--;
                             break;
@@ -133,19 +178,27 @@ namespace Duplicati.Library.Main
 
                 using(var h = new Operation.BackupHandler(m_backend, m_options, result))
                     h.Run(sources.ToArray(), filter);
+
+                Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
+                Library.UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
+                Library.UsageReporter.Reporter.Report("BACKUP_DURATION", (long)result.Duration.TotalSeconds);
             });
         }
 
         public Library.Interface.IRestoreResults Restore(string[] paths, Library.Utility.IFilter filter = null)
 		{
-            return RunAction(new RestoreResults(), ref paths, (result) => {
+            return RunAction(new RestoreResults(), ref paths, ref filter, (result) => {
     			new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
+
+                Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.FilesRestored);
+                Library.UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
+                Library.UsageReporter.Reporter.Report("RESTORE_DURATION", (long)result.Duration.TotalSeconds);
             });
         }
 
         public Duplicati.Library.Interface.IRestoreControlFilesResults RestoreControlFiles(IEnumerable<string> files = null, Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RestoreControlFilesResults(), (result) => {
+            return RunAction(new RestoreControlFilesResults(), ref filter, (result) => {
                 new Operation.RestoreControlFilesHandler(m_backend, m_options, result).Run(files, filter);
             });
         }
@@ -159,7 +212,7 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IRepairResults Repair(Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RepairResults(), (result) => {
+            return RunAction(new RepairResults(), ref filter, (result) => {
                 new Operation.RepairHandler(m_backend, m_options, result).Run(filter);
             });
         }
@@ -176,14 +229,14 @@ namespace Duplicati.Library.Main
         
         public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
 		{
-            return RunAction(new ListResults(), (result) => {
+            return RunAction(new ListResults(), ref filter, (result) => {
     			new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
         
         public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
         {
-            return RunAction(new ListResults(), (result) => {
+            return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
@@ -201,7 +254,7 @@ namespace Duplicati.Library.Main
 
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
 
-            return RunAction(new RecreateDatabaseResults(), ref t, (result) => {
+            return RunAction(new RecreateDatabaseResults(), ref t, ref filter, (result) => {
                 using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
                     h.Run(t[0], filter, filelistfilter);
             });
@@ -211,7 +264,7 @@ namespace Duplicati.Library.Main
         {
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
 
-            return RunAction(new RecreateDatabaseResults(), (result) => {
+            return RunAction(new RecreateDatabaseResults(), ref filter, (result) => {
                 using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
                     h.RunUpdate(filter, filelistfilter);
             });
@@ -230,7 +283,7 @@ namespace Duplicati.Library.Main
         {
             var t = new string[] { baseVersion, targetVersion };
             
-            return RunAction(new ListChangesResults(), ref t, (result) => {
+            return RunAction(new ListChangesResults(), ref t, ref filter, (result) => {
                 new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter);
             });
         }
@@ -255,8 +308,15 @@ namespace Duplicati.Library.Main
             m_options.RawOptions["dry-run"] = "true";
             m_options.RawOptions["dbpath"] = "INVALID!";
             
-            return RunAction(new TestFilterResults(), ref paths, (result) => {
+            return RunAction(new TestFilterResults(), ref paths, ref filter, (result) => {
                 new Operation.TestFilterHandler(m_options, result).Run(paths, filter);
+            });
+        }
+
+        public Library.Interface.ISystemInfoResults SystemInfo()
+        {
+            return RunAction(new SystemInfoResults(), result => {
+                Operation.SystemInfoHandler.Run(result);
             });
         }
         
@@ -264,10 +324,25 @@ namespace Duplicati.Library.Main
             where T : ISetCommonOptions, ITaskControl
         {
             var tmp = new string[0];
-            return RunAction<T>(result, ref tmp, method);
+            IFilter tempfilter = null;
+            return RunAction<T>(result, ref tmp, ref tempfilter, method);
         }
-                
+
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
+            where T : ISetCommonOptions, ITaskControl
+        {
+            IFilter tempfilter = null;
+            return RunAction<T>(result, ref paths, ref tempfilter, method);
+        }
+
+        private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
+            where T : ISetCommonOptions, ITaskControl
+        {
+            var tmp = new string[0];
+            return RunAction<T>(result, ref tmp, ref filter, method);
+        }
+
+        private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
         {
             try
@@ -276,7 +351,7 @@ namespace Duplicati.Library.Main
                 m_currentTaskThread = System.Threading.Thread.CurrentThread;
                 using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
                 {
-                    SetupCommonOptions(result, ref paths);
+                    SetupCommonOptions(result, ref paths, ref filter);
                     OperationRunning(true);
     				
                     method(result);
@@ -324,6 +399,35 @@ namespace Duplicati.Library.Main
                 OperationRunning(false);
             }
 
+            if (m_resetPriority != null)
+            {
+                System.Threading.Thread.CurrentThread.Priority = m_resetPriority.Value;
+                m_resetPriority = null;
+            }
+
+            if (m_doResetLocale)
+            {
+                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = m_resetLocale;
+                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = m_resetLocaleUI;
+                m_doResetLocale = false;
+                m_resetLocale = null;
+            }
+
+            if (m_resetKeys != null)
+            {
+                var keys = m_resetKeys.Keys.ToArray();
+                foreach(var k in keys)
+                {
+                    try
+                    {
+                        Environment.SetEnvironmentVariable(k, m_resetKeys[k]);
+                    } 
+                    catch { }
+                    
+                    m_resetKeys.Remove(k);
+                }
+            }
+
             if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
             {
                 Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
@@ -333,7 +437,7 @@ namespace Duplicati.Library.Main
             }		
 		}
 
-        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths)
+        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
         {
             m_options.MainAction = result.MainOperation;
             result.MessageSink = m_messageSink;
@@ -361,6 +465,9 @@ namespace Duplicati.Library.Main
             foreach(var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
+            // Make the filter read-n-write able in the generic modules
+            var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
+
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
@@ -368,9 +475,14 @@ namespace Duplicati.Library.Main
                         mx.Value.Configure(conopts);
                     else
                         mx.Value.Configure(m_options.RawOptions);
+                    
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
+
+            // If the filters were changed, read them back in
+            if (pristinefilter != conopts["filter"])
+                filter = FilterExpression.Deserialize(conopts["filter"].Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
 
             OperationRunning(true);
 
@@ -390,10 +502,37 @@ namespace Duplicati.Library.Main
             result.VerboseOutput = m_options.Verbose;
 
             if (m_options.HasTempDir)
+            {
                 Library.Utility.TempFolder.SystemTempPath = m_options.TempDir;
+                if (Library.Utility.Utility.IsClientLinux)
+                {
+                    m_resetKeys["TMPDIR"] = Environment.GetEnvironmentVariable("TMPDIR");
+                    Environment.SetEnvironmentVariable("TMPDIR", m_options.TempDir);
+                }
+                else
+                {
+                    m_resetKeys["TMP"] = Environment.GetEnvironmentVariable("TMP");
+                    m_resetKeys["TEMP"] = Environment.GetEnvironmentVariable("TEMP");
+                    Environment.SetEnvironmentVariable("TMP", m_options.TempDir);
+                    Environment.SetEnvironmentVariable("TEMP", m_options.TempDir);
+                }
+            }
+
+            if (m_options.HasForcedLocale)
+            {
+                var locale = m_options.ForcedLocale;
+                m_resetLocale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
+                m_resetLocaleUI = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
+                m_doResetLocale = true;
+                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = locale;
+                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = locale;
+            }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
+            {
+                m_resetPriority = System.Threading.Thread.CurrentThread.Priority;
                 System.Threading.Thread.CurrentThread.Priority = Library.Utility.Utility.ParsePriority(m_options.ThreadPriority);
+            }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);

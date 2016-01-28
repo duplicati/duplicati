@@ -278,21 +278,21 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
             {
+                MailLevels level;
+                if (result is Exception)
+                    level = MailLevels.Error;
+                else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
+                    level = MailLevels.Warning;
+                else
+                    level = MailLevels.Success;
+                
+                m_parsedresultlevel = level.ToString();
+
                 if (m_level != MailLevels.All)
                 {
-                    MailLevels level;
-                    if (result is Exception)
-                        level = MailLevels.Error;
-                    else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
-                        level = MailLevels.Warning;
-                    else
-                        level = MailLevels.Success;
-
                     //Check if this level should send mail
                     if ((m_level & level) == 0)
                         return;
-                    
-                    m_parsedresultlevel = level.ToString();
                 }
             }
 
@@ -303,8 +303,8 @@ namespace Duplicati.Library.Modules.Builtin
                 if (body != DEFAULT_BODY && System.IO.File.Exists(body))
                     body = System.IO.File.ReadAllText(body);
 
-                body = ReplaceTemplate(body, result);
-                subject = ReplaceTemplate(subject, result);
+                body = ReplaceTemplate(body, result, false);
+                subject = ReplaceTemplate(subject, result, true);
 
                 var message = new MailMessage();
                 foreach(string s in m_to.Split(new [] { "," }, StringSplitOptions.RemoveEmptyEntries))
@@ -427,18 +427,25 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
-        private string ReplaceTemplate(string input, object result)
+        private string ReplaceTemplate(string input, object result, bool subjectline)
         {
             input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                using (TempFile tf = new TempFile())
-                {
-                    RunScript.SerializeResult(tf, result);
-                    input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                }
+            if (subjectline)
+            {
+                input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            }
+            else
+            {
+                if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    using(TempFile tf = new TempFile())
+                    {
+                        RunScript.SerializeResult(tf, result);
+                        input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    }
+            }
 
             foreach (KeyValuePair<string, string> kv in m_options)
                 input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);

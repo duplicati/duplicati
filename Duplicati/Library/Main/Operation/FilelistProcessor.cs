@@ -100,6 +100,23 @@ namespace Duplicati.Library.Main.Operation
 				throw new Exception(s);
 			}
 
+            var lookup = new Dictionary<string, string>();
+            var doubles = new Dictionary<string, string>();
+            foreach(var v in tp.ParsedVolumes)
+            {
+                if (lookup.ContainsKey(v.File.Name))
+                    doubles[v.File.Name] = null;
+                else
+                    lookup[v.File.Name] = null;
+            }
+
+            if (doubles.Count > 0)
+            {
+                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: ", string.Join(", ", doubles.Keys));
+                log.AddError(s, null);
+                throw new Exception(s);
+            }
+
             if (missingCount > 0)
             {
             	string s;

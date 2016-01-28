@@ -69,7 +69,10 @@ namespace Duplicati.Library.Main.Database
 				var args = tmp.Item2;
                 
                 using(var cmd = m_connection.CreateCommand())
+                {
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FilesetIDTimestampIndex"" ON ""{0}"" (""FilesetID"", ""Timestamp"" DESC)", m_tablename));
+                }
             }
             
             private class Fileset : IFileset
@@ -211,6 +214,31 @@ namespace Duplicati.Library.Main.Database
                         // Then we select all folders
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""PathEntryID"" INTEGER NOT NULL) SELECT DISTINCT ""B"".""PathEntryID"" FROM ""{1}"" ""A"", ""PathEntry"" ""B"" WHERE ""A"".""PathEntryID"" = ""B"".""ID"" ", tbname, tmpnames.Tablename));
 
+                        // If we had instr support this would work:
+                        /*var distinctPaths = @"SELECT DISTINCT :1 || " +
+                            @"CASE(INSTR(SUBSTR(""Path"", :2), ""/"")) " +
+                            @"WHEN 0 THEN SUBSTR(""Path"", :2) " +
+                            @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), ""/"")) " +
+                            @"END AS ""Path"", ""FilesetID"" " +
+                            @" FROM (" + cartesianPathFileset + @")";*/
+                        
+                        // Instead we manually iterate the paths
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", tbname));
+                        
+                        using(var c2 = m_connection.CreateCommand())
+                        {
+                            c2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", tbname);
+                            c2.AddParameter();
+                        
+                            foreach(var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
+                            {
+                                c2.SetParameterValue(0, n);
+                                c2.ExecuteNonQuery();
+                            }
+
+                            c2.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_PathIndex"" ON ""{0}"" (""Path"")", tbname));
+                        }
+                        
                         //Then we select the matching results
                         var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
                         var cartesianPathFileset = string.Format(@"SELECT ""A"".""ID"", ""B"".""FilesetID"", ""A"".""PathX"" FROM (SELECT ""ID"", ""PathX"" FROM ""FullPathEntry"" WHERE ""ID"" IN (SELECT ""PathEntryID"" FROM ""{0}"")) A, (" + filesets + @") B ORDER BY ""A"".""PathX"" ASC, ""B"".""Timestamp"" DESC", tbname, m_tablename);

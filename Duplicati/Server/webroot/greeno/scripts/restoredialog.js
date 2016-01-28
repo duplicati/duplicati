@@ -176,7 +176,7 @@ $(document).ready(function() {
                             'permissions': restore_permissions,
                             'skip-metadata': skip_metadata,
                             paths: []
-                        }
+                        };
                         for(var p in includeMap[n]) {
                             if (p.lastIndexOf(dirSep) == p.length -1)
                                 t.paths.push(p + '*');
@@ -787,6 +787,7 @@ $(document).ready(function() {
         $.browseForFolder({
             title: 'Select restore folder',
             resolvePath: true,
+            multiSelect: false,
             callback: function(path, display) {
                 $('#restore-target-path').val(path);
                 $('#restore-overwrite-target-other').each(function(i, e) { e.checked = true; });

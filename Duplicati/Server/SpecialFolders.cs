@@ -26,12 +26,12 @@ namespace Duplicati.Server
         public static readonly Serializable.TreeNode[] Nodes;
         private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         private static readonly Dictionary<string, string> DisplayMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-        
+
         public static string ExpandEnvironmentVariables(string path)
         {
             foreach(var n in Nodes)
                 path = path.Replace(n.id, n.resolvedpath);
-            return System.Environment.ExpandEnvironmentVariables(path);
+            return Library.Utility.Utility.ExpandEnvironmentVariables(path);
         }
         
         public static string TranslateToPath(string str) 

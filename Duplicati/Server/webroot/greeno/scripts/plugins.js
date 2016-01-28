@@ -75,6 +75,7 @@ $(document).ready(function() {
             this.btnel.click(function() {
                 $.browseForFolder({
                     title: 'Select target folder',
+                    multiSelect: false,
                     resolvePath: true,            
                     callback: function(path, display) {
                         $('#server-path').val(path);
@@ -222,10 +223,10 @@ $(document).ready(function() {
         }
     }
 
-    APP_DATA.plugins.backend['googledocs'] = {
-        hideserverandport: true
-    }
-
+    APP_DATA.plugins.backend['googledrive'] = APP_DATA.plugins.backend['onedrive'];
+    APP_DATA.plugins.backend['hubic'] = APP_DATA.plugins.backend['onedrive'];
+    APP_DATA.plugins.backend['amzcd'] = APP_DATA.plugins.backend['onedrive'];
+    APP_DATA.plugins.backend['box'] = APP_DATA.plugins.backend['onedrive'];
 
     APP_DATA.plugins.backend['s3'] = {
 
@@ -239,9 +240,12 @@ $(document).ready(function() {
         passwordwatermark: 'AWS Secret Key',
         serverdrop_field: null,
         regiondrop_field: null,
+        storageclassdrop_field: null,        
         bucket_field: null,
+
         known_hosts: null,
         known_regions: null,
+        known_storage_classes: null,
 
         setup_hosts_after_config: function() {
             if (this.known_hosts != null && this.serverdrop_field != null)
@@ -278,6 +282,23 @@ $(document).ready(function() {
             }
         },
 
+        setup_storage_classes_after_config: function() {
+            if (this.known_storage_classes != null && this.storageclassdrop_field != null) {
+                var buckets = [];
+                for (var k in this.known_storage_classes)
+                    buckets.push({label: k + ' (' + this.known_storage_classes[k] + ')', value: this.known_storage_classes[k]});
+                
+                this.storageclassdrop_field.autocomplete({
+                    minLength: 0,
+                    source: buckets, 
+                });
+                var self = this;
+                this.storageclassdrop_field.click(function() {  
+                    self.storageclassdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
         setup: function(dlg, div) {
             var self = this;
 
@@ -287,7 +308,7 @@ $(document).ready(function() {
             var serverdrop = EDIT_URI.createFieldset({label: 'S3 servername', name: 's3-server', after: $('#server-path'), watermark: 'Click for a list of providers'});
             var bucketfield = EDIT_URI.createFieldset({label: 'S3 Bucket name', name: 's3-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
             var regiondrop = EDIT_URI.createFieldset({label: 'Bucket create region', name: 's3-region', before: $('#server-options-label'), watermark: 'Click for a list of regions', title: 'Note that region is only used when creating buckets'});
-            var rrscheck = EDIT_URI.createFieldset({'label': 'Use RRS', name: 's3-rrs', type: 'checkbox', before: $('#server-options-label'), title: 'Reduced Redundancy Storage is cheaper, but less reliable'});
+            var storageclassdrop = EDIT_URI.createFieldset({label: 'Storage class', name: 's3-storage-class', after: regiondrop.outer, watermark: 'Click for a list of storage classes'});
             var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: this.PLUGIN_S3_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
 
             signuplink.outer.css('margin-bottom', '10px');
@@ -295,6 +316,8 @@ $(document).ready(function() {
             this.serverdrop_field = serverdrop.field;
             this.regiondrop_field = regiondrop.field;
             this.bucket_field = bucketfield.field;
+            this.storageclassdrop_field = storageclassdrop.field;
+
 
             if (self.known_hosts == null) {
                 APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'Providers'}, function(data) {
@@ -319,6 +342,19 @@ $(document).ready(function() {
             } else {
                 this.setup_regions_after_config();
             }            
+
+            if (self.known_storage_classes == null) {
+                APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'StorageClasses'}, function(data) {
+                    self.known_storage_classes = data.Result;
+                    self.setup_storage_classes_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get S3 config: ' + message);
+                });
+            } else {
+                this.setup_storage_classes_after_config();
+            }            
+
         },
 
         cleanup: function(dlg, div) {
@@ -326,7 +362,18 @@ $(document).ready(function() {
             $('#server-path').show();
             this.serverdrop_field = null;
             this.regiondrop_field = null;
+            this.storageclassdrop_field = null;
             this.bucket_field = null;
+        },
+
+        fill_form: function(el, cfg) {
+            // Upgrade from checkbox to string
+            if (APP_UTIL.parseBoolOption(cfg['--s3-use-rrs']) && !cfg['--s3-location-constraint']) {
+                delete cfg['--s3-use-rrs'];
+                cfg['--s3-location-constraint'] = 'REDUCED_REDUNDANCY';
+            }
+
+            EDIT_URI.fill_form(el, cfg);
         },
 
         validate: function(dlg, values) {
@@ -358,14 +405,14 @@ $(document).ready(function() {
         fill_form_map: {
             'server-path': 's3-bucket',
             '--s3-server-name': 's3-server',
-            '--s3-use-rrs': 's3-rrs',
+            '--s3-storage-class': 's3-storage-class',
             '--s3-location-constraint': 's3-region'
         },
 
         fill_dict_map: {
             's3-bucket': 'server-path',
             's3-server': '--s3-server-name',
-            's3-rrs': '--s3-use-rrs',
+            's3-storage-class': '--s3-storage-class',
             's3-region': '--s3-location-constraint'
         }
     }
@@ -423,4 +470,362 @@ $(document).ready(function() {
             'azure-container': 'server-name'
         }
     }
+
+    var tmp_gcs = $.extend(true, {
+        locationdrop_field: null,
+        known_locations: null,
+        storage_class_field: null,
+        known_storage_classes: null,
+
+        setup_locations_after_config: function() {
+            if (this.known_locations != null && this.locationdrop_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_locations)
+                    servers.push({label: k + ' (' + this.known_locations[k] + ')', value: this.known_locations[k]});
+
+                this.locationdrop_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.locationdrop_field.click(function() {  
+                    self.locationdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup_storage_classes_after_config: function() {
+            if (this.known_storage_classes != null && this.storage_class_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_storage_classes)
+                    servers.push({label: k + ' (' + this.known_storage_classes[k] + ')', value: this.known_storage_classes[k]});
+
+                this.storage_class_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.storage_class_field.click(function() {  
+                    self.storage_class_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup_gcs: function()
+        {
+            var locationdrop = EDIT_URI.createFieldset({label: 'Bucket create location', name: 'gcs-location', before: $('#server-options-label'), watermark: 'Click for a list of locations', title: 'Note that location is only used when creating buckets'});
+            var storageclassdrop = EDIT_URI.createFieldset({label: 'Bucket storage class', name: 'gcs-storage-class', before: $('#server-options-label'), watermark: 'Click for a list of storage classes', title: 'Note that storage class is only used when creating buckets'});
+            var projectidfield = EDIT_URI.createFieldset({label: 'GCS Project ID', name: 'gcs-project', before: $('#server-options-label'), title: 'Supply the project ID', watermark: 'Enter project ID'});
+
+            this.locationdrop_field = locationdrop.field;
+            this.storage_class_field = storageclassdrop.field;
+            this.projectid_field = projectidfield.field;
+
+            this.prevsettings = {
+                placeholder: $('#server-path').attr('placeholder'),
+                text: $('#server-path-label').text()
+            };
+
+            $('#server-path').attr('placeholder', 'bucket/folder/subfolder');
+            $('#server-path-label').text('Bucket name');
+
+
+            var self = this;
+
+            if (self.known_locations == null) {
+                APP_DATA.callServer({action: 'send-command', command: 'gcs-getconfig', 'gcs-config': 'Locations'}, function(data) {
+                    self.known_locations = data.Result;
+                    self.setup_locations_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get GCS config: ' + message);
+                });
+            } else {
+                this.setup_locations_after_config();
+            }
+
+            if (self.known_storage_classes == null) {
+                APP_DATA.callServer({action: 'send-command', command: 'gcs-getconfig', 'gcs-config': 'StorageClasses'}, function(data) {
+                    self.known_storage_classes = data.Result;
+                    self.setup_storage_classes_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get GCS config: ' + message);
+                });
+            } else {
+                this.setup_storage_classes_after_config();
+            } 
+        },
+
+        cleanup_gcs: function() {
+            this.locationdrop_field = null;
+            this.regiondrop_field = null;
+            this.projectid_field = null;
+
+            if (this.prevsettings != null) {
+                $('#server-path').attr('placeholder', this.prevsettings.placeholder);
+                $('#server-path-label').text(this.prevsettings.text);
+                this.prevsettings = null;
+            }
+
+        },
+
+        fill_form_map: {
+            '--gcs-location': 'gcs-location',
+            '--gcs-storage-class': 'gcs-storage-class',
+            '--gcs-project': 'gcs-project'
+        },
+
+        fill_dict_map: {
+            'gcs-location': '--gcs-location',
+            'gcs-storage-class': '--gcs-storage-class',
+            'gcs-project': '--gcs-project'
+        }
+
+    }, APP_DATA.plugins.backend['onedrive']);
+
+    tmp_gcs.setup_auth = tmp_gcs.setup;
+    tmp_gcs.cleanup_auth = tmp_gcs.cleanup;
+
+    tmp_gcs.setup = function() {
+        this.setup_auth();
+        this.setup_gcs();
+    };
+
+    tmp_gcs.cleanup = function() {
+        this.cleanup_auth();
+        this.cleanup_gcs();
+    };
+
+    APP_DATA.plugins.backend['gcs'] = tmp_gcs;
+    delete tmp_gcs;
+
+    APP_DATA.plugins.backend['openstack'] = {
+
+        hasssl: false,
+        hideserverandport: true,
+
+        serverdrop_field: null,
+        known_hosts: null,
+        optionalauth: true,
+
+        setup_hosts_after_config: function() {
+            if (this.known_hosts != null && this.serverdrop_field != null)
+            {
+                var servers = [];
+                for (var k in this.known_hosts)
+                    servers.push({label: k + ' (' + this.known_hosts[k] + ')', value: this.known_hosts[k]});
+
+                this.serverdrop_field.autocomplete({
+                    minLength: 0,
+                    source: servers, 
+                });
+                var self = this;
+                this.serverdrop_field.click(function() {  
+                    self.serverdrop_field.autocomplete('search', '');
+                });
+            }
+        },
+
+        setup: function(dlg, div) {
+            var self = this;
+
+            var projectidfield = EDIT_URI.createFieldset({label: 'Tenant Name', name: 'openstack-tenant-name', before: $('#server-options-label'), title: 'Enter the Tenant Name if you are not using API Key', watermark: 'Optional Tenant Name'});
+            var projectidfield = EDIT_URI.createFieldset({label: 'API Key', name: 'openstack-apikey', before: $('#server-options-label'), title: 'If you supply the API key, the Password, Tenant Name fields are not required', watermark: 'Optional API Key'});
+            var projectidfield = EDIT_URI.createFieldset({label: 'Container region', name: 'openstack-region', before: $('#server-options-label'), title: 'If your provider supports regions, you can supply the region value here.', watermark: 'Optional region'});
+
+            var serverdrop = EDIT_URI.createFieldset({label: 'OpenStack Authuri', name: 'openstack-authuri', after: $('#server-path'), watermark: 'Click for a list of providers'});
+            this.serverdrop_field = serverdrop.field;
+
+            this.prevsettings = {
+                placeholder: $('#server-path').attr('placeholder'),
+                text: $('#server-path-label').text()
+            };
+
+            $('#server-path').attr('placeholder', 'bucket/folder/subfolder');
+            $('#server-path-label').text('Bucket name');
+
+            if (self.known_hosts == null) {
+                APP_DATA.callServer({action: 'send-command', command: 'openstack-getconfig', 'openstack-config': 'Providers'}, function(data) {
+                    self.known_hosts = data.Result;
+                    self.setup_hosts_after_config();
+                },
+                function(data, success, message) {
+                    alert('Failed to get OpenStack config: ' + message);
+                });
+            } else {
+                this.setup_hosts_after_config();
+            }
+        },
+
+        cleanup: function(dlg, div) {
+            this.serverdrop_field = null;
+            if (this.prevsettings != null) {
+                $('#server-path').attr('placeholder', this.prevsettings.placeholder);
+                $('#server-path-label').text(this.prevsettings.text);
+                this.prevsettings = null;
+            }
+        },
+
+        validate: function(dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return;
+            if (values['--openstack-authuri'] == '')
+                return EDIT_URI.validation_error(this.serverdrop_field, 'You must fill in or select the Authentication URI');
+
+            if (values['server-path'] == '')
+                return EDIT_URI.validation_error($('#server-path'), 'You must enter a path');
+
+            if (values['server-username'] == '')
+                return EDIT_URI.validation_error($('#server-username'), 'You must enter a username');
+
+            if (values['--openstack-apikey'] == '')
+            {
+                if (values['server-password'] == '')
+                    return EDIT_URI.validation_error($('#server-username'), 'You must enter a password or API key');
+
+                if (values['openstack-tenantname'] == '')
+                    return EDIT_URI.validation_error($('#server-username'), 'You must enter a Tenant Name if you do not supply the API key');
+            }
+            else
+            {
+                if (values['server-password'] != '')
+                    return EDIT_URI.validation_error($('#server-username'), 'You should not enter a password if you are using API key authentication');
+            }
+
+            return true;
+        },
+
+        fill_form_map: {
+            '--openstack-authuri': 'openstack-authuri',
+            '--openstack-tenant-name': 'openstack-tenant-name',
+            '--openstack-apikey': 'openstack-apikey',
+            '--openstack-region': 'openstack-region'
+        },
+
+        fill_dict_map: {
+            'openstack-authuri': '--openstack-authuri',
+            'openstack-tenant-name': '--openstack-tenant-name',
+            'openstack-apikey': '--openstack-apikey',
+            'openstack-region': '--openstack-region'
+        }
+    }    
+
+    APP_DATA.plugins.backend['b2'] = {
+
+        PLUGIN_B2_LINK: 'https://www.backblaze.com/b2/cloud-storage.html',
+
+        hasssl: false,
+        hideserverandport: true,
+        usernamelabel: 'B2 Account ID',
+        passwordlabel: 'B2 Application Key',
+        usernamewatermark: 'B2 Cloud Storage Account ID',
+        passwordwatermark: 'B2 Cloud Storage Application Key',
+
+        setup: function(dlg, div) {
+            var self = this;
+
+            $('#server-path-label').hide();
+            $('#server-path').hide();
+
+            var bucketfield = EDIT_URI.createFieldset({label: 'B2 Bucket name', name: 'b2-bucket', after: $('#server-username-and-password'), title: 'Use / to access subfolders in the bucket', watermark: 'Enter bucket name'});
+            var signuplink = EDIT_URI.createFieldset({'label': '&nbsp;', href: this.PLUGIN_B2_LINK, type: 'link', before: bucketfield.outer, 'title': 'Click here for the sign up page'});
+
+            signuplink.outer.css('margin-bottom', '10px');
+
+            this.bucket_field = bucketfield.field;
+        },
+
+        cleanup: function(dlg, div) {
+            $('#server-path-label').show();
+            $('#server-path').show();
+            this.bucket_field = null;
+        },
+
+        validate: function(dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return;
+
+            if (values['server-path'] == '')
+                return EDIT_URI.validation_error(this.bucket_field, 'You must enter a B2 bucket name');
+
+            return true;
+        },
+
+        fill_form_map: {
+            'server-path': 'b2-bucket'
+        },
+
+        fill_dict_map: {
+            'b2-bucket': 'server-path'
+        }
+    }
+
+    APP_DATA.plugins.backend['mega'] = {
+
+        PLUGIN_MEGA_LINK: 'https://mega.co.nz',
+
+        hasssl: false,
+        hideserverandport: true,
+        usernamelabel: 'Username',
+        passwordlabel: 'Password',
+        usernamewatermark: 'Username',
+        passwordwatermark: 'Password',
+        path_field: null,
+
+        setup: function (dlg, div) {
+            $('#server-path-label').hide();
+            $('#server-path').hide();
+
+            $('#server-username').attr('placeholder', this.usernamewatermark);
+            $('#server-password').attr('placeholder', this.passwordwatermark);
+
+            var pathfield = EDIT_URI.createFieldset({ label: 'Path', name: 'mega-path', after: $('#server-username-and-password'), title: 'Path', watermark: 'Enter path' });
+            this.path_field = pathfield.field;
+
+            var signuplink = EDIT_URI.createFieldset({ 'label': '&nbsp;', href: this.PLUGIN_MEGA_LINK, type: 'link', before: $('#server-options-label'), 'title': 'Click here to sign in or register' });
+            signuplink.outer.css('margin-bottom', '10px');
+
+        },
+
+        cleanup: function (dlg, div) {
+            $('#server-path-label').show();
+            $('#server-path').show();
+            this.path_field = null;
+        },
+
+        validate: function (dlg, values) {
+            if (!EDIT_URI.validate_input(values, true))
+                return false;
+
+            values['server-path'] = values["mega-path"].toLowerCase();
+            this.path_field.val(values['server-path']);
+
+            return true;
+        },
+
+        fill_form_map: {
+            'server-path': function(dict, key, el, cfgel) {
+                var p = [];
+                if (dict['server-name'] && dict['server-name'] != '')
+                    p.push(dict['server-name']);
+                if (dict['server-path'] && dict['server-path'] != '')
+                    p.push(dict['server-path']);
+
+                p = p.join('/');
+
+                $('#mega-path').val(p);
+            }
+        },
+
+        fill_dict_map: {
+            'mega-path': function(dict, key, el, cfgel) {
+                var p =  $(el).val();
+                dict['server-path'] = p;
+                dict['server-name'] = '';
+            }
+        }
+    }    
 });

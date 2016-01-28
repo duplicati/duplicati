@@ -127,19 +127,19 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            System.Net.HttpWebRequest req = CreateRequest("");
-
-            req.Method = "PROPFIND";
-            req.Headers.Add("Depth", "1");
-            req.ContentType = "text/xml";
-            req.ContentLength = PROPFIND_BODY.Length;
-
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.IO.Stream s = areq.GetRequestStream())
-                s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
-
             try
             {
+                System.Net.HttpWebRequest req = CreateRequest("");
+
+                req.Method = "PROPFIND";
+                req.Headers.Add("Depth", "1");
+                req.ContentType = "text/xml";
+                req.ContentLength = PROPFIND_BODY.Length;
+
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.IO.Stream s = areq.GetRequestStream())
+                    s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
+                
                 System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {

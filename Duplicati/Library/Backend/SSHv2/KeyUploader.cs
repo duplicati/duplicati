@@ -119,7 +119,7 @@ namespace Duplicati.Library.Backend
                     
                     if (existing_authorized_keys)
                     {
-                        var filename = AUTHORIZED_KEYS_PATH + ".backup-" + DateTime.UtcNow.ToString("yyyyMMddThhmmss");
+                        var filename = AUTHORIZED_KEYS_PATH + ".backup-" + Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
                         using(var ms = new System.IO.MemoryStream(authorized_keys_bytes))
                             client.UploadFile(ms, filename);
                         client.ChangePermissions(filename, AUTHORIZED_KEYS_BACKUP_PERMISSIONS);

@@ -62,6 +62,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.Directory.Delete(PrefixWithUNC(path));
         }
@@ -75,6 +76,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.Directory.CreateDirectory(PrefixWithUNC(path));
         }
@@ -84,6 +86,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Directory.Exists(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.Directory.Exists(PrefixWithUNC(path));
         }
@@ -97,6 +100,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.Delete(PrefixWithUNC(path));
         }
@@ -110,6 +114,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.SetLastWriteTimeUtc(PrefixWithUNC(path), time);
         }
@@ -123,6 +128,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.SetCreationTimeUtc(PrefixWithUNC(path), time);
         }
@@ -135,6 +141,7 @@ namespace Duplicati.Library.Snapshots
                     return System.IO.File.GetLastWriteTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.File.GetLastWriteTimeUtc(PrefixWithUNC(path));
         }
@@ -147,6 +154,7 @@ namespace Duplicati.Library.Snapshots
                     return System.IO.File.GetCreationTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.File.GetCreationTimeUtc(PrefixWithUNC(path));
         }
@@ -156,6 +164,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Exists(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.File.Exists(PrefixWithUNC(path));
         }
@@ -163,10 +172,11 @@ namespace Duplicati.Library.Snapshots
         public System.IO.Stream FileOpenRead(string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.File.OpenRead(path); }
+                try { return System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.OpenRead(PrefixWithUNC(path));
+            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), Alphaleonis.Win32.Filesystem.FileMode.Open, Alphaleonis.Win32.Filesystem.FileAccess.Read, Alphaleonis.Win32.Filesystem.FileShare.ReadWrite);
         }
 
         public System.IO.Stream FileOpenWrite(string path)
@@ -174,6 +184,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.File.OpenWrite(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             if (FileExists(path))
                 return Alphaleonis.Win32.Filesystem.File.OpenWrite(PrefixWithUNC(path));
@@ -186,6 +197,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Open(path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.Read); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), Alphaleonis.Win32.Filesystem.FileMode.OpenOrCreate, Alphaleonis.Win32.Filesystem.FileAccess.ReadWrite, Alphaleonis.Win32.Filesystem.FileShare.Read);
         }
@@ -195,6 +207,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Create(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.File.Create(PrefixWithUNC(path));
         }
@@ -204,6 +217,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.File.GetAttributes(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return (System.IO.FileAttributes)Alphaleonis.Win32.Filesystem.File.GetAttributes(PrefixWithUNC(path));
         }
@@ -217,6 +231,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.SetAttributes(PrefixWithUNC(path), (Alphaleonis.Win32.Filesystem.FileAttributes)attributes);
         }
@@ -242,6 +257,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Directory.EnumerateFileSystemEntries(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             var r = Alphaleonis.Win32.Filesystem.Directory.GetFileSystemEntries(PrefixWithUNC(path));
             for (var i = 0; i < r.Length; i++)
@@ -255,6 +271,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Path.GetFileName(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetFileName(PrefixWithUNC(path)));
         }
@@ -264,6 +281,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Path.GetDirectoryName(path); }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetDirectoryName(PrefixWithUNC(path)));
         }
@@ -273,7 +291,8 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Path.GetExtension(path); }
                 catch (System.IO.PathTooLongException) { }
-            
+                catch (System.ArgumentException) { }
+
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetExtension(PrefixWithUNC(path)));
         }
         
@@ -282,7 +301,8 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Path.ChangeExtension(path, extension); }
                 catch (System.IO.PathTooLongException) { }
-            
+                catch (System.ArgumentException) { }
+
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
         }
 
@@ -295,6 +315,8 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+
 
             Alphaleonis.Win32.Filesystem.File.SetLastWriteTimeUtc(PrefixWithUNC(path), time);
         }
@@ -308,6 +330,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.SetCreationTimeUtc(PrefixWithUNC(path), time);
         }
@@ -320,6 +343,7 @@ namespace Duplicati.Library.Snapshots
                     return System.IO.Directory.GetLastWriteTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.Directory.GetLastWriteTimeUtc(PrefixWithUNC(path));
         }
@@ -332,6 +356,7 @@ namespace Duplicati.Library.Snapshots
                     return System.IO.Directory.GetCreationTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.Directory.GetCreationTimeUtc(PrefixWithUNC(path));
         }
@@ -345,6 +370,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.Move(PrefixWithUNC(source), PrefixWithUNC(target));
         }
@@ -354,6 +380,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return new System.IO.FileInfo(path).Length; }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             return new Alphaleonis.Win32.Filesystem.FileInfo(PrefixWithUNC(path)).Length;
         }
@@ -367,6 +394,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.Directory.Delete(PrefixWithUNC(path), recursive);
         }
@@ -428,6 +456,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.Directory.GetAccessControl(path); }
             catch (System.IO.PathTooLongException) { }
+            catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.Directory.GetAccessControl(PrefixWithUNC(path));
         }
@@ -437,6 +466,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsPathTooLong(path))
                 try { return System.IO.File.GetAccessControl(path); }
             catch (System.IO.PathTooLongException) { }
+            catch (System.ArgumentException) { }
 
             return Alphaleonis.Win32.Filesystem.File.GetAccessControl(PrefixWithUNC(path));
         }
@@ -450,6 +480,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.File.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
         }
@@ -463,6 +494,7 @@ namespace Duplicati.Library.Snapshots
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
 
             Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
         }

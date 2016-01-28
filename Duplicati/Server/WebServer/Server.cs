@@ -115,6 +115,18 @@ namespace Duplicati.Server.WebServer
                 
             throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
         }
+
+        private static void AddMimeTypes(FileModule fm)
+        {
+            fm.AddDefaultMimeTypes();
+            fm.MimeTypes["htc"] = "text/x-component";
+            fm.MimeTypes["json"] = "application/json";
+            fm.MimeTypes["map"] = "application/json";
+            fm.MimeTypes["htm"] = "text/html; charset=utf-8";
+            fm.MimeTypes["html"] = "text/html; charset=utf-8";
+            fm.MimeTypes["hbs"] = "application/x-handlebars-template";
+            fm.MimeTypes["woff"] = "application/font-woff";
+        }
             
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
@@ -123,6 +135,8 @@ namespace Duplicati.Server.WebServer
             server.Add(new AuthenticationHandler());
 
             server.Add(new ControlHandler());
+
+            server.Add(new RESTHandler());
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
@@ -177,23 +191,14 @@ namespace Duplicati.Server.WebServer
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "customized")))
             {
                 var customized_files = new FileModule("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
-                customized_files.AddDefaultMimeTypes();
-                customized_files.MimeTypes.Add("htc", "text/x-component");
-                customized_files.MimeTypes.Add("json", "application/json");
-                customized_files.MimeTypes.Add("map", "application/json");
-                customized_files.MimeTypes["htm"] = "text/html; charset=utf-8";
-                customized_files.MimeTypes["html"] = "text/html; charset=utf-8";
+                AddMimeTypes(customized_files);
                 server.Add(customized_files);
             }
 
             var fh = new FileModule("/", webroot);
-            fh.AddDefaultMimeTypes();
-            fh.MimeTypes.Add("htc", "text/x-component");
-            fh.MimeTypes.Add("json", "application/json");
-            fh.MimeTypes.Add("map", "application/json");
-            fh.MimeTypes["htm"] = "text/html; charset=utf-8";
-            fh.MimeTypes["html"] = "text/html; charset=utf-8";
+            AddMimeTypes(fh);
             server.Add(fh);
+
             server.Add(new IndexHtmlHandler(webroot));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404

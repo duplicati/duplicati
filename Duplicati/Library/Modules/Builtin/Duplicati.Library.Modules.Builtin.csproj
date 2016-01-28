@@ -50,6 +50,7 @@
     <Reference Include="agsXMPP">
       <HintPath>..\..\..\..\thirdparty\agsXMPP\agsXMPP.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Security" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsolePasswordInput.cs" />
@@ -59,6 +60,7 @@
     <Compile Include="RunScript.cs" />
     <Compile Include="SendJabberMessage.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="CheckMonoSSL.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -77,10 +79,18 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+      <Project>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</Project>
+      <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
     <Content Include="run-script-example.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\..\thirdparty\mozroots\mozroots.exe">
+      <Link>mozroots.exe</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

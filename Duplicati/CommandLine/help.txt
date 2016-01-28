@@ -12,7 +12,7 @@
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
   Commands: backup, find, restore, delete, compact, test, compare, repair
-  Debugging: debug, logging, create-report, test-filters
+  Debugging: debug, logging, create-report, test-filters, system-info
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
@@ -31,6 +31,14 @@ Show the last changes to Duplicati
   
   %MONO%"%APP_PATH%" changelog
 
+# =============================================================================
+> duplicati.commandline.exe help system-info
+
+Show system information as seen by Duplicati
+==================================
+  Issue the following command to see a variety of system information relevant to Duplicati. 
+  
+  %MONO%"%APP_PATH%" system-info
 
 > duplicati.commandline.exe help example
 > duplicati.commandline.exe help examples
@@ -103,7 +111,7 @@ Usage: restore <storage-URL> ["<filename>"] [<options>]
   
   Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
-  --overwrite=<boolen>
+  --overwrite=<boolean>
     Overwrites existing files.
   --restore-path=<string>
     Restores files to <restore-path> instead of their original destination. Top folders are removed if possible.
@@ -201,6 +209,7 @@ Usage: test <storage-URL> [<samples>] [<options>]
   
 # =============================================================================
 > duplicati.commandline.exe help test-filters
+> duplicati.commandline.exe help test-filter
 
 Usage: test-filters <source-path> [<options>]
   
@@ -324,11 +333,10 @@ Options:
 
 
 # =============================================================================
-> duplicati.commandline.exe help skydrive
+> duplicati.commandline.exe help onedrive
 
-Duplicati can use Windows Live Skydrive to store backups. The following target URL format is used:
-  skydrive://folder/subfolder
-Please note that there is no official API and accessing SkyDrive through this backend may violate the ToS and may stop to work if Microsoft decides to change the API.
+Duplicati can use Microsoft Onedrive to store backups. The following target URL format is used:
+  onedrive://folder/subfolder
 
 Options:
 %MODULEOPTIONS%
@@ -367,6 +375,8 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
   Globbing: *.txt
   Regex: [.*test\.txt]
 
+Inside scripts and the commandline --parameters-file, where multiple filters are supplied with a single option, filters must be prefixed with either a plus (+) or a (-), for include and exclude respectively. Example:
+  +*.txt%PATH_SEPARATOR%-[.*\.xyz]%PATH_SEPARATOR%+*
 
 
 # =============================================================================
@@ -395,8 +405,11 @@ Duplicati can send email notifications.
     Also send emails after other operations like restore etc.
 	
   Allowed placeholders are:
+    %PARSEDRESULT%
+      The parsed result op the operation: Success, Warning, Error
     %RESULT%
-	  The result/log of the backup
+	  When used in the body, this is the result/log of the backup, 
+      When used in the subject line, this is the same as %PARSEDRESULT%
     %OPERATIONNAME%
 	  The name of the operation, usually "backup", but could also be "restore" etc.
     %REMOTEURL%

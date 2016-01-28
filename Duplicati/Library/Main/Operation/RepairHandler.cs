@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                         
                             if (!m_options.Dryrun)
                             {
-                                db.RegisterRemoteVolume(n.File.Name, n.FileType, RemoteVolumeState.Deleting);								
+                                db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
                                 backend.Delete(n.File.Name, n.File.Size);
                             }
                             else
@@ -393,7 +393,7 @@ namespace Duplicati.Library.Main.Operation
                 db.SetResult(m_result);
                 db.FixDuplicateMetahash();
                 db.FixDuplicateFileentries();
-                db.FixDuplicateBlocklistHashes();
+                db.FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize);
                 db.FixMissingBlocklistHashes(m_options.BlockHashAlgorithm, m_options.Blocksize);
             }
         }

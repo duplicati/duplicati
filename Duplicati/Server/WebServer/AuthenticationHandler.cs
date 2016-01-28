@@ -180,7 +180,7 @@ namespace Duplicati.Server.WebServer
                     m_activeNonces.Add(nonce, new Tuple<DateTime, string>(expires, pwd));
 
                     response.Cookies.Add(new HttpServer.ResponseCookie(NONCE_COOKIE_NAME, nonce, expires));
-                    using(var bw = new BodyWriter(response))
+                    using(var bw = new BodyWriter(response, request))
                     {
                         bw.OutputOK(new {
                             Status = "OK",
@@ -229,7 +229,7 @@ namespace Duplicati.Server.WebServer
                         m_activeTokens.Add(token, expires);
                         response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
 
-                        using(var bw = new BodyWriter(response))
+                        using(var bw = new BodyWriter(response, request))
                             bw.OutputOK();
 
                         return true;
@@ -237,7 +237,13 @@ namespace Duplicati.Server.WebServer
                 }
             }
 
-            if (ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
+            var limitedAccess =
+                ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase)
+                ||
+                request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
+            ;
+
+            if (limitedAccess)
             {
                 if (xsrf_token != null && m_activexsrf.ContainsKey(xsrf_token))
                 {

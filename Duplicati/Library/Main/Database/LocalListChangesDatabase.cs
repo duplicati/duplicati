@@ -142,9 +142,11 @@ namespace Duplicati.Library.Main.Database
                         // Simple case, select everything
                         cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""PathEntryID"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""PathEntryID"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {1} A WHERE ""A"".""FilesetID"" = ? ", tablename, combined), filesetId);
                     }
-                    else if (filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
+                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
                     {
                         // File list based
+                        // unfortunately we cannot do this if the filesystem is case sensitive as
+                        // SQLite only supports ASCII compares
                         var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
                         var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", filenamestable));
@@ -159,6 +161,8 @@ namespace Duplicati.Library.Main.Database
                     
                         //TODO: Handle case-insensitive filename lookup
                         cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""PathEntryID"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""PathEntryID"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {1} A WHERE ""A"".""FilesetID"" = ? AND ""A"".""PathEntryID"" IN (SELECT DISTINCT ""ID"" FROM ""FullPathEntry"" WHERE ""PathX"" IN (SELECT ""Path"" FROM ""{2}"")) ", tablename, combined, filenamestable), filesetId);
+                        // TODO: Check if the pathentry sql is up-to-date
+                        //cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {1} A WHERE ""A"".""FilesetID"" = ? AND ""A"".""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{2}"") ", tablename, combined, filenamestable), filesetId);
                         cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", filenamestable));
                     }
                     else

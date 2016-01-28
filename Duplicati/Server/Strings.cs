@@ -25,6 +25,10 @@ Error message: {0}", error); }
         public static string PingpongkeepaliveLong { get { return LC.L(@"When running as a server, the service daemon must verify that the process is responding. If this option is enabled, the server reads stdin and writes a reply to each line read"); } }
         public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
         public static string LogretentionLong { get { return LC.L(@"Set the time after which log data will be purged from the database."); } }
+        public static string ServerdatafolderShort { get { return LC.L(@"Sets the folder where settings are stored"); } }
+        public static string ServerdatafolderLong(string envname) { return LC.L(@"Duplicati needs to store a small database with all settings. Use this option to choose where the settings are stored. This option can also be set with the environment variable {0}.", envname); }
+        public static string ServerencryptionkeyShort { get { return LC.L(@"Sets the database encryption key"); } }
+        public static string ServerencryptionkeyLong(string envname, string decryptionoption) { return LC.L(@"This option sets the encryption key used to scramble the local settings database. This option can also be set with the environment variable {0}. Use the option --{1} to disable the database scrambling.", envname, decryptionoption); }
     }
     internal static class TaskType {
         public static string FullBackup { get { return LC.L(@"Full backup"); } }

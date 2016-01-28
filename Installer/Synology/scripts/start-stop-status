@@ -1,0 +1,101 @@
+#!/bin/sh
+source /root/.profile  # Get Environment Variables from Root Profile
+
+# Package Varables
+PACKAGE_NAME_SIMPLE="@package_name_simple@" # "$(echo "$SYNOPKG_PKGNAME" | awk '{print tolower($0)}' | sed -e 's/ /_/g')"
+PACKAGE_DIR="@package_dir@" # "$SYNOPKG_PKGDEST"
+PACKAGE_UPGRADE_FLAG="@package_upgrade_flag@"
+
+# Start & Stop Varables
+PID_FILE="/var/run/${PACKAGE_NAME_SIMPLE}.pid"
+
+DaemonStart() {
+	DaemonStatus
+	if [ $? == 0 ]; then
+		echo "Starting ${PACKAGE_NAME_SIMPLE}."
+				
+		mono /volume1/@appstore/Duplicati2/Duplicati.Server.exe &
+		echo $! > "$PID_FILE"		
+	else
+		echo "${PACKAGE_NAME_SIMPLE} already running."
+	fi
+}
+
+DaemonDebug() {
+	DaemonStatus
+}
+
+DaemonStop() {
+	DaemonStatus
+	if [ $? == 1 ]; then
+		echo "Stopping ${PACKAGE_NAME_SIMPLE}."
+		kill $(cat "$PID_FILE");
+		rm -f "$PID_FILE"
+		
+		sleep 3
+	else
+		echo "Nothing to stop for ${PACKAGE_NAME_SIMPLE}."
+	fi
+}
+
+DaemonStatus() {
+	if [ -f "$PID_FILE" ]; then
+		PID=$(cat "$PID_FILE")
+		
+		if [ -n "$(ps | grep $PID | grep -vn "grep $PID")" ]; then
+			echo "${PACKAGE_NAME_SIMPLE} is running ..."
+			return 1  # is running
+		else
+			echo "${PACKAGE_NAME_SIMPLE} is NOT running ..."
+			rm -f ${PID_FILE}  # Remove Invalid PID
+			return 0  # is NOT running
+		fi
+	else
+		echo "${PACKAGE_NAME_SIMPLE} is NOT running ...."
+		return 0  # is NOT running
+	fi
+}
+
+case $1 in
+	start)
+		DaemonStart
+		sleep 1
+		DaemonStatus
+		exit $(( ! $? ))  # [ $? == 1 ] && exit 0 || exit 1  # this if statement flips the boolean outcome.
+	;;
+	stop)
+		DaemonStop
+		sleep 1
+		DaemonStatus
+		exit $?
+	;;
+	restart)
+		DaemonStop
+		sleep 10
+		DaemonStart
+		sleep 1
+		DaemonStatus
+		exit $(( ! $? ))  # this if statement flips the boolean outcome.
+	;;
+	status)
+		DaemonStatus
+		exit $(( ! $? ))  # this if statement flips the boolean outcome.
+	;;
+	debug)
+		DaemonDebug
+		exit 0
+	;;
+	log-show)
+		exit 0
+	;;
+	log-clear)
+		exit 0
+	;;
+	log)
+		exit 0
+	;;
+	*)
+		echo "Usage: $0 {start|stop|restart|status|debug|log|log-show|log-clear}"
+		exit 1
+	;;
+esac

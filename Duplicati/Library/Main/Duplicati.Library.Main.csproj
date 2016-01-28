@@ -108,6 +108,7 @@
     <Compile Include="Database\LocalListAffectedDatabase.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
+    <Compile Include="Operation\SystemInfoHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
@@ -142,6 +143,10 @@
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>
+    <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj">
+      <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
+      <Name>Duplicati.Library.UsageReporter</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -152,7 +157,8 @@
     <EmbeddedResource Include="Database\Database schema\1. Add index.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Use Lastmodified.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add grace delete period.sql" />
-    <EmbeddedResource Include="Database\Database schema\4. Reduce path storage.sql" />
+    <EmbeddedResource Include="Database\Database schema\4. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\5. Reduce path storage.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -38,7 +38,7 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly string[] MANIFEST_URLS = AutoUpdateSettings.URLs;
         private static readonly string APPNAME = AutoUpdateSettings.AppName;
 
-        internal static readonly string INSTALLDIR;
+        public static readonly string INSTALLDIR;
 
         private static readonly string INSTALLED_BASE_DIR = string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(INSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) ?
                                                         System.IO.Path.GetDirectoryName( Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
@@ -81,13 +81,17 @@ namespace Duplicati.Library.AutoUpdater
             string installdir = null;
             var attempts = new string[] {
                 System.IO.Path.Combine(InstalledBaseDir, "updates"),
-                System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), APPNAME, "updates"),
+
+                // Not defined on Non-Windows
+                string.IsNullOrWhiteSpace(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)) 
+                    ? null : System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), APPNAME, "updates"),
+
                 System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"),
                 System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"),
             };
 
             foreach(var p in attempts)
-                if (TestDirectoryIsWriteable(p))
+                if (!string.IsNullOrWhiteSpace(p) && TestDirectoryIsWriteable(p))
                 {
                     installdir = p;
                     break;
@@ -128,7 +132,7 @@ namespace Duplicati.Library.AutoUpdater
             SelfVersion = selfVersion;
         }
 
-        private static Version TryParseVersion(string str)
+        public static Version TryParseVersion(string str)
         {
             Version v;
             if (Version.TryParse(str, out v))
@@ -161,7 +165,7 @@ namespace Duplicati.Library.AutoUpdater
 
         private static bool TestDirectoryIsWriteable(string path)
         {
-            var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT));
+            var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture));
             var probe = System.IO.Directory.Exists(path) ? p2 : path;
 
             if (!System.IO.Directory.Exists(probe))
@@ -181,7 +185,7 @@ namespace Duplicati.Library.AutoUpdater
             return false;
         }
 
-        private static string InstallID
+        public static string InstallID
         {
             get
             { 

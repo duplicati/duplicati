@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Database
             var active = @"SELECT ""A"".""ActiveSize"" AS ""ActiveSize"",  0 AS ""InactiveSize"", ""A"".""VolumeID"" AS ""VolumeID"", CASE WHEN ""B"".""Sorttime"" IS NULL THEN 0 ELSE ""B"".""Sorttime"" END AS ""Sorttime"" FROM (" + usedBlocks + @") A LEFT OUTER JOIN (" + scantime + @") B ON ""B"".""VolumeID"" = ""A"".""VolumeID"" ";
             
 			var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
-            var empty = @"SELECT 0 AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Remotevolume"".""ID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""Remotevolume"" WHERE ""Remotevolume"".""Type"" = ? AND ""Remotevolume"".""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block"") ";
+            var empty = @"SELECT 0 AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Remotevolume"".""ID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""Remotevolume"" WHERE ""Remotevolume"".""Type"" = ? AND ""Remotevolume"".""State"" IN (?, ?) AND ""Remotevolume"".""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block"") ";
 			
 			var combined = active + " UNION " + inactive + " UNION " + empty;
 			var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""Sortime"") AS ""Sorttime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Main.Database
 				cmd.Transaction = transaction;
 				try
 				{
-					cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString());
+                    cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
 					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ", tmptablename)))
 						while (rd.Read())
                             yield return new VolumeUsage(rd.GetValue(0).ToString(), rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(3, 0));
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Database
 			{
 				m_report = report;
 				
-				m_cleandelete = (from n in m_report where n.DataSize <= n.WastedSize select n).ToArray();
+                m_cleandelete = (from n in m_report where n.DataSize <= n.WastedSize select n).ToArray();
 				m_wastevolumes = from n in m_report where ((((n.WastedSize / (float)n.DataSize) * 100) >= wastethreshold) || (((n.WastedSize / (float)volsize) * 100) >= wastethreshold)) && !m_cleandelete.Contains(n) select n;
 				m_smallvolumes = from n in m_report where n.CompressedSize <= smallfilesize && !m_cleandelete.Contains(n) select n;
 
@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Database
 				
 		public interface IBlockQuery : IDisposable
 		{
-			bool UseBlock(string hash, long size);
+            bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction);
 		}
 		
 		private class BlockQuery : IBlockQuery
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main.Database
 				m_command.AddParameters(2);
 			}
 			
-			public bool UseBlock(string hash, long size)
+            public bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction)
 			{
 				if (m_lookup != null)
 				{
@@ -308,6 +308,7 @@ namespace Duplicati.Library.Main.Database
                         return false;
 				}
 				
+                m_command.Transaction = transaction;
 				m_command.SetParameterValue(0, hash);	
 				m_command.SetParameterValue(1, size);
 				var r = m_command.ExecuteScalar();

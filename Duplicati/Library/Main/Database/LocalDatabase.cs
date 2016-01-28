@@ -118,8 +118,8 @@ namespace Duplicati.Library.Main.Database
 
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
-			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (?, ?, ?, ?, ?, ?); SELECT last_insert_rowid();";
-            m_createremotevolumeCommand.AddParameters(6);
+			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (?, ?, ?, ?, ?, ?, ?); SELECT last_insert_rowid();";
+            m_createremotevolumeCommand.AddParameters(7);
 
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
@@ -352,17 +352,22 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery("VACUUM");
         }
 
-        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, long size, RemoteVolumeState state)
         {
-            return RegisterRemoteVolume(name, type, state, new TimeSpan(0), null);
+            return RegisterRemoteVolume(name, type, state, size, new TimeSpan(0), null);
         }
 
         public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction)
         {
             return RegisterRemoteVolume(name, type, state, new TimeSpan(0), transaction);
         }
-            
+
         public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
+        {
+            return RegisterRemoteVolume(name, type, state, -1, deleteGraceTime, transaction);
+        }
+            
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
 		{
         	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
         	{
@@ -370,12 +375,13 @@ namespace Duplicati.Library.Main.Database
                 m_createremotevolumeCommand.SetParameterValue(1, name);
                 m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
                 m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
-                m_createremotevolumeCommand.SetParameterValue(4, 0);
+                m_createremotevolumeCommand.SetParameterValue(4, size);
+                m_createremotevolumeCommand.SetParameterValue(5, 0);
 
                 if (deleteGraceTime.Ticks <= 0)
-                    m_createremotevolumeCommand.SetParameterValue(5, 0);
+                    m_createremotevolumeCommand.SetParameterValue(6, 0);
                 else
-                    m_createremotevolumeCommand.SetParameterValue(5, (DateTime.UtcNow + deleteGraceTime).Ticks);
+                    m_createremotevolumeCommand.SetParameterValue(6, (DateTime.UtcNow + deleteGraceTime).Ticks);
                 
                 m_createremotevolumeCommand.Transaction = tr.Parent;
                 var r = m_createremotevolumeCommand.ExecuteScalarInt64();

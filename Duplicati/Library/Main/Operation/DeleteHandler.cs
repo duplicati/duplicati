@@ -41,28 +41,38 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, false))
-            using(var tr = db.BeginTransaction())
             {
-                m_result.SetDatabase(db);
-
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyParameters(db, m_options);
-                
-                DoRun(db, tr, false, false);
-                
-                if (!m_options.Dryrun)
+                var tr = db.BeginTransaction();
+                try
                 {
-                    using(new Logging.Timer("CommitDelete"))
-                        tr.Commit();
+                    m_result.SetDatabase(db);
+                    Utility.UpdateOptionsFromDb(db, m_options);
+                    Utility.VerifyParameters(db, m_options);
+                    
+                    DoRun(db, ref tr, false, false);
+                    
+                    if (!m_options.Dryrun)
+                    {
+                        using(new Logging.Timer("CommitDelete"))
+                            tr.Commit();
 
-                    db.WriteResults();
+                        db.WriteResults();
+                    }
+                    else
+                        tr.Rollback();
+
+                    tr = null;
                 }
-                else
-                    tr.Rollback();
+                finally
+                {
+                    if (tr != null)
+                        try { tr.Rollback(); }
+                        catch { }
+                }
             }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact)
+        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact)
         {		
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
@@ -74,17 +84,25 @@ namespace Duplicati.Library.Main.Operation
                 
                 if (toDelete != null && toDelete.Length > 0)
                     m_result.AddMessage(string.Format("Deleting {0} remote fileset(s) ...", toDelete.Length));
-                
-                var count = 0L;
-                foreach(var f in db.DropFilesetsFromTable(toDelete, transaction))
+
+                var lst = db.DropFilesetsFromTable(toDelete, transaction).ToArray();
+                foreach(var f in lst)
+                    db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, transaction);
+
+                if (!m_options.Dryrun)
+                {
+                    transaction.Commit();
+                    transaction = db.BeginTransaction();
+                }
+
+                foreach(var f in lst)
                 {
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     {
                         backend.WaitForComplete(db, transaction);
                         return;
-                    }    
-                    
-                    count++;
+                    }
+
                     if (!m_options.Dryrun)
                         backend.Delete(f.Key, f.Value);
                     else
@@ -93,6 +111,7 @@ namespace Duplicati.Library.Main.Operation
 				
                 backend.WaitForComplete(db, transaction);
 				
+                var count = lst.Length;
                 if (!m_options.Dryrun)
                 {
                     if (count == 0)
@@ -115,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
-                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, transaction);
+                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction);
                 }
 				
                 m_result.SetResults(

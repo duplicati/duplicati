@@ -128,7 +128,7 @@ namespace Duplicati.Server
                     {
                     }
 
-                    if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Program.DataConnection.ApplicationSettings.UpdatedVersion.Version != System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString())
+                    if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
                         Program.DataConnection.RegisterNotification(
                                     NotificationType.Information,

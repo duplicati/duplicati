@@ -20,9 +20,10 @@ using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server.WebServer
 {
-    internal class BodyWriter : System.IO.StreamWriter, IDisposable
+    public class BodyWriter : System.IO.StreamWriter, IDisposable
     {
         private HttpServer.IHttpResponse m_resp;
+        private string m_jsonp;
         private static object SUCCESS_RESPONSE = new { Status = "OK" };
 
         // We override the format provider so all JSON output uses US format
@@ -31,10 +32,16 @@ namespace Duplicati.Server.WebServer
             get { return System.Globalization.CultureInfo.InvariantCulture; }
         }
 
-        public BodyWriter(HttpServer.IHttpResponse resp)
+        public BodyWriter(HttpServer.IHttpResponse resp, HttpServer.IHttpRequest request)
+            : this(resp, request.QueryString["jsonp"].Value)
+        {
+        }
+
+        public BodyWriter(HttpServer.IHttpResponse resp, string jsonp)
             : base(resp.Body,  resp.Encoding)
         {
             m_resp = resp;
+            m_jsonp = jsonp;
         }
 
         protected override void Dispose (bool disposing)
@@ -64,7 +71,23 @@ namespace Duplicati.Server.WebServer
         {
             if (!m_resp.HeadersSent)
                 m_resp.ContentType = "application/json";
-            Serializer.SerializeJson(this, o);
+
+            using(this)
+            {
+                if (!string.IsNullOrEmpty(m_jsonp))
+                {
+                    this.Write(m_jsonp);
+                    this.Write('(');
+                }
+
+                Serializer.SerializeJson(this, o, true);
+
+                if (!string.IsNullOrEmpty(m_jsonp))
+                {
+                    this.Write(')');
+                    this.Flush();
+                }
+            }
         }
     }
 

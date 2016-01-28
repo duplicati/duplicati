@@ -254,7 +254,7 @@ namespace Duplicati.Library.Main.Database
 
                     var tablename = "TmpFile-" + Guid.NewGuid().ToString("N");
 
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT * FROM ""File""", tablename));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT * FROM ""File""", tablename));
 
                     var sql = @"SELECT ""A"".""ID"", ""B"".""BlocksetID"" FROM (SELECT MIN(""ID"") AS ""ID"", COUNT(""ID"") AS ""Duplicates"" FROM ""Metadataset"" GROUP BY ""BlocksetID"") ""A"", ""Metadataset"" ""B"" WHERE ""A"".""Duplicates"" > 1 AND ""A"".""ID"" = ""B"".""ID""";
 
@@ -274,7 +274,7 @@ namespace Duplicati.Library.Main.Database
                     using(var c2 = m_connection.CreateCommand())
                     {
                         c2.Transaction = tr;
-                        c2.CommandText = @"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)";
+                        c2.CommandText = string.Format(@"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""{0}"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)", tablename);
                         c2.CommandText += string.Format(@"; DELETE FROM ""{0}"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""ID"" != ?", tablename);
                         foreach(var rd in cmd.ExecuteReaderEnumerable(sql))
                             c2.ExecuteNonQuery(null, rd.GetValue(0), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(1), rd.GetValue(2), rd.GetValue(3), rd.GetValue(0));
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.Database
 
                     itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                     if (itemswithnoblocklisthash != 0)
-                        throw new Exception(string.Format("Failed to repair, after reapir {0} blocklisthashes were missing", itemswithnoblocklisthash));
+                        throw new Exception(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
 
                     m_result.AddMessage("Missing blocklisthashes repaired succesfully");
                     tr.Commit();
@@ -438,7 +438,7 @@ namespace Duplicati.Library.Main.Database
 
         }
 
-        public void FixDuplicateBlocklistHashes()
+        public void FixDuplicateBlocklistHashes(long blocksize, long hashsize)
         {
             using(var tr = m_connection.BeginTransaction())
             using(var cmd = m_connection.CreateCommand(tr))
@@ -475,6 +475,15 @@ namespace Duplicati.Library.Main.Database
 
                     if (real_count != unique_count)
                         throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
+
+                    try
+                    {
+                        VerifyConsistency(tr, blocksize, hashsize);
+                    }
+                    catch(Exception ex)
+                    {
+                        throw new Exception("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
+                    }
 
                     m_result.AddMessage("Duplicate blocklisthashes repaired succesfully");
                     tr.Commit();

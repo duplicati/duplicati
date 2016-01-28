@@ -16,7 +16,9 @@ GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 UPDATE_ZIP_URLS="http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest"
 UPDATER_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-release.key"
-XBUILD=/usr/bin/xbuild
+GPG_KEYFILE="/Users/kenneth/Dropbox/Privat/Duplicati-updater-gpgkey.key"
+XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
+GPG=/usr/local/bin/gpg2
 
 if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
 	echo "Changelog file is missing..."
@@ -64,6 +66,7 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 mono "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 ${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+
 ${XBUILD} /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
@@ -96,29 +99,52 @@ rm -rf "${UPDATE_SOURCE}/"*.pdb;
 echo
 echo "Building signed package ..."
 
-mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/preview.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="$KEYFILE_PASSWORD"
+mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/preview.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+
+if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
+	mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"	
+	
+	echo "Something went wrong while building the package, no output found"
+	exit 5
+fi
 
 echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
 mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
 mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
+mv "${UPDATE_TARGET}/package.zip.sig" "${UPDATE_TARGET}/latest.zip.sig"
+mv "${UPDATE_TARGET}/package.zip.sig.asc" "${UPDATE_TARGET}/latest.zip.sig.asc"
 cp "${UPDATE_TARGET}/latest.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
+cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
+cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
 
 echo "Uploading binaries"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
+aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig"
+aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig.asc"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.manifest"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/rene/latest.manifest"
 
+echo "To release, run:"
+echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/preview/latest.manifest"
+echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/preview/latest.zip"
+echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/preview/latest.zip.sig"
+echo aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/preview/latest.zip.sig.asc"
+
 ZIP_MD5=`md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}'`
+ZIP_SHA1=`shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
+ZIP_SHA256=`shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
+
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"
+
 git checkout "Duplicati/License/VersionTag.txt"
 git add "Updates/build_version.txt"
 git add "${RELEASE_CHANGELOG_FILE}"
-git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip"
-git tag "v${RELEASE_VERSION}-${RELEASE_NAME}" -m "md5 sum: ${ZIP_MD5}"
+git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip" -m "Signatures: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+git tag "v${RELEASE_VERSION}-${RELEASE_NAME}" -m "Binaries: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip" -m "Signature file: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: http://updates.duplicati.com/preview/${RELEASE_FILE_NAME}.zip.sig.asc" -m "md5 sum: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
 
 echo
 echo "Built PREVIEW version: ${RELEASE_VERSION} - ${RELEASE_NAME}"

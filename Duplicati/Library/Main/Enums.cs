@@ -41,7 +41,8 @@ namespace Duplicati.Library.Main
         CreateLogDb,
         Compact,
         Test,
-        TestFilters
+        TestFilters,
+        SystemInfo
     }
 
     /// <summary>

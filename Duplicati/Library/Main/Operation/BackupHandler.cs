@@ -685,7 +685,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                                 m_result.DeleteResults = new DeleteResults(m_result);
                                 using(var db = new LocalDeleteDatabase(m_database))
-                                    new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
+                                    new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
                                 
                             }
                             else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
@@ -693,7 +693,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                                 m_result.CompactResults = new CompactResults(m_result);
                                 using(var db = new LocalDeleteDatabase(m_database))
-                                    new CompactHandler(m_backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, m_transaction);
+                                    new CompactHandler(m_backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref m_transaction);
                             }
                         }
     		            
@@ -775,47 +775,55 @@ namespace Duplicati.Library.Main.Operation
 
         private Dictionary<string, string> GenerateMetadata(string path, System.IO.FileAttributes attributes)
         {
-            Dictionary<string, string> metadata;
-
-            if (m_options.StoreMetadata)
+            try
             {
-                metadata = m_snapshot.GetMetadata(path);
-                if (metadata == null)
+                Dictionary<string, string> metadata;
+
+                if (m_options.StoreMetadata)
+                {
+                    metadata = m_snapshot.GetMetadata(path);
+                    if (metadata == null)
+                        metadata = new Dictionary<string, string>();
+
+                    if (!metadata.ContainsKey("CoreAttributes"))
+                        metadata["CoreAttributes"] = attributes.ToString();
+
+                    if (!metadata.ContainsKey("CoreLastWritetime"))
+                    {
+                        try
+                        {
+                            metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                        }
+                        catch (Exception ex)
+                        {
+                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                        }
+                    }
+
+                    if (!metadata.ContainsKey("CoreCreatetime"))
+                    {
+                        try
+                        {
+                            metadata["CoreCreatetime"] = m_snapshot.GetCreationTimeUtc(path).Ticks.ToString();
+                        }
+                        catch (Exception ex)
+                        {
+                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                        }
+                    }
+                }
+                else
+                {
                     metadata = new Dictionary<string, string>();
-
-                if (!metadata.ContainsKey("CoreAttributes"))
-                    metadata["CoreAttributes"] = attributes.ToString();
-
-                if (!metadata.ContainsKey("CoreLastWritetime"))
-                {
-                    try
-                    {
-                        metadata["CoreLastWritetime"] = m_snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
-                    }
-                    catch (Exception ex)
-                    {
-                        m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
-                    }
                 }
 
-                if (!metadata.ContainsKey("CoreCreatetime"))
-                {
-                    try
-                    {
-                        metadata["CoreCreatetime"] = m_snapshot.GetCreationTimeUtc(path).Ticks.ToString();
-                    }
-                    catch (Exception ex)
-                    {
-                        m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
-                    }
-                }
+                return metadata;
             }
-            else
+            catch(Exception ex)
             {
-                metadata = new Dictionary<string, string>();
+                m_result.AddWarning(string.Format("Failed to process metadata for \"{0}\", storing empty metadata", path), ex);
+                return new Dictionary<string, string>();
             }
-
-            return metadata;
         }
         
         private bool HandleFilesystemEntry(string path, System.IO.FileAttributes attributes)

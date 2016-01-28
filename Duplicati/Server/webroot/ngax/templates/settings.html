@@ -1,0 +1,62 @@
+<div class="settings" ng-controller="SystemSettingsController">
+    <h1>Settings</h1>
+    
+    <form class="styled">
+        <h2>Access to user interface</h2>
+        <div class="input mixed multiple">
+            <input type="checkbox" class="checkbox" id="hasPassword" name="hasPassword" ng-model="requireRemotePassword" />
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" ng-model="remotePassword" />
+        </div>
+        <div class="input checkbox">
+            <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
+            <label for="remote">Allow remote access (requires restart)</label>
+        </div>
+        
+        <h2>Pause after startup or hibernation<span class="info">i</span></h2>
+        <div class="input mixed multiple">
+            <label for="pauseTime">Pause</label>
+            <select id="pauseTime" name="pauseTime" ng-model="startupDelayDurationValue">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+            </select>
+            <select id="pauseFormat" name="pauseFormat" ng-model="startupDelayDurationMultiplier">
+                <option value="s">Seconds</option>
+                <option value="m">Minutes</option>
+                <option value="h">Hours</option>
+            </select>
+        </div>
+        
+        <h2>Donation messages</h2>
+        <div class="input checkbox">
+            <label for="suppresDonationMessages">Donation messages</label>
+            <a href ng-click="suppressDonationMessages()" ng-show="!SystemInfo.SuppressDonationMessages">Donation messages are visible, click to hide</a>
+            <a href ng-click="displayDonationMessages()" ng-show="SystemInfo.SuppressDonationMessages">Donation messages are hidden, click to show</a>
+        </div>
+                    
+        <h2>Default options</h2>
+        <div class="input textarea" ng-show="ShowAdvancedTextArea">
+            <label for="backupOptions">Options</label>
+            <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">Edit as list</a>
+            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+        </div>
+
+        <div class="input" ng-hide="ShowAdvancedTextArea">
+            <label for="backupOptions">Options</label>
+            <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle">Edit as text</a>
+            <advanced-options-editor ng-option-list="advancedOptionList" ng-model="advancedOptions"></advanced-options-editor>
+        </div>
+        
+        <div class="buttons">
+            <a href="#" id="cancel" class="submit">Cancel</a>
+            <input type="button" id="save" class="submit" value="Ok" ng-click="save()" />
+        </div>
+    </form>
+</div>

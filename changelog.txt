@@ -1,3 +1,113 @@
+2016-01-27
+==========
+- Added option for more thorough verification during remote volume test
+- Added support for backing up the filesystem root ( i.e. / ), thanks @mach-o
+- Added fixes to ensure that a failed rebuild of a database cannot be used
+- Added an update to SharpCompress to fix a special case where some bytes could be lost on extraction
+- Updated the NGAX UI with the latest fixes from Alexander
+
+2016-01-12
+==========
+* Fixed the autoupdate popup
+* Added feature to suppress donation messages
+* Fixed an issue with PARSEDRESULT being empty in emails
+* Fixed an issue with paths that contains spaces not being listed for restore
+* Added support for modifying filters through scripts and the parameters file
+* Added check for duplicate files from the backend and updated Google Drive to not report multiple versions of the same file
+* Fixed an unhelpful error message when authid was not supplied
+* Added workaround for Mono 2.11 where get_DefinedTypes is missing
+
+2015-12-17
+==========
+* Bugfix for Backblaze backend
+* Added faster fail for OAuth backends with wrong credentials
+
+2015-12-14
+==========
+* Fixed a few issues with the new theme
+* Added a system info page in the new theme
+
+2015-12-08
+==========
+* New favicon
+* Numerous fixes to the ngax theme
+* Method for editing path to local database
+
+2015-12-07
+==========
+* Added signed GPG signatures to each build
+* Fixed an issue with notifications
+* Numerous fixes and additions to the ngax UI
+* Added Amazon Cloud Drive backend
+* Added Backblaze Cloud Storage backend
+* Added Mega.co.nz backend
+* Added Box.com backend
+
+2015-11-30
+==========
+* Added a check after repairing to test if more damages are done than fixed
+* Implemented correct escaping of environment variables when used in regular expressions
+* Improved the Greeno WebUI when picking file paths
+* Added the new Angular code and the UI by Alexander
+* Added a theme switcher
+
+2015-11-18
+==========
+* Improved CLI output when there are no results
+* Fixed a filtering issue with case-sensitive systems
+* Improved restore by guessing the encryption and compression modules based on their filenames
+* Improved robustness by checking if a file really exists when the server returns 404
+* Fixed an issue where a deleted file would be repeatedly attempted verified
+* Improvements to various CLI inputs
+* Added a fix for a bug where pausing the server would keep it paused
+* Bugfixes for the REST API
+* Added some indexes to speed up the restore process
+* Fixed a bug where backing up a folder and a subfolder would lead to all files being excluded
+* Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
+* Added mentions of the mozroots utility on Linux in various places
+* Added the storage-class option to S3
+
+2015-09-15
+==========
+* Improved use of non-default --oauth-url
+* Bugfixes to the REST API
+* Improved checks when repairing the database
+* Improved handling of tmpdir
+* Improved handling the tilde charater in input paths
+* Fixed a bug with relative paths and the recovery tool
+* Improved handling of RESULT template item in email templates
+* Fixed multiple locations where the system calendar was affecting the date format
+* Added more system info, and a system-info CLI command
+* Added a --force-locale option to force another locale
+* Fixed an issue with restoring, which would give "No filesets found on remote target"
+
+2015-08-24
+==========
+* Fixes to improve the use of the OAuth handler
+* Added a REST API
+* Changed access mode when reading files to not prevent concurrent write access
+* Added a recovery tool as a slower, but more robust restore method
+* Fixed an issue with recreating a partial database that would record missing file sizes in the database.
+* Fixed an issue where a recreated database would miss some files and repair for an extensive period of time.
+* Fixed an issue where repair would fail if the files were decrypted
+
+2015-07-02
+==========
+* Added handling for WebDAV timeouts
+* Updated list of compressed file extensions
+* Improved speed of searching without a local database
+* Improved speed of restore without a local database
+* Improved Web UI
+* Fixed issues with loading SQLite on newer versions of Mono
+* Added status code to email and XMPP messages
+* Fixed an issue with non-ascii filenames
+* Fixed an issue with crashes caused by incomplete remote file data
+* Added Google Drive backend and removed Google Docs backend
+* Added BITS transfer of large files to OneDrive
+* Added Google Cloud Storage backend
+* Added an OpenStack backend
+* Added HubiC backend
+
 2015-03-07
 ==========
 * Fixed an issue with file-length not being set correctly when restoring into an existing file
