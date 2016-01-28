@@ -33,6 +33,8 @@ namespace Duplicati.Library.Main.Database
         
         public bool IsDisposed { get; private set; }
 
+        public readonly object AccessLock = new object();
+
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
         	path = System.IO.Path.GetFullPath(path);

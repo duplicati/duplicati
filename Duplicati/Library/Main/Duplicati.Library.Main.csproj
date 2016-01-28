@@ -45,6 +45,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
+    <Reference Include="CoCoL">
+      <HintPath>..\..\..\thirdparty\CoCoL\CoCoL.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Options.cs" />
@@ -109,6 +112,10 @@
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
     <Compile Include="Operation\SystemInfoHandler.cs" />
+    <Compile Include="Operation\Backup\FileEnumerationProcess.cs" />
+    <Compile Include="Operation\Backup\MetadataPreProcess.cs" />
+    <Compile Include="Operation\Backup\FileSplitterProcess.cs" />
+    <Compile Include="Operation\Backup\MetadataGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
@@ -171,5 +178,8 @@
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Operation\Backup\" />
   </ItemGroup>
 </Project>
