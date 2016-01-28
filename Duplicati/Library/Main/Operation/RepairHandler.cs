@@ -393,7 +393,7 @@ namespace Duplicati.Library.Main.Operation
                 db.SetResult(m_result);
                 db.FixDuplicateMetahash();
                 db.FixDuplicateFileentries();
-                db.FixDuplicateBlocklistHashes();
+                db.FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize);
                 db.FixMissingBlocklistHashes(m_options.BlockHashAlgorithm, m_options.Blocksize);
             }
         }

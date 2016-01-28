@@ -57,15 +57,61 @@ namespace Duplicati.Library.Modules.Builtin
         }
         #endregion
 
+        #region IWebModule implementation
+
+        private const string KEY_CONFIGTYPE = "mono-ssl-config";
+        private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.List;
+
+        private enum ConfigType
+        {
+            List,
+            Install
+        }
+
+
         public IDictionary<string, string> Execute(IDictionary<string, string> options)
         {
+            string k;
+            options.TryGetValue(KEY_CONFIGTYPE, out k);
+
+            ConfigType ct;
+            if (!Enum.TryParse<ConfigType>(k, true, out ct))
+                ct = DEFAULT_CONFIG_TYPE;
+
             var d = new Dictionary<string, string>();
-            d["count"] = CheckForInstalledCerts().ToString();
-            d["mono"] = Library.Utility.Utility.IsMono.ToString();
-            d["message"] = Strings.CheckMonoSSL.ErrorMessage;
+
+            switch (ct)
+            {
+                case ConfigType.Install:
+
+                    try
+                    {
+                        var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "mozroots.exe");
+                        var pi = new System.Diagnostics.ProcessStartInfo(path, "--import --sync --quiet");
+                        pi.UseShellExecute = false;
+                        var p = System.Diagnostics.Process.Start(pi);
+                        p.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds);
+                    }
+                    catch(Exception ex)
+                    {
+                        d["error"] = ex.ToString();
+                    }
+
+                    d["count"] = CheckForInstalledCerts().ToString();
+                    break;
+
+                case ConfigType.List:
+                default:
+                    d["count"] = CheckForInstalledCerts().ToString();
+                    d["mono"] = Library.Utility.Utility.IsMono.ToString();
+                    d["message"] = Strings.CheckMonoSSL.ErrorMessage;
+                    break;
+            }
 
             return d;
         }
+
+        #endregion
     }
 }
 

@@ -41,12 +41,12 @@ namespace Duplicati.Library.Utility
             return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
                 if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    m_filters.Add(new Library.Utility.FilterExpression(value, true));
+                    m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), true));
                     return false;
                 }
                 else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    m_filters.Add(new Library.Utility.FilterExpression(value, false));
+                    m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
                     return false;
                 }
 

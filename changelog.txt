@@ -1,3 +1,72 @@
+2016-01-27
+==========
+- Added option for more thorough verification during remote volume test
+- Added support for backing up the filesystem root ( i.e. / ), thanks @mach-o
+- Added fixes to ensure that a failed rebuild of a database cannot be used
+- Added an update to SharpCompress to fix a special case where some bytes could be lost on extraction
+- Updated the NGAX UI with the latest fixes from Alexander
+
+2016-01-12
+==========
+* Fixed the autoupdate popup
+* Added feature to suppress donation messages
+* Fixed an issue with PARSEDRESULT being empty in emails
+* Fixed an issue with paths that contains spaces not being listed for restore
+* Added support for modifying filters through scripts and the parameters file
+* Added check for duplicate files from the backend and updated Google Drive to not report multiple versions of the same file
+* Fixed an unhelpful error message when authid was not supplied
+* Added workaround for Mono 2.11 where get_DefinedTypes is missing
+
+2015-12-17
+==========
+* Bugfix for Backblaze backend
+* Added faster fail for OAuth backends with wrong credentials
+
+2015-12-14
+==========
+* Fixed a few issues with the new theme
+* Added a system info page in the new theme
+
+2015-12-08
+==========
+* New favicon
+* Numerous fixes to the ngax theme
+* Method for editing path to local database
+
+2015-12-07
+==========
+* Added signed GPG signatures to each build
+* Fixed an issue with notifications
+* Numerous fixes and additions to the ngax UI
+* Added Amazon Cloud Drive backend
+* Added Backblaze Cloud Storage backend
+* Added Mega.co.nz backend
+* Added Box.com backend
+
+2015-11-30
+==========
+* Added a check after repairing to test if more damages are done than fixed
+* Implemented correct escaping of environment variables when used in regular expressions
+* Improved the Greeno WebUI when picking file paths
+* Added the new Angular code and the UI by Alexander
+* Added a theme switcher
+
+2015-11-18
+==========
+* Improved CLI output when there are no results
+* Fixed a filtering issue with case-sensitive systems
+* Improved restore by guessing the encryption and compression modules based on their filenames
+* Improved robustness by checking if a file really exists when the server returns 404
+* Fixed an issue where a deleted file would be repeatedly attempted verified
+* Improvements to various CLI inputs
+* Added a fix for a bug where pausing the server would keep it paused
+* Bugfixes for the REST API
+* Added some indexes to speed up the restore process
+* Fixed a bug where backing up a folder and a subfolder would lead to all files being excluded
+* Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
+* Added mentions of the mozroots utility on Linux in various places
+* Added the storage-class option to S3
+
 2015-09-15
 ==========
 * Improved use of non-default --oauth-url

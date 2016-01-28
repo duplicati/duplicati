@@ -21,14 +21,25 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// A special stream that does on-the-fly MD5 calculations
     /// </summary>
-    class MD5CalculatingStream : Utility.OverrideableStream
+    public class MD5CalculatingStream : HashCalculatingStream
     {
-        private System.Security.Cryptography.MD5 m_hash;
+        public MD5CalculatingStream(System.IO.Stream basestream)
+            : base(basestream, "MD5")
+        {
+        }
+    }
+
+    /// <summary>
+    /// A special stream that does on-the-fly hash calculations
+    /// </summary>
+    public class HashCalculatingStream : OverrideableStream
+    {
+        private System.Security.Cryptography.HashAlgorithm m_hash;
         private byte[] m_finalHash = null;
 
         bool m_hasRead = false;
@@ -37,10 +48,15 @@ namespace Duplicati.Library.Backend
         private byte[] m_hashbuffer = null;
         private int m_hashbufferLength = 0;
 
-        public MD5CalculatingStream(System.IO.Stream basestream)
+        public HashCalculatingStream(System.IO.Stream basestream, string hashalgorithm)
+            : this(basestream, System.Security.Cryptography.HashAlgorithm.Create(hashalgorithm))
+        {
+        }
+
+        public HashCalculatingStream(System.IO.Stream basestream, System.Security.Cryptography.HashAlgorithm algorithm)
             : base(basestream)
         {
-            m_hash = (System.Security.Cryptography.MD5)System.Security.Cryptography.HashAlgorithm.Create("MD5");
+            m_hash = algorithm;
             m_hash.Initialize();
             m_hashbuffer = new byte[m_hash.InputBlockSize];
         }
@@ -117,7 +133,7 @@ namespace Duplicati.Library.Backend
 
         public string GetFinalHashString()
         {
-            return Utility.Utility.ByteArrayAsHexString(this.GetFinalHash());
+            return Utility.ByteArrayAsHexString(this.GetFinalHash());
         }
 
         public byte[] GetFinalHash()

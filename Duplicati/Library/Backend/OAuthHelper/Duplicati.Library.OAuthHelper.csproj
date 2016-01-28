@@ -42,6 +42,7 @@
     <Compile Include="OAuthHelper.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="JSONWebHelper.cs" />
+    <Compile Include="MultipartItem.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

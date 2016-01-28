@@ -84,7 +84,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 CommandRunner command;
 
-                actions.TryGetValue(args.FirstOrDefault(), out command);
+                actions.TryGetValue(args.FirstOrDefault() ?? "", out command);
 
                 command = command ?? actions["help"];
 

@@ -364,6 +364,27 @@ namespace Duplicati.Server.Database
             AddOrUpdateBackup(item, true, schedule);
         }
 
+        internal void UpdateBackupDBPath(IBackup item, string path)
+        {
+            lock(m_lock)
+            using(var tr = m_connection.BeginTransaction())
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = tr;
+                cmd.Parameters.Add(cmd.CreateParameter());
+                ((System.Data.IDbDataParameter)cmd.Parameters[0]).Value = path;
+                cmd.Parameters.Add(cmd.CreateParameter());
+                ((System.Data.IDbDataParameter)cmd.Parameters[1]).Value = item.ID;
+
+                cmd.CommandText = @"UPDATE ""Backup"" SET ""DBPath""=? WHERE ""ID""=?";
+                cmd.ExecuteNonQuery();
+                tr.Commit();
+            }
+            
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+            Program.StatusEventNotifyer.SignalNewEvent();
+        }
+
         private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule schedule)
         {
             lock(m_lock)
@@ -497,7 +518,7 @@ namespace Duplicati.Server.Database
                         NormalizeDateTimeToEpochSeconds(n.Time),
                         n.Repeat,
                         NormalizeDateTimeToEpochSeconds(n.LastRun),
-                        n.Rule,
+                        n.Rule ?? "",
                         update ? (object)item.ID : null
                     });
                     

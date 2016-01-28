@@ -111,7 +111,7 @@ Usage: restore <storage-URL> ["<filename>"] [<options>]
   
   Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
-  --overwrite=<boolen>
+  --overwrite=<boolean>
     Overwrites existing files.
   --restore-path=<string>
     Restores files to <restore-path> instead of their original destination. Top folders are removed if possible.
@@ -209,6 +209,7 @@ Usage: test <storage-URL> [<samples>] [<options>]
   
 # =============================================================================
 > duplicati.commandline.exe help test-filters
+> duplicati.commandline.exe help test-filter
 
 Usage: test-filters <source-path> [<options>]
   
@@ -332,11 +333,10 @@ Options:
 
 
 # =============================================================================
-> duplicati.commandline.exe help skydrive
+> duplicati.commandline.exe help onedrive
 
-Duplicati can use Windows Live Skydrive to store backups. The following target URL format is used:
-  skydrive://folder/subfolder
-Please note that there is no official API and accessing SkyDrive through this backend may violate the ToS and may stop to work if Microsoft decides to change the API.
+Duplicati can use Microsoft Onedrive to store backups. The following target URL format is used:
+  onedrive://folder/subfolder
 
 Options:
 %MODULEOPTIONS%
@@ -375,6 +375,8 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
   Globbing: *.txt
   Regex: [.*test\.txt]
 
+Inside scripts and the commandline --parameters-file, where multiple filters are supplied with a single option, filters must be prefixed with either a plus (+) or a (-), for include and exclude respectively. Example:
+  +*.txt%PATH_SEPARATOR%-[.*\.xyz]%PATH_SEPARATOR%+*
 
 
 # =============================================================================

@@ -1,8 +1,10 @@
 # Duplicati
 Store securely encrypted backups on cloud storage services!
 
+[![Build Status](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/pr)](http://www.issuestats.com/github/duplicati/duplicati/)
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
+
 
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
@@ -27,6 +29,10 @@ The latest version of Duplicati is a preview for the Duplicati 2.0 release.
 [Click here to download the latest Duplicati 2.0 preview release.](http://updates.duplicati.com/preview/latest.zip)
 
 The preview release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
+
+As of version 2.0.0.93, all releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The [latest signature file](http://updates.duplicati.com/preview/latest.zip) and [latest ASCII signature file](http://updates.duplicati.com/preview/latest.zip.sig.asc) are also available.
+
+For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases).
 
 Features
 ========

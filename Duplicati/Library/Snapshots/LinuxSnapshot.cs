@@ -35,11 +35,6 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public class LinuxSnapshot : ISnapshotService
     {
-        /// <summary>
-        /// A frequently used char-as-string
-        /// </summary>
-        protected readonly string DIR_SEP = System.IO.Path.DirectorySeparatorChar.ToString();
-
         protected readonly SystemIOLinux _sysIO = new SystemIOLinux();
         
         /// <summary>
@@ -460,7 +455,7 @@ namespace Duplicati.Library.Snapshots
         public string GetSymlinkTarget(string file)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return UnixSupport.File.GetSymlinkTarget(local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local);
+            return UnixSupport.File.GetSymlinkTarget(System.IO.Path.GetFullPath(local));
         }
 
         /// <summary>
@@ -481,7 +476,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public bool IsBlockDevice(string file)
         {
-            var n = UnixSupport.File.GetFileType(file.EndsWith(DIR_SEP) ? file.Substring(0, file.Length - 1) : file);
+            var n = UnixSupport.File.GetFileType(System.IO.Path.GetFullPath(file));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -501,7 +496,7 @@ namespace Duplicati.Library.Snapshots
         public string HardlinkTargetID(string path)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path);
-            local = local.EndsWith(DIR_SEP) ? local.Substring(0, local.Length - 1) : local;
+            local = System.IO.Path.GetFullPath(local);
             
             if (UnixSupport.File.GetHardlinkCount(local) <= 1)
                 return null;

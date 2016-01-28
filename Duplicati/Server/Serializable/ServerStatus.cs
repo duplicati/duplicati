@@ -76,6 +76,21 @@ namespace Duplicati.Server.Serializable
         {
             get { return (from n in Program.Scheduler.WorkerQueue where n.Backup != null select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList(); }
         }
+
+        public IList<Tuple<string, DateTime>> ProposedSchedule
+        {
+            get
+            {
+                return (
+                    from n in Program.Scheduler.Schedule
+                                let backupid = (from t in n.Value.Tags
+                                                where t != null && t.StartsWith("ID=")
+                                                select t.Substring("ID=".Length)).FirstOrDefault()
+                                where !string.IsNullOrWhiteSpace(backupid)
+                                select new Tuple<string, DateTime>(backupid, n.Key)
+                ).ToList();
+            }
+        }
         
         public bool HasWarning { get { return Program.DataConnection.ApplicationSettings.UnackedWarning; } }
         public bool HasError { get { return Program.DataConnection.ApplicationSettings.UnackedError; } }

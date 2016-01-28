@@ -35,12 +35,19 @@ namespace Duplicati.Library.Main.Operation
             if (System.IO.File.Exists(path))
                 throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
 
-            using(var db = new LocalDatabase(path, "Recreate"))
+            using(var tf = new Duplicati.Library.Utility.TempFile())
             {
-                m_result.SetDatabase(db);
-                DoRun(db, false, filter, filelistfilter, blockprocessor);
-                db.WriteResults();
+                using(var db = new LocalDatabase(tf, "Recreate"))
+                {
+                    m_result.SetDatabase(db);
+                    DoRun(db, false, filter, filelistfilter, blockprocessor);
+                    db.WriteResults();
+                }
+
+                System.IO.File.Move(tf, path);
             }
+
+
         }
 
         /// <summary>
@@ -155,6 +162,15 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
                     var progress = 0;
+
+                    // Register the files we are working with, if not already updated
+                    if (updating)
+                    {
+                        foreach(var n in filelists)
+                            if (volumeIds[n.File.Name] == -1)
+                                volumeIds[n.File.Name] = restoredb.RegisterRemoteVolume(n.File.Name, n.FileType, RemoteVolumeState.Uploaded, n.File.Size, new TimeSpan(0), tr);
+                    }
+                                
 
                     foreach(var entry in new AsyncDownloader(filelistWork, backend))
                         try

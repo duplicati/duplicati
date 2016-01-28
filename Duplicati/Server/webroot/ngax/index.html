@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:ng="http://angularjs.org" ng-app="backupApp">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Duplicati</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
+	<link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png">
+	<link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png">
+	<link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png">
+	<link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png">
+	<link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
+	<link rel="icon" type="image/png" sizes="192x192"  href="favicon/android-icon-192x192.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+	<link rel="manifest" href="favicon/manifest.json">
+	<meta name="msapplication-TileColor" content="#ffffff">
+	<meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png">
+	<meta name="theme-color" content="#ffffff">
+
+	<link rel="stylesheet" type="text/css" href="styles/smoothness/jquery-ui.min.css">
+    <link rel="stylesheet" type="text/css" href="styles/styles2.css">
+    <link rel="stylesheet" type="text/css" href="styles/style.css">
+    <link rel="stylesheet" type="text/css" href="styles/oem.css" />
+    <link rel="stylesheet" type="text/css" href="../customized/customized.css" />
+
+    <script type="text/javascript" src="scripts/libs/oldbrowsersupport.js"></script>
+    <script type="text/javascript" src="scripts/libs/cryptojs.js"></script>
+    <script type="text/javascript" src="scripts/libs/zxcvbn.js"></script>
+
+    <script type="text/javascript" src="scripts/libs/jquery.min.js"></script>
+    <script type="text/javascript" src="scripts/libs/jquery-ui.min.js"></script>
+
+    <script type="text/javascript" src="scripts/angular/angular.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-route.min.js"></script>
+
+    <script type="text/javascript" src="scripts/angular/angular-loader.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-animate.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-cookies.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-resource.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-sanitize.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-touch.min.js"></script>
+
+    <script type="text/javascript" src="scripts/libs/modal.min.js"></script>
+    <script type="text/javascript" src="scripts/libs/dxTree.js"></script>
+
+	<script type="text/javascript" src="scripts/app.js"></script>
+	<script type="text/javascript" src="scripts/menu.js"></script>
+	
+	<script type="text/javascript" src="scripts/services/AppUtils.js"></script>
+	<script type="text/javascript" src="scripts/services/BrandingService.js"></script>
+	<script type="text/javascript" src="scripts/services/BackupList.js"></script>
+	<script type="text/javascript" src="scripts/services/AppService.js"></script>
+	<script type="text/javascript" src="scripts/services/ServerStatus.js"></script>
+	<script type="text/javascript" src="scripts/services/Localization.js"></script>
+	<script type="text/javascript" src="scripts/services/SystemInfo.js"></script>
+	<script type="text/javascript" src="scripts/services/EditUriBackendConfig.js"></script>
+	<script type="text/javascript" src="scripts/services/EditUriBuiltins.js"></script>
+	<script type="text/javascript" src="scripts/services/NotificationService.js"></script>
+	<script type="text/javascript" src="scripts/services/DialogService.js"></script>
+
+	<script type="text/javascript" src="scripts/controllers/AppController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/AboutController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/StateController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/SystemSettingsController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/HomeController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/EditBackupController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/PauseController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/RestoreController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/RestoreDirectController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/LogController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/ExportController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/ImportController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/UpdateChangelogController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/DialogController.js"></script>
+	<script type="text/javascript" src="scripts/controllers/LocalDatabaseController.js"></script>
+
+	<script type="text/javascript" src="scripts/filters/localize.js"></script>
+	<script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
+	<script type="text/javascript" src="scripts/filters/highlight.js"></script>
+	<script type="text/javascript" src="scripts/filters/parsetimestamp.js"></script>
+
+	<script type="text/javascript" src="scripts/directives/backupEditUri.js"></script>
+	<script type="text/javascript" src="scripts/directives/sourceFolderPicker.js"></script>
+	<script type="text/javascript" src="scripts/directives/targetFolderPicker.js"></script>
+	<script type="text/javascript" src="scripts/directives/parseFilterType.js"></script>
+	<script type="text/javascript" src="scripts/directives/parseSizeNumber.js"></script>
+	<script type="text/javascript" src="scripts/directives/parseAdvancedOption.js"></script>
+	<script type="text/javascript" src="scripts/directives/stringArrayAsText.js"></script>
+	<script type="text/javascript" src="scripts/directives/waitArea.js"></script>
+	<script type="text/javascript" src="scripts/directives/restoreFilePicker.js"></script>
+	<script type="text/javascript" src="scripts/directives/keyboardHandlers.js"></script>
+	<script type="text/javascript" src="scripts/directives/notificationArea.js"></script>
+	<script type="text/javascript" src="scripts/directives/progressBar.js"></script>
+	<script type="text/javascript" src="scripts/directives/advancedOptionsEditor.js"></script>
+
+	<script type="text/javascript" src="scripts/oem.js"></script>
+    <script type="text/javascript" src="../customized/customized.js"></script>
+
+</head>
+<body ng-controller="AppController">
+     
+	<div class="container">
+	    <div class="header">
+	        <div class="logo">
+	            <a href="#/" class="home">{{appName}}</a>
+	        </div>
+	        
+	        <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
+	            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank">{{'Donate' | localize}}</a>
+	            <ul>
+	                <li>
+	                    <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="Donate with Bitcoins" /></a>
+	                </li>
+	                <li>
+	                    <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="Donate with PayPal" /></a>
+	                </li>
+	            </ul>
+	        </div>
+            
+	        <a href class="menubutton hidden" data-target="mainmenu">{{'Menu' | localize}}</a>
+	    </div>
+
+	    <div class="body">
+	        <div class="mainmenu menu" id="mainmenu">
+	            <ul>
+	                <li>
+	                    <a href="#/add" class="add">{{'Add new backup' | localize}}</a>
+	                </li>
+	                <li>
+	                    <a href="#/restoredirect" class="restore">{{'Restore backup' | localize}}</a>
+	                </li>
+	                <li>
+	                    <a href="#/pause" id="pause" class="pause">{{'Pause' | localize}}</a>
+	                </li>
+	                <li>
+	                    <a href="#/settings" class="settings">{{'Settings' | localize}}</a>
+	                </li>
+	                <li>
+	                    <a href="#/log" class="log">{{'Show log' | localize}}</a>
+	                </li>
+
+	            </ul>
+	        </div>
+	        
+	        <div ng-view class="content">
+	        </div>
+	    </div>
+	    
+	    <div class="footer">
+	        <div class="about-footer">
+	            <ul>
+	                <li>
+	                    <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank">{{'Support' | localize}}</a>
+	                </li>
+	                <li>
+	                    <a href="#/about">{{'About' | localize}}</a>
+	                </li>
+	            </ul>
+	        </div>
+	        
+	        <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
+	            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank">{{'Donate' | localize}}</a>
+	            <ul>
+	                <li>
+	                    <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="Donate with Bitcoins" /></a>
+	                </li>
+	                <li>
+	                    <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="Donate with PayPal" /></a>
+	                </li>
+	            </ul>
+	        </div>	
+	        
+	        <div class="social">
+	            {{'Visit us on' | localize}}
+	            <ul>
+	                <li>
+	                    <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" /></a>
+	                </li>
+	                <li>
+	                    <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" /></a>
+	                </li>
+	                <li>
+	                    <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" /></a>
+	                </li>
+	            </ul>
+	        </div>
+
+	        <div class="themelink">
+                <a href="../theme.html">Change&nbsp;theme</a>
+            </div>
+	    </div>
+	</div>
+
+	<notification-area></notification-area>
+
+	<div ng-controller="DialogController">
+		<div ng-show="state.CurrentItem != null" class="blocker" ng-click=""></div>
+
+		<div ng-show="state.CurrentItem != null" class="modal-dialog">
+			<div class="info">
+				<div class="title">{{state.CurrentItem.title}}</div>
+				<div class="content">{{state.CurrentItem.message}}</div>
+				<div class="content buttons">
+					<ul>
+						<li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)" >{{btn}}</a></li>
+					</ul>
+				</div>
+			</div>			
+		</div>
+	</div>
+
+	<div ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
+
+	<div ng-show="state.connectionState != 'connected'" class="connection-lost">
+		<div class="info">
+			<div class="title">Connection lost</div>
+			<div class="content" ng-show="state.connectionState !='connecting'">
+				The connection to the server is lost, attempting again in {{ state.connectionAttemptTimer + 1000 | timeremaining }} ...
+			</div>
+			<div class="content" ng-hide="state.connectionState !='connecting'">
+				Connnecting to server ...
+			</div>
+			<div class="content buttons">
+				<a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button">Connect now</a>
+				<a href ng-hide="state.connectionState != 'connecting'" class="button" style="cursor: default;">Connecting...</a>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

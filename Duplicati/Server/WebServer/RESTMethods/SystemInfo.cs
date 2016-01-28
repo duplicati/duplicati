@@ -21,7 +21,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class SystemInfo : IRESTMethodGET, IRESTMethodDocumented
+    public class SystemInfo : IRESTMethodGET, IRESTMethodPOST, IRESTMethodDocumented
     {
         public string Description { get { return "Gets various system properties"; } }
         public IEnumerable<KeyValuePair<string, Type>> Types
@@ -37,6 +37,27 @@ namespace Duplicati.Server.WebServer.RESTMethods
         public void GET(string key, RequestInfo info)
         {
             info.BodyWriter.OutputOK(SystemData);            
+        }
+
+        public void POST(string key, RequestInfo info)
+        {
+            var input = info.Request.Form;
+            switch ((key ?? "").ToLowerInvariant())
+            {
+                case "suppressdonationmessages":
+                    Library.Main.Utility.SuppressDonationMessages = true;
+                    info.OutputOK();
+                    return;
+
+                case "showdonationmessages":
+                    Library.Main.Utility.SuppressDonationMessages = false;
+                    info.OutputOK();
+                    return;
+
+                default:
+                    info.ReportClientError("No such action", System.Net.HttpStatusCode.NotFound);
+                    return;
+            }
         }
 
         private static object SystemData
@@ -73,7 +94,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     WebModules = Serializable.ServerSettings.WebModules,
                     ConnectionModules = Serializable.ServerSettings.ConnectionModules,
                     UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
-                    LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))
+                    LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)),
+                    SuppressDonationMessages = Duplicati.Library.Main.Utility.SuppressDonationMessages
                 };
             }
         }

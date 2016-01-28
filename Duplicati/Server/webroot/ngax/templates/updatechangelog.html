@@ -1,0 +1,16 @@
+<div ng-controller="UpdateChangelogController">
+    <h1>Changelog for {{appName}} {{Version || '-unknown-'}}</h1>
+
+    <div>
+        Current version is {{systeminfo.ServerVersionName}} ({{systeminfo.ServerVersion}})
+    </div>
+
+    <div class="prewrapped-text">{{ChangeLog || 'Loading ...'}}</div>
+
+    <div class="buttons">
+        <a href class="button" ng-show="serverstate.UpdaterState == 'Waiting' &amp;&amp; serverstate.UpdatedVersion != null" ng-click="doInstall()">Install</a>
+        <a href class="button" ng-show="serverstate.UpdateReady" ng-click="doActivate()">Activate</a>
+    </div>
+
+
+</div>

@@ -74,8 +74,14 @@ namespace Duplicati.UnitTest
         /// <param name="target">The target destination for the backups</param>
         public static void RunTest(string[] folders, Dictionary<string, string> options, string target)
         {
-            LogHelper log = new LogHelper("unittest.log");
-            Log.CurrentLog = log; ;
+            var oldlog = Log.CurrentLog as IDisposable;
+            Log.CurrentLog = null;
+            if (oldlog != null)
+                try { oldlog.Dispose(); }
+                catch { }
+
+            LogHelper log = new LogHelper(string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now)));
+            Log.CurrentLog = log;
             Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
 
             string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
@@ -365,7 +371,13 @@ namespace Duplicati.UnitTest
                 		continue;
                 		
                 	Log.WriteMessage(string.Format("Found left-over temp file: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
-                	Console.WriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), TempFile.GetStackTraceForTempFile(System.IO.Path.GetFileName(s)));
+                	Console.WriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), 
+#if DEBUG
+                        TempFile.GetStackTraceForTempFile(System.IO.Path.GetFileName(s))
+#else
+                        System.IO.Path.GetFileName(s)
+#endif
+                    );
                 }
                 
                 foreach(string s in Utility.EnumerateFolders(tempdir))

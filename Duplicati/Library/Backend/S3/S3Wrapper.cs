@@ -35,10 +35,10 @@ namespace Duplicati.Library.Backend
         private const int ITEM_LIST_LIMIT = 1000;
 
         protected string m_locationConstraint;
-        protected bool m_useRRS;
+        protected string m_storageClass;
 		protected AmazonS3Client m_client;
 
-        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, bool useRRS, bool useSSL)
+        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL)
         {
             AmazonS3Config cfg = new AmazonS3Config();
 
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Backend
             m_client = new Amazon.S3.AmazonS3Client(awsID, awsKey, cfg);
 
             m_locationConstraint = locationConstraint;
-            m_useRRS = useRRS;
+            m_storageClass = storageClass;
         }
 
         public void AddBucket(string bucketName)
@@ -98,7 +98,8 @@ namespace Duplicati.Library.Backend
             objectAddRequest.BucketName = bucketName;
             objectAddRequest.Key = keyName;
             objectAddRequest.InputStream = source;
-            objectAddRequest.StorageClass = m_useRRS ? S3StorageClass.ReducedRedundancy : S3StorageClass.Standard;
+            if (!string.IsNullOrWhiteSpace(m_storageClass))
+                objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
             m_client.PutObject(objectAddRequest);
         }

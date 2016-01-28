@@ -78,7 +78,10 @@ namespace Duplicati.Server.Database
                     m_values.Clear();
 
                 foreach(var k in newsettings)
-                    m_values[k.Key] = newsettings[k.Key];
+                    if (!clearExisting && newsettings[k.Key] == null && k.Key.StartsWith("--"))
+                        m_values.Remove(k.Key);
+                    else
+                        m_values[k.Key] = newsettings[k.Key];
 
                 SaveSettings();
             }

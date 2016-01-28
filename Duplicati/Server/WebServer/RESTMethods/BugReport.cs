@@ -29,7 +29,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var tf = Program.DataConnection.GetTempFiles().Where(x => x.ID == id).FirstOrDefault();
             if (tf == null)
             {
-                info.ReportClientError("Invalid or missing backup id");
+                info.ReportClientError("Invalid or missing bugreport id");
                 return;
             }
 

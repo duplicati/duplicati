@@ -54,6 +54,21 @@ REM will be ignored:
 REM echo "Hello! -- test, this line is ignored"
 REM echo "--new-option=""This will be a setting"""
 
+REM Filters are supplied in the DUPLICAT__FILTER variable.
+REM The variable contains all filters supplied with --include and --exclude,
+REM combined into a single string, separated with semicolon (;).
+REM Filters set with --include will be prefixed with a plus (+),
+REM and filters set with --exclude will be prefixed with a minus (-).
+REM
+REM Example:
+REM     --include=*.txt --exclude=[.*\.abc] --include=*
+REM 
+REM Will be encoded as:
+REM     DUPLICATI__FILTER=+*.txt;-[.*\.abc];+*
+REM
+REM You can set the filters by writing --filter=<new filter> to stdout.
+REM You may want to append to the existing filter like this:
+REM     echo "--filter=+*.123;%DUPLICATI__FILTER%;-*.xyz"
 
 
 REM ###############################################################################

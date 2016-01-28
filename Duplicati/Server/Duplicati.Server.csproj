@@ -120,8 +120,7 @@
     <Compile Include="WebServer\RESTMethods\Task.cs" />
     <Compile Include="WebServer\RESTMethods\WebModule.cs" />
     <Compile Include="WebServer\RESTMethods\WebModules.cs" />
-    <Compile Include="SQLite.cs" />
-    <Compile Include="SQLiteAsync.cs" />
+    <Compile Include="WebServer\RESTMethods\Licenses.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -253,6 +252,26 @@
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
       <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>
       <Name>Duplicati.CommandLine.RecoveryTool</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj">
+      <Project>{08D7E42D-285C-4010-9881-986125FE2F3E}</Project>
+      <Name>Duplicati.Library.Backend.AmazonCloudDrive</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj">
+      <Project>{61C43D61-4368-4942-84A3-1EB623F4EF2A}</Project>
+      <Name>Duplicati.Library.Backend.Backblaze</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj">
+      <Project>{6643A5AE-AB38-453F-ADCE-408E35A81A83}</Project>
+      <Name>Duplicati.Library.Backend.Mega</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj">
+      <Project>{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}</Project>
+      <Name>Duplicati.Library.Backend.Box</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
+      <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
+      <Name>Duplicati.Library.UsageReporter</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

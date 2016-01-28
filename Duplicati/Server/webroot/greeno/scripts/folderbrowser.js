@@ -20,6 +20,7 @@ $(document).ready(function() {
 
         self.rootel.attr('title', config.title);
         self.resolvePath = config.resolvePath;
+        self.multiSelect = config.multiSelect;
 
         self.loadData = function(path, callback) {
             $.ajax({
@@ -88,9 +89,12 @@ $(document).ready(function() {
                     } else {
                         self.loadData(node.original.filepath, callback);
                     }
-                }
+                },               
+               'multiple' : self.multiSelect
             },
             'dnd': { copy: false },
+            'checkbox' : { visible: self.multiSelect, three_state: self.multiSelect },
+            'plugins': ["checkbox"]
         });
 
         self.rootel.dialog({
