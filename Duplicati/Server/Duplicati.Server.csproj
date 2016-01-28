@@ -58,8 +58,11 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="HttpServer">
-      <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
+    <Reference Include="Nancy">
+      <HintPath>..\..\packages\Nancy.1.4.1\lib\net40\Nancy.dll</HintPath>
+    </Reference>
+    <Reference Include="Nancy.Hosting.Self">
+      <HintPath>..\..\packages\Nancy.Hosting.Self.1.4.1\lib\net40\Nancy.Hosting.Self.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -82,7 +85,6 @@
     <Compile Include="SpecialFolders.cs" />
     <Compile Include="WebServer\AuthenticationHandler.cs" />
     <Compile Include="WebServer\Server.cs" />
-    <Compile Include="WebServer\BodyWriter.cs" />
     <Compile Include="WebServer\IndexHtmlHandler.cs" />
     <Compile Include="WebServer\ControlHandler.cs" />
     <Compile Include="UpdatePollThread.cs" />
@@ -91,10 +93,8 @@
     <Compile Include="Database\TempFile.cs" />
     <Compile Include="Serializable\ImportExportStructure.cs" />
     <Compile Include="Strings.cs" />
-    <Compile Include="WebServer\RESTHandler.cs" />
     <Compile Include="WebServer\RESTMethods\IRESTMethod.cs" />
     <Compile Include="WebServer\RESTMethods\SystemInfo.cs" />
-    <Compile Include="WebServer\RESTMethods\RequestInfo.cs" />
     <Compile Include="WebServer\RESTMethods\Backups.cs" />
     <Compile Include="WebServer\RESTMethods\ServerState.cs" />
     <Compile Include="WebServer\RESTMethods\ProgressState.cs" />
@@ -120,6 +120,8 @@
     <Compile Include="WebServer\RESTMethods\Task.cs" />
     <Compile Include="WebServer\RESTMethods\WebModule.cs" />
     <Compile Include="WebServer\RESTMethods\WebModules.cs" />
+    <Compile Include="SQLite.cs" />
+    <Compile Include="SQLiteAsync.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -129,6 +131,7 @@
     <EmbeddedResource Include="Database\Database schema\1. Add Notifications.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">

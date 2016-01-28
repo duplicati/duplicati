@@ -16,36 +16,24 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using Nancy;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class Acknowledgements : IRESTMethodGET, IRESTMethodDocumented
+    public class Acknowledgements : NancyModule
     {
-        private class GetResponse
+        public Acknowledgements()
         {
-            public string Status;
-            public string Acknowledgements;
-        }
-
-        public void GET(string key, RequestInfo info)
-        {
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "acknowledgements.txt");
-            info.OutputOK(new GetResponse() {
-                Status = "OK",
-                Acknowledgements = System.IO.File.ReadAllText(path)
-            });            
-        }
-        public string Description { get { return "Gets all acknowledgements"; } }
-
-        public IEnumerable<KeyValuePair<string, Type>> Types
-        {
-            get
+            Get[Server.API_V1_PREFIX + "/acknowledgements"] = _ =>
             {
-                return new KeyValuePair<string, Type>[] {
-                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(GetResponse)),
-                };
-            }
+                var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "acknowledgements.txt");
+                return Response.AsJson(new {
+                    Status = "OK",
+                    Acknowledgements = System.IO.File.ReadAllText(path)
+                });
+            };
         }
+        
     }
 }
 

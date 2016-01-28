@@ -20,11 +20,89 @@ using Duplicati.Server.Serialization;
 using System.IO;
 using System.Linq;
 using Duplicati.Server.Serialization.Interface;
+using Nancy;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class Backup : IRESTMethodGET, IRESTMethodPUT, IRESTMethodPOST, IRESTMethodDELETE, IRESTMethodDocumented
+    public class Backup : NancyModule
     {
+        private class ClientException : Exception 
+        {
+            public ClientException(string message)
+                : base(message)
+            {
+            }
+        }
+
+        private IBackup GetBackup(string id) 
+        {
+            var bk = Program.DataConnection.GetBackup(id);
+            if (bk == null)
+                throw new ClientException("Invalid backup ID");
+            return bk;
+        }
+
+        public Backup()
+        {
+            Get[Server.API_V1_PREFIX + "/backup/{id}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                var scheduleId = Program.DataConnection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
+                var schedule = scheduleId.Any() ? Program.DataConnection.GetSchedule(scheduleId.First()) : null;
+                var sourcenames = SpecialFolders.GetSourceNames(bk);
+
+                //TODO: Filter out the password in both settings and the target url
+
+                Response.AsJson(new GetResponse()
+                {
+                    success = true,
+                    data = new GetResponse.GetResponseData() {
+                        Schedule = schedule,
+                        Backup = bk,
+                        DisplayNames = sourcenames
+                    }
+                });
+            };
+
+
+            Get[Server.API_V1_PREFIX + "/backup/{id}/files/{filter*}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                SearchFiles(bk, param.filter as string);
+            };
+                
+            Get[Server.API_V1_PREFIX + "/backup/{id}/log}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                FetchLogData(bk);
+            };
+
+            Get[Server.API_V1_PREFIX + "/backup/{id}/remotelog}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                FetchRemoteLogData(bk);
+            };
+
+            Get[Server.API_V1_PREFIX + "/backup/{id}/filesets}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                ListFileSets(bk);
+            };
+
+            Get[Server.API_V1_PREFIX + "/backup/{id}/export}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                Export(bk);
+            };
+
+            Get[Server.API_V1_PREFIX + "/backup/{id}/isactive}"] = param =>
+            {
+                var bk = GetBackup(param.id as string);
+                IsActive(bk);
+            };
+
+        }
+
         public class GetResponse
         {
             public class GetResponseData
@@ -39,20 +117,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
             public GetResponseData data;
         }
 
-        private void SearchFiles(IBackup backup, string filterstring, RequestInfo info)
+        private void SearchFiles(IBackup backup, string filterstring)
         {
             var filter = (filterstring ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
-            var timestring = info.Request.QueryString["time"].Value;
-            var allversion = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["all-versions"].Value, false);
+            var timestring = Request.Query["time"] as string;
+            var allversion = Duplicati.Library.Utility.Utility.ParseBool(Request.Query["all-versions"] as string, false);
 
             if (string.IsNullOrWhiteSpace(timestring) && !allversion)
-            {
-                info.ReportClientError("Invalid or missing time");
-                return;
-            }
+                throw new ClientException("Invalid or missing time");
 
-            var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["prefix-only"].Value, false);
-            var foldercontents = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["folder-contents"].Value, false);
+            var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(Request.Query["prefix-only"] as string, false);
+            var foldercontents = Duplicati.Library.Utility.Utility.ParseBool(Request.Query["folder-contents"] as string, false);
             var time = new DateTime();
             if (!allversion)
                 time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
@@ -61,29 +136,28 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             var result = new Dictionary<string, object>();
 
-            foreach(HttpServer.HttpInputItem n in info.Request.QueryString)
+            foreach(var n in Request.Query)
                 result[n.Name] = n.Value;
 
             result["Filesets"] = r.Filesets;
             result["Files"] = r.Files;
 
-            info.OutputOK(result);
-
+            Response.AsJson(result);
         }
 
-        private void ListFileSets(IBackup backup, RequestInfo info)
+        private void ListFileSets(IBackup backup)
         {
-            var input = info.Request.QueryString;
+            var input = Request.Query;
             var extra = new Dictionary<string, string>();
             extra["list-sets-only"] = "true";
             if (input["include-metadata"].Value != null)
-                extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value, false)).ToString();
+                extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value as string, false)).ToString();
             if (input["from-remote-only"].Value != null)
-                extra["no-local-db"] = Library.Utility.Utility.ParseBool(input["from-remote-only"].Value, false).ToString();
+                extra["no-local-db"] = Library.Utility.Utility.ParseBool(input["from-remote-only"].Value as string, false).ToString();
 
             var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, backup, extra), false) as Duplicati.Library.Interface.IListResults;
 
-            info.OutputOK(r.Filesets);
+            Response.AsJson(r.Filesets);
         }
 
         private void FetchLogData(IBackup backup, RequestInfo info)
