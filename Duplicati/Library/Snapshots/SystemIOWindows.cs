@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.AccessControl;
+using System.IO;
 
 
 namespace Duplicati.Library.Snapshots
@@ -176,7 +177,7 @@ namespace Duplicati.Library.Snapshots
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), Alphaleonis.Win32.Filesystem.FileMode.Open, Alphaleonis.Win32.Filesystem.FileAccess.Read, Alphaleonis.Win32.Filesystem.FileShare.ReadWrite);
+            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         }
 
         public System.IO.Stream FileOpenWrite(string path)
@@ -199,7 +200,7 @@ namespace Duplicati.Library.Snapshots
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), Alphaleonis.Win32.Filesystem.FileMode.OpenOrCreate, Alphaleonis.Win32.Filesystem.FileAccess.ReadWrite, Alphaleonis.Win32.Filesystem.FileShare.Read);
+            return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
         }
 
         public System.IO.Stream FileCreate(string path)
@@ -233,7 +234,7 @@ namespace Duplicati.Library.Snapshots
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
-            Alphaleonis.Win32.Filesystem.File.SetAttributes(PrefixWithUNC(path), (Alphaleonis.Win32.Filesystem.FileAttributes)attributes);
+            Alphaleonis.Win32.Filesystem.File.SetAttributes(PrefixWithUNC(path), (FileAttributes)attributes);
         }
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)

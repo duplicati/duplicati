@@ -44,13 +44,14 @@
       <HintPath>..\..\..\..\thirdparty\DnsLite\DnsLib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Net" />
-    <Reference Include="System.Xml" />
-    <Reference Include="agsXMPP">
-      <HintPath>..\..\..\..\thirdparty\agsXMPP\agsXMPP.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Security" />
+    <Reference Include="agsXMPP">
+      <HintPath>..\..\..\..\packages\agsXMPP.1.1.1.0\lib\agsXMPP.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsolePasswordInput.cs" />
@@ -93,6 +94,7 @@
       <Link>mozroots.exe</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -98,9 +98,9 @@ namespace Duplicati.Library.Backend
                 //This allows the use of containers that have names that are not valid hostnames, 
                 // such as container names with spaces in them
                 if (u.Host.Equals(DUMMY_HOSTNAME))
-                    m_path = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+                    m_path = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
                 else
-                    m_path = u.Host + System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+                    m_path = u.Host + Library.Utility.Uri.UrlDecode(u.PathAndQuery);
             }
             else
             {
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Backend
                 repeat = lst.Count == ITEM_LIST_LIMIT;
 
                 if (repeat)
-                    markerUrl = "&marker=" + System.Web.HttpUtility.UrlEncode(lastItemName);
+                    markerUrl = "&marker=" + Library.Utility.Uri.UrlEncode(lastItemName);
 
             } while (repeat);
 
@@ -423,7 +423,7 @@ namespace Duplicati.Library.Backend
 
         private string UrlEncode(string value)
         {
-            return System.Web.HttpUtility.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
+            return Library.Utility.Uri.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
         }
     }
 }
