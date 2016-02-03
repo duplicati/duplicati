@@ -843,6 +843,7 @@ span.info
                     left: auto;
                     right: 0;
                     top: 0;
+                    z-index: 1000;
                 }
                 
                 .content
@@ -1169,15 +1170,18 @@ span.info
                 
                 .donate
                 {
-                    border-bottom: none;
-                    
                     ul
                     {
-                        border-top: 1px #ddd solid;
-                        
                         li
                         {
-                            margin-left: 0;
+                            display: inline-block;
+                            border: none;
+                            margin: 0 5px;
+                            
+                            a img
+                            {
+                                margin-top: 0;
+                            }
                         }
                     }
                 }
