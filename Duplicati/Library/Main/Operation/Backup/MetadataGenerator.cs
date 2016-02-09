@@ -18,12 +18,13 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using CoCoL;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    public static class MetadataGenerator
+    internal static class MetadataGenerator
     {
-        private async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, IWriteChannel<LogMessage> logchannel)
+        public async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, IWriteChannel<LogMessage> logchannel)
         {
             try
             {

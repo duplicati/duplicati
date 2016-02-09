@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -43,20 +44,23 @@ namespace Duplicati.Library.Main.Operation.Backup
         [ChannelName("LogChannel")]
         private IWriteChannel<LogMessage> m_logchannel;
 
+        [ChannelName("ProgressChannel")]
+        private IWriteChannel<ProgressEvent> m_progresschannel;
+
         [ChannelName("ProcessedFiles")]
         private IWriteChannel<FileEntry> m_output;
 
         [ChannelName("OutputBlocks")]
-        private IWriteChannel<FileSplitterProcess.DataBlock> m_blockoutput;
+        private IWriteChannel<DataBlock> m_blockoutput;
 
 
         private Snapshots.ISnapshotService m_snapshot;
         private Options m_options;
-        private Database.LocalBackupDatabase m_database;
+        private BackupDatabase m_database;
         private readonly IMetahash EMPTY_METADATA;
         private int m_blocksize;
 
-        public MetadataPreProcess(Snapshots.ISnapshotService snapshot, Options options, Database.LocalBackupDatabase database)
+        public MetadataPreProcess(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database)
             : base()
         {
             m_snapshot = snapshot;
@@ -123,20 +127,16 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private async Task<bool> AddFolderToOutput(string filename, DateTime lastModified, IMetahash meta)
+        private async Task AddFolderToOutput(string filename, DateTime lastModified, IMetahash meta)
         {
-            long metadataid;
-            bool r = false;
+            long metadataid = -1;
 
             if (meta.Size > m_blocksize)
                 throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
 
-            r |= await FileSplitterProcess.DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            lock(m_database.AccessLock)
-                r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
-
-            m_database.AddDirectoryEntry(filename, metadataid, lastModified, m_transaction);
-            return r;
+            await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
+            await m_database.AddMetadatasetAsync(meta.Hash, meta.Size, ref metadataid);
+            await m_database.AddDirectoryEntryAsync(filename, metadataid, lastModified);
         }
 
         /// <summary>
@@ -148,21 +148,16 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private async Task<bool> AddSymlinkToOutput(string filename, DateTime lastModified, IMetahash meta)
+        private async Task AddSymlinkToOutput(string filename, DateTime lastModified, IMetahash meta)
         {
-            long metadataid;
-            bool r = false;
+            long metadataid = -1;
 
             if (meta.Size > m_blocksize)
                 throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
 
-            r |= await FileSplitterProcess.DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            lock(m_database.AccessLock)
-                r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
-
-            lock(m_database.AccessLock)
-                m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction);
-            return r;
+            await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
+            await m_database.AddMetadatasetAsync(meta.Hash, meta.Size, ref metadataid);
+            await m_database.AddSymlinkEntryAsync(filename, metadataid, lastModified);
         }
 
         protected override async Task Start()
@@ -193,20 +188,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                         await m_logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to read attributes on \"{0}\"", path), ex));
                     }
 
-
                     // If we only have metadata, stop here
                     if (await ProcessMetadata(path, attributes, lastwrite))
                     {
                         try
                         {
-                            DateTime oldModified;
+                            DateTime oldModified = new DateTime(0);
                             long lastFileSize = -1;
-                            string oldMetahash;
-                            long oldMetasize;
+                            string oldMetahash = null;
+                            long oldMetasize = -1;
 
-                            long oldId;
-                            lock(m_database.AccessLock)
-                                oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                            var oldId = await m_database.GetFileEntryAsync(path, ref oldModified, ref lastFileSize, ref oldMetahash, ref oldMetasize);
 
                             await m_output.WriteAsync(new FileEntry() {
                                 OldId = oldId,

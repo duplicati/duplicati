@@ -114,8 +114,20 @@
     <Compile Include="Operation\SystemInfoHandler.cs" />
     <Compile Include="Operation\Backup\FileEnumerationProcess.cs" />
     <Compile Include="Operation\Backup\MetadataPreProcess.cs" />
-    <Compile Include="Operation\Backup\FileSplitterProcess.cs" />
     <Compile Include="Operation\Backup\MetadataGenerator.cs" />
+    <Compile Include="Operation\Common\LogMessage.cs" />
+    <Compile Include="Operation\Common\ProgressEvent.cs" />
+    <Compile Include="Operation\Backup\FileBlockProcessor.cs" />
+    <Compile Include="Operation\Backup\DataBlock.cs" />
+    <Compile Include="Operation\Backup\FilePreFilterProcess.cs" />
+    <Compile Include="Operation\Backup\DataBlockProcessor.cs" />
+    <Compile Include="Operation\Common\BackendOperation.cs" />
+    <Compile Include="Operation\BackendProcess.cs" />
+    <Compile Include="Operation\Backup\SpillCollectorProcess.cs" />
+    <Compile Include="Operation\Backup\BackupDatabase.cs" />
+    <Compile Include="Operation\Common\DatabaseCommon.cs" />
+    <Compile Include="Operation\Common\SingleRunner.cs" />
+    <Compile Include="Operation\Common\BackendHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
@@ -181,5 +193,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Operation\Backup\" />
+    <Folder Include="Operation\Common\" />
   </ItemGroup>
 </Project>

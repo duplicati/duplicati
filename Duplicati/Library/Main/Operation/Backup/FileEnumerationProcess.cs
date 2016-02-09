@@ -20,70 +20,16 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    public struct LogMessage
-    {
-        public Logging.LogMessageType Level;
-        public string Message;
-        public Exception Exception;
-        public bool IsVerbose;
-
-        public static LogMessage Warning(string message, Exception ex)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Warning,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Error(string message, Exception ex)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Error,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Profiling(string message, Exception ex)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Profiling,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Information(string message, Exception ex = null)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Information,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Verbose(string message, params object[] args)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Information,
-                Message = string.Format(message, args),
-                IsVerbose = true
-            };
-        }
-
-    }
-
-
     /// <summary>
     /// The file enumeration process takes a list of source folders as input,
     /// applies all filters requested and emits the filtered set of filenames
     /// to its output channel
     /// </summary>
-    public class FileEnumerationProcess : ProcessHelper
+    internal class FileEnumerationProcess : ProcessHelper
     {
         private Snapshots.ISnapshotService m_snapshot;
         private FileAttributes m_attributeFilter;
@@ -244,50 +190,46 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         protected override async Task Start()
         {
-            using(var chan = ((IChannel<string>)FilenameOutput).AsWriteOnly())
+            // If we have a specific list, use that instead of enumerating the filesystem
+            IEnumerable<string> worklist;
+            if (m_changedfilelist != null && m_changedfilelist.Length > 0)
             {
-
-                // If we have a specific list specified, use that instead of enumerating the filesystem
-                IEnumerable<string> worklist;
-                if (m_changedfilelist != null && m_changedfilelist.Length > 0)
+                worklist = m_changedfilelist.Where(x =>
                 {
-                    worklist = m_changedfilelist.Where(x =>
+                    var fa = FileAttributes.Normal;
+                    try
                     {
-                        var fa = FileAttributes.Normal;
-                        try
-                        {
-                            fa = m_snapshot.GetAttributes(x);
-                        }
-                        catch
-                        {
-                        }
+                        fa = m_snapshot.GetAttributes(x);
+                    }
+                    catch
+                    {
+                    }
 
-                        return AttributeFilter(null, x, fa);
-                    });
-                }
-                else
-                {
-                    worklist = m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter);
-                }
-
-
-                // Process each path, and dequeue the mixins with symlinks as we go
-                foreach(var s in worklist)
-                {
-                    while (m_mixinqueue.Count > 0)
-                        await chan.WriteAsync(m_mixinqueue.Dequeue());
-
-                    Library.Utility.IFilter m;
-                    if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
-                        continue;
-
-                    await chan.WriteAsync(s);
-                }
-
-                // Trailing symlinks are caught here
-                while (m_mixinqueue.Count > 0)
-                    await chan.WriteAsync(m_mixinqueue.Dequeue());
+                    return AttributeFilter(null, x, fa);
+                });
             }
+            else
+            {
+                worklist = m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter);
+            }
+
+
+            // Process each path, and dequeue the mixins with symlinks as we go
+            foreach(var s in worklist)
+            {
+                while (m_mixinqueue.Count > 0)
+                    await m_output.WriteAsync(m_mixinqueue.Dequeue());
+
+                Library.Utility.IFilter m;
+                if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
+                    continue;
+
+                await m_output.WriteAsync(s);
+            }
+
+            // Trailing symlinks are caught here
+            while (m_mixinqueue.Count > 0)
+                await m_output.WriteAsync(m_mixinqueue.Dequeue());
         }
     }
 }
