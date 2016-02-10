@@ -215,6 +215,9 @@ backupApp.directive('restoreFilePicker', function() {
 
                         cur = p;
                         p = findParent(p);
+
+                        if (p == null && all && !$scope.ngSearchMode)
+                            $scope.ngSelected.push(cur.id);
                     }
 
                 } else {
