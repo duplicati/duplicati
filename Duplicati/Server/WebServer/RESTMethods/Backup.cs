@@ -83,7 +83,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, backup, extra), false) as Duplicati.Library.Interface.IListResults;
 
-            info.OutputOK(r.Filesets);
+            if (r.EncryptedFiles && backup.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.InvariantCultureIgnoreCase)))
+                info.ReportServerError("encrypted-storage");
+            else
+                info.OutputOK(r.Filesets);
         }
 
         private void FetchLogData(IBackup backup, RequestInfo info)
