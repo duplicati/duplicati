@@ -33,7 +33,7 @@ backupApp.directive('restoreFilePicker', function() {
                 if (!node.children && !node.loading) {
                     node.loading = true;
 
-                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp)).then(function(data) {
+                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent(node.id)).then(function(data) {
                         var children = []
                         var dirsep = scope.systeminfo.DirectorySeparator || '/';
 

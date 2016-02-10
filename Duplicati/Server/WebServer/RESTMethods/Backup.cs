@@ -320,7 +320,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     switch (operation)
                     {
                         case "files":
-                            SearchFiles(bk, parts.Last().Split(new char[] { '/' }, 2).Skip(1).FirstOrDefault(), info);
+                            var filter = parts.Last().Split(new char[] { '/' }, 2).Skip(1).FirstOrDefault();
+                            if (!string.IsNullOrWhiteSpace(info.Request.QueryString["filter"].Value))
+                                filter = info.Request.QueryString["filter"].Value;
+                            SearchFiles(bk, filter, info);
                             return;
                         case "log":
                             FetchLogData(bk, info);
