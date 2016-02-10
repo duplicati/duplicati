@@ -668,7 +668,8 @@ namespace Duplicati.Library.Main
     {
         private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;
         private IEnumerable<Duplicati.Library.Interface.IListResultFile> m_files;
-        
+        public bool EncryptedFiles { get; set; }
+
         public void SetResult(IEnumerable<Duplicati.Library.Interface.IListResultFileset> filesets, IEnumerable<Duplicati.Library.Interface.IListResultFile> files)
         {
             m_filesets = filesets;

@@ -81,10 +81,11 @@ namespace Duplicati.Library.Main.Operation
                 if (filteredList.Count == 0)
                     throw new Exception("No filesets found on remote target");
 
-                var numberSeq =  CreateResultSequence(filteredList);
+                var numberSeq = CreateResultSequence(filteredList);
                 if (parsedfilter.Type == Library.Utility.FilterType.Empty)
                 {
                     m_result.SetResult(numberSeq, null);
+                    m_result.EncryptedFiles = filteredList.Any(x => !string.IsNullOrWhiteSpace(x.Value.EncryptionModule));
                     return;
                 }
                 

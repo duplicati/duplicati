@@ -85,6 +85,7 @@ namespace Duplicati.Library.Interface
     {
         IEnumerable<IListResultFileset> Filesets { get; }
         IEnumerable<IListResultFile> Files { get; }
+        bool EncryptedFiles { get; }
     }
 
     public interface IListAffectedResults : IBasicResults

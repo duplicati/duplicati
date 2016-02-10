@@ -35,19 +35,12 @@ namespace Duplicati.Library.Main.Operation
             if (System.IO.File.Exists(path))
                 throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
 
-            using(var tf = new Duplicati.Library.Utility.TempFile())
+            using(var db = new LocalDatabase(path, "Recreate"))
             {
-                using(var db = new LocalDatabase(tf, "Recreate"))
-                {
-                    m_result.SetDatabase(db);
-                    DoRun(db, false, filter, filelistfilter, blockprocessor);
-                    db.WriteResults();
-                }
-
-                System.IO.File.Move(tf, path);
+                m_result.SetDatabase(db);
+                DoRun(db, false, filter, filelistfilter, blockprocessor);
+                db.WriteResults();
             }
-
-
         }
 
         /// <summary>

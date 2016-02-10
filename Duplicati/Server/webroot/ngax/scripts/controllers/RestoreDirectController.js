@@ -67,6 +67,9 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
                 if (resp.data != null && resp.data.Message != null)
                     message = resp.data.Message;
 
+                if (message == 'encrypted-storage')
+                    message = 'The target folder contains encrypted files, please supply the passphrase';
+
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
                 DialogService.dialog('Error', 'Failed to connect: ' + message);

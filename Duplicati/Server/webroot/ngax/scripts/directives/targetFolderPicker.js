@@ -28,6 +28,7 @@ backupApp.directive('destinationFolderPicker', function() {
 
         function setIconCls(n) {
             var cp = compareablePath(n.id);
+            var dirsep = scope.systeminfo.DirectorySeparator || '/';
 
             if (cp == compareablePath('%MY_DOCUMENTS%'))
                 n.iconCls = 'x-tree-icon-mydocuments';
@@ -39,8 +40,6 @@ backupApp.directive('destinationFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-desktop';
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
-            else if (defunctmap[cp])
-                n.iconCls = 'x-tree-icon-broken';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
         }
