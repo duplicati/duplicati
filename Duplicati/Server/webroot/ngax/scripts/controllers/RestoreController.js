@@ -200,7 +200,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.doSearch = function() {
-        if ($scope.Searching || $scope.restore_step != 1)
+        if ($scope.Searching || $scope.restore_step != 0)
             return;
 
         if (($scope.SearchFilter || '').trim().length == 0) {
