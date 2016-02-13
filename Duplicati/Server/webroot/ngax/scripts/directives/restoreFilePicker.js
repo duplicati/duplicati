@@ -33,7 +33,7 @@ backupApp.directive('restoreFilePicker', function() {
                 if (!node.children && !node.loading) {
                     node.loading = true;
 
-                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp)).then(function(data) {
+                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent(node.id)).then(function(data) {
                         var children = []
                         var dirsep = scope.systeminfo.DirectorySeparator || '/';
 
@@ -101,7 +101,7 @@ backupApp.directive('restoreFilePicker', function() {
 
                 while(e.length > 0) {
                     var el = e.pop();
-                    if (p.length > el.id.length && el.id.substr(el.length - 1, 1) == dirsep && el.children != null) {
+                    if (p.length > el.id.length && el.id.substr(el.id.length - 1, 1) == dirsep && el.children != null) {
                         if (p.indexOf(compareablePath(el.id)) == 0) {
                             for(var n in el.children) {
                                 if (el.children[n] == node)
@@ -160,7 +160,7 @@ backupApp.directive('restoreFilePicker', function() {
                     for (var j = 0; j < parts.length; j++) {
                         cur += parts[j];
                         if (j != parts.length - 1 || is_dir)
-                            cur += '/';
+                            cur += dirsep;
 
                         map[compareablePath(cur)] = true;
                     };
@@ -215,6 +215,9 @@ backupApp.directive('restoreFilePicker', function() {
 
                         cur = p;
                         p = findParent(p);
+
+                        if (p == null && all && !$scope.ngSearchMode)
+                            $scope.ngSelected.push(cur.id);
                     }
 
                 } else {

@@ -83,7 +83,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, backup, extra), false) as Duplicati.Library.Interface.IListResults;
 
-            info.OutputOK(r.Filesets);
+            if (r.EncryptedFiles && backup.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.InvariantCultureIgnoreCase)))
+                info.ReportServerError("encrypted-storage");
+            else
+                info.OutputOK(r.Filesets);
         }
 
         private void FetchLogData(IBackup backup, RequestInfo info)
@@ -320,7 +323,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     switch (operation)
                     {
                         case "files":
-                            SearchFiles(bk, parts.Last().Split(new char[] { '/' }, 2).Skip(1).FirstOrDefault(), info);
+                            var filter = parts.Last().Split(new char[] { '/' }, 2).Skip(1).FirstOrDefault();
+                            if (!string.IsNullOrWhiteSpace(info.Request.QueryString["filter"].Value))
+                                filter = info.Request.QueryString["filter"].Value;
+                            SearchFiles(bk, filter, info);
                             return;
                         case "log":
                             FetchLogData(bk, info);
