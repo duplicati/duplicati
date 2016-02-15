@@ -769,8 +769,7 @@ namespace Duplicati.Library.Main.Database
                 m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
                 m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_updateTable));
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_updateTable));
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_IndexIndex"" ON ""{0}"" (""Index"")", m_updateTable));
+                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FileIdIndexIndex"" ON ""{0}"" (""FileId"", ""Index"")", m_updateTable));
 
                 m_insertblockCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Metadata"") VALUES (?, ?, ?, ?, ?) ", m_updateTable);
                 m_insertblockCommand.AddParameters(5);

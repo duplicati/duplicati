@@ -1,3 +1,10 @@
+2016-02-15
+==========
+* Added expansion of environment variables in filters
+* Numerous fixes for Windows
+* Added error message for attempting to restore encrypted backup without a passphrase
+* Added two substantial performance fixes for restoring, thanks to @FootStark and @kunom.
+
 2016-01-27
 ==========
 - Added option for more thorough verification during remote volume test

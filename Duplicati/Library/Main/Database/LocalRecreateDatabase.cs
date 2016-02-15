@@ -86,8 +86,11 @@ namespace Duplicati.Library.Main.Database
         {
             m_tempblocklist = "TempBlocklist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                         
-            using (var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand())
+            {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)", m_tempblocklist));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""Index_{0}"" ON ""{0}"" (""BlockListHash"");", m_tempblocklist));
+            }
 
             m_insertFileCommand = m_connection.CreateCommand();
             m_insertFilesetEntryCommand = m_connection.CreateCommand();
