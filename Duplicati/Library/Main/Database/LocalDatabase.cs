@@ -945,7 +945,7 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             {
                 var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " + 
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = 5) A, " + 
+                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " + 
                     @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " + 
                     @" ""B"".""Index"" >= (""A"".""Index"" * ({0}/{1})) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * ({0}/{1})) AND ""C"".""ID"" = ""B"".""BlockID"" " + 
                     @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
@@ -957,7 +957,7 @@ namespace Duplicati.Library.Main.Database
                 int index = 0;
                 byte[] buffer = new byte[blocksize];
 
-                using(var rd = cmd.ExecuteReader(sql))
+                using(var rd = cmd.ExecuteReader(sql, volumeid))
                     while (rd.Read())
                     {
                         var blockhash = rd.GetValue(0).ToString();
