@@ -15,32 +15,45 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
-using CoCoL;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    public struct DataBlock
+    internal class BackupStatsCollector : StatsCollector
     {
-        public string HashKey;
-        public byte[] Data;
-        public int Offset;
-        public long Size;
-        public CompressionHint Hint;
-        public bool IsBlocklistHashes;
+        private BackupResults m_res;
 
-        public static Task AddBlockToOutputAsync(IWriteChannel<DataBlock> channel, string hash, byte[] data, int offset, long size, CompressionHint hint, bool isBlocklistHashes)
+        public BackupStatsCollector(BackupResults res)
+            : base(res)
         {
-            return channel.WriteAsync(new DataBlock() {
-                HashKey = hash,
-                Data = data,
-                Offset = offset,
-                Size = size,
-                Hint = hint,
-                IsBlocklistHashes = isBlocklistHashes
+            m_res = res;
+        }
+
+        public Task AddOpenedFile(long size)
+        {
+            return RunOnMain(() => {
+                m_res.SizeOfOpenedFiles += size;
+                m_res.OpenedFiles++;
             });
         }
+
+        public Task AddAddedFile(long size)
+        {
+            return RunOnMain(() => {
+                m_res.SizeOfAddedFiles += size;
+                m_res.AddedFiles++;
+            });
+        }
+
+        public Task AddModifiedFile(long size)
+        {
+            return RunOnMain(() => {
+                m_res.SizeOfModifiedFiles += size;
+                m_res.ModifiedFiles++;
+            });
+        }
+
     }
 }
 

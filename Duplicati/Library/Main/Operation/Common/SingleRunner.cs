@@ -22,68 +22,82 @@ namespace Duplicati.Library.Main.Operation.Common
 {
     internal abstract class SingleRunner : ProcessHelper
     {
-        protected IChannel<Action> m_channel;
+        protected IChannel<Func<Task>> m_channel;
 
         public SingleRunner()
         {
-            m_channel = ChannelManager.CreateChannel<Action>();
+            m_channel = ChannelManager.CreateChannel<Func<Task>>();
         }
 
         protected override async Task Start()
         {
             while(true)
-                await m_channel.ReadAsync()(); // Grab-n-execute
+                await (await m_channel.ReadAsync())(); // Grab-n-execute
         }
 
-        protected async Task<T> RunOnMain<T>(Func<T> method)
+        protected Task<T> RunOnMain<T>(Func<Task<T>> method)
         {
             var res = new TaskCompletionSource<T>();
-            try
-            {
-                await m_channel.WriteAsync(() => {
-                    try
-                    {
-                        res.SetResult(method());
-                    }
-                    catch(Exception ex)
-                    {
-                        if (ex is System.Threading.ThreadAbortException)
-                            res.TrySetCanceled();
-                        else
-                            res.TrySetException(ex);
-                    }
-                }).ConfigureAwait(false);
-            }
-            catch(Exception ex)
-            {
-                if (ex is System.Threading.ThreadAbortException)
-                    res.TrySetCanceled();
-                else
-                    res.TrySetException(ex);
-            }
 
-            return await res.Task;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await m_channel.WriteAsync(async () =>
+                    {
+                        try
+                        {
+                            res.SetResult(await method());
+                        }
+                        catch (Exception ex)
+                        {
+                            if (ex is System.Threading.ThreadAbortException)
+                                res.TrySetCanceled();
+                            else
+                                res.TrySetException(ex);
+                        }
+                    }).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (ex is System.Threading.ThreadAbortException)
+                        res.TrySetCanceled();
+                    else
+                        res.TrySetException(ex);
+                }
+            });
+
+            return res.Task;
         }
 
-        protected async Task RunOnMain(Action method)
+        protected Task RunOnMain(Action method)
         {
             return RunOnMain<bool>(() =>
             {
                 method();
-                return true;
+                return Task.FromResult(true);
+            });
+        }
+
+        protected Task<T> RunOnMain<T>(Func<T> method)
+        {
+            return RunOnMain(() =>
+            {
+                return Task.FromResult(method());
             });
         }
 
         #region IDisposable implementation
 
-        public void Dispose()
+        public new void Dispose()
         {
+            base.Dispose();
             Dispose(true);
         }
 
         #endregion
 
-        protected void Dispose(bool isDisposing)
+        protected virtual void Dispose(bool isDisposing)
         {
             if (m_channel != null)
                 try { m_channel.Retire(); }

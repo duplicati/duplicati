@@ -25,6 +25,7 @@ namespace Duplicati.Library.Main.Operation.Common
         public Exception Exception;
         public bool IsVerbose;
         public bool IsDryRun;
+        public bool IsRetry;
 
         public static LogMessage Warning(string message, Exception ex)
         {
@@ -77,6 +78,15 @@ namespace Duplicati.Library.Main.Operation.Common
                 Level = Duplicati.Library.Logging.LogMessageType.Information,
                 Message = string.Format(message, args),
                 IsDryRun = true
+            };
+        }
+
+        public static LogMessage RetryAttempt(string message, params object[] args)
+        {
+            return new LogMessage() { 
+                Level = Duplicati.Library.Logging.LogMessageType.Information,
+                Message = string.Format(message, args),
+                IsRetry = true
             };
         }
 

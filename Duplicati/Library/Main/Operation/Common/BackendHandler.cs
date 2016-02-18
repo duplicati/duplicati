@@ -28,11 +28,14 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
-    public class BackendHandler : SingleRunner
+    internal class BackendHandler : SingleRunner
     {
         public const string VOLUME_HASH = "SHA256";
 
-        private class FileEntryItem
+        /// <summary>
+        /// Data storage for an ongoing backend operation
+        /// </summary>
+        protected class FileEntryItem
         {
             /// <summary>
             /// The current operation this entry represents
@@ -120,7 +123,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             }
 
-            private static string CalculateFileHash(string filename)
+            public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
                 using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
@@ -159,22 +162,24 @@ namespace Duplicati.Library.Main.Operation.Common
         private Options m_options;
         private string m_backendurl;
         private bool m_uploadSuccess;
+        private StatsCollector m_stats;
 
-        public BackendHandler(Options options, string backendUrl, DatabaseCommon database)
+        public BackendHandler(Options options, string backendUrl, DatabaseCommon database, StatsCollector stats)
             : base()
         {
             m_backendurl = backendUrl;
             m_database = database;
             m_options = options;
             m_backendurl = backendUrl;
+            m_stats = stats;
             if (!options.NoEncryption)
-                m_encryption = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options);
+                m_encryption = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions);
         }
             
-        protected Task<T> RunRetryOnMain<T>(FileEntryItem fe, Func<T, Task> method)
+        protected Task<T> RunRetryOnMain<T>(FileEntryItem fe, Func<Task<T>> method)
         {
-            return RunOnMain(() =>
-                DoWithRetry(fe, method)
+            return RunOnMain<T>(() =>
+                DoWithRetry<T>(fe, method)
             );
         }
 
@@ -185,7 +190,7 @@ namespace Duplicati.Library.Main.Operation.Common
             fe.Encrypted = true; //Prevent encryption
             fe.TrackedInDb = false; //Prevent Db updates
 
-            return RunRetryOnMain(fe, async () =>
+            return RunRetryOnMain<bool>(fe, async () =>
             {
                 await DoPut(fe);
                 m_uploadSuccess = true;
@@ -202,10 +207,10 @@ namespace Duplicati.Library.Main.Operation.Common
 
             var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename, indexfe);
 
-            return RunRetryOnMain(fe, async () =>
+            return RunRetryOnMain<bool>(fe, async () =>
             {
                 if (fe.IsRetry && fe.Indexfile != null && fe.TrackedInDb)
-                    await RenameFileAfterError(fe);
+                    await RenameFileAfterErrorAsync(fe);
                 else
                     fe.IsRetry = true;
                
@@ -249,13 +254,16 @@ namespace Duplicati.Library.Main.Operation.Common
             );
         }
 
-        public Task<Library.Utility.TempFile> GetFileWithInfoAsync(string remotename, ref long size, ref string remotehash)
+        public Task<Tuple<Library.Utility.TempFile, long, string>> GetFileWithInfoAsync(string remotename)
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename, null);
             return RunRetryOnMain(fe, async () => {
-                await DoGet(fe);
-                size = fe.Size;
-                remotehash = fe.Hash;
+                var res = await DoGet(fe);
+                return new Tuple<Library.Utility.TempFile, long, string>(
+                    res,
+                    fe.Size,
+                    fe.Hash
+                );
             });
         }
 
@@ -268,7 +276,7 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
-        private async Task ResetBackend(Exception ex)
+        private async Task ResetBackendAsync(Exception ex)
         {
             try
             {
@@ -284,7 +292,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         }
 
-        private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<T, Task> method)
+        private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<Task<T>> method)
         {
             if (m_backend == null)
                 m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
@@ -301,7 +309,6 @@ namespace Duplicati.Library.Main.Operation.Common
                 try
                 {
                     return await method();
-                    return;
                 }
                 catch (Exception ex)
                 {
@@ -312,7 +319,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (ex is System.Threading.ThreadAbortException)
                         break;
 
-                    await m_logchannel.WriteAsync(LogMessage.SendEvent(item.Operation, i < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size));
+                    await m_stats.SendEventAsync(item.Operation, i < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                     bool recovered = false;
                     if (!m_uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
@@ -330,12 +337,12 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
                         
                     if (!recovered)
-                        ResetBackend(ex);
+                        await ResetBackendAsync(ex);
                 }
                 finally
                 {
                     if (m_options.NoConnectionReuse)
-                        ResetBackend();
+                        await ResetBackendAsync(null);
                 }
             }
 
@@ -343,7 +350,7 @@ namespace Duplicati.Library.Main.Operation.Common
             
         }
 
-        private async Task RenameFileAfterError(FileEntryItem item)
+        private async Task RenameFileAfterErrorAsync(FileEntryItem item)
         {
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
             var guid = VolumeWriterBase.GenerateGuid(m_options);
@@ -351,10 +358,10 @@ namespace Duplicati.Library.Main.Operation.Common
             var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
 
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(item.Operation, BackendEventType.Rename, oldname, item.Size));
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(item.Operation, BackendEventType.Rename, newname, item.Size));
+            await m_stats.SendEventAsync(item.Operation, BackendEventType.Rename, oldname, item.Size);
+            await m_stats.SendEventAsync(item.Operation, BackendEventType.Rename, newname, item.Size);
             await m_logchannel.WriteAsync(LogMessage.Information(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname)));
-            await m_database.RenameRemoteFile(oldname, newname);
+            await m_database.RenameRemoteFileAsync(oldname, newname);
             item.RemoteFilename = newname;
 
             // If there is an index file attached to the block file, 
@@ -408,8 +415,8 @@ namespace Duplicati.Library.Main.Operation.Common
                 item.IndexfileUpdated = true;
             }            
                 
-            await m_database.LogRemoteOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size));
+            await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
+            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             var begin = DateTime.Now;
 
@@ -429,7 +436,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (item.TrackedInDb)
                 await m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
 
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size));
+            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
             if (m_options.ListVerifyUploads)
             {
@@ -447,7 +454,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         private async Task<IList<Library.Interface.IFileEntry>> DoList(FileEntryItem item)
         {
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.List, BackendEventType.Started, null, -1));
+            await m_stats.SendEventAsync(BackendActionType.List, BackendEventType.Started, null, -1);
 
             var r = m_backend.List();
 
@@ -464,16 +471,16 @@ namespace Duplicati.Library.Main.Operation.Common
 
             sb.AppendLine();
             sb.Append("]");
-            await m_database.LogRemoteOperation("list", "", sb.ToString());
+            await m_database.LogRemoteOperationAsync("list", "", sb.ToString());
 
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count));
+            await m_stats.SendEventAsync(BackendActionType.List, BackendEventType.Completed, null, r.Count);
 
             return r;
         }
 
         private async Task<bool> DoDelete(FileEntryItem item)
         {
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size));
+            await m_stats.SendEventAsync(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
             try
@@ -501,7 +508,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (success)
                     {
                         await m_logchannel.WriteAsync(LogMessage.Information(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename)));
-                        return;
+                        return true;
                     }
 
                 }
@@ -511,18 +518,18 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             finally
             {
-                await m_database.LogRemoteOperation("delete", item.RemoteFilename, result);
+                await m_database.LogRemoteOperationAsync("delete", item.RemoteFilename, result);
             }
 
             await m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size));
+            await m_stats.SendEventAsync(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
             return true;
         }
 
         private async Task<bool> DoCreateFolder(FileEntryItem item)
         {
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1));
+            await m_stats.SendEventAsync(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
 
             string result = null;
             try
@@ -536,17 +543,17 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             finally
             {
-                await m_database.LogRemoteOperation("createfolder", item.RemoteFilename, result);
+                await m_database.LogRemoteOperationAsync("createfolder", item.RemoteFilename, result);
             }
 
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1));
+            await m_stats.SendEventAsync(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1);
             return true;
         }
 
         private async Task<Library.Utility.TempFile> DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
-            await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
+            await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             try
             {
@@ -566,8 +573,8 @@ namespace Duplicati.Library.Main.Operation.Common
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
 
-                await m_database.LogRemoteOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = CalculateFileHash(tmpfile) }));
-                await m_logchannel.WriteAsync(LogMessage.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
+                await m_database.LogRemoteOperationAsync("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
+                await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
                 if (!m_options.SkipFileHashChecks)
                 {
@@ -580,78 +587,88 @@ namespace Duplicati.Library.Main.Operation.Common
                     else
                         item.Size = nl;
 
-                    var nh = CalculateFileHash(tmpfile);
+                    var nh = FileEntryItem.CalculateFileHash(tmpfile);
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (nh != item.Hash)
-                            throw new HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, nh));
+                            throw new Duplicati.Library.Main.BackendManager.HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, nh));
                     }
                     else
                         item.Hash = nh;
                 }
 
-                if (!item.VerifyHashOnly)
+                // Fast exit
+                if (item.VerifyHashOnly)
+                    return null;
+                
+                // Decrypt before returning
+                if (!m_options.NoEncryption)
                 {
-                    // Decrypt before returning
-                    if (!m_options.NoEncryption)
+                    try
                     {
-                        try
-                        {
-                            using(var tmpfile2 = tmpfile)
-                            { 
-                                tmpfile = new Library.Utility.TempFile();
+                        using(var tmpfile2 = tmpfile)
+                        { 
+                            tmpfile = new Library.Utility.TempFile();
 
-                                // Auto-guess the encryption module
-                                var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
-                                if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                            // Auto-guess the encryption module
+                            var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
+                            if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                // Check if the file is encrypted with something else
+                                if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
                                 {
-                                    // Check if the file is encrypted with something else
-                                    if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
-                                    {
-                                        await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule));
-                                        using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
-                                            (encmodule ?? m_encryption).Decrypt(tmpfile2, tmpfile);
-                                    }
-                                    // Check if the file is not encrypted
-                                    else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
-                                    {
-                                            await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule));
-                                    }
-                                    // Fallback, lets see what happens...
-                                    else
-                                    {
-                                        await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule));
-                                        m_encryption.Decrypt(tmpfile2, tmpfile);
-                                    }
+                                    await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule));
+                                    using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
+                                        (encmodule ?? m_encryption).Decrypt(tmpfile2, tmpfile);
                                 }
+                                // Check if the file is not encrypted
+                                else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                {
+                                        await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule));
+                                }
+                                // Fallback, lets see what happens...
                                 else
                                 {
+                                    await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule));
                                     m_encryption.Decrypt(tmpfile2, tmpfile);
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            //If we fail here, make sure that we throw a crypto exception
-                            if (ex is System.Security.Cryptography.CryptographicException)
-                                throw;
                             else
-                                throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
+                            {
+                                m_encryption.Decrypt(tmpfile2, tmpfile);
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        //If we fail here, make sure that we throw a crypto exception
+                        if (ex is System.Security.Cryptography.CryptographicException)
+                            throw;
+                        else
+                            throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
+                    }
+                }
 
-                    var res = tmpfile;
-                    tmpfile = null;
-                    return res;
+                var res = tmpfile;
+                tmpfile = null;
+                return res;
+            }
+            finally
+            {
+                try 
+                { 
+                    if (tmpfile != null) 
+                        tmpfile.Dispose();
+                }
+                catch
+                {
                 }
             }
-            catch
-            {
-                if (tmpfile != null)
-                    tmpfile.Dispose();
+        }
 
-                throw;
-            }
+        private void HandleProgress(long pg)
+        {
+            m_stats.UpdateBackendProgress(pg);
         }
 
         protected override void Dispose(bool disposing)

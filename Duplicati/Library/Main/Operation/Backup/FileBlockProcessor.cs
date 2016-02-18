@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FileBlockProcessor
     {
-        public static async Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database)
+        public static  Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats)
         {
             return AutomationExtensions.RunTask(
             new 
@@ -44,7 +44,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var fileoffset = -1L;
                 var blocksize = options.Blocksize;
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm);                    
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);                    
@@ -66,7 +65,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                             var blocklistbuffer = new byte[blocksize];
                             var blocklistoffset = 0L;
 
-                            fileoffset = -1;
                             using(var fs = snapshot.OpenRead(e.Path))
                             {
                                 long fslen = -1;
@@ -76,10 +74,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
                                 send_close = true;
 
-                                fileoffset = 0;
                                 filehasher.Initialize();
                                 var lastread = 0;
                                 var buf = new byte[blocksize];
+                                var lastupdate = DateTime.Now;
 
                                 // Core processing loop, read blocks of data and hash individually
                                 while((lastread = await fs.ForceStreamReadAsync(buf, blocksize)) != 0)
@@ -93,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // If we have too many hashes, flush the blocklist
                                     if (blocklistbuffer.Length - blocklistoffset < hashdata.Length)
                                     {
-                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, blocklistoffset));
+                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                         blocklisthashes.Add(blkey);
                                         await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                                         blocklistoffset = 0;
@@ -106,9 +104,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     hashcollector.Add(hashkey);
                                     filesize += lastread;
 
+                                    // Don't spam updates
+                                    if ((DateTime.Now - lastupdate).TotalSeconds > 10)
+                                    {
+                                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
+                                        lastupdate = DateTime.Now;
+                                    }
+
                                     // Make sure the filehasher is done with the buf instance before we pass it on
                                     await pftask;
-                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, hashdata, buf, 0, hint, true);
+                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, lastread, 0, hint, true);
                                     buf = new byte[blocksize];
                                 }
                             }
@@ -116,12 +121,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // If we have more than a single block of data, output the (trailing) blocklist
                             if (hashcollector.Count > 1)
                             {
-                                var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, blocklistoffset));
+                                var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                 blocklisthashes.Add(blkey);
                                 await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                             }
 
-                            m_result.SizeOfOpenedFiles += filesize;
+                            await stats.AddOpenedFile(filesize);
                             filehasher.TransformFinalBlock(new byte[0], 0, 0);
 
                             var filekey = Convert.ToBase64String(filehasher.Hash);
@@ -134,35 +139,31 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 if (e.OldId < 0)
                                 {
-                                    m_result.AddedFiles++;
-                                    m_result.SizeOfAddedFiles += filesize;
+                                    await stats.AddAddedFile(filesize);
 
                                     if (options.Dryrun)
                                         await self.LogChannel.WriteAsync(LogMessage.DryRun("Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize)));
                                 }
                                 else
                                 {
-                                    m_result.ModifiedFiles++;
-                                    m_result.SizeOfModifiedFiles += filesize;
+                                    await stats.AddModifiedFile(filesize);
 
                                     if (options.Dryrun)
                                         await self.LogChannel.WriteAsync(LogMessage.DryRun("Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize)));
                                 }
 
-                                AddFileToOutput(e.Path, filesize, e.LastWrite, e.MetaHashAndSize, hashcollector, filekey, blocklisthashes, self.BlockOutput, blocksize, database);
-                                changed = true;
+                                await AddFileToOutputAsync(e.Path, filesize, e.LastWrite, e.MetaHashAndSize, hashcollector, filekey, blocklisthashes, self.BlockOutput, blocksize, database);
                             }
-                            else if (metadatachanged)
+                            else if (e.MetadataChanged)
                             {
                                 await self.LogChannel.WriteAsync(LogMessage.Verbose("File has only metadata changes {0}", e.Path));
-                                AddFileToOutput(e.Path, filesize, e.LastWrite, e.MetaHashAndSize, hashcollector, filekey, blocklisthashes, self.BlockOutput, blocksize, database);
-                                changed = true;
+                                await AddFileToOutputAsync(e.Path, filesize, e.LastWrite, e.MetaHashAndSize, hashcollector, filekey, blocklisthashes, self.BlockOutput, blocksize, database);
                             }
                             else
                             {
                                 // When we write the file to output, update the last modified time
-                                oldModified = lastwrite;
                                 await self.LogChannel.WriteAsync(LogMessage.Verbose("File has not changed {0}", e.Path));
+                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                             }
                         }
                     }
@@ -194,18 +195,15 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private static async Task AddFileToOutput(string filename, long size, DateTime lastmodified, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes, IWriteChannel<DataBlock> channel, long blocksize, BackupDatabase database)
+        private static async Task AddFileToOutputAsync(string filename, long size, DateTime lastmodified, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes, IWriteChannel<DataBlock> channel, int blocksize, BackupDatabase database)
         {
-            long metadataid = -1;
-            long blocksetid = -1;
-
             if (metadata.Size > blocksize)
                 throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", blocksize));
 
-            await DataBlock.AddBlockToOutputAsync(channel, metadata.Hash, null, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
-            await database.AddMetadatasetAsync(metadata.Hash, metadata.Size, ref metadataid);
-            await database.AddBlocksetAsync(filehash, size, blocksize, hashlist, blocklisthashes, ref blocksetid);
-            await database.AddFileAsync(filename, lastmodified, blocksetid, metadataid);
+            await DataBlock.AddBlockToOutputAsync(channel, metadata.Hash, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
+            var metadataid = await database.AddMetadatasetAsync(metadata.Hash, metadata.Size);
+            var blocksetid = await database.AddBlocksetAsync(filehash, size, blocksize, hashlist, blocklisthashes);
+            await database.AddFileAsync(filename, lastmodified, blocksetid, metadataid.Item2);
         }
     }
 }

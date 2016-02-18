@@ -128,6 +128,9 @@
     <Compile Include="Operation\Common\DatabaseCommon.cs" />
     <Compile Include="Operation\Common\SingleRunner.cs" />
     <Compile Include="Operation\Common\BackendHandler.cs" />
+    <Compile Include="Operation\Common\StatsCollector.cs" />
+    <Compile Include="Operation\Backup\BackupStatsCollector.cs" />
+    <Compile Include="Operation\Common\LogHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

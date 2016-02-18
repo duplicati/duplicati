@@ -21,7 +21,7 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
-    public class DatabaseCommon : SingleRunner, IDisposable
+    internal class DatabaseCommon : SingleRunner, IDisposable
     {
         protected LocalDatabase m_db;
         protected System.Data.IDbTransaction m_transaction;
@@ -56,6 +56,16 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
+
+        public Task RenameRemoteFileAsync(string oldname, string newname)
+        {
+            return RunOnMain(() => m_db.RenameRemoteFile(oldname, newname, m_transaction));
+        }
+
+        public Task LogRemoteOperationAsync(string operation, string path, string data)
+        {
+            return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, m_transaction));
+        }
 
     }
 }

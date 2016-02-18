@@ -24,18 +24,27 @@ using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    public class MetadataPreProcess : ProcessHelper
+    internal class MetadataPreProcess : ProcessHelper
     {
-        public struct FileEntry
+        public class FileEntry
         {
-            public long OldId;
+            // From input
             public string Path;
+
+            // From database
+            public long OldId;
             public DateTime OldModified;
             public long LastFileSize;
             public string OldMetaHash;
             public long OldMetaSize;
+
+            // From filedata
             public DateTime LastWrite;
             public FileAttributes Attributes;
+
+            // After processing metadata
+            public IMetahash MetaHashAndSize;
+            public bool MetadataChanged;
         }
 
         [ChannelName("SourcePaths")]
@@ -88,7 +97,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
 
                     var metahash = Utility.WrapMetadata(metadata, m_options);
-                    AddSymlinkToOutput(path, DateTime.UtcNow, metahash);
+                    await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash);
 
                     await m_logchannel.WriteAsync(LogMessage.Verbose("Stored symlink {0}", path));
                     // Don't process further
@@ -110,7 +119,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
 
                 await m_logchannel.WriteAsync(LogMessage.Verbose("Adding directory {0}", path));
-                AddFolderToOutput(path, lastwrite, metahash);
+                await AddFolderToOutputAsync(path, lastwrite, metahash);
                 return false;
             }
 
@@ -127,16 +136,14 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private async Task AddFolderToOutput(string filename, DateTime lastModified, IMetahash meta)
+        private async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta)
         {
-            long metadataid = -1;
-
             if (meta.Size > m_blocksize)
                 throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
 
-            await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            await m_database.AddMetadatasetAsync(meta.Hash, meta.Size, ref metadataid);
-            await m_database.AddDirectoryEntryAsync(filename, metadataid, lastModified);
+            await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, meta.Size, CompressionHint.Default, false);
+            var metadataid = await m_database.AddMetadatasetAsync(meta.Hash, meta.Size);
+            await m_database.AddDirectoryEntryAsync(filename, metadataid.Item2, lastModified);
         }
 
         /// <summary>
@@ -148,16 +155,14 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private async Task AddSymlinkToOutput(string filename, DateTime lastModified, IMetahash meta)
+        private async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta)
         {
-            long metadataid = -1;
-
             if (meta.Size > m_blocksize)
                 throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
 
             await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            await m_database.AddMetadatasetAsync(meta.Hash, meta.Size, ref metadataid);
-            await m_database.AddSymlinkEntryAsync(filename, metadataid, lastModified);
+            var metadataid = await m_database.AddMetadatasetAsync(meta.Hash, meta.Size);
+            await m_database.AddSymlinkEntryAsync(filename, metadataid.Item2, lastModified);
         }
 
         protected override async Task Start()
@@ -168,8 +173,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     var path = await m_input.ReadAsync();
 
-                    DateTime lastwrite = new DateTime(0, DateTimeKind.Utc);
-                    FileAttributes attributes;
+                    var lastwrite = new DateTime(0, DateTimeKind.Utc);
+                    var attributes = default(FileAttributes);
                     try 
                     { 
                         lastwrite = m_snapshot.GetLastWriteTimeUtc(path); 
@@ -193,22 +198,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            DateTime oldModified = new DateTime(0);
-                            long lastFileSize = -1;
-                            string oldMetahash = null;
-                            long oldMetasize = -1;
-
-                            var oldId = await m_database.GetFileEntryAsync(path, ref oldModified, ref lastFileSize, ref oldMetahash, ref oldMetasize);
+                            var res = await m_database.GetFileEntryAsync(path);
 
                             await m_output.WriteAsync(new FileEntry() {
-                                OldId = oldId,
+                                OldId = res == null ? -1 : res.id,
                                 Path = path,
                                 Attributes = attributes,
                                 LastWrite = lastwrite,
-                                OldModified = oldModified,
-                                LastFileSize = lastFileSize,
-                                OldMetaHash = oldMetahash,
-                                OldMetaSize = oldMetasize
+                                OldModified = res == null ? new DateTime(0) : res.modified,
+                                LastFileSize = res == null ? -1 : res.filesize,
+                                OldMetaHash = res == null ? null : res.metahash,
+                                OldMetaSize = res == null ? -1 : res.metasize
                             });
                         }
                         catch(Exception ex)

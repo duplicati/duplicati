@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     while(!self.Input.IsRetired)
                         try
                         {
-                            lst.Add(await (UploadRequest)self.Input.ReadAsync());
+                    lst.Add((UploadRequest)await self.Input.ReadAsync());
                         }
                         catch (Exception ex)
                         {
@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                         target = new UploadRequest(new BlockVolumeWriter(options), options.IndexfilePolicy == Options.IndexFileStrategy.None ? null : new IndexVolumeWriter(options));
                                         target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                                         if (target.IndexVolume != null)
-                                            target.IndexVolume = await database.RegisterRemoteVolumeAsync(target.IndexVolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                                            target.IndexVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.IndexVolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
                                     }
                                     else
                                     {
@@ -102,21 +102,28 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 var len = rd.ReadBlock(file.Key, buffer);
                                 target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
-                                await database.MoveBlockToVolumeAsync(file.Key, target.BlockVolume.RemoteFilename);
+                                await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
 
                                 if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
                                 {
                                     if (options.IndexfilePolicy == Options.IndexFileStrategy.Full && target.IndexVolume != null && source.IndexVolume != null)
                                     {
                                         using(var ixr = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, source.IndexVolume.LocalFilename, options.RawOptions))
-                                        foreach(var blocklisthash in await database.GetBlocklistHashes(source.BlockVolume.RemoteFilename))
+                                        foreach(var blocklisthash in await database.GetBlocklistHashesAsync(source.BlockVolume.RemoteFilename))
+                                        {
+                                            long fslen;
                                             using(var fs = ixr.OpenRead(blocklisthash))
+                                            {
                                                 target.IndexVolume.WriteBlocklist(blocklisthash, fs);
-                                        // TODO: Do we need to move something for the blocklist db registration?
+                                                fslen = fs.Length;
+                                            }
+                                            
+                                            await database.MoveBlockToVolumeAsync(blocklisthash, fslen, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
+                                        }
 
                                     }
 
-                                    self.Output.WriteAsync(target);
+                                    await self.Output.WriteAsync(target);
                                     target = null;
                                 }
                             }
@@ -124,16 +131,16 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         // Make sure they are out of the database
                         System.IO.File.Delete(source.BlockVolume.LocalFilename);
-                        await database.SafeDeleteRemoteVolme(source.BlockVolume.RemoteFilename);
+                        await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename);
                         if (source.IndexVolume != null)
                         {
                             System.IO.File.Delete(source.IndexVolume.LocalFilename);
-                            await database.SafeDeleteRemoteVolme(source.IndexVolume.RemoteFilename);
+                            await database.SafeDeleteRemoteVolumeAsync(source.IndexVolume.RemoteFilename);
                         }
 
                         // Re-inject the target if it has content
                         if (target != null)
-                            lst.Insert(lst.Count == 0 ? 0 : 1);
+                            lst.Insert(lst.Count == 0 ? 0 : 1, target);
 
                     }
 

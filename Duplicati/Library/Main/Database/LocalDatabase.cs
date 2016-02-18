@@ -35,18 +35,6 @@ namespace Duplicati.Library.Main.Database
 
         public readonly object AccessLock = new object();
 
-        private System.Data.IDbTransaction m_currentTransaction;
-
-        public System.Data.IDbTransaction CurrentTransaction 
-        { 
-            get
-            { 
-                lock(AccessLock)
-                    if (m_currentTransaction == null)
-                        throw new ArgumentNullException("CurrentTransaction");
-            }
-        }
-
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
         	path = System.IO.Path.GetFullPath(path);
@@ -459,31 +447,7 @@ namespace Duplicati.Library.Main.Database
 
             return res;
         }
-
-        public void FlushCurrentTransaction(string message, bool autorestart = true)
-        {
-            lock(AccessLock)
-            {
-                if (m_currentTransaction != null)
-                {
-                    m_currentTransaction.Commit();
-                    m_currentTransaction.Dispose();
-                    m_currentTransaction = null;
-                }
-
-                if (autorestart)
-                    StartCurrentTransaction();
-            }
-        }
-
-        public void StartCurrentTransaction()
-        {
-            lock(AccessLock)
-            {
-                if (m_currentTransaction == null)
-                    m_currentTransaction = m_connection.BeginTransaction();
-            }
-        }
+            
 
         // TODO: Remove this
         public System.Data.IDbTransaction BeginTransaction()
@@ -688,9 +652,9 @@ namespace Duplicati.Library.Main.Database
 			}
 		}		
 
-		public IEnumerable<IBlock> GetBlocks(long volumeid)
+        public IEnumerable<IBlock> GetBlocks(long volumeid, System.Data.IDbTransaction transaction = null)
 		{
-			using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
 			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid))
 				while (rd.Read())
                     yield return new Block(rd.GetValue(0).ToString(), rd.GetInt64(1));

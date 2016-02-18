@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class MetadataGenerator
     {
-        public async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, IWriteChannel<LogMessage> logchannel)
+        public static async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, IWriteChannel<LogMessage> logchannel)
         {
             try
             {

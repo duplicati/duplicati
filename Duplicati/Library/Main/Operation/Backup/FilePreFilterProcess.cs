@@ -25,9 +25,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class FilePreFilterProcess
     {
-        public static async Task Start(Snapshots.ISnapshotService snapshot, Options options)
+        public static Task Start(Snapshots.ISnapshotService snapshot, Options options)
         {
-            AutomationExtensions.RunTask(
+            return AutomationExtensions.RunTask(
                 new
                 {
                     LogChannel = ChannelMarker.ForWrite<LogMessage>("LogChannel"),
@@ -54,16 +54,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                         }
 
-                        IMetahash metahashandsize = options.StoreMetadata ? await Utility.WrapMetadata(MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot, self.LogChannel), options) : EMPTY_METADATA;
+                        e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot, self.LogChannel), options) : EMPTY_METADATA;
 
                         var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
                         var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
                         var tooLargeFile = options.SkipFilesLargerThan != long.MaxValue && options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > options.SkipFilesLargerThan;
-                        var metadatachanged = !options.SkipMetadata && (metahashandsize.Size != e.OldMetaSize || metahashandsize.Hash != e.OldMetaHash);
+                        e.MetadataChanged = !options.SkipMetadata && (e.MetaHashAndSize.Size != e.OldMetaSize || e.MetaHashAndSize.Hash != e.OldMetaHash);
 
-                        if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || metadatachanged) && !tooLargeFile)
+                        if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
                         {
-                            await self.LogChannel.WriteAsync(LogMessage.Verbose("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, metadatachanged, e.LastWrite, e.OldModified));
+                            await self.LogChannel.WriteAsync(LogMessage.Verbose("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified));
                             await self.Output.WriteAsync(e);
                         }
                         else

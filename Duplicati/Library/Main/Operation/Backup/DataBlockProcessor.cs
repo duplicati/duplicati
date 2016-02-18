@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
-        public static async Task Run(BackupDatabase database, Options options)
+        public static Task Run(BackupDatabase database, Options options)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -63,18 +63,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
                                     {
                                         indexvolume = new IndexVolumeWriter(options);
-                                        indexvolume.VolumeID = database.RegisterRemoteVolumeAsync(indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                                        indexvolume.VolumeID = await database.RegisterRemoteVolumeAsync(indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
                                     }
                                 }
 
-                                blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, b.Size, b.Hint);
+                                blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
 
                                 //TODO: In theory a normal data block and blocklist block could be equal.
                                 // this would cause the index file to not contain all data,
                                 // if the data file is added before the blocklist data
                                 // ... highly theoretical and only causes extra block data downloads ...
                                 if (options.IndexfilePolicy == Options.IndexFileStrategy.Full && b.IsBlocklistHashes)
-                                    indexvolume.WriteBlocklist(b.HashKey, b.Data, b.Offset, b.Size);
+                                    indexvolume.WriteBlocklist(b.HashKey, b.Data, b.Offset, (int)b.Size);
 
                                 if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
                                 {
@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                         if (indexvolume != null)
                                         {
-                                            UpdateIndexVolume(indexvolume, blockvolume, database);
+                                            await database.UpdateIndexVolumeAsync(indexvolume, blockvolume);
                                             indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(blockvolume.LocalFilename), new FileInfo(blockvolume.LocalFilename).Length);
                                             await self.LogChannel.WriteAsync(LogMessage.DryRun("Would upload index volume: {0}, size: {1}", indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(indexvolume.LocalFilename).Length)));
                                             indexvolume.Dispose();
@@ -104,11 +104,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                                         await database.UpdateRemoteVolume(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                                     
                                         blockvolume.Close();
-                                        UpdateIndexVolume(indexvolume, blockvolume, database);
 
-                                        m_backend.FlushDbMessages(database, database.CurrentTransaction);
-                                        m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
-
+                                        await database.UpdateIndexVolumeAsync(indexvolume, blockvolume);
                                         await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
                                         await self.Output.WriteAsync(new UploadRequest(blockvolume, indexvolume));
@@ -135,22 +132,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
-        private static void UpdateIndexVolume(IndexVolumeWriter indexvolume, BlockVolumeWriter blockvolume, LocalBackupDatabase database)
-        {
-            if (indexvolume != null)
-            {
-                lock(database.AccessLock)
-                {
-                    database.AddIndexBlockLink(indexvolume.VolumeID, blockvolume.VolumeID, database.CurrentTransaction);
-                    indexvolume.StartVolume(blockvolume.RemoteFilename);
 
-                    foreach(var b in database.GetBlocks(blockvolume.VolumeID))
-                        indexvolume.AddBlock(b.Hash, b.Size);
-
-                    database.UpdateRemoteVolume(indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, database.CurrentTransaction);
-                }
-            }
-        }
 
     }
 }

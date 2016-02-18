@@ -786,5 +786,32 @@ namespace Duplicati.Library.Main.Database
                     throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
             }            
         }
+
+        public bool MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, System.Data.IDbTransaction transaction)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                var c = cmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? AND ""VolumeID"" = ? ",blockkey, size, sourcevolumeid);
+                if (c != 1)
+                    throw new Exception(string.Format("Failed to move block {0}:{1} from volume {2}, count: {3}", blockkey, size, sourcevolumeid, c));
+                return AddBlock(blockkey, size, targetvolumeid, transaction);
+            }            
+        }
+
+        public object SafeDeleteRemoteVolume(string name, System.Data.IDbTransaction transaction)
+        {
+            var volumeid = GetRemoteVolumeID(name, transaction);
+
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                var c = cmd.ExecuteNonQuery(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", volumeid);
+                if (c != 0)
+                    throw new Exception(string.Format("Failed to safe-delete volume {0}, blocks: {1}", name, c));
+
+                RemoveRemoteVolume(name, transaction);
+            }            
+        }
     }
 }

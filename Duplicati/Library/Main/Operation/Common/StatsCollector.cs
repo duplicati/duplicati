@@ -15,31 +15,27 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using Duplicati.Library.Interface;
 using System.Threading.Tasks;
-using CoCoL;
 
-namespace Duplicati.Library.Main.Operation.Backup
+namespace Duplicati.Library.Main.Operation.Common
 {
-    public struct DataBlock
+    internal class StatsCollector : SingleRunner, IDisposable
     {
-        public string HashKey;
-        public byte[] Data;
-        public int Offset;
-        public long Size;
-        public CompressionHint Hint;
-        public bool IsBlocklistHashes;
+        protected IBackendWriter m_bw;
 
-        public static Task AddBlockToOutputAsync(IWriteChannel<DataBlock> channel, string hash, byte[] data, int offset, long size, CompressionHint hint, bool isBlocklistHashes)
+        public StatsCollector(IBackendWriter bw)
         {
-            return channel.WriteAsync(new DataBlock() {
-                HashKey = hash,
-                Data = data,
-                Offset = offset,
-                Size = size,
-                Hint = hint,
-                IsBlocklistHashes = isBlocklistHashes
-            });
+            m_bw = bw;
+        }
+
+        public Task SendEventAsync(BackendActionType action, BackendEventType type, string path, long size)
+        {
+            return RunOnMain(() => m_bw.SendEvent(action, type, path, size));
+        }
+
+        public void UpdateBackendProgress(long pg)
+        {
+            m_bw.BackendProgressUpdater.UpdateProgress(pg);
         }
     }
 }
