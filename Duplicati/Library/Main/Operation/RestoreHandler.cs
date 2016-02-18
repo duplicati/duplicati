@@ -250,7 +250,8 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             
-                            if (updateCounter++ % 20 == 0)
+                            // UpdateProcessed is still pretty slow, so we postpone first call at least.
+                            if ((++updateCounter)) % 20 == 0)
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
                         catch (Exception ex)
