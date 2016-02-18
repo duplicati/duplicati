@@ -56,8 +56,8 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_tempblocktable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_Index"" ON ""{0}"" (""TargetPath"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_tempblocktable));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_IndexIndex"" ON ""{0}"" (""Index"")", m_tempblocktable));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_RestoredMetadataIndex"" ON ""{0}"" (""Restored"", ""Metadata"")", m_tempblocktable));
+                    // better suited to speed up commit on UpdateBlocks
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FileIdIndexIndex"" ON ""{0}"" (""FileId"", ""Index"")", m_tempblocktable));
 
 
                     if (filter == null || filter.Empty)
@@ -568,9 +568,7 @@ namespace Duplicati.Library.Main.Database
                         c.ExecuteNonQuery();
                     }
 
-                    c.CommandText = string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_tmptable);
-                    c.Parameters.Clear();
-                    c.ExecuteNonQuery();
+                    // The index _HashSizeIndex is not needed anymore. Index on "Blocks-..." is used on Join in GetMissingBlocks
 
                 }
             }
@@ -624,7 +622,14 @@ namespace Duplicati.Library.Main.Database
                 {
                     using(var cmd = m_connection.CreateCommand())
                     {
-                        cmd.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""FileID"", (""B"".""Index"" * {3}), ""B"".""Size"", ""C"".""Hash"" FROM ""{0}"" A, ""{1}"" B, ""{2}"" C WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"" AND ""B"".""Restored"" = 0 AND ""B"".""Metadata"" = 0 ORDER BY ""A"".""TargetPath"", ""B"".""Index""", m_filetablename, m_blocktablename, m_tmptable, m_blocksize);
+                        // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
+                        cmd.CommandText = string.Format(
+                            @"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {3}), ""BB"".""Size"", ""BB"".""Hash"" "
+                            + @"  FROM ""{0}"" ""A"", ""{1}"" ""BB"" "
+                            + @" WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {4}"
+                            + @"   AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{1}"" ""B"", ""{2}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"") "
+                            + @" ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""
+                            , m_filetablename, m_blocktablename, m_tmptable, m_blocksize, "0");
                         using(var rd = cmd.ExecuteReader())
                         {
                             if (rd.Read())
@@ -652,7 +657,14 @@ namespace Duplicati.Library.Main.Database
                 { 
                     using(var cmd = m_connection.CreateCommand())
                     {
-                        cmd.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""FileID"", (""B"".""Index"" * {3}), ""B"".""Size"", ""C"".""Hash"" FROM ""{0}"" A, ""{1}"" B, ""{2}"" C WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"" AND ""B"".""Restored"" = 0 AND ""B"".""Metadata"" = 1 ORDER BY ""A"".""TargetPath"", ""B"".""Index""", m_filetablename, m_blocktablename, m_tmptable, m_blocksize);
+                        // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
+                        cmd.CommandText = string.Format(
+                            @"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {3}), ""BB"".""Size"", ""BB"".""Hash"" "
+                            + @"  FROM ""{0}"" ""A"", ""{1}"" ""BB"" "
+                            + @" WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {4}"
+                            + @"   AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{1}"" ""B"", ""{2}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"") "
+                            + @" ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""
+                            , m_filetablename, m_blocktablename, m_tmptable, m_blocksize, "1");
                         using(var rd = cmd.ExecuteReader())
                         {
                             if (rd.Read())
@@ -769,8 +781,7 @@ namespace Duplicati.Library.Main.Database
                 m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
                 m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_updateTable));
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_updateTable));
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_IndexIndex"" ON ""{0}"" (""Index"")", m_updateTable));
+                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FileIdIndexIndex"" ON ""{0}"" (""FileId"", ""Index"")", m_updateTable));
 
                 m_insertblockCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Metadata"") VALUES (?, ?, ?, ?, ?) ", m_updateTable);
                 m_insertblockCommand.AddParameters(5);
