@@ -571,9 +571,10 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_backend.Get(item.RemoteFilename, tmpfile);
 
                 var duration = DateTime.Now - begin;
+                var filehash = FileEntryItem.CalculateFileHash(tmpfile);
                 Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
 
-                await m_database.LogRemoteOperationAsync("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
+                await m_database.LogRemoteOperationAsync("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = filehash }));
                 await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
                 if (!m_options.SkipFileHashChecks)
@@ -587,14 +588,13 @@ namespace Duplicati.Library.Main.Operation.Common
                     else
                         item.Size = nl;
 
-                    var nh = FileEntryItem.CalculateFileHash(tmpfile);
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
-                        if (nh != item.Hash)
-                            throw new Duplicati.Library.Main.BackendManager.HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, nh));
+                        if (filehash != item.Hash)
+                            throw new Duplicati.Library.Main.BackendManager.HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, filehash));
                     }
                     else
-                        item.Hash = nh;
+                        item.Hash = filehash;
                 }
 
                 // Fast exit
