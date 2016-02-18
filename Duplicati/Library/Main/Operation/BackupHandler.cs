@@ -501,7 +501,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Finalize);
             using(new Logging.Timer("FinalizeRemoteVolumes"))
             {
-                if (m_blockvolume.SourceSize > 0)
+                if (m_blockvolume != null)
                 {
                     lastVolumeSize = m_blockvolume.SourceSize;
 
@@ -540,12 +540,6 @@ namespace Duplicati.Library.Main.Operation
                         m_blockvolume = null;
                         m_indexvolume = null;
                     }
-                }
-                else
-                {
-                    m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
-                    if (m_indexvolume != null)
-                        m_database.RemoveRemoteVolume(m_indexvolume.RemoteFilename, m_transaction);
                 }
             }
 
@@ -599,15 +593,17 @@ namespace Duplicati.Library.Main.Operation
 
         private void CompactIfRequired(long lastVolumeSize)
         {
+            var currentIsSmall = lastVolumeSize != -1 && lastVolumeSize <= m_options.SmallFileSize;
+
             if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
                 using(var db = new LocalDeleteDatabase(m_database))
-                    new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, lastVolumeSize <= m_options.SmallFileSize);
+                    new DeleteHandler(m_backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, currentIsSmall);
 
             }
-            else if (lastVolumeSize <= m_options.SmallFileSize && !m_options.NoAutoCompact)
+            else if (currentIsSmall && !m_options.NoAutoCompact)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
@@ -708,15 +704,6 @@ namespace Duplicati.Library.Main.Operation
                         var filesetvolumeid = m_database.RegisterRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                         m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(m_filesetvolume.RemoteFilename).Time, m_transaction);
     	
-                        m_blockvolume = new BlockVolumeWriter(m_options);
-                        m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
-    		            
-                        if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                        {
-                            m_indexvolume = new IndexVolumeWriter(m_options);
-                            m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
-                        }
-                        
                         RunMainOperation();
 
                         //If the scanner is still running for some reason, make sure we kill it now 
@@ -1100,6 +1087,18 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
+                if (m_blockvolume == null)
+                {
+                    m_blockvolume = new BlockVolumeWriter(m_options);
+                    m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
+
+                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                    {
+                        m_indexvolume = new IndexVolumeWriter(m_options);
+                        m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
+                    }
+                }
+
                 m_blockvolume.AddBlock(key, data, offset, len, hint);
                 
                 //TODO: In theory a normal data block and blocklist block could be equal.
@@ -1154,15 +1153,6 @@ namespace Duplicati.Library.Main.Operation
 	                	m_transaction = m_database.BeginTransaction();
 	                	
 	                }
-                    
-                    m_blockvolume = new BlockVolumeWriter(m_options);
-					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
-					
-					if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-					{
-	                    m_indexvolume = new IndexVolumeWriter(m_options);
-						m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
-					}
                 }
 
                 return true;
