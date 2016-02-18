@@ -676,7 +676,10 @@ namespace Duplicati.Library.Main
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
 
-                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = CalculateFileHash(tmpfile) }));
+                // Will be done twice otherwise:
+                string fileHash = CalculateFileHash(tmpfile);
+
+                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = fileHash }));
                 m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
                 if (!m_options.SkipFileHashChecks)
@@ -690,7 +693,7 @@ namespace Duplicati.Library.Main
                     else
                     	item.Size = nl;
 
-                    var nh = CalculateFileHash(tmpfile);
+                    var nh = fileHash;
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (nh != item.Hash)
