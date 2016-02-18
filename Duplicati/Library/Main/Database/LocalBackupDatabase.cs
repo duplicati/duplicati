@@ -799,18 +799,30 @@ namespace Duplicati.Library.Main.Database
             }            
         }
 
-        public object SafeDeleteRemoteVolume(string name, System.Data.IDbTransaction transaction)
+        public void SafeDeleteRemoteVolume(string name, System.Data.IDbTransaction transaction)
         {
             var volumeid = GetRemoteVolumeID(name, transaction);
 
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 var c = cmd.ExecuteNonQuery(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", volumeid);
                 if (c != 0)
                     throw new Exception(string.Format("Failed to safe-delete volume {0}, blocks: {1}", name, c));
 
                 RemoveRemoteVolume(name, transaction);
+            }            
+        }
+
+        public IEnumerable<string> GetBlocklistHashes(string name, System.Data.IDbTransaction transaction)
+        {
+            var volumeid = GetRemoteVolumeID(name, transaction);
+            using(var cmd = m_connection.CreateCommand(transaction))
+            {
+                // Grab the strings and return as array to avoid concurrent access to the IEnumerable
+                return cmd.ExecuteReaderEnumerable(
+                    @"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"" WHERE ""Block"".""VolumeID"" = ? AND ""Block"".""Hash"" IN (SELECT ""Hash"" FROM ""BlocklistHash"")", volumeid)
+                    .Select(x => x.ConvertValueToString(0))
+                    .ToArray();
             }            
         }
     }

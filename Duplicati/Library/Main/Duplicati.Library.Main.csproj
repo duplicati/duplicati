@@ -122,7 +122,6 @@
     <Compile Include="Operation\Backup\FilePreFilterProcess.cs" />
     <Compile Include="Operation\Backup\DataBlockProcessor.cs" />
     <Compile Include="Operation\Common\BackendOperation.cs" />
-    <Compile Include="Operation\BackendProcess.cs" />
     <Compile Include="Operation\Backup\SpillCollectorProcess.cs" />
     <Compile Include="Operation\Backup\BackupDatabase.cs" />
     <Compile Include="Operation\Common\DatabaseCommon.cs" />

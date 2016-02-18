@@ -267,14 +267,14 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
-        public Task<Library.Utility.TempFile> GetFileForTestingAsync(string remotename, long size, string remotehash)
+        /*public Task<Library.Utility.TempFile> GetFileForTestingAsync(string remotename, long size, string remotehash)
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename, null);
             return RunRetryOnMain(fe, async() =>
             {
 
             });
-        }
+        }*/
 
         private async Task ResetBackendAsync(Exception ex)
         {

@@ -25,7 +25,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         private BackupResults m_res;
 
         public BackupStatsCollector(BackupResults res)
-            : base(res)
+            : base(res.BackendWriter)
         {
             m_res = res;
         }

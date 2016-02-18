@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task SafeDeleteRemoteVolumeAsync(string remotename)
         {
-            return RunOnMain(() => Task.FromResult(m_database.SafeDeleteRemoteVolume(remotename, m_transaction)));
+            return RunOnMain(() => m_database.SafeDeleteRemoteVolume(remotename, m_transaction));
         }
 
         public Task<IEnumerable<string>> GetBlocklistHashesAsync(string remotename)
