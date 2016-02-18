@@ -53,9 +53,6 @@ namespace Duplicati.Library.Main.Operation.Backup
         [ChannelName("LogChannel")]
         private IWriteChannel<LogMessage> m_logchannel;
 
-        [ChannelName("ProgressChannel")]
-        private IWriteChannel<ProgressEvent> m_progresschannel;
-
         [ChannelName("ProcessedFiles")]
         private IWriteChannel<FileEntry> m_output;
 

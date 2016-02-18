@@ -25,7 +25,6 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         protected LocalDatabase m_db;
         protected System.Data.IDbTransaction m_transaction;
-        protected Task m_mainTask;
 
         public DatabaseCommon(LocalDatabase db)
             : base()

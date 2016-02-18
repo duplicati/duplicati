@@ -141,6 +141,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                 m_database.UpdateRemoteVolume(indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
             });
         }
+
+        public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist)
+        {
+            return RunOnMain(() => m_database.AppendFilesFromPreviousSet(m_transaction, deletedFilelist));
+        }
     }
 }
 
