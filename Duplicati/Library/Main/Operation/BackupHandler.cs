@@ -27,7 +27,6 @@ namespace Duplicati.Library.Main.Operation
         private System.Data.IDbTransaction m_transaction;
         private BlockVolumeWriter m_blockvolume;
         private IndexVolumeWriter m_indexvolume;
-        private FilesetVolumeWriter m_filesetvolume;
 
         private readonly IMetahash EMPTY_METADATA;
         
@@ -301,7 +300,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Finalize);
             using(new Logging.Timer("FinalizeRemoteVolumes"))
             {
-                if (m_blockvolume != null)
+                if (m_blockvolume != null && m_blockvolume.SourceSize > 0)
                 {
                     lastVolumeSize = m_blockvolume.SourceSize;
 
@@ -346,7 +345,7 @@ namespace Duplicati.Library.Main.Operation
             return lastVolumeSize;
         }
 
-        private void UploadRealFileList(BackendManager backend)
+        private void UploadRealFileList(BackendManager backend, FilesetVolumeWriter filesetvolume)
         {
             var changeCount = 
                 m_result.AddedFiles + m_result.ModifiedFiles + m_result.DeletedFiles +
@@ -360,22 +359,22 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (!string.IsNullOrEmpty(m_options.ControlFiles))
                         foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                            m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+                            filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
-                    m_database.WriteFileset(m_filesetvolume, m_transaction);
-                    m_filesetvolume.Close();
+                    m_database.WriteFileset(filesetvolume, m_transaction);
+                    filesetvolume.Close();
 
                     if (m_options.Dryrun)
-                        m_result.AddDryrunMessage(string.Format("Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length)));
+                        m_result.AddDryrunMessage(string.Format("Would upload fileset volume: {0}, size: {1}", filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(filesetvolume.LocalFilename).Length)));
                     else
                     {
-                        m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+                        m_database.UpdateRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
 
                         using(new Logging.Timer("CommitUpdateRemoteVolume"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
 
-                        backend.Put(m_filesetvolume);
+                        backend.Put(filesetvolume);
 
                         using(new Logging.Timer("CommitUpdateRemoteVolume"))
                             m_transaction.Commit();
@@ -387,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
             else
             {
                 m_result.AddVerboseMessage("removing temp files, as no data needs to be uploaded");
-                m_database.RemoveRemoteVolume(m_filesetvolume.RemoteFilename, m_transaction);
+                m_database.RemoveRemoteVolume(filesetvolume.RemoteFilename, m_transaction);
             }
         }
 
@@ -500,8 +499,8 @@ namespace Duplicati.Library.Main.Operation
                                 m_transaction = m_database.BeginTransaction();
             		            
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
-                                var filesetvolumeid = m_database.RegisterRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                                m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(m_filesetvolume.RemoteFilename).Time, m_transaction);
+                                var filesetvolumeid = m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+                                m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_transaction);
             
                                 using(var db = new Backup.BackupDatabase(m_database))
                                 using(var stats = new Backup.BackupStatsCollector(m_result))
@@ -526,7 +525,7 @@ namespace Duplicati.Library.Main.Operation
                         using(new Logging.Timer("VerifyConsistency"))
                             m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize);
     
-                        UploadRealFileList(backend);
+                        UploadRealFileList(backend, filesetvolume);
     									
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
                         using(new Logging.Timer("Async backend wait"))
@@ -885,20 +884,20 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="isBlocklistData">Indicates if the block is list data</param>
         private bool AddBlockToOutput(BackendManager backend, string key, byte[] data, int offset, int len, CompressionHint hint, bool isBlocklistData)
         {
+            if (m_blockvolume == null)
+            {
+                m_blockvolume = new BlockVolumeWriter(m_options);
+                m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
+
+                if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                {
+                    m_indexvolume = new IndexVolumeWriter(m_options);
+                    m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
+                }
+            }
+
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
-                if (m_blockvolume == null)
-                {
-                    m_blockvolume = new BlockVolumeWriter(m_options);
-                    m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
-
-                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                    {
-                        m_indexvolume = new IndexVolumeWriter(m_options);
-                        m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
-                    }
-                }
-
                 m_blockvolume.AddBlock(key, data, offset, len, hint);
                 
                 //TODO: In theory a normal data block and blocklist block could be equal.
