@@ -341,7 +341,7 @@ namespace Duplicati.Library.Main.Operation
 
                         if (!string.IsNullOrEmpty(m_options.ControlFiles))
                             foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                                m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
                         var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
                         m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
