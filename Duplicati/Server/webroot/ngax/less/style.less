@@ -87,7 +87,7 @@ body
             
             a
             {
-                color: @tColor;
+                color: @lColor;
             }
             
             a:hover,
@@ -120,6 +120,19 @@ body
                         float: right;
                         padding-right: 20px;
                     }
+                }
+            }
+            
+            .donate
+            {
+                img
+                {
+                    opacity: 0.6;
+                }
+                
+                img:hover
+                {
+                    opacity: 1;
                 }
             }
         }
@@ -275,11 +288,18 @@ body
                     border: 1px @hColor solid;
                     font-weight: 300;
                     font-size: 18px;
+                    overflow: hidden;
                     
                     strong
                     {
                         display: inline-block;
                         margin-right: 10px;
+                    }
+                    
+                    .button
+                    {
+                        position: static;
+                        margin-top: 70px;
                     }
                 }
                 
@@ -348,9 +368,9 @@ body
                             {
                                 float: left;
                                 margin-right: 10px;
+                                margin-bottom: 0;
                                 padding: 5px 8px;
                                 color: @tColor;
-                                border-bottom: 1px @tColor solid;
                                 cursor: pointer;
                                 clear: none;
                             }
@@ -367,6 +387,8 @@ body
                                 clear: both;
                                 float: none;
                                 padding-bottom: 8px;
+                                border-bottom: 1px #ddd solid;
+                                margin-bottom: 5px;
                             }
                         }
                     }
@@ -636,7 +658,7 @@ body
             
             a
             {
-                color: @tColor;
+                color: @lColor;
             }
             
             .about-footer
@@ -675,6 +697,12 @@ body
                             {
                                 margin-top: 24px;
                                 display: inline-block;
+                                opacity: 0.6;
+                            }
+                            
+                            img:hover
+                            {
+                                opacity: 1;
                             }
                         }
                     }
@@ -702,6 +730,16 @@ body
                         float: right;
                         margin-right: 10px;
                         padding-top: 5px;
+                        
+                        img
+                        {
+                            opacity: 0.6;
+                        }
+                        
+                        img:hover
+                        {
+                            opacity: 1;
+                        }
                     }
                 }
             }
@@ -1166,6 +1204,20 @@ span.info
                 {
                     padding: 8px 0;
                     border-bottom: 1px #ddd solid;
+                }
+                
+                .about-footer
+                {
+                    li:first-child
+                    {
+                        border-bottom: none;
+                        padding-bottom: 0;
+                    }
+                    
+                    li:last-child
+                    {
+                        padding-bottom: 20px;
+                    }
                 }
                 
                 .donate
