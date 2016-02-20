@@ -274,7 +274,8 @@ namespace Duplicati.Library.Main.Operation
                         new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync(),
                         Backup.FilePreFilterProcess.Start(snapshot, options),
                         new Backup.MetadataPreProcess(snapshot, options, database).RunAsync(),
-                        Backup.SpillCollectorProcess.Run(options, database)
+                        Backup.SpillCollectorProcess.Run(options, database),
+                        Backup.ProgressHandler.Run(result)
                     );
                 }
 
@@ -470,7 +471,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
-                    using(var logtarget = ChannelScope.Current.GetOrCreate<Common.LogMessage>("LogChannel").AsWriteOnly())
+                    using(var logtarget = ChannelManager.GetChannel<Common.LogMessage>("LogChannel").AsWriteOnly())
                     {
                         var lh = Common.LogHandler.Run(m_result);
 

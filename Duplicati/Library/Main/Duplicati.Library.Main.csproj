@@ -130,6 +130,7 @@
     <Compile Include="Operation\Common\StatsCollector.cs" />
     <Compile Include="Operation\Backup\BackupStatsCollector.cs" />
     <Compile Include="Operation\Common\LogHandler.cs" />
+    <Compile Include="Operation\Backup\ProgressHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
