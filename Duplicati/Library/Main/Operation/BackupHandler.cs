@@ -35,13 +35,7 @@ namespace Duplicati.Library.Main.Operation
 
         private BackupResults m_result;
 
-        //To better record what happens with the backend, we flush the log messages regularly
-        // We cannot flush immediately, because that would mess up the transaction, as the uploader
-        // is on another thread
-        private readonly TimeSpan FLUSH_TIMESPAN = TimeSpan.FromSeconds(10);
-        private DateTime m_backendLogFlushTimer;
-        
-        // Speed up things by caching these
+        // Speed up things by caching this
         private int m_blocksize;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
@@ -110,7 +104,6 @@ namespace Duplicati.Library.Main.Operation
                                 }
 
                                 result.OperationProgressUpdater.UpdatefileCount(count, size, false);                    
-
                             }
                         }
                         finally
@@ -437,6 +430,8 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
             
+            // New isolated scope for each operation
+            using(new ChannelScope(true))
             using(m_database = new LocalBackupDatabase(m_options.Dbpath, m_options))
             {
                 m_result.SetDatabase(m_database);
@@ -469,16 +464,16 @@ namespace Duplicati.Library.Main.Operation
                 m_filter = filter ?? new Library.Utility.FilterExpression();
                 m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
             	
-                m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
-                System.Threading.Thread parallelScanner = null;
 
-    
+                Task parallelScanner = null;
                 try
                 {
-
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
+                    using(var logtarget = ChannelScope.Current.GetOrCreate<Common.LogMessage>("LogChannel").AsWriteOnly())
                     {
+                        var lh = Common.LogHandler.Run(m_result);
+
                         using(var snapshot = GetSnapshot(sources, m_options, m_result))
                         {
                             var counterToken = new CancellationTokenSource();
@@ -486,7 +481,7 @@ namespace Duplicati.Library.Main.Operation
                             try
                             {
                                 // Start the parallel scanner
-                                CountFilesHandler(snapshot, m_result, m_options, m_sourceFilter, m_filter, counterToken.Token);
+                                parallelScanner = CountFilesHandler(snapshot, m_result, m_options, m_sourceFilter, m_filter, counterToken.Token);
 
                                 // Do a remote verification, unless disabled
                                 PreBackupVerify(backend);
@@ -508,7 +503,12 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     var res = RunMainOperation(snapshot, db, bk, stats, m_options, m_sourceFilter, m_filter, m_result).WaitForTask();
                                     if (res.IsFaulted)
-                                        throw res.Exception;
+                                    {
+                                        if (res.Exception.Flatten().InnerExceptions.Count == 1)
+                                            throw res.Exception.Flatten().InnerExceptions.First();
+                                        else
+                                            throw res.Exception;
+                                    }
                                 }
                             }
                             finally
@@ -573,472 +573,16 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    if (parallelScanner != null && parallelScanner.IsAlive)
-                    {
-                        parallelScanner.Abort();
-                        parallelScanner.Join(500);
-                        if (parallelScanner.IsAlive)
-                            m_result.AddWarning("Failed to terminate filecounter thread", null);
-                    }
-                
+                    if (parallelScanner != null)
+                        parallelScanner.Wait(500);
+
+                    // TODO: We want to commit? always?
                     if (m_transaction != null)
                         try { m_transaction.Rollback(); }
                         catch (Exception ex) { m_result.AddError(string.Format("Rollback error: {0}", ex.Message), ex); }
                 }
             }
         }
-
-        private Dictionary<string, string> GenerateMetadata(Snapshots.ISnapshotService snapshot, string path, System.IO.FileAttributes attributes)
-        {
-            try
-            {
-                Dictionary<string, string> metadata;
-
-                if (m_options.StoreMetadata)
-                {
-                    metadata = snapshot.GetMetadata(path);
-                    if (metadata == null)
-                        metadata = new Dictionary<string, string>();
-
-                    if (!metadata.ContainsKey("CoreAttributes"))
-                        metadata["CoreAttributes"] = attributes.ToString();
-
-                    if (!metadata.ContainsKey("CoreLastWritetime"))
-                    {
-                        try
-                        {
-                            metadata["CoreLastWritetime"] = snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
-                        }
-                        catch (Exception ex)
-                        {
-                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
-                        }
-                    }
-
-                    if (!metadata.ContainsKey("CoreCreatetime"))
-                    {
-                        try
-                        {
-                            metadata["CoreCreatetime"] = snapshot.GetCreationTimeUtc(path).Ticks.ToString();
-                        }
-                        catch (Exception ex)
-                        {
-                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
-                        }
-                    }
-                }
-                else
-                {
-                    metadata = new Dictionary<string, string>();
-                }
-
-                return metadata;
-            }
-            catch(Exception ex)
-            {
-                m_result.AddWarning(string.Format("Failed to process metadata for \"{0}\", storing empty metadata", path), ex);
-                return new Dictionary<string, string>();
-            }
-        }
-        
-        private bool HandleFilesystemEntry(Snapshots.ISnapshotService snapshot, BackendManager backend, string path, System.IO.FileAttributes attributes)
-        {
-            // If we lost the connection, there is no point in keeping on processing
-            if (backend.HasDied)
-                throw backend.LastException;
-            
-            try
-            {
-                m_result.OperationProgressUpdater.StartFile(path, -1);            
-                
-                if (m_backendLogFlushTimer < DateTime.Now)
-                {
-                    m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
-                    backend.FlushDbMessages(m_database, null);
-                }
-
-                DateTime lastwrite = new DateTime(0, DateTimeKind.Utc);
-                try 
-                { 
-                    lastwrite = snapshot.GetLastWriteTimeUtc(path); 
-                }
-                catch (Exception ex) 
-                {
-                    m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
-                }
-                                            
-                if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-                {
-                    if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
-                    {
-                        m_result.AddVerboseMessage("Ignoring symlink {0}", path);
-                        return false;
-                    }
-    
-                    if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
-                    {
-                        Dictionary<string, string> metadata = GenerateMetadata(snapshot, path, attributes);
-    
-                        if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                            metadata["CoreSymlinkTarget"] = snapshot.GetSymlinkTarget(path);
-    
-                        var metahash = Utility.WrapMetadata(metadata, m_options);
-                        AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);
-                        
-                        m_result.AddVerboseMessage("Stored symlink {0}", path);
-                        //Do not recurse symlinks
-                        return false;
-                    }
-                }
-    
-                if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
-                {
-                    IMetahash metahash;
-    
-                    if (m_options.StoreMetadata)
-                    {
-                        metahash = Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options);
-                    }
-                    else
-                    {
-                        metahash = EMPTY_METADATA;
-                    }
-    
-                    m_result.AddVerboseMessage("Adding directory {0}", path);
-                    AddFolderToOutput(backend, path, lastwrite, metahash);
-                    return true;
-                }
-    
-                m_result.OperationProgressUpdater.UpdatefilesProcessed(++m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
-                
-                bool changed = false;
-                
-                // Last scan time
-                DateTime oldModified;
-                long lastFileSize = -1;
-                string oldMetahash;
-                long oldMetasize;
-                var oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
-
-                long filestatsize = -1;
-                try { filestatsize = snapshot.GetFileSize(path); }
-                catch { }
-
-                IMetahash metahashandsize = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options) : EMPTY_METADATA;
-
-                var timestampChanged = lastwrite != oldModified || lastwrite.Ticks == 0 || oldModified.Ticks == 0;
-                var filesizeChanged = filestatsize < 0 || lastFileSize < 0 || filestatsize != lastFileSize;
-                var tooLargeFile = m_options.SkipFilesLargerThan != long.MaxValue && m_options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > m_options.SkipFilesLargerThan;
-                var metadatachanged = !m_options.SkipMetadata && (metahashandsize.Size != oldMetasize || metahashandsize.Hash != oldMetahash);
-
-                if ((oldId < 0 || m_options.DisableFiletimeCheck || timestampChanged || filesizeChanged || metadatachanged) && !tooLargeFile)
-                {
-                    m_result.AddVerboseMessage("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", path, oldId <= 0, timestampChanged, filesizeChanged, metadatachanged, lastwrite, oldModified);
-
-                    m_result.OpenedFiles++;
-                    
-                    long filesize = 0;
-
-                    var hint = m_options.GetCompressionHintFromFilename(path);
-                    var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);
-
-                    using (var blocklisthashes = new Library.Utility.FileBackedStringList())
-                    using (var hashcollector = new Library.Utility.FileBackedStringList())
-                    {
-                        using (var fs = new Blockprocessor(snapshot.OpenRead(path), m_blockbuffer))
-                        {
-                            try { m_result.OperationProgressUpdater.StartFile(path, fs.Length); }
-                            catch (Exception ex) { m_result.AddWarning(string.Format("Failed to read file length for file {0}", path), ex); }
-                            
-                            int blocklistoffset = 0;
-
-                            m_filehasher.Initialize();
-
-                            
-                            var offset = 0;
-                            var remaining = fs.Readblock();
-                            
-                            do
-                            {
-                                var size = Math.Min(m_blocksize, remaining);
-
-                                m_filehasher.TransformBlock(m_blockbuffer, offset, size, m_blockbuffer, offset);
-                                var blockkey = m_blockhasher.ComputeHash(m_blockbuffer, offset, size);
-                                if (m_blocklistbuffer.Length - blocklistoffset < blockkey.Length)
-                                {
-                                    var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
-                                    blocklisthashes.Add(blkey);
-                                    AddBlockToOutput(backend, blkey, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
-                                    blocklistoffset = 0;
-                                }
-
-                                Array.Copy(blockkey, 0, m_blocklistbuffer, blocklistoffset, blockkey.Length);
-                                blocklistoffset += blockkey.Length;
-
-                                var key = Convert.ToBase64String(blockkey);
-                                AddBlockToOutput(backend, key, m_blockbuffer, offset, size, hint, false);
-                                hashcollector.Add(key);
-                                filesize += size;
-
-                                m_result.OperationProgressUpdater.UpdateFileProgress(filesize);
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                    return false;
-                                
-                                remaining -= size;
-                                offset += size;
-                                
-                                if (remaining == 0)
-                                {
-                                    offset = 0;
-                                    remaining = fs.Readblock();
-                                }
-
-                            } while (remaining > 0);
-
-                            //If all fits in a single block, don't bother with blocklists
-                            if (hashcollector.Count > 1)
-                            {
-                                var blkeyfinal = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
-                                blocklisthashes.Add(blkeyfinal);
-                                AddBlockToOutput(backend, blkeyfinal, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
-                            }
-                        }
-
-                        m_result.SizeOfOpenedFiles += filesize;
-                        m_filehasher.TransformFinalBlock(m_blockbuffer, 0, 0);
-
-                        var filekey = Convert.ToBase64String(m_filehasher.Hash);
-                        if (oldHash != filekey)
-                        {
-                            if (oldHash == null)
-                                m_result.AddVerboseMessage("New file {0}", path);
-                            else
-                                m_result.AddVerboseMessage("File has changed {0}", path);
-                            if (oldId < 0)
-                            {
-                                m_result.AddedFiles++;
-                                m_result.SizeOfAddedFiles += filesize;
-					            
-					            if (m_options.Dryrun)
-					            	m_result.AddDryrunMessage(string.Format("Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
-                            }
-                            else
-                            {
-                                m_result.ModifiedFiles++;
-                                m_result.SizeOfModifiedFiles += filesize;
-					            
-					            if (m_options.Dryrun)
-					            	m_result.AddDryrunMessage(string.Format("Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
-                            }
-
-                            AddFileToOutput(backend, path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
-                            changed = true;
-                        }
-                        else if (metadatachanged)
-                        {
-                            m_result.AddVerboseMessage("File has only metadata changes {0}", path);
-                            AddFileToOutput(backend, path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
-                            changed = true;
-                        }
-                        else
-                        {
-                            // When we write the file to output, update the last modified time
-                            oldModified = lastwrite;
-                            m_result.AddVerboseMessage("File has not changed {0}", path);
-                        }
-
-                    }
-                }
-                else
-                {
-                    if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan)                
-                        m_result.AddVerboseMessage("Skipped checking file, because timestamp was not updated {0}", path);
-                    else
-                        m_result.AddVerboseMessage("Skipped checking file, because the size exceeds limit {0}", path);
-                }
-
-                if (!changed)
-                    AddUnmodifiedFile(oldId, lastwrite);
-
-                m_result.SizeOfExaminedFiles += filestatsize;
-                if (filestatsize != 0)
-                    m_result.OperationProgressUpdater.UpdatefilesProcessed(m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
-            }
-            catch (Exception ex)
-            {
-                m_result.AddWarning(string.Format("Failed to process path: {0}", path), ex);
-                m_result.FilesWithError++;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Adds the found file data to the output unless the block already exists
-        /// </summary>
-        /// <param name="key">The block hash</param>
-        /// <param name="data">The data matching the hash</param>
-        /// <param name="len">The size of the data</param>
-        /// <param name="offset">The offset into the data</param>
-        /// <param name="hint">Hint for compression module</param>
-        /// <param name="isBlocklistData">Indicates if the block is list data</param>
-        private bool AddBlockToOutput(BackendManager backend, string key, byte[] data, int offset, int len, CompressionHint hint, bool isBlocklistData)
-        {
-            if (m_blockvolume == null)
-            {
-                m_blockvolume = new BlockVolumeWriter(m_options);
-                m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
-
-                if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                {
-                    m_indexvolume = new IndexVolumeWriter(m_options);
-                    m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
-                }
-            }
-
-            if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
-            {
-                m_blockvolume.AddBlock(key, data, offset, len, hint);
-                
-                //TODO: In theory a normal data block and blocklist block could be equal.
-                // this would cause the index file to not contain all data,
-                // if the data file is added before the blocklist data
-                // ... highly theoretical ...
-                if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full && isBlocklistData)
-                    m_indexvolume.WriteBlocklist(key, data, offset, len);
-                    
-                if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
-                {
-                	if (m_options.Dryrun)
-                	{
-                        m_blockvolume.Close();
-                		m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
-                		
-                		if (m_indexvolume != null)
-                		{
-		            		UpdateIndexVolume();
-                			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-                			m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
-                			m_indexvolume.Dispose();
-                			m_indexvolume = null;
-                		}
-                        
-                        m_blockvolume.Dispose();
-                        m_blockvolume = null;
-                        m_indexvolume.Dispose();
-                        m_indexvolume = null;
-                	}
-                	else
-                	{
-	                	//When uploading a new volume, we register the volumes and then flush the transaction
-	                	// this ensures that the local database and remote storage are as closely related as possible
-                		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-                        m_blockvolume.Close();
-	            		UpdateIndexVolume();
-	                	
-	                	backend.FlushDbMessages(m_database, m_transaction);
-        				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
-
-                        using(new Logging.Timer("CommitAddBlockToOutputFlush"))
-                            m_transaction.Commit();
-                        m_transaction = m_database.BeginTransaction();
-
-                        backend.Put(m_blockvolume, m_indexvolume);
-                        m_blockvolume = null;
-                        m_indexvolume = null;
-
-                        using(new Logging.Timer("CommitAddBlockToOutputFlush"))
-	                    	m_transaction.Commit();
-	                	m_transaction = m_database.BeginTransaction();
-	                	
-	                }
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        private void AddUnmodifiedFile(long oldId, DateTime lastModified)
-        {
-            m_database.AddUnmodifiedFile(oldId, lastModified, m_transaction);
-        }
-
-
-        /// <summary>
-        /// Adds a file to the output, 
-        /// </summary>
-        /// <param name="filename">The name of the file to record</param>
-        /// <param name="lastModified">The value of the lastModified timestamp</param>
-        /// <param name="hashlist">The list of hashes that make up the file</param>
-        /// <param name="size">The size of the file</param>
-        /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
-        /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private bool AddFolderToOutput(BackendManager backend, string filename, DateTime lastModified, IMetahash meta)
-        {
-            long metadataid;
-            bool r = false;
-
-            if (meta.Size > m_blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
-
-            r |= AddBlockToOutput(backend, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
-
-            m_database.AddDirectoryEntry(filename, metadataid, lastModified, m_transaction);
-            return r;
-        }
-
-        /// <summary>
-        /// Adds a file to the output, 
-        /// </summary>
-        /// <param name="filename">The name of the file to record</param>
-        /// <param name="lastModified">The value of the lastModified timestamp</param>
-        /// <param name="hashlist">The list of hashes that make up the file</param>
-        /// <param name="size">The size of the file</param>
-        /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
-        /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private bool AddSymlinkToOutput(BackendManager backend, string filename, DateTime lastModified, IMetahash meta)
-        {
-            long metadataid;
-            bool r = false;
-
-            if (meta.Size > m_blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
-
-            r |= AddBlockToOutput(backend, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
-
-            m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction);
-            return r;
-        }
-
-        /// <summary>
-        /// Adds a file to the output, 
-        /// </summary>
-        /// <param name="filename">The name of the file to record</param>
-        /// <param name="lastModified">The value of the lastModified timestamp</param>
-        /// <param name="hashlist">The list of hashes that make up the file</param>
-        /// <param name="size">The size of the file</param>
-        /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
-        /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private void AddFileToOutput(BackendManager backend, string filename, long size, DateTime lastmodified, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes)
-        {
-            long metadataid;
-            long blocksetid;
-            
-            if (metadata.Size > m_blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
-
-            AddBlockToOutput(backend, metadata.Hash, metadata.Blob, 0, (int)metadata.Size, CompressionHint.Default, false);
-            m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
-
-            m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
-
-            m_database.AddFile(filename, lastmodified, blocksetid, metadataid, m_transaction);
-        }
-
 
         private void UpdateIndexVolume()
         {

@@ -23,10 +23,12 @@ namespace Duplicati.Library.Main.Operation.Common
     internal abstract class SingleRunner : ProcessHelper
     {
         protected IChannel<Func<Task>> m_channel;
+        protected readonly Task m_worker;
 
         public SingleRunner()
         {
             m_channel = ChannelManager.CreateChannel<Func<Task>>();
+            m_worker = Start();
         }
 
         protected override async Task Start()

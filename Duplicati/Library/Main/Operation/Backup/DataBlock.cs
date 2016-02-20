@@ -29,17 +29,23 @@ namespace Duplicati.Library.Main.Operation.Backup
         public long Size;
         public CompressionHint Hint;
         public bool IsBlocklistHashes;
+        public TaskCompletionSource<bool> TaskCompletion;
 
-        public static Task AddBlockToOutputAsync(IWriteChannel<DataBlock> channel, string hash, byte[] data, int offset, long size, CompressionHint hint, bool isBlocklistHashes)
+        public static async Task<bool> AddBlockToOutputAsync(IWriteChannel<DataBlock> channel, string hash, byte[] data, int offset, long size, CompressionHint hint, bool isBlocklistHashes)
         {
-            return channel.WriteAsync(new DataBlock() {
+            var tcs = new TaskCompletionSource<bool>();
+
+            await channel.WriteAsync(new DataBlock() {
                 HashKey = hash,
                 Data = data,
                 Offset = offset,
                 Size = size,
                 Hint = hint,
-                IsBlocklistHashes = isBlocklistHashes
+                IsBlocklistHashes = isBlocklistHashes,
+                TaskCompletion = tcs
             });
+
+            return await tcs.Task;
         }
     }
 }

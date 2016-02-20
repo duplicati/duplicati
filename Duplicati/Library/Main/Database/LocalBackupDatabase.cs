@@ -296,6 +296,32 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Probes to see if a block already exists
+        /// </summary>
+        /// <param name="key">The block key</param>
+        /// <param name="archivename">The name of the archive that holds the data</param>
+        /// <returns>True if the block should be added to the current output</returns>
+        public long FindBlockID (string key, long size, System.Data.IDbTransaction transaction = null)
+        {
+            var r = -1L;
+            if (m_blockHashLookup != null) 
+            {
+                KeyValuePair<long, long> blockid;
+                if (m_blockHashLookup.TryGet(key, size, out blockid))
+                    return blockid.Key;
+            }
+            else
+            {
+                m_findblockCommand.Transaction = transaction;
+                m_findblockCommand.SetParameterValue(0, key);
+                m_findblockCommand.SetParameterValue(1, size);
+                r = m_findblockCommand.ExecuteScalarInt64(-1);
+            }
+
+            return r;
+        }
+
+        /// <summary>
         /// Adds a block to the local database, returning a value indicating if the value presents a new block
         /// </summary>
         /// <param name="key">The block key</param>

@@ -52,20 +52,35 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             var b = await self.Input.ReadAsync();
 
-                            if (await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID))
+                            // Lazy-start a new block volume
+                            if (blockvolume == null)
                             {
-                                // Lazy-start a new block volume
-                                if (blockvolume == null)
+                                // Before we start a new volume, probe to see if it exists
+                                // This will delay creation of volumes for differential backups
+                                // There can be a race, such that two workers determine that
+                                // the block is missing, but this will be solved by the AddBlock call
+                                // which runs atomically
+                                if (await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
                                 {
-                                    blockvolume = new BlockVolumeWriter(options);
-                                    blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-
-                                    if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                                    {
-                                        indexvolume = new IndexVolumeWriter(options);
-                                        indexvolume.VolumeID = await database.RegisterRemoteVolumeAsync(indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
-                                    }
+                                    b.TaskCompletion.TrySetResult(false);
+                                    continue;
                                 }
+
+                                blockvolume = new BlockVolumeWriter(options);
+                                blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+
+                                if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                                {
+                                    indexvolume = new IndexVolumeWriter(options);
+                                    indexvolume.VolumeID = await database.RegisterRemoteVolumeAsync(indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                                }
+                            }
+
+                            var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
+                            b.TaskCompletion.TrySetResult(newBlock);
+
+                            if (newBlock)
+                            {
 
                                 blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
 
@@ -114,7 +129,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     }
                                 }
 
-                            }                    
+                            }
                         }
                     }
                     catch(Exception ex)
@@ -122,7 +137,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (ex.IsRetiredException())
                         {
                             // If we have collected data, merge all pending volumes into a single volume
-                            if (blockvolume != null)
+                            if (blockvolume != null && blockvolume.SourceSize > 0)
                                 await self.SpillPickup.WriteAsync(new UploadRequest(blockvolume, indexvolume));
                         }
 

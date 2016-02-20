@@ -44,14 +44,19 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_database = database;
         }
 
+        public Task<long> FindBlockIDAsync(string hash, long size)
+        {
+            return RunOnMain(() => m_database.FindBlockID(hash, size, m_transaction));
+        }
+
         public Task<bool> AddBlockAsync(string hash, long size, long volumeid)
         {
-            return RunOnMain(() => Task.FromResult(m_database.AddBlock(hash, size, volumeid, m_transaction)));
+            return RunOnMain(() => m_database.AddBlock(hash, size, volumeid, m_transaction));
         }
 
         public Task<string> GetFileHashAsync(long fileid)
         {
-            return RunOnMain(() => Task.FromResult(m_database.GetFileHash(fileid)));
+            return RunOnMain(() => m_database.GetFileHash(fileid));
         }
 
         public Task<Tuple<bool, long>> AddMetadatasetAsync(string hash, long size)
@@ -59,7 +64,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => {
                 long metadataid;
                 var n = m_database.AddMetadataset(hash, size, out metadataid, m_transaction);
-                return Task.FromResult(new Tuple<bool, long>(n, metadataid));
+                return new Tuple<bool, long>(n, metadataid);
             });
         }
 
