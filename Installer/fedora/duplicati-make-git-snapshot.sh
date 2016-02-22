@@ -20,7 +20,7 @@ echo HEAD ${1:-HEAD}
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-         https://code.google.com/p/duplicati/ $DIRNAME
+         https://github.com/duplicati/duplicati.git $DIRNAME
 
 cd "$DIRNAME"
 if [ -e "../oem.js" ]; then
