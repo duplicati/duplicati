@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
     internal static class BackendUploader
     {
-        public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database)
+        public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results)
         {
             return AutomationExtensions.RunTask(new
                 {
@@ -67,6 +67,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                         while(inProgress.Count >= max_pending)
                             await inProgress.Dequeue();
                     }
+
+                    results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
 
                     while(inProgress.Count > 0)
                         await inProgress.Dequeue();

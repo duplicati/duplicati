@@ -54,6 +54,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
+        public Task AddExaminedFile(long size)
+        {
+            return RunOnMain(() => {
+                m_res.SizeOfExaminedFiles += size;
+                m_res.ExaminedFiles++;
+            });
+        }
     }
 }
 

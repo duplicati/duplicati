@@ -41,6 +41,8 @@ namespace Duplicati.Library.Main.Operation.Common
 
             w.Close();
 
+            await database.AddIndexBlockLinkAsync(w.VolumeID, blockvolume.ID);
+
             return w;
         }
 

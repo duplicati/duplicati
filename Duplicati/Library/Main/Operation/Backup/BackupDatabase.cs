@@ -21,6 +21,7 @@ using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Volumes;
+using System.Linq;
 
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -150,6 +151,41 @@ namespace Duplicati.Library.Main.Operation.Backup
         public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist)
         {
             return RunOnMain(() => m_database.AppendFilesFromPreviousSet(m_transaction, deletedFilelist));
+        }
+
+        public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist, long filesetid, long prevId, DateTime timestamp)
+        {
+            return RunOnMain(() => m_database.AppendFilesFromPreviousSet(m_transaction, deletedFilelist, filesetid, prevId, timestamp));
+        }
+
+        public Task<KeyValuePair<long, DateTime>[]> GetIncompleteFilesetsAsync()
+        {
+            return RunOnMain(() => m_database.GetIncompleteFilesets(m_transaction).OrderBy(x => x.Value).ToArray());
+        }
+
+        public Task<IEnumerable<KeyValuePair<long, DateTime>>> GetFilesetTimesAsync()
+        {
+            return RunOnMain(() => m_database.FilesetTimes);
+        }
+
+        public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
+        {
+            return RunOnMain(() => m_database.CreateFileset(volumeID, fileTime, m_transaction));
+        }
+
+        public Task LinkFilesetToVolumeAsync(long filesetid, long volumeid)
+        {
+            return RunOnMain(() => m_database.LinkFilesetToVolume(filesetid, volumeid, m_transaction));
+        }
+
+        public Task WriteFilesetAsync(FilesetVolumeWriter fsw, long newFilesetID)
+        {
+            return RunOnMain(() => m_database.WriteFileset(fsw, m_transaction, newFilesetID));
+        }
+
+        public Task<IEnumerable<string>> GetMissingIndexFilesAsync()
+        {
+            return RunOnMain(() => m_database.GetMissingIndexFiles());
         }
     }
 }

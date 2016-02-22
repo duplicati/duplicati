@@ -57,6 +57,19 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
+        public Task RollbackTransactionAsync(bool restart = true)
+        {
+            return RunOnMain(() =>
+            {
+                m_transaction.Rollback();
+                if (restart)
+                    m_transaction = m_db.BeginTransaction();
+                else
+                    m_transaction = null;
+            });
+        }
+
+
 
         public Task RenameRemoteFileAsync(string oldname, string newname)
         {
@@ -89,6 +102,12 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             return RunOnMain(() => m_db.GetRemoteVolumeID(remotename, m_transaction));
         }
+
+        public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
+        {
+            return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID, m_transaction));
+        }
+
 
         protected override void Dispose(bool isDisposing)
         {

@@ -25,7 +25,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class FilePreFilterProcess
     {
-        public static Task Start(Snapshots.ISnapshotService snapshot, Options options)
+        public static Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -53,6 +53,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                         catch
                         {
                         }
+
+                        await stats.AddExaminedFile(filestatsize);
 
                         e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot, self.LogChannel), options) : EMPTY_METADATA;
 

@@ -132,6 +132,7 @@
     <Compile Include="Operation\Backup\ProgressHandler.cs" />
     <Compile Include="Operation\Backup\BackendUploader.cs" />
     <Compile Include="Operation\Common\IndexVolumeCreator.cs" />
+    <Compile Include="Operation\Backup\UploadSyntheticFilelist.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

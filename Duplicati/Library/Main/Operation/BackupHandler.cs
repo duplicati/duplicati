@@ -117,121 +117,6 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void UploadSyntheticFilelist(BackendManager backend) 
-        {
-            var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();                        
-            if (incompleteFilesets.Length != 0)
-            {
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
-                using(var trn = m_database.BeginTransaction())
-                {
-                    var incompleteSet = incompleteFilesets.Last();
-                    var badIds = from n in incompleteFilesets select n.Key;
-
-                    var prevs = (from n in m_database.FilesetTimes 
-                        where 
-                        n.Key < incompleteSet.Key
-                        &&
-                        !badIds.Contains(n.Key)
-                        orderby n.Key                                                
-                        select n.Key).ToArray();
-
-                    var prevId = prevs.Length == 0 ? -1 : prevs.Last();
-
-                    FilesetVolumeWriter fsw = null;
-                    try
-                    {
-                        var s = 1;
-                        var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                        var oldFilesetID = incompleteSet.Key;
-
-                        // Probe for an unused filename
-                        while (s < 60)
-                        {
-                            var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
-                            if (id < 0)
-                                break;
-
-                            fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                        }
-
-                        fsw = new FilesetVolumeWriter(m_options, fileTime);
-                        fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-
-                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                            foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
-
-                        var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
-                        m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
-                        m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
-
-                        m_database.WriteFileset(fsw, trn, newFilesetID);
-
-                        if (m_options.Dryrun)
-                        {
-                            m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
-                        }
-                        else
-                        {
-                            m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
-
-                            using(new Logging.Timer("CommitUpdateFilelistVolume"))
-                                trn.Commit();
-
-                            backend.Put(fsw);
-                            fsw = null;
-                        }
-                    }
-                    finally
-                    {
-                        if (fsw != null)
-                            try { fsw.Dispose(); }
-                        catch { fsw = null; }
-                    }                          
-                }
-            }
-
-            if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-            {
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                var hashsize = blockhasher.HashSize / 8;
-
-                foreach(var blockfile in m_database.GetMissingIndexFiles())
-                {
-                    m_result.AddMessage(string.Format("Re-creating missing index file for {0}", blockfile));
-                    var w = new IndexVolumeWriter(m_options);
-                    w.VolumeID = m_database.RegisterRemoteVolume(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
-
-                    var blockvolume = m_database.GetRemoteVolumeFromName(blockfile);
-                    w.StartVolume(blockvolume.Name);
-                    var volumeid = m_database.GetRemoteVolumeID(blockvolume.Name);
-
-                    foreach(var b in m_database.GetBlocks(volumeid))
-                        w.AddBlock(b.Hash, b.Size);
-
-                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
-
-                    if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                        foreach(var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
-                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
-
-                    w.Close();
-
-                    m_database.AddIndexBlockLink(w.VolumeID, volumeid, null);
-
-                    if (m_options.Dryrun)
-                        m_result.AddDryrunMessage(string.Format("would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize)));
-                    else
-                    {
-                        m_database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                        backend.Put(w);
-                    }
-                }
-            }
-        }
-
         private void PreBackupVerify(BackendManager backend)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
@@ -272,11 +157,11 @@ namespace Duplicati.Library.Main.Operation
                         Backup.DataBlockProcessor.Run(database, options),
                         Backup.FileBlockProcessor.Start(snapshot, options, database, stats),
                         new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync(),
-                        Backup.FilePreFilterProcess.Start(snapshot, options),
+                        Backup.FilePreFilterProcess.Start(snapshot, options, stats),
                         new Backup.MetadataPreProcess(snapshot, options, database).RunAsync(),
                         Backup.SpillCollectorProcess.Run(options, database),
                         Backup.ProgressHandler.Run(result),
-                        Backup.BackendUploader.Run(backend, options, database)
+                        Backup.BackendUploader.Run(backend, options, database, result)
                     );
                 }
 
@@ -377,6 +262,14 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        private static async Task<long> CreateFilesetAsync(Backup.BackupDatabase database, string filename)
+        {
+            var filesetvolumeid = await database.RegisterRemoteVolumeAsync(filename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+            await database.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filename).Time);
+
+            return filesetvolumeid;
+        }
+
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
@@ -437,23 +330,30 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Do a remote verification, unless disabled
                                 PreBackupVerify(backend);
-
-                                // Verify before uploading a synthetic list
-                                m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
-                                UploadSyntheticFilelist(backend);
-
-                                m_database.BuildLookupTable(m_options);
-                                m_transaction = m_database.BeginTransaction();
-            		            
-                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
-                                var filesetvolumeid = m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                                m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_transaction);
-            
+                                            
                                 using(var db = new Backup.BackupDatabase(m_database))
                                 using(var stats = new Backup.BackupStatsCollector(m_result))
                                 using(var bk = new Common.BackendHandler(m_options, m_backendurl, db, stats))
                                 {
-                                    var res = RunMainOperation(snapshot, db, bk, stats, m_options, m_sourceFilter, m_filter, m_result).WaitForTask();
+                                    // Verify before uploading a synthetic list
+                                    m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+
+                                    var res = Backup.UploadSyntheticFilelist.Run(bk, db, m_options, m_result).WaitForTask();
+                                    if (res.IsFaulted)
+                                    {
+                                        if (res.Exception.Flatten().InnerExceptions.Count == 1)
+                                            throw res.Exception.Flatten().InnerExceptions.First();
+                                        else
+                                            throw res.Exception;
+                                    }
+
+                                    m_database.BuildLookupTable(m_options);
+
+                                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
+
+                                    var filesetvolumeid = CreateFilesetAsync(db, filesetvolume.RemoteFilename).Result;
+
+                                    res = RunMainOperation(snapshot, db, bk, stats, m_options, m_sourceFilter, m_filter, m_result).WaitForTask();
                                     if (res.IsFaulted)
                                     {
                                         if (res.Exception.Flatten().InnerExceptions.Count == 1)
@@ -472,6 +372,8 @@ namespace Duplicati.Library.Main.Operation
 
                         // TODO: Implement this
                         //var lastVolumeSize = FinalizeRemoteVolumes(backend);
+
+                        m_transaction = m_database.BeginTransaction();
     		            
                         using(new Logging.Timer("UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
