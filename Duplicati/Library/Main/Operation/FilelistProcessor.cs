@@ -259,9 +259,9 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            if (i.deleteGracePeriod > DateTime.UtcNow)
+                            if (i.DeleteGracePeriod > DateTime.UtcNow)
                             {
-                                log.AddMessage(string.Format("keeping delete request for {0} until {1}", i.Name, i.deleteGracePeriod.ToLocalTime()));
+                                log.AddMessage(string.Format("keeping delete request for {0} until {1}", i.Name, i.DeleteGracePeriod.ToLocalTime()));
                             }
                             else
                             {

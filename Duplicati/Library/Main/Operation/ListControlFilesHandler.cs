@@ -59,15 +59,10 @@ namespace Duplicati.Library.Main.Operation
                                 return;
                         
                             var file = fileversion.Value.File;
-                            long size;
-                            string hash;
-                            RemoteVolumeType type;
-                            RemoteVolumeState state;
-                            if (!db.GetRemoteVolume(file.Name, out hash, out size, out type, out state))
-                                size = file.Size;
+                            var entry = db.GetRemoteVolume(file.Name);
     
                             var files = new List<Library.Interface.IListResultFile>();
-                            using (var tmpfile = backend.Get(file.Name, size, hash))
+                            using (var tmpfile = backend.Get(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash))
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))

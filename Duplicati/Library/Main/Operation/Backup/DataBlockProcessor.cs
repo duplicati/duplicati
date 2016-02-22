@@ -37,14 +37,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     LogChannel = ChannelMarker.ForWrite<LogMessage>("LogChannel"),
                     Input = ChannelMarker.ForRead<DataBlock>("OutputBlocks"),
-                    Output = ChannelMarker.ForWrite<IBackendOperation>("BackendRequests"),
-                    SpillPickup = ChannelMarker.ForWrite<IBackendOperation>("SpillPickup"),
+                    Output = ChannelMarker.ForWrite<UploadRequest>("BackendRequests"),
+                    SpillPickup = ChannelMarker.ForWrite<UploadRequest>("SpillPickup"),
                 },
 
                 async self =>
                 {
                     BlockVolumeWriter blockvolume = null;
-                    IndexVolumeWriter indexvolume = null;
 
                     try
                     {
@@ -68,12 +67,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 blockvolume = new BlockVolumeWriter(options);
                                 blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-
-                                if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                                {
-                                    indexvolume = new IndexVolumeWriter(options);
-                                    indexvolume.VolumeID = await database.RegisterRemoteVolumeAsync(indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
-                                }
                             }
 
                             var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
@@ -84,13 +77,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
 
-                                //TODO: In theory a normal data block and blocklist block could be equal.
-                                // this would cause the index file to not contain all data,
-                                // if the data file is added before the blocklist data
-                                // ... highly theoretical and only causes extra block data downloads ...
-                                if (options.IndexfilePolicy == Options.IndexFileStrategy.Full && b.IsBlocklistHashes)
-                                    indexvolume.WriteBlocklist(b.HashKey, b.Data, b.Offset, (int)b.Size);
-
                                 if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
                                 {
                                     if (options.Dryrun)
@@ -98,34 +84,21 @@ namespace Duplicati.Library.Main.Operation.Backup
                                         blockvolume.Close();
                                             await self.LogChannel.WriteAsync(LogMessage.DryRun("Would upload block volume: {0}, size: {1}", blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(blockvolume.LocalFilename).Length)));
 
-                                        if (indexvolume != null)
-                                        {
-                                            await database.UpdateIndexVolumeAsync(indexvolume, blockvolume);
-                                            indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(blockvolume.LocalFilename), new FileInfo(blockvolume.LocalFilename).Length);
-                                            await self.LogChannel.WriteAsync(LogMessage.DryRun("Would upload index volume: {0}, size: {1}", indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(indexvolume.LocalFilename).Length)));
-                                            indexvolume.Dispose();
-                                            indexvolume = null;
-                                        }
-
                                         blockvolume.Dispose();
                                         blockvolume = null;
-                                        indexvolume.Dispose();
-                                        indexvolume = null;
                                     }
                                     else
                                     {
                                         //When uploading a new volume, we register the volumes and then flush the transaction
                                         // this ensures that the local database and remote storage are as closely related as possible
-                                        await database.UpdateRemoteVolume(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                                        await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                                     
                                         blockvolume.Close();
 
-                                        await database.UpdateIndexVolumeAsync(indexvolume, blockvolume);
                                         await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                        await self.Output.WriteAsync(new UploadRequest(blockvolume, indexvolume));
+                                        await self.Output.WriteAsync(new UploadRequest(blockvolume, null));
                                         blockvolume = null;
-                                        indexvolume = null;
                                     }
                                 }
 
@@ -138,7 +111,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             // If we have collected data, merge all pending volumes into a single volume
                             if (blockvolume != null && blockvolume.SourceSize > 0)
-                                await self.SpillPickup.WriteAsync(new UploadRequest(blockvolume, indexvolume));
+                                await self.SpillPickup.WriteAsync(new UploadRequest(blockvolume, null));
                         }
 
                         throw;

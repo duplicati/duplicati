@@ -110,9 +110,9 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.CommandText = @"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?";
             m_updateremotevolumeCommand.AddParameters(5);
 
-            m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
+            m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
-            m_selectremotevolumeCommand.CommandText = @"SELECT ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
+            m_selectremotevolumeCommand.CommandText = m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?";
             m_selectremotevolumeCommand.AddParameter();
 
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ?";
@@ -242,39 +242,40 @@ namespace Duplicati.Library.Main.Database
 			return m_selectremotevolumeIdCommand.ExecuteScalarInt64(null, -1, file);
 		}
 
-        public bool GetRemoteVolume(string file, out string hash, out long size, out RemoteVolumeType type, out RemoteVolumeState state)
+        public RemoteVolumeEntry GetRemoteVolume(string file, System.Data.IDbTransaction transaction = null)
         {
+            m_selectremotevolumeCommand.Transaction = transaction;
             m_selectremotevolumeCommand.SetParameterValue(0, file);
-            using (var rd = m_selectremotevolumeCommand.ExecuteReader())
+            using(var rd = m_selectremotevolumeCommand.ExecuteReader())
                 if (rd.Read())
-                {
-                    hash = (rd.GetValue(2) == null || rd.GetValue(2) == DBNull.Value) ? null : rd.GetValue(3).ToString();
-                    size = (rd.GetValue(1) == null || rd.GetValue(1) == DBNull.Value) ? -1 : rd.GetInt64(2);
-                    type = (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(0).ToString());
-                    state = (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(3).ToString());
-                    return true;
-                }
+                    return new RemoteVolumeEntry(
+                        rd.ConvertValueToInt64(0),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                    );
 
-            hash = null;
-            size = -1;
-            type = (RemoteVolumeType)(-1);
-            state = (RemoteVolumeState)(-1);
-            return false;
+            return RemoteVolumeEntry.Empty;
         }
 
-        public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes()
+        public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes(System.Data.IDbTransaction transaction = null)
         {
+            m_selectremotevolumesCommand.Transaction = transaction;
             using (var rd = m_selectremotevolumesCommand.ExecuteReader())
             {
                 while (rd.Read())
                 {
                     yield return new RemoteVolumeEntry(
-                        rd.GetValue(0).ToString(),
-                        (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
-                        rd.ConvertValueToInt64(2, -1),
-                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
+                        rd.ConvertValueToInt64(0),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
                     );
                 }
             }
@@ -943,9 +944,9 @@ namespace Duplicati.Library.Main.Database
             m_insertIndexBlockLink.ExecuteNonQuery();
         }
 
-        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize)
+        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, System.Data.IDbTransaction transaction = null)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " + 
                     @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " + 

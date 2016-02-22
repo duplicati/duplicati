@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                     // Make sure the filehasher is done with the buf instance before we pass it on
                                     await pftask;
-                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, lastread, 0, hint, true);
+                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, hint, true);
                                     buf = new byte[blocksize];
                                 }
                             }

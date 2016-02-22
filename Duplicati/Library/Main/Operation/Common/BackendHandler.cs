@@ -67,10 +67,6 @@ namespace Duplicati.Library.Main.Operation.Common
             /// </summary>
             public long Size;
             /// <summary>
-            /// Reference to the index file entry that is updated if this entry changes
-            /// </summary>
-            public Tuple<IndexVolumeWriter, FileEntryItem> Indexfile;
-            /// <summary>
             /// A flag indicating if the final hash and size of the block volume has been written to the index file
             /// </summary>
             public bool IndexfileUpdated;
@@ -88,16 +84,15 @@ namespace Duplicati.Library.Main.Operation.Common
             /// </summary>
             public bool IsRetry;
 
-            public FileEntryItem(BackendActionType operation, string remotefilename, Tuple<IndexVolumeWriter, FileEntryItem> indexfile = null)
+            public FileEntryItem(BackendActionType operation, string remotefilename)
             {
                 Operation = operation;
                 RemoteFilename = remotefilename;
-                Indexfile = indexfile;
                 Size = -1;
             }
 
-            public FileEntryItem(BackendActionType operation, string remotefilename, long size, string hash, Tuple<IndexVolumeWriter, FileEntryItem> indexfile = null)
-                : this(operation, remotefilename, indexfile)
+            public FileEntryItem(BackendActionType operation, string remotefilename, long size, string hash)
+                : this(operation, remotefilename)
             {
                 Size = size;
                 Hash = hash;
@@ -185,7 +180,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task PutUnencryptedAsync(string remotename, string localpath)
         {
-            var fe = new FileEntryItem(BackendActionType.Put, remotename, null);
+            var fe = new FileEntryItem(BackendActionType.Put, remotename);
             fe.SetLocalfilename(localpath);
             fe.Encrypted = true; //Prevent encryption
             fe.TrackedInDb = false; //Prevent Db updates
@@ -199,31 +194,57 @@ namespace Duplicati.Library.Main.Operation.Common
 
         }
             
-        public Task UploadFileAsync(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
+        public async Task UploadFileAsync(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
         {
-            Tuple<IndexVolumeWriter, FileEntryItem> indexfe = null;
-            if (indexfile != null)
-                indexfe = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, new FileEntryItem(BackendActionType.Put, indexfile.RemoteFilename));
+            var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
+            fe.SetLocalfilename(item.LocalFilename);
 
-            var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename, indexfe);
+            var tcs = new TaskCompletionSource<bool>();
 
-            return RunRetryOnMain<bool>(fe, async () =>
+            await RunOnMain(async () =>
             {
-                if (fe.IsRetry && fe.Indexfile != null && fe.TrackedInDb)
-                    await RenameFileAfterErrorAsync(fe);
-                else
-                    fe.IsRetry = true;
-               
-                await DoPut(fe);
+                try
+                {
+                    await DoWithRetry(fe, async () => {
+                        if (fe.IsRetry)
+                            await RenameFileAfterErrorAsync(fe);
 
-                m_uploadSuccess = true;
-                return true;
+                        return await DoPut(fe);
+                    });
+
+                    if (createIndexFile != null)
+                    {
+                        var ix = await createIndexFile(fe.RemoteFilename);
+                        var indexFile = new FileEntryItem(BackendActionType.Put, ix.RemoteFilename);
+                        indexFile.SetLocalfilename(ix.LocalFilename);
+
+                        await m_database.UpdateRemoteVolumeAsync(indexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+
+                        await DoWithRetry(indexFile, async () => {
+                            if (indexFile.IsRetry)
+                                await RenameFileAfterErrorAsync(indexFile);
+
+                            return await DoPut(indexFile);
+                        });
+                    }
+
+                    tcs.TrySetResult(true);
+                }
+                catch(Exception ex)
+                {
+                    if (ex is System.Threading.ThreadAbortException)
+                        tcs.TrySetCanceled();
+                    else
+                        tcs.TrySetException(ex);
+                }
             });
+
+            await tcs.Task;
         }
 
         public Task DeleteFileAsync(string remotename, long size)
         {
-            var fe = new FileEntryItem(BackendActionType.Delete, remotename, null);
+            var fe = new FileEntryItem(BackendActionType.Delete, remotename);
             return RunRetryOnMain(fe, () =>
                 DoDelete(fe)
             );
@@ -231,7 +252,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task CreateFolder(string remotename)
         {
-            var fe = new FileEntryItem(BackendActionType.CreateFolder, remotename, null);
+            var fe = new FileEntryItem(BackendActionType.CreateFolder, remotename);
             return RunRetryOnMain(fe, () =>
                 DoCreateFolder(fe)
             );
@@ -240,7 +261,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<IList<Library.Interface.IFileEntry>> ListFilesAsync()
         {
-            var fe = new FileEntryItem(BackendActionType.List, null, null);
+            var fe = new FileEntryItem(BackendActionType.List, null);
             return RunRetryOnMain(fe, () => 
                 DoList(fe)
             );
@@ -256,7 +277,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<Tuple<Library.Utility.TempFile, long, string>> GetFileWithInfoAsync(string remotename)
         {
-            var fe = new FileEntryItem(BackendActionType.Get, remotename, null);
+            var fe = new FileEntryItem(BackendActionType.Get, remotename);
             return RunRetryOnMain(fe, async () => {
                 var res = await DoGet(fe);
                 return new Tuple<Library.Utility.TempFile, long, string>(
@@ -299,19 +320,22 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_backend == null)
                 throw new Exception("Backend failed to re-load");
 
+            item.IsRetry = false;
             Exception lastException = null;
 
             for(var i = 0; i < m_options.NumberOfRetries; i++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && i != 0)
-                    System.Threading.Thread.Sleep(m_options.RetryDelay);
+                    await Task.Delay(m_options.RetryDelay);
                 
                 try
                 {
-                    return await method();
+                    var r = await method();
+                    return r;
                 }
                 catch (Exception ex)
                 {
+                    item.IsRetry = true;
                     lastException = ex;
                     await m_logchannel.WriteAsync(LogMessage.RetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, i + 1, m_options.NumberOfRetries, ex.Message), ex));
 
@@ -363,41 +387,6 @@ namespace Duplicati.Library.Main.Operation.Common
             await m_logchannel.WriteAsync(LogMessage.Information(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname)));
             await m_database.RenameRemoteFileAsync(oldname, newname);
             item.RemoteFilename = newname;
-
-            // If there is an index file attached to the block file, 
-            // it references the block filename, so we create a new index file
-            // which is a copy of the current, but with the new name
-            if (item.Indexfile != null)
-            {
-                if (!item.IndexfileUpdated)
-                {
-                    item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
-                    item.Indexfile.Item1.Close();
-                    item.IndexfileUpdated = true;
-                }
-
-                IndexVolumeWriter wr = null;
-                try
-                {
-                    wr = new IndexVolumeWriter(m_options);
-                    using(var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, m_options.BlockhashSize))
-                        wr.CopyFrom(rd, x => x == oldname ? newname : x);
-                    item.Indexfile.Item1.Dispose();
-                    item.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(wr, item.Indexfile.Item2);
-                    item.Indexfile.Item2.LocalTempfile.Dispose();
-                    item.Indexfile.Item2.LocalTempfile = wr.TempFile;
-                    wr.Close();
-                }
-                catch
-                {
-                    if (wr != null)
-                        try { wr.Dispose(); }
-                        catch { }
-                        finally { wr = null; }
-
-                    throw;
-                }
-            }
         }
 
         private async Task<bool> DoPut(FileEntryItem item)
@@ -406,14 +395,8 @@ namespace Duplicati.Library.Main.Operation.Common
                 await item.Encrypt(m_encryption, m_logchannel);
 
             if (item.UpdateHashAndSize(m_options) && item.TrackedInDb)
-                await m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
+                await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
-            if (item.Indexfile != null && !item.IndexfileUpdated)
-            {
-                item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
-                item.Indexfile.Item1.Close();
-                item.IndexfileUpdated = true;
-            }            
                 
             await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
@@ -434,7 +417,7 @@ namespace Duplicati.Library.Main.Operation.Common
             Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
 
             if (item.TrackedInDb)
-                await m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
+                await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
 
             await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
@@ -446,8 +429,9 @@ namespace Duplicati.Library.Main.Operation.Common
                 else if (f.Size != item.Size && f.Size >= 0)
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }
-
+                
             await item.DeleteLocalFile(m_logchannel);
+            await m_database.CommitTransactionAsync("CommitAfterUpload");
 
             return true;
         }
@@ -521,7 +505,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 await m_database.LogRemoteOperationAsync("delete", item.RemoteFilename, result);
             }
 
-            await m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+            await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
             await m_stats.SendEventAsync(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
             return true;

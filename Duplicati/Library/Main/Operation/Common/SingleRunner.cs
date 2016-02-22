@@ -17,23 +17,28 @@
 using System;
 using System.Threading.Tasks;
 using CoCoL;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
-    internal abstract class SingleRunner : ProcessHelper
+    internal abstract class SingleRunner : IDisposable
     {
         protected IChannel<Func<Task>> m_channel;
         protected readonly Task m_worker;
+        protected CancellationTokenSource m_workerSource;
 
         public SingleRunner()
         {
+            AutomationExtensions.AutoWireChannels(this, null);
             m_channel = ChannelManager.CreateChannel<Func<Task>>();
-            m_worker = Start();
+            m_workerSource = new System.Threading.CancellationTokenSource();
+            m_worker = AutomationExtensions.RunProtected(this, Start);
         }
 
-        protected override async Task Start()
+        private async Task Start()
         {
-            while(true)
+            var ct = m_workerSource.Token;
+            while(!ct.IsCancellationRequested)
                 await (await m_channel.ReadAsync())(); // Grab-n-execute
         }
 
@@ -49,7 +54,8 @@ namespace Duplicati.Library.Main.Operation.Common
                     {
                         try
                         {
-                            res.SetResult(await method());
+                            var r = await method();
+                            res.SetResult(r);
                         }
                         catch (Exception ex)
                         {
@@ -89,22 +95,19 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
-        #region IDisposable implementation
-
-        public new void Dispose()
+        public void Dispose()
         {
-            base.Dispose();
             Dispose(true);
         }
-
-        #endregion
 
         protected virtual void Dispose(bool isDisposing)
         {
             if (m_channel != null)
                 try { m_channel.Retire(); }
                 catch { }
-                finally { m_channel = null; } 
+                finally { m_channel = null; }
+
+            AutomationExtensions.RetireAllChannels(this);
         }
     }
 }

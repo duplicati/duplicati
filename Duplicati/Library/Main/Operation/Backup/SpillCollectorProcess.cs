@@ -21,6 +21,7 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main.Volumes;
+using System.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -37,8 +38,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             return AutomationExtensions.RunTask(
                 new
                 {
-                    Input = ChannelMarker.ForRead<IBackendOperation>("SpillPickup"),
-                    Output = ChannelMarker.ForWrite<IBackendOperation>("BackendRequests"),
+                    Input = ChannelMarker.ForRead<UploadRequest>("SpillPickup"),
+                    Output = ChannelMarker.ForWrite<UploadRequest>("BackendRequests"),
                 },
 
                 async self => 
@@ -48,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     while(!self.Input.IsRetired)
                         try
                         {
-                    lst.Add((UploadRequest)await self.Input.ReadAsync());
+                            lst.Add((UploadRequest)await self.Input.ReadAsync());
                         }
                         catch (Exception ex)
                         {
@@ -67,10 +68,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // Finalize the current work
                         source.BlockVolume.Close();
 
-                        // We rebuild the index volume from the database
-                        if (source.IndexVolume != null)
-                            source.IndexVolume.Close();
-
                         // Remove it from the list of active operations
                         lst.RemoveAt(0);
 
@@ -86,10 +83,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     if (lst.Count == 0)
                                     {
                                         // No more targets, make one
-                                        target = new UploadRequest(new BlockVolumeWriter(options), options.IndexfilePolicy == Options.IndexFileStrategy.None ? null : new IndexVolumeWriter(options));
+                                        target = new UploadRequest(new BlockVolumeWriter(options), null);
                                         target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-                                        if (target.IndexVolume != null)
-                                            target.IndexVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.IndexVolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
                                     }
                                     else
                                     {
@@ -106,23 +101,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
                                 {
-                                    if (options.IndexfilePolicy == Options.IndexFileStrategy.Full && target.IndexVolume != null && source.IndexVolume != null)
-                                    {
-                                        using(var ixr = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, source.IndexVolume.LocalFilename, options.RawOptions))
-                                        foreach(var blocklisthash in await database.GetBlocklistHashesAsync(source.BlockVolume.RemoteFilename))
-                                        {
-                                            long fslen;
-                                            using(var fs = ixr.OpenRead(blocklisthash))
-                                            {
-                                                target.IndexVolume.WriteBlocklist(blocklisthash, fs);
-                                                fslen = fs.Length;
-                                            }
-                                            
-                                            await database.MoveBlockToVolumeAsync(blocklisthash, fslen, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
-                                        }
-
-                                    }
-
                                     await self.Output.WriteAsync(target);
                                     target = null;
                                 }
@@ -132,11 +110,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // Make sure they are out of the database
                         System.IO.File.Delete(source.BlockVolume.LocalFilename);
                         await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename);
-                        if (source.IndexVolume != null)
-                        {
-                            System.IO.File.Delete(source.IndexVolume.LocalFilename);
-                            await database.SafeDeleteRemoteVolumeAsync(source.IndexVolume.RemoteFilename);
-                        }
 
                         // Re-inject the target if it has content
                         if (target != null)
@@ -145,7 +118,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     foreach(var n in lst)
+                    {
+                        n.BlockVolume.Close();
                         await self.Output.WriteAsync(n);
+                    }
 
                 }
             );

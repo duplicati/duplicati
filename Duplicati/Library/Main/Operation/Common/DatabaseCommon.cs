@@ -15,9 +15,11 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Database;
+using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -38,7 +40,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, m_transaction));
         }
 
-        public Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash)
+        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash)
         {
             return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, m_transaction));
         }
@@ -64,6 +66,38 @@ namespace Duplicati.Library.Main.Operation.Common
         public Task LogRemoteOperationAsync(string operation, string path, string data)
         {
             return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, m_transaction));
+        }
+
+        public Task<IEnumerable<LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
+        {
+            // TODO: How does the IEnumerable work with RunOnMain ?
+            return RunOnMain(() => m_db.GetBlocks(volumeid, m_transaction).ToArray().AsEnumerable());
+        }
+
+        public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
+        {
+            return RunOnMain(() => m_db.GetRemoteVolume(remotename, m_transaction));
+        }
+
+        public Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        {
+            // TODO: How does the IEnumerable work with RunOnMain ?
+            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, m_transaction));
+        }
+
+        public Task<long> GetRemoteVolumeIDAsync(string remotename)
+        {
+            return RunOnMain(() => m_db.GetRemoteVolumeID(remotename, m_transaction));
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            if (m_transaction != null)
+            {
+                m_transaction.Commit();
+                m_transaction = null;
+            }
         }
 
     }

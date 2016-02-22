@@ -275,7 +275,8 @@ namespace Duplicati.Library.Main.Operation
                         Backup.FilePreFilterProcess.Start(snapshot, options),
                         new Backup.MetadataPreProcess(snapshot, options, database).RunAsync(),
                         Backup.SpillCollectorProcess.Run(options, database),
-                        Backup.ProgressHandler.Run(result)
+                        Backup.ProgressHandler.Run(result),
+                        Backup.BackendUploader.Run(backend, options, database)
                     );
                 }
 
@@ -286,57 +287,6 @@ namespace Duplicati.Library.Main.Operation
                 
                 result.OperationProgressUpdater.UpdatefileCount(result.ExaminedFiles, result.SizeOfExaminedFiles, true);
             }
-        }
-
-        private long FinalizeRemoteVolumes(BackendManager backend)
-        {
-            var lastVolumeSize = -1L;
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Finalize);
-            using(new Logging.Timer("FinalizeRemoteVolumes"))
-            {
-                if (m_blockvolume != null && m_blockvolume.SourceSize > 0)
-                {
-                    lastVolumeSize = m_blockvolume.SourceSize;
-
-                    if (m_options.Dryrun)
-                    {
-                        m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
-                        if (m_indexvolume != null)
-                        {
-                            m_blockvolume.Close();
-                            UpdateIndexVolume();
-                            m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-                            m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
-                        }
-
-                        m_blockvolume.Dispose();
-                        m_blockvolume = null;
-                        m_indexvolume.Dispose();
-                        m_indexvolume = null;
-                    }
-                    else
-                    {
-                        m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-                        m_blockvolume.Close();
-                        UpdateIndexVolume();
-
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
-                            m_transaction.Commit();
-                        m_transaction = m_database.BeginTransaction();
-
-                        backend.Put(m_blockvolume, m_indexvolume);
-
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
-                            m_transaction.Commit();
-                        m_transaction = m_database.BeginTransaction();
-
-                        m_blockvolume = null;
-                        m_indexvolume = null;
-                    }
-                }
-            }
-
-            return lastVolumeSize;
         }
 
         private void UploadRealFileList(BackendManager backend, FilesetVolumeWriter filesetvolume)
@@ -474,6 +424,7 @@ namespace Duplicati.Library.Main.Operation
                     using(var logtarget = ChannelManager.GetChannel<Common.LogMessage>("LogChannel").AsWriteOnly())
                     {
                         var lh = Common.LogHandler.Run(m_result);
+                        long lastVolumeSize = -1L;
 
                         using(var snapshot = GetSnapshot(sources, m_options, m_result))
                         {
@@ -519,7 +470,8 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        var lastVolumeSize = FinalizeRemoteVolumes(backend);
+                        // TODO: Implement this
+                        //var lastVolumeSize = FinalizeRemoteVolumes(backend);
     		            
                         using(new Logging.Timer("UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
@@ -574,7 +526,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    if (parallelScanner != null)
+                    if (parallelScanner != null && !parallelScanner.IsCompleted)
                         parallelScanner.Wait(500);
 
                     // TODO: We want to commit? always?

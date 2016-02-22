@@ -121,7 +121,6 @@
     <Compile Include="Operation\Backup\DataBlock.cs" />
     <Compile Include="Operation\Backup\FilePreFilterProcess.cs" />
     <Compile Include="Operation\Backup\DataBlockProcessor.cs" />
-    <Compile Include="Operation\Common\BackendOperation.cs" />
     <Compile Include="Operation\Backup\SpillCollectorProcess.cs" />
     <Compile Include="Operation\Backup\BackupDatabase.cs" />
     <Compile Include="Operation\Common\DatabaseCommon.cs" />
@@ -131,6 +130,8 @@
     <Compile Include="Operation\Backup\BackupStatsCollector.cs" />
     <Compile Include="Operation\Common\LogHandler.cs" />
     <Compile Include="Operation\Backup\ProgressHandler.cs" />
+    <Compile Include="Operation\Backup\BackendUploader.cs" />
+    <Compile Include="Operation\Common\IndexVolumeCreator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
