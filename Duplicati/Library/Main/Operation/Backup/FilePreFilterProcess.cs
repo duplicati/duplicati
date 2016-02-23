@@ -25,7 +25,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class FilePreFilterProcess
     {
-        public static Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats)
+        public static Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -74,6 +74,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 await self.LogChannel.WriteAsync(LogMessage.Verbose("Skipped checking file, because timestamp was not updated {0}", e.Path));
                             else
                                 await self.LogChannel.WriteAsync(LogMessage.Verbose("Skipped checking file, because the size exceeds limit {0}", e.Path));
+
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                         }
                     }
                 }

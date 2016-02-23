@@ -157,7 +157,7 @@ namespace Duplicati.Library.Main.Operation
                         Backup.DataBlockProcessor.Run(database, options),
                         Backup.FileBlockProcessor.Start(snapshot, options, database, stats),
                         new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync(),
-                        Backup.FilePreFilterProcess.Start(snapshot, options, stats),
+                        Backup.FilePreFilterProcess.Start(snapshot, options, stats, database),
                         new Backup.MetadataPreProcess(snapshot, options, database).RunAsync(),
                         Backup.SpillCollectorProcess.Run(options, database),
                         Backup.ProgressHandler.Run(result),
