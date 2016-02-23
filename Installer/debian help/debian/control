@@ -5,7 +5,7 @@ Maintainer: Kenneth Skovhede <kenneth@duplicati.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
 Homepage: http://www.duplicati.com
-Vcs-Git: https://code.google.com/p/duplicati
+Vcs-Git: https://github.com/duplicati/duplicati.git
 
 Package: duplicati
 Architecture: all
