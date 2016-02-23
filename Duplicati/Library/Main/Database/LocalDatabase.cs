@@ -961,7 +961,7 @@ namespace Duplicati.Library.Main.Database
                     while (rd.Read())
                     {
                         var blockhash = rd.GetValue(0).ToString();
-                        if (blockhash != curHash && curHash != null)
+                        if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
                             curHash = null;
@@ -974,7 +974,7 @@ namespace Duplicati.Library.Main.Database
                         index += hashsize;
                     }
 
-                if (curHash != null)                    
+                if (curHash != null)
                     yield return new Tuple<string, byte[], int>(curHash, buffer, index);
 
 
