@@ -24,6 +24,7 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
         {
+            var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
             var w = new IndexVolumeWriter(options);
             w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
 
@@ -37,7 +38,12 @@ namespace Duplicati.Library.Main.Operation.Common
 
             if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                 foreach(var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
+                {
+                    var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                    if (bh != b.Item1)
+                        throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
                     w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                }
 
             w.Close();
 
