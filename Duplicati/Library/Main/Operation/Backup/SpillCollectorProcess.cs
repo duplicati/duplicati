@@ -36,95 +36,94 @@ namespace Duplicati.Library.Main.Operation.Backup
         public static Task Run(Options options, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
-                new
-                {
-                    Input = ChannelMarker.ForRead<UploadRequest>("SpillPickup"),
-                    Output = ChannelMarker.ForWrite<UploadRequest>("BackendRequests"),
-                },
+            new
+            {
+                Input = Channels.SpillPickup.ForRead,
+                Output = Channels.BackendRequest.ForWrite,
+            },
 
-                async self => 
-                {
-                    var lst = new List<UploadRequest>();
+            async self => 
+            {
+                var lst = new List<VolumeUploadRequest>();
 
-                    while(!self.Input.IsRetired)
-                        try
-                        {
-                            lst.Add((UploadRequest)await self.Input.ReadAsync());
-                        }
-                        catch (Exception ex)
-                        {
-                            if (ex.IsRetiredException())
-                                break;
-                            throw;
-                        }
-
-
-                    while(lst.Count > 1)
+                while(!self.Input.IsRetired)
+                    try
                     {
+                        lst.Add((VolumeUploadRequest)await self.Input.ReadAsync());
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.IsRetiredException())
+                            break;
+                        throw;
+                    }
 
-                        UploadRequest target = null;
-                        var source = lst[0];
 
-                        // Finalize the current work
-                        source.BlockVolume.Close();
+                while(lst.Count > 1)
+                {
 
-                        // Remove it from the list of active operations
-                        lst.RemoveAt(0);
+                    VolumeUploadRequest target = null;
+                    var source = lst[0];
 
-                        var buffer = new byte[options.Blocksize];
+                    // Finalize the current work
+                    source.BlockVolume.Close();
 
-                        using(var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
+                    // Remove it from the list of active operations
+                    lst.RemoveAt(0);
+
+                    var buffer = new byte[options.Blocksize];
+
+                    using(var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
+                    {
+                        foreach(var file in rd.Blocks)
                         {
-                            foreach(var file in rd.Blocks)
+                            // Grab a target
+                            if (target == null)
                             {
-                                // Grab a target
-                                if (target == null)
+                                if (lst.Count == 0)
                                 {
-                                    if (lst.Count == 0)
-                                    {
-                                        // No more targets, make one
-                                        target = new UploadRequest(new BlockVolumeWriter(options), null);
-                                        target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-                                    }
-                                    else
-                                    {
-                                        // Grab the next target
-                                        target = lst[0];
-                                        lst.RemoveAt(0);
-                                    }
+                                    // No more targets, make one
+                                    target = new VolumeUploadRequest(new BlockVolumeWriter(options), null);
+                                    target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                                 }
-
-
-                                var len = rd.ReadBlock(file.Key, buffer);
-                                target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
-                                await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
-
-                                if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
+                                else
                                 {
-                                    await self.Output.WriteAsync(target);
-                                    target = null;
+                                    // Grab the next target
+                                    target = lst[0];
+                                    lst.RemoveAt(0);
                                 }
                             }
+
+
+                            var len = rd.ReadBlock(file.Key, buffer);
+                            target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
+                            await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
+
+                            if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
+                            {
+                                await self.Output.WriteAsync(target);
+                                target = null;
+                            }
                         }
-
-                        // Make sure they are out of the database
-                        System.IO.File.Delete(source.BlockVolume.LocalFilename);
-                        await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename);
-
-                        // Re-inject the target if it has content
-                        if (target != null)
-                            lst.Insert(lst.Count == 0 ? 0 : 1, target);
-
                     }
 
-                    foreach(var n in lst)
-                    {
-                        n.BlockVolume.Close();
-                        await self.Output.WriteAsync(n);
-                    }
+                    // Make sure they are out of the database
+                    System.IO.File.Delete(source.BlockVolume.LocalFilename);
+                    await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename);
+
+                    // Re-inject the target if it has content
+                    if (target != null)
+                        lst.Insert(lst.Count == 0 ? 0 : 1, target);
 
                 }
-            );
+
+                foreach(var n in lst)
+                {
+                    n.BlockVolume.Close();
+                    await self.Output.WriteAsync(n);
+                }
+
+            });
         }
     }
 }

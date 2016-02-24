@@ -23,57 +23,124 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    internal class UploadRequest
+    internal interface IUploadRequest
+    {
+    }
+
+    internal class FlushRequest : IUploadRequest
+    {
+        public Task<long> LastWriteSizeAync { get { return m_tcs.Task; } }
+        private TaskCompletionSource<long> m_tcs = new TaskCompletionSource<long>();
+        public void SetFlushed(long size)
+        {
+            m_tcs.TrySetResult(size);
+        }
+
+    }
+
+    internal class IndexVolumeUploadRequest : IUploadRequest
+    {
+        public IndexVolumeWriter IndexVolume { get; private set; }
+
+        public IndexVolumeUploadRequest(IndexVolumeWriter indexVolume)
+        {
+            IndexVolume = indexVolume;
+        }
+    }
+
+    internal class FilesetUploadRequest : IUploadRequest
+    {
+        public FilesetVolumeWriter Fileset { get; private set; }
+
+        public FilesetUploadRequest(FilesetVolumeWriter fileset)
+        {
+            Fileset = fileset;
+        }
+    }
+
+    internal class VolumeUploadRequest : IUploadRequest
     {
         public BlockVolumeWriter BlockVolume { get; private set; }
         public IndexVolumeWriter IndexVolume { get; private set; }
 
-        public UploadRequest(BlockVolumeWriter blockvolume, IndexVolumeWriter indexvolume)
+        public VolumeUploadRequest(BlockVolumeWriter blockvolume, IndexVolumeWriter indexvolume)
         {
             BlockVolume = blockvolume;
             IndexVolume = indexvolume;
         }
     }
+   
 
     internal static class BackendUploader
     {
         public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results)
         {
             return AutomationExtensions.RunTask(new
-                {
-                    Input = ChannelMarker.ForRead<UploadRequest>("BackendRequests"),
-                },
+            {
+                Input = Channels.BackendRequest.ForRead,
+            },
 
-                async self =>
+            async self =>
+            {
+                var inProgress = new Queue<KeyValuePair<int, Task>>();
+                var max_pending = options.AsynchronousUploadLimit == 0 ? long.MaxValue : options.AsynchronousUploadLimit;
+                var noIndexFiles = options.IndexfilePolicy == Options.IndexFileStrategy.None;
+                var active = 0;
+                var lastSize = -1L;
+                
+                while(!self.Input.IsRetired)
                 {
-                    var inProgress = new Queue<Task>();
-                    var max_pending = options.AsynchronousUploadLimit == 0 ? long.MaxValue : options.AsynchronousUploadLimit;
-                    if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                        max_pending = max_pending / 2;
-                    
-                    while(!self.Input.IsRetired)
+                    try
                     {
-                        try
+                        var req = await self.Input.ReadAsync();
+                        KeyValuePair<int, Task> task = default(KeyValuePair<int, Task>);
+                        if (req is VolumeUploadRequest)
                         {
-                            var req = await self.Input.ReadAsync();
-                            inProgress.Enqueue(backend.UploadFileAsync(req.BlockVolume, name => IndexVolumeCreator.CreateIndexVolume(name, options, database)));
+                            lastSize = ((VolumeUploadRequest)req).BlockVolume.SourceSize;
+
+                            if (noIndexFiles)
+                                task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, null));
+                            else
+                                task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => IndexVolumeCreator.CreateIndexVolume(name, options, database)));
                         }
-                        catch(Exception ex)
+                        else if (req is FilesetUploadRequest)
+                            task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((FilesetUploadRequest)req).Fileset));
+                        else if (req is IndexVolumeUploadRequest)
+                            task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
+                        else if (req is FlushRequest)
                         {
-                            if (!ex.IsRetiredException())
-                                throw;
+                            while(inProgress.Count > 0)
+                                await inProgress.Dequeue().Value;
+                            active = 0;
+
+                            ((FlushRequest)req).SetFlushed(lastSize);
                         }
-                        
-                        while(inProgress.Count >= max_pending)
-                            await inProgress.Dequeue();
+
+                        if (task.Value != null)
+                        {
+                            inProgress.Enqueue(task);
+                            active += task.Key;
+                        }
                     }
-
-                    results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-
-                    while(inProgress.Count > 0)
-                        await inProgress.Dequeue();
+                    catch(Exception ex)
+                    {
+                        if (!ex.IsRetiredException())
+                            throw;
+                    }
+                    
+                    while(active >= max_pending)
+                    {
+                        var top = inProgress.Dequeue();
+                        await top.Value;
+                        active -= top.Key;
+                    }
                 }
-            );
+
+                results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
+
+                while(inProgress.Count > 0)
+                    await inProgress.Dequeue().Value;
+            });
                                 
         }
     }

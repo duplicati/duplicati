@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class MetadataGenerator
     {
-        public static async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, IWriteChannel<LogMessage> logchannel)
+        public static async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, LogWrapper log)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            await logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to read timestamp on \"{0}\"", path), ex));
+                            await log.WriteWarningAsync(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
                         }
                     }
 
@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            await logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to read timestamp on \"{0}\"", path), ex));
+                            await log.WriteWarningAsync(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
                         }
                     }
                 }
@@ -72,7 +72,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch(Exception ex)
             {
-                await logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to process metadata for \"{0}\", storing empty metadata", path), ex));
+                await log.WriteWarningAsync(string.Format("Failed to process metadata for \"{0}\", storing empty metadata", path), ex);
                 return new Dictionary<string, string>();
             }
         }

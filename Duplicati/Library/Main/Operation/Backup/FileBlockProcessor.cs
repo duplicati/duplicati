@@ -36,14 +36,15 @@ namespace Duplicati.Library.Main.Operation.Backup
             return AutomationExtensions.RunTask(
             new 
             {
-                Input = ChannelMarker.ForRead<MetadataPreProcess.FileEntry>("AcceptedChangedFile"),
-                LogChannel = ChannelMarker.ForWrite<LogMessage>("LogChannel"),
-                ProgressChannel = ChannelMarker.ForWrite<ProgressEvent>("ProgressChannel"),
-                BlockOutput = ChannelMarker.ForWrite<DataBlock>("OutputBlocks")
+                Input = Channels.AcceptedChangedFile.ForRead,
+                LogChannel = Common.Channels.LogChannel.ForWrite,
+                ProgressChannel = Channels.ProgressEvents.ForWrite,
+                BlockOutput = Channels.OutputBlocks.ForWrite
             },
 
             async self =>
             {
+                var log = new LogWrapper(self.LogChannel);
                 var blocksize = options.Blocksize;
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm);                    
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);                    
@@ -69,7 +70,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             {
                                 long fslen = -1;
                                 try { fslen = fs.Length; }
-                                catch (Exception ex) { await self.LogChannel.WriteAsync(LogMessage.Warning(string.Format("Failed to read file length for file {0}", e.Path), ex)); }
+                                catch (Exception ex) { await log.WriteWarningAsync(string.Format("Failed to read file length for file {0}", e.Path), ex); }
 
                                 await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
                                 send_close = true;
@@ -133,36 +134,36 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (oldHash != filekey)
                             {
                                 if (oldHash == null)
-                                    await self.LogChannel.WriteAsync(LogMessage.Verbose("New file {0}", e.Path));
+                                    await log.WriteVerboseAsync("New file {0}", e.Path);
                                 else
-                                    await self.LogChannel.WriteAsync(LogMessage.Verbose("File has changed {0}", e.Path));
+                                    await log.WriteVerboseAsync("File has changed {0}", e.Path);
 
                                 if (e.OldId < 0)
                                 {
                                     await stats.AddAddedFile(filesize);
 
                                     if (options.Dryrun)
-                                        await self.LogChannel.WriteAsync(LogMessage.DryRun("Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize)));
+                                        await log.WriteDryRunAsync("Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                                 }
                                 else
                                 {
                                     await stats.AddModifiedFile(filesize);
 
                                     if (options.Dryrun)
-                                        await self.LogChannel.WriteAsync(LogMessage.DryRun("Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize)));
+                                        await log.WriteDryRunAsync("Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                                 }
 
                                 await AddFileToOutputAsync(e.Path, filesize, e.LastWrite, e.MetaHashAndSize, hashcollector, filekey, blocklisthashes, self.BlockOutput, blocksize, database);
                             }
                             else if (e.MetadataChanged)
                             {
-                                await self.LogChannel.WriteAsync(LogMessage.Verbose("File has only metadata changes {0}", e.Path));
+                                await log.WriteVerboseAsync("File has only metadata changes {0}", e.Path);
                                 await AddFileToOutputAsync(e.Path, filesize, e.LastWrite, e.MetaHashAndSize, hashcollector, filekey, blocklisthashes, self.BlockOutput, blocksize, database);
                             }
                             else
                             {
                                 // When we write the file to output, update the last modified time
-                                await self.LogChannel.WriteAsync(LogMessage.Verbose("File has not changed {0}", e.Path));
+                                await log.WriteVerboseAsync("File has not changed {0}", e.Path);
                                 await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                             }
                         }
@@ -172,7 +173,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (ex.IsRetiredException())
                             return;
                         else
-                            await self.LogChannel.WriteAsync(LogMessage.Warning(string.Format("Failed to process file {0}", e.Path), ex));                    
+                            await log.WriteWarningAsync(string.Format("Failed to process file {0}", e.Path), ex);
                     }
                     finally
                     {

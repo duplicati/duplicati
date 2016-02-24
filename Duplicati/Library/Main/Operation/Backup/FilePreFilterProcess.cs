@@ -28,58 +28,58 @@ namespace Duplicati.Library.Main.Operation.Backup
         public static Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
-                new
+            new
+            {
+                LogChannel = Common.Channels.LogChannel.ForWrite,
+                Input = Channels.ProcessedFiles.ForRead,
+                Output = Channels.AcceptedChangedFile.ForWrite
+            },
+
+            async self =>
+            {
+
+                var EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
+                var blocksize = options.Blocksize;
+                var log = new LogWrapper(self.LogChannel);
+
+                while (true)
                 {
-                    LogChannel = ChannelMarker.ForWrite<LogMessage>("LogChannel"),
-                    Input = ChannelMarker.ForRead<MetadataPreProcess.FileEntry>("ProcessedFiles"),
-                    Output = ChannelMarker.ForWrite<MetadataPreProcess.FileEntry>("AcceptedChangedFile")
-                },
+                    var e = await self.Input.ReadAsync();
 
-                async self =>
-                {
-
-                    var EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                    var blocksize = options.Blocksize;
-
-                    while (true)
+                    long filestatsize = -1;
+                    try
                     {
-                        var e = await self.Input.ReadAsync();
+                        filestatsize = snapshot.GetFileSize(e.Path);
+                    }
+                    catch
+                    {
+                    }
 
-                        long filestatsize = -1;
-                        try
-                        {
-                            filestatsize = snapshot.GetFileSize(e.Path);
-                        }
-                        catch
-                        {
-                        }
+                    await stats.AddExaminedFile(filestatsize);
 
-                        await stats.AddExaminedFile(filestatsize);
+                    e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot, log), options) : EMPTY_METADATA;
 
-                        e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot, self.LogChannel), options) : EMPTY_METADATA;
+                    var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
+                    var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
+                    var tooLargeFile = options.SkipFilesLargerThan != long.MaxValue && options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > options.SkipFilesLargerThan;
+                    e.MetadataChanged = !options.SkipMetadata && (e.MetaHashAndSize.Size != e.OldMetaSize || e.MetaHashAndSize.Hash != e.OldMetaHash);
 
-                        var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
-                        var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
-                        var tooLargeFile = options.SkipFilesLargerThan != long.MaxValue && options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > options.SkipFilesLargerThan;
-                        e.MetadataChanged = !options.SkipMetadata && (e.MetaHashAndSize.Size != e.OldMetaSize || e.MetaHashAndSize.Hash != e.OldMetaHash);
-
-                        if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
-                        {
-                            await self.LogChannel.WriteAsync(LogMessage.Verbose("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified));
-                            await self.Output.WriteAsync(e);
-                        }
+                    if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
+                    {
+                        await log.WriteVerboseAsync("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
+                        await self.Output.WriteAsync(e);
+                    }
+                    else
+                    {
+                        if (options.SkipFilesLargerThan == long.MaxValue || options.SkipFilesLargerThan == 0 || snapshot.GetFileSize(e.Path) < options.SkipFilesLargerThan)
+                            await log.WriteVerboseAsync("Skipped checking file, because timestamp was not updated {0}", e.Path);
                         else
-                        {
-                            if (options.SkipFilesLargerThan == long.MaxValue || options.SkipFilesLargerThan == 0 || snapshot.GetFileSize(e.Path) < options.SkipFilesLargerThan)
-                                await self.LogChannel.WriteAsync(LogMessage.Verbose("Skipped checking file, because timestamp was not updated {0}", e.Path));
-                            else
-                                await self.LogChannel.WriteAsync(LogMessage.Verbose("Skipped checking file, because the size exceeds limit {0}", e.Path));
+                            await log.WriteVerboseAsync("Skipped checking file, because the size exceeds limit {0}", e.Path);
 
-                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
-                        }
+                        await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                     }
                 }
-            );
+            });
         }
     }
 }

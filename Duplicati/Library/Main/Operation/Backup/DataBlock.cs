@@ -21,7 +21,7 @@ using CoCoL;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    public struct DataBlock
+    internal struct DataBlock
     {
         public string HashKey;
         public byte[] Data;

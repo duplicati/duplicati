@@ -67,10 +67,6 @@ namespace Duplicati.Library.Main.Operation.Common
             /// </summary>
             public long Size;
             /// <summary>
-            /// A flag indicating if the final hash and size of the block volume has been written to the index file
-            /// </summary>
-            public bool IndexfileUpdated;
-            /// <summary>
             /// A flag indicating if the file is a extra metadata file
             /// that has no entry in the database
             /// </summary>
@@ -104,13 +100,13 @@ namespace Duplicati.Library.Main.Operation.Common
                 this.LocalTempfile.Protected = true;
             }
                 
-            public async Task Encrypt(Library.Interface.IEncryption encryption, IWriteChannel<LogMessage> logchannel)
+            public async Task Encrypt(Library.Interface.IEncryption encryption, LogWrapper log)
             {
                 if (encryption != null && !this.Encrypted)
                 {
                     var tempfile = new Library.Utility.TempFile();
                     encryption.Encrypt(this.LocalFilename, tempfile);
-                    await this.DeleteLocalFile(logchannel);
+                    await this.DeleteLocalFile(log);
                     this.LocalTempfile = tempfile;
                     this.Hash = null;
                     this.Size = 0;
@@ -138,18 +134,18 @@ namespace Duplicati.Library.Main.Operation.Common
                 return false;
             }
 
-            public async Task DeleteLocalFile(IWriteChannel<LogMessage> logchannel)
+            public async Task DeleteLocalFile(LogWrapper log)
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { await logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to dispose temporary file: {0}", this.LocalTempfile), ex)); }
+                catch (Exception ex) { await log.WriteWarningAsync(string.Format("Failed to dispose temporary file: {0}", this.LocalTempfile), ex); }
                 finally { this.LocalTempfile = null; }
             }
         }
 
 
-        [ChannelName("LogChannel")]
-        private IWriteChannel<LogMessage> m_logchannel;
+        private IWriteChannel<LogMessage> m_logchannel = Channels.LogChannel.ForWrite;
+        private LogWrapper m_log;
 
         private DatabaseCommon m_database;
         private IEncryption m_encryption;
@@ -167,6 +163,7 @@ namespace Duplicati.Library.Main.Operation.Common
             m_options = options;
             m_backendurl = backendUrl;
             m_stats = stats;
+            m_log = new LogWrapper(m_logchannel);
             if (!options.NoEncryption)
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions);
         }
@@ -201,6 +198,14 @@ namespace Duplicati.Library.Main.Operation.Common
 
             var tcs = new TaskCompletionSource<bool>();
 
+            var backgroundhashAndEncrypt = Task.Run(async () =>
+            {
+                if (m_encryption != null)
+                    await fe.Encrypt(m_encryption, m_log).ConfigureAwait(false);
+                
+                return fe.UpdateHashAndSize(m_options);
+            });
+
             await RunOnMain(async () =>
             {
                 try
@@ -208,6 +213,9 @@ namespace Duplicati.Library.Main.Operation.Common
                     await DoWithRetry(fe, async () => {
                         if (fe.IsRetry)
                             await RenameFileAfterErrorAsync(fe);
+
+                        // Make sure the encryption and hashing has completed
+                        await backgroundhashAndEncrypt;
 
                         return await DoPut(fe);
                     });
@@ -306,7 +314,7 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             catch (Exception dex)
             {
-                await m_logchannel.WriteAsync(LogMessage.Warning(LC.L("Failed to dispose backend instance: {0}", (ex ?? dex).Message), dex));
+                await m_log.WriteWarningAsync(LC.L("Failed to dispose backend instance: {0}", (ex ?? dex).Message), dex);
             }
 
             m_backend = null;
@@ -337,7 +345,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 {
                     item.IsRetry = true;
                     lastException = ex;
-                    await m_logchannel.WriteAsync(LogMessage.RetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, i + 1, m_options.NumberOfRetries, ex.Message), ex));
+                    await m_log.WriteRetryAttemptAsync(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, i + 1, m_options.NumberOfRetries, ex.Message), ex);
 
                     // If the thread is aborted, we exit here
                     if (ex is System.Threading.ThreadAbortException)
@@ -356,7 +364,7 @@ namespace Duplicati.Library.Main.Operation.Common
                         }
                         catch (Exception dex)
                         { 
-                            await m_logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to create folder: {0}", ex.Message), dex)); 
+                            await m_log.WriteWarningAsync(string.Format("Failed to create folder: {0}", ex.Message), dex); 
                         }
                     }
                         
@@ -384,20 +392,21 @@ namespace Duplicati.Library.Main.Operation.Common
 
             await m_stats.SendEventAsync(item.Operation, BackendEventType.Rename, oldname, item.Size);
             await m_stats.SendEventAsync(item.Operation, BackendEventType.Rename, newname, item.Size);
-            await m_logchannel.WriteAsync(LogMessage.Information(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname)));
+            await m_log.WriteInformationAsync(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname));
             await m_database.RenameRemoteFileAsync(oldname, newname);
             item.RemoteFilename = newname;
         }
 
-        private async Task<bool> DoPut(FileEntryItem item)
+        private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
         {
-            if (m_encryption != null)
-                await item.Encrypt(m_encryption, m_logchannel);
+            if (m_encryption != null && !item.Encrypted)
+                await item.Encrypt(m_encryption, m_log);
 
-            if (item.UpdateHashAndSize(m_options) && item.TrackedInDb)
+            updatedHash |= item.UpdateHashAndSize(m_options);
+
+            if (updatedHash && item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
-                
             await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
@@ -414,7 +423,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
             var duration = DateTime.Now - begin;
-            Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
+            await m_log.WriteProfilingAsync(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), null);
 
             if (item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
@@ -430,7 +439,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }
                 
-            await item.DeleteLocalFile(m_logchannel);
+            await item.DeleteLocalFile(m_log);
             await m_database.CommitTransactionAsync("CommitAfterUpload");
 
             return true;
@@ -478,7 +487,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
                 if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
-                    await m_logchannel.WriteAsync(LogMessage.Warning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex));
+                    await m_log.WriteWarningAsync(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex);
                     bool success = false;
 
                     try
@@ -491,7 +500,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
                     if (success)
                     {
-                        await m_logchannel.WriteAsync(LogMessage.Information(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename)));
+                        await m_log.WriteInformationAsync(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
                         return true;
                     }
 
@@ -556,7 +565,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
                 var duration = DateTime.Now - begin;
                 var filehash = FileEntryItem.CalculateFileHash(tmpfile);
-                Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
+                await m_log.WriteProfilingAsync(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), null);
 
                 await m_database.LogRemoteOperationAsync("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = filehash }));
                 await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
@@ -601,19 +610,19 @@ namespace Duplicati.Library.Main.Operation.Common
                                 // Check if the file is encrypted with something else
                                 if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
                                 {
-                                    await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule));
+                                    await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
                                     using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
                                         (encmodule ?? m_encryption).Decrypt(tmpfile2, tmpfile);
                                 }
                                 // Check if the file is not encrypted
                                 else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
                                 {
-                                        await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule));
+                                    await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
                                 }
                                 // Fallback, lets see what happens...
                                 else
                                 {
-                                    await m_logchannel.WriteAsync(LogMessage.Verbose("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule));
+                                    await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
                                     m_encryption.Decrypt(tmpfile2, tmpfile);
                                 }
                             }

@@ -15,6 +15,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using CoCoL;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -26,70 +28,6 @@ namespace Duplicati.Library.Main.Operation.Common
         public bool IsVerbose;
         public bool IsDryRun;
         public bool IsRetry;
-
-        public static LogMessage Warning(string message, Exception ex)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Warning,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Error(string message, Exception ex)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Error,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Profiling(string message, Exception ex)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Profiling,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Information(string message, Exception ex = null)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Information,
-                Message = message,
-                Exception = ex
-            };
-        }
-
-        public static LogMessage Verbose(string message, params object[] args)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Information,
-                Message = string.Format(message, args),
-                IsVerbose = true
-            };
-        }
-
-        public static LogMessage DryRun(string message, params object[] args)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Information,
-                Message = string.Format(message, args),
-                IsDryRun = true
-            };
-        }
-
-        public static LogMessage RetryAttempt(string message, params object[] args)
-        {
-            return new LogMessage() { 
-                Level = Duplicati.Library.Logging.LogMessageType.Information,
-                Message = string.Format(message, args),
-                IsRetry = true
-            };
-        }
-
     }
 }
 

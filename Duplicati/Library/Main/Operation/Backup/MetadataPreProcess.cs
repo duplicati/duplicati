@@ -47,18 +47,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             public bool MetadataChanged;
         }
 
-        [ChannelName("SourcePaths")]
-        private IReadChannel<string> m_input;
-
-        [ChannelName("LogChannel")]
-        private IWriteChannel<LogMessage> m_logchannel;
-
-        [ChannelName("ProcessedFiles")]
-        private IWriteChannel<FileEntry> m_output;
-
-        [ChannelName("OutputBlocks")]
-        private IWriteChannel<DataBlock> m_blockoutput;
-
+        private IReadChannel<string> m_input = Backup.Channels.SourcePaths.ForRead;
+        private IWriteChannel<LogMessage> m_logchannel = Common.Channels.LogChannel.ForWrite;
+        private IWriteChannel<FileEntry> m_output =  Backup.Channels.ProcessedFiles.ForWrite;
+        private IWriteChannel<DataBlock> m_blockoutput = Backup.Channels.OutputBlocks.ForWrite;
+        private LogWrapper m_log;
 
         private Snapshots.ISnapshotService m_snapshot;
         private Options m_options;
@@ -72,6 +65,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_snapshot = snapshot;
             m_options = options;
             m_database = database;
+            m_log = new LogWrapper(m_logchannel);
             m_blocksize = m_options.Blocksize;
             EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
         }
@@ -82,13 +76,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                 {
-                    await m_logchannel.WriteAsync(LogMessage.Verbose("Ignoring symlink {0}", path));
+                    await m_log.WriteVerboseAsync("Ignoring symlink {0}", path);
                     return false;
                 }
 
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                 {
-                    var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, m_options, m_snapshot, m_logchannel);
+                    var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, m_options, m_snapshot, m_log);
 
                     if (!metadata.ContainsKey("CoreSymlinkTarget"))
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
@@ -96,7 +90,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var metahash = Utility.WrapMetadata(metadata, m_options);
                     await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash);
 
-                    await m_logchannel.WriteAsync(LogMessage.Verbose("Stored symlink {0}", path));
+                    await m_log.WriteVerboseAsync("Stored symlink {0}", path);
                     // Don't process further
                     return false;
                 }
@@ -108,14 +102,14 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (m_options.StoreMetadata)
                 {
-                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, m_options, m_snapshot, m_logchannel), m_options);
+                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, m_options, m_snapshot, m_log), m_options);
                 }
                 else
                 {
                     metahash = EMPTY_METADATA;
                 }
 
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Adding directory {0}", path));
+                await m_log.WriteVerboseAsync("Adding directory {0}", path);
                 await AddFolderToOutputAsync(path, lastwrite, metahash);
                 return false;
             }
@@ -178,7 +172,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex) 
                     {
-                        await m_logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to read timestamp on \"{0}\"", path), ex));
+                        await m_log.WriteWarningAsync(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
                     }
 
                     try 
@@ -187,7 +181,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex) 
                     {
-                        await m_logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to read attributes on \"{0}\"", path), ex));
+                        await m_log.WriteWarningAsync(string.Format("Failed to read attributes on \"{0}\"", path), ex);
                     }
 
                     // If we only have metadata, stop here
@@ -210,7 +204,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch(Exception ex)
                         {
-                            await m_logchannel.WriteAsync(LogMessage.Error(string.Format("Failed to process entry, path: {0}", path), ex));
+                            await m_log.WriteErrorAsync(string.Format("Failed to process entry, path: {0}", path), ex);
                         }
                     }
                 }

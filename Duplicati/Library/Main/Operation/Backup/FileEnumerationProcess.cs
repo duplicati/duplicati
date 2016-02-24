@@ -42,11 +42,10 @@ namespace Duplicati.Library.Main.Operation.Backup
         private Queue<string> m_mixinqueue;
         private string[] m_changedfilelist;
 
-        [ChannelName("LogChannel")]
-        private IWriteChannel<LogMessage> m_logchannel;
 
-        [ChannelName("SourcePaths")]
-        private IWriteChannel<string> m_output;
+        private IWriteChannel<LogMessage> m_logchannel = Common.Channels.LogChannel.ForWrite;
+        private IWriteChannel<string> m_output = Backup.Channels.SourcePaths.ForWrite;
+        private LogWrapper m_log;
 
 
         public FileEnumerationProcess(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, string[] changedfilelist)
@@ -61,6 +60,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_hardlinkmap = new Dictionary<string, string>();
             m_mixinqueue = new Queue<string>();
             m_changedfilelist = changedfilelist;
+            m_log = new LogWrapper(m_logchannel);
 
             bool includes;
             bool excludes;
@@ -93,13 +93,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 if (m_snapshot.IsBlockDevice(path))
                 {
-                    await m_logchannel.WriteAsync(LogMessage.Verbose("Excluding block device: {0}", path));
+                    await m_log.WriteVerboseAsync("Excluding block device: {0}", path);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                await m_logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to process path: {0}", path), ex));
+                await m_log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
                 return false;
             }
 
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             bool sourcematches;
             if (m_sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
             {
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Including source path: {0}", path));
+                await m_log.WriteVerboseAsync("Including source path: {0}", path);
                 return true;
             }
 
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         if (m_hardlinkPolicy == Options.HardlinkStrategy.None)
                         {
-                            await m_logchannel.WriteAsync(LogMessage.Verbose("Excluding hardlink: {0} ({1})", path, id));
+                            await m_log.WriteVerboseAsync("Excluding hardlink: {0} ({1})", path, id);
                             return false;
                         }
                         else if (m_hardlinkPolicy == Options.HardlinkStrategy.First)
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             string prevPath;
                             if (m_hardlinkmap.TryGetValue(id, out prevPath))
                             {
-                                await m_logchannel.WriteAsync(LogMessage.Verbose("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath));
+                                await m_log.WriteVerboseAsync("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
                                 return false;
                             }
                             else
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
-                    await m_logchannel.WriteAsync(LogMessage.Warning(string.Format("Failed to process path: {0}", path), ex));
+                    await m_log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
                     return false;
                 }                    
             }
@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             // If we exclude files based on attributes, filter that
             if ((m_attributeFilter & attributes) != 0)
             {
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Excluding path due to attribute filter: {0}", path));
+                await m_log.WriteVerboseAsync("Excluding path due to attribute filter: {0}", path);
                 return false;
             }
 
@@ -158,25 +158,25 @@ namespace Duplicati.Library.Main.Operation.Backup
             Library.Utility.IFilter match;
             if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
             {
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString()));
+                await m_log.WriteVerboseAsync("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
                 return false;
             }
             else if (match != null)
             {
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Including path due to filter: {0} => {1}", path, match.ToString()));
+                await m_log.WriteVerboseAsync("Including path due to filter: {0} => {1}", path, match.ToString());
             }
 
             // If the file is a symlink, apply special handling
             var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
             if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
             {
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Excluding symlink: {0}", path));
+                await m_log.WriteVerboseAsync("Excluding symlink: {0}", path);
                 return false;
             }
 
             if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
             {
-                await m_logchannel.WriteAsync(LogMessage.Verbose("Storing symlink: {0}", path));
+                await m_log.WriteVerboseAsync("Storing symlink: {0}", path);
 
                 // We return false because we do not want to recurse into the path,
                 // but we add the symlink to the mixin so we process the symlink itself

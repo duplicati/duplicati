@@ -33,91 +33,91 @@ namespace Duplicati.Library.Main.Operation.Backup
         public static Task Run(BackupDatabase database, Options options)
         {
             return AutomationExtensions.RunTask(
-                new
-                {
-                    LogChannel = ChannelMarker.ForWrite<LogMessage>("LogChannel"),
-                    Input = ChannelMarker.ForRead<DataBlock>("OutputBlocks"),
-                    Output = ChannelMarker.ForWrite<UploadRequest>("BackendRequests"),
-                    SpillPickup = ChannelMarker.ForWrite<UploadRequest>("SpillPickup"),
-                },
+            new
+            {
+                LogChannel = Common.Channels.LogChannel.ForWrite,
+                Input = Channels.OutputBlocks.ForRead,
+                Output = Channels.BackendRequest.ForWrite,
+                SpillPickup = Channels.SpillPickup.ForWrite,
+            },
 
-                async self =>
-                {
-                    BlockVolumeWriter blockvolume = null;
+            async self =>
+            {
+                BlockVolumeWriter blockvolume = null;
+                var log = new LogWrapper(self.LogChannel);
 
-                    try
+                try
+                {
+                    while(true)
                     {
-                        while(true)
+                        var b = await self.Input.ReadAsync();
+
+                        // Lazy-start a new block volume
+                        if (blockvolume == null)
                         {
-                            var b = await self.Input.ReadAsync();
-
-                            // Lazy-start a new block volume
-                            if (blockvolume == null)
+                            // Before we start a new volume, probe to see if it exists
+                            // This will delay creation of volumes for differential backups
+                            // There can be a race, such that two workers determine that
+                            // the block is missing, but this will be solved by the AddBlock call
+                            // which runs atomically
+                            if (await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
                             {
-                                // Before we start a new volume, probe to see if it exists
-                                // This will delay creation of volumes for differential backups
-                                // There can be a race, such that two workers determine that
-                                // the block is missing, but this will be solved by the AddBlock call
-                                // which runs atomically
-                                if (await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
-                                {
-                                    b.TaskCompletion.TrySetResult(false);
-                                    continue;
-                                }
-
-                                blockvolume = new BlockVolumeWriter(options);
-                                blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+                                b.TaskCompletion.TrySetResult(false);
+                                continue;
                             }
 
-                            var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
-                            b.TaskCompletion.TrySetResult(newBlock);
-
-                            if (newBlock)
-                            {
-
-                                blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
-
-                                if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
-                                {
-                                    if (options.Dryrun)
-                                    {
-                                        blockvolume.Close();
-                                            await self.LogChannel.WriteAsync(LogMessage.DryRun("Would upload block volume: {0}, size: {1}", blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(blockvolume.LocalFilename).Length)));
-
-                                        blockvolume.Dispose();
-                                        blockvolume = null;
-                                    }
-                                    else
-                                    {
-                                        //When uploading a new volume, we register the volumes and then flush the transaction
-                                        // this ensures that the local database and remote storage are as closely related as possible
-                                        await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                                    
-                                        blockvolume.Close();
-
-                                        await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
-
-                                        await self.Output.WriteAsync(new UploadRequest(blockvolume, null));
-                                        blockvolume = null;
-                                    }
-                                }
-
-                            }
+                            blockvolume = new BlockVolumeWriter(options);
+                            blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                         }
-                    }
-                    catch(Exception ex)
-                    {
-                        if (ex.IsRetiredException())
+
+                        var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
+                        b.TaskCompletion.TrySetResult(newBlock);
+
+                        if (newBlock)
                         {
-                            // If we have collected data, merge all pending volumes into a single volume
-                            if (blockvolume != null && blockvolume.SourceSize > 0)
-                                await self.SpillPickup.WriteAsync(new UploadRequest(blockvolume, null));
-                        }
 
-                        throw;
+                            blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
+
+                            if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
+                            {
+                                if (options.Dryrun)
+                                {
+                                    blockvolume.Close();
+                                    await log.WriteDryRunAsync("Would upload block volume: {0}, size: {1}", blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(blockvolume.LocalFilename).Length));
+
+                                    blockvolume.Dispose();
+                                    blockvolume = null;
+                                }
+                                else
+                                {
+                                    //When uploading a new volume, we register the volumes and then flush the transaction
+                                    // this ensures that the local database and remote storage are as closely related as possible
+                                    await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                                
+                                    blockvolume.Close();
+
+                                    await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
+
+                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, null));
+                                    blockvolume = null;
+                                }
+                            }
+
+                        }
                     }
                 }
-            );
+                catch(Exception ex)
+                {
+                    if (ex.IsRetiredException())
+                    {
+                        // If we have collected data, merge all pending volumes into a single volume
+                        if (blockvolume != null && blockvolume.SourceSize > 0)
+                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, null));
+                    }
+
+                    throw;
+                }
+            });
         }
 
 

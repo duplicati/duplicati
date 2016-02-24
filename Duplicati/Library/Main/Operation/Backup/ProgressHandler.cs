@@ -28,55 +28,55 @@ namespace Duplicati.Library.Main.Operation.Backup
         public static Task Run(BackupResults stat)
         {
             return AutomationExtensions.RunTask(new
-                {
-                    Input = ChannelMarker.ForRead<ProgressEvent>("ProgressChannel")
-                },
-                
-                async self =>
-                {
-                    var filesStarted = new Dictionary<string, long>();
-                    var fileProgress = new Dictionary<string, long>();
-                    string current = null;
+            {
+                Input = Channels.ProgressEvents.ForRead
+            },
+            
+            async self =>
+            {
+                var filesStarted = new Dictionary<string, long>();
+                var fileProgress = new Dictionary<string, long>();
+                string current = null;
 
-                    while(true)
+                while(true)
+                {
+                    var t = await self.Input.ReadAsync();
+                    switch(t.Type)
                     {
-                        var t = await self.Input.ReadAsync();
-                        switch(t.Type)
-                        {
-                            case EventType.FileStarted:
-                                filesStarted[t.Filepath] = t.Length;
-                                fileProgress[t.Filepath] = 0;
-                                break;
-                            case EventType.FileProgressUpdate:
-                                if (t.Filepath == current)
-                                    stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
-                                break;
-                            case EventType.FileClosed:
-                                if (fileProgress.ContainsKey(t.Filepath))
-                                    fileProgress[t.Filepath] = t.Length;
-                            
-                                if (t.Filepath == current)
-                                {
-                                    stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
-                                    current = null;
-                                }
-                                filesStarted.Remove(t.Filepath);
-                                fileProgress.Remove(t.Filepath);
-                                break;
-                        }
-
-                        if (current == null)
-                        {
-                            current = filesStarted.OrderByDescending(x => x.Value).Select(x => x.Key).FirstOrDefault();
-                            if (current != null)
+                        case EventType.FileStarted:
+                            filesStarted[t.Filepath] = t.Length;
+                            fileProgress[t.Filepath] = 0;
+                            break;
+                        case EventType.FileProgressUpdate:
+                            if (t.Filepath == current)
+                                stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
+                            break;
+                        case EventType.FileClosed:
+                            if (fileProgress.ContainsKey(t.Filepath))
+                                fileProgress[t.Filepath] = t.Length;
+                        
+                            if (t.Filepath == current)
                             {
-                                stat.OperationProgressUpdater.StartFile(current, filesStarted[current]);
-                                if (fileProgress.ContainsKey(current) && fileProgress[current] > 0)
-                                    stat.OperationProgressUpdater.UpdateFileProgress(fileProgress[current]);       
+                                stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
+                                current = null;
                             }
+                            filesStarted.Remove(t.Filepath);
+                            fileProgress.Remove(t.Filepath);
+                            break;
+                    }
+
+                    if (current == null)
+                    {
+                        current = filesStarted.OrderByDescending(x => x.Value).Select(x => x.Key).FirstOrDefault();
+                        if (current != null)
+                        {
+                            stat.OperationProgressUpdater.StartFile(current, filesStarted[current]);
+                            if (fileProgress.ContainsKey(current) && fileProgress[current] > 0)
+                                stat.OperationProgressUpdater.UpdateFileProgress(fileProgress[current]);       
                         }
                     }
-                });
+                }
+            });
 
         }
 
