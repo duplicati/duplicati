@@ -33,6 +33,30 @@ namespace Duplicati.Library.Main.Database
             ((System.Data.IDataParameter)self.Parameters[index]).Value = value;
         }
 
+        public static string GetPrintableCommandText(this System.Data.IDbCommand self)
+        {
+            var txt = self.CommandText;
+#if DEBUG
+            foreach(var p in self.Parameters.Cast<System.Data.IDbDataParameter>())
+            {
+                var ix = txt.IndexOf('?');
+                if (ix >= 0)
+                {
+                    string v;
+                    if (p.Value is string)
+                        v = string.Format("\"{0}\"", p.Value);
+                    else if (p.Value == null)
+                        v = "NULL";
+                    else
+                        v = string.Format("{0}", p.Value);
+
+                    txt = txt.Substring(0, ix) + v + txt.Substring(ix + 1);
+                }
+            }
+#endif
+            return txt;
+        }
+
         public static int ExecuteNonQuery(this System.Data.IDbCommand self, string cmd, params object[] values)
         {
             if (cmd != null)
@@ -45,7 +69,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteNonQuery: {0}", self.CommandText)))
+            using(new Logging.Timer(LC.L("ExecuteNonQuery: {0}", self.GetPrintableCommandText())))
                 return self.ExecuteNonQuery();
         }
 
@@ -61,7 +85,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
+            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.GetPrintableCommandText())))
                 return self.ExecuteScalar();
         }
 
@@ -87,7 +111,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
+            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.GetPrintableCommandText())))
                 using(var rd = self.ExecuteReader())
                     if (rd.Read())
                         return ConvertValueToInt64(rd, 0, defaultvalue);
@@ -107,7 +131,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteReader: {0}", self.CommandText)))
+            using(new Logging.Timer(LC.L("ExecuteReader: {0}", self.GetPrintableCommandText())))
                 return self.ExecuteReader();
         }
 
