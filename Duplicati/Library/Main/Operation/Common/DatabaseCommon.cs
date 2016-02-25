@@ -23,6 +23,10 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Asynchronous interface that ensures all requests
+    /// to the database are performed in a sequential manner
+    /// </summary>
     internal class DatabaseCommon : SingleRunner, IDisposable
     {
         protected LocalDatabase m_db;
@@ -49,7 +53,8 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             return RunOnMain(() => 
             {
-                m_transaction.Commit();
+                using(new Logging.Timer(message))
+                    m_transaction.Commit();
                 if (restart)
                     m_transaction = m_db.BeginTransaction();
                 else

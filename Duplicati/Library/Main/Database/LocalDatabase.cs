@@ -590,12 +590,10 @@ namespace Duplicati.Library.Main.Database
             	return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", -1, fhblocksize);
 		}
 
-        public void VerifyConsistency(System.Data.IDbTransaction transaction, long blocksize, long hashsize)
+        public void VerifyConsistency(long blocksize, long hashsize, System.Data.IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-            	cmd.Transaction = transaction;
-
                 // Calculate the lengths for each blockset                
                 var combinedLengths = @"SELECT ""BlocksetEntry"".""BlocksetID"" AS ""BlocksetID"", SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""BlocksetEntry"".""BlocksetID""";
                 // For each blockset with wrong lengths, fetch the file path
@@ -749,7 +747,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, System.Data.IDbTransaction transaction, long filesetId)
+        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId, System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand())
             {

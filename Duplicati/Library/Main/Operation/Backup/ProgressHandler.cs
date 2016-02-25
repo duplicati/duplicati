@@ -23,6 +23,9 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// The progress handler reads all progress messages and reports progress as if the processing is sequential
+    /// </summary>
     internal static class ProgressHandler
     {
         public static Task Run(BackupResults stat)

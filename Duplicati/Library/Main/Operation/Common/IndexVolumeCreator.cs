@@ -20,61 +20,74 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Encapsulates creating an index file from the database contents
+    /// </summary>
     internal static class IndexVolumeCreator
     {
         public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
         {
-            var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
-            var w = new IndexVolumeWriter(options);
-            w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+            using(var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm))
+            {
+                var w = new IndexVolumeWriter(options);
+                w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
 
-            var blockvolume = await database.GetVolumeInfoAsync(blockname);
+                var blockvolume = await database.GetVolumeInfoAsync(blockname);
 
-            w.StartVolume(blockname);
-            foreach(var b in await database.GetBlocksAsync(blockvolume.ID))
-                w.AddBlock(b.Hash, b.Size);
-
-            w.FinishVolume(blockvolume.Hash, blockvolume.Size);
-
-            if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                foreach(var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
-                {
-                    var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
-                    if (bh != b.Item1)
-                        throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
-                    w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
-                }
-
-            w.Close();
-
-            await database.AddIndexBlockLinkAsync(w.VolumeID, blockvolume.ID);
-
-            return w;
-        }
-
-        /*public static async Task<IndexVolumeWriter> ReCreateIndexVolume(string selfname, Options options, Repair.RepairDatabase database)
-        {
-            var w = new IndexVolumeWriter(options);
-            w.SetRemoteFilename(selfname);
-
-            foreach(var blockvolume in await database.GetBlockVolumesFromIndexNameAsync(selfname))
-            {                               
-                w.StartVolume(blockvolume.Name);
-                var volumeid = await database.GetRemoteVolumeIDAsync(blockvolume.Name);
-
-                foreach(var b in await database.GetBlocksAsync(volumeid))
+                w.StartVolume(blockname);
+                foreach(var b in await database.GetBlocksAsync(blockvolume.ID))
                     w.AddBlock(b.Hash, b.Size);
 
                 w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
                 if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                    foreach(var b in await database.GetBlocklistsAsync(volumeid, options.Blocksize, options.BlockhashSize))
+                    foreach(var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
+                    {
+                        var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                        if (bh != b.Item1)
+                            throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
                         w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                    }
+
+                w.Close();
+
+                await database.AddIndexBlockLinkAsync(w.VolumeID, blockvolume.ID);
+
+                return w;
             }
+        }
 
-            w.Close();
+        /*public static async Task<IndexVolumeWriter> ReCreateIndexVolume(string selfname, Options options, Repair.RepairDatabase database)
+        {
+            using(var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm))
+            {
+                var w = new IndexVolumeWriter(options);
+                w.SetRemoteFilename(selfname);
 
-            return w;
+                foreach(var blockvolume in await database.GetBlockVolumesFromIndexNameAsync(selfname))
+                {                               
+                    w.StartVolume(blockvolume.Name);
+                    var volumeid = await database.GetRemoteVolumeIDAsync(blockvolume.Name);
+
+                    foreach(var b in await database.GetBlocksAsync(volumeid))
+                        w.AddBlock(b.Hash, b.Size);
+
+                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+
+                    if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                        foreach(var b in await database.GetBlocklistsAsync(volumeid, options.Blocksize, options.BlockhashSize))
+                        {
+                            var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                            if (bh != b.Item1)
+                                throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
+                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                        }
+                }
+
+                w.Close();
+
+                return w;
+            }
         }*/
     }
 }

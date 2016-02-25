@@ -23,6 +23,11 @@ using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// This process takes files that are processed for metadata, 
+    /// and checks if anything indicates that the file has changed
+    /// and submits potentially changed files for scanning
+    /// </summary>
     internal static class FilePreFilterProcess
     {
         public static Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)

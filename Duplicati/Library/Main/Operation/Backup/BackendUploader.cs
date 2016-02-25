@@ -61,16 +61,19 @@ namespace Duplicati.Library.Main.Operation.Backup
     internal class VolumeUploadRequest : IUploadRequest
     {
         public BlockVolumeWriter BlockVolume { get; private set; }
-        public IndexVolumeWriter IndexVolume { get; private set; }
+        public bool CreateIndexVolume { get; private set; }
 
-        public VolumeUploadRequest(BlockVolumeWriter blockvolume, IndexVolumeWriter indexvolume)
+        public VolumeUploadRequest(BlockVolumeWriter blockvolume, bool createindexvolume)
         {
             BlockVolume = blockvolume;
-            IndexVolume = indexvolume;
+            CreateIndexVolume = createindexvolume;
         }
     }
    
-
+    /// <summary>
+    /// This class encapsulates all requests to the backend
+    /// and ensures that the <code>AsynchronousUploadLimit</code> is honored
+    /// </summary>
     internal static class BackendUploader
     {
         public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results)
@@ -98,7 +101,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             lastSize = ((VolumeUploadRequest)req).BlockVolume.SourceSize;
 
-                            if (noIndexFiles)
+                            if (noIndexFiles || !((VolumeUploadRequest)req).CreateIndexVolume)
                                 task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, null));
                             else
                                 task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => IndexVolumeCreator.CreateIndexVolume(name, options, database)));
@@ -109,11 +112,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                             task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
                         else if (req is FlushRequest)
                         {
-                            while(inProgress.Count > 0)
-                                await inProgress.Dequeue().Value;
-                            active = 0;
-
-                            ((FlushRequest)req).SetFlushed(lastSize);
+                            try
+                            {
+                                while(inProgress.Count > 0)
+                                    await inProgress.Dequeue().Value;
+                                active = 0;
+                            }
+                            finally
+                            {
+                                ((FlushRequest)req).SetFlushed(lastSize);
+                            }
                         }
 
                         if (task.Value != null)

@@ -22,6 +22,9 @@ using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// This class encasuplates the generation of metadata for a filesystem entry
+    /// </summary>
     internal static class MetadataGenerator
     {
         public static async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot, LogWrapper log)

@@ -26,7 +26,9 @@ using System.Linq;
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
-    /// This class receives data blocks and compresses them
+    /// This class receives data blocks, registers then in the database.
+    /// New blocks are added to a compressed archive and sent
+    /// to the uploader
     /// </summary>
     internal static class DataBlockProcessor
     {
@@ -75,9 +77,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         if (newBlock)
                         {
-
                             blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
 
+                            // If the volume is full, send to upload
                             if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
                                 if (options.Dryrun)
@@ -98,7 +100,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                     await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, null));
+                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
                                     blockvolume = null;
                                 }
                             }
@@ -112,7 +114,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         // If we have collected data, merge all pending volumes into a single volume
                         if (blockvolume != null && blockvolume.SourceSize > 0)
-                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, null));
+                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, true));
                     }
 
                     throw;

@@ -20,6 +20,9 @@ using CoCoL;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Handles writing incomming messages to the current log interface
+    /// </summary>
     internal static class LogHandler
     {
         public static Task Run(ILogWriter log)

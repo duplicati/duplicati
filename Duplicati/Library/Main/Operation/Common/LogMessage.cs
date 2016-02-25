@@ -20,6 +20,9 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Representation of a log message
+    /// </summary>
     public struct LogMessage
     {
         public Logging.LogMessageType Level;

@@ -27,7 +27,7 @@ using System.IO;
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
-    /// This class runs a process which opens a file and outputs blocks for processing
+    /// This class runs a process which opens a file and outputs data blocks for processing
     /// </summary>
     internal static class FileBlockProcessor
     {

@@ -21,6 +21,9 @@ using CoCoL;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// The data block represents a single blob of data read from a file
+    /// </summary>
     internal struct DataBlock
     {
         public string HashKey;

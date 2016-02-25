@@ -18,6 +18,9 @@ using System;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// The types of events being sent
+    /// </summary>
     public enum EventType
     {
         FileStarted,
@@ -25,6 +28,9 @@ namespace Duplicati.Library.Main.Operation.Common
         FileClosed
     }
 
+    /// <summary>
+    /// Description of a particular event
+    /// </summary>
     public struct ProgressEvent
     {
         public EventType Type { get; set; }

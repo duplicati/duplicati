@@ -28,6 +28,9 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// This class encapsulates access to the backend and ensures at most one connection is active at a time
+    /// </summary>
     internal class BackendHandler : SingleRunner
     {
         public const string VOLUME_HASH = "SHA256";
@@ -100,13 +103,16 @@ namespace Duplicati.Library.Main.Operation.Common
                 this.LocalTempfile.Protected = true;
             }
                 
-            public async Task Encrypt(Library.Interface.IEncryption encryption, LogWrapper log)
+            public async Task Encrypt(Options options, LogWrapper log)
             {
-                if (encryption != null && !this.Encrypted)
+                if (!this.Encrypted && !options.NoEncryption)
                 {
                     var tempfile = new Library.Utility.TempFile();
-                    encryption.Encrypt(this.LocalFilename, tempfile);
+                    using(var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
+                        enc.Encrypt(this.LocalFilename, tempfile);
+
                     await this.DeleteLocalFile(log);
+
                     this.LocalTempfile = tempfile;
                     this.Hash = null;
                     this.Size = 0;
@@ -148,7 +154,6 @@ namespace Duplicati.Library.Main.Operation.Common
         private LogWrapper m_log;
 
         private DatabaseCommon m_database;
-        private IEncryption m_encryption;
         private IBackend m_backend;
         private Options m_options;
         private string m_backendurl;
@@ -164,8 +169,6 @@ namespace Duplicati.Library.Main.Operation.Common
             m_backendurl = backendUrl;
             m_stats = stats;
             m_log = new LogWrapper(m_logchannel);
-            if (!options.NoEncryption)
-                m_encryption = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions);
         }
             
         protected Task<T> RunRetryOnMain<T>(FileEntryItem fe, Func<Task<T>> method)
@@ -191,6 +194,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         }
             
+        private int m_uploadrefcount = 0;
         public async Task UploadFileAsync(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
         {
             var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
@@ -200,9 +204,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
             var backgroundhashAndEncrypt = Task.Run(async () =>
             {
-                if (m_encryption != null)
-                    await fe.Encrypt(m_encryption, m_log).ConfigureAwait(false);
-                
+                await fe.Encrypt(m_options, m_log).ConfigureAwait(false);
                 return fe.UpdateHashAndSize(m_options);
             });
 
@@ -278,9 +280,7 @@ namespace Duplicati.Library.Main.Operation.Common
         public Task<Library.Utility.TempFile> GetFileAsync(string remotename, long size, string remotehash)
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename, size, remotehash);
-            return RunRetryOnMain(fe, () =>
-                DoGet(fe)
-            );
+            return RunRetryOnMain(fe, () => DoGet(fe) );
         }
 
         public Task<Tuple<Library.Utility.TempFile, long, string>> GetFileWithInfoAsync(string remotename)
@@ -296,14 +296,12 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
-        /*public Task<Library.Utility.TempFile> GetFileForTestingAsync(string remotename, long size, string remotehash)
+        public Task<Library.Utility.TempFile> GetFileForTestingAsync(string remotename, long size, string remotehash)
         {
-            var fe = new FileEntryItem(BackendActionType.Get, remotename, null);
-            return RunRetryOnMain(fe, async() =>
-            {
-
-            });
-        }*/
+            var fe = new FileEntryItem(BackendActionType.Get, remotename);
+            fe.VerifyHashOnly = true;
+            return RunRetryOnMain(fe, () => DoGet(fe));
+        }
 
         private async Task ResetBackendAsync(Exception ex)
         {
@@ -379,7 +377,6 @@ namespace Duplicati.Library.Main.Operation.Common
             }
 
             throw lastException;
-            
         }
 
         private async Task RenameFileAfterErrorAsync(FileEntryItem item)
@@ -399,8 +396,8 @@ namespace Duplicati.Library.Main.Operation.Common
 
         private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
         {
-            if (m_encryption != null && !item.Encrypted)
-                await item.Encrypt(m_encryption, m_log);
+            // If this is not already encrypted, do it now
+            await item.Encrypt(m_options, m_log);
 
             updatedHash |= item.UpdateHashAndSize(m_options);
 
@@ -605,14 +602,17 @@ namespace Duplicati.Library.Main.Operation.Common
 
                             // Auto-guess the encryption module
                             var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
-                            if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                            if (!string.Equals(m_options.EncryptionModule, ext, StringComparison.InvariantCultureIgnoreCase))
                             {
                                 // Check if the file is encrypted with something else
                                 if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
                                 {
-                                    await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
                                     using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
-                                        (encmodule ?? m_encryption).Decrypt(tmpfile2, tmpfile);
+                                        if (encmodule != null)
+                                        {
+                                            await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
+                                            encmodule.Decrypt(tmpfile2, tmpfile);
+                                        }
                                 }
                                 // Check if the file is not encrypted
                                 else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
@@ -623,12 +623,14 @@ namespace Duplicati.Library.Main.Operation.Common
                                 else
                                 {
                                     await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
-                                    m_encryption.Decrypt(tmpfile2, tmpfile);
+                                    using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions))
+                                        encmodule.Decrypt(tmpfile2, tmpfile);
                                 }
                             }
                             else
                             {
-                                m_encryption.Decrypt(tmpfile2, tmpfile);
+                                using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions))
+                                    encmodule.Decrypt(tmpfile2, tmpfile);
                             }
                         }
                     }

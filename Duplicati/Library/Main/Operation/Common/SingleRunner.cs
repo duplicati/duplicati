@@ -21,6 +21,10 @@ using System.Threading;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Provides mutually exclusive access to a resource,
+    /// by ensuring all methods are executed sequentially
+    /// </summary>
     internal abstract class SingleRunner : IDisposable
     {
         protected IChannel<Func<Task>> m_channel;
@@ -36,13 +40,19 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         private async Task Start()
-        {
+        {            
             var ct = m_workerSource.Token;
             while(!ct.IsCancellationRequested)
-                await (await m_channel.ReadAsync())(); // Grab-n-execute
+            {
+                // Grab next task
+                var nextTask = await m_channel.ReadAsync();
+
+                // Execute it
+                await nextTask();
+            }
         }
 
-        protected Task<T> RunOnMain<T>(Func<Task<T>> method)
+        protected Task<T> DoRunOnMain<T>(Func<Task<T>> method)
         {
             var res = new TaskCompletionSource<T>();
 
@@ -54,7 +64,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     {
                         try
                         {
-                            var r = await method();
+                            var r = await method().ConfigureAwait(false);
                             res.SetResult(r);
                         }
                         catch (Exception ex)
@@ -80,7 +90,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         protected Task RunOnMain(Action method)
         {
-            return RunOnMain<bool>(() =>
+            return DoRunOnMain<bool>(() =>
             {
                 method();
                 return Task.FromResult(true);
@@ -89,10 +99,23 @@ namespace Duplicati.Library.Main.Operation.Common
 
         protected Task<T> RunOnMain<T>(Func<T> method)
         {
-            return RunOnMain(() =>
+            return DoRunOnMain(() =>
             {
                 return Task.FromResult(method());
             });
+        }
+
+        protected Task RunOnMain(Func<Task> method)
+        {
+            return DoRunOnMain(async () => {
+                await method().ConfigureAwait(false);
+                return true;
+            });
+        }
+
+        protected Task<T> RunOnMain<T>(Func<Task<T>> method)
+        {
+            return DoRunOnMain(method);
         }
 
         public void Dispose()

@@ -646,11 +646,6 @@ namespace Duplicati.Library.Main.Database
                 
             return r.ToString();
         }
-        
-        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, System.Data.IDbTransaction transaction)
-		{
-			WriteFileset(filesetvolume, transaction, m_filesetId);
-		}        
 
         public override void Dispose ()
         {
@@ -686,9 +681,9 @@ namespace Duplicati.Library.Main.Database
             return lastFilesetId;
         }
 
-        internal void UpdateChangeStatistics(BackupResults results)
+        internal void UpdateChangeStatistics(BackupResults results, System.Data.IDbTransaction transaction)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var lastFilesetId = GetPreviousFilesetID(cmd);
                 results.AddedFolders = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" = ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", 0, m_filesetId, FOLDER_BLOCKSET_ID, lastFilesetId);
@@ -784,7 +779,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IRemoteVolume GetRemoteVolumeFromName(string name)
+        public IRemoteVolume GetRemoteVolumeFromName(string name, System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand())
             using(var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Name"" = ?", name))
@@ -794,9 +789,9 @@ namespace Duplicati.Library.Main.Database
                     return null;
         }
 
-        public IEnumerable<string> GetMissingIndexFiles()
+        public IEnumerable<string> GetMissingIndexFiles(System.Data.IDbTransaction transaction)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             using(var rd = cmd.ExecuteReader(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND NOT ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"") AND ""State"" IN (?,?)", RemoteVolumeType.Blocks.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
                 while (rd.Read())
                     yield return rd.GetValue(0).ToString();

@@ -24,6 +24,9 @@ using System.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// This class encapsulates generation of synthetic file list
+    /// </summary>
     internal static class UploadSyntheticFilelist
     {
         public static Task Run(BackupDatabase database, Options options, BackupResults result)

@@ -223,7 +223,7 @@ namespace Duplicati.Library.Main.Operation
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 								
-                                db.WriteFileset(w, null, filesetId);
+                                db.WriteFileset(w, filesetId, null);
 	
                                 w.Close();
                                 if (m_options.Dryrun)

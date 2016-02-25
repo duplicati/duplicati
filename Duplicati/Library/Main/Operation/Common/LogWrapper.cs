@@ -20,6 +20,9 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Helper method to reduce code-text size when writing log messages
+    /// </summary>
     public class LogWrapper : IDisposable
     {
         private bool m_autoLeave;

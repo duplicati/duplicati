@@ -21,6 +21,9 @@ namespace Duplicati.Library.Main.Operation.Common
 {
     internal static class Channels
     {
+        /// <summary>
+        /// The log channel coordinats log messages
+        /// </summary>
         public static readonly ChannelMarkerWrapper<LogMessage> LogChannel = new ChannelMarkerWrapper<LogMessage>("LogChannel");
-    }}
-
+    }
+}

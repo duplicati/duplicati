@@ -20,6 +20,10 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// Asynchronous interface that ensures all stat requests
+    /// are performed in a sequential manner
+    /// </summary>
     internal class BackupStatsCollector : StatsCollector
     {
         private BackupResults m_res;

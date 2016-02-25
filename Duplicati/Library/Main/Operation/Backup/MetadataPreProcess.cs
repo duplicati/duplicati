@@ -24,7 +24,11 @@ using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
-    internal class MetadataPreProcess : ProcessHelper
+    /// <summary>
+    /// This class processes paths for metadata and emits the metadata blocks for storage.
+    /// Folders and symlinks in the database, and paths are forwarded to be scanned for changes
+    /// </summary>
+    internal static class MetadataPreProcess
     {
         public class FileEntry
         {
@@ -46,51 +50,101 @@ namespace Duplicati.Library.Main.Operation.Backup
             public IMetahash MetaHashAndSize;
             public bool MetadataChanged;
         }
-
-        private IReadChannel<string> m_input = Backup.Channels.SourcePaths.ForRead;
-        private IWriteChannel<LogMessage> m_logchannel = Common.Channels.LogChannel.ForWrite;
-        private IWriteChannel<FileEntry> m_output =  Backup.Channels.ProcessedFiles.ForWrite;
-        private IWriteChannel<DataBlock> m_blockoutput = Backup.Channels.OutputBlocks.ForWrite;
-        private LogWrapper m_log;
-
-        private Snapshots.ISnapshotService m_snapshot;
-        private Options m_options;
-        private BackupDatabase m_database;
-        private readonly IMetahash EMPTY_METADATA;
-        private int m_blocksize;
-
-        public MetadataPreProcess(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database)
-            : base()
+            
+        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database)
         {
-            m_snapshot = snapshot;
-            m_options = options;
-            m_database = database;
-            m_log = new LogWrapper(m_logchannel);
-            m_blocksize = m_options.Blocksize;
-            EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
+            return AutomationExtensions.RunTask(new
+            {
+                Input = Backup.Channels.SourcePaths.ForRead,
+                LogChannel = Common.Channels.LogChannel.ForWrite,
+                Output = Backup.Channels.ProcessedFiles.ForWrite,
+                BlockOutput = Backup.Channels.OutputBlocks.ForWrite
+            },
+                
+            async self =>
+            {
+                var log = new LogWrapper(self.LogChannel);
+                var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
+                var blocksize = options.Blocksize;
+
+                while (true)
+                {
+                    var path = await self.Input.ReadAsync();
+
+                    var lastwrite = new DateTime(0, DateTimeKind.Utc);
+                    var attributes = default(FileAttributes);
+                    try 
+                    { 
+                        lastwrite = snapshot.GetLastWriteTimeUtc(path); 
+                    }
+                    catch (Exception ex) 
+                    {
+                        await log.WriteWarningAsync(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                    }
+
+                    try 
+                    { 
+                        attributes = snapshot.GetAttributes(path); 
+                    }
+                    catch (Exception ex) 
+                    {
+                        await log.WriteWarningAsync(string.Format("Failed to read attributes on \"{0}\"", path), ex);
+                    }
+
+                    // If we only have metadata, stop here
+                    if (await ProcessMetadata(path, attributes, lastwrite, options, log, snapshot, emptymetadata, blocksize, database, self.BlockOutput))
+                    {
+                        try
+                        {
+                            var res = await database.GetFileEntryAsync(path);
+
+                            await self.Output.WriteAsync(new FileEntry() {
+                                OldId = res == null ? -1 : res.id,
+                                Path = path,
+                                Attributes = attributes,
+                                LastWrite = lastwrite,
+                                OldModified = res == null ? new DateTime(0) : res.modified,
+                                LastFileSize = res == null ? -1 : res.filesize,
+                                OldMetaHash = res == null ? null : res.metahash,
+                                OldMetaSize = res == null ? -1 : res.metasize
+                            });
+                        }
+                        catch(Exception ex)
+                        {
+                            await log.WriteErrorAsync(string.Format("Failed to process entry, path: {0}", path), ex);
+                        }
+                    }
+                }
+
+            });
+
         }
 
-        private async Task<bool> ProcessMetadata(string path, FileAttributes attributes, DateTime lastwrite)
+        /// <summary>
+        /// Processes the metadata for the given path.
+        /// </summary>
+        /// <returns><c>True</c> if the path should be submitted to more analysis, <c>false</c> if there is nothing else to do</returns>
+        private static async Task<bool> ProcessMetadata(string path, FileAttributes attributes, DateTime lastwrite, Options options, LogWrapper log, Snapshots.ISnapshotService snapshot, IMetahash emptymetadata, long blocksize, BackupDatabase database, IWriteChannel<DataBlock> blockoutput)
         {
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
-                if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                 {
-                    await m_log.WriteVerboseAsync("Ignoring symlink {0}", path);
+                    await log.WriteVerboseAsync("Ignoring symlink {0}", path);
                     return false;
                 }
 
-                if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                 {
-                    var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, m_options, m_snapshot, m_log);
+                    var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot, log);
 
                     if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                        metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
+                        metadata["CoreSymlinkTarget"] = snapshot.GetSymlinkTarget(path);
 
-                    var metahash = Utility.WrapMetadata(metadata, m_options);
-                    await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash);
+                    var metahash = Utility.WrapMetadata(metadata, options);
+                    await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, blocksize, database, blockoutput);
 
-                    await m_log.WriteVerboseAsync("Stored symlink {0}", path);
+                    await log.WriteVerboseAsync("Stored symlink {0}", path);
                     // Don't process further
                     return false;
                 }
@@ -100,17 +154,17 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 IMetahash metahash;
 
-                if (m_options.StoreMetadata)
+                if (options.StoreMetadata)
                 {
-                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, m_options, m_snapshot, m_log), m_options);
+                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot, log), options);
                 }
                 else
                 {
-                    metahash = EMPTY_METADATA;
+                    metahash = emptymetadata;
                 }
 
-                await m_log.WriteVerboseAsync("Adding directory {0}", path);
-                await AddFolderToOutputAsync(path, lastwrite, metahash);
+                await log.WriteVerboseAsync("Adding directory {0}", path);
+                await AddFolderToOutputAsync(path, lastwrite, metahash, blocksize, database, blockoutput);
                 return false;
             }
 
@@ -127,14 +181,14 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta)
+        private static async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta, long blocksize, BackupDatabase database, IWriteChannel<DataBlock> blockoutput)
         {
-            if (meta.Size > m_blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+            if (meta.Size > blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", blocksize));
 
-            await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, meta.Size, CompressionHint.Default, false);
-            var metadataid = await m_database.AddMetadatasetAsync(meta.Hash, meta.Size);
-            await m_database.AddDirectoryEntryAsync(filename, metadataid.Item2, lastModified);
+            await DataBlock.AddBlockToOutputAsync(blockoutput, meta.Hash, meta.Blob, 0, meta.Size, CompressionHint.Default, false);
+            var metadataid = await database.AddMetadatasetAsync(meta.Hash, meta.Size);
+            await database.AddDirectoryEntryAsync(filename, metadataid.Item2, lastModified);
         }
 
         /// <summary>
@@ -146,70 +200,16 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta)
+        private static async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta, long blocksize, BackupDatabase database, IWriteChannel<DataBlock> blockoutput)
         {
-            if (meta.Size > m_blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", m_blocksize));
+            if (meta.Size > blocksize)
+                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", blocksize));
 
-            await DataBlock.AddBlockToOutputAsync(m_blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            var metadataid = await m_database.AddMetadatasetAsync(meta.Hash, meta.Size);
-            await m_database.AddSymlinkEntryAsync(filename, metadataid.Item2, lastModified);
+            await DataBlock.AddBlockToOutputAsync(blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
+            var metadataid = await database.AddMetadatasetAsync(meta.Hash, meta.Size);
+            await database.AddSymlinkEntryAsync(filename, metadataid.Item2, lastModified);
         }
 
-        protected override async Task Start()
-        {
-            using(var input = m_input.AsReadOnly())
-            {
-                while (true)
-                {
-                    var path = await m_input.ReadAsync();
-
-                    var lastwrite = new DateTime(0, DateTimeKind.Utc);
-                    var attributes = default(FileAttributes);
-                    try 
-                    { 
-                        lastwrite = m_snapshot.GetLastWriteTimeUtc(path); 
-                    }
-                    catch (Exception ex) 
-                    {
-                        await m_log.WriteWarningAsync(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
-                    }
-
-                    try 
-                    { 
-                        attributes = m_snapshot.GetAttributes(path); 
-                    }
-                    catch (Exception ex) 
-                    {
-                        await m_log.WriteWarningAsync(string.Format("Failed to read attributes on \"{0}\"", path), ex);
-                    }
-
-                    // If we only have metadata, stop here
-                    if (await ProcessMetadata(path, attributes, lastwrite))
-                    {
-                        try
-                        {
-                            var res = await m_database.GetFileEntryAsync(path);
-
-                            await m_output.WriteAsync(new FileEntry() {
-                                OldId = res == null ? -1 : res.id,
-                                Path = path,
-                                Attributes = attributes,
-                                LastWrite = lastwrite,
-                                OldModified = res == null ? new DateTime(0) : res.modified,
-                                LastFileSize = res == null ? -1 : res.filesize,
-                                OldMetaHash = res == null ? null : res.metahash,
-                                OldMetaSize = res == null ? -1 : res.metasize
-                            });
-                        }
-                        catch(Exception ex)
-                        {
-                            await m_log.WriteErrorAsync(string.Format("Failed to process entry, path: {0}", path), ex);
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 

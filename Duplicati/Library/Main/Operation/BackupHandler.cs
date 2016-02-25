@@ -13,6 +13,11 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
+    /// <summary>
+    /// The backup handler is the primary function,
+    /// which performs a backup of the given sources
+    /// to the chosen destination
+    /// </summary>
     internal class BackupHandler : IDisposable
     {    
         private readonly Options m_options;
@@ -20,8 +25,6 @@ namespace Duplicati.Library.Main.Operation
 
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
-        private BlockVolumeWriter m_blockvolume;
-        private IndexVolumeWriter m_indexvolume;
 
         private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
@@ -60,50 +63,6 @@ namespace Duplicati.Library.Main.Operation
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
         }
 
-        private static Task CountFilesHandler(Snapshots.ISnapshotService snapshot, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, CancellationToken token = default(CancellationToken))
-        {
-            using(new ChannelScope())
-            {
-                var enumeratorTask = new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync();
-
-                var counterTask = AutomationExtensions.RunTask(new 
-                {
-                    Input = Backup.Channels.SourcePaths.ForRead
-                },
-                async self =>
-                {
-                    var count = 0L;
-                    var size = 0L;
-
-                    try
-                    {
-                        while (!token.IsCancellationRequested)
-                        {
-                            var path = await self.Input.ReadAsync();
-
-                            count++;
-
-                            try
-                            {
-                                size += snapshot.GetFileSize(path);
-                            }
-                            catch
-                            {
-                            }
-
-                            result.OperationProgressUpdater.UpdatefileCount(count, size, false);                    
-                        }
-                    }
-                    finally
-                    {
-                        result.OperationProgressUpdater.UpdatefileCount(count, size, true);
-                    }
-                });
-
-                return Task.WhenAll(enumeratorTask, counterTask);
-            }
-        }
-
         private void PreBackupVerify(BackendManager backend)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
@@ -133,6 +92,9 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        /// <summary>
+        /// Performs the bulk of work by starting all relevant processes
+        /// </summary>
         private static async Task RunMainOperation(Snapshots.ISnapshotService snapshot, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result)
         {
             using(new Logging.Timer("BackupMainOperation"))
@@ -145,7 +107,7 @@ namespace Duplicati.Library.Main.Operation
                         Backup.FileBlockProcessor.Start(snapshot, options, database, stats),
                         new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync(),
                         Backup.FilePreFilterProcess.Start(snapshot, options, stats, database),
-                        new Backup.MetadataPreProcess(snapshot, options, database).RunAsync(),
+                        Backup.MetadataPreProcess.Run(snapshot, options, database),
                         Backup.SpillCollectorProcess.Run(options, database),
                         Backup.ProgressHandler.Run(result)
                     );
@@ -157,51 +119,6 @@ namespace Duplicati.Library.Main.Operation
                     await database.AppendFilesFromPreviousSetAsync(options.DeletedFilelist);
                 
                 result.OperationProgressUpdater.UpdatefileCount(result.ExaminedFiles, result.SizeOfExaminedFiles, true);
-            }
-        }
-
-        private void UploadRealFileList(BackendManager backend, FilesetVolumeWriter filesetvolume)
-        {
-            var changeCount = 
-                m_result.AddedFiles + m_result.ModifiedFiles + m_result.DeletedFiles +
-                m_result.AddedFolders + m_result.ModifiedFolders + m_result.DeletedFolders +
-                m_result.AddedSymlinks + m_result.ModifiedSymlinks + m_result.DeletedSymlinks;
-
-            //Changes in the filelist triggers a filelist upload
-            if (m_options.UploadUnchangedBackups || changeCount > 0)
-            {
-                using(new Logging.Timer("Uploading a new fileset"))
-                {
-                    if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                        foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                            filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
-
-                    m_database.WriteFileset(filesetvolume, m_transaction);
-                    filesetvolume.Close();
-
-                    if (m_options.Dryrun)
-                        m_result.AddDryrunMessage(string.Format("Would upload fileset volume: {0}, size: {1}", filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(filesetvolume.LocalFilename).Length)));
-                    else
-                    {
-                        m_database.UpdateRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
-                            m_transaction.Commit();
-                        m_transaction = m_database.BeginTransaction();
-
-                        backend.Put(filesetvolume);
-
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
-                            m_transaction.Commit();
-                        m_transaction = m_database.BeginTransaction();
-
-                    }
-                }
-            }
-            else
-            {
-                m_result.AddVerboseMessage("removing temp files, as no data needs to be uploaded");
-                m_database.RemoveRemoteVolume(filesetvolume.RemoteFilename, m_transaction);
             }
         }
 
@@ -247,15 +164,7 @@ namespace Duplicati.Library.Main.Operation
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }
-
-        private static async Task<long> CreateFilesetAsync(Backup.BackupDatabase database, string filename)
-        {
-            var filesetvolumeid = await database.RegisterRemoteVolumeAsync(filename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
-            await database.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filename).Time);
-
-            return filesetvolumeid;
-        }
-
+            
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
             RunAsync(sources, filter).WaitForTaskOrThrow();
@@ -285,12 +194,28 @@ namespace Duplicati.Library.Main.Operation
                 return new AggregateException(ex.First().Message, ex);
         }
 
+        private static async Task<long> FlushBackend(BackupResults result, IWriteChannel<Backup.IUploadRequest> uploadtarget, Task uploader)
+        {
+            var flushReq = new Backup.FlushRequest();
+
+            // Wait for upload completion
+            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
+            await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
+
+            // In case the uploader crashes, we grab the exception here
+            if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAync) == uploader)
+                await uploader;
+
+            // Grab the size of the last uploaded volume
+            return await flushReq.LastWriteSizeAync;
+        }
+
         private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
             
             // New isolated scope for each operation
-            using(new ChannelScope(true))
+            using(new IsolatedChannelScope())
             using(m_database = new LocalBackupDatabase(m_options.Dbpath, m_options))
             {
                 // Start the log handler
@@ -302,7 +227,6 @@ namespace Duplicati.Library.Main.Operation
                 // Check the database integrity
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
-                m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
 
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
@@ -313,8 +237,6 @@ namespace Duplicati.Library.Main.Operation
                 Task uploader = null;
                 try
                 {
-                    var flushReq = new Backup.FlushRequest();
-
                     // Setup runners and instances here
                     using(var db = new Backup.BackupDatabase(m_database))
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
@@ -322,82 +244,66 @@ namespace Duplicati.Library.Main.Operation
                     using(var stats = new Backup.BackupStatsCollector(m_result))
                     using(var bk = new Common.BackendHandler(m_options, m_backendurl, db, stats))
                     using(var logtarget = ChannelManager.GetChannel(Common.Channels.LogChannel.ForWrite))
+                    using(var uploadtarget = ChannelManager.GetChannel(Backup.Channels.BackendRequest.ForWrite))
                     {
-                        using(var uploadtarget = ChannelManager.GetChannel(Backup.Channels.BackendRequest.ForWrite))
+                        long filesetid;
+                        var counterToken = new CancellationTokenSource();
+                        using(var snapshot = GetSnapshot(sources, m_options, m_result))
                         {
-                            using(var snapshot = GetSnapshot(sources, m_options, m_result))
+                            try
                             {
-                                var counterToken = new CancellationTokenSource();
+                                // Start the parallel scanner
+                                parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, counterToken.Token);
 
-                                try
-                                {
-                                    // Start the parallel scanner
-                                    parallelScanner = CountFilesHandler(snapshot, m_result, m_options, m_sourceFilter, m_filter, counterToken.Token);
+                                // Make sure the database is sance
+                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize);
 
-                                    // Do a remote verification, unless disabled
-                                    PreBackupVerify(backend);
-                                                
-                                    // Verify before uploading a synthetic list
-                                    m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+                                // Start the uploader process
+                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result);
 
-                                    // Start the uploader process
-                                    uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result);
+                                // TODO: Rewrite to using the uploader process, or the BackendHandler interface
+                                // Do a remote verification, unless disabled
+                                PreBackupVerify(backend);
 
-                                    // If the previous backup was interrupted, send a synthetic list
-                                    await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result);
+                                // If the previous backup was interrupted, send a synthetic list
+                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result);
 
-                                    // This should be removed
-                                    m_database.BuildLookupTable(m_options);
+                                // This should be removed as the lookups are no longer used
+                                m_database.BuildLookupTable(m_options);
 
-                                    // Prepare the operation
-                                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
-                                    await CreateFilesetAsync(db, filesetvolume.RemoteFilename);
+                                // Prepare the operation by registering the filelist
+                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
+                                var filesetvolumeid = await db.RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+                                filesetid = await db.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 
-                                    // Run the backup operation
-                                    await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result);
-                                }
-                                finally
-                                {
-                                    //If the scanner is still running for some reason, make sure we kill it now 
-                                    counterToken.Cancel();
-                                }
+                                // Run the backup operation
+                                await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result);
                             }
-
-                            // Wait for upload completion
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                            await uploadtarget.WriteAsync(flushReq);
-
-                            // TODO: do not close the uploader once the other functions are ported
+                            finally
+                            {
+                                //If the scanner is still running for some reason, make sure we kill it now 
+                                counterToken.Cancel();
+                            }
                         }
 
-                        // In case the uploader crashes, we grab the exception here
-                        if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAync) == uploader)
-                            await uploader;
+                        // Ensure the database is in a sane state after adding data
+                        using(new Logging.Timer("VerifyConsistency"))
+                            await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize);
 
-                        // Grab the size of the last uploaded volume
-                        var lastVolumeSize = await flushReq.LastWriteSizeAync;
+                        // Send the actual filelist
+                        await Backup.UploadRealFilelist.Run(m_result, db, m_options, filesetvolume, filesetid);
+
+                        // Wait for upload completion
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
+                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader);
 
                         // Make sure we have the database up-to-date
                         await db.CommitTransactionAsync("CommitAfterUpload", false);
 
-                        // TODO: Remove this
-                        await uploader;
-
                         // TODO: Remove this later
                         m_transaction = m_database.BeginTransaction();
-    		            
-                        using(new Logging.Timer("UpdateChangeStatistics"))
-                            m_database.UpdateChangeStatistics(m_result);
-                        using(new Logging.Timer("VerifyConsistency"))
-                            m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize);
-    
-                        UploadRealFileList(backend, filesetvolume);
-    									
-                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                        using(new Logging.Timer("Async backend wait"))
-                            backend.WaitForComplete(m_database, m_transaction);
-                            
-                        if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
+    		                                        
+                        if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
                             CompactIfRequired(backend, lastVolumeSize);
     		            
                         if (m_options.UploadVerificationFile)
@@ -455,37 +361,9 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
         }
-
-        private void UpdateIndexVolume()
-        {
-        	if (m_indexvolume != null)
-        	{
-	            m_database.AddIndexBlockLink(m_indexvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
-	            m_indexvolume.StartVolume(m_blockvolume.RemoteFilename);
-	            
-	            foreach(var b in m_database.GetBlocks(m_blockvolume.VolumeID))
-	            	m_indexvolume.AddBlock(b.Hash, b.Size);
-
-    			m_database.UpdateRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-        	}
-        }
-
+            
         public void Dispose()
         {
-            if (m_blockvolume != null)
-            {
-                try { m_blockvolume.Dispose(); }
-                catch (Exception ex) { m_result.AddError("Failed disposing block volume", ex); }
-                finally { m_blockvolume = null; }
-            }
-
-            if (m_indexvolume != null)
-            {
-                try { m_indexvolume.Dispose(); }
-                catch (Exception ex) { m_result.AddError("Failed disposing index volume", ex); }
-                finally { m_indexvolume = null; }
-            }
-
             m_result.EndTime = DateTime.UtcNow;
         }
     }

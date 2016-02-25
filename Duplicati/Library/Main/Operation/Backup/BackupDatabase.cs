@@ -26,6 +26,10 @@ using System.Linq;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    /// <summary>
+    /// Asynchronous interface that ensures all requests
+    /// to the database are performed in a sequential manner
+    /// </summary>
     internal class BackupDatabase : DatabaseCommon
     {
         private LocalBackupDatabase m_database;
@@ -178,14 +182,29 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.LinkFilesetToVolume(filesetid, volumeid, m_transaction));
         }
 
-        public Task WriteFilesetAsync(FilesetVolumeWriter fsw, long newFilesetID)
+        public Task WriteFilesetAsync(FilesetVolumeWriter fsw, long filesetid)
         {
-            return RunOnMain(() => m_database.WriteFileset(fsw, m_transaction, newFilesetID));
+            return RunOnMain(() => m_database.WriteFileset(fsw, filesetid, m_transaction));
         }
 
         public Task<IEnumerable<string>> GetMissingIndexFilesAsync()
         {
-            return RunOnMain(() => m_database.GetMissingIndexFiles());
+            return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction));
+        }
+
+        public Task UpdateChangeStatisticsAsync(BackupResults result)
+        {
+            return RunOnMain(() => m_database.UpdateChangeStatistics(result, m_transaction));
+        }
+
+        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize)
+        {
+            return RunOnMain(() => m_database.VerifyConsistency(blocksize, blockhashSize, m_transaction));
+        }
+
+        public Task RemoveRemoteVolumeAsync(string remoteFilename)
+        {
+            return RunOnMain(() => m_database.RemoveRemoteVolume(remoteFilename, m_transaction));
         }
     }
 }

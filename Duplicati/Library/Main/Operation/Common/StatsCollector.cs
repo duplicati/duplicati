@@ -19,6 +19,9 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
+    /// <summary>
+    /// Ensures sequentially emitted events
+    /// </summary>
     internal class StatsCollector : SingleRunner, IDisposable
     {
         protected IBackendWriter m_bw;
