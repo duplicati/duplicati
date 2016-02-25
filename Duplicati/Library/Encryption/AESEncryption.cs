@@ -37,6 +37,11 @@ namespace Duplicati.Library.Encryption
         private string m_key;
 
         /// <summary>
+        /// The cached value for size overhead
+        /// </summary>
+        private static long m_cachedsizeoverhead = -1;
+
+        /// <summary>
         /// Default constructor, used to read file extension and supported commands
         /// </summary>
         public AESEncryption()
@@ -57,30 +62,68 @@ namespace Duplicati.Library.Encryption
 
         #region IEncryption Members
 
+        /// <summary>
+        /// The extension that the encryption implementation adds to the filename
+        /// </summary>
+        /// <value>The filename extension.</value>
         public override string FilenameExtension { get { return "aes"; } }
+        /// <summary>
+        /// A localized description of the encryption module
+        /// </summary>
+        /// <value>The description.</value>
         public override string Description { get { return string.Format(Strings.AESEncryption.Description_v2); } }
+        /// <summary>
+        /// A localized string describing the encryption module with a friendly name
+        /// </summary>
+        /// <value>The display name.</value>
         public override string DisplayName { get { return Strings.AESEncryption.DisplayName; } }
+        /// <summary>
+        /// Dispose the specified disposing.
+        /// </summary>
+        /// <param name="disposing">If set to <c>true</c> disposing.</param>
         protected override void Dispose(bool disposing) { m_key = null; }
 
+        /// <summary>
+        /// Returns the size in bytes of the overhead that will be added to a file of the given size when encrypted
+        /// </summary>
+        /// <param name="filesize">The size of the file to encrypt</param>
+        /// <returns>The size of the overhead in bytes</returns>
         public override long SizeOverhead(long filesize)
         {
+            if (m_cachedsizeoverhead != -1)
+                return m_cachedsizeoverhead;
+            
             //If we use 1, we trigger the blocksize.
             //As the AES algorithm does not alter the size,
             // the results are the same as for the real size,
             // but a single byte encryption is much faster.
-            return base.SizeOverhead(1);
+            return m_cachedsizeoverhead = base.SizeOverhead(1);
         }
 
+        /// <summary>
+        /// Encrypts the stream
+        /// </summary>
+        /// <param name="input">The target stream</param>
+        /// <returns>An encrypted stream that can be written to</returns>
         public override Stream Encrypt(Stream input)
         {
             return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Encrypt);
         }
 
+        /// <summary>
+        /// Decrypts the stream to the output stream
+        /// </summary>
+        /// <param name="input">The encrypted stream</param>
+        /// <returns>The unencrypted stream</returns>
         public override Stream Decrypt(Stream input)
         {
             return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Decrypt);
         }
 
+        /// <summary>
+        /// Gets a list of supported commandline arguments
+        /// </summary>
+        /// <value>The supported commands.</value>
         public override IList<ICommandLineArgument> SupportedCommands
         {
             get
