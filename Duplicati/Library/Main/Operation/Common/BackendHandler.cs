@@ -321,11 +321,6 @@ namespace Duplicati.Library.Main.Operation.Common
 
         private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<Task<T>> method)
         {
-            if (m_backend == null)
-                m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
-            if (m_backend == null)
-                throw new Exception("Backend failed to re-load");
-
             item.IsRetry = false;
             Exception lastException = null;
 
@@ -333,9 +328,14 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 if (m_options.RetryDelay.Ticks != 0 && i != 0)
                     await Task.Delay(m_options.RetryDelay);
-                
+
                 try
                 {
+                    if (m_backend == null)
+                        m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+                    if (m_backend == null)
+                        throw new Exception("Backend failed to re-load");
+                    
                     var r = await method();
                     return r;
                 }
