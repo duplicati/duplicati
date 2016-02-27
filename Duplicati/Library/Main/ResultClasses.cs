@@ -465,7 +465,10 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Messages { get { return m_messages; } }
         public IEnumerable<string> Warnings { get { return m_warnings; } }
         public IEnumerable<string> Errors { get { return m_errors; } }
-        
+
+        protected Operation.Common.TaskControl m_taskController;
+        public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
+
         public BasicResults() 
         { 
             this.BeginTime = DateTime.UtcNow; 
@@ -479,6 +482,7 @@ namespace Duplicati.Library.Main
             m_callerThread = System.Threading.Thread.CurrentThread;
             m_backendProgressUpdater = new BackendProgressUpdater();
             m_operationProgressUpdater = new OperationProgressUpdater();
+            m_taskController = new Duplicati.Library.Main.Operation.Common.TaskControl();
         }
 
         public BasicResults(BasicResults p)
@@ -508,6 +512,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Pause()
         {
+            m_taskController.Pause();
+
             lock(m_lock)
                 if (m_controlState == TaskControlState.Run)
                 {
@@ -524,6 +530,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Resume()
         {
+            m_taskController.Resume();
+
             lock(m_lock)
                 if (m_controlState == TaskControlState.Pause)
                 {
@@ -540,6 +548,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Stop() 
         {
+            m_taskController.Stop();
+
             lock(m_lock)
                 if (m_controlState != TaskControlState.Abort)
                 {
@@ -556,6 +566,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Abort()
         {
+            m_taskController.Terminate();
+
             lock(m_lock)
             {
                 m_controlState = TaskControlState.Abort;

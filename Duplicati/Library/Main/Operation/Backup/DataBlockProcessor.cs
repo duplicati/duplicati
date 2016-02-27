@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
-        public static Task Run(BackupDatabase database, Options options)
+        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -82,30 +82,22 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // If the volume is full, send to upload
                             if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
-                                if (options.Dryrun)
-                                {
-                                    blockvolume.Close();
-                                    await log.WriteDryRunAsync("Would upload block volume: {0}, size: {1}", blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(blockvolume.LocalFilename).Length));
+                                //When uploading a new volume, we register the volumes and then flush the transaction
+                                // this ensures that the local database and remote storage are as closely related as possible
+                                await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                            
+                                blockvolume.Close();
 
-                                    blockvolume.Dispose();
-                                    blockvolume = null;
-                                }
-                                else
-                                {
-                                    //When uploading a new volume, we register the volumes and then flush the transaction
-                                    // this ensures that the local database and remote storage are as closely related as possible
-                                    await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                                
-                                    blockvolume.Close();
+                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                    await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
-
-                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
-                                    blockvolume = null;
-                                }
+                                await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
+                                blockvolume = null;
                             }
 
                         }
+
+                        // We ignore the stop signal, but not the pause and terminate
+                        await taskreader.ProgressAsync;
                     }
                 }
                 catch(Exception ex)

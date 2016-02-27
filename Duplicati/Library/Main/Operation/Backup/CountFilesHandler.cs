@@ -24,13 +24,13 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
-        public static Task Run(Snapshots.ISnapshotService snapshot, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, CancellationToken token = default(CancellationToken))
+        public static Task Run(Snapshots.ISnapshotService snapshot, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
         {
             // Make sure we create the enumeration process in a seperate scope,
             // but keep the log channel from the parent scope
             using(new IsolatedChannelScope(Common.Channels.LogChannel))
             {
-                var enumeratorTask = new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync();
+                var enumeratorTask = Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader);
 
                 var counterTask = AutomationExtensions.RunTask(new 
                 {
@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     try
                     {
-                        while (!token.IsCancellationRequested)
+                        while (await taskreader.ProgressAsync && !token.IsCancellationRequested)
                         {
                             var path = await self.Input.ReadAsync();
 

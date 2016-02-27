@@ -43,8 +43,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             public long metasize;
         }
 
-        public BackupDatabase(LocalBackupDatabase database)
-            : base(database)
+        public BackupDatabase(LocalBackupDatabase database, Options options)
+            : base(database, options)
         {
             m_database = database;
         }

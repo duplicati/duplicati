@@ -138,6 +138,7 @@
     <Compile Include="Operation\Common\LogWrapper.cs" />
     <Compile Include="Operation\Backup\CountFilesHandler.cs" />
     <Compile Include="Operation\Backup\UploadRealFilelist.cs" />
+    <Compile Include="Operation\Common\TaskControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

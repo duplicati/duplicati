@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FilePreFilterProcess
     {
-        public static Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
+        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
             new

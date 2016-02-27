@@ -29,56 +29,78 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// applies all filters requested and emits the filtered set of filenames
     /// to its output channel
     /// </summary>
-    internal class FileEnumerationProcess : ProcessHelper
+    internal static class FileEnumerationProcess 
     {
-        private Snapshots.ISnapshotService m_snapshot;
-        private FileAttributes m_attributeFilter;
-        private Duplicati.Library.Utility.IFilter m_enumeratefilter;
-        private Duplicati.Library.Utility.IFilter m_emitfilter;
-        private Options.SymlinkStrategy m_symlinkPolicy;
-        private Options.HardlinkStrategy m_hardlinkPolicy;
-        private Dictionary<string, string> m_hardlinkmap;
-        private Duplicati.Library.Utility.IFilter m_sourcefilter;
-        private Queue<string> m_mixinqueue;
-        private string[] m_changedfilelist;
-
-
-        private IWriteChannel<LogMessage> m_logchannel = Common.Channels.LogChannel.ForWrite;
-        private IWriteChannel<string> m_output = Backup.Channels.SourcePaths.ForWrite;
-        private LogWrapper m_log;
-
-
-        public FileEnumerationProcess(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, string[] changedfilelist)
-            : base()
+        public static Task Run(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, string[] changedfilelist, Common.ITaskReader taskreader)
         {
-            m_snapshot = snapshot;
-            m_attributeFilter = attributeFilter;
-            m_sourcefilter = sourcefilter;
-            m_emitfilter = filter;
-            m_symlinkPolicy = symlinkPolicy;
-            m_hardlinkPolicy = hardlinkPolicy;
-            m_hardlinkmap = new Dictionary<string, string>();
-            m_mixinqueue = new Queue<string>();
-            m_changedfilelist = changedfilelist;
-            m_log = new LogWrapper(m_logchannel);
+            return AutomationExtensions.RunTask(
+            new {
+                LogChannel = Common.Channels.LogChannel.ForWrite,
+                Output = Backup.Channels.SourcePaths.ForWrite
+            },
 
-            bool includes;
-            bool excludes;
-            Library.Utility.FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
-            if (includes && !excludes)
+            async self =>
             {
-                m_enumeratefilter = Library.Utility.FilterExpression.Combine(filter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
-            }
-            else
-                m_enumeratefilter = m_emitfilter;
+                var log = new LogWrapper(self.LogChannel);
+                var hardlinkmap = new Dictionary<string, string>();
+                var mixinqueue = new Queue<string>();
+                Duplicati.Library.Utility.IFilter enumeratefilter = emitfilter;
+
+                bool includes;
+                bool excludes;
+                Library.Utility.FilterExpression.AnalyzeFilters(emitfilter, out includes, out excludes);
+                if (includes && !excludes)
+                    enumeratefilter = Library.Utility.FilterExpression.Combine(emitfilter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
+
+                // If we have a specific list, use that instead of enumerating the filesystem
+                IEnumerable<string> worklist;
+                if (changedfilelist != null && changedfilelist.Length > 0)
+                {
+                    worklist = changedfilelist.Where(x =>
+                    {
+                        var fa = FileAttributes.Normal;
+                        try
+                        {
+                            fa = snapshot.GetAttributes(x);
+                        }
+                        catch
+                        {
+                        }
+
+                        return AttributeFilterAsync(null, x, fa, snapshot, log, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;
+                    });
+                }
+                else
+                {
+                    worklist = snapshot.EnumerateFilesAndFolders((root, path, attr) => {
+                        return AttributeFilterAsync(root, path, attr, snapshot, log, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;                        
+                    });
+                }
+
+
+                // Process each path, and dequeue the mixins with symlinks as we go
+                foreach(var s in worklist)
+                {
+                    if (!await taskreader.ProgressAsync)
+                        return;
+                    
+                    while (mixinqueue.Count > 0)
+                        await self.Output.WriteAsync(mixinqueue.Dequeue());
+
+                    Library.Utility.IFilter m;
+                    if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s, out m))
+                        continue;
+
+                    await self.Output.WriteAsync(s);
+                }
+
+                // Trailing symlinks are caught here
+                while (mixinqueue.Count > 0)
+                    await self.Output.WriteAsync(mixinqueue.Dequeue());
+            });
         }
 
-        // Non-async wrapper
-        private bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
-        {
-            return AttributeFilterAsync(rootpath, path, attributes).WaitForTask().Result;
-        }
-
+  
         /// <summary>
         /// Plugin filter for enumerating a list of files.
         /// </summary>
@@ -86,150 +108,106 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="rootpath">The root path that initiated this enumeration.</param>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private async Task<bool> AttributeFilterAsync(string rootpath, string path, FileAttributes attributes)
+        private static async Task<bool> AttributeFilterAsync(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, LogWrapper log, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, Queue<string> mixinqueue)
         {
             // Step 1, exclude block devices
             try
             {
-                if (m_snapshot.IsBlockDevice(path))
+                if (snapshot.IsBlockDevice(path))
                 {
-                    await m_log.WriteVerboseAsync("Excluding block device: {0}", path);
+                    await log.WriteVerboseAsync("Excluding block device: {0}", path);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                await m_log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
+                await log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
                 return false;
             }
 
             // Check if we explicitly include this entry
             Duplicati.Library.Utility.IFilter sourcematch;
             bool sourcematches;
-            if (m_sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
+            if (sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
             {
-                await m_log.WriteVerboseAsync("Including source path: {0}", path);
+                await log.WriteVerboseAsync("Including source path: {0}", path);
                 return true;
             }
 
             // If we have a hardlink strategy, obey it
-            if (m_hardlinkPolicy != Options.HardlinkStrategy.All)
+            if (hardlinkPolicy != Options.HardlinkStrategy.All)
             {
                 try
                 {
-                    var id = m_snapshot.HardlinkTargetID(path);
+                    var id = snapshot.HardlinkTargetID(path);
                     if (id != null)
                     {
-                        if (m_hardlinkPolicy == Options.HardlinkStrategy.None)
+                        if (hardlinkPolicy == Options.HardlinkStrategy.None)
                         {
-                            await m_log.WriteVerboseAsync("Excluding hardlink: {0} ({1})", path, id);
+                            await log.WriteVerboseAsync("Excluding hardlink: {0} ({1})", path, id);
                             return false;
                         }
-                        else if (m_hardlinkPolicy == Options.HardlinkStrategy.First)
+                        else if (hardlinkPolicy == Options.HardlinkStrategy.First)
                         {
                             string prevPath;
-                            if (m_hardlinkmap.TryGetValue(id, out prevPath))
+                            if (hardlinkmap.TryGetValue(id, out prevPath))
                             {
-                                await m_log.WriteVerboseAsync("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
+                                await log.WriteVerboseAsync("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
                                 return false;
                             }
                             else
                             {
-                                m_hardlinkmap.Add(id, path);
+                                hardlinkmap.Add(id, path);
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    await m_log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
+                    await log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
                     return false;
                 }                    
             }
 
             // If we exclude files based on attributes, filter that
-            if ((m_attributeFilter & attributes) != 0)
+            if ((attributeFilter & attributes) != 0)
             {
-                await m_log.WriteVerboseAsync("Excluding path due to attribute filter: {0}", path);
+                await log.WriteVerboseAsync("Excluding path due to attribute filter: {0}", path);
                 return false;
             }
 
             // Then check if the filename is not explicitly excluded by a filter
             Library.Utility.IFilter match;
-            if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
+            if (!Library.Utility.FilterExpression.Matches(enumeratefilter, path, out match))
             {
-                await m_log.WriteVerboseAsync("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
+                await log.WriteVerboseAsync("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
                 return false;
             }
             else if (match != null)
             {
-                await m_log.WriteVerboseAsync("Including path due to filter: {0} => {1}", path, match.ToString());
+                await log.WriteVerboseAsync("Including path due to filter: {0} => {1}", path, match.ToString());
             }
 
             // If the file is a symlink, apply special handling
             var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
-            if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
+            if (isSymlink && symlinkPolicy == Options.SymlinkStrategy.Ignore)
             {
-                await m_log.WriteVerboseAsync("Excluding symlink: {0}", path);
+                await log.WriteVerboseAsync("Excluding symlink: {0}", path);
                 return false;
             }
 
-            if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
+            if (isSymlink && symlinkPolicy == Options.SymlinkStrategy.Store)
             {
-                await m_log.WriteVerboseAsync("Storing symlink: {0}", path);
+                await log.WriteVerboseAsync("Storing symlink: {0}", path);
 
                 // We return false because we do not want to recurse into the path,
                 // but we add the symlink to the mixin so we process the symlink itself
-                m_mixinqueue.Enqueue(path);
+                mixinqueue.Enqueue(path);
                 return false;
             }
 
             // All the way through, yes!
             return true;
-        }
-
-        protected override async Task Start()
-        {
-            // If we have a specific list, use that instead of enumerating the filesystem
-            IEnumerable<string> worklist;
-            if (m_changedfilelist != null && m_changedfilelist.Length > 0)
-            {
-                worklist = m_changedfilelist.Where(x =>
-                {
-                    var fa = FileAttributes.Normal;
-                    try
-                    {
-                        fa = m_snapshot.GetAttributes(x);
-                    }
-                    catch
-                    {
-                    }
-
-                    return AttributeFilter(null, x, fa);
-                });
-            }
-            else
-            {
-                worklist = m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter);
-            }
-
-
-            // Process each path, and dequeue the mixins with symlinks as we go
-            foreach(var s in worklist)
-            {
-                while (m_mixinqueue.Count > 0)
-                    await m_output.WriteAsync(m_mixinqueue.Dequeue());
-
-                Library.Utility.IFilter m;
-                if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
-                    continue;
-
-                await m_output.WriteAsync(s);
-            }
-
-            // Trailing symlinks are caught here
-            while (m_mixinqueue.Count > 0)
-                await m_output.WriteAsync(m_mixinqueue.Dequeue());
         }
     }
 }

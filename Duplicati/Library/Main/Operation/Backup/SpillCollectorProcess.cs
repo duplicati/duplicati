@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class SpillCollectorProcess
     {
-        public static Task Run(Options options, BackupDatabase database)
+        public static Task Run(Options options, BackupDatabase database, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -61,6 +61,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 while(lst.Count > 1)
                 {
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskreader.ProgressAsync;
 
                     VolumeUploadRequest target = null;
                     var source = lst[0];
@@ -101,6 +103,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
+                                target.BlockVolume.Close();
                                 await self.Output.WriteAsync(target);
                                 target = null;
                             }
@@ -119,6 +122,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 foreach(var n in lst)
                 {
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskreader.ProgressAsync;
+
                     n.BlockVolume.Close();
                     await self.Output.WriteAsync(n);
                 }

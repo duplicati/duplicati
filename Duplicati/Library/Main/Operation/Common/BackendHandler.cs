@@ -25,6 +25,7 @@ using Duplicati.Library.Localization.Short;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -159,8 +160,9 @@ namespace Duplicati.Library.Main.Operation.Common
         private string m_backendurl;
         private bool m_uploadSuccess;
         private StatsCollector m_stats;
+        private ITaskReader m_taskreader;
 
-        public BackendHandler(Options options, string backendUrl, DatabaseCommon database, StatsCollector stats)
+        public BackendHandler(Options options, string backendUrl, DatabaseCommon database, StatsCollector stats, ITaskReader taskreader)
             : base()
         {
             m_backendurl = backendUrl;
@@ -168,6 +170,7 @@ namespace Duplicati.Library.Main.Operation.Common
             m_options = options;
             m_backendurl = backendUrl;
             m_stats = stats;
+            m_taskreader = taskreader;
             m_log = new LogWrapper(m_logchannel);
         }
             
@@ -194,7 +197,6 @@ namespace Duplicati.Library.Main.Operation.Common
 
         }
             
-        private int m_uploadrefcount = 0;
         public async Task UploadFileAsync(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
         {
             var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
@@ -324,10 +326,16 @@ namespace Duplicati.Library.Main.Operation.Common
             item.IsRetry = false;
             Exception lastException = null;
 
+            if (!await m_taskreader.TransferProgressAsync)
+                throw new OperationCanceledException();
+            
             for(var i = 0; i < m_options.NumberOfRetries; i++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && i != 0)
                     await Task.Delay(m_options.RetryDelay);
+
+                if (!await m_taskreader.TransferProgressAsync)
+                    throw new OperationCanceledException();
 
                 try
                 {
@@ -404,6 +412,13 @@ namespace Duplicati.Library.Main.Operation.Common
             if (updatedHash && item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
+            if (m_options.Dryrun)
+            {
+                await m_log.WriteDryRunAsync("Would upload volume: {0}, size: {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(item.LocalFilename).Length));
+                await item.DeleteLocalFile(m_log);
+                return true;
+            }
+            
             await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
@@ -470,6 +485,12 @@ namespace Duplicati.Library.Main.Operation.Common
 
         private async Task<bool> DoDelete(FileEntryItem item)
         {
+            if (m_options.Dryrun)
+            {
+                await m_log.WriteDryRunAsync("Would upload delete remote volume: {0}, size: {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(item.Size));
+                return true;
+            }
+
             await m_stats.SendEventAsync(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
@@ -663,6 +684,9 @@ namespace Duplicati.Library.Main.Operation.Common
 
         private void HandleProgress(long pg)
         {
+            if (!m_taskreader.TransferProgressAsync.WaitForTask().Result)
+                throw new OperationCanceledException();
+            
             m_stats.UpdateBackendProgress(pg);
         }
 

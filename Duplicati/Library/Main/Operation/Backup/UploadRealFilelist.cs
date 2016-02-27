@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class UploadRealFilelist
     {
-        public static Task Run(BackupResults result, BackupDatabase db, Options options, FilesetVolumeWriter filesetvolume, long filesetid)
+        public static Task Run(BackupResults result, BackupDatabase db, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -34,6 +34,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
+                if (!await taskreader.ProgressAsync)
+                    return;
+                
                 var log = new Common.LogWrapper(self.LogChannel);
 
                 // Update the reported source and backend changes
@@ -54,19 +57,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                             foreach(var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                                 filesetvolume.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
+                        if (!await taskreader.ProgressAsync)
+                            return;
+
                         await db.WriteFilesetAsync(filesetvolume, filesetid);
                         filesetvolume.Close();
 
-                        if (options.Dryrun)
-                            await log.WriteDryRunAsync("Would upload fileset volume: {0}, size: {1}", filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(filesetvolume.LocalFilename).Length));
-                        else
-                        {
-                            await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-
-                            await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
-
-                            await self.Output.WriteAsync(new FilesetUploadRequest(filesetvolume));
-                        }
+                        if (!await taskreader.ProgressAsync)
+                            return;
+                        
+                        await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                        await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
+                        await self.Output.WriteAsync(new FilesetUploadRequest(filesetvolume));
                     }
                 }
                 else

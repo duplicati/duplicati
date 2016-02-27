@@ -95,7 +95,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(Snapshots.ISnapshotService snapshot, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result)
+        private static async Task RunMainOperation(Snapshots.ISnapshotService snapshot, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader)
         {
             using(new Logging.Timer("BackupMainOperation"))
             {
@@ -103,12 +103,12 @@ namespace Duplicati.Library.Main.Operation
                 using(new ChannelScope())
                 {
                     all = Task.WhenAll(
-                        Backup.DataBlockProcessor.Run(database, options),
-                        Backup.FileBlockProcessor.Start(snapshot, options, database, stats),
-                        new Backup.FileEnumerationProcess(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist).RunAsync(),
-                        Backup.FilePreFilterProcess.Start(snapshot, options, stats, database),
+                        Backup.DataBlockProcessor.Run(database, options, taskreader),
+                        Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
+                        Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader),
+                        Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
                         Backup.MetadataPreProcess.Run(snapshot, options, database),
-                        Backup.SpillCollectorProcess.Run(options, database),
+                        Backup.SpillCollectorProcess.Run(options, database, taskreader),
                         Backup.ProgressHandler.Run(result)
                     );
                 }
@@ -238,11 +238,12 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     // Setup runners and instances here
-                    using(var db = new Backup.BackupDatabase(m_database))
+                    using(var db = new Backup.BackupDatabase(m_database, m_options))
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     using(var stats = new Backup.BackupStatsCollector(m_result))
-                    using(var bk = new Common.BackendHandler(m_options, m_backendurl, db, stats))
+                    using(var bk = new Common.BackendHandler(m_options, m_backendurl, db, stats, m_result.TaskReader))
+                    // Keep a reference to these channels to avoid shutdown
                     using(var logtarget = ChannelManager.GetChannel(Common.Channels.LogChannel.ForWrite))
                     using(var uploadtarget = ChannelManager.GetChannel(Backup.Channels.BackendRequest.ForWrite))
                     {
@@ -253,20 +254,20 @@ namespace Duplicati.Library.Main.Operation
                             try
                             {
                                 // Start the parallel scanner
-                                parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, counterToken.Token);
+                                parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
 
                                 // Make sure the database is sance
                                 await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize);
 
                                 // Start the uploader process
-                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result);
+                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader);
 
                                 // TODO: Rewrite to using the uploader process, or the BackendHandler interface
                                 // Do a remote verification, unless disabled
                                 PreBackupVerify(backend);
 
                                 // If the previous backup was interrupted, send a synthetic list
-                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result);
+                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader);
 
                                 // This should be removed as the lookups are no longer used
                                 m_database.BuildLookupTable(m_options);
@@ -277,7 +278,8 @@ namespace Duplicati.Library.Main.Operation
                                 filesetid = await db.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 
                                 // Run the backup operation
-                                await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result);
+                                if (await m_result.TaskReader.ProgressAsync)
+                                    await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader);
                             }
                             finally
                             {
@@ -291,7 +293,8 @@ namespace Duplicati.Library.Main.Operation
                             await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize);
 
                         // Send the actual filelist
-                        await Backup.UploadRealFilelist.Run(m_result, db, m_options, filesetvolume, filesetid);
+                        if (await m_result.TaskReader.ProgressAsync)
+                            await Backup.UploadRealFilelist.Run(m_result, db, m_options, filesetvolume, filesetid, m_result.TaskReader);
 
                         // Wait for upload completion
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
@@ -303,10 +306,10 @@ namespace Duplicati.Library.Main.Operation
                         // TODO: Remove this later
                         m_transaction = m_database.BeginTransaction();
     		                                        
-                        if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
+                        if (await m_result.TaskReader.ProgressAsync)
                             CompactIfRequired(backend, lastVolumeSize);
     		            
-                        if (m_options.UploadVerificationFile)
+                        if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
                             FilelistProcessor.UploadVerificationFile(backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);

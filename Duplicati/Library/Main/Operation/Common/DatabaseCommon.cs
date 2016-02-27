@@ -31,11 +31,13 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         protected LocalDatabase m_db;
         protected System.Data.IDbTransaction m_transaction;
+        protected Options m_options;
 
-        public DatabaseCommon(LocalDatabase db)
+        public DatabaseCommon(LocalDatabase db, Options options)
             : base()
         {
             m_db = db;
+            m_options = options;
             m_transaction = db.BeginTransaction();
         }
 
@@ -53,6 +55,17 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             return RunOnMain(() => 
             {
+                if (m_options.Dryrun)
+                {
+                    if (!restart)
+                    {
+                        if (m_transaction != null)
+                            m_transaction.Rollback();
+                        m_transaction = null;
+                    }
+                    return;                    
+                }
+
                 using(new Logging.Timer(message))
                     m_transaction.Commit();
                 if (restart)

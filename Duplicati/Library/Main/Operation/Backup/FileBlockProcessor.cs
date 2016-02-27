@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FileBlockProcessor
     {
-        public static  Task Start(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats)
+        public static  Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new 
@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm);                    
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);                    
 
-                while (true)
+                while (await taskreader.ProgressAsync)
                 {
                     var e = await self.Input.ReadAsync();
                     var send_close = false;

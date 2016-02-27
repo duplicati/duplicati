@@ -76,7 +76,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class BackendUploader
     {
-        public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results)
+        public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results, Common.ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -91,11 +91,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var active = 0;
                 var lastSize = -1L;
                 
-                while(!self.Input.IsRetired)
+                while(!self.Input.IsRetired && await taskreader.ProgressAsync)
                 {
                     try
                     {
                         var req = await self.Input.ReadAsync();
+
+                        if (!await taskreader.ProgressAsync)
+                            continue;
+                        
                         KeyValuePair<int, Task> task = default(KeyValuePair<int, Task>);
                         if (req is VolumeUploadRequest)
                         {

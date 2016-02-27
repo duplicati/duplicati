@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class UploadSyntheticFilelist
     {
-        public static Task Run(BackupDatabase database, Options options, BackupResults result)
+        public static Task Run(BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -47,6 +47,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
                     await log.WriteInformationAsync("Uploading filelist from previous interrupted backup");
+
+                    if (!await taskreader.ProgressAsync)
+                        return;
 
                     var incompleteSet = incompleteFilesets.Last();
                     var badIds = from n in incompleteFilesets select n.Key;
@@ -91,17 +94,13 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         await database.WriteFilesetAsync(fsw, newFilesetID);
 
-                        if (options.Dryrun)
-                        {
-                            await log.WriteDryRunAsync("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length));
-                        }
-                        else
-                        {
-                            await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                            await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
-                            await self.UploadChannel.WriteAsync(new FilesetUploadRequest(fsw));
-                            fsw = null;
-                        }
+                        if (!await taskreader.ProgressAsync)
+                            return;
+                        
+                        await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                        await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
+                        await self.UploadChannel.WriteAsync(new FilesetUploadRequest(fsw));
+                        fsw = null;
                     }
                     catch
                     {
@@ -120,16 +119,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     foreach(var blockfile in await database.GetMissingIndexFilesAsync())
                     {
+                        if (!await taskreader.ProgressAsync)
+                            return;
+                        
                         await log.WriteInformationAsync(string.Format("Re-creating missing index file for {0}", blockfile));
                         var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database);
 
-                        if (options.Dryrun)
-                            await log.WriteDryRunAsync("would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize));
-                        else
-                        {
-                            await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                            await self.UploadChannel.WriteAsync(new IndexVolumeUploadRequest(w));
-                        }
+                        if (!await taskreader.ProgressAsync)
+                            return;
+
+                        await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                        await self.UploadChannel.WriteAsync(new IndexVolumeUploadRequest(w));
                     }
                 }
             });
