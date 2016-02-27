@@ -982,7 +982,7 @@ namespace Duplicati.Library.Main.Database
                     //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
                     m_statUpdateCommand.CommandText = string.Format(@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{0}"" ", statstablename);
                 }
-                else
+                else // very slow fallback if stats tables were not created
                     m_statUpdateCommand.CommandText = string.Format(@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{0}"" WHERE ""Restored"" = 1 ", m_blocktablename);
 
             }
