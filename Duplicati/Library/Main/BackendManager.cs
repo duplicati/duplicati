@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -236,7 +236,56 @@ namespace Duplicati.Library.Main
             }
             
         }
-        
+
+        /// <summary> A small utility stream that allows to keep streams open and counts the bytes sent through. </summary>
+        private class ShaderStream : System.IO.Stream
+        {
+            private readonly System.IO.Stream m_baseStream;
+            private readonly bool m_keepBaseOpen;
+            private long m_read = 0;
+            private long m_written = 0;
+
+            public ShaderStream(System.IO.Stream baseStream, bool keepBaseOpen)
+            {
+                if (baseStream == null) throw new ArgumentNullException("baseStream");
+                this.m_baseStream = baseStream;
+                this.m_keepBaseOpen = keepBaseOpen;
+            }
+
+            public long TotalBytesRead { get { return m_read; } }
+            public long TotalBytesWritten { get { return m_written; } }
+
+            public override bool CanRead { get { return m_baseStream.CanRead; } }
+            public override bool CanSeek { get { return m_baseStream.CanSeek; } }
+            public override bool CanWrite { get { return m_baseStream.CanWrite; } }
+            public override long Length { get { return m_baseStream.Length; } }
+            public override long Position
+            {
+                get { return m_baseStream.Position; }
+                set { m_baseStream.Position = value; }
+            }
+            public override void Flush() { m_baseStream.Flush(); }
+            public override long Seek(long offset, System.IO.SeekOrigin origin) { return m_baseStream.Seek(offset, origin); }
+            public override void SetLength(long value) { m_baseStream.SetLength(value); }
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                int r = m_baseStream.Read(buffer, offset, count);
+                m_read += r;
+                return r;
+            }
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                m_baseStream.Write(buffer, offset, count);
+                m_written += count;
+            }
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing && !m_keepBaseOpen)
+                    m_baseStream.Close();
+                base.Dispose(disposing);
+            }
+        }
+
         private class DatabaseCollector
         {
 	        private object m_dbqueuelock = new object();
@@ -385,6 +434,36 @@ namespace Duplicati.Library.Main
             using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
                 return Convert.ToBase64String(hasher.ComputeHash(fs));
         }
+
+        /// <summary> Calculate file hash directly on stream object (for piping) </summary>
+        public static string CalculateFileHash(System.IO.Stream stream)
+        {
+            using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+                return Convert.ToBase64String(hasher.ComputeHash(stream));
+        }
+
+        /// <summary>
+        /// Returns a stream for hashing that can be part of a stream stack together
+        /// with a callback to retrieve the hash when done.
+        /// </summary>
+        public static System.Security.Cryptography.CryptoStream GetFileHasherStream
+            (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, out Func<string> getHash)
+        {
+            var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH);
+            System.Security.Cryptography.CryptoStream retHasherStream =
+                new System.Security.Cryptography.CryptoStream(stream, hasher, mode);
+            getHash = () =>
+            {
+                if (mode == System.Security.Cryptography.CryptoStreamMode.Write
+                    && !retHasherStream.HasFlushedFinalBlock)
+                    retHasherStream.FlushFinalBlock();
+                string retHash = Convert.ToBase64String(hasher.Hash);
+                hasher.Dispose();
+                return retHash;
+            };
+            return retHasherStream;
+        }
+
 
         private void ThreadRun()
         {
@@ -653,6 +732,204 @@ namespace Duplicati.Library.Main
 			item.DeleteLocalFile(m_statwriter);
         }
 
+        private TempFile coreDoGetPiping(FileEntryItem item, Interface.IEncryption useDecrypter, out long retDownloadSize, out string retHashcode)
+        {
+            // With piping allowed, we will parallelize the operation with buffered pipes to maximize throughput:
+            // Separated: Download (only for streaming) - Hashing - Decryption
+            // The idea is to use DirectStreamLink's that are inserted in the stream stack, creating a fork to run
+            // the crypto operations on.
+
+            retDownloadSize = -1;
+            retHashcode = null;
+
+            bool enableStreaming = (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers);
+
+            System.Threading.Tasks.Task<string> taskHasher = null;
+            DirectStreamLink linkForkHasher = null;
+            System.Threading.Tasks.Task taskDecrypter = null;
+            DirectStreamLink linkForkDecryptor = null;
+
+            // keep potential temp files and their streams for cleanup (cannot use using here).
+            TempFile retTarget, dlTarget = null, decryptTarget = null;
+            System.IO.Stream dlToStream = null, decryptToStream = null;
+            try
+            {
+                dlTarget = new TempFile();
+
+                System.IO.Stream nextTierWriter = null; // target of our stacked streams
+                if (!enableStreaming) // have to download first anyway...
+                {
+                    dlTarget = new TempFile();
+                    m_backend.Get(item.RemoteFilename, dlTarget);
+                }
+                if (!enableStreaming && useDecrypter == null)
+                {
+                    dlTarget = new TempFile(); // actually write through to file.
+                    dlToStream = System.IO.File.OpenWrite(dlTarget);
+                    nextTierWriter = dlToStream;
+                }
+
+                // setup decryption: fork off a StreamLink from stack, and setup decryptor task
+                if (useDecrypter != null)
+                {
+                    linkForkDecryptor = new DirectStreamLink(1 << 16, false, false, nextTierWriter);
+                    nextTierWriter = linkForkDecryptor.WriterStream;
+                    linkForkDecryptor.SetKnownLength(item.Size, false); // Set length to allow AES-decryption (not streamable yet)
+                    decryptTarget = new TempFile();
+                    decryptToStream = System.IO.File.OpenWrite(decryptTarget);
+                    taskDecrypter = new System.Threading.Tasks.Task(() =>
+                            {
+                                using (var input = linkForkDecryptor.ReaderStream)
+                                using (var output = decryptToStream)
+                                    lock (m_encryptionLock) { useDecrypter.Decrypt(input, output); }
+                            }
+                        );
+                }
+
+                // setup hashing: fork off a StreamLink from stack, then task computes hash
+                linkForkHasher = new DirectStreamLink(1 << 16, false, false, nextTierWriter);
+                nextTierWriter = linkForkHasher.WriterStream;
+                taskHasher = new System.Threading.Tasks.Task<string>(() =>
+                        {
+                            using (var input = linkForkHasher.ReaderStream)
+                                return CalculateFileHash(input);
+                        }
+                    );
+
+
+                // OK, forks with tasks are set up, so let's do the download which is performed in main thread.
+                bool hadException = false;
+                try
+                {
+                    if (enableStreaming)
+                    {
+                        taskHasher.Start();
+                        if (taskDecrypter != null) taskDecrypter.Start();
+                        using (var ss = new ShaderStream(nextTierWriter, false))
+                        {
+                            using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                                ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
+                            retDownloadSize = ss.TotalBytesWritten;
+                        }
+                    }
+                    else
+                    {
+                        m_backend.Get(item.RemoteFilename, dlTarget);
+                        retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
+                        using (dlToStream = System.IO.File.OpenRead(dlTarget))
+                            new DirectStreamLink.DataPump(dlToStream, nextTierWriter).Run();
+                    }
+                }
+                catch (Exception)
+                { hadException = true; throw; }
+                finally
+                {
+                    // This nested try-catch-finally blocks will make sure we do not miss any exceptions ans all started tasks
+                    // are properly ended and tidied up. For what is thrown: If exceptions in main thread occured (download) it is thrown,
+                    // then hasher task is checked and last decryption. This resembles old logic.
+                    try { retHashcode = taskHasher.Result; }
+                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.InnerExceptions[0]; } }
+                    finally
+                    {
+                        if (taskDecrypter != null)
+                        {
+                            try { taskDecrypter.Wait(); }
+                            catch (AggregateException ex)
+                            {
+                                if (!hadException)
+                                {
+                                    hadException = true;
+                                    if (ex.InnerExceptions[0] is System.Security.Cryptography.CryptographicException)
+                                        throw ex.InnerExceptions[0];
+                                    else
+                                        throw new System.Security.Cryptography.CryptographicException(ex.InnerExceptions[0].Message, ex.InnerExceptions[0]);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (useDecrypter != null) // return decrypted temp file
+                { retTarget = decryptTarget; decryptTarget = null; }
+                else // return downloaded file
+                { retTarget = dlTarget; decryptTarget = null; }
+            }
+            finally
+            {
+                // Be tidy: manually do some cleanup to temp files, as we could not use using's.
+                // Unclosed streams should only occur if we failed even before tasks were started.
+                if (dlToStream != null) dlToStream.Dispose();
+                if (dlTarget != null) dlTarget.Dispose();
+                if (decryptToStream != null) decryptToStream.Dispose();
+                if (decryptTarget != null) decryptTarget.Dispose();
+            }
+
+            return retTarget;
+        }
+
+        private TempFile coreDoGetSequential(FileEntryItem item, Interface.IEncryption useDecrypter, out long retDownloadSize, out string retHashcode)
+        {
+            retHashcode = null;
+            retDownloadSize = -1;
+            TempFile retTarget, dlTarget = null, decryptTarget = null;
+            try
+            {
+                dlTarget = new Library.Utility.TempFile();
+                if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
+                {
+                    Func<string> getFileHash;
+                    // extended to use stacked streams
+                    using (var fs = System.IO.File.OpenWrite(dlTarget))
+                    using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, out getFileHash))
+                    using (var ss = new ShaderStream(hs, true))
+                    {
+                        using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                        { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
+                        ss.Flush();
+                        retDownloadSize = ss.TotalBytesWritten;
+                        retHashcode = getFileHash();
+                    }
+                }
+                else
+                {
+                    m_backend.Get(item.RemoteFilename, dlTarget);
+                    retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
+                    retHashcode = CalculateFileHash(dlTarget);
+                }
+
+                // Decryption is not placed in the stream stack because there seemed to be an effort
+                // to throw a CryptographicException on fail. If in main stack, we cannot differentiate
+                // in which part of the stack the source of an exception resides.
+                if (useDecrypter != null)
+                {
+                    decryptTarget = new Library.Utility.TempFile();
+                    lock (m_encryptionLock)
+                    {
+                        try { useDecrypter.Decrypt(dlTarget, decryptTarget); }
+                        // If we fail here, make sure that we throw a crypto exception
+                        catch (System.Security.Cryptography.CryptographicException) { throw; }
+                        catch (Exception ex) { throw new System.Security.Cryptography.CryptographicException(ex.Message, ex); }
+                    }
+                    retTarget = decryptTarget;
+                    decryptTarget = null;
+                }
+                else
+                {
+                    retTarget = dlTarget;
+                    dlTarget = null;
+                }
+            }
+            finally
+            {
+                if (dlTarget != null) dlTarget.Dispose();
+                if (decryptTarget != null) dlTarget.Dispose();
+            }
+
+            return retTarget;
+        }
+
         private void DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
@@ -662,99 +939,84 @@ namespace Duplicati.Library.Main
             {
                 var begin = DateTime.Now;
 
-                tmpfile = new Library.Utility.TempFile();
-                if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
+                // We already know the filename, so we put the decision about if and which decryptor to
+                // use prior to download. This allows to set up stacked streams or a pipe doing decryption
+                Interface.IEncryption useDecrypter = null;
+                if (!item.VerifyHashOnly && !m_options.NoEncryption)
                 {
-                    using (var fs = System.IO.File.OpenWrite(tmpfile))
-                    using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
-                        ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
+                    useDecrypter = m_encryption;
+                    {
+                        lock (m_encryptionLock)
+                        {
+                            try
+                            {
+                                // Auto-guess the encryption module
+                                var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
+                                if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    // Check if the file is encrypted with something else
+                                    if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                    {
+                                        m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
+                                        useDecrypter = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions);
+                                        useDecrypter = useDecrypter ?? m_encryption;
+                                    }
+                                    // Check if the file is not encrypted
+                                    else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                    {
+                                        m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
+                                        useDecrypter = null;
+                                    }
+                                    // Fallback, lets see what happens...
+                                    else
+                                    {
+                                        m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
+                                    }
+                                }
+                            }
+                            // If we fail here, make sure that we throw a crypto exception
+                            catch (System.Security.Cryptography.CryptographicException) { throw; }
+                            catch (Exception ex) { throw new System.Security.Cryptography.CryptographicException(ex.Message, ex); }
+                        }
+                    }
                 }
+
+                string fileHash;
+                long dataSizeDownloaded;
+                if (m_options.EnablePipedDownstreams)
+                    tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
                 else
-                    m_backend.Get(item.RemoteFilename, tmpfile);
+                    tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
 
                 var duration = DateTime.Now - begin;
-                Logging.Log.WriteMessage(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
-
-                // Will be done twice otherwise:
-                string fileHash = CalculateFileHash(tmpfile);
+                Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size),
+                    duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)),
+                    useDecrypter == null ? "" : "and decrypted "), Duplicati.Library.Logging.LogMessageType.Profiling);
 
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = fileHash }));
                 m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
 
                 if (!m_options.SkipFileHashChecks)
                 {
-                    var nl = new System.IO.FileInfo(tmpfile).Length;
                     if (item.Size >= 0)
                     {
-                        if (nl != item.Size)
-                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, nl, item.Size));
+                        if (dataSizeDownloaded != item.Size)
+                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size));
                     }
                     else
-                    	item.Size = nl;
+                        item.Size = dataSizeDownloaded;
 
-                    var nh = fileHash;
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
-                        if (nh != item.Hash)
-                            throw new HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, nh));
+                        if (fileHash != item.Hash)
+                            throw new HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
                     }
                     else
-                    	item.Hash = nh;
+                        item.Hash = fileHash;
                 }
                 
                 if (!item.VerifyHashOnly)
                 {
-                    // Decrypt before returning
-                    if (!m_options.NoEncryption)
-                    {
-                        try
-                        {
-                            using(var tmpfile2 = tmpfile)
-                            { 
-                            	tmpfile = new Library.Utility.TempFile();
-                                lock(m_encryptionLock)
-                                {
-                                    // Auto-guess the encryption module
-                                    var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
-                                    if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
-                                    {
-                                        // Check if the file is encrypted with something else
-                                        if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
-                                        {
-                                            m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
-                                            using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
-                                                (encmodule ?? m_encryption).Decrypt(tmpfile2, tmpfile);
-                                        }
-                                        // Check if the file is not encrypted
-                                        else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
-                                        {
-                                            m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
-                                        }
-                                        // Fallback, lets see what happens...
-                                        else
-                                        {
-                                            m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
-                                            m_encryption.Decrypt(tmpfile2, tmpfile);
-                                        }
-                                    }
-                                    else
-                                    {
-                                	    m_encryption.Decrypt(tmpfile2, tmpfile);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            //If we fail here, make sure that we throw a crypto exception
-                            if (ex is System.Security.Cryptography.CryptographicException)
-                                throw;
-                            else
-                                throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
-                        }
-                    }
-    
                     item.Result = tmpfile;
                     tmpfile = null;
                 }
