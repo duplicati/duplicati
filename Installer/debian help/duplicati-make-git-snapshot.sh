@@ -42,6 +42,8 @@ cp -R "Installer/debian help/debian" .
 
 sed -e "s;%VERSION%;$VERSION;g" -e "s;%DATE%;$DATE_STAMP;g" "../debian/changelog" > "debian/changelog"
 
+echo "${VERSION}" > version
+
 git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > ../$DIRNAME.tar.bz2
 
