@@ -26,7 +26,7 @@ git clone ${REF:+--reference $REF} \
 cd "$DIRNAME"
 if [ -d "../../oem" ]; then
     echo "Installing OEM files"
-    cp -R ../../oem Duplicati/Server/webroot/
+    cp -R ../../oem/* Duplicati/Server/webroot/
     git add Duplicati/Server/webroot/*
     git commit -m "Added OEM files"
 fi
