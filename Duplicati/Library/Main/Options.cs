@@ -510,7 +510,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
 
-                    new CommandLineArgument("enable-piped-downstreams", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnablePipingShort, Strings.Options.EnablePipingLong, "false"),
+                    new CommandLineArgument("enable-piped-downstreams", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnablepipingShort, Strings.Options.EnablepipingLong, "false"),
                 });
 
                 return lst;

@@ -18,25 +18,25 @@ namespace Duplicati.Library.Main
         /// Class to represent hash failures
         /// </summary>
         [Serializable]
-        public class HashMismathcException : Exception
+        public class HashMismatchException : Exception
         {
             /// <summary>
             /// Default constructor, sets a generic string as the message
             /// </summary>
-            public HashMismathcException() : base() { }
+            public HashMismatchException() : base() { }
 
             /// <summary>
             /// Constructor with non-default message
             /// </summary>
             /// <param name="message">The exception message</param>
-            public HashMismathcException(string message) : base(message) { }
+            public HashMismatchException(string message) : base(message) { }
 
             /// <summary>
             /// Constructor with non-default message and inner exception details
             /// </summary>
             /// <param name="message">The exception message</param>
             /// <param name="innerException">The exception that caused this exception</param>
-            public HashMismathcException(string message, Exception innerException) : base(message, innerException) { }
+            public HashMismatchException(string message, Exception innerException) : base(message, innerException) { }
         }
     
         private enum OperationType
@@ -750,23 +750,18 @@ namespace Duplicati.Library.Main
             DirectStreamLink linkForkDecryptor = null;
 
             // keep potential temp files and their streams for cleanup (cannot use using here).
-            TempFile retTarget, dlTarget = null, decryptTarget = null;
+            TempFile retTarget = null, dlTarget = null, decryptTarget = null;
             System.IO.Stream dlToStream = null, decryptToStream = null;
             try
             {
-                dlTarget = new TempFile();
-
                 System.IO.Stream nextTierWriter = null; // target of our stacked streams
-                if (!enableStreaming) // have to download first anyway...
+                if (!enableStreaming) // we will always need dlTarget if not streaming...
+                    dlTarget = new TempFile();
+                else if (enableStreaming && useDecrypter == null)
                 {
                     dlTarget = new TempFile();
-                    m_backend.Get(item.RemoteFilename, dlTarget);
-                }
-                if (!enableStreaming && useDecrypter == null)
-                {
-                    dlTarget = new TempFile(); // actually write through to file.
                     dlToStream = System.IO.File.OpenWrite(dlTarget);
-                    nextTierWriter = dlToStream;
+                    nextTierWriter = dlToStream; // actually write through to file.
                 }
 
                 // setup decryption: fork off a StreamLink from stack, and setup decryptor task
@@ -796,20 +791,21 @@ namespace Duplicati.Library.Main
                         }
                     );
 
-
                 // OK, forks with tasks are set up, so let's do the download which is performed in main thread.
                 bool hadException = false;
                 try
                 {
                     if (enableStreaming)
                     {
-                        taskHasher.Start();
-                        if (taskDecrypter != null) taskDecrypter.Start();
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
                             using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                             using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                            {
+                                taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
+                                if (taskDecrypter != null) taskDecrypter.Start();
                                 ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
+                            }
                             retDownloadSize = ss.TotalBytesWritten;
                         }
                     }
@@ -818,7 +814,11 @@ namespace Duplicati.Library.Main
                         m_backend.Get(item.RemoteFilename, dlTarget);
                         retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
                         using (dlToStream = System.IO.File.OpenRead(dlTarget))
+                        {
+                            taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
+                            if (taskDecrypter != null) taskDecrypter.Start();
                             new DirectStreamLink.DataPump(dlToStream, nextTierWriter).Run();
+                        }
                     }
                 }
                 catch (Exception)
@@ -924,7 +924,7 @@ namespace Duplicati.Library.Main
             finally
             {
                 if (dlTarget != null) dlTarget.Dispose();
-                if (decryptTarget != null) dlTarget.Dispose();
+                if (decryptTarget != null) decryptTarget.Dispose();
             }
 
             return retTarget;
@@ -989,12 +989,12 @@ namespace Duplicati.Library.Main
                     tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
 
                 var duration = DateTime.Now - begin;
-                Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size),
-                    duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)),
+                Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
+                    duration, Library.Utility.Utility.FormatSizeString((long)(dataSizeDownloaded / duration.TotalSeconds)),
                     useDecrypter == null ? "" : "and decrypted "), Duplicati.Library.Logging.LogMessageType.Profiling);
 
-                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = fileHash }));
-                m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
+                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = dataSizeDownloaded, Hash = fileHash }));
+                m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, dataSizeDownloaded);
 
                 if (!m_options.SkipFileHashChecks)
                 {
@@ -1009,7 +1009,7 @@ namespace Duplicati.Library.Main
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (fileHash != item.Hash)
-                            throw new HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
+                            throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
                     }
                     else
                         item.Hash = fileHash;
