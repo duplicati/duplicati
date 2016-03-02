@@ -30,11 +30,12 @@ override_dh_clean:
 
 override_dh_auto_build:
 	VERSION=`cat ./version`
+	echo $VERSION
 	ls
 	cat version
 	pwd
 	xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
-	mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=${VERSION}
+	mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=$VERSION
 	xbuild /property:Configuration=Release Duplicati.sln
 
 override_dh_auto_install:
