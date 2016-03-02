@@ -9,5 +9,6 @@ bash duplicati-make-git-snapshot.sh "$TAGNAME"
 
 cd "$DIRNAME"
 touch releasenotes.txt
+echo "${TAGNAME}" > version
 dpkg-buildpackage
 cd ..
