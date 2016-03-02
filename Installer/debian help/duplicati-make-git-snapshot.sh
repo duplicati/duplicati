@@ -26,15 +26,15 @@ git clone ${REF:+--reference $REF} \
 cd "$DIRNAME"
 if [ -e "../oem.js" ]; then
     echo "Installing OEM script"
-    cp ../oem.js Duplicati/Server/webroot/scripts/
-    git add Duplicati/Server/webroot/scripts/oem.js
+    cp ../oem.js Duplicati/Server/webroot/ngax/scripts/
+    git add Duplicati/Server/webroot/ngax/scripts/oem.js
     git commit -m "Added OEM branding script"
 fi
 
 if [ -e "../oem.css" ]; then
     echo "Installing OEM stylesheet"
-    cp ../oem.css Duplicati/Server/webroot/stylesheets/
-    git add Duplicati/Server/webroot/stylesheets/oem.css
+    cp ../oem.css Duplicati/Server/webroot/ngax/stylesheets/
+    git add Duplicati/Server/webroot/ngax/stylesheets/oem.css
     git commit -m "Added OEM branding stylesheet"
 fi
 
