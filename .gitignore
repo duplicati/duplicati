@@ -16,6 +16,7 @@ Installer/incLocFiles.*.wxs
 Duplicati/Server/webroot/extjs-*
 Installer/binfiles.wxs
 Installer/generated-keys.xml
+Installer/oem
 Updates/build
 packages
 changelog-news.txt
