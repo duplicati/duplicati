@@ -23,12 +23,16 @@ export DH_OPTIONS
 override_dh_clean:
 	dh_clean
 	xbuild /property:Configuration=Release /target:Clean Duplicati.sln
+	xbuild /property:Configuration=Release /target:Clean BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 	find -type d -name bin | xargs rm -rf
 	find -type d -name obj | xargs rm -rf
 	find -maxdepth 1 -type d -name build | xargs rm -rf
 
 override_dh_auto_build:
-	VERSION=`cat version`
+	VERSION=`cat ./version`
+	ls
+	cat version
+	pwd
 	xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 	mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=${VERSION}
 	xbuild /property:Configuration=Release Duplicati.sln
