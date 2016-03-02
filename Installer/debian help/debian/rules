@@ -15,6 +15,7 @@
 
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
+VERSION=`cat ./version`
 
 
 %:
@@ -29,7 +30,6 @@ override_dh_clean:
 	find -maxdepth 1 -type d -name build | xargs rm -rf
 
 override_dh_auto_build:
-	VERSION=`cat ./version`
 	echo $(VERSION)
 	ls
 	cat version
