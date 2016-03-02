@@ -21,7 +21,7 @@ echo HEAD ${1:-HEAD}
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-         https://github.com/duplicati/duplicati.git $DIRNAME
+         `git config --get remote.origin.url` $DIRNAME
 
 cd "$DIRNAME"
 if [ -e "../oem.js" ]; then
