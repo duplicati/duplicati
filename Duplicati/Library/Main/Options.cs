@@ -509,6 +509,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
+
+                    new CommandLineArgument("enable-piped-downstreams", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnablepipingShort, Strings.Options.EnablepipingLong, "false"),
                 });
 
                 return lst;
@@ -936,6 +938,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if use of the streaming interface is disallowed
         /// </summary>
         public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
+
+        /// <summary>
+        /// A value indicating if multithreaded pipes may be used for decryption on downloads
+        /// </summary>
+        public bool EnablePipedDownstreams { get { return GetBool("enable-piped-downstreams"); } }
 
         /// <summary>
         /// Gets the timelimit for removal

@@ -205,6 +205,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Cultute""."); } }
+        public static string EnablepipingShort{ get { return LC.L(@"Handle downloads with threaded pipes"); } }
+        public static string EnablepipingLong { get { return LC.L(@"Use this option to enable an experimental multithreaded download handling, that can significantly speed up restore operations or backup verifications depending on the hardware you're running on and your fileset. This operation mode is experimental and by default disabled."); } }
             }
 
     internal static class Foresthash 
