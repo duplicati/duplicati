@@ -158,7 +158,15 @@ namespace Duplicati.Library.Encryption
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(COMMANDLINE_SET_THREADLEVEL, CommandLineArgument.ArgumentType.String, Strings.AESEncryption.AessetthreadlevelShort, Strings.AESEncryption.AessetthreadlevelLong),
+                    new CommandLineArgument(
+                        COMMANDLINE_SET_THREADLEVEL, 
+                        CommandLineArgument.ArgumentType.Enumeration, 
+                        Strings.AESEncryption.AessetthreadlevelShort, 
+                        Strings.AESEncryption.AessetthreadlevelLong,
+                        "0", 
+                        null, 
+                        new string[] {"0", "1", "2", "3", "4"}
+                        ),
                 });
             }
         }
