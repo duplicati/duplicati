@@ -406,7 +406,9 @@ namespace Duplicati.Library.Main.Operation
                 }
                 
                 // Fill BLOCKS with remote sources
-                var volumes = database.GetMissingVolumes().ToList();
+                List<IRemoteVolume> volumes;
+                using (new Logging.Timer("GetMissingVolumes"))
+                    volumes = database.GetMissingVolumes().ToList();
 
                 if (volumes.Count > 0)
                 {
