@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main.Operation
             var fullblockverification = options.FullBlockVerification;
             var blockhasher = fullblockverification ? System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
 
-            using(var blockmarker = database.CreateBlockMarker())
+            using (var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
             {
                 foreach(var restorelist in volumekeeper.FilesWithMissingBlocks)
@@ -250,7 +250,6 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             
-                            // UpdateProcessed is still pretty slow, so we postpone first call at least.
                             if ((++updateCounter) % 20 == 0)
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
@@ -295,7 +294,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
-                
                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                 blockmarker.Commit(result);
             }
@@ -634,8 +632,8 @@ namespace Duplicati.Library.Main.Operation
                                         throw;
 	                			}
 	                		}
-                            
-                            if (updateCount++ % 20 == 0)
+
+                            if ((++updateCount) % 20 == 0)
                             {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                                 if (result.TaskControlRendevouz() == TaskControlState.Stop)
@@ -752,7 +750,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            if (updateCount++ % 20 == 0)
+                            if ((++updateCount) % 20 == 0)
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                     }
                     catch (Exception ex)
@@ -802,6 +800,11 @@ namespace Duplicati.Library.Main.Operation
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
 			using(new Logging.Timer("FindMissingBlocks"))
                 database.FindMissingBlocks(result, options.SkipMetadata);
+
+            // Create temporary tables and triggers that automatically track progress
+            using (new Logging.Timer("CreateProgressTracker"))
+                database.CreateProgressTracker(false);
+
         }
 
         private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, RestoreResults result)
@@ -897,6 +900,7 @@ namespace Duplicati.Library.Main.Operation
                                 var filekey = Convert.ToBase64String(filehasher.Hash);
                                 if (filekey == targetfilehash)
                                 {
+                                    //TODO: Check metadata to trigger rename? If metadata changed, it will still be restored for the file in-place.
                                     result.AddVerboseMessage("Target file exists and is correct version: {0}", targetpath);
                                     rename = false;
                                 }
@@ -908,7 +912,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            if (updateCount++ % 20 == 0)
+                            if ((++updateCount) % 20 == 0)
                             {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                                 if (result.TaskControlRendevouz() == TaskControlState.Stop)
@@ -953,7 +957,9 @@ namespace Duplicati.Library.Main.Operation
                                     
                                 if (key == targetfilehash)
                                 {
-                                    blockmarker.SetAllBlocksRestored(targetfileid);
+                                    //TODO: Also needs metadata check to make correct decision.
+                                    //      We stick to the policy to restore metadata in place, if data ok. So, metadata block may be restored.
+                                    blockmarker.SetAllBlocksRestored(targetfileid, false);
                                     break;
                                 }
                             }
