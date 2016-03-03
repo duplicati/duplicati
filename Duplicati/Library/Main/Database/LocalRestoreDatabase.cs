@@ -667,8 +667,8 @@ namespace Duplicati.Library.Main.Database
                 // An optimal algorithm would build a depency net with cycle resolution to find the best near topological
                 // order of volumes, but this is a bit too fancy here.
                 // We will just put a very simlpe heuristic to work, that will try to prefer volumes containing lower block indexes:
-                // We just order all volumes by the maximum block index they contain.
-                // That is likely to restore all files from front to back. Large files will always be done last.
+                // We just order all volumes by the maximum block index they contain. This query is slow, but should be worth the effort.
+                // Now it is likely to restore all files from front to back. Large files will always be done last.
                 // One could also use like the average block number in a volume, that needs to be measured.
 
                 cmd.CommandText = string.Format(
@@ -676,9 +676,9 @@ namespace Duplicati.Library.Main.Database
                     + @"  FROM ""RemoteVolume"" ""RV"" INNER JOIN "
                     + @"        (SELECT ""B"".""VolumeID"", MAX(""TB"".""Index"") as ""MaxIndex"" "
                     + @"           FROM ""Block"" ""B"", ""{0}"" ""TB"" "
-                    + @"          WHERE ""B"".""Hash"" = ""TB"".""Hash"" "
+                    + @"          WHERE ""TB"".""Restored"" = 0 "
+                    + @"            AND ""B"".""Hash"" = ""TB"".""Hash"" "
                     + @"            AND ""B"".""Size"" = ""TB"".""Size"" "
-                    + @"            AND ""TB"".""Restored"" = 0 "
                     + @"          GROUP BY  ""B"".""VolumeID"" "
                     + @"        ) as ""BB"" ON ""RV"".""ID"" = ""BB"".""VolumeID"" "
                     + @"  ORDER BY ""BB"".""MaxIndex"" "
