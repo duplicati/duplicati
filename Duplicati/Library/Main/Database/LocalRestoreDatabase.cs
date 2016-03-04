@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +8,13 @@ namespace Duplicati.Library.Main.Database
 {
     internal partial class LocalRestoreDatabase : LocalDatabase
     {
+        protected string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
         protected string m_tempfiletable;
         protected string m_tempblocktable;
+        protected string m_fileprogtable;
+        protected string m_totalprogtable;
+        protected string m_filesnewlydonetable;
+
         protected DateTime m_restoreTime;
 
 		public DateTime RestoreTime { get { return m_restoreTime; } } 
@@ -23,6 +28,149 @@ namespace Duplicati.Library.Main.Database
             : base(dbparent)
         {
         }
+
+        /// <summary>
+        /// Create tables and triggers for automatic tracking of progress during a restore operation.
+        /// This replaces continuous requerying of block progress by iterating over blocks table.
+        /// SQLite is much faster keeping information up to date with internal triggers.
+        /// </summary>
+        /// <param name="createFilesNewlyDoneTracker"> This allows to create another table that keeps track
+        /// of all files that are done (all data blocks restored). </param>
+        /// <remarks>
+        /// The method is prepared to create a table that keeps track of all files being done completely.
+        /// That means, it fires for files where the number of restored blocks equals the number of all blocks.
+        /// It is intended to be used for fast identification of fully restored files to trigger their verification.
+        /// It should be read after a commit and truncated after putting the files to a verification queue.
+        /// Note: If a file is done once and then set back to a none restored state, the file is not automatically removed.
+        ///       But if it reaches a restored state later, it will be readded (trigger will fire)
+        /// </remarks>
+        public void CreateProgressTracker(bool createFilesNewlyDoneTracker)
+        {
+            m_fileprogtable = "FileProgress-" + this.m_temptabsetguid;
+            m_totalprogtable = "TotalProgress-" + this.m_temptabsetguid;
+            m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + this.m_temptabsetguid : null;
+
+            using (var cmd = m_connection.CreateCommand())
+            {
+                // How to handle METADATA?
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_fileprogtable));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ("
+                        + @"  ""FileId"" INTEGER PRIMARY KEY "
+                        + @", ""TotalBlocks"" INTEGER NOT NULL, ""TotalSize"" INTEGER NOT NULL "
+                        + @", ""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL "
+                        + @")", m_fileprogtable));
+
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_totalprogtable));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ("
+                        + @"  ""TotalFiles"" INTEGER NOT NULL, ""TotalBlocks"" INTEGER NOT NULL, ""TotalSize"" INTEGER NOT NULL "
+                        + @", ""FilesFullyRestored"" INTEGER NOT NULL, ""FilesPartiallyRestored"" INTEGER NOT NULL "
+                        + @", ""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL "
+                        + @")", m_totalprogtable));
+
+                if (createFilesNewlyDoneTracker)
+                {
+                    cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filesnewlydonetable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ("
+                            + @"  ""ID"" INTEGER PRIMARY KEY "
+                            + @")", m_filesnewlydonetable));
+                }
+
+                try
+                {
+                    // Initialize statistics with File- and Block-Data (it is valid to already have restored blocks in files)
+                    // A rebuild with this function should be valid anytime.
+                    // Note: FilesNewlyDone is NOT initialized, as in initialization nothing is really new.
+                    string sql;
+
+                    sql = string.Format(
+                          @" INSERT INTO ""{0}"" (""FileId"", ""TotalBlocks"", ""TotalSize"", ""BlocksRestored"", ""SizeRestored"") "
+                        + @" SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""), 0)"
+                        + @"        , IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0) "
+                        + @"        , IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0) "
+                        + @"   FROM ""{1}"" ""F"" LEFT JOIN ""{2}"" ""B""" // allow for emtpy files (no data Blocks)
+                        + @"        ON  ""B"".""FileID"" = ""F"".""ID"" "
+                        + @"  WHERE ""B"".""Metadata"" IS NOT 1 " // Use "IS" because of Left Join
+                        + @"  GROUP BY ""F"".""ID"" "
+                        , m_fileprogtable, m_tempfiletable, m_tempblocktable);
+
+                    // Will be one row per file.
+                    int fileCnt = cmd.ExecuteNonQuery(sql);
+
+                    sql = string.Format(
+                          @"INSERT INTO ""{0}"" ("
+                        + @"  ""TotalFiles"", ""TotalBlocks"", ""TotalSize"" "
+                        + @", ""FilesFullyRestored"", ""FilesPartiallyRestored"", ""BlocksRestored"", ""SizeRestored"""
+                        + @" ) "
+                        + @" SELECT   IFNULL(COUNT(""P"".""FileId""), 0), IFNULL(SUM(""P"".""TotalBlocks""), 0), IFNULL(SUM(""P"".""TotalSize""), 0) "
+                        + @"        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks"" THEN 1 ELSE NULL END), 0) "
+                        + @"        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" BETWEEN 1 AND ""P"".""TotalBlocks"" - 1 THEN 1 ELSE NULL END), 0) "
+                        + @"        , IFNULL(SUM(""P"".""BlocksRestored""), 0), IFNULL(SUM(""P"".""SizeRestored""), 0) "
+                        + @"   FROM ""{1}"" ""P"" "
+                        , m_totalprogtable, m_fileprogtable);
+
+                    // Will result in a single line (no support to also track metadata)
+                    int totalStatRowCount = cmd.ExecuteNonQuery(sql);
+
+                    // Finally we create TRIGGERs to keep all our statistics up to date.
+                    // This is lightning fast, as SQLite uses internal hooks and our indices to do the update magic.
+                    // Note: We do assume that neither files nor blocks will be added or deleted during restore process
+                    //       and that the size of each block stays constant so there is no need to track that information
+                    //       with additional INSERT and DELETE triggers.
+
+                    // A trigger to update the file-stat entry each time a block changes restoration state.
+                    sql = string.Format(
+                          @"CREATE TEMPORARY TRIGGER ""TrackRestoredBlocks_{1}"" AFTER UPDATE OF ""Restored"" ON ""{1}"" "
+                        + @"  WHEN OLD.""Restored"" != NEW.""Restored"" AND NEW.""Metadata"" = 0 "
+                        + @"  BEGIN UPDATE ""{0}"" "
+                        + @"     SET ""BlocksRestored"" = ""{0}"".""BlocksRestored"" + (NEW.""Restored"" - OLD.""Restored"") "
+                        + @"       , ""SizeRestored"" = ""{0}"".""SizeRestored"" + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size) "
+                        + @"   WHERE ""{0}"".""FileId"" = NEW.""FileID"" "
+                        + @"  ; END "
+                        , m_fileprogtable, m_tempblocktable);
+                    cmd.ExecuteNonQuery(sql);
+
+                    // A trigger to update total stats each time a file stat changed (nested triggering by file-stats)
+                    sql = string.Format(
+                          @"CREATE TEMPORARY TRIGGER ""UpdateTotalStats_{1}"" AFTER UPDATE ON ""{1}"" "
+                        + @"  BEGIN UPDATE ""{0}"" "
+                        + @"     SET ""FilesFullyRestored"" = ""{0}"".""FilesFullyRestored"" "
+                        + @"                 + (CASE WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks"" THEN 1 ELSE 0 END) "
+                        + @"                 - (CASE WHEN OLD.""BlocksRestored"" = OLD.""TotalBlocks"" THEN 1 ELSE 0 END) "
+                        + @"       , ""FilesPartiallyRestored"" = ""{0}"".""FilesPartiallyRestored"" "
+                        + @"                 + (CASE WHEN NEW.""BlocksRestored"" BETWEEN 1 AND NEW.""TotalBlocks"" - 1 THEN 1 ELSE 0 END) "
+                        + @"                 - (CASE WHEN OLD.""BlocksRestored"" BETWEEN 1 AND OLD.""TotalBlocks"" - 1 THEN 1 ELSE 0 END) "
+                        + @"       , ""BlocksRestored"" = ""{0}"".""BlocksRestored"" + NEW.""BlocksRestored"" - OLD.""BlocksRestored"" " // simple delta
+                        + @"       , ""SizeRestored"" = ""{0}"".""SizeRestored"" + NEW.""SizeRestored"" - OLD.""SizeRestored"" " // simple delta
+                        + @"  ; END "
+                        , m_totalprogtable, m_fileprogtable);
+                    cmd.ExecuteNonQuery(sql);
+
+
+                    if (createFilesNewlyDoneTracker)
+                    {
+                        // A trigger checking if a file is done (all blocks restored in file-stat) (nested triggering by file-stats)
+                        sql = string.Format(
+                              @"CREATE TEMPORARY TRIGGER ""UpdateFilesNewlyDone_{1}"" AFTER UPDATE OF ""BlocksRestored"", ""TotalBlocks"" ON ""{1}"" "
+                            + @"  WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks""  "
+                            + @"  BEGIN "
+                            + @"     INSERT OR IGNORE INTO ""{0}"" (""ID"") VALUES (NEW.""FileId""); "
+                            + @"  END "
+                            , m_filesnewlydonetable, m_fileprogtable);
+                        cmd.ExecuteNonQuery(sql);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    m_fileprogtable = null;
+                    m_totalprogtable = null;
+                    Console.WriteLine(ex.ToString());
+                    throw;
+                }
+            }
+
+        }
+
 
         public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
         {
@@ -739,6 +887,35 @@ namespace Duplicati.Library.Main.Database
                     }
                     catch(Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message),  ex); }
                     finally { m_tempblocktable = null; }
+
+
+                if (m_fileprogtable != null)
+                    try
+                    {
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_fileprogtable);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message), ex); }
+                    finally { m_fileprogtable = null; }
+
+                if (m_totalprogtable != null)
+                    try
+                    {
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_totalprogtable);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message), ex); }
+                    finally { m_totalprogtable = null; }
+
+                if (m_filesnewlydonetable != null)
+                    try
+                    {
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_filesnewlydonetable);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message), ex); }
+                    finally { m_filesnewlydonetable = null; }
+            
             }
         }
 
@@ -746,76 +923,91 @@ namespace Duplicati.Library.Main.Database
         {
             void SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
             void SetAllBlocksMissing(long targetfileid);
-            void SetAllBlocksRestored(long targetfileid);
+            void SetAllBlocksRestored(long targetfileid, bool includeMetadata);
             void Commit(ILogWriter log);
             void UpdateProcessed(IOperationProgressUpdater writer);
             System.Data.IDbTransaction Transaction { get; }
         }
 
-        private class BlockMarker : IBlockMarker
+        /// <summary>
+        /// A new implementation of IBlockMarker, marking the blocks directly in the blocks table as restored
+        /// and reading statistics about progress from DB (kept up-to-date by triggers).
+        /// There is no negative influence on performance, esp. since the block table is temporary anyway.
+        /// </summary>
+        private class DirectBlockMarker : IBlockMarker
         {
             private System.Data.IDbCommand m_insertblockCommand;
             private System.Data.IDbCommand m_resetfileCommand;
             private System.Data.IDbCommand m_updateAsRestoredCommand;
             private System.Data.IDbCommand m_statUpdateCommand;
             private bool m_hasUpdates = false;
-            
-            private string m_updateTable;
+
             private string m_blocktablename;
-            
+
             public System.Data.IDbTransaction Transaction { get { return m_insertblockCommand.Transaction; } }
 
-            public BlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename)
+            public DirectBlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename, string statstablename)
             {
                 m_insertblockCommand = connection.CreateCommand();
-                m_resetfileCommand  = connection.CreateCommand();
+                m_resetfileCommand = connection.CreateCommand();
                 m_updateAsRestoredCommand = connection.CreateCommand();
                 m_statUpdateCommand = connection.CreateCommand();
-                
+
                 m_insertblockCommand.Transaction = connection.BeginTransaction();
                 m_resetfileCommand.Transaction = m_insertblockCommand.Transaction;
                 m_updateAsRestoredCommand.Transaction = m_insertblockCommand.Transaction;
                 m_statUpdateCommand.Transaction = m_insertblockCommand.Transaction;
-                
-                m_blocktablename = blocktablename;
-                m_updateTable = "UpdatedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_updateTable));
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FileIdIndexIndex"" ON ""{0}"" (""FileId"", ""Index"")", m_updateTable));
 
-                m_insertblockCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Metadata"") VALUES (?, ?, ?, ?, ?) ", m_updateTable);
+                m_blocktablename = blocktablename;
+
+                m_insertblockCommand.CommandText = string.Format(
+                      @"UPDATE ""{0}"" SET ""Restored"" = 1 "
+                    + @" WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""Metadata"" = ? AND ""Restored"" = 0 "
+                    , m_blocktablename);
                 m_insertblockCommand.AddParameters(5);
-                                
-                m_resetfileCommand.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ""FileID"" = ?", m_updateTable);
+
+                m_resetfileCommand.CommandText = string.Format(
+                      @"UPDATE ""{0}"" SET ""Restored"" = 0 WHERE ""FileID"" = ? "
+                    , m_blocktablename);
                 m_resetfileCommand.AddParameters(1);
-                
-                m_updateAsRestoredCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"") SELECT ""FileID"", ""Index"", ""Hash"", ""Size"" FROM ""{1}"" WHERE ""{1}"".""FileID"" = ?", m_updateTable, m_blocktablename);
-                m_updateAsRestoredCommand.AddParameters(1);
-                
-                m_statUpdateCommand.CommandText = string.Format(@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{0}"" WHERE ""Restored"" = 1 OR ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable);
+
+                m_updateAsRestoredCommand.CommandText = string.Format(
+                      @"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""FileID"" = ? AND ""Metadata"" <= ? "
+                    , m_blocktablename);
+                m_updateAsRestoredCommand.AddParameters(2);
+
+                if (statstablename != null)
+                {
+                    // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
+                    //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
+                    m_statUpdateCommand.CommandText = string.Format(@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{0}"" ", statstablename);
+                }
+                else // very slow fallback if stats tables were not created
+                    m_statUpdateCommand.CommandText = string.Format(@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{0}"" WHERE ""Restored"" = 1 ", m_blocktablename);
+
             }
-            
+
             public void UpdateProcessed(IOperationProgressUpdater updater)
             {
                 if (!m_hasUpdates)
                     return;
-                    
+
                 m_hasUpdates = false;
-                using(var rd = m_statUpdateCommand.ExecuteReader())
-                {                    
+                using (var rd = m_statUpdateCommand.ExecuteReader())
+                {
                     var filesprocessed = 0L;
                     var processedsize = 0L;
-                    
+
                     if (rd.Read())
                     {
-                        filesprocessed = rd.ConvertValueToInt64(0, 0);
-                        processedsize = rd.ConvertValueToInt64(1, 0);
+                        filesprocessed += rd.ConvertValueToInt64(0, 0);
+                        processedsize += rd.ConvertValueToInt64(1, 0);
                     }
 
                     updater.UpdatefilesProcessed(filesprocessed, processedsize);
                 }
             }
-            
+
             public void SetAllBlocksMissing(long targetfileid)
             {
                 m_hasUpdates = true;
@@ -825,15 +1017,16 @@ namespace Duplicati.Library.Main.Database
                     throw new Exception("Unexpected reset result");
             }
 
-            public void SetAllBlocksRestored(long targetfileid)
+            public void SetAllBlocksRestored(long targetfileid, bool includeMetadata)
             {
                 m_hasUpdates = true;
                 m_updateAsRestoredCommand.SetParameterValue(0, targetfileid);
+                m_updateAsRestoredCommand.SetParameterValue(1, includeMetadata ? 1 : 0);
                 var r = m_updateAsRestoredCommand.ExecuteNonQuery();
                 if (r <= 0)
                     throw new Exception("Unexpected reset result");
             }
-            
+
             public void SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata)
             {
                 m_hasUpdates = true;
@@ -844,68 +1037,47 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(4, metadata);
                 var r = m_insertblockCommand.ExecuteNonQuery();
                 if (r != 1)
-                    throw new Exception("Unexpected insert result");
+                    throw new Exception("Unexpected result when marking block.");
+
             }
-            
+
             public void Commit(ILogWriter log)
             {
-                m_insertblockCommand.Parameters.Clear();
-                var rc = m_insertblockCommand.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" AND ""{0}"".""Metadata"" = ""{1}"".""Metadata"" )", m_blocktablename, m_updateTable));
-                var nc = m_insertblockCommand.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable), 0);
-                    		
-                if (rc != nc)
-                    log.AddWarning(string.Format("Inconsistency while marking blocks as updated. Updated blocks: {0}, Registered blocks: {1}", rc, nc), null);
-                
-                m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_updateTable));
-                m_updateTable = null;
-
                 var tr = m_insertblockCommand.Transaction;
                 m_insertblockCommand.Dispose();
                 m_insertblockCommand = null;
-                using(new Logging.Timer("CommitBlockMarker"))
+                using (new Logging.Timer("CommitBlockMarker"))
                     tr.Commit();
                 tr.Dispose();
             }
 
             public void Dispose()
             {
-	            if (m_updateTable != null)
-	            {
-	            	try 
-	            	{
-	            		m_insertblockCommand.Parameters.Clear();
-	            		m_insertblockCommand.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_updateTable));
-	            	}
-	            	catch { }
-	            	finally { m_updateTable = null; }
-	            }
-                            
                 if (m_insertblockCommand != null)
                     try { m_insertblockCommand.Dispose(); }
                     catch { }
                     finally { m_insertblockCommand = null; }
-                    
+
                 if (m_resetfileCommand != null)
                     try { m_resetfileCommand.Dispose(); }
                     catch { }
                     finally { m_resetfileCommand = null; }
-                    
+
                 if (m_updateAsRestoredCommand != null)
                     try { m_updateAsRestoredCommand.Dispose(); }
                     catch { }
                     finally { m_updateAsRestoredCommand = null; }
-                    
+
                 if (m_statUpdateCommand != null)
                     try { m_statUpdateCommand.Dispose(); }
                     catch { }
                     finally { m_statUpdateCommand = null; }
-                
             }
         }
 
         public IBlockMarker CreateBlockMarker()
         {
-            return new BlockMarker(m_connection, m_tempblocktable, m_tempfiletable);
+            return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable);
         }
 
         public override void Dispose()
