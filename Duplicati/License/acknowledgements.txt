@@ -11,6 +11,7 @@ Software Development:
   Sebastian Fahrenholz
   Malte Neumann
   Mostafa Aghajani
+  Stefan Lück
   
 The theme for Duplicati (ngax):
   Alexander Franzelin
