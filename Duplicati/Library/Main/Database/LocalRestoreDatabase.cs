@@ -84,9 +84,9 @@ namespace Duplicati.Library.Main.Database
 
                     sql = string.Format(
                           @" INSERT INTO ""{0}"" (""FileId"", ""TotalBlocks"", ""TotalSize"", ""BlocksRestored"", ""SizeRestored"") "
-                        + @" SELECT   ""F"".""ID"", COUNT(""B"".""ID""), SUM(""B"".""Size"")"
-                        + @"        , COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END) "
-                        + @"        , SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END) "
+                        + @" SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""), 0)"
+                        + @"        , IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0) "
+                        + @"        , IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0) "
                         + @"   FROM ""{1}"" ""F"" LEFT JOIN ""{2}"" ""B""" // allow for emtpy files (no data Blocks)
                         + @"        ON  ""B"".""FileID"" = ""F"".""ID"" "
                         + @"  WHERE ""B"".""Metadata"" IS NOT 1 " // Use "IS" because of Left Join
@@ -101,10 +101,10 @@ namespace Duplicati.Library.Main.Database
                         + @"  ""TotalFiles"", ""TotalBlocks"", ""TotalSize"" "
                         + @", ""FilesFullyRestored"", ""FilesPartiallyRestored"", ""BlocksRestored"", ""SizeRestored"""
                         + @" ) "
-                        + @" SELECT   COUNT(""P"".""FileId""), SUM(""P"".""TotalBlocks""), SUM(""P"".""TotalSize"") "
-                        + @"        , COUNT(CASE WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks"" THEN 1 ELSE NULL END) "
-                        + @"        , COUNT(CASE WHEN ""P"".""BlocksRestored"" BETWEEN 1 AND ""P"".""TotalBlocks"" - 1 THEN 1 ELSE NULL END) "
-                        + @"        , SUM(""P"".""BlocksRestored""), SUM(""P"".""SizeRestored"") "
+                        + @" SELECT   IFNULL(COUNT(""P"".""FileId""), 0), IFNULL(SUM(""P"".""TotalBlocks""), 0), IFNULL(SUM(""P"".""TotalSize""), 0) "
+                        + @"        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks"" THEN 1 ELSE NULL END), 0) "
+                        + @"        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" BETWEEN 1 AND ""P"".""TotalBlocks"" - 1 THEN 1 ELSE NULL END), 0) "
+                        + @"        , IFNULL(SUM(""P"".""BlocksRestored""), 0), IFNULL(SUM(""P"".""SizeRestored""), 0) "
                         + @"   FROM ""{1}"" ""P"" "
                         , m_totalprogtable, m_fileprogtable);
 
