@@ -67,10 +67,11 @@ Restore a specific file
   
 Usage: backup <storage-URL> "<source-path>" [<options>]
 
-  Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is protocol://username:password@hostname:port/path?backend
-  _option1=value1&backend_option2=value2. Multiple source paths can be specified if they are separated by a space. Defaults are: The maximum file size is 100MB, backups are deleted when they are older than one month.
+  Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is 
+    protocol://username:password@hostname:port/path?backend_option1=value1&backend_option2=value2. 
+  Multiple source paths can be specified if they are separated by a space.
 
-  <username> must not contain : and <password> must not contain @. If they do, specify username and password using --auth-username and --auth-password.
+  <username> must not contain : and <password> must not contain @. If they do, specify username and password using --auth-username and --auth-password, or url-encode them.
 
   --auth-password=<string>
     The password that is required to authenticate with the server the backup is stored on.
