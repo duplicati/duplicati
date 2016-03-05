@@ -436,28 +436,8 @@ namespace Duplicati.Library.Main.Operation
                             throw;
 					}
 
-                // Enforce the length of restored files
-                foreach(var file in database.GetFilesToRestore())
-                {
-                    try
-                    {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                        {
-                            backend.WaitForComplete(database, null);
-                            return;
-                        }
-
-                        // Fix the length
-                        using(var fs = m_systemIO.FileOpenWrite(file.Path))
-                            fs.SetLength(file.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        result.AddWarning(ex.Message, ex);
-                        if (ex is System.Threading.ThreadAbortException)
-                            throw;
-                    }
-                }
+                // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
+                // and thus not necessary anymore.
 
                 // Apply metadata
                 if (!m_options.SkipMetadata)
@@ -477,7 +457,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // After all blocks in the files are restored, verify the file hash
                     using(new Logging.Timer("RestoreVerification"))
-                        foreach(var file in database.GetFilesToRestore())
+                        foreach(var file in database.GetFilesToRestore(true))
                         {
                             try
                             {
@@ -861,50 +841,104 @@ namespace Duplicati.Library.Main.Operation
                     var targetpath = restorelist.TargetPath;
                     var targetfileid = restorelist.TargetFileID;
                     var targetfilehash = restorelist.TargetHash;
+                    var targetfilelength = restorelist.Length;
                     if (m_systemIO.FileExists(targetpath))
                     {
                         try
                         {
                             if (result.TaskControlRendevouz() == TaskControlState.Stop)
                                 return;
-                            
-                            if (rename)
-                                filehasher.Initialize();
 
-                            using(var file = m_systemIO.FileOpenReadWrite(targetpath))
-                            using(var block = new Blockprocessor(file, blockbuffer))
-                                foreach(var targetblock in restorelist.Blocks)
-                                {
-                                    var size = block.Readblock();
-                                    if (size <= 0)
-                                        break;
-    
-                                    //TODO: Handle Metadata
+                            var currentfilelength = m_systemIO.FileLength(targetpath);
 
-                                    if (size == targetblock.Size)
+                            // If file size does not match and we have to rename on conflict, 
+                            // the whole check can be skipped here and all blocks have to be restored anyway.
+                            // For the other cases, we will check block and and file hashes and look for blocks
+                            // to be restored and files that can already be verified.
+                            if (!rename || currentfilelength == targetfilelength)
+                            {
+                                // a file hash for verification will only be necessary if the file exact the 
+                                // wanted size so we have a chance to already mark the file as data-verified.
+                                // Actually, we could also check larger files in overwrite mode that only have 
+                                // to be cut (applies to files only being written forth).
+                                // But we will have to touch them to truncate, so we will trigger a separate 
+                                // verification after the file size was adjusted.
+                                bool calcFileHash = (currentfilelength == targetfilelength); 
+                                if (calcFileHash) filehasher.Initialize();
+
+                                using (var file = m_systemIO.FileOpenRead(targetpath))
+                                using (var block = new Blockprocessor(file, blockbuffer))
+                                    foreach (var targetblock in restorelist.Blocks)
                                     {
-                                        var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
-                                        if (key == targetblock.Hash)
+                                        var size = block.Readblock();
+                                        if (size <= 0)
+                                            break;
+
+                                        //TODO: Handle Metadata
+
+                                        bool blockhashmatch = false;
+                                        if (size == targetblock.Size)
                                         {
-                                            blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size, false);
+                                            // Parallelize file hash calculation on rename. Running read-only on same array should not cause conflicts or races.
+                                            // Actually, in future always calculate the file hash and mark the file data as already verified.
+
+                                            System.Threading.Tasks.Task calcFileHashTask = null;
+                                            if (calcFileHash)
+                                                calcFileHashTask = System.Threading.Tasks.Task.Run(
+                                                    () => filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0));
+
+                                            var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
+
+                                            if (calcFileHashTask != null) calcFileHashTask.Wait(); // wait because blockbuffer will be overwritten.
+
+                                            if (key == targetblock.Hash)
+                                            {
+                                                blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size, false);
+                                                blockhashmatch = true;
+                                            }
+                                        }
+                                        if (calcFileHash && !blockhashmatch) // will not be necessary anymore
+                                        {
+                                            filehasher.TransformFinalBlock(blockbuffer, 0, 0); // So a new initialize will not throw
+                                            calcFileHash = false;
+                                            if (rename) // file does not match. So break.
+                                                break;
                                         }
                                     }
-                                    
-                                    if (rename)
-                                        filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0);
+
+                                bool fullfilehashmatch = false;
+                                if (calcFileHash) // now check if files are identical
+                                {
+                                    filehasher.TransformFinalBlock(blockbuffer, 0, 0);
+                                    var filekey = Convert.ToBase64String(filehasher.Hash);
+                                    fullfilehashmatch = (filekey == targetfilehash);
                                 }
-                                
-                            if (rename)
-                            {
-                                filehasher.TransformFinalBlock(blockbuffer, 0, 0);
-                                var filekey = Convert.ToBase64String(filehasher.Hash);
-                                if (filekey == targetfilehash)
+
+                                if (!rename) // Adjust file length and reset read-only (if set) attribute to overwrite
+                                {
+                                    var currentAttr = m_systemIO.GetFileAttributes(targetpath);
+                                    if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
+                                    {   // clear readonly attribute
+                                        if ((currentfilelength > restorelist.Length) || !fullfilehashmatch)
+                                            m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                    }
+
+                                    // Adjust file length if necessary (smaller is ok, will be extended during restore)
+                                    if (currentfilelength > targetfilelength)
+                                    {
+                                        using (var file = m_systemIO.FileOpenWrite(targetpath))
+                                            file.SetLength(targetfilelength);
+                                    }
+                                }
+
+                                if (fullfilehashmatch)
                                 {
                                     //TODO: Check metadata to trigger rename? If metadata changed, it will still be restored for the file in-place.
+                                    blockmarker.SetFileDataVerified(targetfileid);
                                     result.AddVerboseMessage("Target file exists and is correct version: {0}", targetpath);
                                     rename = false;
                                 }
-                                else
+                                else if (rename)
                                 {
                                     // The new file will have none of the correct blocks,
                                     // even if the scanned file had some
@@ -960,6 +994,7 @@ namespace Duplicati.Library.Main.Operation
                                     //TODO: Also needs metadata check to make correct decision.
                                     //      We stick to the policy to restore metadata in place, if data ok. So, metadata block may be restored.
                                     blockmarker.SetAllBlocksRestored(targetfileid, false);
+                                    blockmarker.SetFileDataVerified(targetfileid);
                                     break;
                                 }
                             }
