@@ -406,7 +406,9 @@ namespace Duplicati.Library.Main.Operation
                 }
                 
                 // Fill BLOCKS with remote sources
-                var volumes = database.GetMissingVolumes().ToList();
+                List<IRemoteVolume> volumes;
+                using (new Logging.Timer("GetMissingVolumes"))
+                    volumes = database.GetMissingVolumes().ToList();
 
                 if (volumes.Count > 0)
                 {
@@ -437,27 +439,29 @@ namespace Duplicati.Library.Main.Operation
 					}
 
                 // Enforce the length of restored files
-                foreach(var file in database.GetFilesToRestore())
-                {
-                    try
+                // This might be integrated in block restore process when verification is triggered per file on complete
+                using (new Logging.Timer("Adjusting final file lengths"))
+                    foreach (var file in database.GetFilesToRestore())
                     {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        try
                         {
-                            backend.WaitForComplete(database, null);
-                            return;
-                        }
+                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            {
+                                backend.WaitForComplete(database, null);
+                                return;
+                            }
 
-                        // Fix the length
-                        using(var fs = m_systemIO.FileOpenWrite(file.Path))
-                            fs.SetLength(file.Length);
+                            // Fix the length
+                            using (var fs = m_systemIO.FileOpenWrite(file.Path))
+                                fs.SetLength(file.Length);
+                        }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(ex.Message, ex);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        result.AddWarning(ex.Message, ex);
-                        if (ex is System.Threading.ThreadAbortException)
-                            throw;
-                    }
-                }
 
                 // Apply metadata
                 if (!m_options.SkipMetadata)
