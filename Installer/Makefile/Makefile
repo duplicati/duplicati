@@ -34,7 +34,7 @@ package: build
 	rm -rf "$(PKG_TARGET)/AlphaFS.dll"
 	rm -rf "$(PKG_TARGET)/AlphaVSS.Common.dll"
 
-	cp -R "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/bin/duplicati/"
+	cp -R "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/lib/duplicati/"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-commandline-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-cli"
 	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-server-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-server"
