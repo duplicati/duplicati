@@ -200,18 +200,17 @@ namespace Duplicati.Library.Main.Database
     
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempblocktable));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL) ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_tempblocktable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_Index"" ON ""{0}"" (""TargetPath"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_tempblocktable));
                     // better suited to speed up commit on UpdateBlocks
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FileIdIndexIndex"" ON ""{0}"" (""FileId"", ""Index"")", m_tempblocktable));
 
-
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, restore everything
-                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
                         cmd.AddParameter(filesetId);
                         cmd.ExecuteNonQuery();
                     }
@@ -234,8 +233,8 @@ namespace Duplicati.Library.Main.Database
                                 cmd.SetParameterValue(0, s);
                                 cmd.ExecuteNonQuery();
                             }
-                            
-                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+
+                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
                             cmd.SetParameterValue(0, filesetId);
                             var c = cmd.ExecuteNonQuery();
                             
@@ -271,7 +270,7 @@ namespace Duplicati.Library.Main.Database
                         object[] values = new object[3];
                         using(var cmd2 = m_connection.CreateCommand())
                         {
-                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?)", m_tempfiletable);
+                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,0)", m_tempfiletable);
                             cmd2.AddParameter();
                             cmd2.AddParameter();
                             cmd2.AddParameter();
@@ -880,12 +879,15 @@ namespace Duplicati.Library.Main.Database
 			}
 		}
 
-        public IEnumerable<IFileToRestore> GetFilesToRestore()
+        public IEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
         {
-            using(var cmd = m_connection.CreateCommand())
-            using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" ", m_tempfiletable)))
-                while (rd.Read())
-                    yield return new FileToRestore(rd.GetInt64(0), rd.GetString(1), rd.GetString(2), rd.GetInt64(3));
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.AddParameter(!onlyNonVerified);
+                using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
+                    while (rd.Read())
+                        yield return new FileToRestore(rd.GetInt64(0), rd.GetString(1), rd.GetString(2), rd.GetInt64(3));
+            }
         }
 
         public void DropRestoreTable()
@@ -946,6 +948,7 @@ namespace Duplicati.Library.Main.Database
             void SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
             void SetAllBlocksMissing(long targetfileid);
             void SetAllBlocksRestored(long targetfileid, bool includeMetadata);
+            void SetFileDataVerified(long targetfileid);
             void Commit(ILogWriter log);
             void UpdateProcessed(IOperationProgressUpdater writer);
             System.Data.IDbTransaction Transaction { get; }
@@ -961,10 +964,12 @@ namespace Duplicati.Library.Main.Database
             private System.Data.IDbCommand m_insertblockCommand;
             private System.Data.IDbCommand m_resetfileCommand;
             private System.Data.IDbCommand m_updateAsRestoredCommand;
+            private System.Data.IDbCommand m_updateFileAsDataVerifiedCommand;
             private System.Data.IDbCommand m_statUpdateCommand;
             private bool m_hasUpdates = false;
 
             private string m_blocktablename;
+            private string m_filetablename;
 
             public System.Data.IDbTransaction Transaction { get { return m_insertblockCommand.Transaction; } }
 
@@ -973,14 +978,17 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand = connection.CreateCommand();
                 m_resetfileCommand = connection.CreateCommand();
                 m_updateAsRestoredCommand = connection.CreateCommand();
+                m_updateFileAsDataVerifiedCommand = connection.CreateCommand();
                 m_statUpdateCommand = connection.CreateCommand();
 
                 m_insertblockCommand.Transaction = connection.BeginTransaction();
                 m_resetfileCommand.Transaction = m_insertblockCommand.Transaction;
                 m_updateAsRestoredCommand.Transaction = m_insertblockCommand.Transaction;
+                m_updateFileAsDataVerifiedCommand.Transaction = m_insertblockCommand.Transaction;
                 m_statUpdateCommand.Transaction = m_insertblockCommand.Transaction;
 
                 m_blocktablename = blocktablename;
+                m_filetablename = filetablename;
 
                 m_insertblockCommand.CommandText = string.Format(
                       @"UPDATE ""{0}"" SET ""Restored"" = 1 "
@@ -997,6 +1005,11 @@ namespace Duplicati.Library.Main.Database
                       @"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""FileID"" = ? AND ""Metadata"" <= ? "
                     , m_blocktablename);
                 m_updateAsRestoredCommand.AddParameters(2);
+
+                m_updateFileAsDataVerifiedCommand.CommandText = string.Format(
+                      @"UPDATE ""{0}"" SET ""DataVerified"" = 1 WHERE ""ID"" = ?"
+                    , m_filetablename);
+                m_updateFileAsDataVerifiedCommand.AddParameters(1); 
 
                 if (statstablename != null)
                 {
@@ -1045,6 +1058,15 @@ namespace Duplicati.Library.Main.Database
                 m_updateAsRestoredCommand.SetParameterValue(0, targetfileid);
                 m_updateAsRestoredCommand.SetParameterValue(1, includeMetadata ? 1 : 0);
                 var r = m_updateAsRestoredCommand.ExecuteNonQuery();
+                if (r <= 0)
+                    throw new Exception("Unexpected reset result");
+            }
+
+            public void SetFileDataVerified(long targetfileid)
+            {
+                m_hasUpdates = true;
+                m_updateFileAsDataVerifiedCommand.SetParameterValue(0, targetfileid);
+                var r = m_updateFileAsDataVerifiedCommand.ExecuteNonQuery();
                 if (r <= 0)
                     throw new Exception("Unexpected reset result");
             }
