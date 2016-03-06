@@ -661,7 +661,29 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT DISTINCT ""Block"".""VolumeID"" FROM ""Block"" WHERE ""Block"".""Hash"" IN (SELECT DISTINCT ""{0}"".""Hash"" FROM ""{0}"" WHERE ""{0}"".""Restored"" = 0))", m_tempblocktable);
+                // Return order from SQLite-DISTINCT is likely to be sorted by Name, which is bad for restore.
+                // If the end of very large files (e.g. iso's) is restored before the beginning, most OS write out zeros to fill the file.
+                // If we manage to get the volumes in an order restoring front blocks first, this can save time.
+                // An optimal algorithm would build a depency net with cycle resolution to find the best near topological
+                // order of volumes, but this is a bit too fancy here.
+                // We will just put a very simlpe heuristic to work, that will try to prefer volumes containing lower block indexes:
+                // We just order all volumes by the maximum block index they contain. This query is slow, but should be worth the effort.
+                // Now it is likely to restore all files from front to back. Large files will always be done last.
+                // One could also use like the average block number in a volume, that needs to be measured.
+
+                cmd.CommandText = string.Format(
+                      @"SELECT ""RV"".""Name"", ""RV"".""Hash"", ""RV"".""Size"", ""BB"".""MaxIndex"" "
+                    + @"  FROM ""RemoteVolume"" ""RV"" INNER JOIN "
+                    + @"        (SELECT ""B"".""VolumeID"", MAX(""TB"".""Index"") as ""MaxIndex"" "
+                    + @"           FROM ""Block"" ""B"", ""{0}"" ""TB"" "
+                    + @"          WHERE ""TB"".""Restored"" = 0 "
+                    + @"            AND ""B"".""Hash"" = ""TB"".""Hash"" "
+                    + @"            AND ""B"".""Size"" = ""TB"".""Size"" "
+                    + @"          GROUP BY  ""B"".""VolumeID"" "
+                    + @"        ) as ""BB"" ON ""RV"".""ID"" = ""BB"".""VolumeID"" "
+                    + @"  ORDER BY ""BB"".""MaxIndex"" "
+                    , m_tempblocktable);
+
                 using (var rd = cmd.ExecuteReader())
                 {
                     object[] r = new object[3];
