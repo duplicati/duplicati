@@ -123,9 +123,10 @@ namespace Duplicati.Library.Backend
             
             var b64_raw = Convert.ToBase64String(private_key);
             var sb = new StringBuilder();
-            for(var i = 0; i < b64_raw.Length; i += 80)
+            var lw = 64;
+            for(var i = 0; i < b64_raw.Length; i += lw)
             {
-                sb.Append(b64_raw.Substring(i, Math.Min(80, b64_raw.Length - i)));
+                sb.Append(b64_raw.Substring(i, Math.Min(lw, b64_raw.Length - i)));
                 sb.Append("\n");
             }
             
