@@ -28,15 +28,15 @@ XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
 GPG=/usr/local/bin/gpg2
 
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
-	OTHER_UPLOADS = ""
+	OTHER_UPLOADS=""
 elif [ "${RELEASE_TYPE}" == "canary" ]; then
-	OTHER_UPLOADS = "nightly"
+	OTHER_UPLOADS="nightly"
 elif [ "${RELEASE_TYPE}" == "experimental" ]; then
-	OTHER_UPLOADS = "nightly canary"
+	OTHER_UPLOADS="nightly canary"
 elif [ "${RELEASE_TYPE}" == "beta" ]; then
-	OTHER_UPLOADS = "experimental canary nightly"
+	OTHER_UPLOADS="experimental canary nightly"
 elif [ "${RELEASE_TYPE}" == "stable" ]; then
-	OTHER_UPLOADS = "beta experimental canary nightly"
+	OTHER_UPLOADS="beta experimental canary nightly"
 else
 	echo "Unsupported release type: ${RELEASE_TYPE}, supported types are: nightly, canary, experimental, beta, stable"
 	exit 0
