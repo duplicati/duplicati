@@ -157,10 +157,10 @@ aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}
 
 echo "Propagating to other build types"
 for OTHER in ${OTHER_UPLOADS}; do
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.zip" "s3://updates.duplicati.com/${OTHER}/latest.zip"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.zip.sig" "s3://updates.duplicati.com/${OTHER}/latest.zip.sig"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.zip.sig.asc" "s3://updates.duplicati.com/${OTHER}/latest.zip.sig.asc"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${OTHER}/latest.zip"
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${OTHER}/latest.zip.sig"
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${OTHER}/latest.zip.sig.asc"
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
 done
 
 if [ "${RELEASE_TYPE}" == "canary" ]; then
