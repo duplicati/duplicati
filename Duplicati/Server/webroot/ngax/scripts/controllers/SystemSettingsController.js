@@ -20,6 +20,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
         $scope.updateChannel = data.data['update-channel'];
+        $scope.usageReporterLevel = data.data['usage-reporter-level'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
 
     }, AppUtils.connectionError);
@@ -35,7 +36,8 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
 
             'server-listen-interface': $scope.allowRemoteAccess ? any : 'loopback',
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
-            'update-channel': $scope.updateChannel
+            'update-channel': $scope.updateChannel,
+            'usage-reporter-level': $scope.usageReporterLevel
         }
 
 

@@ -77,6 +77,22 @@
             <div class="sublabel">Regular builds for developers only</div>
         </div>
         -->
+
+        <h2>Usage statistics</h2>
+        <div class="input mixed multiple">
+            <label for="usagereporterlevel">Anonymous usage reports</label>
+            <select id="usagereporterlevel" ng-model="usageReporterLevel">
+                <option value="">System default</option>
+                <option value="information">Usage statistics, warnings, errors, and crashes</option>
+                <option value="warning">Warnings, errors and crashes</option>
+                <option value="error">Errors and crashes</option>
+                <option value="crash">Crashes only</option>
+                <option value="none">None / disabled</option>
+            </select>
+            <div class="sublabel">Usage reports are always anonymous, but contains information about your hardware and operating system. The usage statistics include what type of backend you are using, how long a backup took, the size of your source data and other similar statistics. The statistics do not contain paths, filenames, usernames, passwords or similar sensitive information. The data is collected to aid in deciding how to improve the user experience and evaluate impact of new features. The collected data may be published in an aggreated form, such as &quot;most popular backend&quot; or &quot;average backup size&quot; at a later time.</div>
+
+        </div>
+
                     
         <h2>Default options</h2>
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
