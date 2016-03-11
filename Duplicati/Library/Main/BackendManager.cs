@@ -413,7 +413,7 @@ namespace Duplicati.Library.Main
             {
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
                 if (m_encryption == null)
-                	throw new Exception(string.Format("Encryption method not supported: ", m_options.EncryptionModule));
+                    throw new Exception(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule));
             }
 
             if (m_taskControl != null)

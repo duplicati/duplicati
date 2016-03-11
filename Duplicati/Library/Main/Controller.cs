@@ -380,6 +380,16 @@ namespace Duplicati.Library.Main
                 m_currentTaskThread = null;
             }
 		}
+
+        /// <summary>
+        /// Attempts to set the locale, but delays linking to the calls as they are missing in some environments
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void DoSetLocale(System.Globalization.CultureInfo locale, System.Globalization.CultureInfo uiLocale)
+        {
+            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = locale;
+            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = uiLocale;
+        }
 		
 		private void OnOperationComplete(object result)
 		{
@@ -407,10 +417,12 @@ namespace Duplicati.Library.Main
 
             if (m_doResetLocale)
             {
-                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = m_resetLocale;
-                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = m_resetLocaleUI;
+                // Wrap the call to avoid loading issues for the setLocale method
+                DoSetLocale(m_resetLocale, m_resetLocaleUI);
+
                 m_doResetLocale = false;
                 m_resetLocale = null;
+                m_resetLocaleUI = null;
             }
 
             if (m_resetKeys != null)
@@ -524,8 +536,9 @@ namespace Duplicati.Library.Main
                 m_resetLocale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
                 m_resetLocaleUI = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
                 m_doResetLocale = true;
-                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = locale;
-                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = locale;
+
+                // Wrap the call to avoid loading issues for the setLocale method
+                DoSetLocale(locale, locale);
             }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
