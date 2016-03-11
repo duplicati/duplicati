@@ -19,6 +19,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
         $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
+        $scope.updateChannel = data.data['update-channel'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
 
     }, AppUtils.connectionError);
@@ -33,7 +34,8 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
             'server-passphrase': $scope.requireRemotePassword ? $scope.remotePassword : '',
 
             'server-listen-interface': $scope.allowRemoteAccess ? any : 'loopback',
-            'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier
+            'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
+            'update-channel': $scope.updateChannel
         }
 
 

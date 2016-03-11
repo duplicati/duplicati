@@ -30,6 +30,7 @@ namespace Duplicati.Library.AutoUpdater
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
 
         internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
+        internal const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
 
         static AutoUpdateSettings()
         {
@@ -83,6 +84,26 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
+        public static ReleaseType DefaultUpdateChannel
+        {
+            get
+            {
+                var channelstring = Environment.GetEnvironmentVariable(string.Format(UPDATECHANNEL_ENVNAME_TEMPLATE, AppName));
+                if (string.IsNullOrWhiteSpace(channelstring))
+                {
+                    channelstring = UpdaterManager.BaseVersion.ReleaseType;
+                    // Update from older builds
+                    if (string.Equals(channelstring, "preview", StringComparison.InvariantCultureIgnoreCase))
+                        channelstring = "beta";
+                }
+
+                ReleaseType rt;
+                if (!Enum.TryParse<ReleaseType>(channelstring, true, out rt))
+                    rt = ReleaseType.Stable;
+
+                return rt;
+            }
+        }
 
         public static string AppName
         {
