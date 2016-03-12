@@ -137,6 +137,11 @@ namespace Duplicati.Library.UsageReporter
         private static ReportType? Cached_MaxReportLevel;
 
         /// <summary>
+        /// A value indicating if the usage reporter library is forced disabled
+        /// </summary>
+        private static bool Forced_Disabled = false;
+
+        /// <summary>
         /// The maxmimum allowed report level
         /// </summary>
         /// <value>The type of the max report.</value>
@@ -166,6 +171,9 @@ namespace Duplicati.Library.UsageReporter
         {
             get 
             {
+                if (Forced_Disabled)
+                    return true;
+                
                 var str = Environment.GetEnvironmentVariable(string.Format(DISABLED_ENVNAME_TEMPLATE, AutoUpdater.AutoUpdateSettings.AppName));
 #if DEBUG
                 // Default to not report crashes etc from debug builds
@@ -176,6 +184,25 @@ namespace Duplicati.Library.UsageReporter
             }
         }
 
+        /// <summary>
+        /// Sets the usage reporter level
+        /// </summary>
+        /// <param name="maxreportlevel">The maximum level of events to report, or null to set default.</param>
+        /// <param name="disable"><c>True</c> to disable usage reporting<c>false</c> otherwise.</param>
+        public static void SetReportLevel(ReportType? maxreportlevel, bool disable)
+        {
+            if (disable)
+            {
+                Forced_Disabled = true;
+                ShutDown();
+            }
+            else
+            {
+                Forced_Disabled = false;
+                Cached_MaxReportLevel = maxreportlevel;
+                Initialize();
+            }
+        }
     }
 }
 
