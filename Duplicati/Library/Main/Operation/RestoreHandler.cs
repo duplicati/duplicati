@@ -921,15 +921,23 @@ namespace Duplicati.Library.Main.Operation
                                     var currentAttr = m_systemIO.GetFileAttributes(targetpath);
                                     if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
                                     {   // clear readonly attribute
-                                        if ((currentfilelength > restorelist.Length) || !fullfilehashmatch)
-                                            m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                        if ((currentfilelength > targetfilelength) || !fullfilehashmatch)
+                                        {
+                                            if (options.Dryrun)
+                                                result.AddDryrunMessage(string.Format("Would reset read-only attribute on file: {0}", targetpath));
+                                            else
+                                                m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                        }
                                     }
 
                                     // Adjust file length if necessary (smaller is ok, will be extended during restore)
                                     if (currentfilelength > targetfilelength)
                                     {
-                                        using (var file = m_systemIO.FileOpenWrite(targetpath))
-                                            file.SetLength(targetfilelength);
+                                        if (options.Dryrun)
+                                            result.AddDryrunMessage(string.Format("Would truncate file '{0}' to length of {1:N0} bytes", targetpath, targetfilelength));
+                                        else
+                                            using (var file = m_systemIO.FileOpenWrite(targetpath))
+                                                file.SetLength(targetfilelength);
                                     }
                                 }
 
