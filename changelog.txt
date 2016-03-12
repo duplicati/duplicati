@@ -1,3 +1,8 @@
+2016-03-12
+==========
+* Added feature to select update channel in the UI
+* Added feature to select usage reporter level in the UI
+
 2016-03-11
 ==========
 * Added support for additional configuration parameters for S3
