@@ -97,6 +97,14 @@ CREATE TABLE "BlocklistHash" (
 );
 
 /*
+-- Proposal: Completely remove table "BlocklistHash" (needs cleanup in code), maybe use view if necessary at all.
+-- Table is dispensable, info is better retrieved by joining on demand:
+CREATE VIEW "BlocklistHash" AS
+SELECT "BlocksetEntry"."BlocksetID", "BlocksetEntry"."Index", "Block"."Hash"
+  FROM "BlocksetEntry" LEFT JOIN "Block" ON "Block"."ID" = "BlocksetEntry"."BlockID";
+*/
+
+/*
 The blockset is a list of blocks
 
 Note that Length is actually redundant,
@@ -132,6 +140,21 @@ CREATE INDEX "BlocksetEntryIds_Forward" ON "BlocksetEntry" ("BlocksetID", "Block
 CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID", "BlocksetID");
 
 /*
+-- Proposal: for general speed and storage improvement
+-- ["WITHOUT ROWID" works with SQLite v3.8.2 (eq System.Data.SQLite v1.0.90.0, rel 2013-12-23) and later]
+
+CREATE TABLE "BlocksetEntry" (
+	"BlocksetID" INTEGER NOT NULL,
+	"Index" INTEGER NOT NULL,
+	"BlockID" INTEGER NOT NULL
+	CONSTRAINT "BlocksetEntry_PK_IdIndex" PRIMARY KEY ("BlocksetID", "Index")
+) WITHOUT ROWID;
+CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID");
+*/ 
+
+
+
+/*
 The individual block hashes,
 mapped to the containing remote volume
 */
@@ -144,6 +167,11 @@ CREATE TABLE "Block" (
 
 /* This is the most performance critical part of the database */
 CREATE UNIQUE INDEX "BlockHashSize" ON Block ("Hash", "Size");
+
+/*
+-- Proposal: Add index for faster deletion
+CREATE INDEX "BlockByVolumeId" ON Block ("VolumeID");
+*/
 
 /*
 The deleted block hashes,

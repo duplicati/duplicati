@@ -327,16 +327,34 @@ namespace Duplicati.Library.Main.Database
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" = ?)", volumeid);
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""VolumeID"" = ?", volumeid);
                                                 
-                var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ? UNION SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?))";
+                var subQuery = @"SELECT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ? UNION ALL SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?)";
 
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery + @" OR ""MetadataID"" IN " + subQuery, volumeid, volumeid, volumeid, volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid, volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
+                // Create a temporary table to cache subquery result, as it might take long (SQLite does not cache at all). 
+                var blocksetidstable = "DelBlockSetIds-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", blocksetidstable));
+                deletecmd.ExecuteNonQuery(string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") {1}", blocksetidstable, subQuery), volumeid, volumeid);
+                subQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", blocksetidstable);
+                deletecmd.Parameters.Clear();
+
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN (" + subQuery + @") OR ""MetadataID"" IN (" + subQuery + ")");
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN (" + subQuery + ")");
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (" + subQuery + ")");
+                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (" + subQuery + ")");
 
                 deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?)", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
 				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
+
+                // Clean up temp table for subquery. We truncate content and then try to delete.
+                // Drop in try-block, as it fails in nested transactions (SQLite problem)
+                // System.Data.SQLite.SQLiteException (0x80004005): database table is locked
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" ", blocksetidstable));
+                try
+                {
+                    deletecmd.CommandTimeout = 2;
+                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", blocksetidstable));
+                }
+                catch { /* Ignore, will be deleted on close anyway. */ }
 
                 m_removeremotevolumeCommand.SetParameterValue(0, name);
                 m_removeremotevolumeCommand.Transaction = tr.Parent;
