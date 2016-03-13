@@ -123,9 +123,9 @@ namespace Duplicati.Library.AutoUpdater
 
                 // Update from older builds
                 if (string.Equals(channelstring, "preview", StringComparison.InvariantCultureIgnoreCase))
-                    channelstring = ReleaseType.Beta.ToString();
-                if (string.Equals(channelstring, "rene", StringComparison.InvariantCultureIgnoreCase))
                     channelstring = ReleaseType.Experimental.ToString();
+                if (string.Equals(channelstring, "rene", StringComparison.InvariantCultureIgnoreCase))
+                    channelstring = ReleaseType.Canary.ToString();
                 
                 ReleaseType rt;
                 if (!Enum.TryParse<ReleaseType>(channelstring, true, out rt))
