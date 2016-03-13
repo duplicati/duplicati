@@ -31,6 +31,12 @@ namespace Duplicati.Library.Encryption
     /// </summary>
     public class AESEncryption : EncryptionBase
     {
+
+        /// <summary>
+        /// The commandline option supplied if an explicit thread level should be set (--aes-set-threadlevel)
+        /// </summary>
+        private const string COMMANDLINE_SET_THREADLEVEL = "aes-set-threadlevel";
+
         /// <summary>
         /// The key used to encrypt the data
         /// </summary>
@@ -40,6 +46,11 @@ namespace Duplicati.Library.Encryption
         /// The cached value for size overhead
         /// </summary>
         private static long m_cachedsizeoverhead = -1;
+
+        /// <summary>
+        /// The thread level to pass to SharpAESCrypt. 0 for default.
+        /// </summary>
+        private static int m_usethreadlevel = 0;
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -56,8 +67,22 @@ namespace Duplicati.Library.Encryption
         {
             if(string.IsNullOrEmpty(passphrase))
                 throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, "passphrase");
-                
+
             m_key = passphrase;
+
+            string strTL;
+            if (options != null && options.TryGetValue(COMMANDLINE_SET_THREADLEVEL, out strTL))
+            {
+                int useTL;
+                if (int.TryParse(strTL, out useTL))
+                {
+                    // finally set thread level in a range of 0 (default) to 4
+                    m_usethreadlevel = Math.Max(0, (Math.Min(4, useTL)));
+                }
+            }
+
+
+
         }
 
         #region IEncryption Members
@@ -107,7 +132,9 @@ namespace Duplicati.Library.Encryption
         /// <returns>An encrypted stream that can be written to</returns>
         public override Stream Encrypt(Stream input)
         {
-            return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Encrypt);
+            var cryptoStream = new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Encrypt);
+            if (m_usethreadlevel != 0) cryptoStream.MaxCryptoThreads = m_usethreadlevel;
+            return cryptoStream;
         }
 
         /// <summary>
@@ -117,7 +144,9 @@ namespace Duplicati.Library.Encryption
         /// <returns>The unencrypted stream</returns>
         public override Stream Decrypt(Stream input)
         {
-            return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Decrypt);
+            var cryptoStream = new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Decrypt);
+            if (m_usethreadlevel != 0) cryptoStream.MaxCryptoThreads = m_usethreadlevel;
+            return cryptoStream;
         }
 
         /// <summary>
@@ -129,6 +158,15 @@ namespace Duplicati.Library.Encryption
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument(
+                        COMMANDLINE_SET_THREADLEVEL, 
+                        CommandLineArgument.ArgumentType.Enumeration, 
+                        Strings.AESEncryption.AessetthreadlevelShort, 
+                        Strings.AESEncryption.AessetthreadlevelLong,
+                        "0", 
+                        null, 
+                        new string[] {"0", "1", "2", "3", "4"}
+                        ),
                 });
             }
         }
