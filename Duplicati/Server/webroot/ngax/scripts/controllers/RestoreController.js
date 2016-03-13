@@ -52,7 +52,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         for(var n in $scope.Filesets) {
             var item = $scope.Filesets[n];
             item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
-            item.GroupLabel = n == 0 ? 'Latests' : createGroupLabel(AppUtils.parseDate(item.Time));
+            item.GroupLabel = n == 0 ? 'Latest' : createGroupLabel(AppUtils.parseDate(item.Time));
 
             filesetStamps[item.Version + ''] = item.Time;
         }
