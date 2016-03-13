@@ -34,7 +34,7 @@ namespace Duplicati.Library.UsageReporter
         /// <summary>
         /// The target upload url
         /// </summary>
-        private const string UPLOAD_URL = "https://duplicati-usage-reporter.appspot.com/api/v1/report";
+        private const string UPLOAD_URL = "https://usage-reporter.duplicati.com/api/v1/report";
 
         /// <summary>
         /// The input channel for receiving events

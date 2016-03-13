@@ -120,7 +120,11 @@ namespace Duplicati.Server
 
                     try
                     {
-                        var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate();
+                        Library.AutoUpdater.ReleaseType rt;
+                        if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(Program.DataConnection.ApplicationSettings.UpdateChannel, true, out rt))
+                            rt = Duplicati.Library.AutoUpdater.ReleaseType.Unknown;
+                        
+                        var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate(rt);
                         if (update != null)
                             Program.DataConnection.ApplicationSettings.UpdatedVersion = update;
                     }

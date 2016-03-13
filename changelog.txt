@@ -1,3 +1,9 @@
+2016-03-11
+==========
+* Added support for additional configuration parameters for S3
+* Added download piping for optional parallel hash checking, thanks to Stefan Lück 
+* Drastic improvements for restore speeds, especially on large dataset, thanks to Stefan Lück
+
 2016-02-15
 ==========
 * Added expansion of environment variables in filters

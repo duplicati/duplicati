@@ -111,10 +111,11 @@ namespace Duplicati.Library.AutoUpdater
             Console.WriteLine("{0} - Disables updates completely", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
             Console.WriteLine("{0} - Choose how to handle updates, valid settings: {1}", string.Format(UpdaterManager.UPDATE_STRATEGY_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), string.Join(", ", Enum.GetNames(typeof(AutoUpdateStrategy))));
             Console.WriteLine("{0} - Use alternate updates urls", string.Format(AutoUpdateSettings.UPDATEURL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
+            Console.WriteLine("{0} - Choose different channel than the default {1}, valid settings: {2}", string.Format(AutoUpdateSettings.UPDATECHANNEL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel, string.Join(",", Enum.GetNames(typeof(ReleaseType)).Where( x => x != ReleaseType.Unknown.ToString())));
             Console.WriteLine();
             Console.WriteLine("Updates are downloaded from: {0}", string.Join(";", AutoUpdateSettings.URLs));
             Console.WriteLine("Updates are installed in: {0}", UpdaterManager.INSTALLDIR);
-            Console.WriteLine("The base install dir is: {0}", UpdaterManager.InstalledBaseDir);
+            Console.WriteLine("The base version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.BaseVersion.Displayname, UpdaterManager.BaseVersion.Version, UpdaterManager.InstalledBaseDir);
             Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
             Console.WriteLine();
         }

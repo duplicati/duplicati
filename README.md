@@ -13,6 +13,8 @@ Duplicati is a free, open source, backup client that securely stores encrypted, 
   * Google Drive (Google Docs)
   * Rackspace Cloud Files
   * HubiC
+  * Backblaze (B2)
+  * Amazon Cloud Drive (AmzCD)
   * Swift / OpenStack
   * WebDAV
   * SSH (SFTP)

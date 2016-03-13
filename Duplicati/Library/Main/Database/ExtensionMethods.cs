@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -180,6 +180,9 @@ namespace Duplicati.Library.Main.Database
             qpCmd.Connection = cmd.Connection;
             qpCmd.CommandType = cmd.CommandType;
             qpCmd.Transaction = cmd.Transaction;
+
+            foreach (System.Data.IDataParameter p in cmd.Parameters)
+                qpCmd.AddParameter(p.Value, p.ParameterName);
 
             System.Data.DataTable dt = new System.Data.DataTable();
             using (var rd = qpCmd.ExecuteReader())
