@@ -230,6 +230,9 @@ namespace Duplicati.Library.Main.Operation
                             m_result.AddWarning(string.Format("Failed to process file: {0}", entry.Name), ex);
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
+
+                            if (ex is System.Security.Cryptography.CryptographicException)
+                                throw;
                         }
 
                     //Make sure we write the config
