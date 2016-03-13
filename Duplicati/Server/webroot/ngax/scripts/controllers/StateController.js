@@ -70,5 +70,8 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         $scope.StopReqId = taskId;
     };
 
+    updateStateDisplay();
+    updateActiveTask();
+
 
 });
