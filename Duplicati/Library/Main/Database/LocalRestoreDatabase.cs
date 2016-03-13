@@ -1067,8 +1067,8 @@ namespace Duplicati.Library.Main.Database
                 m_hasUpdates = true;
                 m_updateFileAsDataVerifiedCommand.SetParameterValue(0, targetfileid);
                 var r = m_updateFileAsDataVerifiedCommand.ExecuteNonQuery();
-                if (r <= 0)
-                    throw new Exception("Unexpected reset result");
+                if (r != 1)
+                    throw new Exception("Unexpected result when marking file as verified.");
             }
 
             public void SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata)

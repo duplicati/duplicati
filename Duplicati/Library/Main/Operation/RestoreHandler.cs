@@ -494,8 +494,8 @@ namespace Duplicati.Library.Main.Operation
                         }
                 }
                     
-                if (fileErrors > 0 && brokenFiles.Count > 0)
-                    m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
+                if (fileErrors > 0 || brokenFiles.Count > 0)
+                    m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
 
                 // Drop the temp tables
                 database.DropRestoreTable();
@@ -852,20 +852,39 @@ namespace Duplicati.Library.Main.Operation
                                 return;
 
                             var currentfilelength = m_systemIO.FileLength(targetpath);
+                            var wasTruncated = false;
+
+                            // Adjust file length in overwrite mode if necessary (smaller is ok, will be extended during restore)
+                            // We do it before scanning for blocks. This allows full verification on files that only needs to 
+                            // be truncated (i.e. forthwritten log files).
+                            if (!rename && currentfilelength > targetfilelength)
+                            {
+                                var currentAttr = m_systemIO.GetFileAttributes(targetpath);
+                                if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
+                                {
+                                    if (options.Dryrun) result.AddDryrunMessage(string.Format("Would reset read-only attribute on file: {0}", targetpath));
+                                    else m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                }
+                                if (options.Dryrun)
+                                    result.AddDryrunMessage(string.Format("Would truncate file '{0}' to length of {1:N0} bytes", targetpath, targetfilelength));
+                                else
+                                {
+                                    using (var file = m_systemIO.FileOpenWrite(targetpath))
+                                        file.SetLength(targetfilelength);
+                                    currentfilelength = targetfilelength;
+                                }
+                                wasTruncated = true;
+                            }
 
                             // If file size does not match and we have to rename on conflict, 
-                            // the whole check can be skipped here and all blocks have to be restored anyway.
+                            // the whole scan can be skipped here because all blocks have to be restored anyway.
                             // For the other cases, we will check block and and file hashes and look for blocks
                             // to be restored and files that can already be verified.
                             if (!rename || currentfilelength == targetfilelength)
                             {
-                                // a file hash for verification will only be necessary if the file exact the 
-                                // wanted size so we have a chance to already mark the file as data-verified.
-                                // Actually, we could also check larger files in overwrite mode that only have 
-                                // to be cut (applies to files only being written forth).
-                                // But we will have to touch them to truncate, so we will trigger a separate 
-                                // verification after the file size was adjusted.
-                                bool calcFileHash = (currentfilelength == targetfilelength); 
+                                // a file hash for verification will only be necessary if the file has exactly
+                                // the wanted size so we have a chance to already mark the file as data-verified.
+                                bool calcFileHash = (currentfilelength == targetfilelength);
                                 if (calcFileHash) filehasher.Initialize();
 
                                 using (var file = m_systemIO.FileOpenRead(targetpath))
@@ -916,20 +935,13 @@ namespace Duplicati.Library.Main.Operation
                                     fullfilehashmatch = (filekey == targetfilehash);
                                 }
 
-                                if (!rename) // Adjust file length and reset read-only (if set) attribute to overwrite
+                                if (!rename && !fullfilehashmatch && !wasTruncated) // Reset read-only attribute (if set) to overwrite
                                 {
                                     var currentAttr = m_systemIO.GetFileAttributes(targetpath);
                                     if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
-                                    {   // clear readonly attribute
-                                        if ((currentfilelength > restorelist.Length) || !fullfilehashmatch)
-                                            m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
-                                    }
-
-                                    // Adjust file length if necessary (smaller is ok, will be extended during restore)
-                                    if (currentfilelength > targetfilelength)
                                     {
-                                        using (var file = m_systemIO.FileOpenWrite(targetpath))
-                                            file.SetLength(targetfilelength);
+                                        if (options.Dryrun) result.AddDryrunMessage(string.Format("Would reset read-only attribute on file: {0}", targetpath));
+                                        else m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
                                     }
                                 }
 
@@ -937,7 +949,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     //TODO: Check metadata to trigger rename? If metadata changed, it will still be restored for the file in-place.
                                     blockmarker.SetFileDataVerified(targetfileid);
-                                    result.AddVerboseMessage("Target file exists and is correct version: {0}", targetpath);
+                                    result.AddVerboseMessage("Target file exists{1} and is correct version: {0}", targetpath, wasTruncated ? " (but was truncated)" : "");
                                     rename = false;
                                 }
                                 else if (rename)
