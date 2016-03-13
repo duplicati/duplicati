@@ -42,7 +42,7 @@
                             <label for="target"><a href class="target" ng-click="EditUriState = true">Backup to &gt;</a></label>
                             <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="Enter a url, or click the 'Backup to&gt;' link"></textarea>
                         </div>
-                        <div class="input select">
+                        <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
                             <label for="encryption">Encryption</label>
                             <select name="encryption" id="encryption" ng-model="Options['encryption-module']" ng-options="module.Key as module.DisplayName for module in SystemInfo.EncryptionModules">
                                 <option value="">No encryption</option>
@@ -235,19 +235,23 @@
                 </div>
                 <div class="input multiple text select keepBackups">
                     <label for="keepTimeType">Keep backups<span class="info">i</span></label>
-                    <select id="keepTimeType">
+                    <select id="keepTimeType" ng-model="KeepType">
                         <option value="">forever</option>
-                        <option value="keep-time">for a specific time</option>
-                        <option value="keep-versions">a specific number</option>
+                        <option value="time">for a specific time</option>
+                        <option value="versions">a specific number</option>
                     </select>
-                    <input type="number" id="keepTimeNumber" value="3" />
-                    <select id="keepTimeMultiplier">
-                        <option value="D">Days</option>
-                        <option value="W">Weeks</option>
-                        <option value="M">Months</option>
-                        <option value="Y">Years</option>
-                        <option value="">custom</option>
-                    </select>
+
+                    <input type="number" ng-model="Options['keep-versions']" ng-show="KeepType == 'versions'" />
+                    <div ng-show="KeepType == 'time'">
+                        <input type="number" parse-size-number ng-model="Options['keep-time']" />
+                        <select parse-size-multiplier ng-model="Options['keep-time']" >
+                            <option value="D">Days</option>
+                            <option value="W">Weeks</option>
+                            <option value="M">Months</option>
+                            <option value="Y">Years</option>
+                            <option value="">custom</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="input textarea" ng-show="ShowAdvancedTextArea">
