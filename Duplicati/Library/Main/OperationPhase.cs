@@ -48,6 +48,8 @@ namespace Duplicati.Library.Main
         Recreate_Running,
         Verify_Running,
 
+        BugReport_Running,
+
         Error
     }
 }
