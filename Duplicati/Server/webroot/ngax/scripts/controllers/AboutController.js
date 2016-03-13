@@ -1,5 +1,5 @@
 backupApp.controller('AboutController', function($scope, $location, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils) {
-    $scope.appName = BrandingService.appName;
+    $scope.brandingService = BrandingService.watch($scope);
     $scope.Page = 'general';
     $scope.sysinfo = SystemInfo.watch($scope);
     $scope.state = ServerStatus.watch($scope);

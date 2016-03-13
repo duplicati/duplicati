@@ -4,6 +4,8 @@ namespace Duplicati.Library.Encryption.Strings {
         public static string Description_v2 { get { return LC.L(@"This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption."); } }
         public static string DisplayName { get { return LC.L(@"AES-256 encryption, built in"); } }
         public static string EmptyKeyError { get { return LC.L(@"Blank or empty passphrase not allowed"); } }
+        public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations. Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. multithreading)"); } }
+        public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting (0-4)"); } }
     }
     internal static class EncryptionBase {
         public static string DecryptionError(string message) { return LC.L(@"Failed to decrypt data (invalid passphrase?): {0}", message); }

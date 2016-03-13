@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (doubles.Count > 0)
             {
-                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: ", string.Join(", ", doubles.Keys));
+                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles.Keys));
                 log.AddError(s, null);
                 throw new Exception(s);
             }

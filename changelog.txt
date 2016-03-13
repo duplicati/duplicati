@@ -1,3 +1,30 @@
+2016-03-13
+==========
+* Updated icons for Windows and Linux
+* Improvements to selecting update channels
+* Showing drive labels on Windows
+* Fixed selecting expire intervals with the Ngax theme
+* Minor display fixes
+* Fixes to Amazon Cloud Drive backend
+
+2016-03-12
+==========
+* Added feature to select update channel in the UI
+* Added feature to select usage reporter level in the UI
+
+2016-03-11
+==========
+* Added support for additional configuration parameters for S3
+* Added download piping for optional parallel hash checking, thanks to Stefan Lück 
+* Drastic improvements for restore speeds, especially on large dataset, thanks to Stefan Lück
+
+2016-02-15
+==========
+* Added expansion of environment variables in filters
+* Numerous fixes for Windows
+* Added error message for attempting to restore encrypted backup without a passphrase
+* Added two substantial performance fixes for restoring, thanks to @FootStark and @kunom.
+
 2016-01-27
 ==========
 - Added option for more thorough verification during remote volume test

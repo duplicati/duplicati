@@ -32,7 +32,7 @@ namespace Duplicati.Library.SQLiteHelper
     /// If done correctly, a user may be upgrade from the very first version
     /// to the very latest.
     /// 
-    /// The Schema.sql file should ALWAYS have the latests schema, as that will 
+    /// The Schema.sql file should ALWAYS have the latest schema, as that will 
     /// ensure that new installs do not run upgrades after installation.
     /// Also remember to update the last line in Schema.sql to insert the 
     /// current version number in the version table.

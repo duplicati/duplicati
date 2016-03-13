@@ -112,7 +112,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         select new Serializable.TreeNode()
                     {
                         id = di.RootDirectory.FullName,
-                        text = di.RootDirectory.FullName.Replace('\\', ' ') + "(" + di.DriveType + ")",
+                        text = 
+                            (
+                                string.IsNullOrWhiteSpace(di.VolumeLabel) ? 
+                                di.RootDirectory.FullName.Replace('\\', ' ') : 
+                                di.VolumeLabel + " - " + di.RootDirectory.FullName.Replace('\\', ' ')
+                            ) + "(" + di.DriveType + ")",
                         iconCls = "x-tree-icon-drive"
                     };
                 }

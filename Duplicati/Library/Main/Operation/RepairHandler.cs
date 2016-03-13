@@ -239,6 +239,8 @@ namespace Duplicati.Library.Main.Operation
                                 var w = new IndexVolumeWriter(m_options);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
+
+                                var h = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
 								
                                 foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
                                 {								
@@ -252,7 +254,13 @@ namespace Duplicati.Library.Main.Operation
                                     
                                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                                         foreach(var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                                        {
+                                            var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                                            if (bh != b.Item1)
+                                                throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
+                                            
                                             w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                                        }
                                 }
 								
                                 w.Close();

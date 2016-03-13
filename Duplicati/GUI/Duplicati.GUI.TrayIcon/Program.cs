@@ -60,8 +60,6 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
-            Library.UsageReporter.Reporter.Initialize();
-
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 

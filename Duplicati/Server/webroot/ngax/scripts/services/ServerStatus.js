@@ -54,6 +54,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         'Recreate_Running': 'Recreating database ...',
         'Repair_Running': 'Reparing ...',
         'Verify_Running': 'Verifying ...',
+        'BugReport_Running': 'Creating bug report ...',
         'Error': 'Error!'
     };
 

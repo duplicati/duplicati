@@ -110,7 +110,11 @@ backupApp.directive('backupEditUri', function() {
 
 	            if (!hasTriedCreate && message == 'missing-folder')
 	            {
-	                DialogService.dialog('Create folder?', 'The folder ' + scope.Folder + ' does not exist\nCreate it now?', ['No', 'Yes'], function(ix) {
+	                var folder = scope.Folder;
+	                if ((folder | "") == "")
+	                    folder = scope.Path;
+
+	                DialogService.dialog('Create folder?', 'The folder ' + folder + ' does not exist\nCreate it now?', ['No', 'Yes'], function(ix) {
 	                	if (ix == 1)
 	                    	createFolder();
 	                });

@@ -52,7 +52,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         for(var n in $scope.Filesets) {
             var item = $scope.Filesets[n];
             item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
-            item.GroupLabel = n == 0 ? 'Latests' : createGroupLabel(AppUtils.parseDate(item.Time));
+            item.GroupLabel = n == 0 ? 'Latest' : createGroupLabel(AppUtils.parseDate(item.Time));
 
             filesetStamps[item.Version + ''] = item.Time;
         }
@@ -200,7 +200,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.doSearch = function() {
-        if ($scope.Searching || $scope.restore_step != 1)
+        if ($scope.Searching || $scope.restore_step != 0)
             return;
 
         if (($scope.SearchFilter || '').trim().length == 0) {
@@ -213,7 +213,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var version = $scope.RestoreVersion + '';
         var stamp = filesetStamps[version];
 
-        AppService.get('/backup/' + $scope.BackupID + '/files/*' + $scope.SearchFilter + '*?prefix-only=false&time=' + encodeURIComponent(stamp)).then(
+        AppService.get('/backup/' + $scope.BackupID + '/files/*' + $scope.SearchFilter + '*?prefix-only=false&time=' + encodeURIComponent(stamp) + '&filter=*' + encodeURIComponent($scope.SearchFilter) + '*').then(
             function(resp) {
                 $scope.Searching = false;
                 var searchNodes = [];

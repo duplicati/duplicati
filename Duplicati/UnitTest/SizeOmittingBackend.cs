@@ -26,8 +26,6 @@ namespace Duplicati.UnitTest
     {
         static SizeOmittingBackend() { WrappedBackend = "file"; }
 
-        private static Random random = new Random(42);
-
         public static string WrappedBackend { get; set; }
 
         private IStreamingBackend m_backend;

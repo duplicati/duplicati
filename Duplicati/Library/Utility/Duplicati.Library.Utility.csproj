@@ -68,6 +68,7 @@
     <Compile Include="Strings.cs" />
     <Compile Include="FilterCollector.cs" />
     <Compile Include="HashCalculatingStream.cs" />
+    <Compile Include="DirectStreamLink.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

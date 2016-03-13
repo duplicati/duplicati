@@ -41,6 +41,8 @@ namespace Duplicati.Server.Database
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
             public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
+            public const string UPDATE_CHANNEL = "update-channel";
+            public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
         }
         
         private Dictionary<string, string> m_values;
@@ -62,7 +64,7 @@ namespace Duplicati.Server.Database
                 foreach(var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
                     m_values[n] = null;
                 foreach(var n in m_connection.GetSettings(Connection.APP_SETTINGS_ID))
-                    m_values[n.Name] =  n.Value;
+                    m_values[n.Name] = n.Value;
             }
         }
 
@@ -99,6 +101,9 @@ namespace Duplicati.Server.Database
                     Name = n.Key,
                     Value = n.Value
                 }, Database.Connection.APP_SETTINGS_ID);
+
+            // In case the usage reporter is enabled or disabled, refresh now
+            Program.StartOrStopUsageReporter();
         }
         
         public string StartupDelayDuration
@@ -417,6 +422,33 @@ namespace Duplicati.Server.Database
             }
         }
 
+        public string UpdateChannel
+        {
+            get 
+            {
+                return m_values[CONST.UPDATE_CHANNEL];
+            }
+            set
+            {
+                lock(m_connection.m_lock)
+                    m_values[CONST.UPDATE_CHANNEL] = value;
+                SaveSettings();
+            }
+        }
+
+        public string UsageReporterLevel
+        {
+            get 
+            {
+                return m_values[CONST.USAGE_REPORTER_LEVEL];
+            }
+            set
+            {
+                lock(m_connection.m_lock)
+                    m_values[CONST.USAGE_REPORTER_LEVEL] = value;
+                SaveSettings();
+            }
+        }
     }
 }
 

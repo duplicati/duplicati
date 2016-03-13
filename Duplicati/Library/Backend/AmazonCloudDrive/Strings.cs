@@ -28,6 +28,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string LabelsShort { get { return LC.L(@"The labels to set"); } }
         public static string LabelsLong { get { return LC.L(@"Use this option to set labels on the files and folders created"); } }
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}"""); }
-    }
+        public static string DelayShort { get { return LC.L(@"The consistency delay"); } }
+        public static string DelayLong { get { return LC.L(@"Amazon Cloud drive needs a small delay for results to stay consistent."); } }
+            }
 }
 
