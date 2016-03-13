@@ -690,12 +690,12 @@ namespace Duplicati.Library.Main
 
 
         /// <summary>
-        /// Gets a value indicating whether a temporary folder has been specified
+        /// Gets a value indicating whether the user has forced the locale
         /// </summary>
         public bool HasForcedLocale { get { return m_options.ContainsKey("force-locale"); } }
 
         /// <summary>
-        /// Gets the folder where temporary files are stored
+        /// Gets the forced locale for the current user
         /// </summary>
         public System.Globalization.CultureInfo ForcedLocale
         {

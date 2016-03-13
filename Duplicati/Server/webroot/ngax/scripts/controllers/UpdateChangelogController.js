@@ -1,5 +1,5 @@
 backupApp.controller('UpdateChangelogController', function($scope, BrandingService, ServerStatus, AppService, AppUtils, SystemInfo) {
-    $scope.appName = BrandingService.appName;
+    $scope.brandingService = BrandingService.watch($scope);
     $scope.systeminfo = SystemInfo.watch($scope);
     $scope.serverstate = ServerStatus.watch($scope);
 

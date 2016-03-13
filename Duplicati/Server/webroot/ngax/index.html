@@ -110,7 +110,9 @@
 	<div class="container">
 	    <div class="header">
 	        <div class="logo">
-	            <a href="#/" class="home">{{appName}}</a>
+	            <a href="#/" class="home">{{brandingService.appName}}</a>
+	            <div class="build-suffix" ng-hide="systemInfo.ServerVersionType == 'stable' || systemInfo.ServerVersionType == ''"> &gt; {{systemInfo.ServerVersionType}}</div>
+				<div class="powered-by">{{brandingService.appSubtitle}}</div>	            
 	        </div>
 	        
 	        <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">

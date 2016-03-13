@@ -79,7 +79,7 @@ namespace Duplicati.GUI.TrayIcon
         public static Icon TrayNormal { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal.png" : "Resources.TrayNormal.ico"); } }
         public static Icon TrayNormalError { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalError.ico"); } }
         public static Icon TrayNormalPause { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-pause.png" : "Resources.TrayNormalPause.ico"); } }
-        public static Icon TrayNormalWarning { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalWarning.ico"); } }
+        public static Icon TrayNormalWarning { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalError.ico"); } }
         public static Icon TrayWorking { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-running.png" : "Resources.TrayWorking.ico"); } }
         public static Icon TrayWorkingPause { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-pause.png" : "Resources.TrayWorkingPause.ico"); } }
         

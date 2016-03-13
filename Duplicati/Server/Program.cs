@@ -160,8 +160,6 @@ namespace Duplicati.Server
 
         public static void RealMain(string[] args)
         {
-            Library.UsageReporter.Reporter.Initialize();
-
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
             if (!Library.Utility.Utility.IsClientLinux)
@@ -376,6 +374,8 @@ namespace Duplicati.Server
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
 
+                StartOrStopUsageReporter();
+
                 if (commandlineOptions.ContainsKey("webservice-password"))
                     Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
 
@@ -534,6 +534,20 @@ namespace Duplicati.Server
                     LogHandler.Dispose();
 
             }
+        }
+
+        public static void StartOrStopUsageReporter()
+        {
+            var disableUsageReporter = 
+                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "none", StringComparison.InvariantCultureIgnoreCase)
+                ||
+                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "disabled", StringComparison.InvariantCultureIgnoreCase);
+
+            Library.UsageReporter.ReportType reportLevel;
+            if (!Enum.TryParse<Library.UsageReporter.ReportType>(DataConnection.ApplicationSettings.UsageReporterLevel, true, out reportLevel))                    
+                Library.UsageReporter.Reporter.SetReportLevel(null, disableUsageReporter);
+            else
+                Library.UsageReporter.Reporter.SetReportLevel(reportLevel, disableUsageReporter);
         }
 
         private static void SignalNewEvent(object sender, EventArgs e)

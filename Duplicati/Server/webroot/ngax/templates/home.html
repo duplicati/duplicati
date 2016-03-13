@@ -8,7 +8,7 @@
         </div>
 
         <div ng-hide="activeBackup == null">
-            <strong>Running backup</strong>
+            <strong>Running task: </strong>
             {{activeBackup.Backup.Name}}
 
             <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop'}}</a>

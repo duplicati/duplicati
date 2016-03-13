@@ -207,8 +207,12 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			DialogService.dialog('Missing sources', 'You must choose at least one source folder');
 			$scope.CurrentStep = 1;
 			return;
-
 		}
+
+		if ($scope.KeepType == 'time')
+			delete $scope.Options['keep-versions'];
+		if ($scope.KeepType == 'versions')
+			delete $scope.Options['keep-time'];
 
 		result.Backup.Settings = [];
 		for(var k in opts) {
@@ -309,7 +313,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		};
 
 		function checkForDisabledEncryption(continuation) {
-			if (encryptionEnabled || $scope.Backup.TargetURL.indexOf('file://') == 0)
+			if (encryptionEnabled || $scope.Backup.TargetURL.indexOf('file://') == 0 || $scope.SystemInfo.EncryptionModules.length == 0)
 				continuation();
 			else
 				DialogService.dialog('No encryption', 'You have chosen not to encrypt the backup. Encryption is recommended for all data stored on a remote server.', ['Cancel', 'Continue without encryption'], function(ix) {
@@ -399,9 +403,14 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 		$scope.RepeatPasshrase = $scope.Options['passphrase'];
 
-		delete extopts['--skip-files-larger-than'];
-		delete extopts['--exclude-files-attributes'];
-		delete extopts['--no-encryption'];
+		$scope.KeepType = '';
+		if (($scope.Options['keep-time'] || '').trim().length != 0)
+			$scope.KeepType = 'time';
+		else if (($scope.Options['keep-versions'] || '').trim().length != 0)
+			$scope.KeepType = 'versions';
+
+		for(var n in ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption'])
+			delete extopts[n];
 
 		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
 

@@ -47,6 +47,9 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 				
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.BugReport_Running);
+            m_result.OperationProgressUpdater.UpdateProgress(0);
+
             m_result.AddMessage("Scrubbing filenames from database, this may take a while, please wait");
 
             using(var tmp = new Library.Utility.TempFile())
