@@ -164,6 +164,7 @@ namespace Duplicati.Library.Main.Operation
                                 volumeIds[n.File.Name] = restoredb.RegisterRemoteVolume(n.File.Name, n.FileType, RemoteVolumeState.Uploaded, n.File.Size, new TimeSpan(0), tr);
                     }
                                 
+                    var isFirstFilelist = true;
 
                     foreach(var entry in new AsyncDownloader(filelistWork, backend))
                         try
@@ -182,6 +183,8 @@ namespace Duplicati.Library.Main.Operation
 
                             using(var tmpfile = entry.TempFile)
                             {
+                                isFirstFilelist = false;
+
                                 if (entry.Hash != null && entry.Size > 0)
                                     restoredb.UpdateRemoteVolume(entry.Name, RemoteVolumeState.Verified, entry.Size, entry.Hash, tr);
 
@@ -231,7 +234,7 @@ namespace Duplicati.Library.Main.Operation
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
 
-                            if (ex is System.Security.Cryptography.CryptographicException)
+                            if (isFirstFilelist && ex is System.Security.Cryptography.CryptographicException)
                                 throw;
                         }
 
