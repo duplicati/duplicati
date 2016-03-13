@@ -163,28 +163,6 @@ for OTHER in ${OTHER_UPLOADS}; do
 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
 done
 
-if [ "${RELEASE_TYPE}" == "canary" ]; then
-	echo "To promote this build to experimental, run:"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/experimental/latest.zip"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/experimental/latest.zip.sig"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/experimental/latest.zip.sig.asc"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/experimental/latest.manifest"
-
-elif [ "${RELEASE_TYPE}" == "experimental" ]; then
-	echo "To promote this build to beta, run:"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/beta/latest.zip"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/beta/latest.zip.sig"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/beta/latest.zip.sig.asc"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/beta/latest.manifest"
-
-elif [ "${RELEASE_TYPE}" == "beta" ]; then
-	echo "To promote this build to stable, run:"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/beta/latest.zip"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/beta/latest.zip.sig"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/beta/latest.zip.sig.asc"
-	echo aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/beta/latest.manifest"
-fi
-
 ZIP_MD5=`md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}'`
 ZIP_SHA1=`shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
 ZIP_SHA256=`shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
