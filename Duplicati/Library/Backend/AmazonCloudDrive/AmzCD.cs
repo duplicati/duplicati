@@ -337,9 +337,11 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         {
             try
             {
-                using(m_oauth.GetResponse(string.Format("{0}/nodes/{1}/children/{2}", MetadataUrl, CurrentDirectory.ID, GetFileID(remotename)), null, "DELETE"))
+                using(m_oauth.GetResponse(string.Format("{0}/trash/{1}", MetadataUrl, GetFileID(remotename)), null, "PUT"))
                 {
                 }
+
+                m_filecache.Remove(remotename);
             }
             catch
             {
