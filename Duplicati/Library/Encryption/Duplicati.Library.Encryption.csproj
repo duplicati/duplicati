@@ -40,7 +40,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="SharpAESCrypt">
-      <HintPath>..\..\..\packages\SharpAESCrypt.dll.1.0.0\lib\net20\SharpAESCrypt.dll</HintPath>
+      <HintPath>..\..\..\packages\SharpAESCrypt.dll.1.2.1\lib\net20\SharpAESCrypt.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
