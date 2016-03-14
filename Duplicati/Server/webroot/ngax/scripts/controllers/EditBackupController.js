@@ -15,9 +15,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     $scope.ExcludeLargeFiles = false;
 
     $scope.fileAttributes = [
-    	{name: 'Hidden files', value: 'hidden'}, 
-    	{name: 'System files', value: 'system'}, 
-    	{name: 'Temporary files', value: 'temporary'}
+    	{'name': 'Hidden files', 'value': 'hidden'}, 
+    	{'name': 'System files', 'value': 'system'}, 
+    	{'name': 'Temporary files', 'value': 'temporary'}
 	];
 
 	var scope = $scope;
@@ -41,7 +41,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		else if ((passphrase || '') == '')
 			scope.PassphraseScore = '';
 		else
-			scope.PassphraseScore = (zxcvbn(passphrase) || {score: -1}).score;
+			scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
 
 		scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || 'Unknown';	
 	}
