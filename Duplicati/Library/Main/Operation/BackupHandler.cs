@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
             m_symlinkPolicy = m_options.SymlinkPolicy;
                 
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
+                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
         }
         
         
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main.Operation
                     throw;
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
-                    log.AddWarning(Strings.RSyncDir.SnapshotFailedError(ex.ToString()), ex);
+                    log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
                 }
             }
 
@@ -652,14 +652,14 @@ namespace Duplicati.Library.Main.Operation
                 m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 
                 if (m_blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (m_filehasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
 
                 if (!m_blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
                 if (!m_filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                 // If there is no filter, we set an empty filter to simplify the code

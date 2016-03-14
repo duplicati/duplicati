@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                     if (hashalg == null)
-                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                     var hashsize = hashalg.HashSize / 8;
 
                     //Grab all index files, and update the block table

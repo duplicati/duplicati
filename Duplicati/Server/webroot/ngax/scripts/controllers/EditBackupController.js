@@ -15,9 +15,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     $scope.ExcludeLargeFiles = false;
 
     $scope.fileAttributes = [
-    	{name: 'Hidden files', value: 'hidden'}, 
-    	{name: 'System files', value: 'system'}, 
-    	{name: 'Temporary files', value: 'temporary'}
+    	{'name': 'Hidden files', 'value': 'hidden'}, 
+    	{'name': 'System files', 'value': 'system'}, 
+    	{'name': 'Temporary files', 'value': 'temporary'}
 	];
 
 	var scope = $scope;
@@ -41,7 +41,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		else if ((passphrase || '') == '')
 			scope.PassphraseScore = '';
 		else
-			scope.PassphraseScore = (zxcvbn(passphrase) || {score: -1}).score;
+			scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
 
 		scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || 'Unknown';	
 	}
@@ -209,10 +209,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			return;
 		}
 
-		if ($scope.KeepType == 'time')
-			delete $scope.Options['keep-versions'];
-		if ($scope.KeepType == 'versions')
-			delete $scope.Options['keep-time'];
+		if ($scope.KeepType == 'time' || $scope.KeepType == '')
+			delete opts['keep-versions'];
+		if ($scope.KeepType == 'versions' || $scope.KeepType == '')
+			delete opts['keep-time'];
 
 		result.Backup.Settings = [];
 		for(var k in opts) {
@@ -405,12 +405,18 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 		$scope.KeepType = '';
 		if (($scope.Options['keep-time'] || '').trim().length != 0)
+		{
 			$scope.KeepType = 'time';
+		}
 		else if (($scope.Options['keep-versions'] || '').trim().length != 0)
+		{
+			$scope.Options['keep-versions'] = parseInt($scope.Options['keep-versions']);
 			$scope.KeepType = 'versions';
+		}
 
-		for(var n in ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption'])
-			delete extopts[n];
+		var delopts = ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption']
+		for(var n in delopts)
+			delete extopts[delopts[n]];
 
 		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
 

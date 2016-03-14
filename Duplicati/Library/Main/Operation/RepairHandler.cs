@@ -20,7 +20,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
+                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
         }
         
         public void Run(Library.Utility.IFilter filter = null)
@@ -107,9 +107,9 @@ namespace Duplicati.Library.Main.Operation
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 				
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();

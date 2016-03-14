@@ -126,14 +126,14 @@ namespace Duplicati.Library.Main.Operation
                                     blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                                     filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                                     if (blockhasher == null)
-                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                                     if (!blockhasher.CanReuseTransform)
-                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                                     if (filehasher == null)
-                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                                     if (!filehasher.CanReuseTransform)
-                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                                     // Don't run this again
                                     first = false;
@@ -347,14 +347,14 @@ namespace Duplicati.Library.Main.Operation
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                 if (filehasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                 if (!filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 if (!m_options.NoBackendverification)
                 {
@@ -494,8 +494,10 @@ namespace Duplicati.Library.Main.Operation
                         }
                 }
                     
-                if (fileErrors > 0 || brokenFiles.Count > 0)
+                if (fileErrors > 0 && brokenFiles.Count > 0)
                     m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
+                else if (fileErrors > 0)
+                    m_result.AddMessage(string.Format("Failed to restore {0} files", fileErrors));
 
                 // Drop the temp tables
                 database.DropRestoreTable();
