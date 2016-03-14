@@ -494,8 +494,10 @@ namespace Duplicati.Library.Main.Operation
                         }
                 }
                     
-                if (fileErrors > 0 || brokenFiles.Count > 0)
+                if (fileErrors > 0 && brokenFiles.Count > 0)
                     m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
+                else if (fileErrors > 0)
+                    m_result.AddMessage(string.Format("Failed to restore {0} files", fileErrors));
 
                 // Drop the temp tables
                 database.DropRestoreTable();
