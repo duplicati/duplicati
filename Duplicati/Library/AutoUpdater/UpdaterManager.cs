@@ -216,18 +216,17 @@ namespace Duplicati.Library.AutoUpdater
             if (channel == ReleaseType.Unknown)
                 channel = AutoUpdateSettings.DefaultUpdateChannel;
 
-            // Attempt to match the url to change the channel if possible
-            // This allows overrides to the URLs for deployment of custom builds,
-            // but does not require that they adopt the channel system
-            var re = new System.Text.RegularExpressions.Regex(string.Format("(?<prefix>.+)(?<channel>{0})(?<filename>/([^/]+).manifest)", string.Join("|", Enum.GetNames(typeof(ReleaseType)).Union(new [] { "preview", "rene" }) )), System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
             foreach(var rawurl in MANIFEST_URLS)
             {
                 var url = rawurl;
-                var match = re.Match(url);
+
+                // Attempt to match the url to change the channel if possible
+                // This allows overrides to the URLs for deployment of custom builds,
+                // but does not require that they adopt the channel system
+                var match = AutoUpdateSettings.MATCH_AUTOUPDATE_URL.Match(url);
                 if (match.Success)
                 {
-                    var mg = match.Groups["channel"];
+                    var mg = match.Groups[AutoUpdateSettings.MATCH_UPDATE_URL_CHANNEL_GROUP];
 
                     // Replace the channel name with the chosen channel
                     url =

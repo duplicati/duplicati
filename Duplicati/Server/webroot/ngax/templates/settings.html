@@ -82,7 +82,7 @@
         <div class="input mixed multiple">
             <label for="usagereporterlevel">Anonymous usage reports</label>
             <select id="usagereporterlevel" ng-model="usageReporterLevel">
-                <option value="">System default</option>
+                <option value="">System default ({{SystemInfo.DefaultUsageReportLevel}})</option>
                 <option value="information">Usage statistics, warnings, errors, and crashes</option>
                 <option value="warning">Warnings, errors and crashes</option>
                 <option value="error">Errors and crashes</option>

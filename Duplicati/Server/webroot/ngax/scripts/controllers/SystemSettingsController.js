@@ -20,6 +20,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
         $scope.updateChannel = data.data['update-channel'];
+        $scope.originalUpdateChannel = data.data['update-channel'];
         $scope.usageReporterLevel = data.data['usage-reporter-level'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
 
@@ -55,6 +56,10 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {
+                // Check for updates if we changed the channel
+                if ($scope.updateChannel != $scope.originalUpdateChannel)
+                    AppService.post('/updates/check');
+
                 $location.path('/');
             },
             AppUtils.connectionError(Localization.localize('Failed to save: '))

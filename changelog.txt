@@ -1,3 +1,17 @@
+2016-03-13
+==========
+* Updated icons for Windows and Linux
+* Improvements to selecting update channels
+* Showing drive labels on Windows
+* Fixed selecting expire intervals with the Ngax theme
+* Minor display fixes
+* Fixes to Amazon Cloud Drive backend
+
+2016-03-12
+==========
+* Added feature to select update channel in the UI
+* Added feature to select usage reporter level in the UI
+
 2016-03-11
 ==========
 * Added support for additional configuration parameters for S3
