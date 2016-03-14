@@ -209,10 +209,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			return;
 		}
 
-		if ($scope.KeepType == 'time')
-			delete $scope.Options['keep-versions'];
-		if ($scope.KeepType == 'versions')
-			delete $scope.Options['keep-time'];
+		if ($scope.KeepType == 'time' || $scope.KeepType == '')
+			delete opts['keep-versions'];
+		if ($scope.KeepType == 'versions' || $scope.KeepType == '')
+			delete opts['keep-time'];
 
 		result.Backup.Settings = [];
 		for(var k in opts) {
@@ -405,9 +405,14 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 		$scope.KeepType = '';
 		if (($scope.Options['keep-time'] || '').trim().length != 0)
+		{
 			$scope.KeepType = 'time';
+		}
 		else if (($scope.Options['keep-versions'] || '').trim().length != 0)
+		{
+			$scope.Options['keep-versions'] = parseInt($scope.Options['keep-versions']);
 			$scope.KeepType = 'versions';
+		}
 
 		var delopts = ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption']
 		for(var n in delopts)
