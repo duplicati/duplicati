@@ -154,9 +154,9 @@ namespace Duplicati.Library.Main.Operation
             var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
  
             if (blockhasher == null)
-                throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                throw new Exception(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
             if (!blockhasher.CanReuseTransform)
-                throw new Exception(Strings.Foresthash.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                throw new Exception(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
                 
             var hashsize = blockhasher.HashSize / 8;
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);

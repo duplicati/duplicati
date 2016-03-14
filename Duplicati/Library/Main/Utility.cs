@@ -49,9 +49,9 @@ namespace Duplicati.Library.Main
                 m_values = values;
                 var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
                 if (hasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
                 if (!hasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
                     
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))

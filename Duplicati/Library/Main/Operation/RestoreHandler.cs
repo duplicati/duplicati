@@ -126,14 +126,14 @@ namespace Duplicati.Library.Main.Operation
                                     blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                                     filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                                     if (blockhasher == null)
-                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                                     if (!blockhasher.CanReuseTransform)
-                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                                     if (filehasher == null)
-                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                                     if (!filehasher.CanReuseTransform)
-                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                                     // Don't run this again
                                     first = false;
@@ -347,14 +347,14 @@ namespace Duplicati.Library.Main.Operation
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                 if (filehasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                 if (!filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 if (!m_options.NoBackendverification)
                 {
