@@ -602,7 +602,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (filehash != item.Hash)
-                            throw new Duplicati.Library.Main.BackendManager.HashMismathcException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, filehash));
+                            throw new Duplicati.Library.Main.BackendManager.HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, filehash));
                     }
                     else
                         item.Hash = filehash;
