@@ -1,3 +1,8 @@
+2016-03-14
+==========
+* Added options to run AES encryption with two threads, and decryption with up to four
+* Fixed some minor issues with the UI introduced in the previous build
+
 2016-03-13
 ==========
 * Updated icons for Windows and Linux
