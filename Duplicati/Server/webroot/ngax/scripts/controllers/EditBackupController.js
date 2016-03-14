@@ -409,8 +409,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		else if (($scope.Options['keep-versions'] || '').trim().length != 0)
 			$scope.KeepType = 'versions';
 
-		for(var n in ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption'])
-			delete extopts[n];
+		var delopts = ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption']
+		for(var n in delopts)
+			delete extopts[delopts[n]];
 
 		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
 
