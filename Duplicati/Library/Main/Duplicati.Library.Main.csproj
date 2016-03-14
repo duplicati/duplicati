@@ -168,6 +168,7 @@
   </Target>
   -->
   <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

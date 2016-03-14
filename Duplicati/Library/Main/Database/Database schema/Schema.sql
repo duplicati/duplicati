@@ -97,23 +97,12 @@ CREATE TABLE "BlocklistHash" (
 );
 
 /*
--- Proposal: Completely remove table "BlocklistHash" (needs cleanup in code), maybe use view if necessary at all.
--- Table is dispensable, info is better retrieved by joining on demand:
-CREATE VIEW "BlocklistHash" AS
-SELECT "BlocksetEntry"."BlocksetID", "BlocksetEntry"."Index", "Block"."Hash"
-  FROM "BlocksetEntry" LEFT JOIN "Block" ON "Block"."ID" = "BlocksetEntry"."BlockID";
-*/
-
-/*
 The blockset is a list of blocks
-
 Note that Length is actually redundant,
 it can be calculated by 
 SUM(Blockset.Size)
-
 The FullHash is the hash of the entire
 blob when reconstructed
-
 */
 CREATE TABLE "Blockset" (
 	"ID" INTEGER PRIMARY KEY,
@@ -128,30 +117,20 @@ The elements of a blocklist,
 the hash is the block hash,
 they are grouped by the BlocksetID
 and ordered by the index
+For general speed and storage improvement 
+we use a table with option "WITHOUT ROWID"
+["WITHOUT ROWID" available since SQLite v3.8.2 (= System.Data.SQLite v1.0.90.0, rel 2013-12-23)]
 */
+  
 CREATE TABLE "BlocksetEntry" (
 	"BlocksetID" INTEGER NOT NULL,
 	"Index" INTEGER NOT NULL,
-	"BlockID" INTEGER NOT NULL
-);
-
-/* As this table is a cross table we need fast lookup */
-CREATE INDEX "BlocksetEntryIds_Forward" ON "BlocksetEntry" ("BlocksetID", "BlockID");
-CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID", "BlocksetID");
-
-/*
--- Proposal: for general speed and storage improvement
--- ["WITHOUT ROWID" works with SQLite v3.8.2 (eq System.Data.SQLite v1.0.90.0, rel 2013-12-23) and later]
-
-CREATE TABLE "BlocksetEntry" (
-	"BlocksetID" INTEGER NOT NULL,
-	"Index" INTEGER NOT NULL,
-	"BlockID" INTEGER NOT NULL
+	"BlockID" INTEGER NOT NULL,
 	CONSTRAINT "BlocksetEntry_PK_IdIndex" PRIMARY KEY ("BlocksetID", "Index")
 ) WITHOUT ROWID;
-CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID");
-*/ 
 
+/* As this table is a cross table we need fast lookup */
+CREATE INDEX "BlocksetEntry_IndexIdsBackwards" ON "BlocksetEntry" ("BlockID");
 
 
 /*
@@ -166,12 +145,10 @@ CREATE TABLE "Block" (
 );
 
 /* This is the most performance critical part of the database */
-CREATE UNIQUE INDEX "BlockHashSize" ON Block ("Hash", "Size");
+CREATE UNIQUE INDEX "BlockHashSize" ON "Block" ("Hash", "Size");
 
-/*
--- Proposal: Add index for faster deletion
-CREATE INDEX "BlockByVolumeId" ON Block ("VolumeID");
-*/
+/* Add index for faster volume based block access (for compacting) */
+CREATE INDEX "Block_IndexByVolumeId" ON "Block" ("VolumeID");
 
 /*
 The deleted block hashes,
@@ -193,7 +170,6 @@ CREATE TABLE "DuplicateBlock" (
     "BlockID" INTEGER NOT NULL,
     "VolumeID" INTEGER NOT NULL
 );
-
 
 /*
 A metadata set, essentially a placeholder
@@ -251,4 +227,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (4);
+INSERT INTO "Version" ("Version") VALUES (5);
