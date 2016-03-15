@@ -165,6 +165,8 @@ namespace Duplicati.Library.Main.Operation
                     }
                                 
                     var isFirstFilelist = true;
+                    var blocksize = m_options.Blocksize;
+                    var hashes_pr_block = (blocksize + m_options.BlockhashSize - 1) / m_options.BlockhashSize;
 
                     foreach(var entry in new AsyncDownloader(filelistWork, backend))
                         try
@@ -209,7 +211,10 @@ namespace Duplicati.Library.Main.Operation
                                             }
                                             else if (fe.Type == FilelistEntryType.File)
                                             {
-                                                var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, tr);
+                                                var expectedblocks = (fe.Size + blocksize - 1)  / blocksize;
+                                                var expectedblocklisthashes = (expectedblocks + hashes_pr_block - 1) / hashes_pr_block;
+                                                
+                                                var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
                                                 restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, fe.Metahash, fe.Metahash == null ? -1 : fe.Metasize, tr);
                                             }
                                             else if (fe.Type == FilelistEntryType.Symlink)
