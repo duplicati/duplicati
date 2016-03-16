@@ -220,7 +220,7 @@ namespace Duplicati.Library.Main.Operation
                             
                             // TODO: Much faster if we iterate the volume and checks what blocks are used,
                             // because the compressors usually like sequential reading
-                            using(var file = m_systemIO.FileOpenReadWrite(targetpath))
+                            using(var file = m_systemIO.FileOpenWrite(targetpath))
                                 foreach(var targetblock in restorelist.Blocks)
                                 {
                                     file.Position = targetblock.Offset;
@@ -572,7 +572,7 @@ namespace Duplicati.Library.Main.Operation
 	    						m_systemIO.DirectoryCreate(folderpath);
 	    					}
         				
-	                		using(var targetstream = options.Dryrun ? null : m_systemIO.FileCreate(targetpath))
+	                		using(var targetstream = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
 	                		{
 	                			try
 	                			{
@@ -674,13 +674,9 @@ namespace Duplicati.Library.Main.Operation
     						m_systemIO.DirectoryCreate(folderpath);
     					}
                     
-                        using (var file = options.Dryrun ? null : m_systemIO.FileOpenReadWrite(targetpath))
-                        using (var block = new Blockprocessor(file, blockbuffer))
+                        using (var file = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
                             foreach (var targetblock in restorelist.Blocks)
                             {
-                                if (!options.Dryrun && !targetblock.IsMetadata)
-                                	file.Position = targetblock.Offset;
-                                	
                                 foreach (var source in targetblock.Blocksources)
                                 {
                                     try
@@ -713,7 +709,10 @@ namespace Duplicati.Library.Main.Operation
                                                                 if (targetblock.IsMetadata)
                                                                     metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
                                                                 else
-    	                                                            file.Write(blockbuffer, 0, size);
+                                                                {
+                                                                    file.Position = targetblock.Offset;
+                                                                    file.Write(blockbuffer, 0, size);
+                                                                }
                                                             }
     	                                                        
                                                             blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size, false);
@@ -1002,7 +1001,7 @@ namespace Duplicati.Library.Main.Operation
                                 filehasher.Initialize();
                                 
                                 string key;
-                                using(var file = m_systemIO.FileOpenReadWrite(tr))
+                                using(var file = m_systemIO.FileOpenRead(tr))
                                     key = Convert.ToBase64String(filehasher.ComputeHash(file));
                                     
                                 if (key == targetfilehash)
