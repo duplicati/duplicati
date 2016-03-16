@@ -364,18 +364,30 @@ namespace Duplicati.Library.Main
 	        			entries = m_dbqueue;
 	        			m_dbqueue = new List<IDbEntry>();
 	        		}
-	        	
+
+                // collect removed volumes for final db cleanup.
+                HashSet<string> volsRemoved = new HashSet<string>();
+
 	        	//As we replace the list, we can now freely access the elements without locking
 	        	foreach(var e in entries)
 	        		if (e is DbOperation)
 	        			db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
-	        		else if (e is DbUpdate)
-	        			db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
+                    else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
+                    {
+                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, transaction);
+                        volsRemoved.Add(((DbUpdate)e).Remotename);
+                    }
+                    else if (e is DbUpdate)
+                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
                     else if (e is DbRename)
                         db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
-	        		else if (e != null)
-	        			m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
-	        			
+                    else if (e != null)
+                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
+
+                // Finally remove volumes from DB.
+                if (volsRemoved.Count > 0)
+                    db.RemoveRemoteVolumes(volsRemoved);
+
 	        	return true;
 	        }
         }
