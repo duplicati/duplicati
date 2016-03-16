@@ -232,9 +232,7 @@ namespace Duplicati.Library.SQLiteHelper
                 UpgradeDatabase(connection, sourcefile, schema, versions);
                 return;
             }
-
-
-            if (versions.Count > dbversion)
+            else if (versions.Count > dbversion)
             {
                 string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
 
@@ -250,14 +248,20 @@ namespace Duplicati.Library.SQLiteHelper
                     {
                         //TODO: Find a better way to split SQL statements, as there may be embedded semicolons
                         //in the SQL, like "UPDATE x WHERE y = ';';"
+                        
+                        // Preparse before splitting to enable statement spanning conditional blocks
+                        string versionscript = PreparseSQL(versions[i], preparserVars);
 
                         //We split them to get a better error message
-                        foreach (string c in versions[i].Split(';'))
+                        foreach (string c in versionscript.Split(';'))
                             if (c.Trim().Length > 0)
                             {
-                                cmd.CommandText = PreparseSQL(c, preparserVars);
+                                cmd.CommandText = c;
                                 cmd.ExecuteNonQuery();
                             }
+
+                        // after upgrade, db_version should have changed to i + 1. If logic changes, just requery.
+                        preparserVars["db_version"] = i + 1;
                     }
 
                     //Update databaseversion, so we don't run the scripts again
