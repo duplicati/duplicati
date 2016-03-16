@@ -1,4 +1,14 @@
-﻿/* 
+﻿/*
+Syntax notes (Applying to schema.sql and versioning x.*.sql files):
+Be careful with semicolons, it is used as a simple Split-point for statements.
+For conditional schema statements, a preprocesossor exists. Example:
+{#if sqlite_version >= 3.8.2} DO_SOMETHING {#else} DO_SOMETHING_ELSE {#endif}
+Variables available: sqlite_version (type Version) and db_version (type int)
+Nesting is possible when appending a number in the form "_x" to the #if #else #endif.
+{#if sqlite_version >= 3.8.2} DO_SOMETHING_3.8 {#else} {#if_1 sqlite_version >= 3.6.5} DO_SOMETHING_3.6 {#else_1} DO_SOMETHING_ELSE {#endif_1} {#endif}
+*/
+
+/* 
 The operation table is a local table 
 that is used to record all operations
 for later debug inspection, and can be
@@ -98,14 +108,11 @@ CREATE TABLE "BlocklistHash" (
 
 /*
 The blockset is a list of blocks
-
 Note that Length is actually redundant,
 it can be calculated by 
 SUM(Blockset.Size)
-
 The FullHash is the hash of the entire
 blob when reconstructed
-
 */
 CREATE TABLE "Blockset" (
 	"ID" INTEGER PRIMARY KEY,
@@ -120,16 +127,21 @@ The elements of a blocklist,
 the hash is the block hash,
 they are grouped by the BlocksetID
 and ordered by the index
+For general speed and storage improvement 
+we use a table with option "WITHOUT ROWID"
+["WITHOUT ROWID" available since SQLite v3.8.2 (= System.Data.SQLite v1.0.90.0, rel 2013-12-23)]
 */
+  
 CREATE TABLE "BlocksetEntry" (
 	"BlocksetID" INTEGER NOT NULL,
 	"Index" INTEGER NOT NULL,
-	"BlockID" INTEGER NOT NULL
-);
+	"BlockID" INTEGER NOT NULL,
+	CONSTRAINT "BlocksetEntry_PK_IdIndex" PRIMARY KEY ("BlocksetID", "Index")
+) {#if sqlite_version >= 3.8.2} WITHOUT ROWID {#endif};
 
 /* As this table is a cross table we need fast lookup */
-CREATE INDEX "BlocksetEntryIds_Forward" ON "BlocksetEntry" ("BlocksetID", "BlockID");
-CREATE INDEX "BlocksetEntryIds_Backwards" ON "BlocksetEntry" ("BlockID", "BlocksetID");
+CREATE INDEX "BlocksetEntry_IndexIdsBackwards" ON "BlocksetEntry" ("BlockID");
+
 
 /*
 The individual block hashes,
@@ -143,7 +155,10 @@ CREATE TABLE "Block" (
 );
 
 /* This is the most performance critical part of the database */
-CREATE UNIQUE INDEX "BlockHashSize" ON Block ("Hash", "Size");
+CREATE UNIQUE INDEX "BlockHashSize" ON "Block" ("Hash", "Size");
+
+/* Add index for faster volume based block access (for compacting) */
+CREATE INDEX "Block_IndexByVolumeId" ON "Block" ("VolumeID");
 
 /*
 The deleted block hashes,
@@ -165,7 +180,6 @@ CREATE TABLE "DuplicateBlock" (
     "BlockID" INTEGER NOT NULL,
     "VolumeID" INTEGER NOT NULL
 );
-
 
 /*
 A metadata set, essentially a placeholder
@@ -223,4 +237,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (4);
+INSERT INTO "Version" ("Version") VALUES (5);
