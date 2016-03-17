@@ -995,7 +995,7 @@ namespace Duplicati.Library.Main
 
                 string fileHash;
                 long dataSizeDownloaded;
-                if (m_options.EnablePipedDownstreams)
+                if (m_options.EnablePipedStreaming)
                     tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
                 else
                     tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
@@ -1216,19 +1216,13 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
 
+            hash = null; size = -1;
             var req = new FileEntryItem(OperationType.Get, remotename, -1, null);
             if (m_queue.Enqueue(req))
-            {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
-            }
+                ((IDownloadWaitHandle) req).Wait(out hash, out size);
 
             if (m_lastException != null)
                 throw m_lastException;
-
-            size = req.Size;
-            hash = req.Hash;
 
             return (Library.Utility.TempFile)req.Result;
         }
@@ -1239,12 +1233,8 @@ namespace Duplicati.Library.Main
 				throw m_lastException;
 
 			var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
-			if (m_queue.Enqueue(req))
-			{
-				req.WaitForComplete();
-				if (req.Exception != null)
-					throw req.Exception;
-			}
+            if (m_queue.Enqueue(req))
+                ((IDownloadWaitHandle)req).Wait();
 
 			if (m_lastException != null)
 				throw m_lastException;

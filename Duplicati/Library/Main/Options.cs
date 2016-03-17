@@ -510,7 +510,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
 
-                    new CommandLineArgument("enable-piped-downstreams", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnablepipingShort, Strings.Options.EnablepipingLong, "false"),
+                    new CommandLineArgument("enable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnablepipingShort, Strings.Options.EnablepipingLong, "false"),
                 });
 
                 return lst;
@@ -940,9 +940,9 @@ namespace Duplicati.Library.Main
         public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
 
         /// <summary>
-        /// A value indicating if multithreaded pipes may be used for decryption on downloads
+        /// A value indicating if multithreaded pipes may be used for hashing and crypting on up-/downloads
         /// </summary>
-        public bool EnablePipedDownstreams { get { return GetBool("enable-piped-downstreams"); } }
+        public bool EnablePipedStreaming { get { return GetBool("enable-piped-streaming"); } }
 
         /// <summary>
         /// Gets the timelimit for removal
