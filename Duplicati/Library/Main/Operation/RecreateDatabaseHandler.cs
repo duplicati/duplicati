@@ -196,6 +196,9 @@ namespace Duplicati.Library.Main.Operation
                                     hasUpdatedOptions = true;
                                 }
 
+                                var blocksize = m_options.Blocksize;
+                                var hashes_pr_block = (blocksize + m_options.BlockhashSize - 1) / m_options.BlockhashSize;
+
                                 // Create timestamped operations based on the file timestamp
                                 var filesetid = restoredb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
                                 using(var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
@@ -334,73 +337,164 @@ namespace Duplicati.Library.Main.Operation
                     // if we are still missing data, we must now fetch block files
                     restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, null);
                 
-                    //We do this in three passes
-                    for(var i = 0; i < 3; i++)
+
+                    var repairindex = m_options.IndexfilePolicy == Options.IndexFileStrategy.None ? null : new IndexVolumeWriter(m_options);
+                    if (repairindex != null)
+                        repairindex.VolumeID = dbparent.RegisterRemoteVolume(repairindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
+                    
+                        
+                    try
                     {
-                        // Grab the list matching the pass type
-                        var lst = restoredb.GetMissingBlockListVolumes(i).ToList();
-                        if (lst.Count > 0)
+                        //We do this in three passes
+                        for(var i = 0; i < 3; i++)
                         {
-                            switch (i)
+                            // Grab the list matching the pass type
+                            var lst = restoredb.GetMissingBlockListVolumes(i).ToList();
+                            if (lst.Count > 0)
                             {
-                                case 0:
-                                    if (m_options.Verbose)
-                                        m_result.AddVerboseMessage("Processing required {0} blocklist volumes: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
-                                    else
-                                        m_result.AddMessage(string.Format("Processing required {0} blocklist volumes", lst.Count));
-                                    break;
-                                case 1:
-                                    if (m_options.Verbose)
-                                        m_result.AddVerboseMessage("Probing {0} candidate blocklist volumes: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
-                                    else
-                                        m_result.AddMessage(string.Format("Probing {0} candidate blocklist volumes", lst.Count));
-                                    break;
-                                default:
-                                    if (m_options.Verbose)
-                                        m_result.AddVerboseMessage("Processing all of the {0} volumes for blocklists: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
-                                    else
-                                        m_result.AddMessage(string.Format("Processing all of the {0} volumes for blocklists", lst.Count));
-                                    break;
+                                switch (i)
+                                {
+                                    case 0:
+                                        if (m_options.Verbose)
+                                            m_result.AddVerboseMessage("Processing required {0} blocklist volumes: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
+                                        else
+                                            m_result.AddMessage(string.Format("Processing required {0} blocklist volumes", lst.Count));
+                                        break;
+                                    case 1:
+                                        if (m_options.Verbose)
+                                            m_result.AddVerboseMessage("Probing {0} candidate blocklist volumes: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
+                                        else
+                                            m_result.AddMessage(string.Format("Probing {0} candidate blocklist volumes", lst.Count));
+                                        break;
+                                    default:
+                                        if (m_options.Verbose)
+                                            m_result.AddVerboseMessage("Processing all of the {0} volumes for blocklists: {1}", lst.Count, string.Join(", ", lst.Select(x => x.Name)));
+                                        else
+                                            m_result.AddMessage(string.Format("Processing all of the {0} volumes for blocklists", lst.Count));
+                                        break;
+                                }
                             }
+
+                            var progress = 0;
+                            foreach(var sf in new AsyncDownloader(lst, backend))
+                                using(var tmpfile = sf.TempFile)
+                                using(var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
+                                using(var tr = restoredb.BeginTransaction())
+                                {
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    {
+                                        backend.WaitForComplete(restoredb, null);
+                                        return;
+                                    }    
+                            
+                                    progress++;
+                                    m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
+
+                                    var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
+
+                                    restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
+                            
+                                    if (repairindex != null)
+                                        repairindex.StartVolume(sf.Name);
+
+                                    // Update the block table so we know about the block/volume map
+                                    var addeditems = false;
+                                    foreach(var h in rd.Blocks)
+                                        if (restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr) && repairindex != null)
+                                        {
+                                            addeditems = true;
+                                            repairindex.AddBlock(h.Key, h.Value);
+                                        }
+
+                                    if (repairindex != null && addeditems)
+                                        restoredb.AddIndexBlockLink(repairindex.VolumeID, volumeid, tr);
+
+                                    if (repairindex != null)
+                                        repairindex.FinishVolume(sf.Hash, sf.Size);
+                            
+                                    // Grab all known blocklists from the volume
+                                    foreach(var blocklisthash in restoredb.GetBlockLists(volumeid))
+                                        if (restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr))
+                                        {
+                                            if (repairindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                                            {
+                                                repairindex.WriteBlocklist(blocklisthash, rd.ReadBlocklistRaw(blocklisthash));
+                                                if (repairindex.Filesize > m_options.VolumeSize)
+                                                {
+                                                    var filesize = repairindex.Filesize;
+                                                    repairindex.Close();
+                                                    if (m_options.Dryrun)
+                                                    {
+                                                        m_result.AddDryrunMessage(string.Format("Would upload new index volume with newly obtained information ({0})", Library.Utility.Utility.FormatSizeString(filesize)));
+                                                        repairindex.Dispose();
+                                                    }
+                                                    else
+                                                    {
+                                                        dbparent.UpdateRemoteVolume(repairindex.RemoteFilename, RemoteVolumeState.Uploading, filesize, null, tr);
+                                                        m_result.AddMessage(string.Format("Uploading new index volume with newly obtained information ({0})", Library.Utility.Utility.FormatSizeString(filesize)));
+                                                        backend.Put(repairindex);
+                                                    }
+
+                                                    repairindex = new IndexVolumeWriter(m_options);
+                                                    repairindex.VolumeID = dbparent.RegisterRemoteVolume(repairindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
+                                                }
+                                            }
+                                        }
+
+
+                                    // Update tables so we know if we are done
+                                    restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
+                        
+                                    using(new Logging.Timer("CommitRestoredBlocklist"))
+                                        tr.Commit();
+
+                                    //At this point we can patch files with data from the block volume
+                                    if (blockprocessor != null)
+                                        blockprocessor(sf.Name, rd);
+                                }
+
                         }
 
-                        var progress = 0;
-                        foreach(var sf in new AsyncDownloader(lst, backend))
-                            using(var tmpfile = sf.TempFile)
-                            using(var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
-                            using(var tr = restoredb.BeginTransaction())
+                        if (repairindex != null)
+                        {
+                            var filesize = repairindex.Filesize;
+                            repairindex.Close();
+
+                            // If we have collected new information during this pass, upload it to speed up future repairs
+                            if (repairindex.BlockCount + repairindex.Blocklists + repairindex.VolumeCount > 0)
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                if (m_options.Dryrun)
                                 {
-                                    backend.WaitForComplete(restoredb, null);
-                                    return;
-                                }    
-                            
-                                progress++;
-                                m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
-
-                                var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
-
-                                restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
-                            
-                                // Update the block table so we know about the block/volume map
-                                foreach(var h in rd.Blocks)
-                                    restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr);
-                            
-                                // Grab all known blocklists from the volume
-                                foreach(var blocklisthash in restoredb.GetBlockLists(volumeid))
-                                    restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
-    
-                                // Update tables so we know if we are done
-                                restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
-                        
-                                using(new Logging.Timer("CommitRestoredBlocklist"))
-                                    tr.Commit();
-    
-                                //At this point we can patch files with data from the block volume
-                                if (blockprocessor != null)
-                                    blockprocessor(sf.Name, rd);
+                                    m_result.AddDryrunMessage(string.Format("Would upload index volume with newly obtained information ({0})", Library.Utility.Utility.FormatSizeString(filesize)));
+                                    repairindex.Dispose();
+                                }
+                                else
+                                {
+                                    dbparent.UpdateRemoteVolume(repairindex.RemoteFilename, RemoteVolumeState.Uploading, filesize, null, null);
+                                    m_result.AddMessage(string.Format("Uploading index volume with newly obtained information ({0})", Library.Utility.Utility.FormatSizeString(filesize)));
+                                    backend.Put(repairindex);
+                                }
                             }
+                            else
+                            {
+                                dbparent.RemoveRemoteVolume(repairindex.RemoteFilename);
+                                repairindex.Dispose();
+                            }
+
+                            repairindex = null;
+
+                        }
+                    }
+                    finally
+                    {
+                        if (repairindex != null)
+                        {
+                            try { repairindex.Close(); }
+                            catch { }
+
+                            try { repairindex.Dispose(); }
+                            catch { }
+                        }
                     }
                 }
                 

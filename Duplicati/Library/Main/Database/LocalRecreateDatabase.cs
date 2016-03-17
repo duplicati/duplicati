@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Database
             return blocksetid;
         }
 
-        public void UpdateBlock(string hash, long size, long volumeID, System.Data.IDbTransaction transaction)
+        public bool UpdateBlock(string hash, long size, long volumeID, System.Data.IDbTransaction transaction)
         {
             var currentVolumeId = -2L;
             if (m_blockHashLookup != null)
@@ -403,7 +403,7 @@ namespace Duplicati.Library.Main.Database
             }
             
             if (currentVolumeId == volumeID)
-                return;
+                return false;
                 
             if (currentVolumeId == -2)
             {
@@ -416,6 +416,8 @@ namespace Duplicati.Library.Main.Database
                 
                 if (m_blockHashLookup != null)
                     m_blockHashLookup.Add(hash, size, volumeID);
+
+                return true;
             }
             else if (currentVolumeId == -1)
             {
@@ -430,6 +432,8 @@ namespace Duplicati.Library.Main.Database
                     
                 if (m_blockHashLookup != null)
                     m_blockHashLookup.Add(hash, size, volumeID);
+
+                return true;
             }
             else
             {
@@ -438,17 +442,18 @@ namespace Duplicati.Library.Main.Database
                 m_insertDuplicateBlockCommand.SetParameterValue(1, size);
                 m_insertDuplicateBlockCommand.SetParameterValue(2, volumeID);
                 m_insertDuplicateBlockCommand.ExecuteNonQuery();
-            }
-            
+
+                return false;
+            }            
         }
         
-        public void UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
+        public bool UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
         {
             if (m_blockListHashLookup != null)
             {
                 bool b;
                 if (m_blockListHashLookup.TryGet(hash, -1, out b))
-                    return;
+                    return false;
             }
             else
             {
@@ -456,7 +461,7 @@ namespace Duplicati.Library.Main.Database
                 m_findblocklisthashCommand.SetParameterValue(0, hash);
                 var r = m_findblocklisthashCommand.ExecuteScalar();
                 if (r != null && r != DBNull.Value)
-                    return;
+                    return false;
             }
             
             if (m_blockListHashLookup != null)
@@ -473,6 +478,8 @@ namespace Duplicati.Library.Main.Database
                 m_insertBlockset.SetParameterValue(2, index++);
                 m_insertBlockset.ExecuteNonQuery();
             }
+
+            return true;
         }            
 
 
