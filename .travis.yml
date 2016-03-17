@@ -28,4 +28,5 @@ script:
   - chmod -R 755 ~/testdata
   - ls -la ~/testdata
   - ls -la ~/testdata/data
+  - export USAGEREPORTER_Duplicati_LEVEL=none
   - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
