@@ -29,6 +29,10 @@ namespace Duplicati.Library.Main.Volumes
         {
             return ReadBlocklist(m_compression, Library.Utility.Utility.Base64PlainToBase64Url(hash), hashsize);
         }
+
+        public Stream ReadBlocklistRaw(string hash)
+        {
+            return m_compression.OpenRead(Library.Utility.Utility.Base64PlainToBase64Url(hash));
         }
 
         //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
