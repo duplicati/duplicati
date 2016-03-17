@@ -33,7 +33,7 @@ The latest version of Duplicati is a preview for the Duplicati 2.0 release.
 
 The preview release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
 
-As of version 2.0.0.93, all releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The [latest signature file](http://updates.duplicati.com/preview/latest.zip) and [latest ASCII signature file](http://updates.duplicati.com/preview/latest.zip.sig.asc) are also available.
+As of version 2.0.0.93, all releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The [latest signature file](http://updates.duplicati.com/preview/latest.zip.sig) and [latest ASCII signature file](http://updates.duplicati.com/preview/latest.zip.sig.asc) are also available.
 
 For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases).
 
