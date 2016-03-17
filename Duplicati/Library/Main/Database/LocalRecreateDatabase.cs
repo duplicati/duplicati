@@ -73,24 +73,44 @@ namespace Duplicati.Library.Main.Database
         private Dictionary<long, long> m_proccessedVolumes;
         
         // SQL that finds index and block size for all blocklist hashes, based on the temporary hash list
-        internal const string SELECT_BLOCKLIST_ENTRIES = 
+        private const string SELECT_BLOCKLIST_ENTRIES = 
             @" 
-SELECT 
-    ""B"".""Length"", 
-    ""A"".""BlocklistHash"", 
-    ""A"".""BlockHash"", 
-    ""C"".""Index"", 
-    ""A"".""Index"" AS ""BlocIndex"", 
-    ""B"".""Length""/{0} AS ""LastBlock"", 
-    ""B"".""Length"" - (""B"".""Length""/{0})*{0} AS ""LastBlockSize"",
-    CASE WHEN ""A"".""Index"" + (""C"".""Index"" * ({0}/{1})) = ""B"".""Length""/{0} THEN ""B"".""Length"" - (""B"".""Length""/{0})*{0} ELSE {0} END AS ""BlockSize"", 
-    ""A"".""Index"" +  (""C"".""Index"" * ({0}/{1})) AS ""FullIndex"", 
-    (""B"".""Length""/{0}) / ({0}/{1}) AS ""LastBlocklistEntry"", 
-    (((""B"".""Length""/{0}) % ({0}/{1})) * {1}) + {1} AS ""LastBlocklistEntryLength"",
-    CASE WHEN ""C"".""Index"" = (""B"".""Length""/{0}) / ({0}/{1}) THEN (((""B"".""Length""/{0}) % ({0}/{1})) * {1}) + {1} ELSE {0} - ({0}%{1}) END AS BloclistEntryLength 
-FROM ""Blockset"" B, ""BlocklistHash"" C, ""{2}"" A 
-WHERE ""B"".""ID"" = ""C"".""BlocksetID"" AND ""A"".""BlockListHash"" = ""C"".""Hash"" 
-ORDER BY ""A"".""BlockListHash"", ""A"".""Index"" 
+        SELECT 
+            ""E"".""BlocksetID"",
+            ""F"".""Index"" + (""E"".""BlocklistIndex"" * ({0} / {1})) AS ""FullIndex"",
+            ""F"".""BlockHash"",
+            MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * ({0} / {1}))) * {0})) AS ""BlockSize"",
+            ""E"".""Hash"",
+            ""E"".""BlocklistSize"",
+            ""E"".""BlocklistHash""
+        FROM
+            (
+                    SELECT * FROM
+                    (
+                        SELECT 
+                            ""A"".""BlocksetID"",
+                            ""A"".""Index"" AS ""BlocklistIndex"",
+                            MIN({0}, ((""B"".""Length"" - (""A"".""Index"" * ({0} / {1}) * {0})) +  (({0} / {1}) - 1) ) / ({0} / {1})) AS ""BlocklistSize"",
+                            ""A"".""Hash"" AS ""BlocklistHash"",
+                            ""B"".""Length""
+                        FROM 
+                            ""BlocklistHash"" A,
+                            ""Blockset"" B
+                        WHERE 
+                            ""B"".""ID"" = ""A"".""BlocksetID""
+                    ) C,
+                    ""Block"" D
+                WHERE
+                   ""C"".""BlocklistHash"" = ""D"".""Hash""
+                   AND
+                   ""C"".""BlocklistSize"" = ""D"".""Size""
+            ) E,
+            ""{2}"" F
+        WHERE
+           ""F"".""BlocklistHash"" = ""E"".""Hash""
+        ORDER BY 
+           ""E"".""BlocksetID"",
+           ""FullIndex""
 ";
 
         public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
@@ -224,7 +244,7 @@ ORDER BY ""A"".""BlockListHash"", ""A"".""Index""
                 var selectBlocklistBlocksetEntries = string.Format(
                     @"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( " +
                     SELECT_BLOCKLIST_ENTRIES +
-                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BloclistEntryLength"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
+                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
                     blocksize,
                     hashsize,
                     m_tempblocklist
