@@ -78,6 +78,23 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
+        public static IEnumerable<string> ReadBlocklist(ICompression compression, string filename, long hashsize)
+        {
+            var buffer = new byte[hashsize];
+            using(var fs = compression.OpenRead(filename))
+            {
+                int s;
+                while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
+                {                    
+                    if (s != buffer.Length)
+                        throw new InvalidDataException("Premature End-of-stream encountered while reading blocklist hashes");
+
+                    yield return Convert.ToBase64String(buffer);
+                }
+
+            }
+        }
+
         protected static object SkipJsonToken(JsonReader reader, JsonToken type)
         {
             if (!reader.Read() || reader.TokenType != type)

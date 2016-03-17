@@ -69,7 +69,6 @@
     <Compile Include="Operation\DeleteHandler.cs" />
     <Compile Include="Operation\CreateBugReportHandler.cs" />
     <Compile Include="Operation\RepairHandler.cs" />
-    <Compile Include="Volumes\BlocklistEnumerable.cs" />
     <Compile Include="Volumes\BlockVolumeReader.cs" />
     <Compile Include="Volumes\BlockVolumeWriter.cs" />
     <Compile Include="Volumes\FilesetVolumeReader.cs" />
