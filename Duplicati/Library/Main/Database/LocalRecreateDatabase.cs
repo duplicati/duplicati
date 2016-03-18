@@ -90,7 +90,7 @@ namespace Duplicati.Library.Main.Database
                         SELECT 
                             ""A"".""BlocksetID"",
                             ""A"".""Index"" AS ""BlocklistIndex"",
-                            MIN({0}, ((""B"".""Length"" - (""A"".""Index"" * ({0} / {1}) * {0})) +  (({0} / {1}) - 1) ) / ({0} / {1})) AS ""BlocklistSize"",
+                            MIN(10240, (((""B"".""Length"" + {0} - 1) / {0}) - (""A"".""Index"" * ({0} / {1}))) * {1}) AS ""BlocklistSize"",
                             ""A"".""Hash"" AS ""BlocklistHash"",
                             ""B"".""Length""
                         FROM 
