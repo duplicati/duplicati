@@ -565,6 +565,25 @@ namespace Duplicati.Library.Main.Database
 		{
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);	
 		}
+
+        public bool RepairInProgress
+        {
+            get
+            {
+                return GetDbOptions().ContainsKey("repair-in-progress");
+            }
+            set
+            {
+                var opts = GetDbOptions();
+
+                if (value)
+                    opts["repair-in-progress"] = "true";
+                else
+                    opts.Remove("repair-in-progress");
+                
+                SetDbOptions(opts);
+            }
+        }
 		
 		public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
 		{
