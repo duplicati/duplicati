@@ -8,25 +8,14 @@ script:
   - mkdir ~/testdata
   - mkdir ~/testdata/data
   - mkdir ~/testdata/DSMCBE
-  - svn checkout -q -r 50 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r50
-  - svn checkout -q -r 100 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r100
-  - svn checkout -q -r 150 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r150
-  - svn checkout -q -r 200 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r200
-  - svn checkout -q -r 250 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r250
-  - svn checkout -q -r 251 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r251
-  - svn checkout -q -r 252 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r252
-  - svn checkout -q -r 253 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r253
-  - svn checkout -q -r 254 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r254
-  - svn checkout -q -r 255 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r255
-  - svn checkout -q -r 256 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r256
-  - svn checkout -q -r 257 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r257
-  - svn checkout -q -r 258 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r258
-  - svn checkout -q -r 259 http://dsmcbe.googlecode.com/svn/trunk/ ~/testdata/DSMCBE/r259
+  - wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip"
   - wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip"
+  - unzip -q DSMCBE.zip -d ~/testdata/
   - unzip -q data.zip -d ~/testdata/
   - chown -R travis ~/testdata/
   - chmod -R 755 ~/testdata
   - ls -la ~/testdata
+  - ls -la ~/testdata/DSMCBE
   - ls -la ~/testdata/data
   - export USAGEREPORTER_Duplicati_LEVEL=none
   - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
