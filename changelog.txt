@@ -1,3 +1,7 @@
+2016-03-18
+==========
+* Improved rebuild of the local database
+
 2016-03-16
 ==========
 * Improvements to database size, thanks to @FootStark
