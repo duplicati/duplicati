@@ -643,6 +643,9 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                if (m_database.RepairInProgress)
+                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
+
                 m_blocksize = m_options.Blocksize;
 
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];

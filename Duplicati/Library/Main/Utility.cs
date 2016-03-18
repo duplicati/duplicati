@@ -165,14 +165,20 @@ namespace Duplicati.Library.Main
                         throw new Exception(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
                     
                 }
-                    
-        
+                            
             //Extra sanity check
             if (db.GetBlocksLargerThan(options.Blocksize) > 0)
                 throw new Exception("Unsupported block-size change detected");
         
             if (needsUpdate)
+            {
+                // Make sure we do not loose values
+                foreach(var k in opts)
+                    if (!newDict.ContainsKey(k.Key))
+                        newDict[k.Key] = k.Value;
+                
                 db.SetDbOptions(newDict, transaction);               
+            }
         }
 
         /// <summary>
