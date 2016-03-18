@@ -83,6 +83,8 @@ namespace Duplicati.Library.Main.Operation
             using(var restoredb = new LocalRecreateDatabase(dbparent, m_options))
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
+				restoredb.RepairInProgress = true;
+
                 var volumeIds = new Dictionary<string, long>();
 
                 var rawlist = backend.List();
@@ -154,6 +156,8 @@ namespace Duplicati.Library.Main.Operation
                 using(var tr = restoredb.BeginTransaction())
                 {
                     var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
+                    m_result.AddMessage(string.Format("Rebuild database started, downloading {0} filelists", filelistWork.Count));
+
                     var progress = 0;
 
                     // Register the files we are working with, if not already updated
@@ -196,7 +200,11 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     VolumeReaderBase.UpdateOptionsFromManifest(parsed.CompressionModule, tmpfile, m_options);
                                     hasUpdatedOptions = true;
+                                    // Recompute the cached sizes
+                                    blocksize = m_options.Blocksize;
+                                    hashes_pr_block = (blocksize + m_options.BlockhashSize - 1) / m_options.BlockhashSize;
                                 }
+
 
                                 // Create timestamped operations based on the file timestamp
                                 var filesetid = restoredb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
@@ -265,6 +273,8 @@ namespace Duplicati.Library.Main.Operation
                                          from n in remotefiles
                                           where n.FileType == RemoteVolumeType.Index
                                           select new RemoteVolume(n.File) as IRemoteVolume).ToList();
+
+                        m_result.AddMessage(string.Format("Filelists restored, downloading {0} index files", indexfiles.Count));
 
                         var progress = 0;
                                     
@@ -411,10 +421,16 @@ namespace Duplicati.Library.Main.Operation
                 
 				backend.WaitForComplete(restoredb, null);
 
+                m_result.AddMessage("Recreate completed, verifying the database consistency");
+
                 //All done, we must verify that we have all blocklist fully intact
                 // if this fails, the db will not be deleted, so it can be used,
                 // except to continue a backup
                 restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+
+                m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
+
+				restoredb.RepairInProgress = false;
             }
         }
 
