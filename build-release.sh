@@ -7,7 +7,7 @@ if [ "x$1" == "x" ]; then
 	RELEASE_TYPE="canary"
 	echo "No release type specified, using ${RELEASE_TYPE}"
 else
-	RELEASE_TYPE = $1
+	RELEASE_TYPE=$1
 fi
 
 RELEASE_VERSION="2.0.1.${RELEASE_INC_VERSION}"
