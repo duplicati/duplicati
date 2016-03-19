@@ -75,7 +75,7 @@ namespace Duplicati.Library.Main.Database
         // SQL that finds index and block size for all blocklist hashes, based on the temporary hash list
         private const string SELECT_BLOCKLIST_ENTRIES = 
             @" 
-        SELECT 
+        SELECT DISTINCT
             ""E"".""BlocksetID"",
             ""F"".""Index"" + (""E"".""BlocklistIndex"" * ({0} / {1})) AS ""FullIndex"",
             ""F"".""BlockHash"",
