@@ -206,7 +206,7 @@ else
 	    --repo "duplicati" \
 	    --user "duplicati" \
 	    --security-token "${GITHUB_TOKEN}" \
-	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+	    --file "${RELEASE_FILE_NAME}.zip"
 fi
 
 echo
