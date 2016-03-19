@@ -995,10 +995,10 @@ namespace Duplicati.Library.Main
 
                 string fileHash;
                 long dataSizeDownloaded;
-                if (m_options.EnablePipedStreaming)
-                    tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
-                else
+                if (m_options.DisablePipedStreaming)
                     tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+                else
+                    tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),

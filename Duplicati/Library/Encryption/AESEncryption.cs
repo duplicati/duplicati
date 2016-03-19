@@ -38,6 +38,11 @@ namespace Duplicati.Library.Encryption
         private const string COMMANDLINE_SET_THREADLEVEL = "aes-set-threadlevel";
 
         /// <summary>
+        /// The default thread level
+        /// </summary>
+        private static readonly string DEFAULT_THREAD_LEVEL = Math.Min(4, Environment.ProcessorCount).ToString();
+
+        /// <summary>
         /// The key used to encrypt the data
         /// </summary>
         private string m_key;
@@ -71,18 +76,17 @@ namespace Duplicati.Library.Encryption
             m_key = passphrase;
 
             string strTL;
-            if (options != null && options.TryGetValue(COMMANDLINE_SET_THREADLEVEL, out strTL))
+            options.TryGetValue(COMMANDLINE_SET_THREADLEVEL, out strTL);
+
+            if (string.IsNullOrWhiteSpace(strTL))
+                strTL = DEFAULT_THREAD_LEVEL;
+
+            int useTL;
+            if (int.TryParse(strTL, out useTL))
             {
-                int useTL;
-                if (int.TryParse(strTL, out useTL))
-                {
-                    // finally set thread level in a range of 0 (default) to 4
-                    m_usethreadlevel = Math.Max(0, (Math.Min(4, useTL)));
-                }
+                // finally set thread level in a range of 0 (default) to 4
+                m_usethreadlevel = Math.Max(0, (Math.Min(4, useTL)));
             }
-
-
-
         }
 
         #region IEncryption Members
@@ -163,7 +167,7 @@ namespace Duplicati.Library.Encryption
                         CommandLineArgument.ArgumentType.Enumeration, 
                         Strings.AESEncryption.AessetthreadlevelShort, 
                         Strings.AESEncryption.AessetthreadlevelLong,
-                        "0", 
+                        DEFAULT_THREAD_LEVEL, 
                         null, 
                         new string[] {"0", "1", "2", "3", "4"}
                         ),
