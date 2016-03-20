@@ -700,7 +700,14 @@ namespace Duplicati.Library.Main.Operation
 
                             m_database.BuildLookupTable(m_options);
                             m_transaction = m_database.BeginTransaction();
+
+                            var repcnt = 0;
+                            while(repcnt < 100 && m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
+                                filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt));
         		            
+                            if (m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
+                                throw new Exception("Unable to generate a unique fileset name");
+
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
                             var filesetvolumeid = m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                             m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_transaction);
