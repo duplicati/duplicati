@@ -1,3 +1,8 @@
+2016-03-20
+==========
+* New icons, thanks to @agrajaghh
+* Multithreading is now enabled by default
+
 2016-03-18
 ==========
 * Improved rebuild of the local database
