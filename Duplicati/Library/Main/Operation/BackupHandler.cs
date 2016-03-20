@@ -703,7 +703,7 @@ namespace Duplicati.Library.Main.Operation
 
                             var repcnt = 0;
                             while(repcnt < 100 && m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
-                                filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt));
+                                filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
         		            
                             if (m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
                                 throw new Exception("Unable to generate a unique fileset name");
