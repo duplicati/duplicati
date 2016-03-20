@@ -51,6 +51,8 @@ namespace Duplicati.UnitTest
                 Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
 
+            System.Threading.Thread.Sleep(2000);
+
             new Random().NextBytes(data);
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data);
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
