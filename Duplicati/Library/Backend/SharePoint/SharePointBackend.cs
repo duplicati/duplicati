@@ -1,0 +1,497 @@
+﻿#region Disclaimer / License
+// Copyright (C) 2016, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using Duplicati.Library.Interface;
+
+using SP = Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
+
+namespace Duplicati.Library.Backend
+{
+    /// <summary>
+    /// Class implementing Duplicati's backend for SharePoint.
+    /// </summary>
+    /// <remarks>
+    /// SharePoint Server 2013 Client Components SDK: https://www.microsoft.com/en-us/download/details.aspx?id=35585
+    /// Infos for further development:
+    /// Using ADAL-Tokens (Azure Active directory): https://samlman.wordpress.com/2015/02/27/using-adal-access-tokens-with-o365-rest-apis-and-csom/
+    /// Outline:
+    /// - On AzureAD --> AddNewApp and configure access to O_365 (SharePoint/OneDrive4Busi)
+    ///              --> Get App's CLIENT ID and REDIRECT URIS.
+    /// - Get SAML token (WebRequest).
+    /// - Add auth code with access token in event ctx.ExecutingWebRequest
+    ///   --> e.WebRequestExecutor.RequestHeaders[“Authorization”] = “Bearer ” + ar.AccessToken;
+    /// </remarks>
+    public class SharePointBackend : IBackend, IStreamingBackend
+    {
+
+#region [Variables and constants declarations]
+
+        private Utility.Uri m_orgUrl;
+        private string m_serverRelPath;
+        private string m_spWebUrl;
+        private SP.ClientContext m_spContext;
+
+        private System.Net.ICredentials m_userInfo;
+
+        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+
+#endregion
+
+#region [Public Properties]
+
+        public string DisplayName
+        {
+            get { return Strings.SharePoint.DisplayName; }
+        }
+
+        public string ProtocolKey
+        {
+            get { return "sp"; }
+        }
+
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SharePoint.DescriptionAuthPasswordShort, Strings.SharePoint.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SharePoint.DescriptionAuthUsernameShort, Strings.SharePoint.DescriptionAuthUsernameLong),
+                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionIntegratedAuthenticationShort, Strings.SharePoint.DescriptionIntegratedAuthenticationLong),
+                });
+            }
+        }
+
+        public string Description
+        {
+            get { return Strings.SharePoint.Description; }
+        }
+
+#endregion
+
+#region [Constructors]
+
+        public SharePointBackend()
+        { }
+
+        public SharePointBackend(string url, Dictionary<string, string> options)
+        {
+            var u = new Utility.Uri(url);
+            u.RequireHost();
+        
+            // Create sanitized plain https-URI (note: still has double slashes for processing web)
+            m_orgUrl = new Utility.Uri("https", u.Host, u.Path, null, null, null, u.Port);
+
+            // Actual path to Web will be searched for on first use. Ctor should not throw.
+            m_spWebUrl = null;
+
+            m_serverRelPath = u.Path;
+            if (!m_serverRelPath.StartsWith("/"))
+                m_serverRelPath = "/" + m_serverRelPath;
+            if (!m_serverRelPath.EndsWith("/"))
+                m_serverRelPath += "/";
+            // remove marker for SP-Web
+            m_serverRelPath = m_serverRelPath.Replace("//", "/");
+
+            // Authentication settings processing:
+            // Default: try integrated auth (will normally not work for Office365, but maybe on-prem SharePoint...).
+            // Otherwise: Command line options precede URL-integrated auth.
+
+            string useUsername = null;
+            string usePassword = null;
+            bool useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
+            if (!useIntegratedAuthentication)
+            {
+                // Note: Supplying a username on cmdline and relying on pwd in URL is not considered legal!
+                if (options.TryGetValue("auth-username", out useUsername))
+                    options.TryGetValue("auth-password", out usePassword);
+                else
+                {
+                    useUsername = u.Username;
+                    if (!options.TryGetValue("auth-password", out usePassword))
+                        usePassword = u.Password;
+                } 
+            }
+
+            if (useIntegratedAuthentication || (useUsername == null || usePassword == null))
+            {
+                // This might or might not work for on-premises SP. Maybe support if someone complains...
+                m_userInfo = System.Net.CredentialCache.DefaultNetworkCredentials;
+            }
+            else
+            {
+                System.Security.SecureString securePwd = new System.Security.SecureString();
+                usePassword.ToList().ForEach(c => securePwd.AppendChar(c));
+                m_userInfo = new Microsoft.SharePoint.Client.SharePointOnlineCredentials(useUsername, securePwd);
+                // Other options (also ADAL, see class remarks) might be supported on request.
+                // Microsoft.SharePoint.Client.AppPrincipalCredential.CreateFromKeyGroup()
+                // ctx.AuthenticationMode = SP.ClientAuthenticationMode.FormsAuthentication;
+                // ctx.FormsAuthenticationLoginInfo = new SP.FormsAuthenticationLoginInfo(user, pwd);
+            }
+
+        }
+
+
+#endregion
+
+        #region [Private helper methods]
+
+        /// <summary>
+        /// Tries a simple query to test the passed context.
+        /// Returns 0 on success, negative if completely invalid, positive if SharePoint error (wrong creds are negative).
+        /// </summary>
+        private static int testContextForWeb(SP.ClientContext ctx, bool rethrow = true)
+        {
+            try
+            {
+                ctx.Load(ctx.Web, w => w.Title);
+                ctx.ExecuteQuery(); // should fail and throw if anything wrong.
+                string webTitle = ctx.Web.Title;
+                if (webTitle == null)
+                    throw new UnauthorizedAccessException(Strings.SharePoint.WebTitleReadFailedError);
+                return 0;
+            }
+            catch (Microsoft.SharePoint.Client.ServerException)
+            {
+                if (rethrow) throw;
+                else return 1;
+            }
+            catch (Exception)
+            {
+                if (rethrow) throw;
+                else return -1;
+            }
+        }
+
+        /// <summary>
+        /// Builds a client context and tries a simple query to test if there's a web.
+        /// Returns 0 on success, negative if completely invalid, positive if SharePoint error (likely wrong creds).
+        /// </summary>
+        private static int testUrlForWeb(string url, System.Net.ICredentials userInfo, bool rethrow, out SP.ClientContext retCtx)
+        {
+            int result = -1;
+            retCtx = null;
+            SP.ClientContext ctx = new ClientContext(url);
+            try
+            {
+                ctx.Credentials = userInfo;
+                result = testContextForWeb(ctx, rethrow);
+                if (result >= 0)
+                {
+                    retCtx = ctx;
+                    ctx = null;
+                }
+            }
+            finally { if (ctx != null) { ctx.Dispose(); } }
+
+            return result;
+        }
+
+        /// <summary>
+        /// SharePoint has nested subwebs but sometimes different webs
+        /// are hooked into a sub path.
+        /// For finding files SharePoint is picky to use the correct
+        /// path to the web, so we will trial and error here.
+        /// The user can give us a hint by supplying an URI with a double
+        /// slash to separate web.
+        /// Otherwise it's a good guess to look for "/documents", as we expect
+        /// that the default document library is used in the path.
+        /// If that won't help, we will try all possible pathes from longest
+        /// to shortest...
+        /// </summary>
+        private static string findCorrectWebPath(Utility.Uri orgUrl, System.Net.ICredentials userInfo, out SP.ClientContext retCtx)
+        {
+            retCtx = null;
+
+            string path = orgUrl.Path;
+            int webIndicatorPos = path.IndexOf("//");
+
+            // if a hint is supplied, we will of course use this first.
+            if (webIndicatorPos >= 0)
+            {
+                string testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host, path.Substring(0, webIndicatorPos), null, null, null, orgUrl.Port).ToString();
+                if (testUrlForWeb(testUrl, userInfo, false, out retCtx) >= 0)
+                    return testUrl;
+            }
+
+            // Now go through path and see where we land a success.
+            string[] pathParts = path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            // first we look for the doc library
+            int docLibrary = Array.FindIndex(pathParts, p => StringComparer.InvariantCultureIgnoreCase.Equals(p, "documents"));
+            if (docLibrary >= 0)
+            {
+                string testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host,
+                    string.Join("/", pathParts, 0, docLibrary),
+                    null, null, null, orgUrl.Port).ToString();
+                if (testUrlForWeb(testUrl, userInfo, false, out retCtx) >= 0)
+                    return testUrl;
+            }
+
+            // last but not least: try one after the other.
+            for (int pi = pathParts.Length - 1; pi >= 0; pi--)
+            {
+                if (pi == docLibrary) continue; // already tested
+
+                string testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host,
+                    string.Join("/", pathParts, 0, pi),
+                    null, null, null, orgUrl.Port).ToString();
+                if (testUrlForWeb(testUrl, userInfo, false, out retCtx) >= 0)
+                    return testUrl;
+            }
+
+            // nothing worked :(
+            return null;
+        }
+
+        /// <summary> Return the preconfigured SP.ClientContext to use. </summary>
+        private SP.ClientContext getSpClientContext(bool forceNewContext = false)
+        {
+            if (forceNewContext)
+            {
+                if (m_spContext != null) m_spContext.Dispose();
+                m_spContext = null;
+            }
+
+            if (m_spContext == null)
+            {
+                if (m_spWebUrl == null)
+                {
+                    m_spWebUrl = findCorrectWebPath(m_orgUrl, m_userInfo, out m_spContext);
+                    if (m_spWebUrl == null)
+                        throw new System.Net.WebException(Strings.SharePoint.NoSharePointWebFoundError(m_orgUrl.ToString()));
+                }
+                else
+                {
+                    // would query: testUrlForWeb(m_spWebUrl, userInfo, true, out m_spContext);
+                    m_spContext = new ClientContext(m_spWebUrl);
+                    m_spContext.Credentials = m_userInfo;
+                }
+            }
+
+            return m_spContext;
+        }
+
+
+        /// <summary>
+        /// Dedicated code to wrap ExecuteQuery on file ops and check for errors.
+        /// We have to check for the exceptions thrown to know about file /folder existence.
+        /// Why the funny guys at MS provided an .Exists field stays a mystery...
+        /// </summary>
+        /// <param name="fileNameInfo"> the filename  </param>
+        private void wrappedExecuteQueryOnConext(SP.ClientContext ctx, string serverRelPathInfo, bool isFolder)
+        {
+            try { ctx.ExecuteQuery(); }
+            catch (ServerException ex)
+            {
+                // funny: If a folder is not found, we still get a FileNotFoundException from Server...?!?
+                // Thus, we help ourselves by just passing the info if we wanted to query a folder.
+                if (ex.ServerErrorTypeName == "System.IO.DirectoryNotFoundException"
+                    || (ex.ServerErrorTypeName == "System.IO.FileNotFoundException" && isFolder))
+                    throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(serverRelPathInfo, m_spWebUrl));
+                if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
+                    throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(serverRelPathInfo, m_spWebUrl));
+                else
+                    throw;
+            }
+        }
+
+        #endregion
+
+
+        #region [Public backend methods]
+
+        public void Test()
+        {
+            SP.ClientContext ctx = getSpClientContext();
+            testContextForWeb(ctx, true);
+        }
+
+        public List<IFileEntry> List()
+        {
+            SP.ClientContext ctx = getSpClientContext();
+            try
+            {
+                SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
+                ctx.Load(remoteFolder, f => f.Exists);
+                ctx.Load(remoteFolder, f => f.Files, f => f.Folders);
+
+                wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
+                if (!remoteFolder.Exists)
+                    throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
+
+                List<IFileEntry> files = new List<IFileEntry>(remoteFolder.Folders.Count + remoteFolder.Files.Count);
+                foreach (var f in remoteFolder.Folders.Where(ff => ff.Exists))
+                {
+                    FileEntry fe = new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
+                    fe.IsFolder = true;
+                    files.Add(fe);
+                }
+                foreach (var f in remoteFolder.Files.Where(ff => ff.Exists))
+                {
+                    FileEntry fe = new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
+                    fe.IsFolder = false;
+                    files.Add(fe);
+                }
+                return files;
+            }
+            finally
+            {}
+        }
+
+        public void Get(string remotename, string filename)
+        {
+            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+                Get(remotename, fs);
+        }
+
+        public void Get(string remotename, System.IO.Stream stream)
+        {
+            SP.ClientContext ctx = getSpClientContext();
+            try
+            {
+                string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+                SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
+                ctx.Load(remoteFile, f => f.Exists);
+                wrappedExecuteQueryOnConext(ctx, fileurl, false);
+                if (!remoteFile.Exists)
+                    throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
+
+                using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
+                using (var s = fileInfo.Stream)
+                    Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
+            }
+            finally
+            { }
+        }
+
+        public void Put(string remotename, string filename)
+        {
+            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
+                Put(remotename, fs);
+        }
+
+        public void Put(string remotename, System.IO.Stream stream)
+        {
+            SP.ClientContext ctx = getSpClientContext();
+            try
+            {
+                SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
+                ctx.Load(remoteFolder, f => f.Exists);
+                wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
+                if (!remoteFolder.Exists)
+                    throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
+                // or use: remoteFolder.ServerRelativeUrl + "/" + remotename;
+                string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+                SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
+            }
+            finally
+            { }
+        }
+
+        public void CreateFolder()
+        {
+
+            SP.ClientContext ctx = getSpClientContext();
+            try
+            {
+                int pathLengthToWeb = new Utility.Uri(m_spWebUrl).Path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+                string[] folderNames = m_serverRelPath.Substring(0, m_serverRelPath.Length - 1).Split('/');
+                folderNames = Array.ConvertAll(folderNames, fold => System.Net.WebUtility.UrlDecode(fold));
+                var spfolders = new SP.Folder[folderNames.Length];
+                string folderRelPath = "";
+                int fi = 0;
+                for (; fi < folderNames.Length; fi++)
+                {
+                    folderRelPath += System.Web.HttpUtility.UrlPathEncode(folderNames[fi]) + "/";
+                    if (fi < pathLengthToWeb) continue;
+                    var folder = ctx.Web.GetFolderByServerRelativeUrl(folderRelPath);
+                    spfolders[fi] = folder;
+                    ctx.Load(folder, f => f.Exists);
+                    try { wrappedExecuteQueryOnConext(ctx, folderRelPath, true); }
+                    catch (FolderMissingException)
+                    { break; }
+                    if (!folder.Exists) break;
+                }
+
+                for (; fi < folderNames.Length; fi++)
+                    spfolders[fi] = spfolders[fi - 1].Folders.Add(folderNames[fi]);
+                ctx.Load(spfolders[folderNames.Length - 1], f => f.Exists);
+
+                wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
+
+                if (!spfolders[folderNames.Length - 1].Exists)
+                    throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
+
+            }
+            finally
+            { }
+
+        }
+
+        public void Delete(string remotename)
+        {
+            SP.ClientContext ctx = getSpClientContext();
+            try
+                {
+                    string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+                    SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
+                    ctx.Load(remoteFile);
+                    wrappedExecuteQueryOnConext(ctx, fileurl, false);
+                    if (!remoteFile.Exists)
+                        throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
+
+                    // allow optionally?: remoteFile.Recycle();
+                    remoteFile.DeleteObject();
+                    // not necessary: remoteFile.Update();
+                    ctx.ExecuteQuery();
+
+                }
+                finally
+                { }
+        }
+
+        #endregion
+
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            try
+            {
+                if (m_spContext != null)
+                    m_spContext.Dispose();
+            }
+            catch { }
+            m_userInfo = null;
+        }
+
+        #endregion
+
+    }
+
+}
+
