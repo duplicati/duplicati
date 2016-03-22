@@ -30,6 +30,7 @@ using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
 
 namespace Duplicati.Library.Backend
 {
+
     /// <summary>
     /// Class implementing Duplicati's backend for SharePoint.
     /// </summary>
@@ -66,17 +67,27 @@ namespace Duplicati.Library.Backend
 
         #region [Public Properties]
 
-        public string DisplayName
+        public virtual string ProtocolKey
+        {
+            get { return "mssp"; }
+        }
+
+        public virtual string DisplayName
         {
             get { return Strings.SharePoint.DisplayName; }
         }
 
-        public string ProtocolKey
+        public virtual string Description
         {
-            get { return "sp"; }
+            get { return Strings.SharePoint.Description; }
         }
 
-        public IList<ICommandLineArgument> SupportedCommands
+        public virtual bool SupportsStreaming
+        {
+            get { return true; }
+        }
+
+        public virtual IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
@@ -86,11 +97,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionIntegratedAuthenticationShort, Strings.SharePoint.DescriptionIntegratedAuthenticationLong),
                 });
             }
-        }
-
-        public string Description
-        {
-            get { return Strings.SharePoint.Description; }
         }
 
         #endregion
