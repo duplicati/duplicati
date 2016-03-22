@@ -34,8 +34,9 @@ namespace Duplicati.Library.Backend
     /// Class implementing Duplicati's backend for SharePoint.
     /// </summary>
     /// <remarks>
-    /// SharePoint Server 2013 Client Components SDK: https://www.microsoft.com/en-us/download/details.aspx?id=35585
-    /// Infos for further development:
+    /// Find SharePoint Server 2013 Client Components SDK (15.xxx): https://www.microsoft.com/en-us/download/details.aspx?id=35585
+    /// Currently used is MS-package from nuget (for SharePoint Server 2016, 16.xxx): https://www.nuget.org/packages/Microsoft.SharePointOnline.CSOM
+    /// Infos for further development (pursue on demand):
     /// Using ADAL-Tokens (Azure Active directory): https://samlman.wordpress.com/2015/02/27/using-adal-access-tokens-with-o365-rest-apis-and-csom/
     /// Outline:
     /// - On AzureAD --> AddNewApp and configure access to O_365 (SharePoint/OneDrive4Busi)
@@ -47,20 +48,23 @@ namespace Duplicati.Library.Backend
     public class SharePointBackend : IBackend, IStreamingBackend
     {
 
-#region [Variables and constants declarations]
+        #region [Variables and constants declarations]
 
+        /// <summary> Auth-stripped HTTPS-URI as passed to constructor. </summary>
         private Utility.Uri m_orgUrl;
+        /// <summary> Server relative path to backup folder. </summary>
         private string m_serverRelPath;
-        private string m_spWebUrl;
-        private SP.ClientContext m_spContext;
-
+        /// <summary> User's credentials to create client context </summary>
         private System.Net.ICredentials m_userInfo;
 
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+        /// <summary> URL to SharePoint web. Will be determined from m_orgUri on first use. </summary>
+        private string m_spWebUrl;
+        /// <summary> Current context to SharePoint web. </summary>
+        private SP.ClientContext m_spContext;
 
-#endregion
+        #endregion
 
-#region [Public Properties]
+        #region [Public Properties]
 
         public string DisplayName
         {
@@ -89,9 +93,9 @@ namespace Duplicati.Library.Backend
             get { return Strings.SharePoint.Description; }
         }
 
-#endregion
+        #endregion
 
-#region [Constructors]
+        #region [Constructors]
 
         public SharePointBackend()
         { }
@@ -100,7 +104,7 @@ namespace Duplicati.Library.Backend
         {
             var u = new Utility.Uri(url);
             u.RequireHost();
-        
+
             // Create sanitized plain https-URI (note: still has double slashes for processing web)
             m_orgUrl = new Utility.Uri("https", u.Host, u.Path, null, null, null, u.Port);
 
@@ -116,23 +120,32 @@ namespace Duplicati.Library.Backend
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
 
             // Authentication settings processing:
-            // Default: try integrated auth (will normally not work for Office365, but maybe on-prem SharePoint...).
-            // Otherwise: Command line options precede URL-integrated auth.
+            // Default: try integrated auth (will normally not work for Office365, but maybe with on-prem SharePoint...).
+            // Otherwise: Use settings from URL(precedence) or from command line options.
+            bool useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
 
             string useUsername = null;
             string usePassword = null;
-            bool useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
+
             if (!useIntegratedAuthentication)
             {
-                // Note: Supplying a username on cmdline and relying on pwd in URL is not considered legal!
-                if (options.TryGetValue("auth-username", out useUsername))
-                    options.TryGetValue("auth-password", out usePassword);
-                else
+                if (!string.IsNullOrEmpty(u.Username))
                 {
                     useUsername = u.Username;
-                    if (!options.TryGetValue("auth-password", out usePassword))
+                    if (!string.IsNullOrEmpty(u.Password))
                         usePassword = u.Password;
-                } 
+                    else if (options.ContainsKey("auth-password"))
+                        usePassword = options["auth-password"];
+                }
+                else
+                {
+                    if (options.ContainsKey("auth-username"))
+                    {
+                        useUsername = options["auth-username"];
+                        if (options.ContainsKey("auth-password"))
+                            usePassword = options["auth-password"];
+                    }
+                }
             }
 
             if (useIntegratedAuthentication || (useUsername == null || usePassword == null))
@@ -146,15 +159,16 @@ namespace Duplicati.Library.Backend
                 usePassword.ToList().ForEach(c => securePwd.AppendChar(c));
                 m_userInfo = new Microsoft.SharePoint.Client.SharePointOnlineCredentials(useUsername, securePwd);
                 // Other options (also ADAL, see class remarks) might be supported on request.
-                // Microsoft.SharePoint.Client.AppPrincipalCredential.CreateFromKeyGroup()
-                // ctx.AuthenticationMode = SP.ClientAuthenticationMode.FormsAuthentication;
-                // ctx.FormsAuthenticationLoginInfo = new SP.FormsAuthenticationLoginInfo(user, pwd);
+                // Maybe go in deep then and also look at:
+                // - Microsoft.SharePoint.Client.AppPrincipalCredential.CreateFromKeyGroup()
+                // - ctx.AuthenticationMode = SP.ClientAuthenticationMode.FormsAuthentication;
+                // - ctx.FormsAuthenticationLoginInfo = new SP.FormsAuthenticationLoginInfo(user, pwd);
             }
 
         }
 
 
-#endregion
+        #endregion
 
         #region [Private helper methods]
 
@@ -289,7 +303,6 @@ namespace Duplicati.Library.Backend
                     m_spContext.Credentials = m_userInfo;
                 }
             }
-
             return m_spContext;
         }
 
@@ -324,13 +337,14 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            SP.ClientContext ctx = getSpClientContext();
+            SP.ClientContext ctx = getSpClientContext(true);
             testContextForWeb(ctx, true);
         }
 
-        public List<IFileEntry> List()
+        public List<IFileEntry> List() { return doList(false); }
+        private List<IFileEntry> doList(bool useNewContext)
         {
-            SP.ClientContext ctx = getSpClientContext();
+            SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
             {
                 SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
@@ -356,8 +370,11 @@ namespace Duplicati.Library.Backend
                 }
                 return files;
             }
-            finally
-            {}
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (Interface.FileMissingException) { throw; }
+            catch (Interface.FolderMissingException) { throw; }
+            catch { if (!useNewContext) /* retry */ return doList(true); else throw; }
+            finally { }
         }
 
         public void Get(string remotename, string filename)
@@ -366,24 +383,32 @@ namespace Duplicati.Library.Backend
                 Get(remotename, fs);
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public void Get(string remotename, System.IO.Stream stream) { doGet(remotename, stream, false); }
+        private void doGet(string remotename, System.IO.Stream stream, bool useNewContext)
         {
-            SP.ClientContext ctx = getSpClientContext();
+            string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+            SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
             {
-                string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
                 SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
                 ctx.Load(remoteFile, f => f.Exists);
                 wrappedExecuteQueryOnConext(ctx, fileurl, false);
                 if (!remoteFile.Exists)
                     throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
-
+            }
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (Interface.FileMissingException) { throw; }
+            catch (Interface.FolderMissingException) { throw; }
+            catch { if (!useNewContext) /* retry */ doGet(remotename, stream, true); else throw; }
+            finally { }
+            try
+            {
+                byte[] copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
                 using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
                 using (var s = fileInfo.Stream)
-                    Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
+                    Utility.Utility.CopyStream(s, stream, true, copybuffer);
             }
-            finally
-            { }
+            finally { }
         }
 
         public void Put(string remotename, string filename)
@@ -392,9 +417,11 @@ namespace Duplicati.Library.Backend
                 Put(remotename, fs);
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public void Put(string remotename, System.IO.Stream stream) { doPut(remotename, stream, false); }
+        private void doPut(string remotename, System.IO.Stream stream, bool useNewContext)
         {
-            SP.ClientContext ctx = getSpClientContext();
+            string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+            SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
             {
                 SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
@@ -402,18 +429,23 @@ namespace Duplicati.Library.Backend
                 wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
-                // or use: remoteFolder.ServerRelativeUrl + "/" + remotename;
-                string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+            }
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (Interface.FileMissingException) { throw; }
+            catch (Interface.FolderMissingException) { throw; }
+            catch { if (!useNewContext) /* retry */ doPut(remotename, stream, true); else throw; }
+            finally { }
+            try
+            {
                 SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
             }
-            finally
-            { }
+            finally { }
         }
 
-        public void CreateFolder()
+        public void CreateFolder() { doCreateFolder(false); }
+        private void doCreateFolder(bool useNewContext)
         {
-
-            SP.ClientContext ctx = getSpClientContext();
+            SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
             {
                 int pathLengthToWeb = new Utility.Uri(m_spWebUrl).Path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Length;
@@ -444,33 +476,38 @@ namespace Duplicati.Library.Backend
 
                 if (!spfolders[folderNames.Length - 1].Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
-
             }
-            finally
-            { }
-
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (Interface.FileMissingException) { throw; }
+            catch (Interface.FolderMissingException) { throw; }
+            catch { if (!useNewContext) /* retry */ doCreateFolder(true); else throw; }
+            finally { }
         }
 
-        public void Delete(string remotename)
+        public void Delete(string remotename) { doDelete(remotename, false); }
+        private void doDelete(string remotename, bool useNewContext)
         {
-            SP.ClientContext ctx = getSpClientContext();
+            SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
-                {
-                    string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
-                    SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
-                    ctx.Load(remoteFile);
-                    wrappedExecuteQueryOnConext(ctx, fileurl, false);
-                    if (!remoteFile.Exists)
-                        throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
+            {
+                string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
+                SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
+                ctx.Load(remoteFile);
+                wrappedExecuteQueryOnConext(ctx, fileurl, false);
+                if (!remoteFile.Exists)
+                    throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
 
-                    // allow optionally?: remoteFile.Recycle();
-                    remoteFile.DeleteObject();
-                    // not necessary: remoteFile.Update();
-                    ctx.ExecuteQuery();
+                // allow optionally?: remoteFile.Recycle();
+                remoteFile.DeleteObject();
+                // should not be necessary: remoteFile.Update();
+                ctx.ExecuteQuery();
 
-                }
-                finally
-                { }
+            }
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (Interface.FileMissingException) { throw; }
+            catch (Interface.FolderMissingException) { throw; }
+            catch { if (!useNewContext) /* retry */ doDelete(remotename, true); else throw; }
+            finally { }
         }
 
         #endregion
