@@ -57,6 +57,8 @@ namespace Duplicati.Library.Backend
         private string m_serverRelPath;
         /// <summary> User's credentials to create client context </summary>
         private System.Net.ICredentials m_userInfo;
+        /// <summary> Flag indicating to move files to recycler on deletion. </summary>
+        private bool m_deleteToRecycler = false;
 
         /// <summary> URL to SharePoint web. Will be determined from m_orgUri on first use. </summary>
         private string m_spWebUrl;
@@ -95,6 +97,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SharePoint.DescriptionAuthPasswordShort, Strings.SharePoint.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SharePoint.DescriptionAuthUsernameShort, Strings.SharePoint.DescriptionAuthUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionIntegratedAuthenticationShort, Strings.SharePoint.DescriptionIntegratedAuthenticationLong),
+                    new CommandLineArgument("delete-to-recycler", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionUseRecyclerShort, Strings.SharePoint.DescriptionUseRecyclerLong),
                 });
             }
         }
@@ -108,6 +111,8 @@ namespace Duplicati.Library.Backend
 
         public SharePointBackend(string url, Dictionary<string, string> options)
         {
+            m_deleteToRecycler = Utility.Utility.ParseBoolOption(options, "delete-to-recycler");
+
             var u = new Utility.Uri(url);
             u.RequireHost();
 
@@ -503,9 +508,9 @@ namespace Duplicati.Library.Backend
                 if (!remoteFile.Exists)
                     throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
 
-                // allow optionally?: remoteFile.Recycle();
-                remoteFile.DeleteObject();
-                // should not be necessary: remoteFile.Update();
+                if (m_deleteToRecycler) remoteFile.Recycle();
+                else remoteFile.DeleteObject();
+
                 ctx.ExecuteQuery();
 
             }
