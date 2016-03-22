@@ -18,6 +18,13 @@
 // 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using Duplicati.Library.Interface;
+
 namespace Duplicati.Library.Backend
 {
     /// <summary>
@@ -42,6 +49,15 @@ namespace Duplicati.Library.Backend
         {
             get { return Strings.OneDriveForBusiness.Description; }
         }
+
+        public OneDriveForBusinessBackend()
+            :base ()
+        { }
+
+        public OneDriveForBusinessBackend(string url, Dictionary<string, string> options)
+            : base(url, options)
+        { }
+
 
     }
 }
