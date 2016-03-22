@@ -116,6 +116,8 @@ namespace Duplicati.GUI.TrayIcon.Windows
 
             WinFormsRunner.Instance = this;
 
+            ImageLoader.SetTrayIconSize(System.Windows.Forms.SystemInformation.SmallIconSize);
+
             //We need this ugly hack to get a handle that we can call Invoke on,
             // and sadly the TrayIcon does not expose one, and forcing the context menu
             // to create one causes weird "lost clicks"

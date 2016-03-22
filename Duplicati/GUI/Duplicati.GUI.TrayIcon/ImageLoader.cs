@@ -21,14 +21,6 @@ using System.Collections.Generic;
 
 namespace Duplicati.GUI.TrayIcon
 {
-    public static class ImageLoaderMac
-    {
-        public static Icon LoadFromStream(System.IO.Stream s)
-        {
-            return null;
-        }
-    }
-    
     public static class ImageLoader
     {
         private static readonly System.Reflection.Assembly ASSEMBLY = System.Reflection.Assembly.GetExecutingAssembly();
@@ -58,7 +50,10 @@ namespace Duplicati.GUI.TrayIcon
         public static Icon LoadIcon(string filename, Size size)
         {
             Icon ico;
-            if (ICONS.TryGetValue(filename, out ico))
+
+            var cachename = string.Format("{0};{1}x{2}", filename, size.Width, size.Height);
+
+            if (ICONS.TryGetValue(cachename, out ico))
                 return ico;
 
             if (!filename.EndsWith(".ico", StringComparison.InvariantCultureIgnoreCase))
@@ -70,15 +65,15 @@ namespace Duplicati.GUI.TrayIcon
 
                     ms.Position = 0;
                     lock(LOCK)
-                        if (!ICONS.TryGetValue(filename, out ico))
-                            return ICONS[filename] = ic;
+                        if (!ICONS.TryGetValue(cachename, out ico))
+                            return ICONS[cachename] = ic;
                 }
                 
             lock(LOCK)
-                if (!ICONS.TryGetValue(filename, out ico))
-                    return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename), System.Windows.Forms.SystemInformation.SmallIconSize);
+                if (!ICONS.TryGetValue(cachename, out ico))
+                    return ICONS[cachename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename), size);
             
-            return ICONS[filename];
+            return ICONS[cachename];
         }
 
         public const string NormalIcon = "Resources.TrayNormal.ico";
