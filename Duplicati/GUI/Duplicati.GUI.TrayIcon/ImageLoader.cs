@@ -36,7 +36,19 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly Dictionary<string, Bitmap> BITMAPS = new Dictionary<string, Bitmap>();
         private static readonly Dictionary<string, Icon> ICONS = new Dictionary<string, Icon>();
         private static readonly object LOCK = new object();
-        
+
+        private static Size m_trayIconSize = Size.Empty;
+
+        /// <summary> Set size of icons to return. </summary>
+        public static void SetTrayIconSize(Size useTrayIconSize)
+        {
+            lock (LOCK)
+            {
+                ICONS.Clear();
+                m_trayIconSize = useTrayIconSize;
+            }
+        }
+
         private static Bitmap LoadImage(string filename)
         {
             Bitmap bmp;
@@ -71,7 +83,12 @@ namespace Duplicati.GUI.TrayIcon
                 
             lock(LOCK)
                 if (!ICONS.TryGetValue(filename, out ico))
-                    return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename));
+                {
+                    if (!m_trayIconSize.IsEmpty)
+                        return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename), m_trayIconSize);
+                    else
+                        return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename));
+                }
             
             return ICONS[filename];
         }
