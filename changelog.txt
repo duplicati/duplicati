@@ -1,3 +1,50 @@
+2016-03-20
+==========
+* New icons, thanks to @agrajaghh
+* Multithreading is now enabled by default
+
+2016-03-18
+==========
+* Improved rebuild of the local database
+
+2016-03-16
+==========
+* Improvements to database size, thanks to @FootStark
+* Reduced storage for large backup sets, thanks to @FootStark
+* Update version of SharpAESCrypt with utilization of hardware support for encryption/decryption if available
+
+2016-03-14
+==========
+* Added options to run AES encryption with two threads, and decryption with up to four
+* Fixed some minor issues with the UI introduced in the previous build
+
+2016-03-13
+==========
+* Updated icons for Windows and Linux
+* Improvements to selecting update channels
+* Showing drive labels on Windows
+* Fixed selecting expire intervals with the Ngax theme
+* Minor display fixes
+* Fixes to Amazon Cloud Drive backend
+
+2016-03-12
+==========
+* Added feature to select update channel in the UI
+* Added feature to select usage reporter level in the UI
+
+2016-03-11
+==========
+* Added support for additional configuration parameters for S3
+* Added download piping for optional parallel hash checking, thanks to Stefan Lück 
+* Drastic improvements for restore speeds, especially on large dataset, thanks to Stefan Lück
+
+2016-02-15
+==========
+* Added expansion of environment variables in filters
+* Numerous fixes for Windows
+* Added error message for attempting to restore encrypted backup without a passphrase
+* Added two substantial performance fixes for restoring, thanks to @FootStark and @kunom.
+
 2016-01-27
 ==========
 - Added option for more thorough verification during remote volume test

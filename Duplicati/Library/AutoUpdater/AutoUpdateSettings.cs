@@ -17,6 +17,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -30,6 +32,20 @@ namespace Duplicati.Library.AutoUpdater
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
 
         internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
+        internal const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
+
+        internal const string MATCH_UPDATE_URL_PREFIX_GROUP = "prefix";
+        internal const string MATCH_UPDATE_URL_CHANNEL_GROUP = "channel";
+        internal const string MATCH_UPDATE_URL_FILENAME_GROUP = "filename";
+
+        internal static readonly Regex MATCH_AUTOUPDATE_URL = 
+            new Regex(string.Format(
+                "(?<{0}>.+)(?<{1}>{3})(?<{2}>/([^/]+).manifest)", 
+                MATCH_UPDATE_URL_PREFIX_GROUP,
+                MATCH_UPDATE_URL_CHANNEL_GROUP,
+                MATCH_UPDATE_URL_FILENAME_GROUP,
+                string.Join("|", Enum.GetNames(typeof(ReleaseType)).Union(new [] { "preview", "rene" }) )), RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 
         static AutoUpdateSettings()
         {
@@ -83,6 +99,41 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
+        public static ReleaseType DefaultUpdateChannel
+        {
+            get
+            {
+                var channelstring = Environment.GetEnvironmentVariable(string.Format(UPDATECHANNEL_ENVNAME_TEMPLATE, AppName));
+
+                if (UsesAlternateURLs && string.IsNullOrWhiteSpace(channelstring))
+                {
+                    foreach(var url in URLs)
+                    {
+                        var match = AutoUpdateSettings.MATCH_AUTOUPDATE_URL.Match(url);
+                        if (match.Success)
+                        {
+                            channelstring = match.Groups[AutoUpdateSettings.MATCH_UPDATE_URL_CHANNEL_GROUP].Value;
+                            break;
+                        }   
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(channelstring))
+                    channelstring = UpdaterManager.BaseVersion.ReleaseType;
+
+                // Update from older builds
+                if (string.Equals(channelstring, "preview", StringComparison.InvariantCultureIgnoreCase))
+                    channelstring = ReleaseType.Experimental.ToString();
+                if (string.Equals(channelstring, "rene", StringComparison.InvariantCultureIgnoreCase))
+                    channelstring = ReleaseType.Canary.ToString();
+                
+                ReleaseType rt;
+                if (!Enum.TryParse<ReleaseType>(channelstring, true, out rt))
+                    rt = ReleaseType.Stable;
+
+                return rt;
+            }
+        }
 
         public static string AppName
         {

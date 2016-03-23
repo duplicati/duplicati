@@ -113,25 +113,10 @@
     <Compile Include="AppIndicatorRunner.cs" />
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
-    <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
-    <EmbeddedResource Include="Resources\SettingsMenuIcon.png" />
-    <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
-    <EmbeddedResource Include="Resources\WizardMenuIcon.png" />
-    <EmbeddedResource Include="Resources\Clock05.png" />
-    <EmbeddedResource Include="Resources\Clock15.png" />
-    <EmbeddedResource Include="Resources\Clock30.png" />
-    <EmbeddedResource Include="Resources\Clock60.png" />
-    <EmbeddedResource Include="Resources\Delay.png" />
-    <EmbeddedResource Include="Resources\Throttle.png" />
-    <EmbeddedResource Include="Resources\Stop.png" />
     <EmbeddedResource Include="Resources\TrayNormal.ico" />
     <EmbeddedResource Include="Resources\TrayNormalError.ico" />
     <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
-    <EmbeddedResource Include="Resources\TrayNormalWarning.ico" />
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
-    <EmbeddedResource Include="Resources\TrayWorkingPause.ico" />
-    <EmbeddedResource Include="Resources\Pause.png" />
-    <EmbeddedResource Include="Resources\Play.png" />
     <Compile Include="ImageLoader.cs" />
     <Compile Include="GtkRunner.cs" />
     <Compile Include="CocoaRunner.cs">
@@ -150,6 +135,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <Compile Include="WinFormsRunner.cs" />
+    <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
+    <EmbeddedResource Include="Resources\Pause.png" />
+    <EmbeddedResource Include="Resources\Play.png" />
+    <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

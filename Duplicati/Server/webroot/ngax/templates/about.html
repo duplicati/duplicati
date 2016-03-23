@@ -1,5 +1,5 @@
 <div ng-controller="AboutController">
-    <h1>About {{appName}}</h1>
+    <h1>About {{brandingService.appName}}</h1>
     <ul class="tabs">
         <li ng-class="{active: Page=='general'}"><a href ng-click="Page='general'">General</a></li>
         <li ng-class="{active: Page=='changelog'}"><a href ng-click="Page='changelog'">Changelog</a></li>
@@ -8,10 +8,10 @@
     </ul>
 
     <div ng-show="Page == 'general'">
-        <div>{{appName}} was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. {{appName}} can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. {{appName}} is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.</div>
+        <div>{{brandingService.appName}} was primarily developed by <a href="mailto:kenneth@duplicati.com">Kenneth Skovhede</a> and <a href="mailto:rene@duplicati.com">Rene Stach</a>. {{brandingService.appName}} can be downloaded from <a href="http://www.duplicati.com" target="blank">duplicati.com</a>. {{brandingService.appName}} is licensed under the <a href="https://www.gnu.org/licenses/lgpl.html">GNU Lesser General Public License</a>.</div>
 
         <div>&nbsp;</div>
-        <div>You are currently running {{appName}} {{sysinfo.ServerVersionName || 'unknown'}}</div>
+        <div>You are currently running {{brandingService.appName}} {{sysinfo.ServerVersionName || 'unknown'}}</div>
 
         <div ng-show="state.updatedVersion != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
             Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href ng-click="doStartUpdateDownload()">download now</a>
@@ -32,11 +32,11 @@
     </div>
 
     <div ng-show="Page == 'changelog'">
-    	<div class="prewrapped-text">{{ChangeLog || 'Loading ...'}}</div>
+    	<div class="prewrapped-text fixed-width-font">{{ChangeLog || 'Loading ...'}}</div>
 	</div>
 
     <div ng-show="Page == 'licenses'" class="licenses">
-    	{{appName}} is using the following third party libraries:
+    	{{brandingService.appName}} is using the following third party libraries:
 	    <ul>
 	        <li ng-show="Licenses == null">Loading ...</li>
 	        <li ng-repeat="item in Licenses" class="licenseentry">

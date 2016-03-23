@@ -509,6 +509,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
+
+                    new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
                 });
 
                 return lst;
@@ -688,12 +690,12 @@ namespace Duplicati.Library.Main
 
 
         /// <summary>
-        /// Gets a value indicating whether a temporary folder has been specified
+        /// Gets a value indicating whether the user has forced the locale
         /// </summary>
         public bool HasForcedLocale { get { return m_options.ContainsKey("force-locale"); } }
 
         /// <summary>
-        /// Gets the folder where temporary files are stored
+        /// Gets the forced locale for the current user
         /// </summary>
         public System.Globalization.CultureInfo ForcedLocale
         {
@@ -936,6 +938,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if use of the streaming interface is disallowed
         /// </summary>
         public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
+
+        /// <summary>
+        /// A value indicating if multithreaded pipes may be used for hashing and crypting on up-/downloads
+        /// </summary>
+        public bool DisablePipedStreaming { get { return GetBool("disable-piped-streaming"); } }
 
         /// <summary>
         /// Gets the timelimit for removal

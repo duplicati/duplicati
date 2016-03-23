@@ -26,7 +26,9 @@ namespace Duplicati.Library.AutoUpdater
     {
         Unknown,
         Stable,
+        Beta,
         Experimental,
+        Canary,
         Nightly,
         Debug
     }

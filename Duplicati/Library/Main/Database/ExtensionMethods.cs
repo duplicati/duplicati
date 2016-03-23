@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -147,7 +147,30 @@ namespace Duplicati.Library.Main.Database
             con.Transaction = transaction;
             return con;
         }
-            
+
+        /// <summary> Small helper method querying and returning a textual representation of the SQLite execution plan. </summary>
+        public static string GetSQLiteExecutionPlan(this System.Data.IDbCommand cmd)
+        {
+            var qpCmd = cmd.Connection.CreateCommand();
+            qpCmd.CommandText = "EXPLAIN QUERY PLAN " + cmd.CommandText;
+            qpCmd.Connection = cmd.Connection;
+            qpCmd.CommandType = cmd.CommandType;
+            qpCmd.Transaction = cmd.Transaction;
+
+            foreach (System.Data.IDataParameter p in cmd.Parameters)
+                qpCmd.AddParameter(p.Value, p.ParameterName);
+
+            System.Data.DataTable dt = new System.Data.DataTable();
+            using (var rd = qpCmd.ExecuteReader())
+                dt.Load(rd);
+
+            string plan =
+                 String.Join("\t", dt.Columns.Cast<System.Data.DataColumn>().Select(c => c.ColumnName).ToArray()) + "\n"
+                + string.Join("\n", dt.Rows.Cast<System.Data.DataRow>().Select(r => String.Join("\t", r.ItemArray.Select(o => o == null ? "" : o.ToString()).ToArray())).ToArray());
+
+            return plan;
+        }
+        
         public static void DumpSQL(this System.Data.IDbConnection self, System.Data.IDbTransaction trans, string sql, params object[] parameters)
         {
             using (var c = self.CreateCommand())

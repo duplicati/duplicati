@@ -27,10 +27,17 @@ namespace Duplicati.GUI.TrayIcon
         public static string BrowserCommand { get { return _browser_command; } }
         
         
-        private static string GetDefaultToolKit()
+        private static string GetDefaultToolKit(bool printwarnings)
         {
+            
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
-                return TOOLKIT_COCOA;
+            {
+                if (!Environment.Is64BitProcess)
+                    return TOOLKIT_COCOA;
+
+                if (printwarnings)
+                    Console.WriteLine("64bit runtime detected which is known to crash the Cocoa interface, choosing GTK as the default instead");
+            }
 
 #if __MonoCS__ || __WindowsGTK__            
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
@@ -60,8 +67,6 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
-            Library.UsageReporter.Reporter.Initialize();
-
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -94,7 +99,7 @@ namespace Duplicati.GUI.TrayIcon
             
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
-                toolkit = GetDefaultToolKit();
+                toolkit = GetDefaultToolKit(true);
             else 
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
@@ -108,7 +113,7 @@ namespace Duplicati.GUI.TrayIcon
                 else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
                 else
-                    toolkit = GetDefaultToolKit();
+                    toolkit = GetDefaultToolKit(true);
             }
 
             HostedInstanceKeeper hosted = null;
@@ -263,7 +268,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static bool TryGetMonoMac()
         {
-            return typeof(MonoMac.AppKit.NSApplication) != null;
+            return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
         }
   
         //The functions below here, simply wrap the call to the above functions,
@@ -291,7 +296,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private static bool SupportsCocoaStatusIcon
+        private static bool SupportsCocoa
         {
             get 
             {
@@ -324,12 +329,12 @@ namespace Duplicati.GUI.TrayIcon
                     toolkits.Add(TOOLKIT_GTK);
                 if (SupportsAppIndicator)
                     toolkits.Add(TOOLKIT_GTK_APP_INDICATOR);
-                if (SupportsCocoaStatusIcon)
+                if (SupportsCocoa)
                     toolkits.Add(TOOLKIT_COCOA);
                 
                 return new Duplicati.Library.Interface.ICommandLineArgument[]
                 {
-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(), null, toolkits.ToArray()),
+                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),

@@ -468,7 +468,32 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 			EditUriBackendConfig.recommend_path(scope, continuation);
 	};
 
-	EditUriBackendConfig.validaters['hubic']       = EditUriBackendConfig.validaters['onedrive'];
+	EditUriBackendConfig.validaters['hubic']       = function(scope, continuation) {
+
+		var prefix = 'HubiC-DeskBackup_Duplicati/';
+
+		EditUriBackendConfig.validaters['onedrive'](scope, function() {
+
+			var p = (scope.Path || '').trim();
+
+			if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
+				DialogService.dialog('Adjust path name?', 'The path should start with "' + prefix + '" or "default", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
+					if (ix == 2) {
+						while (p.indexOf('/') == 0)
+							p = p.substr(1);
+
+						scope.Path = prefix + p;
+					}
+					if (ix == 1 || ix == 2)
+						continuation();
+				});
+			} else {
+				continuation();
+			}	
+		});
+
+	};
+
 	EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['onedrive'];
 	EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['onedrive'];
 	EditUriBackendConfig.validaters['amzcd']       = EditUriBackendConfig.validaters['onedrive'];

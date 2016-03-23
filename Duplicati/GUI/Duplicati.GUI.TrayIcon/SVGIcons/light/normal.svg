@@ -1,107 +1,50 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="214.90625"
-   height="219.5625"
-   id="svg2"
-   version="1.1"
-   inkscape:version="0.48.2 r9819"
-   sodipodi:docname="normal.svg">
-  <defs
-     id="defs4" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="169.46889"
-     inkscape:cy="90.651604"
-     inkscape:document-units="px"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     inkscape:window-width="1774"
-     inkscape:window-height="971"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="0"
-     fit-margin-top="0"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="0" />
-  <metadata
-     id="metadata7">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-152.90625,-125.25)">
-    <path
-       style="font-size:medium;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;stroke:none;stroke-width:13.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Sans;-inkscape-font-specification:Sans"
-       d="m 167.65625,125.25 c -8.05474,0 -14.75,6.69526 -14.75,14.75 l 0,138.28125 c 0,8.05474 6.69526,14.75 14.75,14.75 l 64.53125,0.0937 0,36.9375 c 0,8.05474 6.69526,14.75 14.75,14.75 l 106.125,0 c 8.05474,0 14.75,-6.69526 14.75,-14.75 l 0,-138.28125 c 0,-8.05474 -6.69526,-14.75 -14.75,-14.75 l -64.875,0 L 288.53125,140 c 0.0774,-8.05437 -6.69526,-14.75 -14.75,-14.75 l -106.125,0 z m 0,13.5 106.125,0 c 0.80926,0 1.25,0.44074 1.25,1.25 l 0,37.03125 -28.09375,0 c -8.05474,0 -14.75,6.69526 -14.75,14.75 l 0,87.75 -64.53125,0 c -0.80926,0 -1.25,-0.44074 -1.25,-1.25 l 0,-138.28125 c 0,-0.80926 0.44074,-1.25 1.25,-1.25 z m 79.28125,51.78125 106.125,0 c 0.80926,0 1.25,0.44074 1.25,1.25 l 0,138.28125 c 0,0.80926 -0.44074,1.25 -1.25,1.25 l -106.125,0 c -0.80926,0 -1.25,-0.44074 -1.25,-1.25 l 0,-138.28125 c 0,-0.80926 0.44074,-1.25 1.25,-1.25 z"
-       id="rect3971"
-       inkscape:connector-curvature="0" />
-    <rect
-       style="fill:#000000;fill-opacity:1;stroke:none"
-       id="rect4005"
-       width="49.339554"
-       height="16.42857"
-       x="182.85715"
-       y="163.79076" />
-    <rect
-       style="fill:#000000;fill-opacity:1;stroke:none"
-       id="rect4009"
-       width="40"
-       height="15"
-       x="182.85715"
-       y="202.18362" />
-    <rect
-       style="fill:#000000;fill-opacity:1;stroke:none"
-       id="rect4011"
-       width="40"
-       height="15"
-       x="182.85715"
-       y="239.86218" />
-    <rect
-       style="fill:#000000;fill-opacity:1;stroke:none"
-       id="rect4013"
-       width="76.428574"
-       height="15.357142"
-       x="261.96429"
-       y="215.93361" />
-    <rect
-       y="253.79076"
-       x="261.96429"
-       height="15.357142"
-       width="76.428574"
-       id="rect4015"
-       style="fill:#000000;fill-opacity:1;stroke:none" />
-    <rect
-       style="fill:#000000;fill-opacity:1;stroke:none"
-       id="rect4023"
-       width="76.428574"
-       height="15.357142"
-       x="261.96429"
-       y="292.00504" />
-  </g>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 19.2.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
+<style type="text/css">
+	.st0{display:none;}
+	.st1{display:inline;}
+	.st2{fill:#D0CDC6;}
+	.st3{fill:#FFFFFF;}
+	.st4{fill:#1D4775;}
+	.st5{fill:#8194A9;}
+	.st6{fill:#EBF1F5;}
+	.st7{fill:#2C933D;}
+	.st8{fill:#676767;}
+	.st9{fill:#C91517;}
+</style>
+<g id="backgrounds" class="st0">
+	<rect id="black" x="-40" y="-15" class="st1" width="120" height="45"/>
+	<rect id="win2k" x="-40" y="-15" class="st2" width="120" height="45"/>
+	<rect id="white" x="-40" y="-15" class="st3" width="120" height="45"/>
+	<rect id="win7_aero" x="-40" y="-15" class="st4" width="120" height="45"/>
+	<rect id="win7_1_" x="-40" y="-15" class="st5" width="120" height="45"/>
+	<rect id="macosx" x="-40" y="-15" class="st6" width="120" height="45"/>
+</g>
+<g id="_x31_6x16_optimized">
+	<g id="green">
+	</g>
+	<g id="black_1_">
+		<g id="small_2_">
+			<path d="M11,12.5c-0.8,0-1.5-0.7-1.5-1.5V9c0-0.8,0.7-1.5,1.5-1.5h3c0.8,0,1.5,0.7,1.5,1.5v2c0,0.8-0.7,1.5-1.5,1.5H11z"/>
+			<path class="st3" d="M14,8c0.6,0,1,0.4,1,1v2c0,0.6-0.4,1-1,1h-3c-0.6,0-1-0.4-1-1V9c0-0.6,0.4-1,1-1H14 M14,7h-3
+				C9.9,7,9,7.9,9,9v2c0,1.1,0.9,2,2,2h3c1.1,0,2-0.9,2-2V9C16,7.9,15.1,7,14,7L14,7z"/>
+		</g>
+		<g id="middle_2_">
+			<path d="M2,13.5c-0.8,0-1.5-0.7-1.5-1.5V9c0-0.8,0.7-1.5,1.5-1.5h5c0.8,0,1.5,0.7,1.5,1.5v3c0,0.8-0.7,1.5-1.5,1.5H2z"/>
+			<path class="st3" d="M7,8c0.6,0,1,0.4,1,1v3c0,0.6-0.4,1-1,1H2c-0.6,0-1-0.4-1-1V9c0-0.6,0.4-1,1-1H7 M7,7H2C0.9,7,0,7.9,0,9v3
+				c0,1.1,0.9,2,2,2h5c1.1,0,2-0.9,2-2V9C9,7.9,8.1,7,7,7L7,7z"/>
+		</g>
+		<g id="big_2_">
+			<path d="M6,9.5C5.2,9.5,4.5,8.8,4.5,8V3c0-0.8,0.7-1.5,1.5-1.5h7c0.8,0,1.5,0.7,1.5,1.5v5c0,0.8-0.7,1.5-1.5,1.5H6z"/>
+			<path class="st3" d="M13,2c0.6,0,1,0.4,1,1v5c0,0.6-0.4,1-1,1H6C5.4,9,5,8.6,5,8V3c0-0.6,0.4-1,1-1H13 M13,1H6C4.9,1,4,1.9,4,3v5
+				c0,1.1,0.9,2,2,2h7c1.1,0,2-0.9,2-2V3C15,1.9,14.1,1,13,1L13,1z"/>
+		</g>
+	</g>
+	<g id="grey">
+	</g>
+	<g id="red">
+	</g>
+</g>
 </svg>

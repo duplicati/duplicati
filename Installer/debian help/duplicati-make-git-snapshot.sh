@@ -21,26 +21,23 @@ echo HEAD ${1:-HEAD}
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-         https://code.google.com/p/duplicati/ $DIRNAME
+         `git config --get remote.origin.url` $DIRNAME
 
 cd "$DIRNAME"
-if [ -e "../oem.js" ]; then
-    echo "Installing OEM script"
-    cp ../oem.js Duplicati/Server/webroot/scripts/
-    git add Duplicati/Server/webroot/scripts/oem.js
-    git commit -m "Added OEM branding script"
-fi
-
-if [ -e "../oem.css" ]; then
-    echo "Installing OEM stylesheet"
-    cp ../oem.css Duplicati/Server/webroot/stylesheets/
-    git add Duplicati/Server/webroot/stylesheets/oem.css
-    git commit -m "Added OEM branding stylesheet"
+if [ -d "../../oem" ]; then
+    echo "Installing OEM files"
+    cp -R ../../oem/* Duplicati/Server/webroot/
+    git add Duplicati/Server/webroot/*
+    git commit -m "Added OEM files"
 fi
 
 cp -R "Installer/debian help/debian" .
 
 sed -e "s;%VERSION%;$VERSION;g" -e "s;%DATE%;$DATE_STAMP;g" "../debian/changelog" > "debian/changelog"
+
+echo "${VERSION}" > version
+git add version
+git commit -m "Added version file"
 
 git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > ../$DIRNAME.tar.bz2

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -126,14 +126,14 @@ namespace Duplicati.Library.Main.Operation
                                     blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                                     filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                                     if (blockhasher == null)
-                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                                     if (!blockhasher.CanReuseTransform)
-                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                                     if (filehasher == null)
-                                        throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                                     if (!filehasher.CanReuseTransform)
-                                        throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                                     // Don't run this again
                                     first = false;
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main.Operation
             var fullblockverification = options.FullBlockVerification;
             var blockhasher = fullblockverification ? System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
 
-            using(var blockmarker = database.CreateBlockMarker())
+            using (var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
             {
                 foreach(var restorelist in volumekeeper.FilesWithMissingBlocks)
@@ -220,7 +220,7 @@ namespace Duplicati.Library.Main.Operation
                             
                             // TODO: Much faster if we iterate the volume and checks what blocks are used,
                             // because the compressors usually like sequential reading
-                            using(var file = m_systemIO.FileOpenReadWrite(targetpath))
+                            using(var file = m_systemIO.FileOpenWrite(targetpath))
                                 foreach(var targetblock in restorelist.Blocks)
                                 {
                                     file.Position = targetblock.Offset;
@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             
-                            if (updateCounter++ % 20 == 0)
+                            if ((++updateCounter) % 20 == 0)
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                         }
                         catch (Exception ex)
@@ -294,7 +294,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
-                
                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                 blockmarker.Commit(result);
             }
@@ -348,14 +347,14 @@ namespace Duplicati.Library.Main.Operation
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                 if (filehasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                 if (!filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 if (!m_options.NoBackendverification)
                 {
@@ -407,7 +406,9 @@ namespace Duplicati.Library.Main.Operation
                 }
                 
                 // Fill BLOCKS with remote sources
-                var volumes = database.GetMissingVolumes().ToList();
+                List<IRemoteVolume> volumes;
+                using (new Logging.Timer("GetMissingVolumes"))
+                    volumes = database.GetMissingVolumes().ToList();
 
                 if (volumes.Count > 0)
                 {
@@ -437,28 +438,8 @@ namespace Duplicati.Library.Main.Operation
                             throw;
 					}
 
-                // Enforce the length of restored files
-                foreach(var file in database.GetFilesToRestore())
-                {
-                    try
-                    {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                        {
-                            backend.WaitForComplete(database, null);
-                            return;
-                        }
-
-                        // Fix the length
-                        using(var fs = m_systemIO.FileOpenWrite(file.Path))
-                            fs.SetLength(file.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        result.AddWarning(ex.Message, ex);
-                        if (ex is System.Threading.ThreadAbortException)
-                            throw;
-                    }
-                }
+                // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
+                // and thus not necessary anymore.
 
                 // Apply metadata
                 if (!m_options.SkipMetadata)
@@ -478,7 +459,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // After all blocks in the files are restored, verify the file hash
                     using(new Logging.Timer("RestoreVerification"))
-                        foreach(var file in database.GetFilesToRestore())
+                        foreach(var file in database.GetFilesToRestore(true))
                         {
                             try
                             {
@@ -514,7 +495,9 @@ namespace Duplicati.Library.Main.Operation
                 }
                     
                 if (fileErrors > 0 && brokenFiles.Count > 0)
-                    m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
+                    m_result.AddMessage(string.Format("Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles)));
+                else if (fileErrors > 0)
+                    m_result.AddMessage(string.Format("Failed to restore {0} files", fileErrors));
 
                 // Drop the temp tables
                 database.DropRestoreTable();
@@ -589,7 +572,7 @@ namespace Duplicati.Library.Main.Operation
 	    						m_systemIO.DirectoryCreate(folderpath);
 	    					}
         				
-	                		using(var targetstream = options.Dryrun ? null : m_systemIO.FileCreate(targetpath))
+	                		using(var targetstream = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
 	                		{
 	                			try
 	                			{
@@ -633,8 +616,8 @@ namespace Duplicati.Library.Main.Operation
                                         throw;
 	                			}
 	                		}
-                            
-                            if (updateCount++ % 20 == 0)
+
+                            if ((++updateCount) % 20 == 0)
                             {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                                 if (result.TaskControlRendevouz() == TaskControlState.Stop)
@@ -691,13 +674,9 @@ namespace Duplicati.Library.Main.Operation
     						m_systemIO.DirectoryCreate(folderpath);
     					}
                     
-                        using (var file = options.Dryrun ? null : m_systemIO.FileOpenReadWrite(targetpath))
-                        using (var block = new Blockprocessor(file, blockbuffer))
+                        using (var file = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
                             foreach (var targetblock in restorelist.Blocks)
                             {
-                                if (!options.Dryrun && !targetblock.IsMetadata)
-                                	file.Position = targetblock.Offset;
-                                	
                                 foreach (var source in targetblock.Blocksources)
                                 {
                                     try
@@ -730,7 +709,10 @@ namespace Duplicati.Library.Main.Operation
                                                                 if (targetblock.IsMetadata)
                                                                     metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
                                                                 else
-    	                                                            file.Write(blockbuffer, 0, size);
+                                                                {
+                                                                    file.Position = targetblock.Offset;
+                                                                    file.Write(blockbuffer, 0, size);
+                                                                }
                                                             }
     	                                                        
                                                             blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size, false);
@@ -751,7 +733,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            if (updateCount++ % 20 == 0)
+                            if ((++updateCount) % 20 == 0)
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                     }
                     catch (Exception ex)
@@ -801,6 +783,11 @@ namespace Duplicati.Library.Main.Operation
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
 			using(new Logging.Timer("FindMissingBlocks"))
                 database.FindMissingBlocks(result, options.SkipMetadata);
+
+            // Create temporary tables and triggers that automatically track progress
+            using (new Logging.Timer("CreateProgressTracker"))
+                database.CreateProgressTracker(false);
+
         }
 
         private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, RestoreResults result)
@@ -857,49 +844,116 @@ namespace Duplicati.Library.Main.Operation
                     var targetpath = restorelist.TargetPath;
                     var targetfileid = restorelist.TargetFileID;
                     var targetfilehash = restorelist.TargetHash;
+                    var targetfilelength = restorelist.Length;
                     if (m_systemIO.FileExists(targetpath))
                     {
                         try
                         {
                             if (result.TaskControlRendevouz() == TaskControlState.Stop)
                                 return;
-                            
-                            if (rename)
-                                filehasher.Initialize();
 
-                            using(var file = m_systemIO.FileOpenReadWrite(targetpath))
-                            using(var block = new Blockprocessor(file, blockbuffer))
-                                foreach(var targetblock in restorelist.Blocks)
+                            var currentfilelength = m_systemIO.FileLength(targetpath);
+                            var wasTruncated = false;
+
+                            // Adjust file length in overwrite mode if necessary (smaller is ok, will be extended during restore)
+                            // We do it before scanning for blocks. This allows full verification on files that only needs to 
+                            // be truncated (i.e. forthwritten log files).
+                            if (!rename && currentfilelength > targetfilelength)
+                            {
+                                var currentAttr = m_systemIO.GetFileAttributes(targetpath);
+                                if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
                                 {
-                                    var size = block.Readblock();
-                                    if (size <= 0)
-                                        break;
-    
-                                    //TODO: Handle Metadata
+                                    if (options.Dryrun) result.AddDryrunMessage(string.Format("Would reset read-only attribute on file: {0}", targetpath));
+                                    else m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                }
+                                if (options.Dryrun)
+                                    result.AddDryrunMessage(string.Format("Would truncate file '{0}' to length of {1:N0} bytes", targetpath, targetfilelength));
+                                else
+                                {
+                                    using (var file = m_systemIO.FileOpenWrite(targetpath))
+                                        file.SetLength(targetfilelength);
+                                    currentfilelength = targetfilelength;
+                                }
+                                wasTruncated = true;
+                            }
 
-                                    if (size == targetblock.Size)
+                            // If file size does not match and we have to rename on conflict, 
+                            // the whole scan can be skipped here because all blocks have to be restored anyway.
+                            // For the other cases, we will check block and and file hashes and look for blocks
+                            // to be restored and files that can already be verified.
+                            if (!rename || currentfilelength == targetfilelength)
+                            {
+                                // a file hash for verification will only be necessary if the file has exactly
+                                // the wanted size so we have a chance to already mark the file as data-verified.
+                                bool calcFileHash = (currentfilelength == targetfilelength);
+                                if (calcFileHash) filehasher.Initialize();
+
+                                using (var file = m_systemIO.FileOpenRead(targetpath))
+                                using (var block = new Blockprocessor(file, blockbuffer))
+                                    foreach (var targetblock in restorelist.Blocks)
                                     {
-                                        var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
-                                        if (key == targetblock.Hash)
+                                        var size = block.Readblock();
+                                        if (size <= 0)
+                                            break;
+
+                                        //TODO: Handle Metadata
+
+                                        bool blockhashmatch = false;
+                                        if (size == targetblock.Size)
                                         {
-                                            blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size, false);
+                                            // Parallelize file hash calculation on rename. Running read-only on same array should not cause conflicts or races.
+                                            // Actually, in future always calculate the file hash and mark the file data as already verified.
+
+                                            System.Threading.Tasks.Task calcFileHashTask = null;
+                                            if (calcFileHash)
+                                                calcFileHashTask = System.Threading.Tasks.Task.Run(
+                                                    () => filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0));
+
+                                            var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
+
+                                            if (calcFileHashTask != null) calcFileHashTask.Wait(); // wait because blockbuffer will be overwritten.
+
+                                            if (key == targetblock.Hash)
+                                            {
+                                                blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size, false);
+                                                blockhashmatch = true;
+                                            }
+                                        }
+                                        if (calcFileHash && !blockhashmatch) // will not be necessary anymore
+                                        {
+                                            filehasher.TransformFinalBlock(blockbuffer, 0, 0); // So a new initialize will not throw
+                                            calcFileHash = false;
+                                            if (rename) // file does not match. So break.
+                                                break;
                                         }
                                     }
-                                    
-                                    if (rename)
-                                        filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0);
-                                }
-                                
-                            if (rename)
-                            {
-                                filehasher.TransformFinalBlock(blockbuffer, 0, 0);
-                                var filekey = Convert.ToBase64String(filehasher.Hash);
-                                if (filekey == targetfilehash)
+
+                                bool fullfilehashmatch = false;
+                                if (calcFileHash) // now check if files are identical
                                 {
-                                    result.AddVerboseMessage("Target file exists and is correct version: {0}", targetpath);
+                                    filehasher.TransformFinalBlock(blockbuffer, 0, 0);
+                                    var filekey = Convert.ToBase64String(filehasher.Hash);
+                                    fullfilehashmatch = (filekey == targetfilehash);
+                                }
+
+                                if (!rename && !fullfilehashmatch && !wasTruncated) // Reset read-only attribute (if set) to overwrite
+                                {
+                                    var currentAttr = m_systemIO.GetFileAttributes(targetpath);
+                                    if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0)
+                                    {
+                                        if (options.Dryrun) result.AddDryrunMessage(string.Format("Would reset read-only attribute on file: {0}", targetpath));
+                                        else m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
+                                    }
+                                }
+
+                                if (fullfilehashmatch)
+                                {
+                                    //TODO: Check metadata to trigger rename? If metadata changed, it will still be restored for the file in-place.
+                                    blockmarker.SetFileDataVerified(targetfileid);
+                                    result.AddVerboseMessage("Target file exists{1} and is correct version: {0}", targetpath, wasTruncated ? " (but was truncated)" : "");
                                     rename = false;
                                 }
-                                else
+                                else if (rename)
                                 {
                                     // The new file will have none of the correct blocks,
                                     // even if the scanned file had some
@@ -907,7 +961,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            if (updateCount++ % 20 == 0)
+                            if ((++updateCount) % 20 == 0)
                             {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                                 if (result.TaskControlRendevouz() == TaskControlState.Stop)
@@ -947,12 +1001,15 @@ namespace Duplicati.Library.Main.Operation
                                 filehasher.Initialize();
                                 
                                 string key;
-                                using(var file = m_systemIO.FileOpenReadWrite(tr))
+                                using(var file = m_systemIO.FileOpenRead(tr))
                                     key = Convert.ToBase64String(filehasher.ComputeHash(file));
                                     
                                 if (key == targetfilehash)
                                 {
-                                    blockmarker.SetAllBlocksRestored(targetfileid);
+                                    //TODO: Also needs metadata check to make correct decision.
+                                    //      We stick to the policy to restore metadata in place, if data ok. So, metadata block may be restored.
+                                    blockmarker.SetAllBlocksRestored(targetfileid, false);
+                                    blockmarker.SetFileDataVerified(targetfileid);
                                     break;
                                 }
                             }

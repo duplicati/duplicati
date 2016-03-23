@@ -581,4 +581,26 @@ ul.notification {
   font-style: italic;
 }
 
+.settings div.sublabel {
+  clear: both;
+  padding: 0 31px;
+  font-style: italic;
+}
 
+.logo div.build-suffix {
+  display: inline;
+  font-size: 16px;
+}
+
+.logo div.powered-by {
+  font-size: 16px;
+  margin: 0px;
+  line-height: 16px;
+  padding: 0px;
+  margin-top: -25px;
+  margin-left: 10px
+}
+
+.fixed-width-font {
+  font-family: monospace;
+}

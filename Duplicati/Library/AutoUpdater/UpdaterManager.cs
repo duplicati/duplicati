@@ -52,6 +52,8 @@ namespace Duplicati.Library.AutoUpdater
 
         public static readonly UpdateInfo SelfVersion;
 
+        public static readonly UpdateInfo BaseVersion;
+
         public static event Action<Exception> OnError;
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
@@ -108,9 +110,18 @@ namespace Duplicati.Library.AutoUpdater
             }
 
             UpdateInfo selfVersion = null;
+            UpdateInfo baseVersion = null;
             try
             {
                 selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location));
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                baseVersion = ReadInstalledManifest(InstalledBaseDir);
             }
             catch
             {
@@ -129,7 +140,11 @@ namespace Duplicati.Library.AutoUpdater
 #endif
                 };
 
+            if (baseVersion == null)
+                baseVersion = selfVersion;
+
             SelfVersion = selfVersion;
+            BaseVersion = baseVersion;
         }
 
         public static Version TryParseVersion(string str)
@@ -195,12 +210,33 @@ namespace Duplicati.Library.AutoUpdater
                 return "";
             }
         }
-
-        public static UpdateInfo CheckForUpdate()
+            
+        public static UpdateInfo CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
         {
+            if (channel == ReleaseType.Unknown)
+                channel = AutoUpdateSettings.DefaultUpdateChannel;
 
-            foreach(var url in MANIFEST_URLS)
+            foreach(var rawurl in MANIFEST_URLS)
             {
+                var url = rawurl;
+
+                // Attempt to match the url to change the channel if possible
+                // This allows overrides to the URLs for deployment of custom builds,
+                // but does not require that they adopt the channel system
+                var match = AutoUpdateSettings.MATCH_AUTOUPDATE_URL.Match(url);
+                if (match.Success)
+                {
+                    var mg = match.Groups[AutoUpdateSettings.MATCH_UPDATE_URL_CHANNEL_GROUP];
+
+                    // Replace the channel name with the chosen channel
+                    url =
+                        url.Substring(0, mg.Index)
+                        +
+                        channel.ToString().ToLowerInvariant()
+                        +
+                        url.Substring(mg.Index + mg.Length);
+                }
+
                 try
                 {
                     using(var tmpfile = new Library.Utility.TempFile())
@@ -220,7 +256,17 @@ namespace Duplicati.Library.AutoUpdater
                             if (TryParseVersion(update.Version) <= TryParseVersion(SelfVersion.Version))
                                 return null;
 
+                            // Don't install a debug update on a release build and vice versa
                             if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                                return null;
+
+                            ReleaseType rt;
+                            if (!Enum.TryParse<ReleaseType>(update.ReleaseType, true, out rt))
+                                rt = ReleaseType.Unknown;
+
+                            // If the update is too low to be considered, skip it
+                            // Should never happen, but protects against mistakes in deployment
+                            if (rt > channel)
                                 return null;
 
                             LastUpdateCheckVersion = update;
