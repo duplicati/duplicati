@@ -240,7 +240,7 @@ namespace Duplicati.Library.Main.Operation
                 if (e.State == RemoteVolumeState.Uploading || e.State == RemoteVolumeState.Temporary)
                     database.UnlinkRemoteVolume(e.Name, e.State);
                 else
-                    throw new Exception("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Name, e.State.ToString());
+                    throw new Exception(string.Format("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Name, e.State.ToString()));
             }
 
             var locallist = database.GetRemoteVolumes();
