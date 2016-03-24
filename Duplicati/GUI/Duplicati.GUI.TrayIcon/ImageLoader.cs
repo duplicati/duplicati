@@ -21,14 +21,6 @@ using System.Collections.Generic;
 
 namespace Duplicati.GUI.TrayIcon
 {
-    public static class ImageLoaderMac
-    {
-        public static Icon LoadFromStream(System.IO.Stream s)
-        {
-            return null;
-        }
-    }
-    
     public static class ImageLoader
     {
         private static readonly System.Reflection.Assembly ASSEMBLY = System.Reflection.Assembly.GetExecutingAssembly();
@@ -36,18 +28,6 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly Dictionary<string, Bitmap> BITMAPS = new Dictionary<string, Bitmap>();
         private static readonly Dictionary<string, Icon> ICONS = new Dictionary<string, Icon>();
         private static readonly object LOCK = new object();
-
-        private static Size m_trayIconSize = Size.Empty;
-
-        /// <summary> Set size of icons to return. </summary>
-        public static void SetTrayIconSize(Size useTrayIconSize)
-        {
-            lock (LOCK)
-            {
-                ICONS.Clear();
-                m_trayIconSize = useTrayIconSize;
-            }
-        }
 
         private static Bitmap LoadImage(string filename)
         {
@@ -62,10 +42,18 @@ namespace Duplicati.GUI.TrayIcon
             return BITMAPS[filename];
         }
 
-        private static Icon LoadIcon(string filename)
+        public static Icon LoadIcon(string filename)
+        {
+            return LoadIcon(filename, new Size(32, 32));
+        }
+
+        public static Icon LoadIcon(string filename, Size size)
         {
             Icon ico;
-            if (ICONS.TryGetValue(filename, out ico))
+
+            var cachename = string.Format("{0};{1}x{2}", filename, size.Width, size.Height);
+
+            if (ICONS.TryGetValue(cachename, out ico))
                 return ico;
 
             if (!filename.EndsWith(".ico", StringComparison.InvariantCultureIgnoreCase))
@@ -77,29 +65,22 @@ namespace Duplicati.GUI.TrayIcon
 
                     ms.Position = 0;
                     lock(LOCK)
-                        if (!ICONS.TryGetValue(filename, out ico))
-                            return ICONS[filename] = ic;
+                        if (!ICONS.TryGetValue(cachename, out ico))
+                            return ICONS[cachename] = ic;
                 }
                 
             lock(LOCK)
-                if (!ICONS.TryGetValue(filename, out ico))
-                {
-                    if (!m_trayIconSize.IsEmpty)
-                        return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename), m_trayIconSize);
-                    else
-                        return ICONS[filename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename));
-                }
+                if (!ICONS.TryGetValue(cachename, out ico))
+                    return ICONS[cachename] = new Icon(ASSEMBLY.GetManifestResourceStream(PREFIX + filename), size);
             
-            return ICONS[filename];
+            return ICONS[cachename];
         }
 
-        public static Icon TrayNormal { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal.png" : "Resources.TrayNormal.ico"); } }
-        public static Icon TrayNormalError { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalError.ico"); } }
-        public static Icon TrayNormalPause { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-pause.png" : "Resources.TrayNormalPause.ico"); } }
-        public static Icon TrayNormalWarning { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-error.png" : "Resources.TrayNormalError.ico"); } }
-        public static Icon TrayWorking { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-running.png" : "Resources.TrayWorking.ico"); } }
-        public static Icon TrayWorkingPause { get { return LoadIcon(Duplicati.Library.Utility.Utility.IsClientOSX ? "OSX_Icons.normal-pause.png" : "Resources.TrayWorkingPause.ico"); } }
-        
+        public const string NormalIcon = "Resources.TrayNormal.ico";
+        public const string ErrorIcon = "Resources.TrayNormalError.ico";
+        public const string PauseIcon = "Resources.TrayNormalPause.ico";
+        public const string WorkingIcon = "Resources.TrayWorking";
+
         public static Bitmap Pause { get { return LoadImage("Resources.Pause.png"); } }
         public static Bitmap Play { get { return LoadImage("Resources.Play.png"); } }
         public static Bitmap CloseMenuIcon { get { return LoadImage("Resources.CloseMenuIcon.png"); } }
