@@ -235,6 +235,14 @@ namespace Duplicati.Library.Main.Operation
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
             var cleanupRemovedRemoteVolumes = new HashSet<string>();
 
+            foreach(var e in database.DuplicateRemoteVolumes())
+            {
+                if (e.State == RemoteVolumeState.Uploading || e.State == RemoteVolumeState.Temporary)
+                    database.UnlinkRemoteVolume(e.Name, e.State);
+                else
+                    throw new Exception("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Name, e.State.ToString());
+            }
+
             var locallist = database.GetRemoteVolumes();
             foreach(var i in locallist)
             {
