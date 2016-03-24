@@ -282,8 +282,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
                             cleanupRemovedRemoteVolumes.Add(i.Name);
-                            database.RegisterRemoteVolume(i.Name, i.Type, RemoteVolumeState.Deleting, TimeSpan.FromHours(2), null);
-                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, null);
+                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
                         }
                         else
                         {

@@ -156,9 +156,16 @@ namespace Duplicati.Library.Main.Database
         }
 
         public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
-        { UpdateRemoteVolume(name, state, size, hash, false, transaction); }
+        { 
+            UpdateRemoteVolume(name, state, size, hash, false, transaction); 
+        }
 
-		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
+        {
+            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction); 
+        }
+
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -169,6 +176,12 @@ namespace Duplicati.Library.Main.Database
             var c = m_updateremotevolumeCommand.ExecuteNonQuery();
             if (c != 1)
                 throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+
+            if (deleteGraceTime.Ticks > 0)
+                using(var cmd = m_connection.CreateCommand(transaction))
+                    if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
+                        throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)
            		RemoveRemoteVolume(name, transaction);
