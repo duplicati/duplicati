@@ -239,24 +239,24 @@ namespace Duplicati.GUI.TrayIcon
             {
                 switch(icon)
                 {
-                case TrayIcons.Paused:
-                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormalPause.ToBitmap());
-                    break;
-                case TrayIcons.Running:
-                    _images[icon] = ImageToPixbuf(ImageLoader.TrayWorking.ToBitmap());
-                    break;
-                case TrayIcons.IdleError:
-                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormalError.ToBitmap());
-                    break;
-                case TrayIcons.RunningError:
-                    _images[icon] = ImageToPixbuf(ImageLoader.TrayWorking.ToBitmap());
-                    break;
-                case TrayIcons.PausedError:
-                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormalPause.ToBitmap());
-                    break;
-                case TrayIcons.Idle:
-                default:
-                    _images[icon] = ImageToPixbuf(ImageLoader.TrayNormal.ToBitmap());
+                    case TrayIcons.Paused:
+                        _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.PauseIcon).ToBitmap());
+                        break;
+                    case TrayIcons.Running:
+                        _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.WorkingIcon).ToBitmap());
+                        break;
+                    case TrayIcons.IdleError:
+                        _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.ErrorIcon).ToBitmap());
+                        break;
+                    case TrayIcons.RunningError:
+                        _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.WorkingIcon).ToBitmap());
+                        break;
+                    case TrayIcons.PausedError:
+                            _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.PauseIcon).ToBitmap());
+                        break;
+                    case TrayIcons.Idle:
+                    default:
+                        _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.NormalIcon).ToBitmap());
                     break;
                 }
             }
