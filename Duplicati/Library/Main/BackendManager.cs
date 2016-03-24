@@ -865,7 +865,7 @@ namespace Duplicati.Library.Main
                 if (useDecrypter != null) // return decrypted temp file
                 { retTarget = decryptTarget; decryptTarget = null; }
                 else // return downloaded file
-                { retTarget = dlTarget; decryptTarget = null; }
+                { retTarget = dlTarget; dlTarget = null; }
             }
             finally
             {
