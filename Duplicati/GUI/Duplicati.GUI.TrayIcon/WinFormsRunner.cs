@@ -116,8 +116,6 @@ namespace Duplicati.GUI.TrayIcon.Windows
 
             WinFormsRunner.Instance = this;
 
-            ImageLoader.SetTrayIconSize(System.Windows.Forms.SystemInformation.SmallIconSize);
-
             //We need this ugly hack to get a handle that we can call Invoke on,
             // and sadly the TrayIcon does not expose one, and forcing the context menu
             // to create one causes weird "lost clicks"
@@ -174,23 +172,23 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 switch (value)
                 {
                     case TrayIcons.IdleError:
-                        m_trayIcon.Icon = ImageLoader.TrayNormalError;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.ErrorIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.Paused:
-                        m_trayIcon.Icon = ImageLoader.TrayNormalPause;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.PausedError:
-                        m_trayIcon.Icon = ImageLoader.TrayNormalPause;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.Running:
-                        m_trayIcon.Icon = ImageLoader.TrayWorking;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.RunningError:
-                        m_trayIcon.Icon = ImageLoader.TrayWorking;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.Idle:
                     default:
-                        m_trayIcon.Icon = ImageLoader.TrayNormal;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.NormalIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                 }
             }
