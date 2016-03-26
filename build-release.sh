@@ -183,7 +183,7 @@ if [ "${RELEASE_TYPE}" == "stable" ]; then
 	PRE_RELEASE_LABEL=""
 fi
 
-RELEASE_MESSAGE=`printf "Changes: ${RELEASE_CHANGEINFO_NEWS}\n\nBinaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip\nSignature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig\nASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc\nMD5: ${ZIP_MD5}\nSHA1: ${ZIP_SHA1}\nSHA256: ${ZIP_SHA256}"`
+RELEASE_MESSAGE=`printf "Changes:\n${RELEASE_CHANGEINFO_NEWS}\n\nBinaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip\nSignature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig\nASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc\nMD5: ${ZIP_MD5}\nSHA1: ${ZIP_SHA1}\nSHA256: ${ZIP_SHA256}"`
 
 # Using the tool from https://github.com/aktau/github-release
 
