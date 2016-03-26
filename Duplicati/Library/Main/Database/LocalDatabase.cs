@@ -17,6 +17,7 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_removeremotevolumeCommand;
 		private readonly System.Data.IDbCommand m_selectremotevolumeIdCommand;
         private readonly System.Data.IDbCommand m_createremotevolumeCommand;
+        private readonly System.Data.IDbCommand m_selectduplicateRemoteVolumesCommand;
 
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
@@ -91,6 +92,7 @@ namespace Duplicati.Library.Main.Database
 		{
             m_updateremotevolumeCommand = connection.CreateCommand();
             m_selectremotevolumesCommand = connection.CreateCommand();
+            m_selectduplicateRemoteVolumesCommand = connection.CreateCommand();
             m_selectremotevolumeCommand = connection.CreateCommand();
             m_insertlogCommand = connection.CreateCommand();
             m_insertremotelogCommand = connection.CreateCommand();
@@ -109,6 +111,8 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.AddParameters(5);
 
             m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
+
+            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT ID FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN (""{0}"", ""{1}"")) AND NOT ""State"" IN (""{0}"", ""{1}"")", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
 
             m_selectremotevolumeCommand.CommandText = @"SELECT ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_selectremotevolumeCommand.AddParameter();
@@ -156,9 +160,16 @@ namespace Duplicati.Library.Main.Database
         }
 
         public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
-        { UpdateRemoteVolume(name, state, size, hash, false, transaction); }
+        { 
+            UpdateRemoteVolume(name, state, size, hash, false, transaction); 
+        }
 
-		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
+        {
+            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction); 
+        }
+
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -169,6 +180,12 @@ namespace Duplicati.Library.Main.Database
             var c = m_updateremotevolumeCommand.ExecuteNonQuery();
             if (c != 1)
                 throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+
+            if (deleteGraceTime.Ticks > 0)
+                using(var cmd = m_connection.CreateCommand(transaction))
+                    if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
+                        throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)
            		RemoveRemoteVolume(name, transaction);
@@ -263,6 +280,21 @@ namespace Duplicati.Library.Main.Database
             return false;
         }
 
+        public IEnumerable<RemoteVolumeEntry> DuplicateRemoteVolumes()
+        {
+            foreach(var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerable(null))
+            {
+                yield return new RemoteVolumeEntry(
+                    rd.GetValue(0).ToString(),
+                    (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
+                    rd.ConvertValueToInt64(2, -1),
+                    (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
+                    (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
+                    new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
+                );
+            }
+        }
+
         public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes()
         {
             using (var rd = m_selectremotevolumesCommand.ExecuteReader())
@@ -313,6 +345,20 @@ namespace Duplicati.Library.Main.Database
             m_insertlogCommand.SetParameterValue(3, message);
             m_insertlogCommand.SetParameterValue(4, exception == null ? null : exception.ToString());
             m_insertlogCommand.ExecuteNonQuery();
+        }
+
+        public void UnlinkRemoteVolume(string name, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+        {
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = tr.Parent;
+                var c = cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteVolume"" WHERE ""Name"" = ? AND ""State"" = ? ", name, state.ToString());
+                if (c != 1)
+                    throw new Exception(string.Format("Unexpected number of remote volumes deleted: {0}, expected {1}", c, 1));
+
+                tr.Commit();
+            }
         }
 
         public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
