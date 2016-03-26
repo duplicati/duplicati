@@ -542,13 +542,20 @@ namespace Duplicati.Library.Main
 
             if (m_options.HasForcedLocale)
             {
-                var locale = m_options.ForcedLocale;
-                // Wrap the call to avoid loading issues for the getLocale method
-                DoGetLocale(out m_resetLocale, out m_resetLocaleUI);
-                m_doResetLocale = true;
-
-                // Wrap the call to avoid loading issues for the setLocale method
-                DoSetLocale(locale, locale);
+                try
+                {
+                    var locale = m_options.ForcedLocale;
+                    DoGetLocale(out m_resetLocale, out m_resetLocaleUI);
+                    m_doResetLocale = true;
+                    // Wrap the call to avoid loading issues for the setLocale method
+                    DoSetLocale(locale, locale);
+                }
+                catch (Exception ex) // or only: MissingMethodException
+                {
+                    Library.Logging.Log.WriteMessage(Strings.Controller.FailedForceLocaleError(ex.Message), Logging.LogMessageType.Warning);
+                    m_doResetLocale = false;
+                    m_resetLocale = m_resetLocaleUI = null;
+                }
             }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
