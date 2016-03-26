@@ -200,15 +200,13 @@ else
 	    --security-token "${GITHUB_TOKEN}" \
 	    --description "${RELEASE_MESSAGE}" \
 
-    cd "${RELEASE_TYPE}"
 	github-release upload \
 	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
-	    --name "${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" \
+	    --name "${RELEASE_FILE_NAME}.zip" \
 	    --repo "duplicati" \
 	    --user "duplicati" \
 	    --security-token "${GITHUB_TOKEN}" \
-	    --file "${RELEASE_FILE_NAME}.zip"
-	cd ..
+	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 fi
 
 echo
