@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Database
             ""E"".""BlocksetID"",
             ""F"".""Index"" + (""E"".""BlocklistIndex"" * {3}) AS ""FullIndex"",
             ""F"".""BlockHash"",
-            MIN({3} * {1}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {3})) * {0})) AS ""BlockSize"",
+            MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {3})) * {0})) AS ""BlockSize"",
             ""E"".""Hash"",
             ""E"".""BlocklistSize"",
             ""E"".""BlocklistHash""
