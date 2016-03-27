@@ -34,6 +34,11 @@
                     <backup-edit-uri uri="Backup.TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
 
                     <div ng-hide="EditUriState">
+                        <div class="input text linklabel">
+                            <label for="importlink">&nbsp;</label>
+                            <a href="#import">Import configuration from a file ...</a>
+                        </div>
+
                         <div class="input text">
                             <label for="name">Name</label>
                             <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="My Photos"/>
