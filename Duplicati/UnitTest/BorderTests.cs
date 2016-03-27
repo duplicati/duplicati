@@ -64,7 +64,7 @@ namespace Duplicati.UnitTest
         {
             var testopts = TestOptions;
             testopts["verbose"] = "true";
-            testopts["blocksize"] = blocksize.ToString();
+            testopts["blocksize"] = blocksize.ToString() + "b";
 
             if (basedatasize <= 0)
                 basedatasize = blocksize * 1024;
