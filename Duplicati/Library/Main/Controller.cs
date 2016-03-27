@@ -382,6 +382,16 @@ namespace Duplicati.Library.Main
 		}
 
         /// <summary>
+        /// Attempts to get the locale, but delays linking to the calls as they are missing in some environments
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void DoGetLocale(out System.Globalization.CultureInfo locale, out System.Globalization.CultureInfo uiLocale)
+        {
+            locale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
+            uiLocale = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
+        }
+        
+        /// <summary>
         /// Attempts to set the locale, but delays linking to the calls as they are missing in some environments
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -532,13 +542,20 @@ namespace Duplicati.Library.Main
 
             if (m_options.HasForcedLocale)
             {
-                var locale = m_options.ForcedLocale;
-                m_resetLocale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
-                m_resetLocaleUI = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
-                m_doResetLocale = true;
-
-                // Wrap the call to avoid loading issues for the setLocale method
-                DoSetLocale(locale, locale);
+                try
+                {
+                    var locale = m_options.ForcedLocale;
+                    DoGetLocale(out m_resetLocale, out m_resetLocaleUI);
+                    m_doResetLocale = true;
+                    // Wrap the call to avoid loading issues for the setLocale method
+                    DoSetLocale(locale, locale);
+                }
+                catch (Exception ex) // or only: MissingMethodException
+                {
+                    Library.Logging.Log.WriteMessage(Strings.Controller.FailedForceLocaleError(ex.Message), Logging.LogMessageType.Warning);
+                    m_doResetLocale = false;
+                    m_resetLocale = m_resetLocaleUI = null;
+                }
             }
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))

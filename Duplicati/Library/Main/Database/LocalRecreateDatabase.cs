@@ -73,13 +73,18 @@ namespace Duplicati.Library.Main.Database
         private Dictionary<long, long> m_proccessedVolumes;
         
         // SQL that finds index and block size for all blocklist hashes, based on the temporary hash list
-        private const string SELECT_BLOCKLIST_ENTRIES = 
+        // with vars Used:
+        // {0} --> Blocksize
+        // {1} --> BlockHash-Size
+        // {2} --> Temp-Table
+        // {3} --> FullBlocklist-BlockCount [equals ({0} / {1}), if SQLite pays respect to ints]
+        private const string SELECT_BLOCKLIST_ENTRIES =
             @" 
         SELECT DISTINCT
             ""E"".""BlocksetID"",
-            ""F"".""Index"" + (""E"".""BlocklistIndex"" * ({0} / {1})) AS ""FullIndex"",
+            ""F"".""Index"" + (""E"".""BlocklistIndex"" * {3}) AS ""FullIndex"",
             ""F"".""BlockHash"",
-            MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * ({0} / {1}))) * {0})) AS ""BlockSize"",
+            MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {3})) * {0})) AS ""BlockSize"",
             ""E"".""Hash"",
             ""E"".""BlocklistSize"",
             ""E"".""BlocklistHash""
@@ -90,7 +95,7 @@ namespace Duplicati.Library.Main.Database
                         SELECT 
                             ""A"".""BlocksetID"",
                             ""A"".""Index"" AS ""BlocklistIndex"",
-                            MIN(10240, (((""B"".""Length"" + {0} - 1) / {0}) - (""A"".""Index"" * ({0} / {1}))) * {1}) AS ""BlocklistSize"",
+                            MIN({3} * {1}, (((""B"".""Length"" + {0} - 1) / {0}) - (""A"".""Index"" * ({3}))) * {1}) AS ""BlocklistSize"",
                             ""A"".""Hash"" AS ""BlocklistHash"",
                             ""B"".""Length""
                         FROM 
@@ -209,7 +214,8 @@ namespace Duplicati.Library.Main.Database
                     @" )",
                     blocksize,
                     hashsize,
-                    m_tempblocklist
+                    m_tempblocklist,
+                    blocksize / hashsize
                 );
                                 
                 var selectAllBlocks = @"SELECT DISTINCT ""FullHash"", ""Length"" FROM (" + selectBlockHashes + " UNION " + selectSmallBlocks + " )";
@@ -247,7 +253,8 @@ namespace Duplicati.Library.Main.Database
                     @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
                     blocksize,
                     hashsize,
-                    m_tempblocklist
+                    m_tempblocklist,
+                    blocksize / hashsize
                     );
                     
                 var selectBlocksetEntries = string.Format(
@@ -419,8 +426,8 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                if (c > expectedblocklisthashes)
-                    m_result.AddWarning(string.Format("Extra blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
+                if (c != expectedblocklisthashes) // or is there a legacy with single element blocklist hashes? --> && !(c == 1 && hash == computeBlockHash(fullhash))
+                    m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
 
             }
                             

@@ -161,6 +161,10 @@
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
+      <Project>{59c8bbc5-6e42-46fb-ab3e-6c183a82459a}</Project>
+      <Name>Duplicati.Library.Backend.SharePoint</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>
       <Name>Duplicati.Library.Backend.SSHv2</Name>

@@ -1,5 +1,5 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
+﻿Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
@@ -80,6 +80,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.UsageReporter", "Duplicati\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj", "{BB014EA5-CE2C-4444-8D30-38983A0E8553}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SharePoint", "Duplicati\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj", "{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -247,6 +249,10 @@ Global
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

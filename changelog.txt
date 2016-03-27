@@ -1,3 +1,10 @@
+2016-03-26
+==========
+* Fixed a problem with recreating database from backup data
+* Added a OneDrive for business backend
+* Fixed tray icons on all platforms
+* Fixed an issue with running on .Net 4.0
+
 2016-03-20
 ==========
 * New icons, thanks to @agrajaghh
