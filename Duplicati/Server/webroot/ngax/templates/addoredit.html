@@ -162,8 +162,8 @@
                     <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
                     <label for="exclude-large-files">Files larger than:</label>
 
-                    <input type="number" parse-size-number ng-model="Backup.Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-                    <select parse-size-multiplier id="exclude-larger-than-multiplier" ng-model="Backup.Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                    <input type="number" parse-size-number ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
+                    <select parse-size-multiplier id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
                     </select>
 
                 </div>    
