@@ -79,7 +79,7 @@ namespace Duplicati.GUI.TrayIcon
         public const string NormalIcon = "Resources.TrayNormal.ico";
         public const string ErrorIcon = "Resources.TrayNormalError.ico";
         public const string PauseIcon = "Resources.TrayNormalPause.ico";
-        public const string WorkingIcon = "Resources.TrayWorking";
+        public const string WorkingIcon = "Resources.TrayWorking.ico";
 
         public static Bitmap Pause { get { return LoadImage("Resources.Pause.png"); } }
         public static Bitmap Play { get { return LoadImage("Resources.Play.png"); } }
