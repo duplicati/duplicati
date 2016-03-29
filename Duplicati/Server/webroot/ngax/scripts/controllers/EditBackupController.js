@@ -163,6 +163,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 		if (($scope.ExcludeAttributes || []).length > 0) {
 			opts['--exclude-files-attributes'] = $scope.ExcludeAttributes.join(',');
+			
+			while (opts['--exclude-files-attributes'].indexOf(',') == 0)
+				opts['--exclude-files-attributes'] = opts['--exclude-files-attributes'].substr(1);
+
 			if (opts['--exclude-files-attributes'] == '')
 				delete opts['--exclude-files-attributes'];
 		}
@@ -398,8 +402,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		for(var ix in filters)
 			$scope.Backup.Filters.push((filters[ix].Include ? '+' : '-') + filters[ix].Expression);
 
-		$scope.ExcludeLargeFiles = $scope.Options['--skip-files-larger-than'];
-		$scope.ExcludeAttributes = ($scope.Options['--exclude-files-attributes'] || '').split(',');
+		$scope.ExcludeLargeFiles = (extopts['--skip-files-larger-than'] || '').trim().length > 0;
+		if ($scope.ExcludeLargeFiles)
+			$scope.Options['--skip-files-larger-than'] = extopts['--skip-files-larger-than'];
+		$scope.ExcludeAttributes = (extopts['--exclude-files-attributes'] || '').split(',');
 
 		$scope.RepeatPasshrase = $scope.Options['passphrase'];
 
