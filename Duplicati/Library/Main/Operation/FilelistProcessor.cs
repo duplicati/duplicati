@@ -237,10 +237,10 @@ namespace Duplicati.Library.Main.Operation
 
             foreach(var e in database.DuplicateRemoteVolumes())
             {
-                if (e.State == RemoteVolumeState.Uploading || e.State == RemoteVolumeState.Temporary)
-                    database.UnlinkRemoteVolume(e.Name, e.State);
+                if (e.Value == RemoteVolumeState.Uploading || e.Value == RemoteVolumeState.Temporary)
+                    database.UnlinkRemoteVolume(e.Key, e.Value);
                 else
-                    throw new Exception(string.Format("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Name, e.State.ToString()));
+                    throw new Exception(string.Format("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Key, e.Value.ToString()));
             }
 
             var locallist = database.GetRemoteVolumes();

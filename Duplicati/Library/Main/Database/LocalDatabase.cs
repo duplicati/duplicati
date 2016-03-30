@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Database
 
             m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
-            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT ID FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN (""{0}"", ""{1}"")) AND NOT ""State"" IN (""{0}"", ""{1}"")", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
+            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN (""{0}"", ""{1}"")) AND NOT ""State"" IN (""{0}"", ""{1}"")", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
 
             m_selectremotevolumeCommand.CommandText = @"SELECT ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_selectremotevolumeCommand.AddParameter();
@@ -280,17 +280,13 @@ namespace Duplicati.Library.Main.Database
             return false;
         }
 
-        public IEnumerable<RemoteVolumeEntry> DuplicateRemoteVolumes()
+        public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
         {
             foreach(var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerable(null))
             {
-                yield return new RemoteVolumeEntry(
+                yield return new KeyValuePair<string, RemoteVolumeState>(
                     rd.GetValue(0).ToString(),
-                    (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
-                    rd.ConvertValueToInt64(2, -1),
-                    (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
-                    (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
-                    new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
+                    (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(1).ToString())
                 );
             }
         }
