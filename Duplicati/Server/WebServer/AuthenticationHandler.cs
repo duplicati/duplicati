@@ -293,7 +293,7 @@ namespace Duplicati.Server.WebServer
                 return true;
             }
                 
-            if (ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
+            if (limitedAccess)
             {
                 response.Status = System.Net.HttpStatusCode.Unauthorized;
                 response.Reason = "Not logged in";
