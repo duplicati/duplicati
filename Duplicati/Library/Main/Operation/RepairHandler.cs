@@ -202,18 +202,15 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         foreach(var rv in ifr.Volumes)
                                         {
-                                            string cmphash;
-                                            long cmpsize;
-                                            RemoteVolumeType cmptype;
-                                            RemoteVolumeState cmpstate;
-                                            if (!db.GetRemoteVolume(rv.Filename, out cmphash, out cmpsize, out cmptype, out cmpstate))
+                                            var entry = db.GetRemoteVolume(rv.Filename);
+                                            if (entry.ID < 0)
                                                 throw new Exception(string.Format("Unknown remote file {0} detected", rv.Filename));
                                             
-                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
-                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, cmpstate));
+                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, entry.State));
                                         
-                                            if (cmphash != rv.Hash || cmpsize != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
-                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, cmphash, cmpsize, rv.Hash, rv.Length));
+                                            if (entry.Hash != rv.Hash || entry.Size != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
 
                                             db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
                                         }
