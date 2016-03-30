@@ -1,4 +1,4 @@
-backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUtils, ServerStatus, appConfig) {
+backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUtils, ServerStatus) {
     var list = [];
     var lookup = {};
 
