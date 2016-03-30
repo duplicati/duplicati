@@ -47,11 +47,6 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
         return installResponseHook($http.get(rurl, setupConfig('GET', options)));
     };
     
-    this.getx = function(url, options) {
-        var rurl = this.apiurl + url;
-        return $http.get(rurl, setupConfig('GET', options));
-    };
-
     this.patch = function(url, data, options) {
         var rurl = this.apiurl + url;
         return installResponseHook($http.patch(rurl, data, setupConfig('PATCH', options, data)));
