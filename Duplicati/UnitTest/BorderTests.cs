@@ -18,6 +18,7 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
@@ -60,7 +61,48 @@ namespace Duplicati.UnitTest
             RunCommands(12345, 1024 * 1024 * 10);
         }
 
-        private void RunCommands(int blocksize, int basedatasize = 0)
+        [Test]
+        public void RunMD5()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "MD5";
+                opts["file-hash-algorithm"] = "MD5";
+            });
+        }
+            
+        [Test]
+        public void RunSHA384()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "SHA384";
+                opts["file-hash-algorithm"] = "SHA384";
+            });
+        }
+
+        [Test]
+        public void RunMixedBlockFile_1()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "MD5";
+                opts["file-hash-algorithm"] = "SHA1";
+            });
+        }
+
+        [Test]
+        public void RunMixedBlockFile_2()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "MD5";
+                opts["file-hash-algorithm"] = "SHA256";
+            });
+        }
+
+
+        private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
             testopts["verbose"] = "true";
