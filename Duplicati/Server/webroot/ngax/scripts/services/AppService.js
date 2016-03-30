@@ -1,4 +1,4 @@
-backupApp.service('AppService', function($http, $cookies) {
+backupApp.service('AppService', function($http, $cookies, $q, DialogService, appConfig) {
     this.apiurl = '/api/v1';
 
     var setupConfig = function (method, options, data) {
@@ -10,41 +10,66 @@ backupApp.service('AppService', function($http, $cookies) {
         options.headers = options.headers || {};
 
         if ((method == "POST" || method == "PATCH" || method == "PUT") && options.headers['Content-Type'] == null && data != null && typeof(data) != typeof('')) {
-			options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
-			options.transformRequest = function(obj) {
-		        var str = [];
-		        for(var p in obj)
-		        str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
-		        return str.join("&");
-		    };
+            options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
+            options.transformRequest = function(obj) {
+                var str = [];
+                for(var p in obj)
+                str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+                return str.join("&");
+            };
         }
 
         return options;
     };
+        
+    var installResponseHook = function(promise) {        
+        var deferred = $q.defer();
+        
+        promise.then(function successCallback(response) {
+            deferred.resolve(response);
+        }, function errorCallback(response) {                            
+            if (response.status == 401){
+                DialogService.dismissAll();
+                DialogService.accept('Not logged in', function () {
+                    window.location = appConfig.login_url;
+                });
+                return;
+            }
+            deferred.reject(response);    
+        });
+        
+        return deferred.promise;
+    };
 
-    this.get = function(url, options) {
+    this.get = function(url, options) {        
+        var rurl = this.apiurl + url;
+        
+        return installResponseHook($http.get(rurl, setupConfig('GET', options)));
+    };
+    
+    this.getx = function(url, options) {
         var rurl = this.apiurl + url;
         return $http.get(rurl, setupConfig('GET', options));
     };
 
     this.patch = function(url, data, options) {
         var rurl = this.apiurl + url;
-        return $http.patch(rurl, data, setupConfig('PATCH', options, data));
+        return installResponseHook($http.patch(rurl, data, setupConfig('PATCH', options, data)));
     };
 
     this.post = function(url, data, options) {
         var rurl = this.apiurl + url;
-        return $http.post(rurl, data, setupConfig('POST', options, data));
+        return installResponseHook($http.post(rurl, data, setupConfig('POST', options, data)));
     };
 
     this.put = function(url, data, options) {
         var rurl = this.apiurl + url;
-        return $http.put(rurl, data, setupConfig('PUT', options, data));
+        return installResponseHook($http.put(rurl, data, setupConfig('PUT', options, data)));
     };
 
     this.delete = function(url, options) {
         var rurl = this.apiurl + url;
-        return $http.delete(rurl, setupConfig('DELETE', options));
+        return installResponseHook($http.delete(rurl, setupConfig('DELETE', options)));
     };
 
 
@@ -67,6 +92,4 @@ backupApp.service('AppService', function($http, $cookies) {
     this.get_bugreport_url = function(reportid) {
         return this.apiurl + '/bugreport/' + reportid + '?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
     };
-
-
 });
