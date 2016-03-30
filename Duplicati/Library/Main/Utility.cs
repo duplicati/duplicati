@@ -49,9 +49,9 @@ namespace Duplicati.Library.Main
                 m_values = values;
                 var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
                 if (hasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
                 if (!hasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
                     
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
@@ -165,14 +165,20 @@ namespace Duplicati.Library.Main
                         throw new Exception(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
                     
                 }
-                    
-        
+                            
             //Extra sanity check
             if (db.GetBlocksLargerThan(options.Blocksize) > 0)
                 throw new Exception("Unsupported block-size change detected");
         
             if (needsUpdate)
+            {
+                // Make sure we do not loose values
+                foreach(var k in opts)
+                    if (!newDict.ContainsKey(k.Key))
+                        newDict[k.Key] = k.Value;
+                
                 db.SetDbOptions(newDict, transaction);               
+            }
         }
 
         /// <summary>

@@ -1,3 +1,30 @@
+2016-03-26
+==========
+* Fixed a problem with recreating database from backup data
+* Added a OneDrive for business backend
+* Fixed tray icons on all platforms
+* Fixed an issue with running on .Net 4.0
+
+2016-03-20
+==========
+* New icons, thanks to @agrajaghh
+* Multithreading is now enabled by default
+
+2016-03-18
+==========
+* Improved rebuild of the local database
+
+2016-03-16
+==========
+* Improvements to database size, thanks to @FootStark
+* Reduced storage for large backup sets, thanks to @FootStark
+* Update version of SharpAESCrypt with utilization of hardware support for encryption/decryption if available
+
+2016-03-14
+==========
+* Added options to run AES encryption with two threads, and decryption with up to four
+* Fixed some minor issues with the UI introduced in the previous build
+
 2016-03-13
 ==========
 * Updated icons for Windows and Linux

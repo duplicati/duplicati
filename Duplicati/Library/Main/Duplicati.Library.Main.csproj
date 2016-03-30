@@ -72,7 +72,6 @@
     <Compile Include="Operation\DeleteHandler.cs" />
     <Compile Include="Operation\CreateBugReportHandler.cs" />
     <Compile Include="Operation\RepairHandler.cs" />
-    <Compile Include="Volumes\BlocklistEnumerable.cs" />
     <Compile Include="Volumes\BlockVolumeReader.cs" />
     <Compile Include="Volumes\BlockVolumeWriter.cs" />
     <Compile Include="Volumes\FilesetVolumeReader.cs" />
@@ -198,6 +197,7 @@
   </Target>
   -->
   <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

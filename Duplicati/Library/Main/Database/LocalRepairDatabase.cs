@@ -490,6 +490,87 @@ namespace Duplicati.Library.Main.Database
                 }
             }
         }
+
+        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
+        {
+            using(var tr = m_connection.BeginTransaction())
+            using(var cmd = m_connection.CreateCommand(tr))
+            {
+                var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)", tablename));
+                cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Hash"", ""Size"") VALUES (?, ?)", tablename);
+                cmd.AddParameters(2);
+
+                foreach(var kp in blocks)
+                {
+                    cmd.SetParameterValue(0, kp.Key);
+                    cmd.SetParameterValue(1, kp.Value);
+                    cmd.ExecuteNonQuery();
+                }
+
+                var id = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?", -1, filename);
+                var aliens = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT ""A"".""VolumeID"" FROM ""{0}"" B LEFT OUTER JOIN ""Block"" A ON ""A"".""Hash"" = ""B"".""Hash"" AND ""A"".""Size"" = ""B"".""Size"") WHERE ""VolumeID"" != ? ", tablename), 0, id);
+
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
+
+                if (aliens != 0)
+                    throw new Exception(string.Format("Not all blocks were found in {0}", filename));
+            }
+        }
+
+        public void CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            {
+                var query = string.Format(@"
+SELECT 
+    ""C"".""Hash"", 
+    ""C"".""Size""
+FROM 
+    ""BlocksetEntry"" A, 
+    (
+        SELECT 
+            ""Y"".""BlocksetID"",
+            ""Y"".""Hash"" AS ""BlocklistHash"",
+            ""Y"".""Index"" AS ""BlocklistHashIndex"",
+            ""Z"".""Size"" AS ""BlocklistSize"",
+            ""Z"".""ID"" AS ""BlocklistHashBlockID"" 
+        FROM 
+            ""BlocklistHash"" Y,
+            ""Block"" Z 
+        WHERE 
+            ""Y"".""Hash"" = ""Z"".""Hash"" AND ""Y"".""Hash"" = ? AND ""Z"".""Size"" = ?
+        LIMIT 1
+    ) B,
+    ""Block"" C
+WHERE 
+    ""A"".""BlocksetID"" = ""B"".""BlocksetID"" 
+    AND 
+    ""A"".""BlockID"" = ""C"".""ID""
+    AND
+    ""A"".""Index"" >= ""B"".""BlocklistHashIndex"" * ({0} / {1})
+    AND
+    ""A"".""Index"" < (""B"".""BlocklistHashIndex"" + 1) * ({0} / {1})
+ORDER BY 
+    ""A"".""Index""
+
+"
+                ,blocksize, blockhashlength);
+
+                var en = blocklist.GetEnumerator();
+                foreach(var r in cmd.ExecuteReaderEnumerable(query, hash, length))
+                {
+                    if (!en.MoveNext())
+                        throw new Exception(string.Format("Too few entries in source blocklist with hash {0}", hash));
+                    if (en.Current != r.GetString(0))
+                        throw new Exception(string.Format("Mismatch in blocklist with hash {0}", hash));
+                }
+
+                if (en.MoveNext())
+                    throw new Exception(string.Format("Too many source blocklist entries in {0}", hash));
+            }
+        }
 	}
 }
 

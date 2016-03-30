@@ -40,12 +40,17 @@ namespace Duplicati.Library.Main.Volumes
         	
         }
 
+        public void ResetRemoteFilename(Options options, DateTime timestamp)
+        {
+            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+        }
+
         public VolumeWriterBase(Options options, DateTime timestamp)
             : base(options)
         {
             m_localfile = new Library.Utility.TempFile();
 
-			m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            ResetRemoteFilename(options, timestamp);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
             
             if(m_compression == null)

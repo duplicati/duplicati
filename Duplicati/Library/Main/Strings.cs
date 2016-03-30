@@ -20,6 +20,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); } 
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); } 
+        public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
     }
 
     internal static class Options 
@@ -205,19 +206,16 @@ namespace Duplicati.Library.Main.Strings
         public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Cultute""."); } }
-        public static string EnablepipingShort{ get { return LC.L(@"Handle downloads with threaded pipes"); } }
-        public static string EnablepipingLong { get { return LC.L(@"Use this option to enable an experimental multithreaded download handling, that can significantly speed up restore operations or backup verifications depending on the hardware you're running on and your fileset. This operation mode is experimental and by default disabled."); } }
-            }
+        public static string DisablepipingShort{ get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
+        public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
+    }
 
-    internal static class Foresthash 
+    internal static class Common 
     {
         public static string InvalidCryptoSystem(string algorithm) { return LC.L(@"The cryptolibrary does not support re-usable transforms for the hash algorithm {0}", algorithm); }
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }
         public static string PassphraseChangeUnsupported { get { return LC.L(@"The passphrase cannot be changed for an existing backup"); } }
-    }
-    
-    internal static class RSyncDir 
-    {
         public static string SnapshotFailedError(string message) { return LC.L(@"Failed to create a snapshot: {0}", message); }
     }
+
 }

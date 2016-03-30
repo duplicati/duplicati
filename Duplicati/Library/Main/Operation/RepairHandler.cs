@@ -20,7 +20,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
+                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
         }
         
         public void Run(Library.Utility.IFilter filter = null)
@@ -101,15 +101,18 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
+                if (db.RepairInProgress)
+                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
                 var buffer = new byte[m_options.Blocksize];
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 				
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
@@ -185,6 +188,56 @@ namespace Duplicati.Library.Main.Operation
 
                             progress++;
                             m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+
+                            // If this is a new index file, we can accept it if it matches our local data
+                            // This makes it possible to augment the remote store with new index data
+                            if (n.FileType == RemoteVolumeType.Index && m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                            {
+                                try
+                                {
+                                    string hash;
+                                    long size;
+                                    using(var tf = backend.GetWithInfo(n.File.Name, out size, out hash))
+                                    using(var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
+                                    {
+                                        foreach(var rv in ifr.Volumes)
+                                        {
+                                            string cmphash;
+                                            long cmpsize;
+                                            RemoteVolumeType cmptype;
+                                            RemoteVolumeState cmpstate;
+                                            if (!db.GetRemoteVolume(rv.Filename, out cmphash, out cmpsize, out cmptype, out cmpstate))
+                                                throw new Exception(string.Format("Unknown remote file {0} detected", rv.Filename));
+                                            
+                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
+                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, cmpstate));
+                                        
+                                            if (cmphash != rv.Hash || cmpsize != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
+                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, cmphash, cmpsize, rv.Hash, rv.Length));
+
+                                            db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
+                                        }
+
+                                        var blocksize = m_options.Blocksize;
+                                        foreach(var ixb in ifr.BlockLists)
+                                            db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
+
+                                        var selfid = db.GetRemoteVolumeID(n.File.Name);
+                                        foreach(var rv in ifr.Volumes)
+                                            db.AddIndexBlockLink(selfid, db.GetRemoteVolumeID(rv.Filename), null);
+                                    }
+                                    
+                                    // All checks fine, we accept the new index file
+                                    m_result.AddMessage(string.Format("Accepting new index file {0}", n.File.Name));
+                                    db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, size, RemoteVolumeState.Uploading);
+                                    db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash);
+                                    continue;
+                                }
+                                catch (Exception rex)
+                                {
+                                    m_result.AddError(string.Format("Failed to accept new index file: {0}, message: {1}", n.File.Name, rex.Message), rex);
+                                }
+                            }
                         
                             if (!m_options.Dryrun)
                             {
@@ -399,6 +452,12 @@ namespace Duplicati.Library.Main.Operation
             using(var db = new LocalRepairDatabase(m_options.Dbpath))
             {
                 db.SetResult(m_result);
+
+                Utility.UpdateOptionsFromDb(db, m_options);
+
+                if (db.RepairInProgress)
+                    m_result.AddWarning("The database is marked as \"in-progress\" and may be incomplete.", null);
+
                 db.FixDuplicateMetahash();
                 db.FixDuplicateFileentries();
                 db.FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize);

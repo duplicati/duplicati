@@ -35,7 +35,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
         var patchdata = {
             'server-passphrase': $scope.requireRemotePassword ? $scope.remotePassword : '',
 
-            'server-listen-interface': $scope.allowRemoteAccess ? any : 'loopback',
+            'server-listen-interface': $scope.allowRemoteAccess ? 'any' : 'loopback',
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel

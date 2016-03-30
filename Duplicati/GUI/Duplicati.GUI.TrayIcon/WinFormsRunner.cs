@@ -172,23 +172,23 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 switch (value)
                 {
                     case TrayIcons.IdleError:
-                        m_trayIcon.Icon = ImageLoader.TrayNormalError;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.ErrorIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.Paused:
-                        m_trayIcon.Icon = ImageLoader.TrayNormalPause;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.PausedError:
-                        m_trayIcon.Icon = ImageLoader.TrayNormalPause;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.Running:
-                        m_trayIcon.Icon = ImageLoader.TrayWorking;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.RunningError:
-                        m_trayIcon.Icon = ImageLoader.TrayWorking;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                     case TrayIcons.Idle:
                     default:
-                        m_trayIcon.Icon = ImageLoader.TrayNormal;
+                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.NormalIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                         break;
                 }
             }

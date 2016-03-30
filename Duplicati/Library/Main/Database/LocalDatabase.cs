@@ -17,6 +17,7 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_removeremotevolumeCommand;
 		private readonly System.Data.IDbCommand m_selectremotevolumeIdCommand;
         private readonly System.Data.IDbCommand m_createremotevolumeCommand;
+        private readonly System.Data.IDbCommand m_selectduplicateRemoteVolumesCommand;
 
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
@@ -93,6 +94,7 @@ namespace Duplicati.Library.Main.Database
 		{
             m_updateremotevolumeCommand = connection.CreateCommand();
             m_selectremotevolumesCommand = connection.CreateCommand();
+            m_selectduplicateRemoteVolumesCommand = connection.CreateCommand();
             m_selectremotevolumeCommand = connection.CreateCommand();
             m_insertlogCommand = connection.CreateCommand();
             m_insertremotelogCommand = connection.CreateCommand();
@@ -113,6 +115,8 @@ namespace Duplicati.Library.Main.Database
             m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
             m_selectremotevolumeCommand.CommandText = m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?";
+            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN (""{0}"", ""{1}"")) AND NOT ""State"" IN (""{0}"", ""{1}"")", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
+
             m_selectremotevolumeCommand.AddParameter();
 
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ?";
@@ -156,8 +160,18 @@ namespace Duplicati.Library.Main.Database
         {
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
         }
-        
-		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
+
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
+        { 
+            UpdateRemoteVolume(name, state, size, hash, false, transaction); 
+        }
+
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
+        {
+            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction); 
+        }
+
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -168,8 +182,14 @@ namespace Duplicati.Library.Main.Database
             var c = m_updateremotevolumeCommand.ExecuteNonQuery();
             if (c != 1)
                 throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
-            	
-           	if (state == RemoteVolumeState.Deleted)
+
+            if (deleteGraceTime.Ticks > 0)
+                using(var cmd = m_connection.CreateCommand(transaction))
+                    if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
+                        throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+
+
+            if (!suppressCleanup && state == RemoteVolumeState.Deleted)
            		RemoveRemoteVolume(name, transaction);
         }
         
@@ -257,8 +277,19 @@ namespace Duplicati.Library.Main.Database
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
                         new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
                     );
-
+            
             return RemoteVolumeEntry.Empty;
+        }
+
+        public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
+        {
+            foreach(var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerable(null))
+            {
+                yield return new KeyValuePair<string, RemoteVolumeState>(
+                    rd.GetValue(0).ToString(),
+                    (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(1).ToString())
+                );
+            }
         }
 
         public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes(System.Data.IDbTransaction transaction = null)
@@ -315,36 +346,101 @@ namespace Duplicati.Library.Main.Database
             m_insertlogCommand.ExecuteNonQuery();
         }
 
+        public void UnlinkRemoteVolume(string name, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+        {
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = tr.Parent;
+                var c = cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteVolume"" WHERE ""Name"" = ? AND ""State"" = ? ", name, state.ToString());
+                if (c != 1)
+                    throw new Exception(string.Format("Unexpected number of remote volumes deleted: {0}, expected {1}", c, 1));
+
+                tr.Commit();
+            }
+        }
+
         public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
         {
+            RemoveRemoteVolumes(new string[] { name }, transaction);
+        }
+
+        public void RemoveRemoteVolumes(ICollection<string> names, System.Data.IDbTransaction transaction = null)
+        {
+            if (names.Count == 0) return;
+
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var deletecmd = m_connection.CreateCommand())
             {
                 deletecmd.Transaction = tr.Parent;
-            	var volumeid = GetRemoteVolumeID(name, tr.Parent);
+
+                string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var volidstable = "DelVolSetIds-" + temptransguid;
+                var blocksetidstable = "DelBlockSetIds-" + temptransguid;
+
+                // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
+                deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", volidstable));
+                deletecmd.CommandText = string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") VALUES (?)", volidstable);
+                deletecmd.Parameters.Clear();
+                deletecmd.AddParameters(1);
+                foreach (var name in names)
+                {
+                    var volumeid = GetRemoteVolumeID(name, tr.Parent);
+                    deletecmd.SetParameterValue(0, volumeid);
+                    deletecmd.ExecuteNonQuery();
+                }
+                var volIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", volidstable);
+                deletecmd.Parameters.Clear();
                 
 				// If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? OR ""IndexVolumeID"" = ?", volumeid, volumeid);
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
 				
                 // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" = ?)", volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""VolumeID"" = ?", volumeid);
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Fileset"" WHERE ""VolumeID""  IN ({0})", volIdsSubQuery));
                                                 
-                var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ? UNION SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?))";
+                var bsIdsSubQuery = string.Format(
+                      @"SELECT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" "
+                    + @" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" IN ({0}) "
+                    + @"UNION ALL "
+                    + @"SELECT ""BlocksetID"" FROM ""BlocklistHash"" "
+                    + @"WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN ({0}))"
+                    , volIdsSubQuery);
 
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN " + subQuery + @" OR ""MetadataID"" IN " + subQuery, volumeid, volumeid, volumeid, volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid, volumeid);
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid, volumeid);
+                // Create a temporary table to cache subquery result, as it might take long (SQLite does not cache at all). 
+                deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", blocksetidstable));
+                deletecmd.ExecuteNonQuery(string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") {1}", blocksetidstable, bsIdsSubQuery));
+                bsIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", blocksetidstable);
+                deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" = ?)", volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN ({0}) OR ""MetadataID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
 
-                m_removeremotevolumeCommand.SetParameterValue(0, name);
-                m_removeremotevolumeCommand.Transaction = tr.Parent;
-                m_removeremotevolumeCommand.ExecuteNonQuery();
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocklistHash"" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
 
+                // Clean up temp tables for subqueries. We truncate content and then try to delete.
+                // Drop in try-block, as it fails in nested transactions (SQLite problem)
+                // System.Data.SQLite.SQLiteException (0x80004005): database table is locked
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" ", blocksetidstable));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" ", volidstable));
+                try
+                {
+                    deletecmd.CommandTimeout = 2;
+                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", blocksetidstable));
+                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", volidstable));
+                }
+                catch { /* Ignore, will be deleted on close anyway. */ }
+
+                foreach (var name in names)
+                {
+                    m_removeremotevolumeCommand.SetParameterValue(0, name);
+                    m_removeremotevolumeCommand.Transaction = tr.Parent;
+                    m_removeremotevolumeCommand.ExecuteNonQuery();
+                }
                 tr.Commit();
             }
         }
@@ -569,6 +665,25 @@ namespace Duplicati.Library.Main.Database
 		{
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);	
 		}
+
+        public bool RepairInProgress
+        {
+            get
+            {
+                return GetDbOptions().ContainsKey("repair-in-progress");
+            }
+            set
+            {
+                var opts = GetDbOptions();
+
+                if (value)
+                    opts["repair-in-progress"] = "true";
+                else
+                    opts.Remove("repair-in-progress");
+                
+                SetDbOptions(opts);
+            }
+        }
 		
 		public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
 		{
@@ -949,10 +1064,9 @@ namespace Duplicati.Library.Main.Database
                 var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " + 
                     @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " + 
                     @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " + 
-                    @" ""B"".""Index"" >= (""A"".""Index"" * ({0}/{1})) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * ({0}/{1})) AND ""C"".""ID"" = ""B"".""BlockID"" " + 
+                    @" ""B"".""Index"" >= (""A"".""Index"" * {0}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {0}) AND ""C"".""ID"" = ""B"".""BlockID"" " + 
                     @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
-                    blocksize,
-                    hashsize
+                    blocksize / hashsize
                 );
 
                 string curHash = null;

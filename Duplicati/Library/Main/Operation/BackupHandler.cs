@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backendurl;
                             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
+                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
         }
         
 
@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    log.AddWarning(Strings.RSyncDir.SnapshotFailedError(ex.ToString()), ex);
+                    log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
             }
 
             return Library.Utility.Utility.IsClientLinux ?
@@ -228,6 +228,9 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                if (m_database.RepairInProgress)
+                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
+
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
                 m_filter = filter ?? new Library.Utility.FilterExpression();
@@ -274,6 +277,14 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Prepare the operation by registering the filelist
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
+
+                                var repcnt = 0;
+                                while(repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
+                                    filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
+
+                                if (await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
+                                    throw new Exception("Unable to generate a unique fileset name");
+
                                 var filesetvolumeid = await db.RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
                                 filesetid = await db.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 

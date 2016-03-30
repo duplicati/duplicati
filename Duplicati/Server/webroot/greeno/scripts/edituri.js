@@ -364,7 +364,7 @@ $(document).ready(function() {
                 }
             }
 
-            for (var i in { 's3': 0, 'azure': 0, 'googledrive': 0, 'onedrive': 0, 'cloudfiles': 0, 'gcs': 0, 'openstack': 0, 'hubic': 0, 'amzcd': 0, 'b2': 0, 'mega': 0 }) {
+            for (var i in { 's3': 0, 'azure': 0, 'googledrive': 0, 'onedrive': 0, 'cloudfiles': 0, 'gcs': 0, 'openstack': 0, 'hubic': 0, 'amzcd': 0, 'b2': 0, 'mega': 0, 'od4b': 0, 'mssp': 0 }) {
                 if (BACKEND_STATE.module_lookup[i]) {
                     used[i] = true;
                     group_prop.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));

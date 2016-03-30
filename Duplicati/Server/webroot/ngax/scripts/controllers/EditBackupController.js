@@ -15,9 +15,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     $scope.ExcludeLargeFiles = false;
 
     $scope.fileAttributes = [
-    	{name: 'Hidden files', value: 'hidden'}, 
-    	{name: 'System files', value: 'system'}, 
-    	{name: 'Temporary files', value: 'temporary'}
+    	{'name': 'Hidden files', 'value': 'hidden'}, 
+    	{'name': 'System files', 'value': 'system'}, 
+    	{'name': 'Temporary files', 'value': 'temporary'}
 	];
 
 	var scope = $scope;
@@ -41,7 +41,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		else if ((passphrase || '') == '')
 			scope.PassphraseScore = '';
 		else
-			scope.PassphraseScore = (zxcvbn(passphrase) || {score: -1}).score;
+			scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
 
 		scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || 'Unknown';	
 	}
@@ -163,6 +163,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 		if (($scope.ExcludeAttributes || []).length > 0) {
 			opts['--exclude-files-attributes'] = $scope.ExcludeAttributes.join(',');
+			
+			while (opts['--exclude-files-attributes'].indexOf(',') == 0)
+				opts['--exclude-files-attributes'] = opts['--exclude-files-attributes'].substr(1);
+
 			if (opts['--exclude-files-attributes'] == '')
 				delete opts['--exclude-files-attributes'];
 		}
@@ -209,10 +213,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			return;
 		}
 
-		if ($scope.KeepType == 'time')
-			delete $scope.Options['keep-versions'];
-		if ($scope.KeepType == 'versions')
-			delete $scope.Options['keep-time'];
+		if ($scope.KeepType == 'time' || $scope.KeepType == '')
+			delete opts['keep-versions'];
+		if ($scope.KeepType == 'versions' || $scope.KeepType == '')
+			delete opts['keep-time'];
 
 		result.Backup.Settings = [];
 		for(var k in opts) {
@@ -398,19 +402,27 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		for(var ix in filters)
 			$scope.Backup.Filters.push((filters[ix].Include ? '+' : '-') + filters[ix].Expression);
 
-		$scope.ExcludeLargeFiles = $scope.Options['--skip-files-larger-than'];
-		$scope.ExcludeAttributes = ($scope.Options['--exclude-files-attributes'] || '').split(',');
+		$scope.ExcludeLargeFiles = (extopts['--skip-files-larger-than'] || '').trim().length > 0;
+		if ($scope.ExcludeLargeFiles)
+			$scope.Options['--skip-files-larger-than'] = extopts['--skip-files-larger-than'];
+		$scope.ExcludeAttributes = (extopts['--exclude-files-attributes'] || '').split(',');
 
 		$scope.RepeatPasshrase = $scope.Options['passphrase'];
 
 		$scope.KeepType = '';
 		if (($scope.Options['keep-time'] || '').trim().length != 0)
+		{
 			$scope.KeepType = 'time';
+		}
 		else if (($scope.Options['keep-versions'] || '').trim().length != 0)
+		{
+			$scope.Options['keep-versions'] = parseInt($scope.Options['keep-versions']);
 			$scope.KeepType = 'versions';
+		}
 
-		for(var n in ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption'])
-			delete extopts[n];
+		var delopts = ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption']
+		for(var n in delopts)
+			delete extopts[delopts[n]];
 
 		$scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
 
