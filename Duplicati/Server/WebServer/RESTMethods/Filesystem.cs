@@ -30,7 +30,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var command = parts.Length == 2 ? parts.Last() : null;
             if (string.IsNullOrEmpty(path))
                 path = info.Request.QueryString["path"].Value;
-            
+
             Process(command, path, info);
         }
 
@@ -106,27 +106,20 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                 if (!Library.Utility.Utility.IsClientLinux && (path.Equals("/") || path.Equals("")))
                 {
-                    res = 
-                        from di in System.IO.DriveInfo.GetDrives()
-                            where di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable
-                        select new Serializable.TreeNode()
-                    {
-                        id = di.RootDirectory.FullName,
-                        text = 
-                            (
-                                string.IsNullOrWhiteSpace(di.VolumeLabel) ? 
-                                di.RootDirectory.FullName.Replace('\\', ' ') : 
-                                di.VolumeLabel + " - " + di.RootDirectory.FullName.Replace('\\', ' ')
-                            ) + "(" + di.DriveType + ")",
-                        iconCls = "x-tree-icon-drive"
-                    };
+                    res = DriveInfo.GetDrives()
+		                    .Where(di =>
+								(di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable)
+								&& di.IsReady // Only try to create TreeNode entries for drives who were ready 'now'
+							)
+		                    .Select(TryCreateTreeNodeForDrive) // This will try to create a TreeNode for selected drives
+							.Where(tn => tn != null); // This filters out such entries that could not be created
                 }
                 else
                 {
-                    res = ListFolderAsNodes(path, skipFiles, showHidden);                        
+                    res = ListFolderAsNodes(path, skipFiles, showHidden);
                 }
 
-                if ((path.Equals("/") || path.Equals("")) && specialtoken == null) 
+                if ((path.Equals("/") || path.Equals("")) && specialtoken == null)
                 {
                     // Prepend special folders
                     res = SpecialFolders.Nodes.Union(res);
@@ -134,20 +127,62 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                 if (specialtoken != null)
                 {
-                    res = res.Select(x => { 
+                    res = res.Select(x => {
                         x.resolvedpath = x.id;
                         x.id = specialtoken + x.id.Substring(specialpath.Length);
-                        return x; 
+                        return x;
                     });
                 }
 
-                info.OutputOK(res);
+				// We have to resolve the query before giving it to OutputOK
+				// If we do not do this, and the query throws an exception when OutputOK resolves it,
+				// the exception would not be handled properly
+	            res = res.ToList();
+
+				info.OutputOK(res);
             }
             catch (Exception ex)
             {
                 info.ReportClientError("Failed to process the path: " + ex.Message);
             }
         }
+
+		/// <summary>
+		/// Try to create a new TreeNode instance for the given DriveInfo instance.
+		///
+		/// <remarks>
+		/// If an exception occurs during creation (most likely the device became unavailable), a null is returned instead.
+		/// </remarks>
+		/// </summary>
+		/// <param name="driveInfo">DriveInfo to try create a TreeNode for. Cannot be null.</param>
+		/// <returns>A new TreeNode instance on success; null if an exception occurred during creation.</returns>
+		private static Serializable.TreeNode TryCreateTreeNodeForDrive(DriveInfo driveInfo)
+	    {
+			if (driveInfo == null) throw new ArgumentNullException("driveInfo");
+
+		    try
+		    {
+				// Try to create the TreeNode
+				// This may still fail as the drive might become unavailable in the meanwhile
+				return new Serializable.TreeNode
+				{
+					id = driveInfo.RootDirectory.FullName,
+					text =
+					(
+						string.IsNullOrWhiteSpace(driveInfo.VolumeLabel)
+							? driveInfo.RootDirectory.FullName.Replace('\\', ' ')
+							: driveInfo.VolumeLabel + " - " + driveInfo.RootDirectory.FullName.Replace('\\', ' ')
+						) + "(" + driveInfo.DriveType + ")",
+					iconCls = "x-tree-icon-drive"
+				};
+			}
+		    catch
+		    {
+				// Drive became unavailable in the meanwhile or another exception occurred
+				// Return a null as fall back
+				return null;
+		    }
+	    }
 
         private static IEnumerable<Serializable.TreeNode> ListFolderAsNodes(string entrypath, bool skipFiles, bool showHidden)
         {
@@ -168,10 +203,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 try { hasSubElements(p); return true; }
                 catch { }
                 return false;
-            }; 
+            };
 
             var systemIO = Library.Utility.Utility.IsClientLinux
-                ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux() 
+                ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux()
                 : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
 
             foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(entrypath))
