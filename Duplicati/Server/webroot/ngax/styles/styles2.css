@@ -555,16 +555,14 @@ ul.notification {
 .advanced-toggle {
   float: right;
   margin-right: 25px;
+  line-height: 37px;
 }
 
 .advancedoptions li {
-  clear: both; 
-}
-
-.advancedoptions .advancedentry {
+  clear: both;
   margin-bottom: 10px;
-  padding-bottom: 4px; 
-  border-bottom: 1px lightgray solid;  
+  padding: 10px 0;
+  border-top: 1px lightgray solid;
 }
 
 .advancedentry .multiple {
@@ -573,6 +571,18 @@ ul.notification {
 
 .advancedentry .shortname {
   font-weight: bold;
+}
+
+.advancedentry input[type="text"],
+.advancedentry select
+{
+    width: 300px;
+}
+
+.advancedentry input[type="checkbox"]
+{
+    margin-top: 13px;
+    width: auto;
 }
 
 .advancedentry .longdescription {
@@ -603,4 +613,12 @@ ul.notification {
 
 .fixed-width-font {
   font-family: monospace;
+}
+
+@media(max-width: 580px)
+{
+    .advancedentry .longdescription
+    {
+        margin-left: 0;
+    }
 }
