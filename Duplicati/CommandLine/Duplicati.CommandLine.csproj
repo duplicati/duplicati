@@ -70,7 +70,7 @@
       <Name>Duplicati.Library.Backend.File</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
-      <Project>{59c8bbc5-6e42-46fb-ab3e-6c183a82459a}</Project>
+      <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
