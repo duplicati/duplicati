@@ -45,8 +45,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string file)
         {
-            return UnixSupport.File.GetSymlinkTarget(
-                System.IO.Path.GetFullPath(file) );
+            return UnixSupport.File.GetSymlinkTarget(NormalizePath(file));
         }
         
         /// <summary>
@@ -66,7 +65,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public override bool IsBlockDevice(string file)
         {
-            var n = UnixSupport.File.GetFileType(System.IO.Path.GetFullPath(file));
+            var n = UnixSupport.File.GetFileType(NormalizePath(file));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -85,7 +84,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public override string HardlinkTargetID(string path)
         {
-            path = System.IO.Path.GetFullPath(path);
+            path = NormalizePath(path);
             if (UnixSupport.File.GetHardlinkCount(path) <= 1)
                 return null;
             
