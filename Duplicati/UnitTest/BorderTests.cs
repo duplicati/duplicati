@@ -250,6 +250,21 @@ namespace Duplicati.UnitTest
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual(49, r.Files.Count());
             }
+
+            using(var tf = new Library.Utility.TempFolder())
+            {
+                using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = tf, no_local_blocks = true }), null))
+                    c.Restore(null);
+                
+                TestUtils.VerifyDir(DATAFOLDER, tf, true);
+            }
+
+            using(var tf = new Library.Utility.TempFolder())
+            {
+                using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = tf, no_local_blocks = true }), null))
+                    c.Restore(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
+            }
+
         }    
     }
 }
