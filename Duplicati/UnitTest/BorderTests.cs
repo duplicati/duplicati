@@ -127,18 +127,23 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-s2"), data.Take(blocksize / 10 + 6).ToArray());
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-l1"), data.Take(blocksize * 4 + 6).ToArray());
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-l2"), data.Take(blocksize * 10 + 6).ToArray());
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-bm1"), data.Take(blocksize - 1).ToArray());
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-b"), data.Take(blocksize).ToArray());
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-bp1"), data.Take(blocksize + 1).ToArray());
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
 
             // After the first backup we remove the --blocksize argument as that should be auto-set
             testopts.Remove("blocksize");
+            testopts.Remove("block-hash-algorithm");
+            testopts.Remove("file-hash-algorithm");
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("In first backup:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //Console.WriteLine("In first backup:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
 
             new Random().NextBytes(data);
@@ -155,6 +160,9 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-s2"), data.Take(blocksize / 10 + 6).ToArray());
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-l1"), data.Take(blocksize * 4 + 6).ToArray());
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-l2"), data.Take(blocksize * 10 + 6).ToArray());
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-bm1"), data.Take(blocksize - 1).ToArray());
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-b"), data.Take(blocksize).ToArray());
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-bp1"), data.Take(blocksize + 1).ToArray());
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
@@ -185,6 +193,12 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-l1"), data.Take(blocksize * 4 + 6).ToArray());
             new Random().NextBytes(data);
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-l2"), data.Take(blocksize * 10 + 6).ToArray());
+            new Random().NextBytes(data);
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-bm1"), data.Take(blocksize - 1).ToArray());
+            new Random().NextBytes(data);
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-b"), data.Take(blocksize).ToArray());
+            new Random().NextBytes(data);
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-bp1"), data.Take(blocksize + 1).ToArray());
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
@@ -194,7 +208,7 @@ namespace Duplicati.UnitTest
                 var r = c.List("*");
                 //Console.WriteLine("Newest before deleting:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(40, r.Files.Count());
+                Assert.AreEqual(49, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
@@ -202,7 +216,7 @@ namespace Duplicati.UnitTest
                 var r = c.List("*");
                 //Console.WriteLine("Newest without db:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(40, r.Files.Count());
+                Assert.AreEqual(49, r.Files.Count());
             }
 
 
@@ -218,7 +232,7 @@ namespace Duplicati.UnitTest
                 var r = c.List("*");
                 //Console.WriteLine("V2 after delete:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(14, r.Files.Count());
+                Assert.AreEqual(17, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
@@ -226,7 +240,7 @@ namespace Duplicati.UnitTest
                 var r = c.List("*");
                 //Console.WriteLine("V1 after delete:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(27, r.Files.Count());
+                Assert.AreEqual(33, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
@@ -234,7 +248,7 @@ namespace Duplicati.UnitTest
                 var r = c.List("*");
                 //Console.WriteLine("Newest after delete:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(40, r.Files.Count());
+                Assert.AreEqual(49, r.Files.Count());
             }
         }    
     }
