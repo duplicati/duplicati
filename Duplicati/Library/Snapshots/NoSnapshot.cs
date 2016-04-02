@@ -60,6 +60,19 @@ namespace Duplicati.Library.Snapshots
 
         #region Private Methods
         /// <summary>
+        /// Normalizes a path before calling system methods
+        /// </summary>
+        /// <returns>The path to normalize.</returns>
+        /// <param name="path">The normalized path.</param>
+        public static string NormalizePath(string path)
+        {
+            var p = System.IO.Path.GetFullPath(path);
+
+            // This should not be required, but some versions of Mono apperently do not strip the trailing slash
+            return (p.Length > 1 && p[p.Length - 1] == System.IO.Path.DirectorySeparatorChar) ? p.Substring(0, p.Length - 1) : p;
+        }
+
+        /// <summary>
         /// Lists all folders in the given folder
         /// </summary>
         /// <returns>All folders found in the folder</returns>
@@ -155,7 +168,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public virtual System.IO.FileAttributes GetAttributes(string file)
         {
-            return System.IO.File.GetAttributes(System.IO.Path.GetFullPath(file));
+            return System.IO.File.GetAttributes(NormalizePath(file));
         }
         
         /// <summary>
