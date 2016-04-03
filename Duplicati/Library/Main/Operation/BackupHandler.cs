@@ -41,6 +41,7 @@ namespace Duplicati.Library.Main.Operation
         private readonly FileAttributes m_attributeFilter;
         private readonly Options.SymlinkStrategy m_symlinkPolicy;
         private int m_blocksize;
+        private long m_maxmetadatasize;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -647,6 +648,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
 
                 m_blocksize = m_options.Blocksize;
+                m_maxmetadatasize = (m_blocksize / m_options.BlockhashSize) * m_blocksize;
 
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
                 m_blocklistbuffer = new byte[m_options.Blocksize];
@@ -1190,13 +1192,19 @@ namespace Duplicati.Library.Main.Operation
         {
             long metadataid;
 
+            if (meta.Blob.Length > m_maxmetadatasize)
+            {
+                m_result.AddWarning(string.Format("Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata", meta.Blob.Length, m_maxmetadatasize), null);
+                meta = EMPTY_METADATA;
+            }
+
             using(var blocklisthashes = new Library.Utility.FileBackedStringList())
             using(var hashcollector = new Library.Utility.FileBackedStringList())
             {
                 using(var ms = new MemoryStream(meta.Blob))
                     ProcessStream(ms, CompressionHint.Compressible, backend, blocklisthashes, hashcollector, true);
 
-                m_database.AddMetadataset(meta.FileHash, meta.Blob.Length, hashcollector, blocklisthashes, out metadataid, m_transaction);
+                m_database.AddMetadataset(meta.FileHash, meta.Blob.Length, m_blocksize, hashcollector, blocklisthashes, out metadataid, m_transaction);
             }  
 
             return metadataid;

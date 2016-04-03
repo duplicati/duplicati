@@ -441,7 +441,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hash">The metadata hash</param>
         /// <param name="metadataid">The id of the metadata set</param>
         /// <returns>True if the set was added to the database, false otherwise</returns>
-        public bool AddMetadataset(string filehash, long size, IEnumerable<string> blockhashes, IEnumerable<string> blocklisthashes, out long metadataid, System.Data.IDbTransaction transaction = null)
+        public bool AddMetadataset(string filehash, long size, int blocksize, IEnumerable<string> blockhashes, IEnumerable<string> blocklisthashes, out long metadataid, System.Data.IDbTransaction transaction = null)
         {
             if (size > 0)
             {
@@ -460,7 +460,7 @@ namespace Duplicati.Library.Main.Database
             
 
                 long blocksetid;
-                AddBlockset(filehash, size, (int)size, blockhashes, blocklisthashes, out blocksetid, transaction);
+                AddBlockset(filehash, size, blocksize, blockhashes, blocklisthashes, out blocksetid, transaction);
 
                 using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                 {
