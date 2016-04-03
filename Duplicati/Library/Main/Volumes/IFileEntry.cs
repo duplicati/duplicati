@@ -14,7 +14,10 @@ namespace Duplicati.Library.Main.Volumes
         long Size { get; }
         DateTime Time { get; }
         string Metahash { get; }
+        string Metablockhash { get; }
         long Metasize { get; }
+        string Blockhash { get; }
+        long Blocksize { get; }
         IEnumerable<string> BlocklistHashes { get; }
     }
 }

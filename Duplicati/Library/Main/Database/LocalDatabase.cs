@@ -887,7 +887,64 @@ namespace Duplicati.Library.Main.Database
                         filesetvolume.AddSymlink(path, metahash, metalength);
                 }
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Lastmodified"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Lastmodified"" AS ""Lastmodified"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                var query = @"
+SELECT 
+    ""J"".""Path"", 
+    ""J"".""Lastmodified"", 
+    ""J"".""Filelength"", 
+    ""J"".""Filehash"", 
+    ""J"".""Metahash"", 
+    ""J"".""Metalength"",
+    ""K"".""Hash"" AS ""BlocklistHash"", 
+    ""J"".""FirstBlockHash"",
+    ""J"".""FirstBlockSize"",
+    ""J"".""FirstMetaBlockHash"",
+    ""J"".""FirstMetaBlockSize""
+FROM 
+    (
+    SELECT 
+        ""A"".""Path"" AS ""Path"", 
+        ""D"".""Lastmodified"" AS ""Lastmodified"", 
+        ""B"".""Length"" AS ""Filelength"", 
+        ""B"".""FullHash"" AS ""Filehash"", 
+        ""E"".""FullHash"" AS ""Metahash"", 
+        ""E"".""Length"" AS ""Metalength"", 
+        ""A"".""BlocksetID"" AS ""BlocksetID"",
+        ""F"".""Hash"" AS ""FirstBlockHash"",
+        ""F"".""Size"" AS ""FirstBlockSize"",
+        ""H"".""Hash"" AS ""FirstMetaBlockHash"",
+        ""H"".""Size"" AS ""FirstMetaBlockSize""
+    FROM 
+        ""File"" A, 
+        ""Blockset"" B, 
+        ""Metadataset"" C, 
+        ""FilesetEntry"" D, 
+        ""Blockset"" E, 
+        ""Block"" F,
+        ""BlocksetEntry"" G,
+        ""Block"" H,
+        ""BlocksetEntry"" I
+    WHERE 
+        ""A"".""ID"" = ""D"".""FileID"" 
+        AND ""D"".""FilesetID"" = ? 
+        AND ""A"".""BlocksetID"" = ""B"".""ID"" 
+        AND ""A"".""MetadataID"" = ""C"".""ID"" 
+        AND ""E"".""ID"" = ""C"".""BlocksetID""
+        AND ""B"".""ID"" = ""G"".""BlocksetID""
+        AND ""G"".""BlockID"" = ""F"".""ID""
+        AND ""G"".""Index"" = 0
+        AND ""I"".""BlocksetID"" = ""E"".""ID""
+        AND ""I"".""BlockID"" = ""H"".""ID""
+        AND ""I"".""Index"" = 0
+    ) J
+LEFT OUTER JOIN 
+    ""BlocklistHash"" K 
+ON 
+    ""K"".""BlocksetID"" = ""J"".""BlocksetID"" 
+ORDER BY ""J"".""Path"", ""K"".""Index""
+";
+
+                cmd.CommandText = query;
                 cmd.Parameters.Clear();
                 cmd.AddParameter(filesetId);
 
@@ -905,8 +962,12 @@ namespace Duplicati.Library.Main.Database
                         var metasize = rd.ConvertValueToInt64(5, -1);
                         var p = rd.GetValue(6);
                         var blrd = (p == null || p == DBNull.Value) ? null : new BlocklistHashEnumerable(rd);
+                        var blockhash = rd.GetValue(7).ToString();
+                        var blocksize = rd.ConvertValueToInt64(8, -1);
+                        var metablockhash = rd.GetValue(9).ToString();
+                        //var metablocksize = rd.ConvertValueToInt64(10, -1);
 
-                        filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, blrd);
+                        filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blrd);
                         if (blrd == null)
                             more = rd.Read();
                         else

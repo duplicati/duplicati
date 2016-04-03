@@ -441,26 +441,26 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hash">The metadata hash</param>
         /// <param name="metadataid">The id of the metadata set</param>
         /// <returns>True if the set was added to the database, false otherwise</returns>
-        public bool AddMetadataset(string hash, long size, out long metadataid, System.Data.IDbTransaction transaction = null)
+        public bool AddMetadataset(string filehash, long size, IEnumerable<string> blockhashes, IEnumerable<string> blocklisthashes, out long metadataid, System.Data.IDbTransaction transaction = null)
         {
             if (size > 0)
             {
                 if (m_metadataLookup != null)
                 {
-                    if(m_metadataLookup.TryGet(hash, size, out metadataid))
+                    if(m_metadataLookup.TryGet(filehash, size, out metadataid))
                         return false;
                 }
                 else
                 {
                     m_findmetadatasetCommand.Transaction = transaction;
-                    metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(null, -1, hash, size);
+                    metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(null, -1, filehash, size);
                     if (metadataid != -1)
                         return false;
                 }
             
 
                 long blocksetid;
-                AddBlockset(hash, size, (int)size, new string[] { hash }, null, out blocksetid, transaction);
+                AddBlockset(filehash, size, (int)size, blockhashes, blocklisthashes, out blocksetid, transaction);
 
                 using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                 {
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main.Database
                     metadataid = m_insertmetadatasetCommand.ExecuteScalarInt64();
                     tr.Commit();
                     if (m_metadataLookup != null)
-                        m_metadataLookup.Add(hash, size, metadataid);
+                        m_metadataLookup.Add(filehash, size, metadataid);
                 }
 
                 return true;

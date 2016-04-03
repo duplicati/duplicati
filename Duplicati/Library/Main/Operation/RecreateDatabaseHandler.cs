@@ -225,6 +225,27 @@ namespace Duplicati.Library.Main.Operation
 
                                                 var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
                                                 restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, fe.Metahash, fe.Metahash == null ? -1 : fe.Metasize, tr);
+                                                
+                                                if (fe.Size <= blocksize)
+                                                {
+                                                    if (!string.IsNullOrWhiteSpace(fe.Blockhash))
+                                                        restoredb.AddSmallBlocksetLink(fe.Hash, fe.Blockhash, fe.Blocksize, tr);
+                                                    else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
+                                                        restoredb.AddSmallBlocksetLink(fe.Hash, fe.Hash, fe.Size, tr);
+                                                    else
+                                                        m_result.AddWarning(string.Format("No block hash found for file: {0}", fe.Path), null);
+                                                }
+
+                                                if (fe.Metasize <= blocksize)
+                                                {
+                                                    if (!string.IsNullOrWhiteSpace(fe.Metablockhash))
+                                                        restoredb.AddSmallBlocksetLink(fe.Metahash, fe.Metablockhash, fe.Metasize, tr);
+                                                    else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
+                                                        restoredb.AddSmallBlocksetLink(fe.Metahash, fe.Metahash, fe.Metasize, tr);
+                                                    else
+                                                        m_result.AddWarning(string.Format("No block hash found for file metadata: {0}", fe.Path), null);                                                
+                                                }
+                                            
                                             }
                                             else if (fe.Type == FilelistEntryType.Symlink)
                                             {

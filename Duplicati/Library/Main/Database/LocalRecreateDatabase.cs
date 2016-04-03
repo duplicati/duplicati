@@ -51,6 +51,7 @@ namespace Duplicati.Library.Main.Database
         private System.Data.IDbCommand m_insertBlocklistHashCommand;
         private System.Data.IDbCommand m_updateBlockVolumeCommand;
         private System.Data.IDbCommand m_insertBlockset;
+        private System.Data.IDbCommand m_insertSmallBlockset;
         private System.Data.IDbCommand m_findBlocksetCommand;
         private System.Data.IDbCommand m_findMetadatasetCommand;
         private System.Data.IDbCommand m_findFilesetCommand;
@@ -66,6 +67,7 @@ namespace Duplicati.Library.Main.Database
         private PathLookupHelper<PathEntryKeeper> m_filesetLookup;
         
         private string m_tempblocklist;
+        private string m_tempsmalllist;
         
         /// <summary>
         /// A lookup table that prevents multiple downloads of the same volume
@@ -122,11 +124,16 @@ namespace Duplicati.Library.Main.Database
             : base(parentdb)
         {
             m_tempblocklist = "TempBlocklist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            m_tempsmalllist = "TempSmalllist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                         
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)", m_tempblocklist));
                 cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""Index_{0}"" ON ""{0}"" (""BlockListHash"");", m_tempblocklist));
+
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""BlockSize"" INTEGER NOT NULL)", m_tempsmalllist));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE UNIQUE INDEX ""Index_File_{0}"" ON ""{0}"" (""FileHash"", ""BlockSize"");", m_tempsmalllist));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE UNIQUE INDEX ""Index_Block_{0}"" ON ""{0}"" (""BlockHash"", ""BlockSize"");", m_tempsmalllist));
             }
 
             m_insertFileCommand = m_connection.CreateCommand();
@@ -136,6 +143,7 @@ namespace Duplicati.Library.Main.Database
             m_insertBlocklistHashCommand = m_connection.CreateCommand();
             m_updateBlockVolumeCommand = m_connection.CreateCommand();
             m_insertBlockset = m_connection.CreateCommand();
+            m_insertSmallBlockset = m_connection.CreateCommand();
             m_findBlocksetCommand = m_connection.CreateCommand();
             m_findMetadatasetCommand = m_connection.CreateCommand();
             m_findFilesetCommand = m_connection.CreateCommand();
@@ -164,7 +172,10 @@ namespace Duplicati.Library.Main.Database
 
             m_insertBlockset.CommandText = string.Format(@"INSERT INTO ""{0}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (?,?,?) ", m_tempblocklist);
             m_insertBlockset.AddParameters(3);
-            
+
+            m_insertSmallBlockset.CommandText = string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""FileHash"", ""BlockHash"", ""BlockSize"") VALUES (?,?,?) ", m_tempsmalllist);
+            m_insertSmallBlockset.AddParameters(3);
+
             m_findBlocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = ? AND ""FullHash"" = ? ";
             m_findBlocksetCommand.AddParameters(2);
             
@@ -206,7 +217,8 @@ namespace Duplicati.Library.Main.Database
                 cmd.Transaction = transaction;
                 
                 //Update all small blocklists and matching blocks
-                var selectSmallBlocks = string.Format(@"SELECT ""Blockset"".""Fullhash"", ""Blockset"".""Length"" FROM ""Blockset"" WHERE ""Blockset"".""Length"" <= {0}", blocksize);
+
+                var selectSmallBlocks = string.Format(@"SELECT ""BlockHash"", ""BlockSize"" FROM ""{0}""", m_tempsmalllist);
             
                 var selectBlockHashes = string.Format(
                     @"SELECT ""BlockHash"" AS ""FullHash"", ""BlockSize"" AS ""Length"" FROM ( " +
@@ -257,9 +269,12 @@ namespace Duplicati.Library.Main.Database
                     blocksize / hashsize
                     );
                     
+
+
                 var selectBlocksetEntries = string.Format(
-                    @"SELECT ""Blockset"".""ID"" AS ""BlocksetID"", 0 AS ""Index"", ""Block"".""ID"" AS ""BlockID"" FROM ""Blockset"", ""Block"" WHERE ""Blockset"".""Fullhash"" = ""Block"".""Hash"" AND ""Blockset"".""Length"" <= {0} ",
-                    blocksize
+                    @"SELECT ""Blockset"".""ID"" AS ""BlocksetID"", 0 AS ""Index"", ""Block"".""ID"" AS ""BlockID"" FROM ""Blockset"", ""Block"", ""{1}"" S WHERE ""Blockset"".""Fullhash"" = ""S"".""FileHash"" AND ""S"".""BlockHash"" = ""Block"".""Hash"" AND ""S"".""BlockSize"" = ""Block"".""Size"" AND ""Blockset"".""Length"" = ""S"".""BlockSize"" AND ""Blockset"".""Length"" <= {0} ",
+                    blocksize,
+                    m_tempsmalllist
                     );
                     
                 var selectAllBlocksetEntries =
@@ -364,7 +379,9 @@ namespace Duplicati.Library.Main.Database
                 if (metadataid != -1)
                     return metadataid;
             }
-            
+
+            // Strange ..... metahash is hashed with block hash algorithm, but should be filehash?
+
             var blocksetid = AddBlockset(metahash, metahashsize, null, 0, transaction);
             
             m_insertMetadatasetCommand.Transaction = transaction;
@@ -426,8 +443,12 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                if (c != expectedblocklisthashes) // or is there a legacy with single element blocklist hashes? --> && !(c == 1 && hash == computeBlockHash(fullhash))
-                    m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
+                if (c != expectedblocklisthashes)
+                {
+                    // Older versions of the filelists do not have a blocklisthash for files smaller than blocksize
+                    if (c != 0 || expectedblocklisthashes != 1)
+                        m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
+                }
 
             }
                             
@@ -493,6 +514,15 @@ namespace Duplicati.Library.Main.Database
 
                 return false;
             }            
+        }
+
+        public void AddSmallBlocksetLink(string filehash, string blockhash, long blocksize, System.Data.IDbTransaction transaction)
+        {
+            m_insertSmallBlockset.Transaction = transaction;
+            m_insertSmallBlockset.SetParameterValue(0, filehash);
+            m_insertSmallBlockset.SetParameterValue(1, blockhash);
+            m_insertSmallBlockset.SetParameterValue(2, blocksize);
+            m_insertSmallBlockset.ExecuteNonQuery();
         }
         
         public bool UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
@@ -640,6 +670,15 @@ namespace Duplicati.Library.Main.Database
                     catch { }
                     finally { m_tempblocklist = null; }
                     
+                if (m_tempsmalllist != null)
+                    try
+                {
+                    cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempsmalllist);
+                    cmd.ExecuteNonQuery();
+                }
+                catch { }
+                finally { m_tempsmalllist = null; }
+
             }
             
             foreach(var cmd in new IDisposable [] {
@@ -656,7 +695,8 @@ namespace Duplicati.Library.Main.Database
                 m_findblocklisthashCommand,
                 m_findHashBlockCommand,
                 m_insertBlockCommand,
-                m_insertDuplicateBlockCommand
+                m_insertDuplicateBlockCommand,
+                m_insertSmallBlockset
                 })
                     try
                     {

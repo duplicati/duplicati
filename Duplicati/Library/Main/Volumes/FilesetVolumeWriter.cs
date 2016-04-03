@@ -25,17 +25,17 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WriteStartArray();
         }
 
-        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, blocklisthashes);
+            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes);
         }
 
-        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, IEnumerable<string> blocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, blocklisthashes);
+            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, null, -1, blocklisthashes);
         }
 
-        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -55,6 +55,11 @@ namespace Duplicati.Library.Main.Volumes
                 m_writer.WriteValue(metahash);
                 m_writer.WritePropertyName("metasize");
                 m_writer.WriteValue(metasize);
+                if (!string.IsNullOrWhiteSpace(metablockhash))
+                {
+                    m_writer.WritePropertyName("metablockhash");
+                    m_writer.WriteValue(metablockhash);
+                }
             }
 
             if (blocklisthashes != null)
@@ -66,10 +71,17 @@ namespace Duplicati.Library.Main.Volumes
                     m_writer.WritePropertyName("blocklists");
                     m_writer.WriteStartArray();
                     m_writer.WriteValue(en.Current);
-                    while(en.MoveNext())
+                    while (en.MoveNext())
                         m_writer.WriteValue(en.Current);
                     m_writer.WriteEndArray();
                 }
+            }
+            else if (blockhash != null)
+            {
+                m_writer.WritePropertyName("blockhash");
+                m_writer.WriteValue(blockhash);
+                m_writer.WritePropertyName("blocksize");
+                m_writer.WriteValue(blocksize);
             }
 
             m_writer.WriteEndObject();
