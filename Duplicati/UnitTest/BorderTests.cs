@@ -81,7 +81,7 @@ namespace Duplicati.UnitTest
             });
         }
 
-        //[Test]
+        [Test]
         public void RunMixedBlockFile_1()
         {
             PrepareSourceData();
@@ -91,7 +91,7 @@ namespace Duplicati.UnitTest
             });
         }
 
-        //[Test]
+        [Test]
         public void RunMixedBlockFile_2()
         {
             PrepareSourceData();
