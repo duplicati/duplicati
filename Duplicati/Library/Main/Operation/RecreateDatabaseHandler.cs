@@ -241,17 +241,6 @@ namespace Duplicati.Library.Main.Operation
                                                     else
                                                         m_result.AddWarning(string.Format("No block hash found for file: {0}", fe.Path), null);
                                                 }
-
-                                                if (fe.Metasize <= blocksize)
-                                                {
-                                                    if (!string.IsNullOrWhiteSpace(fe.Metablockhash))
-                                                        restoredb.AddSmallBlocksetLink(fe.Metahash, fe.Metablockhash, fe.Metasize, tr);
-                                                    else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
-                                                        restoredb.AddSmallBlocksetLink(fe.Metahash, fe.Metahash, fe.Metasize, tr);
-                                                    else
-                                                        m_result.AddWarning(string.Format("No block hash found for file metadata: {0}", fe.Path), null);                                                
-                                                }
-                                            
                                             }
                                             else if (fe.Type == FilelistEntryType.Symlink)
                                             {
@@ -261,6 +250,16 @@ namespace Duplicati.Library.Main.Operation
                                             else
                                             {
                                                 m_result.AddWarning(string.Format("Skipping file-entry with unknown type {0}: {1} ", fe.Type, fe.Path), null);
+                                            }
+
+                                            if (fe.Metasize <= blocksize && (fe.Type == FilelistEntryType.Folder || fe.Type == FilelistEntryType.File || fe.Type == FilelistEntryType.Symlink))
+                                            {
+                                                if (!string.IsNullOrWhiteSpace(fe.Metablockhash))
+                                                    restoredb.AddSmallBlocksetLink(fe.Metahash, fe.Metablockhash, fe.Metasize, tr);
+                                                else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
+                                                    restoredb.AddSmallBlocksetLink(fe.Metahash, fe.Metahash, fe.Metasize, tr);
+                                                else
+                                                    m_result.AddWarning(string.Format("No block hash found for file metadata: {0}", fe.Path), null);                                                
                                             }
                                         }
                                         catch (Exception ex)
