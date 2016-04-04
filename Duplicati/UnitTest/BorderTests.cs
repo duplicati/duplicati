@@ -18,6 +18,7 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
@@ -60,79 +61,113 @@ namespace Duplicati.UnitTest
             RunCommands(12345, 1024 * 1024 * 10);
         }
 
-        private void RunCommands(int blocksize, int basedatasize = 0)
+        [Test]
+        public void RunMD5()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "MD5";
+                opts["file-hash-algorithm"] = "MD5";
+            });
+        }
+            
+        [Test]
+        public void RunSHA384()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "SHA384";
+                opts["file-hash-algorithm"] = "SHA384";
+            });
+        }
+
+        //[Test]
+        public void RunMixedBlockFile_1()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "MD5";
+                opts["file-hash-algorithm"] = "SHA1";
+            });
+        }
+
+        //[Test]
+        public void RunMixedBlockFile_2()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["block-hash-algorithm"] = "MD5";
+                opts["file-hash-algorithm"] = "SHA256";
+            });
+        }
+
+
+        private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
             testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
+            if (modifyOptions != null)
+                modifyOptions(testopts);
 
             if (basedatasize <= 0)
                 basedatasize = blocksize * 1024;
 
-            var data = new byte[basedatasize + 500];
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data.Take(basedatasize).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-p1"), data.Take(basedatasize + 1).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-p2"), data.Take(basedatasize+ 2).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-p500"), data.Take(basedatasize + 500).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-m1"), data.Take(basedatasize - 1).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-m2"), data.Take(basedatasize - 2).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-m500"), data.Take(basedatasize - 500).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-s1"), data.Take(blocksize / 4 + 6).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-s2"), data.Take(blocksize / 10 + 6).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-l1"), data.Take(blocksize * 4 + 6).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-l2"), data.Take(blocksize * 10 + 6).ToArray());
+            var filenames = new Dictionary<string, int>();
+            filenames[""] = basedatasize;
+            filenames["-0"] = 0;
+            filenames["-1"] = 1;
+
+            filenames["-p1"] = basedatasize + 1;
+            filenames["-p2"] = basedatasize + 2;
+            filenames["-p500"] = basedatasize + 500;
+            filenames["-m1"] = basedatasize - 1;
+            filenames["-m2"] = basedatasize - 2;
+            filenames["-m500"] = basedatasize - 500;
+
+            filenames["-s1"] = blocksize / 4 + 6;
+            filenames["-s2"] = blocksize / 10 + 6;
+            filenames["-l1"] = blocksize * 4 + 6;
+            filenames["-l2"] = blocksize * 10 + 6;
+
+            filenames["-bm1"] = blocksize - 1;
+            filenames["-b"] = blocksize;
+            filenames["-bp1"] = blocksize + 1;
+
+            var data = new byte[filenames.Select(x => x.Value).Max()];
+
+            foreach(var k in filenames)
+                File.WriteAllBytes(Path.Combine(DATAFOLDER, "a" + k.Key), data.Take(k.Value).ToArray());
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
 
             // After the first backup we remove the --blocksize argument as that should be auto-set
             testopts.Remove("blocksize");
+            testopts.Remove("block-hash-algorithm");
+            testopts.Remove("file-hash-algorithm");
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("In first backup:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //Console.WriteLine("In first backup:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
 
             new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data.Take(basedatasize).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-p1"), data.Take(basedatasize + 1).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-p2"), data.Take(basedatasize + 2).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-p500"), data.Take(basedatasize + 500).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-m1"), data.Take(basedatasize - 1).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-m2"), data.Take(basedatasize - 2).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-m500"), data.Take(basedatasize - 500).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-s1"), data.Take(blocksize / 4 + 6).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-s2"), data.Take(blocksize / 10 + 6).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-l1"), data.Take(blocksize * 4 + 6).ToArray());
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "b-l2"), data.Take(blocksize * 10 + 6).ToArray());
+            foreach(var k in filenames)
+                File.WriteAllBytes(Path.Combine(DATAFOLDER, "b" + k.Key), data.Take(k.Value).ToArray());
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
 
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c"), data.Take(basedatasize).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-p1"), data.Take(basedatasize + 1).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-p2"), data.Take(basedatasize + 2).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-p500"), data.Take(basedatasize + 500).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-m1"), data.Take(basedatasize - 1).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-m2"), data.Take(basedatasize - 2).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-m500"), data.Take(basedatasize - 500).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-s1"), data.Take(blocksize / 4 + 6).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-s2"), data.Take(blocksize / 10 + 6).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-l1"), data.Take(blocksize * 4 + 6).ToArray());
-            new Random().NextBytes(data);
-            File.WriteAllBytes(Path.Combine(DATAFOLDER, "c-l2"), data.Take(blocksize * 10 + 6).ToArray());
+            var rn = new Random();
+            foreach(var k in filenames)
+            {
+                rn.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(DATAFOLDER, "c" + k.Key), data.Take(k.Value).ToArray());
+            }
+            
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
@@ -140,17 +175,17 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("Newest before deleting:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(34, r.Files.Count());
+                //Console.WriteLine("Newest before deleting:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("Newest without db:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(34, r.Files.Count());
+                //Console.WriteLine("Newest without db:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
 
@@ -164,26 +199,48 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("V2 after delete:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(12, r.Files.Count());
+                //Console.WriteLine("V2 after delete:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                Assert.AreEqual((filenames.Count * 1) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("V1 after delete:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(23, r.Files.Count());
+                //Console.WriteLine("V1 after delete:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                Assert.AreEqual((filenames.Count * 2) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                Console.WriteLine("Newest after delete:");
-                Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
-                Assert.AreEqual(34, r.Files.Count());
+                //Console.WriteLine("Newest after delete:");
+                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
+
+            if (Directory.Exists(RESTOREFOLDER))
+                Directory.Delete(RESTOREFOLDER, true);
+            Directory.CreateDirectory(RESTOREFOLDER);
+
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER, no_local_blocks = true }), null))
+            {
+                var r = c.Restore(null);
+                Assert.AreEqual(filenames.Count * 3, r.FilesRestored);
+            }
+
+            TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, true);
+
+            using(var tf = new Library.Utility.TempFolder())
+            {
+                using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf, no_local_blocks = true }), null))
+                {
+                    var r = c.Restore(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
+                    Assert.AreEqual(filenames.Count, r.FilesRestored);
+                }
+            }
+
         }    
     }
 }

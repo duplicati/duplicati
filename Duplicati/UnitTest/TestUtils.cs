@@ -225,14 +225,20 @@ namespace Duplicati.UnitTest
                 }
                 else
                 {
-                    long len = fs1.Length;
-                    for (long l = 0; l < len; l++)
-                        if (fs1.ReadByte() != fs2.ReadByte())
-                        {
-                            Log.WriteMessage("Mismatch in byte " + l.ToString() + " in file " + display, LogMessageType.Error);
-                            Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
-                            return false;
-                        }
+                    // The byte-by-byte compare is dog-slow, so we use a fast(-er) check, and then report the first byte diff if required
+                    if (!Library.Utility.Utility.CompareStreams(fs1, fs2, true))
+                    {
+                        fs1.Position = 0;
+                        fs2.Position = 0;
+                        long len = fs1.Length;
+                        for(long l = 0; l < len; l++)
+                            if (fs1.ReadByte() != fs2.ReadByte())
+                            {
+                                Log.WriteMessage("Mismatch in byte " + l.ToString() + " in file " + display, LogMessageType.Error);
+                                Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
+                                return false;
+                            }
+                    }
                 }
 
             if (verifymetadata)

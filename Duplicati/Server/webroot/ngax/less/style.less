@@ -3,6 +3,7 @@
 @import 'fonts.less';
 @import 'variables.less';
 @import 'form.less';
+@import 'font-awesome/font-awesome.less';
 
 *
 {
@@ -46,7 +47,13 @@ ul
     padding: 0;
 }
 
-a.button
+hr
+{
+    border: none;
+    border-bottom: 1px #ddd solid;
+}
+
+.button
 {
     display: block;
     background: @lColor;
@@ -63,7 +70,7 @@ a.button
     border-radius: 0;
 }
 
-a.button:hover
+.button:hover
 {
     background: darken(@lColor, 10%);
 }
@@ -461,6 +468,130 @@ body
                         {
                             display: block;
                         }
+                        
+                        .box.browser
+                        {
+                            .checklinks
+                            {
+                                a
+                                {
+                                    float: right;
+                                    margin-right: 20px;
+                                    color: @tColor;
+                                    
+                                    i
+                                    {
+                                        border: 2px solid;
+                                        border-color: @tColor;
+                                        border-radius: 2px;
+                                        font-size: 18px;
+                                        height: 18px;
+                                        vertical-align: top;
+                                        width: 18px;
+                                    }
+                                }
+                                
+                                a.inactive
+                                {
+                                    color: lighten(@tColor, 20%);
+                                    cursor: default;
+                                    
+                                    i
+                                    {
+                                        border-color: lighten(@tColor, 20%);
+                                    }
+                                }
+                                
+                                a:first-child
+                                {
+                                    margin-right: 0;
+                                }
+                            }
+                            
+                            .input.overlayButton
+                            {
+                                padding-top: 10px;
+                                max-width: 100%;
+                                
+                                input#sourcePath
+                                {
+                                    width: 100%;
+                                    box-sizing: border-box;
+                                    height: 37px;
+                                }
+                                
+                                a.button
+                                {
+                                    top: 10px;
+                                }
+                            }
+                        }
+                        
+                        .box.filters
+                        {
+                            .input.link
+                            {
+                                a
+                                {
+                                    color: @tColor;
+                                    
+                                    i
+                                    {
+                                        border: 2px solid;
+                                        border-color: @tColor;
+                                        border-radius: 2px;
+                                        font-size: 18px;
+                                        height: 18px;
+                                        vertical-align: top;
+                                        width: 18px;
+                                    }
+                                }
+                            }
+                            
+                            ul#simplefilterlist
+                            {
+                                overflow: hidden;
+                                padding-bottom: 15px;
+                                
+                                li
+                                {
+                                    overflow: hidden;
+                                    clear: both;
+                                    padding-bottom: 5px;
+                                    
+                                    select
+                                    {
+                                        width: 200px;
+                                        margin-right: 5px;
+                                        height: 36px;
+                                        line-height: 36px;
+                                    }
+                                    
+                                    input
+                                    {
+                                        width: 280px;
+                                        padding: 5px;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        .step4
+                        {
+                            div.input.maxSize input.number,
+                            div.input.keepBackups input.number
+                            {
+                                width: 60px;
+                            }
+                            
+                            .advancedoptions
+                            {
+                                li > a
+                                {
+                                    .button;
+                                }
+                            }
+                        }
                     }
                     
                     .steps-legend
@@ -643,6 +774,12 @@ body
                         }
                     }
                 }
+                
+                .prewrapped-text
+                {
+                    white-space: pre;
+                    overflow-x: auto;
+                }
             }
         }
         
@@ -666,6 +803,18 @@ body
                 float: left;
                 overflow: hidden;
                 padding-right: 20px;
+                
+                span
+                {
+                    display: block;
+                    float: left;
+                    padding-left: 20px;
+                }
+                
+                ul
+                {
+                    float: left;
+                }
                 
                 li
                 {
@@ -1072,12 +1221,12 @@ span.info
                             {
                                 padding-top: 8px;
                                 padding-bottom: 30px;
-                                border-bottom: 1px #ddd solid;
+                                //border-bottom: 1px #ddd solid;
                                 margin-bottom: 10px;
                                 
                                 a.button
                                 {
-                                    padding: 5px 10px;
+                                    padding: 7px 10px;
                                     right: 1px;
                                     top: 9px;
                                 }
@@ -1106,11 +1255,11 @@ span.info
                             
                             .filters
                             {
-                                border-bottom: 1px #ddd solid;
+                                //border-bottom: 1px #ddd solid;
                                 
                                 .input.link
                                 {
-                                    padding-bottom: 0;
+                                    //padding-bottom: 0;
                                 }
                                 
                                 .input.textarea
@@ -1192,25 +1341,42 @@ span.info
                 {
                     padding-right: 0;
                     
+                    span
+                    {
+                        padding-left: 0;
+                        padding-bottom: 5px;
+                    }
+                    
                     li
                     {
                         padding-left: 0;
+                        float: none;
+                        display: inline-block;
+                        height: 32px;
+                        width: 32px;
+                        background-size: 28px !important;
+                        border-bottom: none;
+                        
+                        a
+                        {
+                            color: transparent;
+                            height: 32px;
+                            width: 32px;
+                        }
                     }
-                }
-                
-                li,
-                .donate,
-                .social
-                {
-                    padding: 8px 0;
-                    border-bottom: 1px #ddd solid;
-                }
-                
-                .about-footer
-                {
+                    
+                    li.support
+                    {
+                        background: url('../img/support.png') no-repeat center center;
+                    }
+                    
+                    li.about
+                    {
+                        background: url('../img/about.png') no-repeat center center;
+                    }
+                    
                     li:first-child
                     {
-                        border-bottom: none;
                         padding-bottom: 0;
                     }
                     
@@ -1218,6 +1384,15 @@ span.info
                     {
                         padding-bottom: 20px;
                     }
+                }
+                
+                li,
+                .donate,
+                .social,
+                .about-footer
+                {
+                    padding: 8px 0;
+                    border-bottom: 1px #ddd solid;
                 }
                 
                 .donate
@@ -1323,6 +1498,22 @@ span.info
                                     float: none;
                                     text-align: center;
                                     margin-bottom: 5px;
+                                }
+                            }
+                        }
+                        
+                        .steps-boxes
+                        {
+                            .box.browser
+                            {
+                                .checklinks
+                                {
+                                    a
+                                    {
+                                        float: none;
+                                        margin-bottom: 8px;
+                                        display: block;
+                                    }
                                 }
                             }
                         }

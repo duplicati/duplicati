@@ -8,6 +8,10 @@ var backupApp = angular.module(
     ]
 );
 
+backupApp.constant('appConfig', {
+	login_url: '/login.html'
+});
+
 backupApp.config(['$routeProvider',
 	function($routeProvider) {
 		$routeProvider.

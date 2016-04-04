@@ -455,7 +455,7 @@ namespace Duplicati.Library.Snapshots
         public string GetSymlinkTarget(string file)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return UnixSupport.File.GetSymlinkTarget(System.IO.Path.GetFullPath(local));
+            return UnixSupport.File.GetSymlinkTarget(NoSnapshot.NormalizePath(local));
         }
 
         /// <summary>
@@ -476,7 +476,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public bool IsBlockDevice(string file)
         {
-            var n = UnixSupport.File.GetFileType(System.IO.Path.GetFullPath(file));
+            var n = UnixSupport.File.GetFileType(NoSnapshot.NormalizePath(file));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -496,7 +496,7 @@ namespace Duplicati.Library.Snapshots
         public string HardlinkTargetID(string path)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path);
-            local = System.IO.Path.GetFullPath(local);
+            local = NoSnapshot.NormalizePath(local);
             
             if (UnixSupport.File.GetHardlinkCount(local) <= 1)
                 return null;

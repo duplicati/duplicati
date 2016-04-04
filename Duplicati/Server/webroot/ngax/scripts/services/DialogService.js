@@ -51,6 +51,14 @@ backupApp.service('DialogService', function() {
     	});
     };
 
+    this.accept = function(message, callback) {
+    	return this.enqueueDialog({
+    		'message': message, 
+    		'callback': callback, 
+    		'buttons': ['OK']
+    	});
+    };
+
     this.dialog = function(title, message, buttons, callback, onshow) {
     	return this.enqueueDialog({
     		'message': message, 
@@ -76,6 +84,12 @@ backupApp.service('DialogService', function() {
     		if (state.CurrentItem.onshow)
     			state.CurrentItem.onshow();
     	}
+    };
+
+    this.dismissAll = function() {
+		while (state.CurrentItem != null){
+			this.dismissCurrent();
+		}
     };
 
 });

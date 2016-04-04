@@ -745,6 +745,9 @@ namespace Duplicati.Library.Main.Database
                 if (itemswithnoblocklisthash != 0)
                     throw new InvalidDataException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
 
+                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
+                    throw new Exception("Detected file entries with not associated blocks");
+
             }
         }
 
