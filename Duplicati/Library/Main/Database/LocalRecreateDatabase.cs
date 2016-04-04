@@ -294,25 +294,24 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
-        public void AddDirectoryEntry(long filesetid, string path, DateTime time, string metahash, long metahashsize, System.Data.IDbTransaction transaction)
+        public void AddDirectoryEntry(long filesetid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.Folder, filesetid, path, time, FOLDER_BLOCKSET_ID, metahash, metahashsize, transaction);
+            AddEntry(FilelistEntryType.Folder, filesetid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
         }
 
-        public void AddSymlinkEntry(long filesetid, string path, DateTime time, string metahash, long metahashsize, System.Data.IDbTransaction transaction)
+        public void AddSymlinkEntry(long filesetid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.Symlink, filesetid, path, time, SYMLINK_BLOCKSET_ID, metahash, metahashsize, transaction);
+            AddEntry(FilelistEntryType.Symlink, filesetid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
         }
         
-        public void AddFileEntry(long filesetid, string path, DateTime time, long blocksetid, string metahash, long metahashsize, System.Data.IDbTransaction transaction)
+        public void AddFileEntry(long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.File , filesetid, path, time, blocksetid, metahash, metahashsize, transaction);
+            AddEntry(FilelistEntryType.File , filesetid, path, time, blocksetid, metadataid, transaction);
         }
         
-        private void AddEntry(FilelistEntryType type, long filesetid, string path, DateTime time, long blocksetid, string metahash, long metahashsize, System.Data.IDbTransaction transaction)
+        private void AddEntry(FilelistEntryType type, long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
         {
             var fileid = -1L;
-            var metadataid = AddMetadataset(metahash, metahashsize, transaction);
                         
             if (m_filesetLookup != null)
             {
@@ -357,7 +356,7 @@ namespace Duplicati.Library.Main.Database
             m_insertFilesetEntryCommand.ExecuteNonQuery();
         }
         
-        private long AddMetadataset(string metahash, long metahashsize, System.Data.IDbTransaction transaction)
+        public long AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes, System.Data.IDbTransaction transaction)
         {
             var metadataid = -1L;
             if (metahash == null)
@@ -380,9 +379,7 @@ namespace Duplicati.Library.Main.Database
                     return metadataid;
             }
 
-            // Strange ..... metahash is hashed with block hash algorithm, but should be filehash?
-
-            var blocksetid = AddBlockset(metahash, metahashsize, null, 0, transaction);
+            var blocksetid = AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes, transaction);
             
             m_insertMetadatasetCommand.Transaction = transaction;
             m_insertMetadatasetCommand.SetParameterValue(0, blocksetid);
@@ -422,13 +419,13 @@ namespace Duplicati.Library.Main.Database
             if (m_fileHashLookup != null)
                 m_fileHashLookup.Add(fullhash, size, blocksetid);
         
+            long c = 0;
             if (blocklisthashes != null)
             {
                 var index = 0L;
                 m_insertBlocklistHashCommand.Transaction = transaction;
                 m_insertBlocklistHashCommand.SetParameterValue(0, blocksetid);
 
-                long c = 0;
                 foreach(var hash in blocklisthashes)
                 {
                     if (!string.IsNullOrEmpty(hash))
@@ -442,16 +439,11 @@ namespace Duplicati.Library.Main.Database
                         }
                     }
                 }
-
-                if (c != expectedblocklisthashes)
-                {
-                    // Older versions of the filelists do not have a blocklisthash for files smaller than blocksize
-                    if (c != 0 || expectedblocklisthashes != 1)
-                        m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
-                }
-
             }
                             
+            if (c != expectedblocklisthashes)
+                m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
+            
             return blocksetid;
         }
 

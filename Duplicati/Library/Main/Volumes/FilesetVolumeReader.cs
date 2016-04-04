@@ -102,6 +102,7 @@ namespace Duplicati.Library.Main.Volumes
                     public string Blockhash { get; private set; }
                     public long Blocksize { get; private set; }
                     public IEnumerable<string> BlocklistHashes { get; private set; }
+                    public IEnumerable<string> MetaBlocklistHashes { get; private set; }
                     private JsonReader m_reader;
 
                     public FileEntry(JsonReader reader)
@@ -154,7 +155,30 @@ namespace Duplicati.Library.Main.Volumes
                                 if (!m_reader.Read())
                                     throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading entry {0}", this.Path));
 
-                                if (m_reader.TokenType == JsonToken.PropertyName && m_reader.Value != null && m_reader.Value.ToString() == "metablockhash")
+                                if (m_reader.TokenType == JsonToken.PropertyName && m_reader.Value != null && m_reader.Value.ToString() == "metablocklists")
+                                {
+                                    var metadatablocklisthashes = new List<string>();
+                                    SkipJsonToken(m_reader, JsonToken.StartArray);
+
+                                    if (!m_reader.Read())
+                                        throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading entry {0}", this.Path));
+                                    
+                                    while(m_reader.TokenType == JsonToken.String)
+                                    {
+                                        metadatablocklisthashes.Add(m_reader.Value.ToString());
+                                        if (!m_reader.Read())
+                                            throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading entry {0}", this.Path));
+                                    }
+                                    
+                                    if (m_reader.TokenType != JsonToken.EndArray)
+                                        throw new InvalidDataException(string.Format("Invalid JSON, unexpected token {1} found while reading entry {0}", this.Path, m_reader.TokenType));
+                                    if (!m_reader.Read())
+                                        throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading entry {0}", this.Path));
+
+                                    this.MetaBlocklistHashes = metadatablocklisthashes;
+                                    this.Metablockhash = null;
+                                }
+                                else if (m_reader.TokenType == JsonToken.PropertyName && m_reader.Value != null && m_reader.Value.ToString() == "metablockhash")
                                 {
                                     if (!m_reader.Read())
                                         throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading entry {0}", this.Path));
@@ -162,6 +186,8 @@ namespace Duplicati.Library.Main.Volumes
 
                                     if (!m_reader.Read())
                                         throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading entry {0}", this.Path));
+
+                                    this.MetaBlocklistHashes = null;
                                 }
                             }
 

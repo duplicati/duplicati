@@ -19,5 +19,6 @@ namespace Duplicati.Library.Main.Volumes
         string Blockhash { get; }
         long Blocksize { get; }
         IEnumerable<string> BlocklistHashes { get; }
+        IEnumerable<string> MetaBlocklistHashes { get; }
     }
 }

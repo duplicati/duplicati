@@ -666,7 +666,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_filehasher.CanReuseTransform)
                     throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
-                m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+                m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, false);
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
                 m_filter = filter ?? new Library.Utility.FilterExpression();
@@ -697,7 +697,6 @@ namespace Duplicati.Library.Main.Operation
                             PreBackupVerify(backend);
 
                             // Verify before uploading a synthetic list
-                            m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                             UploadSyntheticFilelist(backend);
 
                             m_database.BuildLookupTable(m_options);
@@ -726,7 +725,7 @@ namespace Duplicati.Library.Main.Operation
                         using(new Logging.Timer("UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
                         using(new Logging.Timer("VerifyConsistency"))
-                            m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize);
+                            m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize, false);
     
                         UploadRealFileList(backend, filesetvolume);
     									

@@ -213,9 +213,14 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         try
                                         {
+                                            var expectedmetablocks = (fe.Metasize + blocksize - 1)  / blocksize;
+                                            var expectedmetablocklisthashes = (expectedmetablocks + hashes_pr_block - 1) / hashes_pr_block;
+                                            if (expectedmetablocks <= 1) expectedmetablocklisthashes = 0;
+
                                             if (fe.Type == FilelistEntryType.Folder)
                                             {
-                                                restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, fe.Metahash, fe.Metahash == null ? -1 : fe.Metasize, tr);
+                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
                                             }
                                             else if (fe.Type == FilelistEntryType.File)
                                             {
@@ -224,7 +229,8 @@ namespace Duplicati.Library.Main.Operation
                                                 if (expectedblocks <= 1) expectedblocklisthashes = 0;
 
                                                 var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
-                                                restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, fe.Metahash, fe.Metahash == null ? -1 : fe.Metasize, tr);
+                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, metadataid, tr);
                                                 
                                                 if (fe.Size <= blocksize)
                                                 {
@@ -249,7 +255,8 @@ namespace Duplicati.Library.Main.Operation
                                             }
                                             else if (fe.Type == FilelistEntryType.Symlink)
                                             {
-                                                restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, fe.Metahash, fe.Metahash == null ? -1 : fe.Metasize, tr);
+                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
                                             }
                                             else
                                             {
@@ -448,7 +455,7 @@ namespace Duplicati.Library.Main.Operation
                 //All done, we must verify that we have all blocklist fully intact
                 // if this fails, the db will not be deleted, so it can be used,
                 // except to continue a backup
-                restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+                restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
 
                 m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
 
