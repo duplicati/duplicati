@@ -1,3 +1,14 @@
+2016-03-31
+==========
+* Fixed some issues with non-standard block sizes
+* Fixed a number of issues with recreating the database from remote data, thanks @footstark
+* Fixed an issue where filelists with no files would cause an error message
+* Added an import link to the NGAX theme
+* Fixed loading and saving additional properties from NGAX theme
+* Improved login redirect logic in NGAX theme, thanks @mylemans
+* Improved layout for the NGAX theme, thanks @AlexFran
+* Improved image quality for the TrayIcon on OSX and Windows, thanks @FootStark and @agrajaghh
+
 2016-03-26
 ==========
 * Fixed a problem with recreating database from backup data
