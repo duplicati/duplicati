@@ -350,6 +350,8 @@ namespace Duplicati.Library.Main
                 m_currentTask = result;
                 m_currentTaskThread = System.Threading.Thread.CurrentThread;
                 using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                using(new CoCoL.IsolatedChannelScope())
+                using(m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                 {
                     SetupCommonOptions(result, ref paths, ref filter);
                     OperationRunning(true);

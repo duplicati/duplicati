@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FileBlockProcessor
     {
-        public static  Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
+        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new 

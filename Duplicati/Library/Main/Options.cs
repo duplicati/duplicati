@@ -74,6 +74,16 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_LOG_RETENTION = "30D";
 
         /// <summary>
+        /// The default number of compressor instances
+        /// </summary>
+        private readonly int DEFAULT_COMPRESSORS = 1; //Math.Max(1, Environment.ProcessorCount / 2);
+
+        /// <summary>
+        /// The default number of hasher instances
+        /// </summary>
+        private readonly int DEFAULT_BLOCK_HASHERS = 1;//Math.Max(1, Environment.ProcessorCount / 2);
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -511,6 +521,11 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
+
+                    new CommandLineArgument("concurrency-max-threads", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencymaxthreadsShort, Strings.Options.ConcurrencymaxthreadsLong, "0"),
+                    new CommandLineArgument("concurrency-block-hashers", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyblockhashersShort, Strings.Options.ConcurrencyblockhashersLong, DEFAULT_BLOCK_HASHERS.ToString()),
+                    new CommandLineArgument("concurrency-compressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencycompressorsShort, Strings.Options.ConcurrencycompressorsLong, DEFAULT_COMPRESSORS.ToString()),
+
                 });
 
                 return lst;
@@ -1785,6 +1800,62 @@ namespace Duplicati.Library.Main
                 return Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true);
             }
         }
+
+
+        /// <summary>
+        /// Gets the number of concurrent threads
+        /// </summary>
+        public int ConcurrencyMaxThreads
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-max-threads", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return 0;
+                else
+                    return int.Parse(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent block hashers
+        /// </summary>
+        public int ConcurrencyBlockHashers
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-block-hashers", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_BLOCK_HASHERS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent block hashers
+        /// </summary>
+        public int ConcurrencyCompressors
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-compressors", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_COMPRESSORS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
         /// <summary>
         /// Gets a lookup table with compression hints, the key is the file extension with the leading period
         /// </summary>

@@ -103,13 +103,24 @@ namespace Duplicati.Library.Main.Operation
                 using(new ChannelScope())
                 {
                     all = Task.WhenAll(
-                        Backup.DataBlockProcessor.Run(database, options, taskreader),
-                        Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
-                        Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader),
-                        Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
-                        Backup.MetadataPreProcess.Run(snapshot, options, database),
-                        Backup.SpillCollectorProcess.Run(options, database, taskreader),
-                        Backup.ProgressHandler.Run(result)
+                        new [] 
+                        {
+                            Backup.DataBlockProcessor.Run(database, options, taskreader),
+                            Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
+                            Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader),
+                            Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
+                            Backup.MetadataPreProcess.Run(snapshot, options, database),
+                            Backup.SpillCollectorProcess.Run(options, database, taskreader),
+                            Backup.ProgressHandler.Run(result)
+                        }
+                        // Spawn additional block hashers
+                        .Union(
+                            Enumerable.Range(0, options.ConcurrencyBlockHashers - 1).Select(x => Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader))
+                        )
+                        // Spawn additional compressors
+                        .Union(
+                            Enumerable.Range(0, options.ConcurrencyCompressors - 1).Select(x => Backup.DataBlockProcessor.Run(database, options, taskreader))
+                        )
                     );
                 }
 
