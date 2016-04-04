@@ -62,6 +62,16 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public void RunNoMetadata()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["skip-metadata"] = "true";
+            });
+        }
+
+
+        [Test]
         public void RunMD5()
         {
             PrepareSourceData();
@@ -230,7 +240,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(filenames.Count * 3, r.FilesRestored);
             }
 
-            TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, true);
+            TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"));
 
             using(var tf = new Library.Utility.TempFolder())
             {
