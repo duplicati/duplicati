@@ -808,16 +808,15 @@ namespace Duplicati.Library.Main.Database
             }            
         }
 
-        public bool MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, System.Data.IDbTransaction transaction)
+        public void MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = transaction;
-                var c = cmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? AND ""VolumeID"" = ? ",blockkey, size, sourcevolumeid);
+                var c = cmd.ExecuteNonQuery(@"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? AND ""VolumeID"" = ? ", targetvolumeid, blockkey, size, sourcevolumeid);
                 if (c != 1)
                     throw new Exception(string.Format("Failed to move block {0}:{1} from volume {2}, count: {3}", blockkey, size, sourcevolumeid, c));
-                return AddBlock(blockkey, size, targetvolumeid, transaction);
-            }            
+            }
         }
 
         public void SafeDeleteRemoteVolume(string name, System.Data.IDbTransaction transaction)

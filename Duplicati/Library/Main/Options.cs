@@ -76,12 +76,12 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default number of compressor instances
         /// </summary>
-        private readonly int DEFAULT_COMPRESSORS = 1; //Math.Max(1, Environment.ProcessorCount / 2);
+        private readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default number of hasher instances
         /// </summary>
-        private readonly int DEFAULT_BLOCK_HASHERS = 1;//Math.Max(1, Environment.ProcessorCount / 2);
+        private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -1865,8 +1865,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_compressionHints == null)
                 {
-                    //Don't try again, if the file does not exist
-                    m_compressionHints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
+                    var hints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
@@ -1880,8 +1879,11 @@ namespace Duplicati.Library.Main
                             if (lix > 0)
                                 line = line.Substring(0, lix);
                             if (line.Length >= 2 && line[0] == '.')
-                                m_compressionHints[line] = CompressionHint.Noncompressible;
+                                hints[line] = CompressionHint.Noncompressible;
                         }
+
+                    //Don't try again, if the file does not exist
+                    m_compressionHints = hints;
                 }
 
                 return m_compressionHints;
