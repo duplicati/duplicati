@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService) {
+backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService) {
 
 	$scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -151,6 +151,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 	};
 
 	$scope.save = function() {
+
+		if (!EditBackupService.preValidate())
+			return false;
+
 		var result = {
 			Backup: angular.copy($scope.Backup),
 			Schedule: angular.copy($scope.Schedule)
@@ -360,7 +364,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			checkForGeneratedPassphrase(function() {
 				checkForDisabledEncryption(function() {
 					warnWeakPassphrase(function() {
-						checkForExistingDb(postDb);
+						checkForExistingDb(function() {
+							EditBackupService.postValidate(postDb);
+						});
 					});
 				});
 			});

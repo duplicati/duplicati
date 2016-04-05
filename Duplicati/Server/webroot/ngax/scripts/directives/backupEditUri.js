@@ -6,12 +6,9 @@ backupApp.directive('backupEditUri', function() {
     	hide: '=hide'
     },
     templateUrl: 'templates/edituri.html',
-    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $injector) {
+    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
 
 		var scope = $scope;
-
-		// Dynamically load extensions
- 		$injector.get('EditUriBuiltins');
 
 		var builduri = function(callback) {
 
