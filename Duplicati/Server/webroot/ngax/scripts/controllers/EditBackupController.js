@@ -152,7 +152,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 	$scope.save = function() {
 
-		if (!EditBackupService.preValidate())
+		if (!EditBackupService.preValidate($scope))
 			return false;
 
 		var result = {
@@ -365,7 +365,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 				checkForDisabledEncryption(function() {
 					warnWeakPassphrase(function() {
 						checkForExistingDb(function() {
-							EditBackupService.postValidate(postDb);
+							EditBackupService.postValidate($scope, postDb);
 						});
 					});
 				});
