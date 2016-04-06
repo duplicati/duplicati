@@ -94,8 +94,9 @@ namespace Duplicati.Library.Main.Database
         private long m_filesetId;
 
         public LocalBackupDatabase(string path, Options options)
-            : this(new LocalDatabase(path, "Backup"), options)
+            : this(new LocalDatabase(path, "Backup", false), options)
         {
+            this.ShouldCloseConnection = true;
         }
        	
         public LocalBackupDatabase(LocalDatabase db, Options options)
