@@ -328,6 +328,9 @@ namespace Duplicati.Library.Main.Operation.Common
 
             if (!await m_taskreader.TransferProgressAsync)
                 throw new OperationCanceledException();
+
+            if (m_workerSource.IsCancellationRequested)
+                throw new OperationCanceledException();
             
             for(var i = 0; i < m_options.NumberOfRetries; i++)
             {
@@ -335,6 +338,9 @@ namespace Duplicati.Library.Main.Operation.Common
                     await Task.Delay(m_options.RetryDelay);
 
                 if (!await m_taskreader.TransferProgressAsync)
+                    throw new OperationCanceledException();
+
+                if (m_workerSource.IsCancellationRequested)
                     throw new OperationCanceledException();
 
                 try
@@ -354,7 +360,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     await m_log.WriteRetryAttemptAsync(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, i + 1, m_options.NumberOfRetries, ex.Message), ex);
 
                     // If the thread is aborted, we exit here
-                    if (ex is System.Threading.ThreadAbortException)
+                    if (ex is System.Threading.ThreadAbortException || ex is OperationCanceledException)
                         break;
 
                     await m_stats.SendEventAsync(item.Operation, i < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);

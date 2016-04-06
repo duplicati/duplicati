@@ -60,8 +60,20 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 try
                 {
+                    if (m_workerSource.IsCancellationRequested)
+                    {
+                        res.TrySetCanceled();
+                        return;
+                    }
+
                     await m_channel.WriteAsync(async () =>
                     {
+                        if (m_workerSource.IsCancellationRequested)
+                        {
+                            res.TrySetCanceled();
+                            return;
+                        }
+
                         try
                         {
                             var r = await method().ConfigureAwait(false);
@@ -125,10 +137,12 @@ namespace Duplicati.Library.Main.Operation.Common
 
         protected virtual void Dispose(bool isDisposing)
         {
+            m_workerSource.Cancel();
+
             if (m_channel != null)
                 try { m_channel.Retire(); }
                 catch { }
-                finally { m_channel = null; }
+                finally { }
 
             AutomationExtensions.RetireAllChannels(this);
         }
