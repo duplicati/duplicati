@@ -286,6 +286,18 @@
       <Link>licenses\CoCoL\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\rumps\download.txt">
+      <Link>licenses\rumps\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\rumps\License.txt">
+      <Link>licenses\rumps\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\rumps\licensedata.json">
+      <Link>licenses\rumps\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -314,5 +326,6 @@
     <Folder Include="licenses\AngularJS\" />
     <Folder Include="licenses\jQuery\" />
     <Folder Include="licenses\CoCoL\" />
+    <Folder Include="licenses\rumps\" />
   </ItemGroup>
 </Project>
