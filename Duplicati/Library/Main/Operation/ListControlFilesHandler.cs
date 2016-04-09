@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
         {
             using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles"))
+            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);

@@ -15,6 +15,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string TOOLKIT_GTK = "gtk";
         private const string TOOLKIT_GTK_APP_INDICATOR = "gtk-appindicator";
         private const string TOOLKIT_COCOA = "cocoa";
+        private const string TOOLKIT_RUMPS = "rumps";
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
@@ -32,11 +33,10 @@ namespace Duplicati.GUI.TrayIcon
             
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
             {
-                if (!Environment.Is64BitProcess)
+                if (Environment.Is64BitProcess)
+                    return TOOLKIT_RUMPS;
+                else
                     return TOOLKIT_COCOA;
-
-                if (printwarnings)
-                    Console.WriteLine("64bit runtime detected which is known to crash the Cocoa interface, choosing GTK as the default instead");
             }
 
 #if __MonoCS__ || __WindowsGTK__            
@@ -112,6 +112,8 @@ namespace Duplicati.GUI.TrayIcon
 #endif
                 else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
+                else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                    toolkit = TOOLKIT_RUMPS;
                 else
                     toolkit = GetDefaultToolKit(true);
             }
@@ -215,6 +217,8 @@ namespace Duplicati.GUI.TrayIcon
 #endif
             else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
+            else if (toolkit == TOOLKIT_RUMPS)
+                return GetRumpsRunnerInstance();
             else 
                 throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
         }
@@ -237,12 +241,15 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 
+        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
+
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
         //This seems to be more reliable than attempting to load the assembly,
         // as there are too many complex rules for when an updated assembly is also
         // acceptable. This is fairly error proof, as it is just asks the runtime
         // to load the required types
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetGtk()
         {
 #if __MonoCS__ || __WindowsGTK__
@@ -252,11 +259,13 @@ namespace Duplicati.GUI.TrayIcon
 #endif
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetWinforms()
         {
             return typeof(System.Windows.Forms.NotifyIcon) != null;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetAppIndicator()
         {
 #if __MonoCS__ || __WindowsGTK__
@@ -266,6 +275,7 @@ namespace Duplicati.GUI.TrayIcon
 #endif
         }
         
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetMonoMac()
         {
             return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
@@ -307,6 +317,18 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
         
+        private static bool SupportsRumps
+        {
+            get 
+            {
+                try { return RumpsRunner.CanRun(); }
+                catch {}
+
+                return false;
+            }
+        }
+
+
         private static bool SupportsWinForms
         {
             get 
@@ -331,6 +353,8 @@ namespace Duplicati.GUI.TrayIcon
                     toolkits.Add(TOOLKIT_GTK_APP_INDICATOR);
                 if (SupportsCocoa)
                     toolkits.Add(TOOLKIT_COCOA);
+                if (SupportsRumps)
+                    toolkits.Add(TOOLKIT_RUMPS);
                 
                 return new Duplicati.Library.Interface.ICommandLineArgument[]
                 {

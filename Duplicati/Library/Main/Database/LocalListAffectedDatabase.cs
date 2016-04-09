@@ -24,8 +24,9 @@ namespace Duplicati.Library.Main.Database
     internal class LocalListAffectedDatabase : LocalDatabase
     {
         public LocalListAffectedDatabase(string path)
-            : base(path, "ListAffected")
+            : base(path, "ListAffected", false)
         {
+            ShouldCloseConnection = true;
         }
 
         private class ListResultFileset : Duplicati.Library.Interface.IListResultFileset

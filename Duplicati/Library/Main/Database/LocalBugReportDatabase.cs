@@ -22,8 +22,9 @@ namespace Duplicati.Library.Main.Database
 	internal class LocalBugReportDatabase : LocalDatabase
 	{
 		public LocalBugReportDatabase(string path)
-			: base(path, "BugReportCreate")
+			: base(path, "BugReportCreate", false)
 		{
+            ShouldCloseConnection = true;
 		}
 
 		public void Fix()
