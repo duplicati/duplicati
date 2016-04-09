@@ -149,6 +149,7 @@
 
 
 # Encrypted Files
+.aes #AES encrypted file
 .gpg #GnuPG Encrypted file
 .kdbx #KeePass Password Database
 .tc #TrueCrypt Encrypted Volume
