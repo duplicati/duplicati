@@ -325,7 +325,7 @@
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-- <ItemGroup>
+  <ItemGroup>
     <Folder Include="licenses\MegaApi\" />
     <Folder Include="licenses\AngularJS\" />
     <Folder Include="licenses\jQuery\" />
