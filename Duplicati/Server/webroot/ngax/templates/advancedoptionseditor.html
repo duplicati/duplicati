@@ -1,10 +1,11 @@
 <ul class="advancedoptions">
 	<li ng-repeat="item in ngModel | orderBy: 'item' as nn track by $index" class="advancedentry">
-		<div>			
+		<div>
 			<label class="shortname">{{getShortName(item)}}</label>
 
-			<select ng-if="getInputType(item) == 'enum'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option="getEnumerations(item)" ></select>
-			<input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$index]" parse-advanced-option-bool ></input>
+            <select ng-if="getInputType(item) == 'enum'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option="getEnumerations(item)"></select>
+            <select ng-if="getInputType(item) == 'flags'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option-flags="getEnumerations(item)" multiple="multiple"></select>
+            <input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$index]" parse-advanced-option-bool ></input>
 			<input ng-if="getInputType(item) == 'password'" type="password" ng-model="$parent.ngModel[$index]" parse-advanced-option ></input>
 			<input ng-if="getInputType(item) == 'text'" type="text" ng-model="$parent.ngModel[$index]" parse-advanced-option ></input>
 			<input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$index]" parse-advanced-option-integer ></input>
@@ -27,7 +28,7 @@
                     <option value="M">Months</option>
                     <option value="Y">Years</option>
                     <option value="">custom</option>
-                </select>				
+                </select>
 			</div>
 
 		</div>
