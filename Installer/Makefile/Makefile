@@ -35,12 +35,12 @@ package: build
 	rm -rf "$(PKG_TARGET)/AlphaVSS.Common.dll"
 
 	cp -R "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/lib/duplicati/"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-commandline-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-cli"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati-server-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-server"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati.desktop" "$(PACKAGE_DIR)/usr/share/applications/"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati.xpm" "$(PACKAGE_DIR)/usr/share/pixmaps/"
-	cp "$(SOURCE_DIR)/Installer/debian help/duplicati.png" "$(PACKAGE_DIR)/usr/share/pixmaps/"
+	cp "$(SOURCE_DIR)/Installer/debian/duplicati-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati"
+	cp "$(SOURCE_DIR)/Installer/debian/duplicati-commandline-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-cli"
+	cp "$(SOURCE_DIR)/Installer/debian/duplicati-server-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati-server"
+	cp "$(SOURCE_DIR)/Installer/debian/duplicati.desktop" "$(PACKAGE_DIR)/usr/share/applications/"
+	cp "$(SOURCE_DIR)/Installer/debian/duplicati.xpm" "$(PACKAGE_DIR)/usr/share/pixmaps/"
+	cp "$(SOURCE_DIR)/Installer/debian/duplicati.png" "$(PACKAGE_DIR)/usr/share/pixmaps/"
 
 	# If we edit files, we sometimes get backup files included
 	find "$(PACKAGE_DIR)" -type f -name \*\~ -exec rm -rf '{}' \;

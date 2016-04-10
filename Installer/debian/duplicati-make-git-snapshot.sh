@@ -31,7 +31,7 @@ if [ -d "../../oem" ]; then
     git commit -m "Added OEM files"
 fi
 
-cp -R "Installer/debian help/debian" .
+cp -R "Installer/debian/debian" .
 
 sed -e "s;%VERSION%;$VERSION;g" -e "s;%DATE%;$DATE_STAMP;g" "../debian/changelog" > "debian/changelog"
 
