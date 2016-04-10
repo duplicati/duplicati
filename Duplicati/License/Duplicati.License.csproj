@@ -17,8 +17,6 @@
     <UpgradeBackupLocation />
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -137,10 +135,6 @@
     </Content>
     <Content Include="..\..\thirdparty\HttpServer\Homepage.txt">
       <Link>licenses\HttpServer\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\LICENSE.TXT">
-      <Link>licenses\System.Net.FtpClient\LICENSE.TXT</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\HttpServer\license.txt">
@@ -302,6 +296,18 @@
       <Link>licenses\rumps\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\System.Net.FtpClient\Homepage.txt">
+      <Link>licenses\System.Net.FtpClient\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\System.Net.FtpClient\License.txt">
+      <Link>licenses\System.Net.FtpClient\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\System.Net.FtpClient\licensedata.json">
+      <Link>licenses\System.Net.FtpClient\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -331,5 +337,6 @@
     <Folder Include="licenses\jQuery\" />
     <Folder Include="licenses\CoCoL\" />
     <Folder Include="licenses\rumps\" />
+    <Folder Include="licenses\System.Net.FtpClient\" />
   </ItemGroup>
 </Project>

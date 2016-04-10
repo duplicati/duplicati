@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -38,15 +38,15 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.FtpClient">
-      <HintPath>..\..\..\..\thirdparty\System.Net.FtpClient\Release\System.Net.FtpClient.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Net.FtpClient">
+      <HintPath>..\..\..\..\thirdparty\System.Net.FtpClient\System.Net.FtpClient.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AlternativeFTPBackend.cs" />
@@ -63,15 +63,15 @@
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
-      <Project>{b68f2214-951f-4f78-8488-66e1ed3f50bf}</Project>
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
-      <Project>{52826615-7964-47fe-b4b3-1b2dbdf605b9}</Project>
+      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
       <Name>Duplicati.Library.Modules.Builtin</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
   </ItemGroup>
