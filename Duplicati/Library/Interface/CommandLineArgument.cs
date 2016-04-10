@@ -1,21 +1,21 @@
 #region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 using System;
 using System.Collections.Generic;
@@ -63,6 +63,10 @@ namespace Duplicati.Library.Interface
             /// Indicates that the argument is a password and should be masked
             /// </summary>
             Password,
+            /// <summary>
+            /// Indicates that the argument is an enumeration value supporting a combination of flags
+            /// </summary>
+            Flags,
             /// <summary>
             /// The argument type is unknown
             /// </summary>
@@ -272,6 +276,8 @@ namespace Duplicati.Library.Interface
                         return Strings.DataTypes.Boolean;
                     case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration:
                         return Strings.DataTypes.Enumeration;
+                    case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags:
+                        return Strings.DataTypes.Flags;
                     case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer:
                         return Strings.DataTypes.Integer;
                     case Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path:
@@ -299,7 +305,7 @@ namespace Duplicati.Library.Interface
         public static void PrintArgument(List<string> lines, ICommandLineArgument arg, string indent)
         {
             lines.Add(indent + "--" + arg.Name + " (" + arg.Typename + "): " + arg.ShortDescription);
-            
+
             if (arg.Deprecated)
                 lines.Add(indent + "  " + Strings.CommandLineArgument.DeprecationMarker + ": " + arg.DeprecationMessage);
 

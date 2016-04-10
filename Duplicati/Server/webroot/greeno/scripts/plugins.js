@@ -40,7 +40,7 @@ $(document).ready(function() {
         decode_uri: function(url) {
             var dict = EDIT_URI.decode_uri(url);
             if (dict == null || dict['backend-type'] == null) {
-                
+
                 dict = dict || {};
 
                 var p = url;
@@ -76,7 +76,7 @@ $(document).ready(function() {
                 $.browseForFolder({
                     title: 'Select target folder',
                     multiSelect: false,
-                    resolvePath: true,            
+                    resolvePath: true,
                     callback: function(path, display) {
                         $('#server-path').val(path);
                     }
@@ -110,6 +110,12 @@ $(document).ready(function() {
     }
 
     APP_DATA.plugins.backend['ftp'] = {
+        defaultport: 21,
+        defaultportssl: 443,
+        optionalpassword: true
+    }
+
+    APP_DATA.plugins.backend['aftp'] = {
         defaultport: 21,
         defaultportssl: 443,
         optionalpassword: true
@@ -184,7 +190,7 @@ $(document).ready(function() {
                 var h = 550;
 
                 var left = (screen.width/2)-(w/2);
-                var top = (screen.height/2)-(h/2);                
+                var top = (screen.height/2)-(h/2);
                 var wnd = window.open(url, '_blank', 'height=' + h +',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
 
                 var recheck = function() {
@@ -209,7 +215,7 @@ $(document).ready(function() {
                     } else {
                         if (wnd != null)
                             wnd.close();
-                    }                  
+                    }
                 };
 
                 setTimeout(recheck, 6000);
@@ -240,7 +246,7 @@ $(document).ready(function() {
         passwordwatermark: 'AWS Secret Key',
         serverdrop_field: null,
         regiondrop_field: null,
-        storageclassdrop_field: null,        
+        storageclassdrop_field: null,
         bucket_field: null,
 
         known_hosts: null,
@@ -256,10 +262,10 @@ $(document).ready(function() {
 
                 this.serverdrop_field.autocomplete({
                     minLength: 0,
-                    source: servers, 
+                    source: servers,
                 });
                 var self = this;
-                this.serverdrop_field.click(function() {  
+                this.serverdrop_field.click(function() {
                     self.serverdrop_field.autocomplete('search', '');
                 });
             }
@@ -270,13 +276,13 @@ $(document).ready(function() {
                 var buckets = [];
                 for (var k in this.known_regions)
                     buckets.push({label: k + ' (' + this.known_regions[k] + ')', value: this.known_regions[k]});
-                
+
                 this.regiondrop_field.autocomplete({
                     minLength: 0,
-                    source: buckets, 
+                    source: buckets,
                 });
                 var self = this;
-                this.regiondrop_field.click(function() {  
+                this.regiondrop_field.click(function() {
                     self.regiondrop_field.autocomplete('search', '');
                 });
             }
@@ -287,13 +293,13 @@ $(document).ready(function() {
                 var buckets = [];
                 for (var k in this.known_storage_classes)
                     buckets.push({label: k + ' (' + this.known_storage_classes[k] + ')', value: this.known_storage_classes[k]});
-                
+
                 this.storageclassdrop_field.autocomplete({
                     minLength: 0,
-                    source: buckets, 
+                    source: buckets,
                 });
                 var self = this;
-                this.storageclassdrop_field.click(function() {  
+                this.storageclassdrop_field.click(function() {
                     self.storageclassdrop_field.autocomplete('search', '');
                 });
             }
@@ -341,7 +347,7 @@ $(document).ready(function() {
                 });
             } else {
                 this.setup_regions_after_config();
-            }            
+            }
 
             if (self.known_storage_classes == null) {
                 APP_DATA.callServer({action: 'send-command', command: 's3-getconfig', 's3-config': 'StorageClasses'}, function(data) {
@@ -353,7 +359,7 @@ $(document).ready(function() {
                 });
             } else {
                 this.setup_storage_classes_after_config();
-            }            
+            }
 
         },
 
@@ -486,10 +492,10 @@ $(document).ready(function() {
 
                 this.locationdrop_field.autocomplete({
                     minLength: 0,
-                    source: servers, 
+                    source: servers,
                 });
                 var self = this;
-                this.locationdrop_field.click(function() {  
+                this.locationdrop_field.click(function() {
                     self.locationdrop_field.autocomplete('search', '');
                 });
             }
@@ -504,10 +510,10 @@ $(document).ready(function() {
 
                 this.storage_class_field.autocomplete({
                     minLength: 0,
-                    source: servers, 
+                    source: servers,
                 });
                 var self = this;
-                this.storage_class_field.click(function() {  
+                this.storage_class_field.click(function() {
                     self.storage_class_field.autocomplete('search', '');
                 });
             }
@@ -556,7 +562,7 @@ $(document).ready(function() {
                 });
             } else {
                 this.setup_storage_classes_after_config();
-            } 
+            }
         },
 
         cleanup_gcs: function() {
@@ -620,10 +626,10 @@ $(document).ready(function() {
 
                 this.serverdrop_field.autocomplete({
                     minLength: 0,
-                    source: servers, 
+                    source: servers,
                 });
                 var self = this;
-                this.serverdrop_field.click(function() {  
+                this.serverdrop_field.click(function() {
                     self.serverdrop_field.autocomplete('search', '');
                 });
             }
@@ -711,7 +717,7 @@ $(document).ready(function() {
             'openstack-apikey': '--openstack-apikey',
             'openstack-region': '--openstack-region'
         }
-    }    
+    }
 
     APP_DATA.plugins.backend['b2'] = {
 
@@ -827,5 +833,5 @@ $(document).ready(function() {
                 dict['server-name'] = '';
             }
         }
-    }    
+    }
 });

@@ -140,6 +140,10 @@
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
       <Name>Duplicati.CommandLine</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
+      <Project>{3f47cb0c-cee1-447f-9c26-7f8e419e3e3f}</Project>
+      <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>

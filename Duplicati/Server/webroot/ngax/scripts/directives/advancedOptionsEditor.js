@@ -29,7 +29,7 @@ backupApp.directive('advancedOptionsEditor', function() {
                     name = name.substr(2);
                 if (name.indexOf('=') >= 0)
                     name = name.substr(0, name.indexOf('='));
-                return name;                
+                return name;
             }
 
             $scope.getEntry = function(key) {
@@ -41,7 +41,7 @@ backupApp.directive('advancedOptionsEditor', function() {
 
             $scope.getDisplayName = function(name) {
                 var item = $scope.getEntry(name);
-                if (item == null) 
+                if (item == null)
                     return coreName(name);
 
                 return item.Name + ': ' + item.ShortDescription;
@@ -54,6 +54,8 @@ backupApp.directive('advancedOptionsEditor', function() {
 
                 if (item.Type == 'Enumeration')
                     return 'enum';
+                if (item.Type == 'Flags')
+                    return 'flags';
                 else if (item.Type == 'Boolean')
                     return 'bool';
                 else if (item.Type == 'Password')
