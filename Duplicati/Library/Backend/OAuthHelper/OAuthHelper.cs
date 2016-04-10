@@ -89,6 +89,8 @@ namespace Duplicati.Library
                             var res = GetTokenResponse<OAuth_Service_Response>();
 
                             m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
+                            if (!string.IsNullOrWhiteSpace(res.v2_authid))
+                                m_authid = res.v2_authid;
                             return m_token = res.access_token;
                         }
                         catch (Exception ex)
@@ -137,6 +139,9 @@ namespace Duplicati.Library
             public string access_token { get; set; }
             [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public int expires { get; set; }
+            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+            public string v2_authid { get; set; }
+
         }
 
     }
