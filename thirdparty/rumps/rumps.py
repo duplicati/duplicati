@@ -10,6 +10,7 @@
 #
 # The method _nsimage_from_file has been modified to also allow 
 # loading a manually constructed NSImage
+# The notification class has also been modified to allow an image
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 from collections import OrderedDict
@@ -94,7 +95,7 @@ def alert(title=None, message='', ok=None, cancel=None):
     return alert.runModal()
 
 
-def notification(title, subtitle, message, data=None, sound=True):
+def notification(title, subtitle, message, data=None, sound=True, image=None):
     """Send a notification to Notification Center (Mac OS X 10.8+). If running on a version of Mac OS X that does not
     support notifications, a ``RuntimeError`` will be raised. Apple says,
 
@@ -121,6 +122,8 @@ def notification(title, subtitle, message, data=None, sound=True):
     notification.setUserInfo_({} if data is None else data)
     if sound:
         notification.setSoundName_("NSUserNotificationDefaultSoundName")
+    if image != None:
+        notification.setContentImage_(image)
     notification.setDeliveryDate_(NSDate.dateWithTimeInterval_sinceDate_(0, NSDate.date()))
     NSUserNotificationCenter.defaultUserNotificationCenter().scheduleNotification_(notification)
 
