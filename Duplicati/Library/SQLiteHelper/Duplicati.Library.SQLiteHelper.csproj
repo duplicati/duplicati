@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{2C838169-B187-4B09-8768-1C24C2521C8D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.SQLiteHelper</RootNamespace>

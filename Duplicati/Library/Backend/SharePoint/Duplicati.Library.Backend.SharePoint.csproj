@@ -36,14 +36,6 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.SharePoint.Client, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Runtime, Version=16.1.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.Runtime.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web" />
@@ -52,6 +44,12 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.SharePoint.Client">
+      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SharePoint.Client.Runtime">
+      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.Runtime.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="OneDriveForBusinessBackend.cs" />
@@ -65,19 +63,19 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
-      <Project>{c5899f45-b0ff-483c-9d38-24a9fcaab237}</Project>
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
-      <Project>{b68f2214-951f-4f78-8488-66e1ed3f50bf}</Project>
+      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
-      <Project>{52826615-7964-47fe-b4b3-1b2dbdf605b9}</Project>
+      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
       <Name>Duplicati.Library.Modules.Builtin</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
   </ItemGroup>

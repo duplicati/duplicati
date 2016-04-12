@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.OAuthHelper</RootNamespace>
