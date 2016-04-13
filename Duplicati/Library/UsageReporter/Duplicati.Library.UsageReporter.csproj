@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.UsageReporter</RootNamespace>
