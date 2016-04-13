@@ -2,13 +2,41 @@ import sys
 import json
 import rumps
 import base64
+import traceback
+
 from threading import Thread
 
-from Foundation import (NSData)
-from AppKit import NSImage
+from Foundation import NSData
+from AppKit import NSImage, NSApplication
+from ctypes import CDLL, Structure, POINTER, c_uint32, byref
+from ctypes.util import find_library
+
+class ProcessSerialNumber(Structure):
+    _fields_    = [('highLongOfPSN', c_uint32),
+                   ('lowLongOfPSN',  c_uint32)]
 
 lookup = {}
 app = None
+
+
+def transform_app_type(toForeground):
+    kCurrentProcess = 2
+    
+    kProcessTransformToForegroundApplication = 1
+    kProcessTransformToBackgroundApplication = 2
+    kProcessTransformToUIElementAppication   = 4
+
+    apptype = kProcessTransformToBackgroundApplication
+    if toForeground:
+        apptype = kProcessTransformToForegroundApplication
+
+    ApplicationServices           = CDLL(find_library('ApplicationServices'))
+    TransformProcessType          = ApplicationServices.TransformProcessType
+    TransformProcessType.argtypes = [POINTER(ProcessSerialNumber), c_uint32]
+
+    psn = ProcessSerialNumber(0, kCurrentProcess)
+    ApplicationServices.TransformProcessType(psn, apptype)
+
 
 def item_clicked(sender):
     for k in lookup:
@@ -97,13 +125,61 @@ def get_input():
                         print "warn:Failed to set image"
                         sys.stdout.flush()
 
+                elif cfg["Action"] == "setappicon":
+
+                    try:
+                        raw = base64.b64decode(cfg["Image"])
+                        data = NSData.dataWithBytes_length_(raw, len(raw))
+                        img = NSImage.alloc().initWithData_(data)    
+                        #img.setScalesWhenResized_(True)
+                        #img.setSize_((21, 21))
+                        NSApplication.sharedApplication().setApplicationIconImage_(img)
+
+                        print "info:AppImage updated"
+                        sys.stdout.flush()
+
+                    except:
+                        print "warn:Failed to set image"
+                        sys.stdout.flush()
+
                 elif cfg["Action"] == "shutdown":
                     break
+
+                elif cfg["Action"] == "foreground":
+                    transform_app_type(True)
+                elif cfg["Action"] == "background":
+                    transform_app_type(False)
+
                 elif cfg["Action"] == "notification":
-                    if rumps_NOTIFICATIONS:
-                        rumps.notification(cfg["Title"], '', cfg["Message"])
+                    if rumps._NOTIFICATIONS:
+                        title = cfg["Title"]
+                        message = cfg["Message"]
+                        subtitle = ''
+                        playSound = True
+                        image = None
+
+                        if cfg.has_key("SubTitle"):
+                            subtitle = cfg["SubTitle"]
+
+                        if cfg.has_key("PlaySound"):
+                            playSound = cfg["PlaySound"]
+                        if cfg.has_key("Image"):
+                            try:
+                                raw = base64.b64decode(cfg["Image"])
+                                data = NSData.dataWithBytes_length_(raw, len(raw))
+                                image = NSImage.alloc().initWithData_(data)
+                            except:
+                                print "warn:Failed to decode image"
+                                sys.stdout.flush()
+
+                        rumps.notification(cfg["Title"], subtitle, cfg["Message"], sound=playSound, image=image)
 
     finally:
+        try:
+            traceback.print_exc()
+        except:
+            pass
+
         rumps.quit_application()     
         print "info:Shutdown"
         sys.stdout.flush()
@@ -117,6 +193,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     app = rumps.App('', quit_button=None)
+
+    transform_app_type(False)
 
     t = Thread(target=get_input)
     t.start()
