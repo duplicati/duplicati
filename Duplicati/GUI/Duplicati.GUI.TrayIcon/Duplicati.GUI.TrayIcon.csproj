@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{17566860-3D98-4604-AA5B-47661F75609F}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -307,6 +305,10 @@
     <ProjectReference Include="..\..\WindowsService\WindowsService.csproj">
       <Project>{bef7af9a-3978-4f90-8592-198bf6ea6c6b}</Project>
       <Name>WindowsService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
+      <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
+      <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

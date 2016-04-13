@@ -180,6 +180,9 @@ namespace Duplicati.GUI.TrayIcon
             ReadChannel(m_rumpsProcess.StandardOutput);
             ReadChannel(m_rumpsProcess.StandardError);
 
+			m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "background"}));
+			//m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "setappicon", Image = GetIcon(m_lastIcon)}));
+
             if (m_menus != null)
             {
                 ResetMenus();
@@ -351,7 +354,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void NotifyUser(string title, string message, NotificationType type)
         {
-            m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "notification", Title = title, Message = message}));
+			m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "notification", Title = title, Message = message}));
         }
 
         public override void Dispose()

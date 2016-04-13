@@ -1,3 +1,9 @@
+2016-04-10
+==========
+* Added a new FTP backend, thanks @mylemans
+* Fixed an issue with AWS crashing in initializer
+* Updated list of compressed extensions
+
 2016-04-08
 ==========
 * Fixed a problem with symlink policy not being honored for folders
