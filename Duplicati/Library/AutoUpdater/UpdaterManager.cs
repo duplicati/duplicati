@@ -361,8 +361,9 @@ namespace Duplicati.Library.AutoUpdater
                         wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
                         wreq.Headers.Add("X-Install-ID", InstallID);
 
-                        using(var resp = wreq.GetResponse())
-                        using(var rss = resp.GetResponseStream())
+						var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
+                        using(var resp = areq.GetResponse())
+						using(var rss = areq.GetResponseStream())
                         using(var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
                         using(var fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create))
                             Duplicati.Library.Utility.Utility.CopyStream(pgs, fs);

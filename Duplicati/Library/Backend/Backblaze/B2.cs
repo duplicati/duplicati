@@ -267,7 +267,8 @@ namespace Duplicati.Library.Backend.Backblaze
 
             try
             {
-                using(var rs = req.GetResponseStream())
+				using(var resp = req.GetResponse())
+				using(var rs = req.GetResponseStream())
                     Library.Utility.Utility.CopyStream(rs, stream);
             }
             catch (Exception ex)
