@@ -285,7 +285,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         public void Get(string remotename, System.IO.Stream stream)
         {
             using (var resp = m_oauth.GetResponse(string.Format("{0}/nodes/{1}/content", ContentUrl, GetFileID(remotename))))
-			using(var rs = Library.Utility.AsyncHttpRequest.TrySetDefaultTimeout(resp.GetResponseStream()))
+			using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
 				Utility.Utility.CopyStream(rs, stream);
         }
         #endregion

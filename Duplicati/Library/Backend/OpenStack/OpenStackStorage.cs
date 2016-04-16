@@ -290,7 +290,7 @@ namespace Duplicati.Library.Backend.OpenStack
             try
             {
                 using(var resp = m_helper.GetResponse(url))
-				using(var rs = AsyncHttpRequest.TrySetDefaultTimeout(resp.GetResponseStream()))
+				using(var rs = AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
                     Library.Utility.Utility.CopyStream(rs, stream);
             }
             catch(WebException wex)
