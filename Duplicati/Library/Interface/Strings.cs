@@ -9,6 +9,7 @@ namespace Duplicati.Library.Interface.Strings {
     internal static class DataTypes {
         public static string Boolean { get { return LC.L(@"Boolean"); } }
         public static string Enumeration { get { return LC.L(@"Enumeration"); } }
+        public static string Flags { get { return LC.L(@"Flags"); } }
         public static string Integer { get { return LC.L(@"Integer"); } }
         public static string Path { get { return LC.L(@"Path"); } }
         public static string Size { get { return LC.L(@"Size"); } }

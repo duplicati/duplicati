@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Duplicati.CommandLine.BackendTool</RootNamespace>
@@ -72,7 +70,7 @@
       <Name>Duplicati.Library.Backend.S3</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
-      <Project>{59c8bbc5-6e42-46fb-ab3e-6c183a82459a}</Project>
+      <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
@@ -138,6 +136,10 @@
     <ProjectReference Include="..\..\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj">
       <Project>{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}</Project>
       <Name>Duplicati.Library.Backend.Box</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
+      <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
+      <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

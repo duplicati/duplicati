@@ -43,9 +43,9 @@ override_dh_auto_install:
 	mkdir build/share
 	mkdir build/share/applications
 	mkdir build/share/pixmaps
-	cp Installer/debian\ help/duplicati-launcher.sh build/bin/duplicati
-	cp Installer/debian\ help/duplicati-commandline-launcher.sh build/bin/duplicati-cli
-	cp Installer/debian\ help/duplicati-server-launcher.sh build/bin/duplicati-server
+	cp Installer/debian/duplicati-launcher.sh build/bin/duplicati
+	cp Installer/debian/duplicati-commandline-launcher.sh build/bin/duplicati-cli
+	cp Installer/debian/duplicati-server-launcher.sh build/bin/duplicati-server
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll build/lib/duplicati/
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe build/lib/duplicati/
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config build/lib/duplicati/
@@ -54,9 +54,9 @@ override_dh_auto_install:
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/ build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses build/lib/duplicati/
 	cp -r Duplicati/Server/webroot build/lib/duplicati/
-	cp Installer/debian\ help/duplicati.desktop build/share/applications
-	cp Installer/debian\ help/duplicati.xpm build/share/pixmaps
-	cp Installer/debian\ help/duplicati.png build/share/pixmaps
+	cp Installer/debian/duplicati.desktop build/share/applications
+	cp Installer/debian/duplicati.xpm build/share/pixmaps
+	cp Installer/debian/duplicati.png build/share/pixmaps
 	rm build/lib/duplicati/AlphaFS.dll
 	rm build/lib/duplicati/AlphaVSS.Common.dll
 	rm build/lib/duplicati/MonoMac.dll

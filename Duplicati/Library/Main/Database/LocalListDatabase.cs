@@ -25,8 +25,9 @@ namespace Duplicati.Library.Main.Database
     internal class LocalListDatabase : LocalDatabase
     {
         public LocalListDatabase(string path)
-            : base(path, "List")
+            : base(path, "List", false)
         {
+            ShouldCloseConnection = true;
         }
                 
         public interface IFileversion

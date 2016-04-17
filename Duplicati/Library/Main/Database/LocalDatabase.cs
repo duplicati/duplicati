@@ -34,6 +34,8 @@ namespace Duplicati.Library.Main.Database
         
         public bool IsDisposed { get; private set; }
 
+        public bool ShouldCloseConnection { get; set; }
+
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
         	path = System.IO.Path.GetFullPath(path);
@@ -51,9 +53,10 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
-        public LocalDatabase(string path, string operation)
+        public LocalDatabase(string path, string operation, bool shouldclose)
             : this(CreateConnection(path), operation)
         {
+            ShouldCloseConnection = shouldclose;
         }
 
         /// <summary>
@@ -1117,8 +1120,58 @@ namespace Duplicati.Library.Main.Database
         {
             if (IsDisposed)
                 return;
+
+            DisposeAllFields<System.Data.IDbCommand>(this, false);
+
+            if (ShouldCloseConnection && m_connection != null)
+            {
+                if (m_connection.State == System.Data.ConnectionState.Open)
+                    m_connection.Close();
+                m_connection.Dispose();
+            }
+
             IsDisposed = true;
-            
+        }
+
+        /// <summary>
+        /// Disposes all fields of a certain type, in the instance and its bases
+        /// </summary>
+        /// <typeparam name="T">The type of fields to find</typeparam>
+        /// <param name="item">The item to dispose</param>
+        /// <param name="throwExceptions"><c>True</c> if an aggregate exception should be thrown, or <c>false</c> if exceptions are silently captured</param>
+        public static void DisposeAllFields<T>(object item, bool throwExceptions)
+            where T : IDisposable
+        {
+            var typechain = new List<Type>();
+            var cur = item.GetType();
+            var exceptions = new List<Exception>();
+
+            while (cur != null && cur != typeof(object))
+            {
+                typechain.Add(cur);
+                cur = cur.BaseType;
+            }
+
+            var fields =
+                typechain.SelectMany(x =>
+                    x.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.FlattenHierarchy)
+                ).Distinct().Where(x => x.FieldType.IsAssignableFrom(typeof(T)));
+
+            foreach (var p in fields)
+                try
+                {
+                    var val = p.GetValue(item);
+                    if (val != null)
+                        ((T)val).Dispose();
+                }
+                catch (Exception ex)
+                {
+                    if (throwExceptions)
+                        exceptions.Add(ex);
+                }
+
+            if (exceptions.Count > 0)
+                throw new AggregateException(exceptions);
         }
 
         public void WriteResults()

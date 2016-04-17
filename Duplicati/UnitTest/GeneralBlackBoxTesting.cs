@@ -26,7 +26,12 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class GeneralBlackBoxTesting
     {
-        private static readonly string SOURCE_FOLDERS = Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata", "DSMCBE"));
+        private static readonly string SOURCE_FOLDERS =
+            Path.Combine(
+                string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
+                ? Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata"))
+                : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
+            , "DSMCBE");
 
         protected IEnumerable<string> TestFolders
         {

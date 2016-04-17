@@ -1,0 +1,7 @@
+{
+    "name": "System.Net.FtpClient",
+    "description": "A .Net library for connecting with the FTP protocol",
+    "link": "https://netftp.codeplex.com",
+    "license": "MIT",
+    "notes": ""
+}

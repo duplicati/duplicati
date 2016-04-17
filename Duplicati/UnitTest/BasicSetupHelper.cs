@@ -26,7 +26,10 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// The base folder where all data is trashed around
         /// </summary>
-        protected static readonly string BASEFOLDER = Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata"));
+        protected static readonly string BASEFOLDER =
+            string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
+            ? Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata"))
+            : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER");
 
         /// <summary>
         /// The folder path that serves as the backup destination

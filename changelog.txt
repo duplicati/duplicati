@@ -1,3 +1,16 @@
+2016-04-10
+==========
+* Added a new FTP backend, thanks @mylemans
+* Fixed an issue with AWS crashing in initializer
+* Updated list of compressed extensions
+
+2016-04-08
+==========
+* Fixed a problem with symlink policy not being honored for folders
+* Fixed disposing database commands and connections, which should fix all "database is locked" errors on Windows
+* Updates to handling scenarios where the user is not logged in, thanks @mylemans
+* Added an OSX TrayIcon for 64-bit, based on rumps
+
 2016-03-31
 ==========
 * Fixed some issues with non-standard block sizes

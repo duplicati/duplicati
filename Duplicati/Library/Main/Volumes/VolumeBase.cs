@@ -19,6 +19,7 @@ namespace Duplicati.Library.Main.Volumes
             public long Blocksize;
             public string BlockHash;
 			public string FileHash;
+			public string AppVersion;
 
             public static string GetManifestInstance(long blocksize, string blockhash, string filehash)
             {
@@ -29,7 +30,8 @@ namespace Duplicati.Library.Main.Volumes
                     Blocksize = blocksize,
                     Created = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow),
                     BlockHash = blockhash,
-                    FileHash = filehash
+                    FileHash = filehash,
+					AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()
                 });
             }
 

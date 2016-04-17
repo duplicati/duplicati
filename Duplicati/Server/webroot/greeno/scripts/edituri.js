@@ -18,7 +18,7 @@ $(document).ready(function() {
             var label = config.label ? $('<div></div>').addClass('edit-dialog-label ' + (config.labelclass || '')).html(config.label) : null;
             var field;
             if (config.type == 'link') {
-                field = config.field === false ? null : 
+                field = config.field === false ? null :
                     $('<a />').text(config.title)
                     .attr('id', (config.name || ''))
                     .addClass('action-link ' + (config.fieldclass || ''))
@@ -26,11 +26,11 @@ $(document).ready(function() {
                     .attr('target', config.target || '_blank');
 
             } else {
-                field = config.field === false ? null : 
+                field = config.field === false ? null :
                     $('<input type="' + (config.type || 'text') + '" name="' + (config.name || '') + '" />')
                     .attr('id', (config.name || ''))
                     .addClass('text ui-widget-content ui-corner-all ' + (config.fieldclass || ''));
-                
+
                 if (field && config.value !== undefined)
                     config.attr('value', config.value);
             }
@@ -123,9 +123,9 @@ $(document).ready(function() {
                                 return EDIT_URI.validation_error($('#server-options'), 'Invalid value for ' + k.substr(2) + ': ' + val + ' is not an integer');
                             }
                         } else if (opt.Typename == 'Size') {
-                            //TODO 
+                            //TODO
                         } else if (opt.Typename == 'Timespan') {
-                            //TODO 
+                            //TODO
                         }
 
                     }
@@ -159,7 +159,7 @@ $(document).ready(function() {
             if (cfg['server-port'])
                 url += ':' + cfg['server-port'];
 
-            if (cfg['server-path'] != '') 
+            if (cfg['server-path'] != '')
             {
                 if(url[url.length - 1] != '/')
                     url += '/';
@@ -297,11 +297,11 @@ $(document).ready(function() {
                     BACKEND_STATE.fieldset_cleanup[i].remove();
 
             if (BACKEND_STATE && BACKEND_STATE.current_state && BACKEND_STATE.current_state.cleanup )
-                BACKEND_STATE.current_state.cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));        
+                BACKEND_STATE.current_state.cleanup($('#connection-uri-dialog'), $('#edit-dialog-extensions'));
             BACKEND_STATE.current_state = null;
             BACKEND_STATE.fieldset_cleanup = [];
         }
-        $('#edit-dialog-extensions').empty();        
+        $('#edit-dialog-extensions').empty();
     };
 
     var uriel = null;
@@ -340,7 +340,7 @@ $(document).ready(function() {
 
             var used = {};
 
-            for(var i in {'ftp':0, 'ssh':0, 'webdav':0}) {
+            for(var i in {'ftp':0, 'ssh':0, 'webdav':0, 'aftp':0}) {
                 if (BACKEND_STATE.module_lookup[i]) {
                     used[i] = true;
                     group_basic.append($("<option></option>").attr("value", i).text(BACKEND_STATE.module_lookup[i].DisplayName));
@@ -413,9 +413,9 @@ $(document).ready(function() {
     $('#server-use-ssl').change(function() {
         if (BACKEND_STATE.current_state.defaultportssl) {
             if ($('#server-use-ssl').is(':checked')) {
-                $('#server-port').watermark(BACKEND_STATE.current_state.defaultportssl + '');            
+                $('#server-port').watermark(BACKEND_STATE.current_state.defaultportssl + '');
             } else {
-                $('#server-port').watermark(BACKEND_STATE.current_state.defaultport + '');            
+                $('#server-port').watermark(BACKEND_STATE.current_state.defaultport + '');
             }
         }
     });
@@ -430,7 +430,7 @@ $(document).ready(function() {
         // Auto-detect for SSL
         if (cfg.hasssl === undefined) {
             var m = BACKEND_STATE.module_lookup[k];
-            
+
             if (m && m.Options)
                 for(var i in m.Options)
                     if (m.Options[i].Name == 'use-ssl')
@@ -524,11 +524,11 @@ $(document).ready(function() {
         return uri;
    };
 
-    $('#connection-uri-dialog').dialog({ 
-        modal: true, 
-        minWidth: 320, 
+    $('#connection-uri-dialog').dialog({
+        modal: true,
+        minWidth: 320,
         width: $('body').width > 600 ? 320 : 600,
-        autoOpen: false, 
+        autoOpen: false,
         closeOnEscape: true,
         buttons: [
             {text: 'Cancel', click: function() { $( this ).dialog( "close" ); } },
@@ -582,8 +582,8 @@ $(document).ready(function() {
                     selfbtn.button('option', 'label', 'Creating folder ...');
 
                     APP_DATA.callServer(
-                        {action: 'create-remote-folder', url: uri}, 
-                        testConnection, 
+                        {action: 'create-remote-folder', url: uri},
+                        testConnection,
                         handleError
                     );
                 };
@@ -593,7 +593,7 @@ $(document).ready(function() {
                     testConnection();
                 }
             } },
-            {text: 'Create URI', click: function() { 
+            {text: 'Create URI', click: function() {
 
                 var uri = validate_and_return_uri();
                 if (uri != null) {
@@ -609,7 +609,7 @@ $(document).ready(function() {
 
             var k = $('#backend-type').val();
             var m = BACKEND_STATE.module_lookup[k];
-            
+
             if (m && m.Options) {
             $('#backup-options-dialog').trigger('configure', { Options: m.Options.concat(BACKEND_STATE.extra_options), callback: function(id) {
                 $('#backup-options-dialog').dialog('close');

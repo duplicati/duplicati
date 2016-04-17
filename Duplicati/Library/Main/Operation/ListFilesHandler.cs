@@ -72,7 +72,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(tmpdb, "List"))
+            using (var db = new Database.LocalDatabase(tmpdb, "List", true))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);

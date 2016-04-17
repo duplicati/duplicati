@@ -4,7 +4,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if ((scope.Server || '') != '') {
 			var p = scope.Path;
 			scope.Path = scope.Server;
-			if ((p || '') != '') 
+			if ((p || '') != '')
 				scope.Path += '/' + p;
 
 			delete scope.Server;
@@ -81,7 +81,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             var countDown = 100;
             var ft = scope.oauth_create_token;
             var left = (screen.width/2)-(w/2);
-            var top = (screen.height/2)-(h/2);                
+            var top = (screen.height/2)-(h/2);
             var wnd = window.open(url, '_blank', 'height=' + h +',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
 
             var recheck = function() {
@@ -94,7 +94,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		                    	scope.oauth_in_progress = false;
                     			wnd.close();
                     		} else {
-                    			setTimeout(recheck, 3000);	
+                    			setTimeout(recheck, 3000);
                     		}
                     	},
                     	function(response) {
@@ -105,10 +105,10 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
                 	scope.oauth_in_progress = false;
                     if (wnd != null)
                         wnd.close();
-                }                  
+                }
             };
 
-            setTimeout(recheck, 6000);                
+            setTimeout(recheck, 6000);
 
             return false;
 		};
@@ -229,7 +229,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		for(var x in nukeopts)
 			delete options[nukeopts[x]];
 
-		EditUriBackendConfig.mergeServerAndPath(scope);		
+		EditUriBackendConfig.mergeServerAndPath(scope);
 	};
 
 	EditUriBackendConfig.parsers['azure'] = function(scope, module, server, port, path, options) {
@@ -399,7 +399,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
 		// Slightly better error message
 		scope.Folder = scope.Server;
-		
+
 		var url = AppUtils.format('{0}://{1}/{2}{3}',
 			scope.Backend.Key,
 			scope.Server || '',
@@ -408,7 +408,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		);
 
 		return url;
-	};	
+	};
 
 	EditUriBackendConfig.builders['mega'] = function(scope) {
 		var opts = { };
@@ -432,18 +432,32 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 			continuation();
 	};
 
-	EditUriBackendConfig.validaters['ftp'] = function(scope, continuation) {
-		var res = 
+	EditUriBackendConfig.validaters['ftp'] = function (scope, continuation) {
+	    var res =
 			EditUriBackendConfig.require_server(scope) &&
 			EditUriBackendConfig.require_field(scope, 'Username', 'username');
 
-		if (res)
-			EditUriBackendConfig.recommend_path(scope, function() {
-				if ((scope.Password || '').trim().length == 0)
-					EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
-				else
-					continuation();
-			});
+	    if (res)
+	        EditUriBackendConfig.recommend_path(scope, function () {
+	            if ((scope.Password || '').trim().length == 0)
+	                EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
+	            else
+	                continuation();
+	        });
+	};
+
+	EditUriBackendConfig.validaters['aftp'] = function (scope, continuation) {
+	    var res =
+			EditUriBackendConfig.require_server(scope) &&
+			EditUriBackendConfig.require_field(scope, 'Username', 'username');
+
+	    if (res)
+	        EditUriBackendConfig.recommend_path(scope, function () {
+	            if ((scope.Password || '').trim().length == 0)
+	                EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
+	            else
+	                continuation();
+	        });
 	};
 
 	EditUriBackendConfig.validaters['ssh'] = function(scope, continuation) {
@@ -489,7 +503,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 				});
 			} else {
 				continuation();
-			}	
+			}
 		});
 
 	};
@@ -556,7 +570,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 					});
 				} else {
 					continuation();
-				}	
+				}
 			}
 
 			function checkLowerCase() {
