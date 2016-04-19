@@ -19,6 +19,12 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
             };
         }
 
+        // Disable cache in IE
+        if (method == "GET" || method == "HEAD") {
+            options.headers['Cache-Control'] = 'no-cache';
+            options.headers['Pragma'] = 'no-cache';
+        }
+
         return options;
     };
         
