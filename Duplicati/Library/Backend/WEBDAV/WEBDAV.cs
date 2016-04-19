@@ -129,19 +129,19 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                System.Net.HttpWebRequest req = CreateRequest("");
+                var req = CreateRequest("");
 
                 req.Method = "PROPFIND";
                 req.Headers.Add("Depth", "1");
                 req.ContentType = "text/xml";
                 req.ContentLength = PROPFIND_BODY.Length;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                var areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
                     s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
                 
-                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var doc = new System.Xml.XmlDocument();
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -149,13 +149,17 @@ namespace Duplicati.Library.Backend
 
                     if (!string.IsNullOrEmpty(m_debugPropfindFile))
                     {
-                        using (System.IO.FileStream fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            Utility.Utility.CopyStream(areq.GetResponseStream(), fs, false, m_copybuffer);
+						using (var rs = areq.GetResponseStream())
+                        using (var fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                            Utility.Utility.CopyStream(rs, fs, false, m_copybuffer);
 
                         doc.Load(m_debugPropfindFile);
                     }
                     else
-                        doc.Load(areq.GetResponseStream());
+					{
+						using (var rs = areq.GetResponseStream())
+							doc.Load(rs);
+					}
                 }
 
                 System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
@@ -390,19 +394,19 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename);
+            var req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Http.Get;
 
             try
             {
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    using (System.IO.Stream s = areq.GetResponseStream())
+					using (var s = areq.GetResponseStream())
                         Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
                 }
             }
