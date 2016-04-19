@@ -28,7 +28,7 @@ backupApp.directive('notificationArea', function() {
                         if ((parseInt(backupid) + '') != backupid)
                             DialogService.dialog('Error', 'The backup was temporary and does not exist anymore, so the log data is lost');
                         else
-                            DialogService.dialog('Error', 'The backup is missing, has it been delete?');
+                            DialogService.dialog('Error', 'The backup is missing, has it been deleted?');
                     } else {
                         AppUtils.connectionError('Failed to find backup: ', resp);
                     }
