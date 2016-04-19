@@ -85,6 +85,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.UsageRepo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SharePoint", "Duplicati\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj", "{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AlternativeFTP", "Duplicati\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj", "{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}"
 EndProject
 Global
@@ -261,6 +263,10 @@ Global
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF2BF37C-E502-4C98-BEA0-701671DDFA08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

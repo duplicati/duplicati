@@ -162,6 +162,10 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+      <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
+      <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
@@ -297,6 +301,10 @@
     <ProjectReference Include="..\..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
       <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
       <Name>Duplicati.Library.UsageReporter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\WindowsService\WindowsService.csproj">
+      <Project>{bef7af9a-3978-4f90-8592-198bf6ea6c6b}</Project>
+      <Name>WindowsService</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
       <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
