@@ -708,10 +708,20 @@ namespace Duplicati.Server
         {
             var rd = new System.IO.StreamReader(Console.OpenStandardInput());
             var wr = new System.IO.StreamWriter(Console.OpenStandardOutput());
-            while (rd.ReadLine() != null)
+            string line;
+            while ((line = rd.ReadLine()) != null)
             {
-                wr.WriteLine("pong");
-                wr.Flush();
+                if (string.Equals("shutdown", line, StringComparison.OrdinalIgnoreCase))
+                {
+                    // TODO: All calls to ApplicationExitEvent and TrayIcon->Quit
+                    // should check if we are running something
+                    ApplicationExitEvent.Set();
+                }
+                else
+                {
+                    wr.WriteLine("pong");
+                    wr.Flush();
+                }
             }
         }
 
