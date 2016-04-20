@@ -1,0 +1,4 @@
+#!/bin/sh
+
+set -e
+/bin/launchctl load "/Library/LaunchDaemons/com.duplicati.app.launchagent.plist"
