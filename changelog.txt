@@ -1,3 +1,15 @@
+2016-04-21
+==========
+* Added a new TrayIcon runner for OSX, so it now works on 64bit mono
+* Fixed some error messages
+* Updated App icon on Windows
+* Added a Windows service
+* Fixed an issue with IE caching data in the UI
+* Fixed an issue with restoring from multi-drive backups in Windows
+* Fixed an issue with spaces in the path on B2 backend
+* Changed how the autoupdater attempts to find a folder for storing updates
+* Updated NGAX, thanks AlexFRAN
+
 2016-04-10
 ==========
 * Added a new FTP backend, thanks @mylemans
