@@ -8,7 +8,7 @@ WC_DMG=wc.dmg
 WC_DIR=wc
 TEMPLATE_DMG=template.dmg
 OUTPUT=Duplicati.dmg
-UNWANTED_FILES="AlphaVSS.Common.dll AlphaFS.dll AlphaFS.dll.config AlphaVSS.Common.dll.config appindicator-sharp.dll SQLite win-tools alphavss control_dir Duplicati.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
+UNWANTED_FILES="AlphaVSS.Common.dll AlphaFS.dll AlphaFS.dll.config AlphaVSS.Common.dll.config appindicator-sharp.dll SQLite win-tools alphavss control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
 
 SHOW_USAGE_ERROR=
 
@@ -90,15 +90,21 @@ if [ -e ../oem.css ]; then
     cp ../oem.css Duplicati.app/Contents/Resources/webroot/stylesheets/
 fi
 
+# Install the LauncAgent if anyone needs it
+cp -R "daemon" "Duplicati.app/Contents/Resources"
+
 # Install executables
 cp "run-with-mono.sh" "Duplicati.app/Contents/MacOS/"
 cp "Duplicati-trayicon-launcher" "Duplicati.app/Contents/MacOS/duplicati"
 cp "Duplicati-commandline-launcher" "Duplicati.app/Contents/MacOS/duplicati-cli"
 cp "Duplicati-server-launcher" "Duplicati.app/Contents/MacOS/duplicati-server"
+cp "uninstall.sh" "Duplicati.app/Contents/MacOS/"
+
 chmod +x "Duplicati.app/Contents/MacOS/run-with-mono.sh"
 chmod +x "Duplicati.app/Contents/MacOS/duplicati"
 chmod +x "Duplicati.app/Contents/MacOS/duplicati-cli"
 chmod +x "Duplicati.app/Contents/MacOS/duplicati-server"
+chmod +x "Duplicati.app/Contents/MacOS/uninstall.sh"
 
 # Remove some of the files that we do not like
 for FILE in $UNWANTED_FILES

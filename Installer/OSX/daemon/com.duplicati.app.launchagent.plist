@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>com.duplicati.app</string>
+	<string>com.duplicati.app.launchagent</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/usr/bin/open</string>
