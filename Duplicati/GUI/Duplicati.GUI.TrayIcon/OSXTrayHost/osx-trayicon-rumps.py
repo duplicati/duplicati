@@ -115,7 +115,7 @@ def get_input():
                         data = NSData.dataWithBytes_length_(raw, len(raw))
                         img = NSImage.alloc().initWithData_(data)    
                         img.setScalesWhenResized_(True)
-                        img.setSize_((21, 21))
+                        img.setSize_((18, 18))
                         app.icon = img
 
                         print "info:Image updated"
