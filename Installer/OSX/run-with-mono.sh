@@ -62,25 +62,30 @@ fi
 # Move into the folder where all the assemblies are located
 cd "${APP_PATH}/Resources"
 
-# Make a symlink so Duplicati shows up as "Duplicati" in ps and not as "mono"
-if [ ! -d "./bin" ]; then mkdir bin ; fi
+# Get the current running version
+OSX_VERSION=$(uname -r | cut -f1 -d.)
 
-if [ ! -d "./bin" ]
-then
-	# We cannot make the extra dir (most likely we are running on read-only medium)
-	# Instead we attempt to use exec to set the appname
-	OSX_VERSION=$(uname -r | cut -f1 -d.)
-	if [ $OSX_VERSION -lt 9 ]; then  # If OSX version is 10.4
+if [ $OSX_VERSION -lt 9 ]; then  # If OSX version is 10.4 or less, the exec command is missing the -a option
+
+	# Attempt to create a folder inside the Resources folder
+	if [ ! -d "./bin" ]; then mkdir bin ; fi
+
+	# If we failed, the meduim is probably read-only, so we revert to exec
+	if [ ! -d "./bin" ]
+	then
 		exec "${MONO_BIN}" "$ASSEMBLY" $@
 	else
-		exec -a "$APP_NAME" "${MONO_BIN}" "$ASSEMBLY" $@
-	fi		
+
+		# We can make the helper file, lets use that
+		if [ -f "./bin/$APP_NAME" ]; then rm -f "./bin/$APP_NAME" ; fi
+		ln -s "${MONO_BIN}" "./bin/$APP_NAME"
+
+		# Start Duplicati using the renamed symlink to Mono
+		"./bin/$APP_NAME" "$ASSEMBLY" $@
+	fi
 else
+	# On a modern OSX, so we avoid modifying the bundle contents
+	exec -a "$APP_NAME" "${MONO_BIN}" "$ASSEMBLY" $@
+fi		
 
-	# We can make the helper file, lets use that
-	if [ -f "./bin/$APP_NAME" ]; then rm -f "./bin/$APP_NAME" ; fi
-	ln -s "${MONO_BIN}" "./bin/$APP_NAME"
 
-	# Start Duplicati using the renamed symlink to Mono
-	"./bin/$APP_NAME" "$ASSEMBLY" $@
-fi
