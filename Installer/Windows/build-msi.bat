@@ -5,7 +5,6 @@ echo File not found, please supply a zip file with the build as the first argume
 goto EXIT
 )
 
-
 call "%VS120COMNTOOLS%vsvars32.bat"
 
 rmdir /s /q Duplicati
@@ -13,6 +12,21 @@ del /q Duplicati.msi
 del /q Duplicati-32bit.msi
 
 7z x -oDuplicati %1
+
+IF EXIST "..\oem" (
+	echo Installing OEM files
+	xcopy ..\oem\* Duplicati\webroot\oem /e /s /y /i
+)
+
+IF EXIST "..\..\oem" (
+	echo Installing OEM files
+	xcopy ..\..\oem\* Duplicati\webroot\ /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem" (
+	echo Installing OEM files
+	xcopy ..\..\..\oem\* Duplicati\webroot\ /e /s /y /i
+)
 
 rmdir /s /q obj
 rmdir /s /q bin
