@@ -195,6 +195,13 @@ namespace Duplicati.Server.WebServer
                 server.Add(customized_files);
             }
 
+			if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
+			{
+				var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
+				AddMimeTypes(oem_files);
+				server.Add(oem_files);
+			}
+
             var fh = new FileModule("/", webroot);
             AddMimeTypes(fh);
             server.Add(fh);
