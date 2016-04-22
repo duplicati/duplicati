@@ -24,12 +24,15 @@ git clone ${REF:+--reference $REF} \
          `git config --get remote.origin.url` $DIRNAME
 
 cd "$DIRNAME"
-if [ -d "../../oem" ]; then
-    echo "Installing OEM files"
-    cp -R ../../oem/* Duplicati/Server/webroot/
-    git add Duplicati/Server/webroot/*
-    git commit -m "Added OEM files"
-fi
+for n in "../../oem" "../../../oem" "../../../../oem"
+do
+    if [ -d $n ]; then
+        echo "Installing OEM files"
+        cp -R $n Duplicati/Server/webroot/
+        git add Duplicati/Server/webroot/*
+        git commit -m "Added OEM files"
+    fi
+done
 
 cp -R "Installer/debian/debian" .
 

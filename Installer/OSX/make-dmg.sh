@@ -18,25 +18,25 @@ DELETE_DMG=0
 
 if [ -f "$TEMPLATE_DMG_BZ2" ]
 then
-	if [ -f "$TEMPLATE_DMG" ]
-	then
-		rm -rf "$TEMPLATE_DMG"
-	fi
-	
-	bzip2 --decompress --keep --quiet "$TEMPLATE_DMG_BZ2"
-	DELETE_DMG=1
+    if [ -f "$TEMPLATE_DMG" ]
+    then
+        rm -rf "$TEMPLATE_DMG"
+    fi
+    
+    bzip2 --decompress --keep --quiet "$TEMPLATE_DMG_BZ2"
+    DELETE_DMG=1
 fi
 
 if [ ! -f "$TEMPLATE_DMG" ]
 then
-	echo "Template file $TEMPLATE_DMG not found"
-	exit
+    echo "Template file $TEMPLATE_DMG not found"
+    exit
 fi
 
 if [ ! -f "$1" ]
 then
-	echo "Please supply a packaged zip file as the first input argument"
-	exit
+    echo "Please supply a packaged zip file as the first input argument"
+    exit
 fi
 
 VERSION_NUMBER=`echo "$1" | awk -F- '{print $2}' | awk -F_ '{print $1}'`
@@ -44,13 +44,13 @@ VERSION_NUMBER=`echo "$1" | awk -F- '{print $2}' | awk -F_ '{print $1}'`
 VERSION_NAME="Duplicati"
 if [ -e "$OUTPUT" ]
 then
-	rm -rf "$OUTPUT"
+    rm -rf "$OUTPUT"
 fi
 
 # Remove any existing work copy
 if [ -e "Duplicati.app" ]
 then
-	sudo rm -rf "Duplicati.app"
+    sudo rm -rf "Duplicati.app"
 fi
 
 # Create folder structure
@@ -70,25 +70,13 @@ PLIST=${PLIST/!SHORT_VERSION!/${SHORT_VERSION_NUMBER}}
 echo ${PLIST} > "Duplicati.app/Contents/Info.plist"
 cp "Duplicati.icns" "Duplicati.app/Contents/Resources"
 
-if [ -e ./oem.js ]; then
-    echo "Installing OEM script"
-    cp ./oem.js Duplicati.app/Contents/Resources/webroot/scripts/
-fi
-
-if [ -e ../oem.js ]; then
-    echo "Installing OEM script"
-    cp ../oem.js Duplicati.app/Contents/Resources/webroot/scripts/
-fi
-
-if [ -e ./oem.css ]; then
-    echo "Installing OEM stylesheet"
-    cp ./oem.css Duplicati.app/Contents/Resources/webroot/stylesheets/
-fi
-
-if [ -e ../oem.css ]; then
-    echo "Installing OEM stylesheet"
-    cp ../oem.css Duplicati.app/Contents/Resources/webroot/stylesheets/
-fi
+for n in "../oem" "../../oem" "../../../oem"
+do
+    if [ -d $n ]; then
+        echo "Installing OEM files"
+        cp -R $n Duplicati.app/Contents/Resources/webroot/
+    fi
+done
 
 # Install the LauncAgent if anyone needs it
 cp -R "daemon" "Duplicati.app/Contents/Resources"
@@ -109,10 +97,10 @@ chmod +x "Duplicati.app/Contents/MacOS/uninstall.sh"
 # Remove some of the files that we do not like
 for FILE in $UNWANTED_FILES
 do
-	if [ -e "Duplicati.app/Contents/Resources/${FILE}" ]
-	then
-		rm -rf "Duplicati.app/Contents/Resources/${FILE}"
-	fi
+    if [ -e "Duplicati.app/Contents/Resources/${FILE}" ]
+    then
+        rm -rf "Duplicati.app/Contents/Resources/${FILE}"
+    fi
 done
 
 # Set permissions
@@ -147,11 +135,11 @@ rm -rf "DuplicatiDaemon.pkg"
 echo "Building dmg"
 if [ "$DELETE_DMG" -eq "1" ]
 then
-	# If we have just extracted the dmg, use that as working copy
-	WC_DMG=$TEMPLATE_DMG
+    # If we have just extracted the dmg, use that as working copy
+    WC_DMG=$TEMPLATE_DMG
 else
-	# Otherwise we want a copy so we kan keep the original fresh
-	cp "$TEMPLATE_DMG" "$WC_DMG"
+    # Otherwise we want a copy so we kan keep the original fresh
+    cp "$TEMPLATE_DMG" "$WC_DMG"
 fi
 
 # Make a mount point and mount the new dmg
@@ -165,7 +153,7 @@ diskutil quiet rename wc "$VERSION_NAME"
 # Make the Duplicati.app structure, root folder should exist
 if [ -e "$WC_DIR/Duplicati.app" ]
 then
-	rm -rf "$WC_DIR/Duplicati.app"
+    rm -rf "$WC_DIR/Duplicati.app"
 fi
 
 # Move in the prepared folder

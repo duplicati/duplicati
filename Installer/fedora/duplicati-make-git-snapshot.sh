@@ -23,19 +23,16 @@ git clone ${REF:+--reference $REF} \
          https://github.com/duplicati/duplicati.git $DIRNAME
 
 cd "$DIRNAME"
-if [ -e "../oem.js" ]; then
-    echo "Installing OEM script"
-    cp ../oem.js Duplicati/Server/webroot/scripts/
-    git add Duplicati/Server/webroot/scripts/oem.js
-    git commit -m "Added OEM branding script"
-fi
+for n in "../../oem" "../../../oem" "../../../../oem"
+do
+    if [ -d $n ]; then
+        echo "Installing OEM files"
+        cp -R $n Duplicati/Server/webroot/
+        git add Duplicati/Server/webroot/*
+        git commit -m "Added OEM files"
+    fi
+done
 
-if [ -e "../oem.css" ]; then
-    echo "Installing OEM stylesheet"
-    cp ../oem.css Duplicati/Server/webroot/stylesheets/
-    git add Duplicati/Server/webroot/stylesheets/oem.css
-    git commit -m "Added OEM branding stylesheet"
-fi
 
 git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > ../$DIRNAME.tar.bz2
