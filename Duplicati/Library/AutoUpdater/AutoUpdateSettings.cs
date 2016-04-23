@@ -31,6 +31,12 @@ namespace Duplicati.Library.AutoUpdater
         private const string UPDATE_README = "AutoUpdateFolderReadme.txt";
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
 
+		private const string OEM_APP_NAME = "oem-app-name.txt";
+		private const string OEM_UPDATE_URL = "oem-update-url.txt";
+		private const string OEM_UPDATE_KEY = "oem-update-key.txt";
+		private const string OEM_UPDATE_README = "oem-update-readme.txt";
+		private const string OEM_UPDATE_INSTALL_FILE = "oem-update-installid.txt";
+
         internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
         internal const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
 
@@ -49,18 +55,19 @@ namespace Duplicati.Library.AutoUpdater
 
         static AutoUpdateSettings()
         {
-            ReadResourceText(APP_NAME);
-            ReadResourceText(UPDATE_URL);
-            ReadResourceText(UPDATE_KEY);
-            ReadResourceText(UPDATE_README);
-            ReadResourceText(UPDATE_INSTALL_FILE);
+			ReadResourceText(APP_NAME, OEM_APP_NAME);
+			ReadResourceText(UPDATE_URL, OEM_UPDATE_URL);
+			ReadResourceText(UPDATE_KEY, OEM_UPDATE_URL);
+			ReadResourceText(UPDATE_README, OEM_UPDATE_README);
+			ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE);
         }
 
-        private static string ReadResourceText(string name)
+		private static string ReadResourceText(string name, string oemname)
         {
             string result;
             if (_cache.TryGetValue(name, out result))
                 return result;
+
 
             try
             {
@@ -70,6 +77,16 @@ namespace Duplicati.Library.AutoUpdater
             catch
             {
             }
+
+			try
+			{
+				// Check for OEM override
+				if (!string.IsNullOrWhiteSpace(oemname) && System.IO.File.Exists(oemname))
+					result = System.IO.File.ReadAllText(oemname);
+			}
+			catch
+			{
+			}
 
             if (string.IsNullOrWhiteSpace(result))
                 result = "";
@@ -87,7 +104,7 @@ namespace Duplicati.Library.AutoUpdater
                 if (UsesAlternateURLs)
                     return Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName)).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                 else
-                    return ReadResourceText(UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);; 
+					return ReadResourceText(UPDATE_URL, OEM_UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);; 
             }
         }
 
@@ -137,17 +154,17 @@ namespace Duplicati.Library.AutoUpdater
 
         public static string AppName
         {
-            get { return ReadResourceText(APP_NAME); }
+			get { return ReadResourceText(APP_NAME, OEM_APP_NAME); }
         }
 
         public static string UpdateFolderReadme
         {
-            get { return ReadResourceText(UPDATE_README); }
+			get { return ReadResourceText(UPDATE_README, OEM_UPDATE_README); }
         }
 
         public static string UpdateInstallFileText
         {
-            get { return string.Format(ReadResourceText(UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N")); }
+			get { return string.Format(ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N")); }
         }
 
         public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
@@ -157,7 +174,7 @@ namespace Duplicati.Library.AutoUpdater
                 try
                 {
                     var key = System.Security.Cryptography.RSACryptoServiceProvider.Create();
-                    key.FromXmlString(ReadResourceText(UPDATE_KEY)); 
+					key.FromXmlString(ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY)); 
                     return (System.Security.Cryptography.RSACryptoServiceProvider)key;
                 }
                 catch
