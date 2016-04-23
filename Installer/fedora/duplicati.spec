@@ -152,6 +152,13 @@ install -p  Installer/debian/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
 install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/light/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
 
+# Install oem overrides
+if [ -f "oem-app-name.txt" ]; then install -p -m 755 "oem-app-name.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
+if [ -f "oem-update-url.txt" ]; then install -p -m 755 "oem-update-url.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
+if [ -f "oem-update-key.txt" ]; then install -p -m 755 "oem-update-key.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
+if [ -f "oem-update-readme.txt" ]; then install -p -m 755 "oem-update-readme.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
+if [ -f "oem-update-installid.txt" ]; then install -p -m 755 "oem-update-installid.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
+
 cp -r Duplicati/Server/webroot %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
 chmod -R 655 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot
 cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses

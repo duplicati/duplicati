@@ -34,6 +34,19 @@ do
     fi
 done
 
+for n in "oem-app-name.txt" "oem-update-url.txt" "oem-update-key.txt" "oem-update-readme.txt" "oem-update-installid.txt"
+do
+    for p in "../../$n" "../../../$n" "../../../../$n"
+    do
+        if [ -f $p ]; then
+            echo "Installin OEM override file"
+            cp $p .
+            git add ./$n
+            git commit -m "Added OEM override file"
+        fi
+    done
+done
+
 cp -R "Installer/debian/debian" .
 
 sed -e "s;%VERSION%;$VERSION;g" -e "s;%DATE%;$DATE_STAMP;g" "../debian/changelog" > "debian/changelog"

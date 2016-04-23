@@ -78,6 +78,18 @@ do
     fi
 done
 
+for n in "oem-app-name.txt" "oem-update-url.txt" "oem-update-key.txt" "oem-update-readme.txt" "oem-update-installid.txt"
+do
+    for p in "../$n" "../../$n" "../../../$n"
+    do
+        if [ -f $p ]; then
+            echo "Installing OEM override file"
+            cp $p Duplicati.app/Contents/Resources
+        fi
+    done
+done
+
+
 # Install the LauncAgent if anyone needs it
 cp -R "daemon" "Duplicati.app/Contents/Resources"
 
