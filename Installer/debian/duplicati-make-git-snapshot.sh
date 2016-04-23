@@ -39,7 +39,7 @@ do
     for p in "../../$n" "../../../$n" "../../../../$n"
     do
         if [ -f $p ]; then
-            echo "Installin OEM override file"
+            echo "Installing OEM override file"
             cp $p .
             git add ./$n
             git commit -m "Added OEM override file"
@@ -59,5 +59,4 @@ git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > ../$DIRNAME.tar.bz2
 
 cd ..
-
-
+rm -rf $DIRNAME

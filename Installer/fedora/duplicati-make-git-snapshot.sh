@@ -11,6 +11,12 @@ else
   DATE=$2
 fi
 
+if [ -z $3 ]; then
+  VERSION=`git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2`
+else
+  VERSION=$3
+fi
+
 DIRNAME="duplicati-$DATE"
 
 echo REF ${REF:+--reference $REF}
@@ -20,7 +26,7 @@ echo HEAD ${1:-HEAD}
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-         https://github.com/duplicati/duplicati.git $DIRNAME
+         `git config --get remote.origin.url` $DIRNAME
 
 cd "$DIRNAME"
 for n in "../../oem" "../../../oem" "../../../../oem"
@@ -38,7 +44,7 @@ do
     for p in "../../$n" "../../../$n" "../../../../$n"
     do
         if [ -f $p ]; then
-            echo "Installin OEM override file"
+            echo "Installing OEM override file"
             cp $p .
             git add ./$n
             git commit -m "Added OEM override file"
@@ -46,6 +52,9 @@ do
     done
 done
 
+echo "${VERSION}" > version
+git add version
+git commit -m "Added version file"
 
 git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > ../$DIRNAME.tar.bz2

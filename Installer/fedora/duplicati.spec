@@ -9,25 +9,26 @@
 
 %global debug_package %{nil}
 
-%global gitdate 20140330
+#%global gitdate 20140330
 #%global gitcommit 18dba966f35f222a6b4bd054b2431a7abe4651de
 #%global gitver HEAD
 %global alphatag git
 
+
 %global namer duplicati
 Name:	%{namer}2
-Version:	2.0.0
-Release:	0.%{gitdate}%{?alphatag}%{?dist}
+Version:	%{_buildversion}
+Release:	%{_gittag}%{?alphatag}%{?dist}
 BuildArch:  noarch
 
 Summary:	Backup client for encrypted online backups
 License:	LGPLv2+
 URL:	http://www.duplicati.com
-#Source0:	http://duplicati.googlecode.com/files/Duplicati%20%{version}.tgz
-Source0:	duplicati-%{gitdate}.tar.bz2
+#Source0:	http://duplicati.googlecode.com/files/Duplicati%20%{_buildversion}.tgz
+Source0:	duplicati-%{_builddate}.tar.bz2
 
 # based on libdrm's make-git-snapshot.sh 
-# sh duplicati-make-git-snapshot.sh <gitcommit> <gitdate>
+# sh duplicati-make-git-snapshot.sh <gitcommit> <_builddate>
 Source1:	%{namer}-make-git-snapshot.sh
 
 Patch2:	%{namer}-0002-fedora-clean-build.patch
@@ -39,11 +40,27 @@ BuildRequires:  dos2unix
 
 Requires:	desktop-file-utils
 Requires:	bash
-Requires:	mono(System), mono(System.Web)
 Requires:	sqlite
 Requires:   mono(appindicator-sharp)
 Requires:   libappindicator
-
+Requires:   mono(System)
+Requires:   mono(System.Configuration)
+Requires:   mono(System.Configuration.Install)
+Requires:   mono(System.Core)
+Requires:   mono(System.Data)
+Requires:   mono(System.Drawing)
+Requires:   mono(System.Net)
+Requires:   mono(System.Net.Http)
+Requires:   mono(System.Net.Http.WebRequest)
+Requires:   mono(System.Runtime.Serialization)
+Requires:   mono(System.ServiceModel)
+Requires:   mono(System.ServiceModel.Discovery)
+Requires:   mono(System.ServiceProcess)
+Requires:   mono(System.Transactions)
+Requires:   mono(System.Web)
+Requires:   mono(System.Web.Services)
+Requires:   mono(System.Xml)
+Requires:   mono(Mono.Security)
 Conflicts:	duplicati < 2.0.0
 
 %description 
@@ -59,7 +76,7 @@ tweaks like filters, deletion rules, transfer and bandwidth options to run
 backups for specific purposes.
 
 %prep
-%setup -q -n %{namer}-%{gitdate}
+%setup -q -n %{namer}-%{_builddate}
 dos2unix Duplicati/CommandLine/Duplicati.CommandLine.csproj
 dos2unix Duplicati/Library/Utility/Duplicati.Library.Utility.csproj
 dos2unix Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj
@@ -92,11 +109,6 @@ rm thirdparty/gpg/libgcrypt-11.dll
 rm thirdparty/gpg/libgpg-error-0.dll
 rm thirdparty/gpg/zlib1.dll
 
-# dunno if they are crossplatform or *ix especific:
-#rm thirdparty/alphavss/Bin/AlphaFS.dll
-#rm thirdparty/alphavss/Bin/AlphaVSS.Common.dll
-#thirdparty/UnixSupport/UnixSupport.dll
-
 rm -rf thirdparty/alphavss/platform
 rm thirdparty/Signer/Signer.exe
 
@@ -117,8 +129,10 @@ ln -sf /usr/lib/mono/gtk-sharp-2.0/atk-sharp.dll \
 
 find -type f -name "*dll" -or -name "*DLL" -or -name "*exe"
 
-
 %build
+
+xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
+mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=%{_buildversion}
 
 xbuild /property:Configuration=Release Duplicati.sln
 # xbuild BuildTools/LocalizationTool/LocalizationTool.sln
@@ -182,6 +196,10 @@ mv Installer/linux\ help/linux-readme.txt .
 # remove the app-indicator file, it is supposed to be on the system, if it is supported
 rm %{buildroot}%{_exec_prefix}/lib/%{namer}/appindicator-sharp.dll
 
+# Remove the Windows-only AlphaFS / AlphaVSS
+rm %{buildroot}%{_exec_prefix}/lib/%{namer}/AlphaFS.dll
+rm %{buildroot}%{_exec_prefix}/lib/%{namer}/AlphaVSS.Common.dll
+
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor || :
 %{_bindir}/gtk-update-icon-cache \
@@ -204,6 +222,9 @@ rm %{buildroot}%{_exec_prefix}/lib/%{namer}/appindicator-sharp.dll
 
 
 %changelog
+* Thu Apr 23 2016 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20160423.git
+- Updated list of dependencies
+
 * Thu Mar 27 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
 - Moved to /usr/lib
 - Fixed minor build issues
