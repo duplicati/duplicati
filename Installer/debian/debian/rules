@@ -54,6 +54,11 @@ override_dh_auto_install:
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/ build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses build/lib/duplicati/
 	cp -r Duplicati/Server/webroot build/lib/duplicati/
+	if [ -f "oem-app-name.txt" ]; then cp "oem-app-name.txt" build/lib/duplicati; fi
+	if [ -f "oem-update-url.txt" ]; then cp "oem-update-url.txt" build/lib/duplicati; fi
+	if [ -f "oem-update-key.txt" ]; then cp "oem-update-key.txt" build/lib/duplicati; fi
+	if [ -f "oem-update-readme.txt" ]; then cp "oem-update-readme.txt" build/lib/duplicati; fi
+	if [ -f "oem-update-installid.txt" ]; then cp "oem-update-installid.txt" build/lib/duplicati; fi
 	cp Installer/debian/duplicati.desktop build/share/applications
 	cp Installer/debian/duplicati.xpm build/share/pixmaps
 	cp Installer/debian/duplicati.png build/share/pixmaps

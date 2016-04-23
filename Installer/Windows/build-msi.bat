@@ -5,7 +5,6 @@ echo File not found, please supply a zip file with the build as the first argume
 goto EXIT
 )
 
-
 call "%VS120COMNTOOLS%vsvars32.bat"
 
 rmdir /s /q Duplicati
@@ -13,6 +12,96 @@ del /q Duplicati.msi
 del /q Duplicati-32bit.msi
 
 7z x -oDuplicati %1
+
+IF EXIST "..\oem" (
+	echo Installing OEM files
+	xcopy ..\oem\* Duplicati\webroot\oem /e /s /y /i
+)
+
+IF EXIST "..\..\oem" (
+	echo Installing OEM files
+	xcopy ..\..\oem\* Duplicati\webroot\ /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem" (
+	echo Installing OEM files
+	xcopy ..\..\..\oem\* Duplicati\webroot\ /e /s /y /i
+)
+
+IF EXIST "..\oem-app-name.txt" (
+	echo Installing OEM override file
+	xcopy ..\oem-app-name.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\oem-app-name.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\oem-app-name.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem-app-name.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\..\oem-app-name.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\oem-update-url.txt" (
+	echo Installing OEM override file
+	xcopy ..\oem-update-url.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\oem-update-url.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\oem-update-url.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem-update-url.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\..\oem-update-url.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\oem-update-key.txt" (
+	echo Installing OEM override file
+	xcopy ..\oem-update-key.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\oem-update-key.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\oem-update-key.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem-update-key.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\..\oem-update-key.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\oem-update-readme.txt" (
+	echo Installing OEM override file
+	xcopy ..\oem-update-readme.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\oem-update-readme.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\oem-update-readme.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem-update-readme.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\..\oem-update-readme.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\oem-update-installid.txt" (
+	echo Installing OEM override file
+	xcopy ..\oem-update-installid.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\oem-update-installid.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\oem-update-installid.txt Duplicati /e /s /y /i
+)
+
+IF EXIST "..\..\..\oem-update-installid.txt" (
+	echo Installing OEM override file
+	xcopy ..\..\..\oem-update-installid.txt Duplicati /e /s /y /i
+)
 
 rmdir /s /q obj
 rmdir /s /q bin

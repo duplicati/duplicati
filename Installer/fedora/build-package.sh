@@ -1,19 +1,15 @@
 #!/bin/bash
 
-DATE=`date +%Y%m%d`
-
 git pull
-bash duplicati-make-git-snapshot.sh
+
+DATE=`date +%Y%m%d`
+VERSION=`git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2`
+GITTAG=`git describe --tags`
+
+bash duplicati-make-git-snapshot.sh "${DATE}" "${VERSION}"
 mv duplicati-$DATE.tar.bz2 ~/rpmbuild/SOURCES/ 
 cp *.sh ~/rpmbuild/SOURCES/
 cp *.patch ~/rpmbuild/SOURCES/
-if [ -e ./oem.js ]; then
-    cp ./oem.js ~/rpmbuild/SOURCES/
-fi
 
-if [ -e ./oem.css ]; then
-    cp ./oem.css ~/rpmbuild/SOURCES/
-fi
-
-rpmbuild -bs duplicati.spec
-rpmbuild -bb duplicati.spec
+rpmbuild -bs --define '_builddate ${DATE}' --define '_buildversion ${VERSION}' --define '_gittag ${GITTAG}' duplicati.spec
+rpmbuild -bb --define '_builddate ${DATE}' --define '_buildversion ${VERSION}' --define '_gittag ${GITTAG}' duplicati.spec
