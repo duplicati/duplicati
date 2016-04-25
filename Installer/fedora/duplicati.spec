@@ -84,6 +84,7 @@ dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj
 dos2unix Duplicati/GUI/Duplicati.GUI.TrayIcon/Program.cs
 dos2unix Duplicati/License/Duplicati.License.csproj
 dos2unix Duplicati.sln
+dos2unix Tools/Verification/DuplicatiVerify.py
 #%patch0 -p1
 %patch2 -p1
 %patch3 -p1
