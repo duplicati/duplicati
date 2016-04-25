@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Usage: ./duplicati-make-git-snapshot.sh [COMMIT] [DATE]
+# Usage: ./duplicati-make-git-snapshot.sh [COMMIT] [DATE] [VERSION]
 #
 # to make a snapshot of the given tag/branch.  Defaults to HEAD.
 # Point env var REF to a local duplicati repo to reduce clone time.
