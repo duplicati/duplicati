@@ -38,7 +38,6 @@ Source0:	duplicati-%{_builddate}.tar.bz2
 # based on libdrm's make-git-snapshot.sh 
 # sh duplicati-make-git-snapshot.sh <gitcommit> <_builddate>
 Source1:	%{namer}-make-git-snapshot.sh
-Source2:	%{namer}-install-recursive.sh
 
 Patch1:	%{namer}-0001-remove-unittest.patch
 
@@ -170,6 +169,7 @@ install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe %{build
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 #install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/default_compressed_extensions.txt %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/acknowledgements.txt %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p  Installer/debian/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/light/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
@@ -183,12 +183,9 @@ if [ -f "oem-update-key.txt" ]; then install -p -m 644 "oem-update-key.txt" %{bu
 if [ -f "oem-update-readme.txt" ]; then install -p -m 644 "oem-update-readme.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
 if [ -f "oem-update-installid.txt" ]; then install -p -m 644 "oem-update-installid.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
 
-/bin/bash %{namer}-install-recursive.sh "Duplicati/Server/webroot/" "%{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/"
+/bin/bash Installer/fedora/%{namer}-install-recursive.sh "Duplicati/Server/webroot/" "%{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/"
 
-/bin/bash %{namer}-install-recursive.sh "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/" "%{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/"
-
-sh tmp_install.sh
-#rm tmp_install.sh
+/bin/bash Installer/fedora/%{namer}-install-recursive.sh "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/" "%{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/"
 
 desktop-file-install Installer/debian/%{namer}.desktop 
 
