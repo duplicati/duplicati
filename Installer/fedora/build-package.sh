@@ -10,6 +10,7 @@ bash duplicati-make-git-snapshot.sh "${GITTAG}" "${DATE}" "${VERSION}"
 mv duplicati-$DATE.tar.bz2 ~/rpmbuild/SOURCES/ 
 cp *.sh ~/rpmbuild/SOURCES/
 cp *.patch ~/rpmbuild/SOURCES/
+cp duplicati.xpm ~/rpmbuild/SOURCES/
 
 rpmbuild -bs --define "_builddate ${DATE}" --define "_buildversion ${VERSION}" --define "_gittag ${GITTAG}" duplicati.spec
 rpmbuild -bb --define "_builddate ${DATE}" --define "_buildversion ${VERSION}" --define "_gittag ${GITTAG}" duplicati.spec
