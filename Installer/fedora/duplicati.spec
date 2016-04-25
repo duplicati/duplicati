@@ -31,6 +31,8 @@ Source0:	duplicati-%{_builddate}.tar.bz2
 # sh duplicati-make-git-snapshot.sh <gitcommit> <_builddate>
 Source1:	%{namer}-make-git-snapshot.sh
 
+Icon: duplicati.xpm
+
 Patch2:	%{namer}-0002-fedora-clean-build.patch
 Patch3:	%{namer}-0003-remove-monomac.patch
 
