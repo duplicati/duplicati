@@ -4,7 +4,7 @@ git pull
 
 DATE=`date +%Y%m%d`
 VERSION=`git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2`
-GITTAG=`git describe --tags | cut -d '-' -f 6`
+GITTAG=`git rev-parse --short HEAD`
 
 bash duplicati-make-git-snapshot.sh "${GITTAG}" "${DATE}" "${VERSION}"
 mv duplicati-$DATE.tar.bz2 ~/rpmbuild/SOURCES/ 
