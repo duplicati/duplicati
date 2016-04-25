@@ -144,6 +144,8 @@ rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/MonoMac.dll
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/OSX\ Icons
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/OSXTrayHost
+rm Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/AlphaFS.dll
+rm Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/AlphaVSS.Common.dll
 
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/alphavss
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/MonoMac
