@@ -85,7 +85,7 @@ do
     done
 done
 
-cp -R "Installer/debian/debian" .
+cp -R "../debian" .
 
 sed -e "s;%VERSION%;$VERSION;g" -e "s;%DATE%;$DATE_STAMP;g" "../debian/changelog" > "debian/changelog"
 
