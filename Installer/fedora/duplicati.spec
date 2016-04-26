@@ -1,20 +1,16 @@
 # TODO:
-# - check what thirdparty bins are really needed
-# - clean svg file
 # - check where Tools/* scripts should really be
-# - update l10n (when main code get stabilized)
 # - try to fix every mono compiler warning
-# - what should I do with Installer/AssemblyRedirects.xml?
 # - fix rpmlint warnings
 
+# Set up some defaults
+%global namer duplicati
 %global debug_package %{nil}
-
-#% global gitdate 20140330
-#% global gitcommit 18dba966f35f222a6b4bd054b2431a7abe4651de
-#% global gitver HEAD
 %global alphatag .git
 
-%global namer duplicati
+# Then load overrides
+%include %{_topdir}/SOURCES/%{namer}-buildinfo.spec
+
 Name:	%{namer}
 Version:	%{_buildversion}
 Release:	%{_gittag}%{?alphatag}%{?dist}
@@ -37,7 +33,9 @@ Source0:	duplicati-%{_builddate}.tar.bz2
 
 # based on libdrm's make-git-snapshot.sh 
 # sh duplicati-make-git-snapshot.sh <gitcommit> <_builddate>
-Source1:	%{namer}-make-git-snapshot.sh
+Source1:	%{namer}-build-package.sh
+Source2:	%{namer}-make-git-snapshot.sh
+Source3:	%{namer}-buildinfo.spec
 
 Patch1:	%{namer}-0001-remove-unittest.patch
 
@@ -51,6 +49,7 @@ Requires:	sqlite
 Requires:	mono(appindicator-sharp)
 Requires:	libappindicator
 Requires:	mono-core
+Requires:	mono-data-sqlite
 Requires:	mono(System)
 Requires:	mono(System.Configuration)
 Requires:	mono(System.Configuration.Install)
