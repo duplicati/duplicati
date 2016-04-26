@@ -172,10 +172,11 @@ install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.exe.config 
 #install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.dll.config %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/default_compressed_extensions.txt %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/acknowledgements.txt %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/changelog.txt %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -p  Installer/debian/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/dark/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
 install -p -m 644 Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/light/* %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
-install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/lvm-scripts/*.sh %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts
+install -p -m 755 Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/lvm-scripts/*.sh %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
 
 
 # Install oem overrides
