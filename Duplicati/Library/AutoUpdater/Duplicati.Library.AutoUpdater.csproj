@@ -69,6 +69,7 @@
     <EmbeddedResource Include="AutoUpdateURL.txt" />
     <EmbeddedResource Include="AutoUpdateFolderReadme.txt" />
     <EmbeddedResource Include="AutoUpdateInstallIDTemplate.txt" />
+    <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

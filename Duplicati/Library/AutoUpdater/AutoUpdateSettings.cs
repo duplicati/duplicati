@@ -28,6 +28,7 @@ namespace Duplicati.Library.AutoUpdater
         private const string APP_NAME = "AutoUpdateAppName.txt";
         private const string UPDATE_URL = "AutoUpdateURL.txt";
         private const string UPDATE_KEY = "AutoUpdateSignKey.txt";
+		private const string UPDATE_CHANNEL = "AutoUpdateBuildChannel.txt";
         private const string UPDATE_README = "AutoUpdateFolderReadme.txt";
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
 
@@ -57,9 +58,10 @@ namespace Duplicati.Library.AutoUpdater
         {
 			ReadResourceText(APP_NAME, OEM_APP_NAME);
 			ReadResourceText(UPDATE_URL, OEM_UPDATE_URL);
-			ReadResourceText(UPDATE_KEY, OEM_UPDATE_URL);
+			ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY);
 			ReadResourceText(UPDATE_README, OEM_UPDATE_README);
 			ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE);
+			ReadResourceText(UPDATE_CHANNEL, null);
         }
 
 		private static string ReadResourceText(string name, string oemname)
@@ -135,8 +137,12 @@ namespace Duplicati.Library.AutoUpdater
                     }
                 }
 
+				if (string.IsNullOrWhiteSpace(channelstring))
+					channelstring = BuildUpdateChannel;
+
                 if (string.IsNullOrWhiteSpace(channelstring))
                     channelstring = UpdaterManager.BaseVersion.ReleaseType;
+
 
                 // Update from older builds
                 if (string.Equals(channelstring, "preview", StringComparison.InvariantCultureIgnoreCase))
@@ -156,6 +162,11 @@ namespace Duplicati.Library.AutoUpdater
         {
 			get { return ReadResourceText(APP_NAME, OEM_APP_NAME); }
         }
+
+		public static string BuildUpdateChannel
+		{
+			get { return ReadResourceText(UPDATE_CHANNEL, null); }
+		}
 
         public static string UpdateFolderReadme
         {

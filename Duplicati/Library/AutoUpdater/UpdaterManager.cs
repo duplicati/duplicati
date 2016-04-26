@@ -207,18 +207,22 @@ namespace Duplicati.Library.AutoUpdater
             {
             }
 
-            if (selfVersion == null)
-                selfVersion = new UpdateInfo() {
-                    Displayname = "Current",
-                    Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                    ReleaseTime = new DateTime(0),
-                    ReleaseType = 
+			if (selfVersion == null)
+			{
+				selfVersion = new UpdateInfo() {
+					Displayname = "Current",
+					Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+					ReleaseTime = new DateTime(0),
+					ReleaseType = 
 #if DEBUG
                         "Debug"
 #else
-                        "Nightly"                           
+						string.IsNullOrWhiteSpace(AutoUpdateSettings.BuildUpdateChannel) ? "Nightly" : AutoUpdateSettings.BuildUpdateChannel
 #endif
-                };
+				};
+
+
+			}
 
             if (baseVersion == null)
                 baseVersion = selfVersion;
