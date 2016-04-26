@@ -54,7 +54,7 @@ override_dh_auto_install:
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/acknowledgements.txt build/lib/duplicati/
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/changelog.txt build/lib/duplicati/
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/run-script-example.sh build/lib/duplicati/
-	cp Duplicati/Tools/Verification/DuplicatiVerify.py build/lib/duplicati/
+	cp Tools/Verification/DuplicatiVerify.py build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/ build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/lvm-scripts build/lib/duplicati/lvm-scripts
