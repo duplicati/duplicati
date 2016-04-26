@@ -53,8 +53,11 @@ override_dh_auto_install:
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/default_compressed_extensions.txt build/lib/duplicati/
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/acknowledgements.txt build/lib/duplicati/
 	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/changelog.txt build/lib/duplicati/
+	cp Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/run-script-example.sh build/lib/duplicati/
+	cp Duplicati/Tools/Verification/DuplicatiVerify.py build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/SVGIcons/ build/lib/duplicati/
 	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses build/lib/duplicati/
+	cp -r Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/lvm-scripts build/lib/duplicati/lvm-scripts
 	cp -r Duplicati/Server/webroot build/lib/duplicati/
 	if [ -f "oem-app-name.txt" ]; then cp "oem-app-name.txt" build/lib/duplicati; fi
 	if [ -f "oem-update-url.txt" ]; then cp "oem-update-url.txt" build/lib/duplicati; fi
@@ -79,9 +82,9 @@ override_dh_auto_install:
 	rm -rf build/lib/duplicati/licenses/gpg
 	find build/lib/duplicati/* -type f | xargs chmod 644
 	find build/lib/duplicati/* -type d | xargs chmod 755
-	find build/lib/duplicati/* -type f | grep \\.exe | xargs chmod 755
-	find build/lib/duplicati/* -type f | grep \\.sh | xargs chmod 755
-	find build/lib/duplicati/* -type f | grep \\.py | xargs chmod 755
+	find build/lib/duplicati/* -type f -name \*.exe | xargs chmod 755
+	find build/lib/duplicati/* -type f -name \*.sh | xargs chmod 755
+	find build/lib/duplicati/* -type f -name \*.py | xargs chmod 755
 	dh_install
 
 #override_dh_auto_install:
