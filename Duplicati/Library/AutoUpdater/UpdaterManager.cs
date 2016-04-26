@@ -210,7 +210,7 @@ namespace Duplicati.Library.AutoUpdater
 			if (selfVersion == null)
 			{
 				selfVersion = new UpdateInfo() {
-					Displayname = Duplicati.License.VersionNumbers.Version,
+					Displayname = string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG),
 					Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
 					ReleaseTime = new DateTime(0),
 					ReleaseType = 
