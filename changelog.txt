@@ -1,3 +1,11 @@
+2016-04-27
+==========
+* Improved support for OEM customization
+* Updated tray icons on OSX
+* Added support for choosing SSL protocols
+* Added suppresion of reparsepoint errors
+* Improved restoring folder symlinks
+
 2016-04-21
 ==========
 * Added a new TrayIcon runner for OSX, so it now works on 64bit mono
