@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Usage: ./duplicati-make-git-snapshot.sh [COMMIT] [DATE]
+# Usage: ./duplicati-make-git-snapshot.sh [COMMIT] [DATE] [VERSION] [RELEASETYPE] [BUILDTAG]
 #
 # to make a snapshot of the given tag/branch.  Defaults to HEAD.
 # Point env var REF to a local duplicati repo to reduce clone time.
@@ -17,18 +17,47 @@ else
   VERSION=$3
 fi
 
-DIRNAME="duplicati-$DATE"
+if [ -z $4 ]; then
+  RELEASETYPE=`git describe --tags | cut -d '_' -f 2`
+else
+  RELEASETYPE=$4
+fi
 
-echo REF ${REF:+--reference $REF}
+if [ -z $5 ]; then
+  BUILDTAG=`git describe --tags | cut -d '-' -f 2-4`
+else
+  BUILDTAG=$5
+fi
+
+
+DIRNAME="duplicati-$DATE"
+UPDATE_URLS="http://updates.duplicati.com/${RELEASETYPE}/latest.manifest;http://alt.updates.duplicati.com/${RELEASETYPE}/latest.manifest"
+
 echo DIRNAME $DIRNAME
-echo HEAD ${1:-HEAD}
+echo COMMIT ${1:-HEAD}
+echo RELEASETYPE ${RELEASETYPE}
+echo URLS ${UPDATE_URLS}
+echo BUILDTAG ${BUILDTAG}
 
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-         `git config --get remote.origin.url` $DIRNAME
+	`git config --get remote.origin.url` $DIRNAME
 
 cd "$DIRNAME"
+git checkout -b fedora-build ${1:-HEAD}
+
+echo "${BUILDTAG}" > "Duplicati/License/VersionTag.txt"
+echo "${RELEASETYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+echo "${UPDATE_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
+cp "Updates/release_key.txt" "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
+
+git add "Duplicati/License/VersionTag.txt"
+git add "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+git add "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
+git add "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
+git commit -m "Updated auto-update properties"
+
 for n in "../../oem" "../../../oem" "../../../../oem"
 do
     if [ -d $n ]; then
@@ -56,7 +85,7 @@ echo "${VERSION}" > version
 git add version
 git commit -m "Added version file"
 
-git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
+git archive --format=tar --prefix=$DIRNAME/ HEAD \
         | bzip2 > ../$DIRNAME.tar.bz2
 
 cd ..

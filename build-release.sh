@@ -77,6 +77,7 @@ if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 fi
 
 echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
 echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
 cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
 
