@@ -11,6 +11,12 @@ else
   DATE=$2
 fi
 
+if [ -z $3 ]; then
+  VERSION=`git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2`
+else
+  VERSION=$3
+fi
+
 DIRNAME="duplicati-$DATE"
 
 echo REF ${REF:+--reference $REF}
@@ -20,22 +26,35 @@ echo HEAD ${1:-HEAD}
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-         https://github.com/duplicati/duplicati.git $DIRNAME
+         `git config --get remote.origin.url` $DIRNAME
 
 cd "$DIRNAME"
-if [ -e "../oem.js" ]; then
-    echo "Installing OEM script"
-    cp ../oem.js Duplicati/Server/webroot/scripts/
-    git add Duplicati/Server/webroot/scripts/oem.js
-    git commit -m "Added OEM branding script"
-fi
+for n in "../../oem" "../../../oem" "../../../../oem"
+do
+    if [ -d $n ]; then
+        echo "Installing OEM files"
+        cp -R $n Duplicati/Server/webroot/
+        git add Duplicati/Server/webroot/*
+        git commit -m "Added OEM files"
+    fi
+done
 
-if [ -e "../oem.css" ]; then
-    echo "Installing OEM stylesheet"
-    cp ../oem.css Duplicati/Server/webroot/stylesheets/
-    git add Duplicati/Server/webroot/stylesheets/oem.css
-    git commit -m "Added OEM branding stylesheet"
-fi
+for n in "oem-app-name.txt" "oem-update-url.txt" "oem-update-key.txt" "oem-update-readme.txt" "oem-update-installid.txt"
+do
+    for p in "../../$n" "../../../$n" "../../../../$n"
+    do
+        if [ -f $p ]; then
+            echo "Installing OEM override file"
+            cp $p .
+            git add ./$n
+            git commit -m "Added OEM override file"
+        fi
+    done
+done
+
+echo "${VERSION}" > version
+git add version
+git commit -m "Added version file"
 
 git archive --format=tar --prefix=$DIRNAME/ ${1:-HEAD} \
         | bzip2 > ../$DIRNAME.tar.bz2
