@@ -69,7 +69,7 @@
 
                 <dl>
                     <dt>Last successful run:</dt>
-                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}}</dd>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}} (took {{formatDuration(item.Backup.Metadata.LastDuration)}})</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
                     Never - <a href class="action-link" ng-click="doRun(item.Backup.ID)">Run now</a>
                     </dd>
