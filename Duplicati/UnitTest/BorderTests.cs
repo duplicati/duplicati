@@ -101,6 +101,24 @@ namespace Duplicati.UnitTest
             });
         }
 
+		[Test]
+		public void RunNoIndexFiles()
+		{
+			PrepareSourceData();
+			RunCommands(1024 * 10, modifyOptions: opts => {
+				opts["index-file-policy"] = "None";
+			});
+		}
+
+		[Test]
+		public void RunSlimIndexFiles()
+		{
+			PrepareSourceData();
+			RunCommands(1024 * 10, modifyOptions: opts => {
+				opts["index-file-policy"] = "Lookup";
+			});
+		}
+
         private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
