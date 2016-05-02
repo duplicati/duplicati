@@ -881,7 +881,14 @@ namespace Duplicati.Library.Main.Operation
                         Dictionary<string, string> metadata = GenerateMetadata(snapshot, path, attributes);
     
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                            metadata["CoreSymlinkTarget"] = snapshot.GetSymlinkTarget(path);
+						{
+							var p = snapshot.GetSymlinkTarget(path);
+
+							if (string.IsNullOrWhiteSpace(p))
+								m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
+							else
+                            	metadata["CoreSymlinkTarget"] = p;
+						}
     
                         var metahash = Utility.WrapMetadata(metadata, m_options);
                         AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);
