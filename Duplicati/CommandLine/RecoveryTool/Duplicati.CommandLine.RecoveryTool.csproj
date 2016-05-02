@@ -153,4 +153,7 @@
   <ItemGroup>
     <EmbeddedResource Include="help.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
 </Project>

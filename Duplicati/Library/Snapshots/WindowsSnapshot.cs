@@ -67,6 +67,14 @@ namespace Duplicati.Library.Snapshots
         /// A cached lookup for windows methods for dealing with long filenames
         /// </summary>
         private static readonly SystemIOWindows _ioWin = new SystemIOWindows();
+        /// <summary>
+        /// The Hyper-V VSS Writer Guid
+        /// </summary>
+        private static readonly Guid HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
+        /// <summary>
+        /// A list off Hyper-V Machines that we will back up
+        /// </summary>
+        private readonly IDictionary<string, string> _hyperVMachines = null;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -100,17 +108,59 @@ namespace Duplicati.Library.Snapshots
                 if (excludedWriters.Count > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
+                //Check if we are backing up HyperV machines
+                options.Add("hyperv-backup-vm", "true");
+                if (options.ContainsKey("hyperv-backup-vm"))
+                {
+                    //Do not hardcode the VM in the future, the front-end will provide this.
+                    var requestedVMs = new List<string> {"TESTTS-CLNT"};
+                    //Make an hyper V Backup object with the requested VMs
+                    var hyperVBackup = new HyperVBackup(requestedVMs);
+                    //Retrieve all information about VMs
+                    _hyperVMachines = hyperVBackup.GetHyperVMachines();
+                    ////Add the HyperV vss-writer; This is already implicitly included in the vss-writers
+                    //Enabling this vss-writer will disable all other vss-writers
+                    //m_backup.EnableWriterClasses(hyperVWriterGuid));
+                }
+
                 m_backup.StartSnapshotSet();
 
                 m_sourcepaths = new string[sourcepaths.Length];
 
-                for(int i = 0; i < m_sourcepaths.Length; i++)
-                        m_sourcepaths[i] = System.IO.Directory.Exists(sourcepaths[i]) ? Utility.Utility.AppendDirSeparator(sourcepaths[i]) : sourcepaths[i];
+                for (int i = 0; i < m_sourcepaths.Length; i++)
+                    m_sourcepaths[i] = System.IO.Directory.Exists(sourcepaths[i]) ? Utility.Utility.AppendDirSeparator(sourcepaths[i]) : sourcepaths[i];
 
                 try
                 {
                     //Gather information on all Vss writers
                     m_backup.GatherWriterMetadata();
+
+                    //If we are backup up Hyper V Machines then we need to update our sourcepaths
+                    if (options.ContainsKey("hyperv-backup-vm"))
+                    {
+                        //We will need the Hyper-V WriterMetaData to find the corresponding sourcepaths
+                        var m_backup_wmd = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
+                        if (m_backup_wmd != null)
+                            foreach (var component in m_backup_wmd.Components)
+                            {
+                                //For all the components found cross reference the requested Hyper-V Machines to backup
+                                if (!_hyperVMachines.ContainsKey(component.ComponentName)) continue;
+                                //Each component is in fact a Hyper-V Machine, which contains several files.
+                                int m_sourcepathsStartPos = m_sourcepaths.Length;
+                                int i = 0;
+                                Array.Resize(ref m_sourcepaths, m_sourcepaths.Length + component.Files.Count());
+                                foreach (var file in component.Files)
+                                {
+                                    if (file.FileSpecification.Contains("*")) continue;
+                                    m_sourcepaths[m_sourcepathsStartPos + i] = file.Path + file.FileSpecification;
+                                    i++;
+                                }
+                            }
+                        //Now clean up the sourcepaths
+                        m_sourcepaths = m_sourcepaths.Where(x => !string.IsNullOrEmpty(x)).ToArray();
+                    }
+
+
                     m_backup.FreeWriterMetadata();
                 }
                 catch
@@ -131,7 +181,7 @@ namespace Duplicati.Library.Snapshots
                         if (!m_backup.IsVolumeSupported(drive))
                             throw new VssVolumeNotSupportedException(drive);
 
-                        m_volumes.Add(drive, m_backup.AddToSnapshotSet(drive)); 
+                        m_volumes.Add(drive, m_backup.AddToSnapshotSet(drive));
                     }
                 }
 
@@ -146,7 +196,7 @@ namespace Duplicati.Library.Snapshots
 
                 //Make a little lookup table for faster translation
                 m_volumeMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-                foreach(KeyValuePair<string, Guid> kvp in m_volumes)
+                foreach (KeyValuePair<string, Guid> kvp in m_volumes)
                     m_volumeMap.Add(kvp.Key, m_backup.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
 
                 //If we should map the drives, we do that now and update the volumeMap
@@ -238,7 +288,7 @@ namespace Duplicati.Library.Snapshots
 
             string[] tmp = null;
             string spath = GetSnapshotPath(folder);
-            
+
             if (SystemIOWindows.IsPathTooLong(spath))
                 try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath); }
                 catch (PathTooLongException) { }
@@ -283,7 +333,6 @@ namespace Duplicati.Library.Snapshots
 
             return localPath;
         }
-
         #endregion
 
         #region ISnapshotService Members
@@ -295,9 +344,9 @@ namespace Duplicati.Library.Snapshots
         /// <param name="callback">The callback to invoke with each found path</param>
         public IEnumerable<string> EnumerateFilesAndFolders(Utility.Utility.EnumerationFilterDelegate callback)
         {
-        	return m_sourcepaths.SelectMany(
-        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
-        	);
+            return m_sourcepaths.SelectMany(
+                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+            );
         }
 
         /// <summary>
@@ -328,10 +377,10 @@ namespace Duplicati.Library.Snapshots
             string spath = GetSnapshotPath(file);
             if (!SystemIOWindows.IsPathTooLong(spath))
                 try
-            {
-                return File.GetCreationTimeUtc(spath);
-            }
-            catch (PathTooLongException) { }
+                {
+                    return File.GetCreationTimeUtc(spath);
+                }
+                catch (PathTooLongException) { }
 
             return Alphaleonis.Win32.Filesystem.File.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
@@ -382,7 +431,7 @@ namespace Duplicati.Library.Snapshots
 
             return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(spath)).PrintName;
         }
-        
+
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
@@ -392,7 +441,7 @@ namespace Duplicati.Library.Snapshots
         {
             return _ioWin.GetMetadata(file);
         }
-        
+
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>
@@ -401,8 +450,8 @@ namespace Duplicati.Library.Snapshots
         public bool IsBlockDevice(string file)
         {
             return false;
-        }        
-        
+        }
+
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
@@ -432,7 +481,7 @@ namespace Duplicati.Library.Snapshots
             }
             catch { }
 
-            try 
+            try
             {
                 if (m_backup != null)
                     m_backup.BackupComplete();
@@ -453,7 +502,7 @@ namespace Duplicati.Library.Snapshots
                 m_backup.Dispose();
                 m_backup = null;
             }
-            
+
         }
 
         #endregion
