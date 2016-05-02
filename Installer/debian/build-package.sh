@@ -13,5 +13,6 @@ bash duplicati-make-git-snapshot.sh "${GITTAG}" "${DATE}" "${VERSION}" "${RELEAS
 
 cd "$DIRNAME"
 touch releasenotes.txt
+rm -rf .git
 dpkg-buildpackage
 cd ..
