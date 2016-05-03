@@ -44,3 +44,4 @@ touch "${DIRNAME}/releasenotes.txt"
 cd "${DIRNAME}"
 dpkg-buildpackage
 cd ..
+rm -rf "${DIRNAME}"
