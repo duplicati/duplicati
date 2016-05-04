@@ -27,10 +27,10 @@ BUILDTAG="${BUILDTAG_RAW//-}"
 
 RPMNAME="duplicati-${VERSION}-${BUILDTAG}.noarch.rpm"
 DEBNAME="duplicati_${VERSION}-1_all.deb"
-MSI64NAME="Duplicati-${BUILDTAG_RAW}-x64.msi"
-MSI32NAME="Duplicati-${BUILDTAG_RAW}-x86.msi"
-DMGNAME="Duplicati-${BUILDTAG_RAW}.dmg"
-PKGNAME="Duplicati-${BUILDTAG_RAW}.pkg"
+MSI64NAME="duplicati-${BUILDTAG_RAW}-x64.msi"
+MSI32NAME="duplicati-${BUILDTAG_RAW}-x86.msi"
+DMGNAME="duplicati-${BUILDTAG_RAW}.dmg"
+PKGNAME="duplicati-${BUILDTAG_RAW}.pkg"
 
 UPDATE_TARGET="Updates/build/${BUILDTYPE}_target-${VERSION}"
 
@@ -344,7 +344,7 @@ if [ "x${GITHUB_TOKEN}" == "x" ]; then
 else
 	github-release upload \
 	    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
-	    --name "Duplicati-${BUILDTAG_RAW}-signatures.zip" \
+	    --name "duplicati-${BUILDTAG_RAW}-signatures.zip" \
 	    --repo "duplicati" \
 	    --user "duplicati" \
 	    --security-token "${GITHUB_TOKEN}" \
