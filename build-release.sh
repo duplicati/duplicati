@@ -222,22 +222,6 @@ else
 	    --user "duplicati" \
 	    --security-token "${GITHUB_TOKEN}" \
 	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
-
-	github-release upload \
-	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
-	    --name "${RELEASE_FILE_NAME}.zip.sig" \
-	    --repo "duplicati" \
-	    --user "duplicati" \
-	    --security-token "${GITHUB_TOKEN}" \
-	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
-
-	github-release upload \
-	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
-	    --name "${RELEASE_FILE_NAME}.zip.sig.asc" \
-	    --repo "duplicati" \
-	    --user "duplicati" \
-	    --security-token "${GITHUB_TOKEN}" \
-	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 fi
 
 echo
