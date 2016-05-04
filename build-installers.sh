@@ -7,6 +7,8 @@ then
 fi
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
+GPG_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-gpgkey.key"
+GPG=/usr/local/bin/gpg2
 
 FEDORA_INSTANCE_ID=i-deef5352
 FEDORA_PUBKEY=AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBM3OWpUJOqoh9hq/k48g/FFLqnxUHxecVZM/jRD69Y/cn0OygsSyi3E5X/PVgtfyoced/HV788f9rDpLbY08jXg=
@@ -114,6 +116,35 @@ ssh_upload_file() {
 ssh_run_commands() {
 	cat "$1" | ssh ${SSH_OPTIONS} "${SSH_HOST}"
 }
+
+build_file_signatures() {
+	if [ "z${GPGID}" != "z" ]; then
+		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--output" "$2.sig" "--detach-sig" "$1"
+		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--armor" "--output" "$2.sig.asc" "--detach-sig" "$1"
+	fi
+
+	md5 "$1" | awk -F ' ' '{print $NF}' > "$2.md5"
+	shasum -a 1 "$1" | awk -F ' ' '{print $1}' > "$2.sha1"
+	shasum -a 256 "$1" | awk -F ' ' '{print $1}'  > "$2.sha256"
+}
+
+if [ -f "${GPG_KEYFILE}" ]; then
+	if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+		echo -n "Enter keyfile password: "
+		read -s KEYFILE_PASSWORD
+		echo
+	fi
+
+	GPGDATA=`mono thirdparty/SharpAESCrypt/SharpAESCrypt.exe d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
+	if [ ! $? -eq 0 ]; then
+		echo "Decrypting GPG keyfile failed"
+		exit 1
+	fi
+	GPGID=`echo "${GPGDATA}" | head -n 1`
+	GPGKEY=`echo "${GPGDATA}" | head -n 2 | tail -n 1`
+else
+	echo "No GPG keyfile found, skipping gpg signatures"
+fi
 
 # Pre-boot instances to keep the waiting to a minimun
 
@@ -250,7 +281,9 @@ echo "Done building, uploading installers ..."
 echo "{" > "./tmp/latest-installers.json"
 
 process_installer() {
-	aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/$1" "s3://updates.duplicati.com/${BUILDTYPE}/$1"
+	if [ "$2" != "zip" ]; then
+		aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/$1" "s3://updates.duplicati.com/${BUILDTYPE}/$1"
+	fi
 
 	local MD5=`md5 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $NF}'`
 	local SHA1=`shasum -a 1 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $1}'`
@@ -268,6 +301,7 @@ EOF
 
 }
 
+process_installer "${ZIPFILE}" "zip"
 process_installer "${RPMNAME}" "rpm"
 process_installer "${DEBNAME}" "deb"
 process_installer "${DMGNAME}" "dmg"
@@ -282,11 +316,40 @@ EOF
 
 aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.json" "s3://updates.duplicati.com/${BUILDTYPE}/latest-installers.json"
 
+if [ -d "./tmp" ]; then
+	rm -rf "./tmp"
+fi
+
+mkdir tmp
+mkdir "./tmp/duplicati-${BUILDTAG_RAW}-signatures"
+
+for FILE in "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${ZIPFILE}"; do
+	build_file_signatures "${UPDATE_TARGET}/${FILE}" "./tmp/duplicati-${BUILDTAG_RAW}-signatures/${FILE}"
+done
+
+echo "${GPGID}" > "./tmp/duplicati-${BUILDTAG_RAW}-signatures/sign-key.txt"
+
+cd tmp
+zip -r9 "./duplicati-${BUILDTAG_RAW}-signatures.zip" "./duplicati-${BUILDTAG_RAW}-signatures/"
+cd ..
+
+rm -rf "./tmp/duplicati-${BUILDTAG_RAW}-signatures"
+
+aws --profile=duplicati-upload s3 cp "./tmp/duplicati-${BUILDTAG_RAW}-signatures.zip" "s3://updates.duplicati.com/${BUILDTYPE}/duplicati-${BUILDTAG_RAW}-signatures.zip"
+
 GITHUB_TOKEN=`cat "${GITHUB_TOKEN_FILE}"`
 
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
+	github-release upload \
+	    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
+	    --name "Duplicati-${BUILDTAG_RAW}-signatures.zip" \
+	    --repo "duplicati" \
+	    --user "duplicati" \
+	    --security-token "${GITHUB_TOKEN}" \
+	    --file "./tmp/duplicati-${BUILDTAG_RAW}-signatures.zip"
+
 	for FILE in "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}"; do
 		github-release upload \
 		    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
