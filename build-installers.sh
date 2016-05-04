@@ -327,7 +327,10 @@ for FILE in "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "
 	build_file_signatures "${UPDATE_TARGET}/${FILE}" "./tmp/duplicati-${BUILDTAG_RAW}-signatures/${FILE}"
 done
 
-echo "${GPGID}" > "./tmp/duplicati-${BUILDTAG_RAW}-signatures/sign-key.txt"
+if [ "z${GPGID}" != "z" ]; then
+	echo "${GPGID}" > "./tmp/duplicati-${BUILDTAG_RAW}-signatures/sign-key.txt"
+	echo "https://pgp.mit.edu/pks/lookup?op=get&search=${GPGID}" >> "./tmp/duplicati-${BUILDTAG_RAW}-signatures/sign-key.txt"
+fi
 
 cd tmp
 zip -r9 "./duplicati-${BUILDTAG_RAW}-signatures.zip" "./duplicati-${BUILDTAG_RAW}-signatures/"
