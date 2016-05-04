@@ -1,15 +1,15 @@
 @echo off
 
-IF NOT EXIST "%1" (
-echo File not found, please supply a zip file with the build as the first argument
-goto EXIT
-)
-
-call "%VS120COMNTOOLS%vsvars32.bat"
-
 rmdir /s /q Duplicati
 del /q Duplicati.msi
 del /q Duplicati-32bit.msi
+
+IF NOT EXIST "%1" (
+	echo File not found, please supply a zip file with the build as the first argument
+	goto EXIT
+)
+
+call "%VS120COMNTOOLS%vsvars32.bat"
 
 7z x -oDuplicati %1
 
