@@ -1,3 +1,9 @@
+2016-05-04
+==========
+* Updated Renci.SSH to latest build
+* Added duration to the UI (thanks @trampi)
+* Fixed a bug in recreate database with specially crafted index files
+
 2016-04-27
 ==========
 * Improved support for OEM customization
