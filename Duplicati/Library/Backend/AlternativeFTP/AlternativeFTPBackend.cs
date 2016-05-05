@@ -177,7 +177,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Process the aftp-ssl-protocols option
             string sslProtocolsString;
 
-            if (!options.TryGetValue(CONFIG_KEY_AFTP_ENCRYPTION_MODE, out sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
+			if (!options.TryGetValue(CONFIG_KEY_AFTP_SSL_PROTOCOLS, out sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
             {
                 sslProtocolsString = null;
             }

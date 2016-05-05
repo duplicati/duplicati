@@ -1,3 +1,29 @@
+2016-05-04
+==========
+* Updated Renci.SSH to latest build
+* Added duration to the UI (thanks @trampi)
+* Fixed a bug in recreate database with specially crafted index files
+
+2016-04-27
+==========
+* Improved support for OEM customization
+* Updated tray icons on OSX
+* Added support for choosing SSL protocols
+* Added suppresion of reparsepoint errors
+* Improved restoring folder symlinks
+
+2016-04-21
+==========
+* Added a new TrayIcon runner for OSX, so it now works on 64bit mono
+* Fixed some error messages
+* Updated App icon on Windows
+* Added a Windows service
+* Fixed an issue with IE caching data in the UI
+* Fixed an issue with restoring from multi-drive backups in Windows
+* Fixed an issue with spaces in the path on B2 backend
+* Changed how the autoupdater attempts to find a folder for storing updates
+* Updated NGAX, thanks AlexFRAN
+
 2016-04-10
 ==========
 * Added a new FTP backend, thanks @mylemans

@@ -751,6 +751,17 @@ namespace Duplicati.Library.Utility
             }
         }
 
+		/// <summary>
+		/// Gets a value indicating if the client is Windows based
+		/// </summary>
+		public static bool IsClientWindows
+		{
+			get
+			{
+				return !IsClientLinux;
+			}
+		}
+
         /// <value>
         /// Returns a value indicating if the filesystem, is case sensitive 
         /// </value>
