@@ -115,12 +115,15 @@ namespace Duplicati.Library.Snapshots
                     //Do not hardcode the VM in the future, the front-end will provide this.
                     var requestedVMs = new List<string> {"TESTTS-CLNT"};
                     //Make an hyper V Backup object with the requested VMs
-                    var hyperVBackup = new HyperVBackup(requestedVMs);
+                    var hyperVUtility = new HyperVUtility(requestedVMs);
                     //Retrieve all information about VMs
-                    _hyperVMachines = hyperVBackup.GetHyperVMachines();
+                    _hyperVMachines = hyperVUtility.GetHyperVMachines();
                     ////Add the HyperV vss-writer; This is already implicitly included in the vss-writers
                     //Enabling this vss-writer will disable all other vss-writers
                     //m_backup.EnableWriterClasses(hyperVWriterGuid));
+
+                    //attempt to create a vm
+                    hyperVUtility.CreateVm("createtest");
                 }
 
                 m_backup.StartSnapshotSet();
@@ -135,17 +138,17 @@ namespace Duplicati.Library.Snapshots
                     //Gather information on all Vss writers
                     m_backup.GatherWriterMetadata();
 
-                    //If we are backup up Hyper V Machines then we need to update our sourcepaths
+#region HyperVBackup
+                    //Update the sourcepaths if we're backing up Hyper-V Machines
                     if (options.ContainsKey("hyperv-backup-vm"))
                     {
-                        //We will need the Hyper-V WriterMetaData to find the corresponding sourcepaths
+                        //Find sourcepaths in Hyper-V WriterMetaData
                         var m_backup_wmd = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
                         if (m_backup_wmd != null)
                             foreach (var component in m_backup_wmd.Components)
                             {
-                                //For all the components found cross reference the requested Hyper-V Machines to backup
+                                //Cross reference the requested Hyper-V Machines to backup and add the sources
                                 if (!_hyperVMachines.ContainsKey(component.ComponentName)) continue;
-                                //Each component is in fact a Hyper-V Machine, which contains several files.
                                 int m_sourcepathsStartPos = m_sourcepaths.Length;
                                 int i = 0;
                                 Array.Resize(ref m_sourcepaths, m_sourcepaths.Length + component.Files.Count());
@@ -159,7 +162,7 @@ namespace Duplicati.Library.Snapshots
                         //Now clean up the sourcepaths
                         m_sourcepaths = m_sourcepaths.Where(x => !string.IsNullOrEmpty(x)).ToArray();
                     }
-
+#endregion
 
                     m_backup.FreeWriterMetadata();
                 }
