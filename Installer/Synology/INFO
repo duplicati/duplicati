@@ -1,5 +1,4 @@
 package="Duplicati"
-version="2.0.0.93"
 support_url="https://www.duplicati.com/"
 displayname="Duplicati"
 maintainer="The Duplicati Team"
