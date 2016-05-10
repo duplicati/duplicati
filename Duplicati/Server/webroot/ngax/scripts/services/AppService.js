@@ -1,7 +1,8 @@
 backupApp.service('AppService', function($http, $cookies, $q, DialogService, appConfig) {
     this.apiurl = '/api/v1';
+    this.proxy_url = null;
 
-    var setupConfig = function (method, options, data) {
+    var setupConfig = function (method, options, data, targeturl) {
         options = options || {};
         options.method = options.method || method;
         options.responseType = options.responseType || 'json';
@@ -24,6 +25,9 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
             options.headers['Cache-Control'] = 'no-cache';
             options.headers['Pragma'] = 'no-cache';
         }
+
+        if (this.proxy_url != null)
+            options.headers['X-Proxy-Path'] = targeturl;
 
         return options;
     };
@@ -50,27 +54,27 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
     this.get = function(url, options) {        
         var rurl = this.apiurl + url;
         
-        return installResponseHook($http.get(rurl, setupConfig('GET', options)));
+        return installResponseHook($http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl)));
     };
     
     this.patch = function(url, data, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook($http.patch(rurl, data, setupConfig('PATCH', options, data)));
+        return installResponseHook($http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl)));
     };
 
     this.post = function(url, data, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook($http.post(rurl, data, setupConfig('POST', options, data)));
+        return installResponseHook($http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl)));
     };
 
     this.put = function(url, data, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook($http.put(rurl, data, setupConfig('PUT', options, data)));
+        return installResponseHook($http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl)));
     };
 
     this.delete = function(url, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook($http.delete(rurl, setupConfig('DELETE', options)));
+        return installResponseHook($http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl)));
     };
 
 
@@ -79,6 +83,8 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
         if ((passphrase || '').trim().length > 0)
             rurl += '&passphrase=' + encodeURIComponent(passphrase);
 
+        if (this.proxy_url != null)
+            return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
         return rurl;
     };
 
@@ -87,10 +93,17 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
         if ((passphrase || '').trim().length > 0)
             rurl += '&passphrase=' + encodeURIComponent(passphrase);
 
+        if (this.proxy_url != null)
+            return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
         return rurl;
     };
 
     this.get_bugreport_url = function(reportid) {
-        return this.apiurl + '/bugreport/' + reportid + '?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+        var rurl = this.apiurl + '/bugreport/' + reportid + '?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+
+        if (this.proxy_url != null)
+            return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
+
+        return rurl;
     };
 });
