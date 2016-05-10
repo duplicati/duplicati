@@ -4,15 +4,12 @@ using System.Linq;
 using System.Management;
 using System.Text;
 
-using System.Globalization;
-
 namespace Duplicati.Library.Snapshots
 {
 
     //Original code: HVBackup Project
     public class HyperVUtility
     {
-        private string _wmiQuery;
         private readonly ManagementScope _wmiScope;
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost"; //We could backup remote Hyper-V Machines in the future
@@ -37,7 +34,7 @@ namespace Duplicati.Library.Snapshots
         public HyperVUtility(List<string> reqVmNames)
         {
             _wmiv2Namespace = Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2;
-            _wmiScope = _wmiv2Namespace 
+            _wmiScope = _wmiv2Namespace
                 ? new ManagementScope(string.Format("\\\\{0}\\root\\virtualization\\v2", _wmiHost))
                 : new ManagementScope(string.Format("\\\\{0}\\root\\virtualization", _wmiHost));
             _vmIdField = _wmiv2Namespace ? "VirtualSystemIdentifier" : "SystemName";
@@ -52,9 +49,9 @@ namespace Duplicati.Library.Snapshots
         public IDictionary<string, string> GetHyperVMachines()
         {
             ManagementObjectCollection moCollection = GetWmiObjects(WmiQueryHyperVMachines());
-                    foreach (ManagementBaseObject mObject in moCollection)
-                        using (mObject)
-                            _hyperVMachines.Add((string)mObject[_vmIdField], (string)mObject["ElementName"]);
+            foreach (ManagementBaseObject mObject in moCollection)
+                using (mObject)
+                    _hyperVMachines.Add((string) mObject[_vmIdField], (string) mObject["ElementName"]);
 
             return _hyperVMachines;
         }
@@ -83,7 +80,8 @@ namespace Duplicati.Library.Snapshots
 
             return wmiQuery;
         }
-#region Wmi helpers
+
+        #region Management Object helpers
         /// <summary>
         /// Executes the WMI Query
         /// </summary>
@@ -95,29 +93,17 @@ namespace Duplicati.Library.Snapshots
             ManagementObjectCollection resultset = moSearcher.Get();
             return resultset;
         }
-#endregion Wmi helpers
 
-
-
-
-
-
-#region Recovery Virtual Machines
-        public void CreateHyperVMachine()
-        {
-            ManagementObject sysMan = GetMsVM_VirtualSystemManagementService("MsVM_VirtualSystemManagementService", null);
-        }
-        
         /// <summary>
-        /// Please refer to https://blogs.msdn.microsoft.com/sergeim/2008/06/03/prepare-vm-create-vm-programmatically-hyper-v-api-c-version/
+        /// Queries and gets a Management Object
         /// </summary>
         /// <param name="className"></param>
         /// <param name="where"></param>
         /// <returns></returns>
-        private ManagementObject GetMsVM_VirtualSystemManagementService(string className, string where)
+        private ManagementObject GetMsVMObject(string className, string where)
         {
-            var query = @where != null 
-                ? string.Format("select * from {0} where {1}", className, where) 
+            var query = @where != null
+                ? string.Format("select * from {0} where {1}", className, where)
                 : string.Format("select * from {0}", className);
 
             ManagementObjectCollection resultset = GetWmiObjects(query);
@@ -136,135 +122,65 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException(string.Format("Failure retrieving {0} where {1}", className, where));
             }
         }
-
         #endregion
 
+
+
+
+
+        #region Recovery Virtual Machines
         /// <summary>
         /// Please refer to https://blogs.msdn.microsoft.com/sergeim/2008/06/03/prepare-vm-create-vm-programmatically-hyper-v-api-c-version/
+        /// Creation of a Hyper-V Machine
         /// </summary>
-        /// <param name="className"></param>
-        /// <param name="where"></param>
-        /// <returns></returns>
-        public void CreateVm(string displayName)
+        /// <param name="vmDisplayName"></param>
+        /// <param name="vmNotes"></param>
+        public void CreateHyperVMachine(string vmDisplayName, string vmNotes)
         {
-            string notes = "Created" + DateTime.Now;
-
-            ManagementObject sysMan = GetMsVM_VirtualSystemManagementService();
-            // Create VM with empty settings
-            ManagementBaseObject definition = sysMan.InvokeMethod(Constants.DefineVirtualSystem, sysMan.GetMethodParameters(Constants.DefineVirtualSystem), null); //Empty set
-            uint retCode = (uint)definition["returnvalue"];
-
-            if (retCode != Constants.ERROR_SUCCESS)
-                throw new InvalidOperationException("DefineVirtualSystem failed");
-            
-            // Obtain WMI root\virtualization:ComputerSystem object.
-            // we will need "Name" of it, which is GUID
-            
-            string vmPath = definition["DefinedSystem"] as string;
-            ManagementObject computerSystemTemplate = new ManagementObject(vmPath);
-            string vmName = (string)computerSystemTemplate["name"];
-
-            // this is GUID; will need to locate settings for this VM
-            ManagementObject settings = GetMsvm_VirtualSystemSettingData(vmName);
-            
-            // Now, set settings of this MSVM_ComputerSystem as we like
-
-            settings["elementname"] = displayName;
-            settings["notes"] = notes;
-            settings["BIOSGUID"] = new Guid();
-            settings["BIOSSerialNumber"] = "1234567890";
-            settings["BIOSNumLock"] = "true";
-
-            // settings["…"] = …;
-            // … set whatever you like; see list at
-            //     http://msdn.microsoft.com/en-us/library/cc136944(VS.85).aspx
-
-            settings.Put();
-            
-            // Now, set the settings which were build above to newly created ComputerSystem
-            ManagementBaseObject inParams = sysMan.GetMethodParameters(Constants.ModifyVirtualSystem);
-            string settingsText = settings.GetText(TextFormat.WmiDtd20);
-            inParams["ComputerSystem"] = computerSystemTemplate;
-            inParams["SystemSettingData"] = settingsText;
-            ManagementBaseObject resultToCheck = sysMan.InvokeMethod(Constants.ModifyVirtualSystem, inParams, null);
-            
-            // Almost done – now apply the settings to newly created ComputerSystem
-            ManagementObject settingsAsSet = (ManagementObject)resultToCheck["ModifiedSettingData"];
-            
-            // Optionally print settingsAsSet here
-            
-            Log(string.Format("Created: VM with name {0} and GUID name {1}", displayName, vmName));
-
-        } // CreateVm
-
-        private ManagementObject GetMsVM_VirtualSystemManagementService()
-        {
-            return GetWmiObject("MsVM_VirtualSystemManagementService", null);
-        }
-
-        private ManagementObject GetMsvm_VirtualSystemSettingData(string vmName)
-        {
-            return GetWmiObject("Msvm_VirtualSystemSettingData", string.Format("systemname = '{0}'", vmName));
-        }
-
-        #region Wmi Helpers
-
-        private ManagementObject GetWmiObject(string classname, string where)
-        {
-            ManagementObjectCollection resultset = GetWmiObjects(classname, where);
-
-            if (resultset.Count != 1)
-                throw new InvalidOperationException(string.Format("Cannot locate {0} where {1}", classname, where));
-
-            ManagementObjectCollection.ManagementObjectEnumerator en = resultset.GetEnumerator();
-            en.MoveNext();
-            ManagementObject result = en.Current as ManagementObject;
-
-            if (result == null) throw new InvalidOperationException("Failure retrieving " +classname + " where " +where);
-
-            return result;
-        }
-
-        private ManagementObjectCollection GetWmiObjects(string className, string where)
-        {
-            string query;
-            ManagementScope scope = new ManagementScope(@"root\virtualization", null);
-            if (where != null)
+            try
             {
-                query = string.Format("select * from {0} where {1}", className, where);
-            } else {
-                query = string.Format("select * from {0}", className);
+                ManagementObject sysManService = GetMsVMObject(Constants.MsVM_VSMS, null);
+
+                //Defining a VM with empty settings
+                ManagementBaseObject hyperVM = sysManService.InvokeMethod(Constants.DefineVirtualSystem,
+                    sysManService.GetMethodParameters(Constants.DefineVirtualSystem), null);
+
+                if ((uint)hyperVM["returnvalue"] != Constants.ERROR_SUCCESS)
+                    throw new InvalidOperationException("DefineVirtualSystem failed");
+
+                ManagementObject hyperVMTemplate = new ManagementObject((string)hyperVM["DefinedSystem"]);
+
+                // this is GUID; will need to locate settings for this VM and edit the settings
+                ManagementObject hyperVMSettings = GetMsVMObject(Constants.MsVM_VSSD, string.Format("systemname = '{0}'", (string) hyperVMTemplate["name"]));
+                hyperVMSettings["elementname"] = vmDisplayName;
+                hyperVMSettings["notes"] = vmNotes;
+                hyperVMSettings["BIOSGUID"] = new Guid();
+                hyperVMSettings["BIOSNumLock"] = "true";
+                hyperVMSettings["Description"] = "Hyper-V Machine restored from machine xxxx by Duplicati";
+                hyperVMSettings.Put();
+
+                ManagementBaseObject hyperVMParams = sysManService.GetMethodParameters(Constants.ModifyVirtualSystem);
+                string settingsText = hyperVMSettings.GetText(TextFormat.WmiDtd20);
+                hyperVMParams["ComputerSystem"] = hyperVMTemplate;
+                hyperVMParams["SystemSettingData"] = settingsText;
+                sysManService.InvokeMethod(Constants.ModifyVirtualSystem, hyperVMParams, null);
             }
-
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, new ObjectQuery(query));
-            ManagementObjectCollection resultset = searcher.Get();
-            return resultset;
+            catch (Exception exception)
+            {
+                Console.WriteLine("Failed to create Hyper-V machine");
+                throw new Exception(exception.ToString());
+            }
         }
-        #endregion Wmi helpers
 
-        private static void Log(string message, params object[] data)
+        class Constants
         {
-            Console.WriteLine(message, data);
+            internal const string DefineVirtualSystem = "DefineVirtualSystem";
+            internal const string ModifyVirtualSystem = "ModifyVirtualSystem";
+            internal const string MsVM_VSMS = "MsVM_VirtualSystemManagementService";
+            internal const string MsVM_VSSD = "MsVM_VirtualSystemSettingData";
+            internal const uint ERROR_SUCCESS = 0;
         }
-
-        private static void Oops(object sender, UnhandledExceptionEventArgs e)
-        {
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.ForegroundColor = ConsoleColor.Black;
-            Exception ex = e.ExceptionObject as Exception;
-            Log(ex.Message);
-            Console.ResetColor();
-            Log(ex.ToString());
-        }
-
-    } // class MainCreateVm
-
-    class Constants
-    {
-        internal const string DefineVirtualSystem = "DefineVirtualSystem";
-        internal const string ModifyVirtualSystem = "ModifyVirtualSystem";
-        internal const uint ERROR_SUCCESS = 0;
-        internal const uint ERROR_INV_ARGUMENTS = 87;
+        #endregion 
     }
 }
 

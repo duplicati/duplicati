@@ -123,7 +123,7 @@ namespace Duplicati.Library.Snapshots
                     //m_backup.EnableWriterClasses(hyperVWriterGuid));
 
                     //attempt to create a vm
-                    hyperVUtility.CreateVm("createtest");
+                    hyperVUtility.CreateHyperVMachine("createtest", "");
                 }
 
                 m_backup.StartSnapshotSet();
