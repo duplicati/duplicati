@@ -113,7 +113,7 @@ namespace Duplicati.Library.Snapshots
                 if (options.ContainsKey("hyperv-backup-vm"))
                 {
                     //Do not hardcode the VM in the future, the front-end will provide this.
-                    var requestedVMs = new List<string> {"TESTTS-CLNT"};
+                    var requestedVMs = new List<string> {"TESTTS-VDP1-CLNT"};
                     //Make an hyper V Backup object with the requested VMs
                     var hyperVUtility = new HyperVUtility(requestedVMs);
                     //Retrieve all information about VMs
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Snapshots
                     //m_backup.EnableWriterClasses(hyperVWriterGuid));
 
                     //attempt to create a vm
-                    hyperVUtility.CreateHyperVMachine("createtest", "");
+                    //hyperVUtility.CreateHyperVMachine("createtest", "");
                 }
 
                 m_backup.StartSnapshotSet();

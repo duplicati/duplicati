@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -103,8 +107,17 @@ namespace Duplicati.Library.Snapshots
         private ManagementObject GetMsVMObject(string className, string where)
         {
             var query = @where != null
-                ? string.Format("select * from {0} where {1}", className, where)
-                : string.Format("select * from {0}", className);
+                ? $"select * from {className} where {@where}"
+                : $"select * from {className}";
+
+            if (where != null)
+            {
+                query = string.Format("select * from {0} where {1}", className, where);
+            }
+            else
+            {
+                query = string.Format("select * from {0} where {1}", className);
+            }
 
             ManagementObjectCollection resultset = GetWmiObjects(query);
 
@@ -128,7 +141,7 @@ namespace Duplicati.Library.Snapshots
 
 
 
-        #region Recovery Virtual Machines
+#region Recovery Virtual Machines
         /// <summary>
         /// Please refer to https://blogs.msdn.microsoft.com/sergeim/2008/06/03/prepare-vm-create-vm-programmatically-hyper-v-api-c-version/
         /// Creation of a Hyper-V Machine
@@ -180,7 +193,40 @@ namespace Duplicati.Library.Snapshots
             internal const string MsVM_VSSD = "MsVM_VirtualSystemSettingData";
             internal const uint ERROR_SUCCESS = 0;
         }
-        #endregion 
+#endregion
+
+#region XML Reader Helpers
+        /// <summary>
+        /// Copies the xml to a temp folder so that we can load the xml
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <returns></returns>
+        private XDocument GetXml(string filepath)
+        {
+            string tempFilepath = $"{Path.GetTempPath()}{Path.GetFileName(filepath)}";
+            File.Copy(filepath, tempFilepath);
+            XDocument xmlDocument = XDocument.Load(tempFilepath);
+            File.Delete(tempFilepath);
+            return xmlDocument;
+        }
+
+        /// <summary>
+        /// This will retrieve the respected active VHD of the machine
+        /// </summary>
+        /// <param name="xmlDocument"></param>
+        /// <returns></returns>
+        private string GetVhdPathFromXml(XDocument xmlDocument)
+        {
+            return
+                xmlDocument.Descendants("type")
+                    .Where(x => x.Value == "VHD")
+                    .Select(x => x.Parent)
+                    .FirstOrDefault()
+                    .Element("pathname")
+                    .Value;
+        }
+
+#endregion
     }
 }
 
