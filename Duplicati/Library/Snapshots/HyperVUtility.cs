@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -14,6 +13,35 @@ namespace Duplicati.Library.Snapshots
     //Original code: HVBackup Project
     public class HyperVUtility
     {
+        private static class WmiClasses
+        {
+            internal const string MsVM_VSMS = "MsVM_VirtualSystemManagementService";
+            internal const string MsVM_VSSD = "MsVM_VirtualSystemSettingData";
+            internal const string MsVM_VHDI = "MsVM_VirtualHardDiskInfo";
+            internal const string MsVM_IMS = "MsVM_ImageManagementService";
+        }
+
+        private static class Methods
+        {
+            internal const string DefineVirtualSystem = "DefineVirtualSystem";
+            internal const string ModifyVirtualSystem = "ModifyVirtualSystem";
+            internal const string GetVirtualHardDiskInfo = "GetVirtualHardDiskInfo";
+            internal const string MergeVirtualHardDisk = "MergeVirtualHardDisk";
+        }
+
+        private static class ReturnCode
+        {
+            internal const UInt16 ERROR_SUCCESS = 0;
+            internal const UInt16 ERROR_JOBSTARTED = 4096;
+        }
+
+        private static class JobState
+        {
+            internal const UInt16 Starting = 3;
+            internal const UInt16 Running = 4;
+            internal const UInt16 Completed = 7;
+        }
+
         private readonly ManagementScope _wmiScope;
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost"; //We could backup remote Hyper-V Machines in the future
@@ -110,15 +138,6 @@ namespace Duplicati.Library.Snapshots
                 ? $"select * from {className} where {@where}"
                 : $"select * from {className}";
 
-            if (where != null)
-            {
-                query = string.Format("select * from {0} where {1}", className, where);
-            }
-            else
-            {
-                query = string.Format("select * from {0} where {1}", className);
-            }
-
             ManagementObjectCollection resultset = GetWmiObjects(query);
 
             if (resultset.Count != 1)
@@ -142,6 +161,7 @@ namespace Duplicati.Library.Snapshots
 
 
 #region Recovery Virtual Machines
+
         /// <summary>
         /// Please refer to https://blogs.msdn.microsoft.com/sergeim/2008/06/03/prepare-vm-create-vm-programmatically-hyper-v-api-c-version/
         /// Creation of a Hyper-V Machine
@@ -152,19 +172,21 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                ManagementObject sysManService = GetMsVMObject(Constants.MsVM_VSMS, null);
+                ManagementObject sysManService = GetMsVMObject(WmiClasses.MsVM_VSMS, null);
 
                 //Defining a VM with empty settings
-                ManagementBaseObject hyperVM = sysManService.InvokeMethod(Constants.DefineVirtualSystem,
-                    sysManService.GetMethodParameters(Constants.DefineVirtualSystem), null);
+                ManagementBaseObject hyperVM = sysManService.InvokeMethod(Methods.DefineVirtualSystem,
+                    sysManService.GetMethodParameters(Methods.DefineVirtualSystem), null);
 
-                if ((uint)hyperVM["returnvalue"] != Constants.ERROR_SUCCESS)
-                    throw new InvalidOperationException("DefineVirtualSystem failed");
+                if ((uint) hyperVM["ReturnValue"] != ReturnCode.ERROR_SUCCESS)
+                    throw new InvalidOperationException(
+                        $"DefineVirtualSystem failed. ReturnValue: {(uint) hyperVM["ReturnValue"]}");
 
-                ManagementObject hyperVMTemplate = new ManagementObject((string)hyperVM["DefinedSystem"]);
+                ManagementObject hyperVMTemplate = new ManagementObject((string) hyperVM["DefinedSystem"]);
 
                 // this is GUID; will need to locate settings for this VM and edit the settings
-                ManagementObject hyperVMSettings = GetMsVMObject(Constants.MsVM_VSSD, string.Format("systemname = '{0}'", (string) hyperVMTemplate["name"]));
+                ManagementObject hyperVMSettings = GetMsVMObject(WmiClasses.MsVM_VSSD,
+                    string.Format("systemname = '{0}'", (string) hyperVMTemplate["name"]));
                 hyperVMSettings["elementname"] = vmDisplayName;
                 hyperVMSettings["notes"] = vmNotes;
                 hyperVMSettings["BIOSGUID"] = new Guid();
@@ -172,11 +194,11 @@ namespace Duplicati.Library.Snapshots
                 hyperVMSettings["Description"] = "Hyper-V Machine restored from machine xxxx by Duplicati";
                 hyperVMSettings.Put();
 
-                ManagementBaseObject hyperVMParams = sysManService.GetMethodParameters(Constants.ModifyVirtualSystem);
+                ManagementBaseObject hyperVMParams = sysManService.GetMethodParameters(Methods.ModifyVirtualSystem);
                 string settingsText = hyperVMSettings.GetText(TextFormat.WmiDtd20);
                 hyperVMParams["ComputerSystem"] = hyperVMTemplate;
                 hyperVMParams["SystemSettingData"] = settingsText;
-                sysManService.InvokeMethod(Constants.ModifyVirtualSystem, hyperVMParams, null);
+                sysManService.InvokeMethod(Methods.ModifyVirtualSystem, hyperVMParams, null);
             }
             catch (Exception exception)
             {
@@ -185,17 +207,93 @@ namespace Duplicati.Library.Snapshots
             }
         }
 
-        class Constants
-        {
-            internal const string DefineVirtualSystem = "DefineVirtualSystem";
-            internal const string ModifyVirtualSystem = "ModifyVirtualSystem";
-            internal const string MsVM_VSMS = "MsVM_VirtualSystemManagementService";
-            internal const string MsVM_VSSD = "MsVM_VirtualSystemSettingData";
-            internal const uint ERROR_SUCCESS = 0;
-        }
-#endregion
+        #endregion
 
-#region XML Reader Helpers
+            #region Merging VHD
+
+        public void MergeVhd()
+        {
+            var vhdPath = GetVhdPathFromXml(GetXml("C:\\Users\\Administrator\\Desktop\\TESTMerge\\Snapshots\\TESTTS-VDP2-CLNT\\Virtual Machines\\75201246-AD9D-4D6F-8788-B2EF77EF6A2A.xml"));
+
+            List<string> vhdPaths = GetVhdParentPaths(vhdPath);
+
+            ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
+            ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.MergeVirtualHardDisk);
+            inParams["DestinationPath"] = vhdPaths.Last();
+            inParams["SourcePath"] = vhdPaths.First();
+            ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.MergeVirtualHardDisk, inParams, null);
+            if (outParams != null && (uint)outParams["ReturnValue"] == ReturnCode.ERROR_JOBSTARTED)
+            {
+                var result = JobCompleted(outParams, _wmiScope)
+                    ? $"{inParams["SourcePath"]} was merged successfully."
+                    : $"{inParams["SourcePath"]} failed merging.";
+
+                Console.WriteLine(result);
+            }
+        }
+        public static bool JobCompleted(ManagementBaseObject outParams, ManagementScope scope)
+        {
+            bool jobCompleted = true;
+            
+            //Retrieve msvc_StorageJob path. This is a full wmi path
+            string JobPath = (string)outParams["Job"];
+            ManagementObject Job = new ManagementObject(scope, new ManagementPath(JobPath), null);
+            //Try to get storage job information
+            Job.Get();
+            while ((UInt16)Job["JobState"] == JobState.Starting
+                || (UInt16)Job["JobState"] == JobState.Running)
+            {
+                Console.WriteLine("In progress... {0}% completed.", Job["PercentComplete"]);
+                System.Threading.Thread.Sleep(1000);
+                Job.Get();
+            }
+
+            //Figure out if job failed
+            UInt16 jobState = (UInt16)Job["JobState"];
+            if (jobState != JobState.Completed)
+            {
+                UInt16 jobErrorCode = (UInt16)Job["ErrorCode"];
+                Console.WriteLine("Error Code:{0}", jobErrorCode);
+                Console.WriteLine("ErrorDescription: {0}", (string)Job["ErrorDescription"]);
+                jobCompleted = false;
+            }
+            return jobCompleted;
+        }
+
+        private List<string> GetVhdParentPaths(string vhdPath)
+        {
+            List<string> ParentPaths = new List<string>() {vhdPath};
+            ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
+            ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.GetVirtualHardDiskInfo);
+            inParams["Path"] = vhdPath;
+
+            while (true)
+            { 
+                ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.GetVirtualHardDiskInfo, inParams, null);
+
+                if (outParams != null && (uint)outParams["ReturnValue"] != ReturnCode.ERROR_SUCCESS)
+                    throw new InvalidOperationException($"GetVirtualHardDiskInfo failed. ReturnValue: {(uint)outParams["ReturnValue"]}");
+
+                string xpath = "//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()";
+                XmlDocument doc = new XmlDocument();
+                if (outParams != null) doc.LoadXml((string)outParams["Info"]);
+                XmlNode node = doc.SelectSingleNode(xpath);
+                if (node != null)
+                {
+                    ParentPaths.Add(node.Value);
+                    inParams["Path"] = ParentPaths[ParentPaths.Count - 1];
+                    Console.WriteLine(node.Value);
+                } else break;
+            }
+
+            imgMan.Dispose();
+            inParams.Dispose();
+            return ParentPaths;
+        }
+
+        #endregion
+
+        #region XML Reader Helpers
         /// <summary>
         /// Copies the xml to a temp folder so that we can load the xml
         /// </summary>

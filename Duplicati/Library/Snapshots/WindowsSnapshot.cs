@@ -22,7 +22,6 @@ using System.Linq;
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using Alphaleonis.Win32.Vss;
 
@@ -116,6 +115,10 @@ namespace Duplicati.Library.Snapshots
                     var requestedVMs = new List<string> {"TESTTS-VDP1-CLNT"};
                     //Make an hyper V Backup object with the requested VMs
                     var hyperVUtility = new HyperVUtility(requestedVMs);
+
+                    //Test out merging
+                    hyperVUtility.MergeVhd();
+
                     //Retrieve all information about VMs
                     _hyperVMachines = hyperVUtility.GetHyperVMachines();
                     ////Add the HyperV vss-writer; This is already implicitly included in the vss-writers
