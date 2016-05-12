@@ -2,6 +2,11 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
     this.apiurl = '/api/v1';
     this.proxy_url = null;
 
+    var self = this;
+
+    var dummyconfig = function(method, options, data, targeturl) { };
+    this.proxy_config = dummyconfig;
+
     var setupConfig = function (method, options, data, targeturl) {
         options = options || {};
         options.method = options.method || method;
@@ -25,9 +30,9 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
             options.headers['Cache-Control'] = 'no-cache';
             options.headers['Pragma'] = 'no-cache';
         }
-
-        if (this.proxy_url != null)
-            options.headers['X-Proxy-Path'] = targeturl;
+  
+        if (self.proxy_config != null)
+            self.proxy_config(method, options, data, targeturl);
 
         return options;
     };
