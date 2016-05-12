@@ -31,6 +31,7 @@ MSI64NAME="duplicati-${BUILDTAG_RAW}-x64.msi"
 MSI32NAME="duplicati-${BUILDTAG_RAW}-x86.msi"
 DMGNAME="duplicati-${BUILDTAG_RAW}.dmg"
 PKGNAME="duplicati-${BUILDTAG_RAW}.pkg"
+SPKNAME="duplicati-${BUILDTAG_RAW}.spk"
 
 UPDATE_TARGET="Updates/build/${BUILDTYPE}_target-${VERSION}"
 
@@ -43,6 +44,7 @@ echo "Buildtype: ${BUILDTYPE}"
 echo "Buildtag: ${BUILDTAG}"
 echo "RPMName: ${RPMNAME}"
 echo "DEBName: ${DEBNAME}"
+echo "SPKName: ${SPKNAME}"
 
 start_aws_instance() {
 
@@ -162,6 +164,15 @@ cd Installer/OSX
 bash "make-dmg.sh" "../../$1"
 mv "Duplicati.dmg" "../../${UPDATE_TARGET}/${DMGNAME}"
 mv "Duplicati.pkg" "../../${UPDATE_TARGET}/${PKGNAME}"
+cd ../..
+
+echo ""
+echo ""
+echo "Building Synology package locally ..."
+
+cd Installer/Synology
+bash "make-binary-package.sh" "../../$1"
+mv "${SPKNAME}" "../../${UPDATE_TARGET}/"
 cd ../..
 
 
@@ -302,6 +313,7 @@ EOF
 }
 
 process_installer "${ZIPFILE}" "zip"
+process_installer "${SPKNAME}" "spk"
 process_installer "${RPMNAME}" "rpm"
 process_installer "${DEBNAME}" "deb"
 process_installer "${DMGNAME}" "dmg"
@@ -323,7 +335,7 @@ fi
 mkdir tmp
 mkdir "./tmp/duplicati-${BUILDTAG_RAW}-signatures"
 
-for FILE in "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${ZIPFILE}"; do
+for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${ZIPFILE}"; do
 	build_file_signatures "${UPDATE_TARGET}/${FILE}" "./tmp/duplicati-${BUILDTAG_RAW}-signatures/${FILE}"
 done
 
@@ -353,7 +365,7 @@ else
 	    --security-token "${GITHUB_TOKEN}" \
 	    --file "./tmp/duplicati-${BUILDTAG_RAW}-signatures.zip"
 
-	for FILE in "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}"; do
+	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}"; do
 		github-release upload \
 		    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
 		    --name "${FILE}" \
