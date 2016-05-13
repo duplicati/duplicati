@@ -43,7 +43,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The list of paths that will be shadow copied
         /// </summary>
-        private string[] m_sourcepaths;
+        private List<string> m_sourcepaths = new List<string>();
         /// <summary>
         /// The list of snapshot ids for each volume, key is the path root, eg C:\.
         /// The dictionary is case insensitive
@@ -107,34 +107,23 @@ namespace Duplicati.Library.Snapshots
                 if (excludedWriters.Count > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
+                for (int i = 0; i < sourcepaths.Length; i++)
+                {
+                    m_sourcepaths.Add(System.IO.Directory.Exists(sourcepaths[i]) ? Utility.Utility.AppendDirSeparator(sourcepaths[i]) : sourcepaths[i]);
+                }
+
                 //Check if we are backing up HyperV machines
                 options.Add("hyperv-backup-vm", "true");
                 if (options.ContainsKey("hyperv-backup-vm"))
                 {
                     //Do not hardcode the VM in the future, the front-end will provide this.
-                    var requestedVMs = new List<string> {"TESTTS-VDP1-CLNT"};
-                    //Make an hyper V Backup object with the requested VMs
+                    var requestedVMs = new List<string> {"TESTTS-VDP2-CLNT"};
+
                     var hyperVUtility = new HyperVUtility(requestedVMs);
-
-                    //Test out merging
-                    hyperVUtility.MergeVhd();
-
-                    //Retrieve all information about VMs
                     _hyperVMachines = hyperVUtility.GetHyperVMachines();
-                    ////Add the HyperV vss-writer; This is already implicitly included in the vss-writers
-                    //Enabling this vss-writer will disable all other vss-writers
-                    //m_backup.EnableWriterClasses(hyperVWriterGuid));
-
-                    //attempt to create a vm
-                    //hyperVUtility.CreateHyperVMachine("createtest", "");
                 }
 
                 m_backup.StartSnapshotSet();
-
-                m_sourcepaths = new string[sourcepaths.Length];
-
-                for (int i = 0; i < m_sourcepaths.Length; i++)
-                    m_sourcepaths[i] = System.IO.Directory.Exists(sourcepaths[i]) ? Utility.Utility.AppendDirSeparator(sourcepaths[i]) : sourcepaths[i];
 
                 try
                 {
@@ -152,18 +141,12 @@ namespace Duplicati.Library.Snapshots
                             {
                                 //Cross reference the requested Hyper-V Machines to backup and add the sources
                                 if (!_hyperVMachines.ContainsKey(component.ComponentName)) continue;
-                                int m_sourcepathsStartPos = m_sourcepaths.Length;
-                                int i = 0;
-                                Array.Resize(ref m_sourcepaths, m_sourcepaths.Length + component.Files.Count());
                                 foreach (var file in component.Files)
                                 {
                                     if (file.FileSpecification.Contains("*")) continue;
-                                    m_sourcepaths[m_sourcepathsStartPos + i] = file.Path + file.FileSpecification;
-                                    i++;
+                                    m_sourcepaths.Add(file.Path + file.FileSpecification);
                                 }
                             }
-                        //Now clean up the sourcepaths
-                        m_sourcepaths = m_sourcepaths.Where(x => !string.IsNullOrEmpty(x)).ToArray();
                     }
 #endregion
 
