@@ -1,3 +1,9 @@
+2016-05-14
+==========
+* Fixes for UI on Safari, thanks @alexfran
+* Speed and space improvement for backups, thanks @footstark
+* Added a Synology package
+
 2016-05-04
 ==========
 * Updated Renci.SSH to latest build
