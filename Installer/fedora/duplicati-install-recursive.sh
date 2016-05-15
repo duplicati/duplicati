@@ -11,7 +11,7 @@ for file in $(find "$1" -type d -printf '%P\n'); do
 done
 
 for file in $(find "$1" -type f -printf '%P\n'); do
-	install -p -D -m 755 "$1/${file}" "$2/${file}"
+	install -p -D -m 644 "$1/${file}" "$2/${file}"
 done
 
 IFS=$OLDIFS

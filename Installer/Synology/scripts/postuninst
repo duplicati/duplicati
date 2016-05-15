@@ -1,2 +1,3 @@
 #!/bin/sh
+rm "/usr/local/bin/duplicati-cli"
 exit 0

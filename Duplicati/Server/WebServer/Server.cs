@@ -202,6 +202,13 @@ namespace Duplicati.Server.WebServer
 				server.Add(oem_files);
 			}
 
+			if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
+			{
+				var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
+				AddMimeTypes(proxy_files);
+				server.Add(proxy_files);
+			}
+
             var fh = new FileModule("/", webroot);
             AddMimeTypes(fh);
             server.Add(fh);

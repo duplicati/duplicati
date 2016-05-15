@@ -70,4 +70,7 @@ backupApp.run(function($injector) {
 	try {
 		$injector.get('CustomService');
 	} catch(e) {}
+	try {
+		$injector.get('ProxyService');
+	} catch(e) {}
 });

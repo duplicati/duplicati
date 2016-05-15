@@ -89,7 +89,6 @@ namespace Duplicati.Library.Main.Database
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
         
         private long m_missingBlockHashes;
-        private string m_lastmodifiedLookupTablename;
         
         private long m_filesetId;
 
@@ -155,8 +154,15 @@ namespace Duplicati.Library.Main.Database
             m_insertmetadatasetCommand.AddParameter();
 
             //Need a temporary table with path/lastmodified lookups
-            m_lastmodifiedLookupTablename = "LastModified-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileID"", ""Lastmodified"", ""Length"", ""Metahash"", ""Metasize"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 AND ""Path"" = ?", m_lastmodifiedLookupTablename);
+            m_selectfileSimpleCommand.CommandText =
+                @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
+                @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
+                @"  WHERE ""File"".""Path"" = ? " +
+                @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
+                @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
+                @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
+                @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
+                @"  LIMIT 1 ";
             m_selectfileSimpleCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
@@ -186,9 +192,19 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 //Need a temporary table with path/lastmodified lookups
-                var scantableDefinition = @"SELECT ""B"".""ID"" AS ""FileID"", ""D"".""Lastmodified"" AS ""Lastmodified"", ""B"".""Path"" AS ""Path"", ""C"".""Length"" AS ""Length"", ""F"".""Fullhash"" AS ""Metahash"", ""F"".""Length"" AS ""Metasize""  FROM (SELECT ""FilesetEntry"".""FileID"" AS ""FileID"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"", MAX(""Fileset"".""Timestamp"") AS ""MostRecent"" FROM ""FilesetEntry"", ""Fileset"", ""File"" WHERE ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" GROUP BY ""File"".""Path"") A, ""File"" B, ""Blockset"" C, ""FilesetEntry"" D, ""Metadataset"" E, ""Blockset"" F WHERE ""B"".""ID"" = ""A"".""FileID"" AND ""C"".""ID"" = ""B"".""BlocksetID"" AND ""D"".""FileID"" = ""B"".""ID"" AND ""D"".""FilesetID"" = ""A"".""FilesetID"" AND ""B"".""MetadataID"" = ""E"".""ID"" AND ""F"".""ID"" = ""E"".""BlocksetID""";
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + scantableDefinition, m_lastmodifiedLookupTablename));
-                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}Index"" ON ""{0}"" (""Path"", ""Lastmodified"", ""Length"", ""Metahash"", ""Metasize"", ""FileID"") ",  m_lastmodifiedLookupTablename));
+                var scantableDefinition =
+                    @"SELECT ""A1"".""ID"" AS ""FileID"", ""A1"".""Lastmodified"" AS ""Lastmodified"", ""A1"".""Path"" AS ""Path"", ""C"".""Length"" AS ""Length"", ""F"".""Fullhash"" AS ""Metahash"", ""F"".""Length"" AS ""Metasize"", ""A1"".""BlocksetID"" " +
+                    @"  FROM (SELECT ""File"".""ID"", ""File"".""BlocksetID"", ""File"".""MetadataID"", ""FilesetEntry"".""Lastmodified"", ""File"".""Path"", ""Fileset"".""Timestamp"" " +
+                    @"          FROM ""FilesetEntry"", ""Fileset"", ""File"" WHERE ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" " +
+                    @"       ) ""A1"" LEFT JOIN " +
+                    @"       (SELECT ""File"".""Path"", ""Fileset"".""Timestamp"" " +
+                    @"           FROM ""FilesetEntry"", ""Fileset"", ""File"" WHERE ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" " +
+                    @"       ) ""A2"" ON ""A1"".""Path"" = ""A2"".""Path"" AND ""A1"".""Timestamp"" < ""A2"".""Timestamp"" " +
+                    @"       , ""Blockset"" ""C"", ""Metadataset"" ""E"", ""Blockset"" ""F"" " +
+                    @" WHERE ""A2"".""Path"" IS NULL " +
+                    @"   AND ""C"".""ID"" = ""A1"".""BlocksetID"" " +
+                    @"   AND ""A1"".""MetadataID"" = ""E"".""ID"" " +
+                    @"   AND ""F"".""ID"" = ""E"".""BlocksetID"" ";
 
                 if (m_blockHashLookup != null)
                     try
@@ -247,7 +263,7 @@ namespace Duplicati.Library.Main.Database
 
                 if (m_pathLookup != null)
                     using(new Logging.Timer("Build path lastmodified lookup table"))
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Lastmodified"", ""Length"", ""Path"", ""Metahash"", ""Metasize"" FROM ""{0}"" WHERE ""BlocksetID"" >= 0 ", m_lastmodifiedLookupTablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Lastmodified"", ""Length"", ""Path"", ""Metahash"", ""Metasize"" FROM ({0}) WHERE ""BlocksetID"" >= 0 ", scantableDefinition)))
                         while (rd.Read())
                         {
                             var id = rd.GetInt64(0);
@@ -629,19 +645,6 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose ()
         {
-            if (m_lastmodifiedLookupTablename != null)
-                try 
-                { 
-                    using(var cmd = m_connection.CreateCommand())
-                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_lastmodifiedLookupTablename));
-                }
-                catch { }
-                finally
-                {
-                    m_lastmodifiedLookupTablename = null;
-                }
-
-
             m_fileHashLookup = null;
             m_metadataLookup = null;
             m_blockHashLookup = null;
