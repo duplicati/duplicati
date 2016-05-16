@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Utility;
 
 using Duplicati.Library.Interface;
 
@@ -60,11 +61,19 @@ namespace Duplicati.Library.Backend
         private System.Net.ICredentials m_userInfo;
         /// <summary> Flag indicating to move files to recycler on deletion. </summary>
         private bool m_deleteToRecycler = false;
+        /// <summary> Flag indicating to use UploadBinaryDirect. </summary>
+        private bool m_useBinaryDirectMode = false;
 
         /// <summary> URL to SharePoint web. Will be determined from m_orgUri on first use. </summary>
         private string m_spWebUrl;
         /// <summary> Current context to SharePoint web. </summary>
         private SP.ClientContext m_spContext;
+
+        /// <summary> The chunk size for uploading files. </summary>
+        private int m_fileChunkSize = 4 << 20; // Default: 4MB
+
+        /// <summary> The chunk size for uploading files. </summary>
+        private int m_useContextTimeoutMs = -1; // default: do not touch original setting
 
         #endregion
 
@@ -99,6 +108,9 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SharePoint.DescriptionAuthUsernameShort, Strings.SharePoint.DescriptionAuthUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionIntegratedAuthenticationShort, Strings.SharePoint.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("delete-to-recycler", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionUseRecyclerShort, Strings.SharePoint.DescriptionUseRecyclerLong),
+                    new CommandLineArgument("binary-direct-mode", CommandLineArgument.ArgumentType.Boolean, Strings.SharePoint.DescriptionBinaryDirectModeShort, Strings.SharePoint.DescriptionBinaryDirectModeLong, "false"),
+                    new CommandLineArgument("web-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SharePoint.DescriptionWebTimeoutShort, Strings.SharePoint.DescriptionWebTimeoutLong),
+                    new CommandLineArgument("chunk-size", CommandLineArgument.ArgumentType.Size, Strings.SharePoint.DescriptionChunkSizeShort, Strings.SharePoint.DescriptionChunkSizeLong, "4mb"),
                 });
             }
         }
@@ -113,6 +125,32 @@ namespace Duplicati.Library.Backend
         public SharePointBackend(string url, Dictionary<string, string> options)
         {
             m_deleteToRecycler = Utility.Utility.ParseBoolOption(options, "delete-to-recycler");
+            m_useBinaryDirectMode = Utility.Utility.ParseBoolOption(options, "binary-direct-mode");
+            
+            try
+            {
+                string strSpan;
+                if (options.TryGetValue("web-timeout", out strSpan))
+                {
+                    TimeSpan ts = Timeparser.ParseTimeSpan(strSpan);
+                    if (ts.TotalMilliseconds > 30000 && ts.TotalMilliseconds < int.MaxValue)
+                        this.m_useContextTimeoutMs = (int)ts.TotalMilliseconds;
+                }
+            }
+            catch { }
+
+            try
+            {
+                string strChunkSize;
+                if (options.TryGetValue("chunk-size", out strChunkSize))
+                {
+                    long pSize = Utility.Sizeparser.ParseSize(strChunkSize, "MB");
+                    if (pSize >= (1 << 14) && pSize <= (1 << 30)) // [16kb .. 1GB]
+                        this.m_fileChunkSize = (int)pSize;
+                }
+            }
+            catch { }
+
 
             var u = new Utility.Uri(url);
             u.RequireHost();
@@ -314,6 +352,8 @@ namespace Duplicati.Library.Backend
                     m_spContext = new ClientContext(m_spWebUrl);
                     m_spContext.Credentials = m_userInfo;
                 }
+                if (m_spContext != null && m_useContextTimeoutMs > 0)
+                    m_spContext.RequestTimeout = m_useContextTimeoutMs;
             }
             return m_spContext;
         }
@@ -437,149 +477,119 @@ namespace Duplicati.Library.Backend
             try
             {
                 SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
-                ctx.Load(remoteFolder, f => f.Exists);
+                ctx.Load(remoteFolder, f => f.Exists, f => f.ServerRelativeUrl);
                 wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
-
-	            UploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl, 10);
+                
+                useNewContext = true; // disable retry
+                if (!m_useBinaryDirectMode)
+                    uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl);
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ doPut(remotename, stream, true); else throw; }
+            catch { if (!useNewContext) /* retry */ { doPut(remotename, stream, true); return; } else throw; }
+            finally { }
+
+            if (m_useBinaryDirectMode)
+            {
+                try { SP.File.SaveBinaryDirect(ctx, fileurl, stream, true); }
+                finally { }
+            }
+
         }
 
 		/// <summary>
 		/// Upload in chunks to bypass filesize limit.
 		/// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
 		/// </summary>
-		/// <param name="ctx"></param>
-		/// <param name="folder"></param>
-		/// <param name="sourceFileStream"></param>
-		/// <param name="fileName"></param>
-		/// <param name="fileChunkSizeInMB"></param>
-		/// <returns></returns>
-		public SP.File UploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, int fileChunkSizeInMB = 10)
-		{
-			// Each sliced upload requires a unique ID.
-			Guid uploadId = Guid.NewGuid();
+        private SP.File uploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName)
+        {
+            // Each sliced upload requires a unique ID.
+            Guid uploadId = Guid.NewGuid();
 
-			// Get the name of the file.
-			string uniqueFileName = Path.GetFileName(fileName);
+            // Get the name of the file.
+            string uniqueFileName = Path.GetFileName(fileName);
 
-			// File object.
-			SP.File uploadFile;
+            // File object.
+            SP.File uploadFile = null;
 
-			// Calculate block size in bytes.
-			int blockSize = fileChunkSizeInMB * 1024 * 1024;
+            // Calculate block size in bytes.
+            int blockSize = m_fileChunkSize;
+            byte[] buf = new byte[blockSize];
 
-			// Get the information about the folder that will hold the file.
-			ctx.Load(folder, f => f.ServerRelativeUrl);
-			ctx.ExecuteQuery();
+            bool first = true;
+            bool needsFinalize = true;
+            long fileoffset = 0;
 
-			// Get the size of the file to be uploaded.
-			long fileSize = sourceFileStream.Length;//new FileInfo(fileName).Length;
+            int lastreadsize = -1;
+            while (lastreadsize != 0)
+            {
+                int bufCnt = 0;
+                // read chunk to array (necessary because chunk uploads fail if size unknown)
+                while (bufCnt < blockSize && (lastreadsize = sourceFileStream.Read(buf, bufCnt, blockSize - bufCnt)) > 0)
+                    bufCnt += lastreadsize;
 
-			if (fileSize <= blockSize)
-			{
-				// Use regular approach.
+                using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
+                {
+                    ClientResult<long> bytesUploaded = null;
+                    if (first)
+                    {
+                        // Add an empty / single chunk file.
+                        FileCreationInformation fileInfo = new FileCreationInformation();
+                        fileInfo.Url = uniqueFileName;
+                        fileInfo.Overwrite = true;
+                        fileInfo.ContentStream = (bufCnt < blockSize) ? contentChunk : new MemoryStream(0);
+                        uploadFile = folder.Files.Add(fileInfo);
 
-				FileCreationInformation fileInfo = new FileCreationInformation();
-				fileInfo.ContentStream = sourceFileStream;
-				fileInfo.Url = uniqueFileName;
-				fileInfo.Overwrite = true;
-				uploadFile = folder.Files.Add(fileInfo);
-				ctx.Load(uploadFile);
-				ctx.ExecuteQuery();
-				// Return the file object for the uploaded file.
-				return uploadFile;
-			}
+                        if (bufCnt < blockSize) needsFinalize = false;
+                        else bytesUploaded = uploadFile.StartUpload(uploadId, contentChunk); // new OverrideableStream(chunkStream));
 
-			// Use large file upload approach.
-			using (BinaryReader br = new BinaryReader(sourceFileStream))
-			{
-				byte[] buffer = new byte[blockSize];
-				byte[] lastBuffer = null;
-				long fileoffset = 0;
-				long totalBytesRead = 0;
-				int bytesRead;
-				bool first = true;
-				bool last = false;
+                        first = false;
+                    }
+                    else
+                    {
+                        // Get a reference to your file.
+                        //uploadFile = ctx.Web.GetFileByServerRelativeUrl(folder.ServerRelativeUrl + System.IO.Path.AltDirectorySeparatorChar + uniqueFileName);
+                        if (bufCnt < blockSize) // Last block: end sliced upload by calling FinishUpload.
+                        {
+                            uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, contentChunk);
+                            needsFinalize = false; // signal no final call necessary.
+                        }
+                        else // Continue sliced upload.
+                        {
+                            bytesUploaded = uploadFile.ContinueUpload(uploadId, fileoffset, contentChunk);
+                        }
+                    }
 
-				// Read data from file system in blocks. 
-				while ((bytesRead = br.Read(buffer, 0, buffer.Length)) > 0)
-				{
-					totalBytesRead = totalBytesRead + bytesRead;
+                    if (bytesUploaded == null)
+                        ctx.Load(uploadFile, f => f.Length);
 
-					// You've reached the end of the file.
-					if (totalBytesRead == fileSize)
-					{
-						last = true;
-						// Copy to a new buffer that has the correct size.
-						lastBuffer = new byte[bytesRead];
-						Array.Copy(buffer, 0, lastBuffer, 0, bytesRead);
-					}
+                    ctx.ExecuteQuery();
+                    // Check consistency and update fileoffset for the next slice.
+                    if (bytesUploaded != null)
+                    {
+                        if (bytesUploaded.Value != fileoffset + bufCnt)
+                            throw new InvalidDataException(string.Format("Reported uploaded file size ({0:N0}) does not match internal recording ({1:N0}) for '{2}'.", bytesUploaded.Value, fileoffset + bufCnt, uniqueFileName));
+                        fileoffset = bytesUploaded.Value; // Update fileoffset for the next slice.
+                    }
+                    else fileoffset += bufCnt;
+                }
+            }
+            if (needsFinalize) // finalize file (should only occur if filesize is exactly a multiple of chunksize)
+            {
+                // End sliced upload by calling FinishUpload.
+                uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, new MemoryStream(0));
+                ctx.Load(uploadFile, f => f.Length);
+                ctx.ExecuteQuery();
+            }
 
-					ClientResult<long> bytesUploaded;
-					if (first)
-					{
-						using (MemoryStream contentStream = new MemoryStream())
-						{
-							// Add an empty file.
-							FileCreationInformation fileInfo = new FileCreationInformation();
-							fileInfo.ContentStream = contentStream;
-							fileInfo.Url = uniqueFileName;
-							fileInfo.Overwrite = true;
-							uploadFile = folder.Files.Add(fileInfo);
+            if (uploadFile.Length != fileoffset)
+                throw new InvalidDataException(string.Format("Reported final file size ({0:N0}) does not match internal recording ({1:N0}) for '{2}'.", uploadFile.Length, fileoffset, uniqueFileName));
 
-							// Start upload by uploading the first slice. 
-							using (MemoryStream s = new MemoryStream(buffer))
-							{
-								// Call the start upload method on the first slice.
-								bytesUploaded = uploadFile.StartUpload(uploadId, s);
-								ctx.ExecuteQuery();
-								// fileoffset is the pointer where the next slice will be added.
-								fileoffset = bytesUploaded.Value;
-							}
-
-							// You can only start the upload once.
-							first = false;
-						}
-					}
-					else
-					{
-						// Get a reference to your file.
-						uploadFile = ctx.Web.GetFileByServerRelativeUrl(folder.ServerRelativeUrl + System.IO.Path.AltDirectorySeparatorChar + uniqueFileName);
-
-						if (last)
-						{
-							// Is this the last slice of data?
-							using (MemoryStream s = new MemoryStream(lastBuffer))
-							{
-								// End sliced upload by calling FinishUpload.
-								uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, s);
-								ctx.ExecuteQuery();
-
-								// Return the file object for the uploaded file.
-								return uploadFile;
-							}
-						}
-
-						using (MemoryStream s = new MemoryStream(buffer))
-						{
-							// Continue sliced upload.
-							bytesUploaded = uploadFile.ContinueUpload(uploadId, fileoffset, s);
-							ctx.ExecuteQuery();
-							// Update fileoffset for the next slice.
-							fileoffset = bytesUploaded.Value;
-						}
-					}
-				}
-			}
-
-			return null;
-		}
+            return uploadFile;
+        }
 
 		public void CreateFolder() { doCreateFolder(false); }
         private void doCreateFolder(bool useNewContext)
