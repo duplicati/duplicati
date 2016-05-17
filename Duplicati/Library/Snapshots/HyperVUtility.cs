@@ -228,27 +228,28 @@ namespace Duplicati.Library.Snapshots
         #endregion
 
         #region Merging VHD
-        public void MergeVhd(string vhdPath)
+        public void MergeVhd(List<string> VmNames)
         {
-            //GetVhdPathFromXml(GetXml(vhdPath));
+            List<string> vhdPaths = new List<string>();
+            foreach (string vmName in VmNames)
+            {
+                vhdPaths.AddRange(GetAllVmVhdPaths(vmName));
+            }
 
-            ////List<string> vhdPaths = GetVhdParentPaths(vhdPath);
-            //List<string> vhdPaths = ReadVhdPaths(File);
+            ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
+            ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.MergeVirtualHardDisk);
+            inParams["DestinationPath"] = vhdPaths.First();
+            inParams["SourcePath"] = vhdPaths.Last();
+            ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.MergeVirtualHardDisk, inParams, null);
+            if (outParams != null && (uint)outParams["ReturnValue"] == ReturnCode.ERROR_JOBSTARTED)
+            {
+                var result = JobCompleted(outParams, _wmiScope)
+                    ? $"{inParams["SourcePath"]} was merged successfully."
+                    : $"{inParams["SourcePath"]} failed merging.";
+            }
 
-            //ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
-            //ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.MergeVirtualHardDisk);
-            //inParams["DestinationPath"] = vhdPaths.Last();
-            //inParams["SourcePath"] = vhdPaths.First();
-            //ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.MergeVirtualHardDisk, inParams, null);
-            //if (outParams != null && (uint)outParams["ReturnValue"] == ReturnCode.ERROR_JOBSTARTED)
-            //{
-            //    var result = JobCompleted(outParams, _wmiScope)
-            //        ? $"{inParams["SourcePath"]} was merged successfully."
-            //        : $"{inParams["SourcePath"]} failed merging.";
-            //}
-
-            ////Remove the snapshots since they are no longer valid.
-            //RemoveSnapshotTree();
+            //Remove the snapshots since they are no longer valid.
+            RemoveSnapshotTree();
         }
 
         private void RemoveSnapshotTree()
@@ -293,98 +294,49 @@ namespace Duplicati.Library.Snapshots
             return jobCompleted;
         }
 
-        public List<string> GetAllVmVhdPaths(List<string> vmNames)
+        private List<string> GetAllVmVhdPaths(string vmName)
         {
 
             List<string> ParentPaths = new List<string>();
-            foreach (string vmName in vmNames)
+            ManagementObject vm = GetTargetVmObject(vmName);
+            ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
+
+            foreach (ManagementObject sysSettings in vm.GetRelated(WmiClasses.MsVM_VSSD))
             {
-                ManagementObject vm = GetTargetVmObject(vmName);
-                List<ManagementBaseObject> vhds = new List<ManagementBaseObject>();
-                ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
-
-                foreach (ManagementObject sysSettings in vm.GetRelated(WmiClasses.MsVM_VSSD))
-                {
-                    ManagementObjectCollection systemObjCollection = sysSettings.GetRelated(WmiClasses.MsVM_RASD);
-                    var tempvhd = from ManagementBaseObject systemBaseObj in systemObjCollection
-                        where ((UInt16) systemBaseObj["ResourceType"] == 21
-                               && (string) systemBaseObj["ResourceSubType"] == "Microsoft Virtual Hard Disk")
-                        select systemBaseObj;
-                    ParentPaths.Add(((IEnumerable<object>) tempvhd.First()["Connection"]).First().ToString());
-                }
-                List<string> result = new List<string>();
-
-                foreach (var vhdPath in ParentPaths)
-                {
-                    if (result.Contains(vhdPath)) continue;
-                    ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.GetVirtualHardDiskInfo);
-                    inParams["Path"] = vhdPath;
-                    while (true) { 
-                        ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.GetVirtualHardDiskInfo, inParams,
-                            null);
-
-                        if (outParams != null)
-                        {
-                            XmlDocument doc = new XmlDocument();
-                            doc.LoadXml((string) outParams["Info"]);
-                            XmlNode node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
-                            if (node != null)
-                            {
-                                if (result.Count() == 0)
-                                {
-                                    result.Add(node.Value);
-                                }
-                                else
-                                {
-                                    result.Insert(0, node.Value);
-                                }
-                                inParams["Path"] = node.Value;
-                            }
-                            else break;
-                        }
-                    }
-                }
-
-                #region older code
-
-                //inParams["Path"] = vhdPath;
-                //ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
-                //ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.GetVirtualHardDiskInfo);
-                //while (true)
-                //{
-                //    ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.GetVirtualHardDiskInfo, inParams, null);
-
-                //    if (outParams != null
-                //        && (uint)outParams["ReturnValue"] != ReturnCode.ERROR_SUCCESS
-                //        && (uint)outParams["ReturnValue"] != ReturnCode.ERROR_JOBSTARTED)
-                //        throw new InvalidOperationException(
-                //            $"GetVirtualHardDiskInfo failed. ReturnValue: {(uint)outParams["ReturnValue"]}");
-
-                //    string xpath = "//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()";
-                //    XmlDocument doc = new XmlDocument();
-                //    if (outParams != null)
-                //    {
-                //        doc.LoadXml((string)outParams["Info"]);
-                //        XmlNode node = doc.SelectSingleNode(xpath);
-                //        if (node != null)
-                //        {
-                //            ParentPaths.Add(node.Value);
-                //            inParams["Path"] = ParentPaths[ParentPaths.Count - 1];
-                //            Console.WriteLine(node.Value);
-                //        }
-                //        else break;
-                //    }
-                //}
-
-                //imgMan.Dispose();
-                //inParams.Dispose();
-
-                #endregion older code
-
-
+                ManagementObjectCollection systemObjCollection = sysSettings.GetRelated(WmiClasses.MsVM_RASD);
+                var tempvhd = from ManagementBaseObject systemBaseObj in systemObjCollection
+                    where ((UInt16) systemBaseObj["ResourceType"] == 21
+                            && (string) systemBaseObj["ResourceSubType"] == "Microsoft Virtual Hard Disk")
+                    select systemBaseObj;
+                ParentPaths.Add(((IEnumerable<object>) tempvhd.First()["Connection"]).First().ToString());
             }
-            
-            return ParentPaths;
+
+            List<string> result = new List<string>() {ParentPaths.First()};
+
+            ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.GetVirtualHardDiskInfo);
+            foreach (var vhdPath in ParentPaths)
+            {
+                inParams["Path"] = vhdPath;
+                ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.GetVirtualHardDiskInfo, inParams,
+                    null);
+
+                if (outParams != null)
+                {
+                    XmlDocument doc = new XmlDocument();
+                    doc.LoadXml((string) outParams["Info"]);
+                    XmlNode node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
+                    if (node == null)
+                    {
+                        if (result.Contains(vhdPath)) continue;
+                        result.Insert(0, vhdPath);
+                    }
+                    if (!result.Contains(vhdPath))
+                        result.Add(vhdPath);
+                    if (result.Contains(vhdPath))
+                        result.Insert(result.IndexOf(vhdPath), node.Value);
+                }
+            }
+            return result;
         }
 
         #endregion

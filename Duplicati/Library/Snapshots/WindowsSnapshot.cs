@@ -117,23 +117,17 @@ namespace Duplicati.Library.Snapshots
                 if (options.ContainsKey("hyperv-backup-vm"))
                 {
                     //Do not hardcode the VM in the future, the front-end will provide this.
-                    var requestedVMs = new List<string> {"TESTTS-VDP2-CLNT"};
+                    var requestedVMs = new List<string> {"testmerge"};
                     var hyperVUtility = new HyperVUtility(requestedVMs);
                     _hyperVMachines = hyperVUtility.GetHyperVMachines();
 
 
                     #region Testing Features
-                    hyperVUtility.GetAllVmVhdPaths(requestedVMs).First();
-
-                    //Every VM backup will contain an XML file (Configuration)
-                    string xmlpath =
-                        "C:\\Users\\Administrator\\Desktop\\TESTMerge\\Snapshots\\TESTTS-VDP2-CLNT\\Virtual Machines\\75201246-AD9D-4D6F-8788-B2EF77EF6A2A.xml";
-
-                    //Option: Merge-vhd-after-restore, feed the XML of the VM
-                    hyperVUtility.MergeVhd(xmlpath);
+                    //Option: Merge-vhd-before-backup
+                    hyperVUtility.MergeVhd(requestedVMs);
 
                     //Option: Create-new-vm-after-restore, 
-                    hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
+                    //hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
                     #endregion Testing Features
                 }
 
