@@ -581,6 +581,9 @@ namespace Duplicati.Library.Main
         /// <param name="stats">The statistics into which warnings are written</param>
         private void ValidateOptions(ILogWriter log)
         {
+			if (m_options.KeepTime.Ticks > 0 && m_options.KeepVersions > 0)
+				throw new Exception("Setting both --{0} and --{1} is not permitted", "keep-versions", "keep-time");
+
             //No point in going through with this if we can't report
             if (log == null)
                 return;
