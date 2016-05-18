@@ -19,8 +19,10 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
             options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
             options.transformRequest = function(obj) {
                 var str = [];
-                for(var p in obj)
-                str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+                for(var p in obj) {
+                    var arg = obj[p] == null ? '' : encodeURIComponent(obj[p]);
+                    str.push(encodeURIComponent(p) + "=" + arg);
+                }
                 return str.join("&");
             };
         }
