@@ -45,6 +45,9 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
     };
 
     $scope.formatDuration = function(duration) {
-        return duration.substring(0, duration.length - duration.indexOf("."));
+        if (duration != null && duration.indexOf(".") > 0)
+            return duration.substring(0, duration.length - duration.indexOf("."));
+        else
+            return duration;
     };
 });
