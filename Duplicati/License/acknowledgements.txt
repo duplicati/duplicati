@@ -13,6 +13,7 @@ Software Development:
   Mostafa Aghajani
   Stefan Lück
   Tim Mylemans
+  Xelio Cheong
   
 The theme for Duplicati (ngax):
   Alexander Franzelin
