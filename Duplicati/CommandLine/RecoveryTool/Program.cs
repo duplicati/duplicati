@@ -77,6 +77,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 var actions = new Dictionary<string, CommandRunner>(StringComparer.InvariantCultureIgnoreCase);
                 actions["download"] = Download.Run;
+                actions["recompress"] = Recompress.Run;
                 actions["index"] = Index.Run;
                 actions["list"] = List.Run;
                 actions["restore"] = Restore.Run;
