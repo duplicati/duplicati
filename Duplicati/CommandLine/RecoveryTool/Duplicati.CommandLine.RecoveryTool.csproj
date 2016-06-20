@@ -45,6 +45,7 @@
     <Compile Include="Help.cs" />
     <Compile Include="Index.cs" />
     <Compile Include="List.cs" />
+    <Compile Include="Recompress.cs" />
     <Compile Include="Restore.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
