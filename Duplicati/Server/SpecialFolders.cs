@@ -98,15 +98,17 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.MyVideos, "%MY_VIDEOS%", "My Videos");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.SpecialFolder.ApplicationData, "%APPDATA%", "Application Data");
-            } else {
+                TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
+            }
+            else
+            {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
                 TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "My Pictures");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
+                TryAdd(lst, Environment.SpecialFolder.Personal, "%HOME%", "Home");
             }
-            
-            TryAdd(lst, Library.Utility.Utility.IsClientLinux ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%"), "%HOME%", "Home");
-            
+
             Nodes = lst.ToArray();
         }
 
