@@ -33,7 +33,24 @@ namespace Duplicati.Server
                 path = path.Replace(n.id, n.resolvedpath);
             return Library.Utility.Utility.ExpandEnvironmentVariables(path);
         }
-        
+
+        public static string ExpandEnvironmentVariablesRegexp(string path)
+        {
+            // The double expand is to use both the special folder names,
+            // which are not in the environment, as well as allow expansion
+            // of values found in the environment
+
+            return
+                Library.Utility.Utility.ExpandEnvironmentVariablesRegexp(path, name =>
+                {
+                    var res = string.Empty;
+                    if (name != null && !PathMap.TryGetValue(name, out res))
+                        res = Environment.GetEnvironmentVariable(name);
+
+                    return res;
+                });
+        }
+
         public static string TranslateToPath(string str) 
         {
             string res;
