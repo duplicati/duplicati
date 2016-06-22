@@ -42,8 +42,11 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="AWSSDK">
-      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.dll</HintPath>
+    <Reference Include="AWSSDK.Core">
+      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="AWSSDK.S3">
+      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.S3.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
