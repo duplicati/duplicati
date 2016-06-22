@@ -48,6 +48,9 @@
     <Reference Include="AWSSDK.S3">
       <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.S3.dll</HintPath>
     </Reference>
+    <Reference Include="AWSSDK.IdentityManagement">
+      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.IdentityManagement.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="S3Backend.cs" />
@@ -55,6 +58,7 @@
     <Compile Include="S3Wrapper.cs" />
     <Compile Include="S3Config.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="S3IAM.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
