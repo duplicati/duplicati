@@ -98,10 +98,6 @@ namespace Duplicati.Library.Backend
 
 			if (string.IsNullOrWhiteSpace(operationstring))
 				throw new ArgumentNullException(KEY_OPERATION);
-			if (string.IsNullOrWhiteSpace(username))
-				throw new ArgumentNullException(KEY_USERNAME);
-			if (string.IsNullOrWhiteSpace(password))
-				throw new ArgumentNullException(KEY_PASSWORD);
 
 			if (!Enum.TryParse(operationstring, true, out operation))
 				throw new ArgumentException(string.Format("Unable to parse {0} as an operation", operationstring));
@@ -109,11 +105,25 @@ namespace Duplicati.Library.Backend
 			switch (operation)
 			{
 				case Operation.GetPolicyDoc:
+					if (string.IsNullOrWhiteSpace(path))
+						throw new ArgumentNullException(KEY_PATH);
 					return GetPolicyDoc(path);
+
 				case Operation.CreateIAMUser:
+					if (string.IsNullOrWhiteSpace(username))
+						throw new ArgumentNullException(KEY_USERNAME);
+					if (string.IsNullOrWhiteSpace(password))
+						throw new ArgumentNullException(KEY_PASSWORD);
+					if (string.IsNullOrWhiteSpace(path))
+						throw new ArgumentNullException(KEY_PATH);
 					return CreateUnprivilegedUser(username, password, path);
+
 				case Operation.IsRootAccount:
 				default:
+					if (string.IsNullOrWhiteSpace(username))
+						throw new ArgumentNullException(KEY_USERNAME);
+					if (string.IsNullOrWhiteSpace(password))
+						throw new ArgumentNullException(KEY_PASSWORD);
 					return IsRoot(username, password);
 			}
 		}
@@ -149,7 +159,6 @@ namespace Duplicati.Library.Backend
 			dict["arn"] = user.Arn;
 			dict["id"] = user.UserId;
 			dict["name"] = user.UserName;
-			dict["path"] = user.Path;
 
 			return dict;
 		}
@@ -166,7 +175,7 @@ namespace Duplicati.Library.Backend
 			cl.PutUserPolicy(new PutUserPolicyRequest(
 				user.UserName,
 				policyname,
-				string.Format(POLICY_DOCUMENT_TEMPLATE, path)
+				policydoc
 			));
 			var key = cl.CreateAccessKey(new CreateAccessKeyRequest() { UserName = user.UserName }).AccessKey;
 
