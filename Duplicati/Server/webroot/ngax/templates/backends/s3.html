@@ -58,3 +58,7 @@
     <label for="s3_password">AWS Access Key</label>
     <input type="text" name="s3_password" id="s3_password" ng-model="$parent.Password" placeholder="AWS Access Key" />
 </div>
+
+<div class="buttons">
+    <a href ng-click="s3_createIAMPolicy()" ng-show="$parent.s3_server == 's3.amazonaws.com'" >Generate IAM access policy</a>
+</div>

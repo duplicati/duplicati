@@ -25,6 +25,44 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
 	EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
 
+
+	EditUriBackendConfig.testers['s3'] = function(scope, callback) {
+
+		if (scope.s3_server != 's3.amazonaws.com')
+		{
+			callback();
+			return;
+		}
+
+		var dlg = null;
+
+		dlg = DialogService.dialog('Testing permissions...', 'Testing permissions ...', [], null, function() {	
+			AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CanCreateUser', 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
+				dlg.dismiss();
+
+				if (data.data.Result.isroot == 'True') {
+					DialogService.dialog('User has too many permissions', 'The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?', ['Cancel', 'No' ,'Yes'], function(ix) {
+						if (ix == 0 || ix == 1) {
+							callback();
+						} else {
+							scope.s3_directCreateIAMUser(function() {
+								scope.s3_bucket_check_name = scope.Server;
+								scope.s3_bucket_check_user = scope.Username;
+
+								callback();
+							});
+						}
+					});
+				} else {
+					callback();
+				}
+			}, function(data) { 
+				dlg.dismiss();
+				AppUtils.connectionError(data); 
+			});
+		});
+	}
+
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
 		if (scope.s3_providers == null) {
@@ -61,6 +99,41 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 				scope.s3_storageclass = '';
 		}
 
+		scope.s3_bucket_check_name = null;
+		scope.s3_bucket_check_user = null;
+
+		scope.s3_directCreateIAMUser = function(callback) {
+
+			var dlg = null;
+
+			dlg = DialogService.dialog('Creating user...', 'Creating new user with limited access ...', [], null, function() {
+				path = (scope.Server || '') + '/' + (scope.Path || '');
+
+				AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CreateIAMUser', 's3-path': path, 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
+					dlg.dismiss();
+
+					scope.Username = data.data.Result.accessid;
+					scope.Password = data.data.Result.secretkey;
+
+					DialogService.dialog('Created new limited user', 'New user name is ' + data.data.Result.username + '.\nUpdated credentials to use the new limited user', ['OK'], callback);
+
+				}, function(data) { 
+					dlg.dismiss();
+					AppUtils.connectionError(data);
+				});
+			});
+		};
+
+		scope.s3_createIAMPolicy = function() {
+			EditUriBackendConfig.validaters['s3'](scope, function() {
+				path = (scope.Server || '') + '/' + (scope.Path || '');
+
+				AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'GetPolicyDoc', 's3-path': path}).then(function(data) {
+					DialogService.dialog('AWS IAM Policy', data.data.Result.doc);
+				}, AppUtils.connectionError);
+			});
+
+		};
 	};
 
 	EditUriBackendConfig.loaders['oauth-base'] = function(scope) {
@@ -561,12 +634,16 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if (res) {
 
 			function checkUsernamePrefix() {
-				if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0) {
+				if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
 					DialogService.dialog('Adjust bucket name?', 'The bucket name should start with your username, prepend automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
 						if (ix == 2)
 							scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
 						if (ix == 1 || ix == 2)
+						{
+							scope.s3_bucket_check_name = scope.Server;
+							scope.s3_bucket_check_user = scope.Username;
 							continuation();
+						}
 					});
 				} else {
 					continuation();

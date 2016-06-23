@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
 
 		public enum Operation
 		{
-			IsRootAccount,
+			CanCreateUser,
 			CreateIAMUser,
 			GetPolicyDoc
 		}
@@ -52,8 +52,8 @@ namespace Duplicati.Library.Backend
                 ""s3:DeleteObject""
             ],
             ""Resource"": [
-                ""arn:aws:s3:::{0}"",
-                ""arn:aws:s3:::{0}/*""
+                ""arn:aws:s3:::bucket-name-and-path"",
+                ""arn:aws:s3:::bucket-name-and-path/*""
             ]
         }
     ]
@@ -118,13 +118,13 @@ namespace Duplicati.Library.Backend
 						throw new ArgumentNullException(KEY_PATH);
 					return CreateUnprivilegedUser(username, password, path);
 
-				case Operation.IsRootAccount:
+				case Operation.CanCreateUser:
 				default:
 					if (string.IsNullOrWhiteSpace(username))
 						throw new ArgumentNullException(KEY_USERNAME);
 					if (string.IsNullOrWhiteSpace(password))
 						throw new ArgumentNullException(KEY_PASSWORD);
-					return IsRoot(username, password);
+					return CanCreateUser(username, password);
 			}
 		}
 
@@ -140,25 +140,34 @@ namespace Duplicati.Library.Backend
 			if (string.IsNullOrWhiteSpace(path))
 				throw new ArgumentNullException("path");
 
-			while (path.EndsWith("/", StringComparison.Ordinal))
-				path = path.Substring(0, path.Length - 1);
+			path = path.Trim().Trim('/').Trim();
 
 			if (string.IsNullOrWhiteSpace(path))
 				throw new ArgumentException("Invalid value for path");
 
-			return string.Format(POLICY_DOCUMENT_TEMPLATE, path);
+			return POLICY_DOCUMENT_TEMPLATE.Replace("bucket-name-and-path", path).Trim();
 		}
 
-		private Dictionary<string, string> IsRoot(string awsid, string awskey)
+		private Dictionary<string, string> CanCreateUser(string awsid, string awskey)
 		{
-			var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
-			var user = cl.GetUser().User;
-
 			var dict = new Dictionary<string, string>();
-			dict["isroot"] = user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
-			dict["arn"] = user.Arn;
-			dict["id"] = user.UserId;
-			dict["name"] = user.UserName;
+			var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
+			try
+			{
+				var user = cl.GetUser().User;
+
+				dict["isroot"] = "False"; //user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
+				dict["arn"] = user.Arn;
+				dict["id"] = user.UserId;
+				dict["name"] = user.UserName;
+
+				dict["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString();
+			}
+			catch (Exception ex)
+			{
+				dict["ex"] = ex.ToString();
+				dict["error"] = ex.Message;
+			}
 
 			return dict;
 		}
@@ -182,6 +191,7 @@ namespace Duplicati.Library.Backend
 			var dict = new Dictionary<string, string>();
 			dict["accessid"] = key.AccessKeyId;
 			dict["secretkey"] = key.SecretAccessKey;
+			dict["username"] = key.UserName;
 
 			return dict;
 		}
