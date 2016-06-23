@@ -41,7 +41,14 @@ backupApp.directive('backupEditUri', function() {
 		        	AppService.post('/remoteoperation/test', uri).then(function() {
 		        		scope.Testing = false;
 		        		dlg.dismiss();
-		        		DialogService.dialog('Success', 'Connection worked!');
+
+		        		if (EditUriBackendConfig.testers[scope.Backend.Key] != null)
+							EditUriBackendConfig.testers[scope.Backend.Key](scope, function() {
+			        			DialogService.dialog('Success', 'Connection worked!');
+							});
+						else
+		        			DialogService.dialog('Success', 'Connection worked!');
+
 		        	}, handleError);
 				});				
 
@@ -108,8 +115,10 @@ backupApp.directive('backupEditUri', function() {
 	            if (!hasTriedCreate && message == 'missing-folder')
 	            {
 	                var folder = scope.Folder;
-	                if ((folder | "") == "")
+	                if ((folder || "") == "")
 	                    folder = scope.Path;
+	                if ((folder || "") == "")
+	                    folder = '';
 
 	                DialogService.dialog('Create folder?', 'The folder ' + folder + ' does not exist\nCreate it now?', ['No', 'Yes'], function(ix) {
 	                	if (ix == 1)
