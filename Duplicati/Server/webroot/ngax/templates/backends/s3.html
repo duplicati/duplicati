@@ -37,11 +37,11 @@
 
     <label for="s3_storageclass">Storage class</label>
 
-    <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclass | orderBy: k" title="The storage class affects the availability and price for a stored file">
+    <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k" title="The storage class affects the availability and price for a stored file">
         <option value="">Custom storage class</option>
     </select>
 
-    <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom" ng-model="$parent.s3_storageclass_custom" placeholder="Custom region for creating buckets"/>
+    <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom" ng-model="$parent.s3_storageclass_custom" placeholder="Custom bucket storage class"/>
 
 </div>
 
