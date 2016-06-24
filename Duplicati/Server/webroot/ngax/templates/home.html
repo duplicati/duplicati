@@ -28,7 +28,7 @@
             {{nextTask.Backup.Name}}
         </div>
 
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} at {{nextScheduledTime | date: 'medium'}}</div>
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | moment: 'calendar'}}</span></div>
 
         <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null">No scheduled tasks, you can manually start a task</div>
 
@@ -69,14 +69,14 @@
 
                 <dl>
                     <dt>Last successful run:</dt>
-                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{item.Backup.Metadata.LastBackupFinished | date :'medium'}} (took {{formatDuration(item.Backup.Metadata.LastDuration)}})</dd>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}">{{item.Backup.Metadata.LastBackupFinished | moment: 'calendar'}} (took {{formatDuration(item.Backup.Metadata.LastDuration)}})</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
                     Never - <a href class="action-link" ng-click="doRun(item.Backup.ID)">Run now</a>
                     </dd>
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
                         <dt>Next scheduled run:</dt>
-                        <dd>{{item.Backup.Metadata.NextScheduledRun | date :'medium'}}</dd>
+                        <dd title="{{item.Backup.Metadata.NextScheduledRun | parsetimestamp }}">{{item.Backup.Metadata.NextScheduledRun | moment: 'calendar'}}</dd>
                     </div>
                     <div ng-hide="item.Backup.Metadata == null">
                         <div ng-hide="item.Backup.Metadata.SourceSizeString == null">

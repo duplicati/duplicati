@@ -45,7 +45,6 @@ namespace Duplicati.Library.Backend
 
             cfg.UseHttp = !useSSL;
             cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
-            cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
             cfg.BufferSize = (int)Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE;
 
             foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-")))

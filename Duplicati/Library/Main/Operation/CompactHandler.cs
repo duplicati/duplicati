@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
 											//TODO: How do we get the compression hint? Reverse query for filename in db?
 											var s = f.ReadBlock(e.Key, buffer);
 											if (s != e.Value)
-												throw new Exception("Size mismatch problem, {0} vs {1}");
+												throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
 												
 											newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
 											if (newvolindex != null)

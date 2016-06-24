@@ -139,18 +139,43 @@ namespace Duplicati.Server
         /// Returns the next valid date, given the start and the interval
         /// </summary>
         /// <param name="basetime">The base time</param>
-        /// <param name="firstdata">The first allowed date</param>
+        /// <param name="firstdate">The first allowed date</param>
         /// <param name="repetition">The repetition interval</param>
         /// <param name="allowedDays">The days the backup is allowed to run</param>
         /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
         public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition, DayOfWeek[] allowedDays)
         {
-            DateTime res = basetime;
+			var res = basetime;
 
-            int i = 50000;
+			var i = 50000;
+			while (res < firstdate && i-- > 0)
+				res = Timeparser.ParseTimeInterval(repetition, res);
 
-            while ((!IsDateAllowed(res, allowedDays)|| res < firstdate) && i-- > 0)
-                res = Timeparser.ParseTimeInterval(repetition, res);
+			// If we arived somewhere after the first allowed date
+			if (res >= firstdate)
+			{
+				var ts = Timeparser.ParseTimeSpan(repetition);
+
+				if (ts.TotalDays >= 1)
+				{
+					// We jump in days, so we pick the first valid day after firstdate
+
+					for (var n = 0; n < 8; n++)
+						if (IsDateAllowed(res, allowedDays))
+							break;
+						else
+							res = res.AddDays(1);
+				}
+				else
+				{
+					// We jump less than a day, so we keep adding the repetition until
+					// we hit a valid day
+
+					i = 50000;
+					while (!IsDateAllowed(res, allowedDays) && i-- > 0)
+						res = Timeparser.ParseTimeInterval(repetition, res);
+			}
+			}
 
             if (!IsDateAllowed(res, allowedDays) || res < firstdate)
             {
@@ -246,20 +271,16 @@ namespace Duplicati.Server
                                 }
                             }
 
-                            //Caluclate next time, by adding the interval to the start until we have
-                            // passed the current date and time
-                            //TODO: Make this more efficient
-                            int i = 50000;
-                            while (start <= DateTime.UtcNow && i-- > 0)
-                                try
-                                {
-                                    start = GetNextValidTime(start, start.AddSeconds(1), sc.Repeat, sc.AllowedDays);
-                                }
-                                catch(Exception ex)
-                                {
-                                    Program.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
-                                    continue;
-                                }
+                            //Caluclate next time, by finding the first entry later than now
+                            try
+                            {
+								start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.Now.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
+                            }
+                            catch(Exception ex)
+                            {
+                                Program.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
+                                continue;
+                            }
                             
                             Server.Runner.IRunnerData lastJob = jobsToRun.LastOrDefault();
                             if (lastJob != null && lastJob != null)
