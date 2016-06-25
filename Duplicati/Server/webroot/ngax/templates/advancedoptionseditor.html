@@ -11,8 +11,8 @@
 			<input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$index]" parse-advanced-option-integer ></input>
 
 			<div ng-if="getInputType(item) == 'size'" class="input type multiple">
-                <input type="number" parse-advanced-option-size-number ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]">
+                <input type="number" parse-advanced-option-size-number="lowercase" ng-model="$parent.ngModel[$index]" />
+                <select parse-advanced-option-size-multiplier="lowercase" ng-model="$parent.ngModel[$index]">
                     <option value="kb">KByte</option>
                     <option value="mb">MByte</option>
                     <option value="gb">GByte</option>

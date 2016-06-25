@@ -186,7 +186,9 @@ namespace Duplicati.Library.Backend
                         cmp_path = m_rawurlPort;
                     else if (name.StartsWith(m_path))
                         cmp_path = m_path;
-                    else if (name.StartsWith(m_sanitizedUrl))
+					else if (name.StartsWith("/" + m_path))
+						cmp_path = "/" + m_path;
+					else if (name.StartsWith(m_sanitizedUrl))
                         cmp_path = m_sanitizedUrl;
                     else if (name.StartsWith(m_reverseProtocolUrl))
                         cmp_path = m_reverseProtocolUrl;
