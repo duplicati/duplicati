@@ -5,6 +5,7 @@ using System.Text;
 using HttpServer.HttpModules;
 using System.IO;
 using Duplicati.Server.Serialization;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.WebServer
 {
@@ -14,10 +15,12 @@ namespace Duplicati.Server.WebServer
         /// Option for changing the webroot folder
         /// </summary>
         public const string OPTION_WEBROOT = "webservice-webroot";
+
         /// <summary>
         /// Option for changing the webservice listen port
         /// </summary>
         public const string OPTION_PORT = "webservice-port";
+
         /// <summary>
         /// Option for changing the webservice listen interface
         /// </summary>
@@ -32,6 +35,16 @@ namespace Duplicati.Server.WebServer
         /// The default listening port
         /// </summary>
         public const int DEFAULT_OPTION_PORT = 8200;
+
+        /// <summary>
+        /// Option for setting the webservice SSL certificate
+        /// </summary>
+        public const string OPTION_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
+
+        /// <summary>
+        /// Option for setting the webservice SSL certificate key
+        /// </summary>
+        public const string OPTION_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
 
         /// <summary>
         /// The default listening interface
@@ -88,10 +101,35 @@ namespace Duplicati.Server.WebServer
             else
                 listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
+            string certificateFile;
+            options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out certificateFile);
+
+            string certificateFilePassword;
+            options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out certificateFilePassword);
+
+            X509Certificate2 cert = null;
+            bool certValid = false;
+
+            if (!string.IsNullOrWhiteSpace(certificateFile))
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(certificateFilePassword))
+                        cert = new X509Certificate2(certificateFile);
+                    else
+                        cert = new X509Certificate2(certificateFile, certificateFilePassword);
+
+                    certValid = cert.Verify();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Unable to create SSL certificate using provided parameters. Exception detail: " + ex.Message);
+                }
+            }
 
             // If we are in hosted mode with no specified port, 
             // then try different ports
-            foreach(var p in ports)
+            foreach (var p in ports)
                 try
                 {
                     // Due to the way the server is initialized, 
@@ -99,7 +137,12 @@ namespace Duplicati.Server.WebServer
                     // so we create a new server for each attempt
                 
                     var server = CreateServer(options);
-                    server.Start(listenInterface, p);
+                    
+                    if (!certValid)
+                        server.Start(listenInterface, p);
+                    else
+                        server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.Tls | System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12, null, false);
+
                     m_server = server;
                     m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
                     this.Port = p;
