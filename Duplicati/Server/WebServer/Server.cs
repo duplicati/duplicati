@@ -110,14 +110,32 @@ namespace Duplicati.Server.WebServer
             X509Certificate2 cert = null;
             bool certValid = false;
 
-            if (!string.IsNullOrWhiteSpace(certificateFile))
+            if (certificateFile == null)
+            {
+                try
+                {
+                    cert = Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
+
+                    if (cert != null)
+                        certValid = cert.Verify();
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteMessage("Unable to create SSL certificate using data from database. Starting without SSL.", Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                }
+            }
+            else if (certificateFile.Length == 0)
+            {
+                Program.DataConnection.ApplicationSettings.ServerSSLCertificate = null;
+            }
+            else
             {
                 try
                 {
                     if (string.IsNullOrWhiteSpace(certificateFilePassword))
-                        cert = new X509Certificate2(certificateFile);
+                        cert = new X509Certificate2(certificateFile, "", X509KeyStorageFlags.Exportable);
                     else
-                        cert = new X509Certificate2(certificateFile, certificateFilePassword);
+                        cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
 
                     certValid = cert.Verify();
                 }
@@ -149,7 +167,10 @@ namespace Duplicati.Server.WebServer
 
                     if (interfacestring !=  Program.DataConnection.ApplicationSettings.ServerListenInterface)
                         Program.DataConnection.ApplicationSettings.ServerListenInterface = interfacestring;
-    
+                    
+                    if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
+                        Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
+
                     return;
                 }
                 catch (System.Net.Sockets.SocketException)
