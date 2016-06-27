@@ -86,11 +86,11 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Drawing" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="CoCoL">
-      <HintPath>..\..\..\thirdparty\CoCoL\CoCoL.dll</HintPath>
+      <HintPath>..\..\..\packages\CoCoL.1.5.0\lib\net45\CoCoL.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +140,7 @@
     <EmbeddedResource Include="Resources\Play.png" />
     <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
     <Compile Include="RumpsRunner.cs" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
