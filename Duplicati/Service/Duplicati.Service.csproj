@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Duplicati.Service</RootNamespace>

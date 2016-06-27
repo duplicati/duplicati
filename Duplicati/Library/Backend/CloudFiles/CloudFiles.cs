@@ -130,7 +130,7 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            List<IFileEntry> files = new List<IFileEntry>();
+            var files = new List<IFileEntry>();
             string extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
             string markerUrl = "";
 
@@ -138,15 +138,15 @@ namespace Duplicati.Library.Backend
 
             do
             {
-                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                var doc = new System.Xml.XmlDocument();
 
-                HttpWebRequest req = CreateRequest("", extraUrl + markerUrl);
+                var req = CreateRequest("", extraUrl + markerUrl);
 
                 try
                 {
-                    Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                    using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
-                    using (System.IO.Stream s = areq.GetResponseStream())
+                    var areq = new Utility.AsyncHttpRequest(req);
+                    using (var resp = (HttpWebResponse)areq.GetResponse())
+					using (var s = areq.GetResponseStream())
                         doc.Load(s);
                 }
                 catch (WebException wex)
@@ -223,7 +223,7 @@ namespace Duplicati.Library.Backend
                     if ((int)resp.StatusCode >= 300)
                         throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError, resp);
                     else
-                        using (areq.GetResponseStream())
+						using (areq.GetResponseStream())
                         { }
                 }
             }
@@ -294,12 +294,12 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename, "");
+            var req = CreateRequest("/" + remotename, "");
             req.Method = "GET";
 
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (WebResponse resp = areq.GetResponse())
-            using (System.IO.Stream s = areq.GetResponseStream())
+            var areq = new Utility.AsyncHttpRequest(req);
+            using (var resp = areq.GetResponse())
+			using (var s = areq.GetResponseStream())
             using (var mds = new Utility.MD5CalculatingStream(s))
             {
                 string md5Hash = resp.Headers["ETag"];

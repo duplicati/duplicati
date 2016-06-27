@@ -26,14 +26,17 @@
     <!-- .steps-legend -->
 
     <div class="steps-boxes">
-
-
         <div class="step step1" ng-class="{active: CurrentStep == 0}">
             <div class="form">
                 <form class="styled">
                     <backup-edit-uri uri="Backup.TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
 
                     <div ng-hide="EditUriState">
+                        <div class="input text linklabel">
+                            <label for="importlink">&nbsp;</label>
+                            <a href="#import">Import configuration from a file ...</a>
+                        </div>
+                        
                         <div class="input text">
                             <label for="name">Name</label>
                             <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="My Photos"/>
@@ -86,42 +89,35 @@
         <!-- .step1 -->
         
         <div class="step step2" ng-class="{active: CurrentStep == 1}">
-            <h2>Choose which folders to include in the backup:</h2>
-
             <form class="styled">
-
-                <div class="input">
-                    <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced" style="float: right">Show {{EditSourceAdvanced ? 'simple' : 'advanced'}} editor</p>
-                    <a href ng-hide="EditSourceAdvanced" ng-click="showhiddenfolders = !showhiddenfolders" style="float: right; margin-right: 10px;">{{showhiddenfolders ? 'Hide' : 'Show'}} hidden folders</a>
-                </div>
-
-                <div class="resizable filepicker">
-                    <source-folder-picker ng-show-hidden="showhiddenfolders" ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-hide="EditSourceAdvanced"></source-folder-picker>
-                </div>
-
-                <div class="input textarea" ng-show="EditSourceAdvanced">
-                    <label for="SourcePathList">Source folders</label>
-                    <textarea id="SourcePathList" string-array-as-text ng-model="Backup.Sources" ng-model-options="{updateOn: 'blur'}"></textarea>
-                </div>
-
-                <div class="input text overlayButton">
-                    <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
-                    <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">{{validatingSourcePath ? 'Validating ...' : 'Add path'}}</a>
-                </div>
-                
-                <div class="filters">
-                    <div class="input link">
-                        <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced">Show {{EditFilterAdvanced ? 'simple' : 'advanced'}} editor</a>
+                <div class="box browser">
+                    <h2>Folders</h2>
+                    <div class="input checklinks">
+                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> Show hidden folders</a>
+                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced"><i class="fa {{EditSourceAdvanced ? 'fa-check' : ''}}"></i> Show advanced editor</a>
                     </div>
-                    
+                    <div class="resizable filepicker" ng-hide="EditSourceAdvanced" ng-show-hidden="showhiddenfolders">
+                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters"></source-folder-picker>
+                    </div>
+                    <div class="input textarea" ng-show="EditSourceAdvanced">
+                        <label for="SourcePathList">Source folders</label>
+                        <textarea id="SourcePathList" string-array-as-text ng-model="Backup.Sources" ng-model-options="{updateOn: 'blur'}"></textarea>
+                    </div>
+                    <div class="input text overlayButton">
+                        <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
+                        <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">{{validatingSourcePath ? 'Validating ...' : 'Add path'}}</a>
+                    </div>
+                </div>
+                <div class="box filters">
+                    <h2>Filters</h2>
+                    <div class="input link">
+                        <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced"><i class="fa {{EditFilterAdvanced ? 'fa-check' : ''}}"></i> Show advanced editor</a>
+                    </div>
                     <div class="input textarea" ng-show="EditFilterAdvanced">
-                        <label for="FilterList">Filters <span class="info">i</span></label>
+                        <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
                         <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
                     </div>
-    
                     <div class="input textarea" ng-hide="EditFilterAdvanced">
-                        <h3 for="simplefilterlist">Filters</h3>
-    
                         <ul id="simplefilterlist">
                             <li ng-repeat="f in Backup.Filters track by $index">
                                 <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
@@ -133,37 +129,34 @@
                             </li>
     
                         </ul>
-    
                         <a href ng-click="Backup.Filters.push('-*')">Add filter</a>
                     </div>
                 </div>
-                
-                <h3>Also exclude:</h3>
-                <div class="input checkbox multiple">
-                    <div ng-repeat="attr in fileAttributes">
-                      <input
-                        id="fileattr_{{attr.value}}"
-                        type="checkbox"
-                        name="fileattr_{{attr.value}}"
-                        value="{{attr.value}}"
-                        ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
-                        ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
-                      />
-                      <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
-                    </div>                
+                <div class="box exclude">
+                    <h2>Exclude</h2>
+                    <div class="input checkbox multiple">
+                        <div ng-repeat="attr in fileAttributes">
+                          <input
+                            id="fileattr_{{attr.value}}"
+                            type="checkbox"
+                            name="fileattr_{{attr.value}}"
+                            value="{{attr.value}}"
+                            ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
+                            ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
+                          />
+                          <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
+                        </div>                
+                    </div>
+    
+                    <div class="input text select multiple">
+                        <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
+                        <label for="exclude-large-files">Files larger than:</label>
+                        
+                        <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
+                        <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                        </select>
+                    </div>
                 </div>
-
-                <div class="input text select multiple">
-                    <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
-                    <label for="exclude-large-files">Files larger than:</label>
-
-                    <input type="number" parse-size-number ng-model="Backup.Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-                    <select parse-size-multiplier id="exclude-larger-than-multiplier" ng-model="Backup.Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
-                    </select>
-
-                </div>    
-
-                
                 <div class="buttons">
                     <input class="submit next" type="button" id="nextStep2" ng-click="nextPage()" value="Next &gt;" />
                     <input class="submit prev" type="button" id="prevStep2" ng-click="prevPage()" value="&lt; Previous" />
@@ -223,18 +216,18 @@
         
         <div class="step step4" ng-class="{active: CurrentStep == 3}">
             <form class="styled">
+                <h2>General options</h2>
                 <div class="input multiple text select maxSize">
-                    <label for="dblockSizeNumber">Max backup file size <span class="info">i</span></label>
-                    <input type="number" parse-size-number id="dblockSizeNumber" ng-model="Options['dblock-size']" />
-                    <select parse-size-multiplier id="dblockSizeMultiplier" ng-model="Options['dblock-size']">
-                        <option value="kb">KByte</option>
-                        <option value="mb">MByte</option>
-                        <option value="gb">GByte</option>
-                        <option value="tb">TByte</option>
+                    <label for="dblockSizeNumber">Max backup file size</label>
+                    <input type="number" class="number" parse-size-number="uppercase" id="dblockSizeNumber" ng-model="Options['dblock-size']" />
+                    <select parse-size-multiplier="uppercase" id="dblockSizeMultiplier" ng-model="Options['dblock-size']" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers"></select>
+                        <option value="MB">MByte</option>
+                        <option value="GB">GByte</option>
+                        <option value="TB">TByte</option>
                     </select>
                 </div>
                 <div class="input multiple text select keepBackups">
-                    <label for="keepTimeType">Keep backups<span class="info">i</span></label>
+                    <label for="keepTimeType">Keep backups</label>
                     <select id="keepTimeType" ng-model="KeepType">
                         <option value="">forever</option>
                         <option value="time">for a specific time</option>
@@ -243,7 +236,7 @@
 
                     <input type="number" ng-model="Options['keep-versions']" ng-show="KeepType == 'versions'" />
                     <div ng-show="KeepType == 'time'">
-                        <input type="number" parse-size-number ng-model="Options['keep-time']" />
+                        <input type="number" class="number" parse-size-number ng-model="Options['keep-time']" />
                         <select parse-size-multiplier ng-model="Options['keep-time']" >
                             <option value="D">Days</option>
                             <option value="W">Weeks</option>
@@ -253,16 +246,15 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="input textarea" ng-show="ShowAdvancedTextArea">
-                    <label for="backupOptions">Advanced options</label>
-                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">Edit as list</a>
+                    <h2><label for="backupOptions">Advanced options</label></h2>
+                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> Edit as text</a>
                     <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
                 </div>
                 
                 <div class="input" ng-hide="ShowAdvancedTextArea">
-                    <label for="backupOptions">Advanced options</label>
-                    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle">Edit as text</a>
+                    <h2><label for="backupOptions">Advanced options</label></h2>
+                    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> Edit as text</a>
                     <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
                 </div>
 

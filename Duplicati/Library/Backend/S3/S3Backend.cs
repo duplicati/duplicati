@@ -73,7 +73,8 @@ namespace Duplicati.Library.Backend
 
         static S3() {
             var ns = new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("Standard", "STANDARD"),
+				new KeyValuePair<string, string>("(default)", ""),
+				new KeyValuePair<string, string>("Standard", "STANDARD"),
                 new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
                 new KeyValuePair<string, string>("Glacier", "GLACIER"),
                 new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),

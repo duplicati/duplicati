@@ -15,6 +15,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string TOOLKIT_GTK = "gtk";
         private const string TOOLKIT_GTK_APP_INDICATOR = "gtk-appindicator";
         private const string TOOLKIT_COCOA = "cocoa";
+        private const string TOOLKIT_RUMPS = "rumps";
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
@@ -27,10 +28,16 @@ namespace Duplicati.GUI.TrayIcon
         public static string BrowserCommand { get { return _browser_command; } }
         
         
-        private static string GetDefaultToolKit()
+        private static string GetDefaultToolKit(bool printwarnings)
         {
+            
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
-                return TOOLKIT_COCOA;
+            {
+                if (Environment.Is64BitProcess)
+                    return TOOLKIT_RUMPS;
+                else
+                    return TOOLKIT_COCOA;
+            }
 
 #if __MonoCS__ || __WindowsGTK__            
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
@@ -92,7 +99,7 @@ namespace Duplicati.GUI.TrayIcon
             
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
-                toolkit = GetDefaultToolKit();
+                toolkit = GetDefaultToolKit(true);
             else 
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
@@ -105,8 +112,10 @@ namespace Duplicati.GUI.TrayIcon
 #endif
                 else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
+                else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                    toolkit = TOOLKIT_RUMPS;
                 else
-                    toolkit = GetDefaultToolKit();
+                    toolkit = GetDefaultToolKit(true);
             }
 
             HostedInstanceKeeper hosted = null;
@@ -208,6 +217,8 @@ namespace Duplicati.GUI.TrayIcon
 #endif
             else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
+            else if (toolkit == TOOLKIT_RUMPS)
+                return GetRumpsRunnerInstance();
             else 
                 throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
         }
@@ -230,12 +241,15 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 
+        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
+
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
         //This seems to be more reliable than attempting to load the assembly,
         // as there are too many complex rules for when an updated assembly is also
         // acceptable. This is fairly error proof, as it is just asks the runtime
         // to load the required types
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetGtk()
         {
 #if __MonoCS__ || __WindowsGTK__
@@ -245,11 +259,13 @@ namespace Duplicati.GUI.TrayIcon
 #endif
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetWinforms()
         {
             return typeof(System.Windows.Forms.NotifyIcon) != null;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetAppIndicator()
         {
 #if __MonoCS__ || __WindowsGTK__
@@ -259,9 +275,10 @@ namespace Duplicati.GUI.TrayIcon
 #endif
         }
         
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetMonoMac()
         {
-            return typeof(MonoMac.AppKit.NSApplication) != null;
+            return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
         }
   
         //The functions below here, simply wrap the call to the above functions,
@@ -289,7 +306,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private static bool SupportsCocoaStatusIcon
+        private static bool SupportsCocoa
         {
             get 
             {
@@ -300,6 +317,18 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
         
+        private static bool SupportsRumps
+        {
+            get 
+            {
+                try { return RumpsRunner.CanRun(); }
+                catch {}
+
+                return false;
+            }
+        }
+
+
         private static bool SupportsWinForms
         {
             get 
@@ -322,12 +351,14 @@ namespace Duplicati.GUI.TrayIcon
                     toolkits.Add(TOOLKIT_GTK);
                 if (SupportsAppIndicator)
                     toolkits.Add(TOOLKIT_GTK_APP_INDICATOR);
-                if (SupportsCocoaStatusIcon)
+                if (SupportsCocoa)
                     toolkits.Add(TOOLKIT_COCOA);
+                if (SupportsRumps)
+                    toolkits.Add(TOOLKIT_RUMPS);
                 
                 return new Duplicati.Library.Interface.ICommandLineArgument[]
                 {
-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(), null, toolkits.ToArray()),
+                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),

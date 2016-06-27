@@ -200,7 +200,7 @@ backupApp.directive('restoreFilePicker', function() {
                         var all = true;
                         var pp = compareablePath(p.id);
                         var map = buildSelectedMap();
-                        map[compareablePath(cur.id)] = true;
+                        map[c] = true;
 
                         for (var i = p.children.length - 1; i >= 0; i--)
                             if (!map[compareablePath(p.children[i].id)]) {

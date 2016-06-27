@@ -7,7 +7,7 @@ if [ "x$1" == "x" ]; then
 	RELEASE_TYPE="canary"
 	echo "No release type specified, using ${RELEASE_TYPE}"
 else
-	RELEASE_TYPE = $1
+	RELEASE_TYPE=$1
 fi
 
 RELEASE_VERSION="2.0.1.${RELEASE_INC_VERSION}"
@@ -24,6 +24,7 @@ UPDATE_ZIP_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAM
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;http://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 UPDATER_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-release.key"
 GPG_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-gpgkey.key"
+GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
 GPG=/usr/local/bin/gpg2
 
@@ -60,7 +61,7 @@ echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
 echo
 
-RELEASE_CHANGEINFO_NEWS=`cat ${RELEASE_CHANGELOG_NEWS_FILE}`
+RELEASE_CHANGEINFO_NEWS=`cat "${RELEASE_CHANGELOG_NEWS_FILE}"`
 
 git stash save "${GIT_STASH_NAME}"
 
@@ -76,6 +77,7 @@ if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 fi
 
 echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
 echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
 cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
 
@@ -150,34 +152,85 @@ aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
 
-aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.zip"
-aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.zip.sig"
-aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.zip.sig.asc"
 aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
-
-echo "Propagating to other build types"
-for OTHER in ${OTHER_UPLOADS}; do
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${OTHER}/latest.zip"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${OTHER}/latest.zip.sig"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${OTHER}/latest.zip.sig.asc"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
-done
 
 ZIP_MD5=`md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}'`
 ZIP_SHA1=`shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
 ZIP_SHA256=`shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
 
+cat > "latest.json" <<EOF
+{
+	"zip": "${RELEASE_FILE_NAME}.zip",
+	"zipsig": "${RELEASE_FILE_NAME}.zip.sig",
+	"zipsigasc": "${RELEASE_FILE_NAME}.zip.sig.asc",
+	"manifest": "${RELEASE_FILE_NAME}.manifest",
+	"urlbase": "http://updates.duplicati.com/${RELEASE_TYPE}/",
+	"link": "http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip",
+	"zipmd5": "${ZIP_MD5}",
+	"zipsha1": "${ZIP_SHA1}",
+	"zipsha256": "${ZIP_SHA256}"
+}
+EOF
+
+
+echo "${RELEASE_FILE_NAME}" > "latest.json"
+aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
+
+echo "Propagating to other build types"
+for OTHER in ${OTHER_UPLOADS}; do
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json" "s3://updates.duplicati.com/${OTHER}/latest.json"
+done
+
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 
 git checkout "Duplicati/License/VersionTag.txt"
 git checkout "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
+git checkout "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
 git add "Updates/build_version.txt"
 git add "${RELEASE_CHANGELOG_FILE}"
-git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signatures: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
-git tag "v${RELEASE_VERSION}-${RELEASE_NAME}" -m "Binaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "md5 sum: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: " -m "Binaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"                       -m "You can download this build from: " -m "Binaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+git push --tags
+
+PRE_RELEASE_LABEL="--pre-release"
+if [ "${RELEASE_TYPE}" == "stable" ]; then
+	PRE_RELEASE_LABEL=""
+fi
+
+RELEASE_MESSAGE=`printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}"`
+
+# Using the tool from https://github.com/aktau/github-release
+
+GITHUB_TOKEN=`cat "${GITHUB_TOKEN_FILE}"`
+
+if [ "x${GITHUB_TOKEN}" == "x" ]; then
+	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
+else
+	github-release release ${PRE_RELEASE_LABEL} \
+	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
+	    --name "v${RELEASE_VERSION}-${RELEASE_NAME}" \
+	    --repo "duplicati" \
+	    --user "duplicati" \
+	    --security-token "${GITHUB_TOKEN}" \
+	    --description "${RELEASE_MESSAGE}" \
+
+	github-release upload \
+	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
+	    --name "${RELEASE_FILE_NAME}.zip" \
+	    --repo "duplicati" \
+	    --user "duplicati" \
+	    --security-token "${GITHUB_TOKEN}" \
+	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+fi
 
 echo
 echo "Built ${RELEASE_TYPE} version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
 echo "    in folder: ${UPDATE_TARGET}"
+echo
+echo
+echo "Building installers ..."
+
+bash "build-installers.sh" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 
 

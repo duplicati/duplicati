@@ -1,3 +1,86 @@
+2016-05-14
+==========
+* Fixes for UI on Safari, thanks @alexfran
+* Speed and space improvement for backups, thanks @footstark
+* Added a Synology package
+
+2016-05-04
+==========
+* Updated Renci.SSH to latest build
+* Added duration to the UI (thanks @trampi)
+* Fixed a bug in recreate database with specially crafted index files
+
+2016-04-27
+==========
+* Improved support for OEM customization
+* Updated tray icons on OSX
+* Added support for choosing SSL protocols
+* Added suppresion of reparsepoint errors
+* Improved restoring folder symlinks
+
+2016-04-21
+==========
+* Added a new TrayIcon runner for OSX, so it now works on 64bit mono
+* Fixed some error messages
+* Updated App icon on Windows
+* Added a Windows service
+* Fixed an issue with IE caching data in the UI
+* Fixed an issue with restoring from multi-drive backups in Windows
+* Fixed an issue with spaces in the path on B2 backend
+* Changed how the autoupdater attempts to find a folder for storing updates
+* Updated NGAX, thanks AlexFRAN
+
+2016-04-10
+==========
+* Added a new FTP backend, thanks @mylemans
+* Fixed an issue with AWS crashing in initializer
+* Updated list of compressed extensions
+
+2016-04-08
+==========
+* Fixed a problem with symlink policy not being honored for folders
+* Fixed disposing database commands and connections, which should fix all "database is locked" errors on Windows
+* Updates to handling scenarios where the user is not logged in, thanks @mylemans
+* Added an OSX TrayIcon for 64-bit, based on rumps
+
+2016-03-31
+==========
+* Fixed some issues with non-standard block sizes
+* Fixed a number of issues with recreating the database from remote data, thanks @footstark
+* Fixed an issue where filelists with no files would cause an error message
+* Added an import link to the NGAX theme
+* Fixed loading and saving additional properties from NGAX theme
+* Improved login redirect logic in NGAX theme, thanks @mylemans
+* Improved layout for the NGAX theme, thanks @AlexFran
+* Improved image quality for the TrayIcon on OSX and Windows, thanks @FootStark and @agrajaghh
+
+2016-03-26
+==========
+* Fixed a problem with recreating database from backup data
+* Added a OneDrive for business backend
+* Fixed tray icons on all platforms
+* Fixed an issue with running on .Net 4.0
+
+2016-03-20
+==========
+* New icons, thanks to @agrajaghh
+* Multithreading is now enabled by default
+
+2016-03-18
+==========
+* Improved rebuild of the local database
+
+2016-03-16
+==========
+* Improvements to database size, thanks to @FootStark
+* Reduced storage for large backup sets, thanks to @FootStark
+* Update version of SharpAESCrypt with utilization of hardware support for encryption/decryption if available
+
+2016-03-14
+==========
+* Added options to run AES encryption with two threads, and decryption with up to four
+* Fixed some minor issues with the UI introduced in the previous build
+
 2016-03-13
 ==========
 * Updated icons for Windows and Linux

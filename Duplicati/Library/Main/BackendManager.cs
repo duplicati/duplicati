@@ -364,18 +364,30 @@ namespace Duplicati.Library.Main
 	        			entries = m_dbqueue;
 	        			m_dbqueue = new List<IDbEntry>();
 	        		}
-	        	
+
+                // collect removed volumes for final db cleanup.
+                HashSet<string> volsRemoved = new HashSet<string>();
+
 	        	//As we replace the list, we can now freely access the elements without locking
 	        	foreach(var e in entries)
 	        		if (e is DbOperation)
 	        			db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
-	        		else if (e is DbUpdate)
-	        			db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
+                    else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
+                    {
+                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, transaction);
+                        volsRemoved.Add(((DbUpdate)e).Remotename);
+                    }
+                    else if (e is DbUpdate)
+                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
                     else if (e is DbRename)
                         db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
-	        		else if (e != null)
-	        			m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
-	        			
+                    else if (e != null)
+                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
+
+                // Finally remove volumes from DB.
+                if (volsRemoved.Count > 0)
+                    db.RemoveRemoteVolumes(volsRemoved);
+
 	        	return true;
 	        }
         }
@@ -406,8 +418,16 @@ namespace Duplicati.Library.Main
             m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
-            if (m_backend == null)
-            	throw new Exception(string.Format("Backend not supported: {0}", m_backendurl));
+			if (m_backend == null)
+			{
+				string shortname = m_backendurl;
+
+				// Try not to leak hostnames or other information in the error messages
+				try { shortname = new Library.Utility.Uri(shortname).Scheme; }
+				catch { }
+
+				throw new Exception(string.Format("Backend not supported: {0}", shortname));
+			}
 
             if (!m_options.NoEncryption)
             {
@@ -853,7 +873,7 @@ namespace Duplicati.Library.Main
                 if (useDecrypter != null) // return decrypted temp file
                 { retTarget = decryptTarget; decryptTarget = null; }
                 else // return downloaded file
-                { retTarget = dlTarget; decryptTarget = null; }
+                { retTarget = dlTarget; dlTarget = null; }
             }
             finally
             {
@@ -983,10 +1003,10 @@ namespace Duplicati.Library.Main
 
                 string fileHash;
                 long dataSizeDownloaded;
-                if (m_options.EnablePipedDownstreams)
-                    tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
-                else
+                if (m_options.DisablePipedStreaming)
                     tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+                else
+                    tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
@@ -1204,19 +1224,13 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
 
+            hash = null; size = -1;
             var req = new FileEntryItem(OperationType.Get, remotename, -1, null);
             if (m_queue.Enqueue(req))
-            {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
-            }
+                ((IDownloadWaitHandle) req).Wait(out hash, out size);
 
             if (m_lastException != null)
                 throw m_lastException;
-
-            size = req.Size;
-            hash = req.Hash;
 
             return (Library.Utility.TempFile)req.Result;
         }
@@ -1227,12 +1241,8 @@ namespace Duplicati.Library.Main
 				throw m_lastException;
 
 			var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
-			if (m_queue.Enqueue(req))
-			{
-				req.WaitForComplete();
-				if (req.Exception != null)
-					throw req.Exception;
-			}
+            if (m_queue.Enqueue(req))
+                ((IDownloadWaitHandle)req).Wait();
 
 			if (m_lastException != null)
 				throw m_lastException;

@@ -1,4 +1,4 @@
-We would like to thank all contributors who made Duplicati what it is today.
+﻿We would like to thank all contributors who made Duplicati what it is today.
 
 Software Development:
   Livio Bertacco
@@ -12,6 +12,9 @@ Software Development:
   Malte Neumann
   Mostafa Aghajani
   Stefan Lück
+  Tim Mylemans
+  Xelio Cheong
+  Michal Naiman
   
 The theme for Duplicati (ngax):
   Alexander Franzelin

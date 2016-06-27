@@ -6,12 +6,9 @@ backupApp.directive('backupEditUri', function() {
     	hide: '=hide'
     },
     templateUrl: 'templates/edituri.html',
-    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $injector) {
+    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
 
 		var scope = $scope;
-
-		// Dynamically load extensions
- 		$injector.get('EditUriBuiltins');
 
 		var builduri = function(callback) {
 
@@ -44,7 +41,14 @@ backupApp.directive('backupEditUri', function() {
 		        	AppService.post('/remoteoperation/test', uri).then(function() {
 		        		scope.Testing = false;
 		        		dlg.dismiss();
-		        		DialogService.dialog('Success', 'Connection worked!');
+
+		        		if (EditUriBackendConfig.testers[scope.Backend.Key] != null)
+							EditUriBackendConfig.testers[scope.Backend.Key](scope, function() {
+			        			DialogService.dialog('Success', 'Connection worked!');
+							});
+						else
+		        			DialogService.dialog('Success', 'Connection worked!');
+
 		        	}, handleError);
 				});				
 
@@ -111,8 +115,10 @@ backupApp.directive('backupEditUri', function() {
 	            if (!hasTriedCreate && message == 'missing-folder')
 	            {
 	                var folder = scope.Folder;
-	                if ((folder | "") == "")
+	                if ((folder || "") == "")
 	                    folder = scope.Path;
+	                if ((folder || "") == "")
+	                    folder = '';
 
 	                DialogService.dialog('Create folder?', 'The folder ' + folder + ' does not exist\nCreate it now?', ['No', 'Yes'], function(ix) {
 	                	if (ix == 1)
@@ -238,9 +244,31 @@ backupApp.directive('backupEditUri', function() {
 
 			var parts = AppUtils.decode_uri(scope.uri);
 
-			for(var n in scope.SystemInfo.GroupedBackendModules)
-				if (scope.SystemInfo.GroupedBackendModules[n].Key == parts['backend-type'])
+			for(var n in scope.SystemInfo.GroupedBackendModules) {
+				if (scope.SystemInfo.GroupedBackendModules[n].Key == parts['backend-type']) {
 					scope.Backend = $scope.SystemInfo.GroupedBackendModules[n];
+					break;
+				}
+
+				if ((scope.SystemInfo.GroupedBackendModules[n].Key + 's') == parts['backend-type']) {
+					var hasssl = false;
+					var bk = scope.SystemInfo.GroupedBackendModules[n];
+
+					for(var o in bk.Options) {
+						if (bk.Options[o].Name == 'use-ssl') {
+							hasssl = true;
+							break;
+						}
+					}
+
+					if (hasssl) {
+						scope.Backend = bk;
+						parts['--use-ssl'] = true;
+						break;
+					}
+				}
+			}
+
 
 			scope.Username = parts['--auth-username'];
 			scope.Password = parts['--auth-password'];

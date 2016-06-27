@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -68,7 +66,6 @@
     <Compile Include="Operation\DeleteHandler.cs" />
     <Compile Include="Operation\CreateBugReportHandler.cs" />
     <Compile Include="Operation\RepairHandler.cs" />
-    <Compile Include="Volumes\BlocklistEnumerable.cs" />
     <Compile Include="Volumes\BlockVolumeReader.cs" />
     <Compile Include="Volumes\BlockVolumeWriter.cs" />
     <Compile Include="Volumes\FilesetVolumeReader.cs" />
@@ -168,6 +165,8 @@
   </Target>
   -->
   <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
+    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

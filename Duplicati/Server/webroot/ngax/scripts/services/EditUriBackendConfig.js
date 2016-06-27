@@ -17,6 +17,9 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 	// Validaters check the input and show the user an error or warning
 	this.validaters = { };
 
+	// Testers perform additional checks when pressing the Test button
+	this.testers = { };
+
 	this.defaultbackend = 'file';
 	this.defaulttemplate = 'templates/backends/generic.html';
 	this.defaultbuilder = function(scope) {

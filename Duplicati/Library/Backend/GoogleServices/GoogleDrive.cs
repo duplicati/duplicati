@@ -181,7 +181,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var req = m_oauth.CreateRequest(string.Format("{0}/files/{1}?alt=media", DRIVE_API_URL, fileid));
             var areq = new AsyncHttpRequest(req);
             using(var resp = (HttpWebResponse)areq.GetResponse())
-            using(var rs = resp.GetResponseStream())
+			using(var rs = areq.GetResponseStream())
                 Duplicati.Library.Utility.Utility.CopyStream(rs, stream);
         }
 

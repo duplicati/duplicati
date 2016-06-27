@@ -2,6 +2,15 @@ backupApp.service('AppUtils', function(DialogService) {
 
     var apputils = this;
 
+    try {
+        moment.locale(
+            navigator.languages
+            ? navigator.languages[0]
+            : (navigator.language || navigator.userLanguage)
+        );
+    } catch (e) {
+    }    
+
     this.formatSizes = ['TB', 'GB', 'MB', 'KB'];
     this.formatSizeString = function(val) {
         val = parseInt(val || 0);
@@ -64,14 +73,7 @@ backupApp.service('AppUtils', function(DialogService) {
 
 
     this.toDisplayDateAndTime = function(dt) {
-        function pwz(i, c) {
-            i += '';
-            while(i.length < c)
-                i = '0' + i;
-            return i;
-        }
-
-        return pwz(dt.getFullYear(), 4) + '-' + pwz(dt.getMonth() + 1, 2) + '-' + pwz(dt.getDate(), 2) + ' ' + pwz(dt.getHours(), 2) + ':' + pwz(dt.getMinutes(), 2);
+        return moment(dt).format('lll');
     };
 
     this.parseDate = function(dt) {

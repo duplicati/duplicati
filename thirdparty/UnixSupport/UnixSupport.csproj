@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>UnixSupport</RootNamespace>
     <AssemblyName>UnixSupport</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <ReleaseVersion>1.0</ReleaseVersion>

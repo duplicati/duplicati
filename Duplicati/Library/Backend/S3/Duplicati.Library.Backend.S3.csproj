@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -45,6 +43,9 @@
     <Reference Include="AWSSDK.S3">
       <HintPath>..\..\..\..\packages\AWSSDK.S3.3.1.3.10\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
+    <Reference Include="AWSSDK.IdentityManagement">
+      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.1.3.10\lib\net4.5\AWSSDK.IdentityManagement.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="S3Backend.cs" />
@@ -52,6 +53,7 @@
     <Compile Include="S3Wrapper.cs" />
     <Compile Include="S3Config.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="S3IAM.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">

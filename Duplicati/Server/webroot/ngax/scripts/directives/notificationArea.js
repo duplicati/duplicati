@@ -7,7 +7,13 @@ backupApp.directive('notificationArea', function() {
         $scope.state = ServerStatus.watch($scope);
 
         $scope.doDismiss = function(id) {
-            AppService.delete('/notification/' + id);
+            AppService.delete('/notification/' + id).then(
+                function() { }, // Don't care, the message will be removed
+                function(resp) {
+                    // Most likely there was a sync problem, so attempt to reload
+                    NotificationService.refresh_notifications();
+                }
+            );
         };
 
         $scope.doShowLog = function(backupid) {
@@ -22,7 +28,7 @@ backupApp.directive('notificationArea', function() {
                         if ((parseInt(backupid) + '') != backupid)
                             DialogService.dialog('Error', 'The backup was temporary and does not exist anymore, so the log data is lost');
                         else
-                            DialogService.dialog('Error', 'The backup is missing, has it been delete?');
+                            DialogService.dialog('Error', 'The backup is missing, has it been deleted?');
                     } else {
                         AppUtils.connectionError('Failed to find backup: ', resp);
                     }

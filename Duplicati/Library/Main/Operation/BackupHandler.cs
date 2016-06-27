@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
             m_symlinkPolicy = m_options.SymlinkPolicy;
                 
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Foresthash.PassphraseChangeUnsupported);
+                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
         }
         
         
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main.Operation
                     throw;
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
-                    log.AddWarning(Strings.RSyncDir.SnapshotFailedError(ex.ToString()), ex);
+                    log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
                 }
             }
 
@@ -643,6 +643,9 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                if (m_database.RepairInProgress)
+                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
+
                 m_blocksize = m_options.Blocksize;
 
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
@@ -652,14 +655,14 @@ namespace Duplicati.Library.Main.Operation
                 m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 
                 if (m_blockhasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (m_filehasher == null)
-                    throw new Exception(Strings.Foresthash.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
 
                 if (!m_blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
                 if (!m_filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Foresthash.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
                 // If there is no filter, we set an empty filter to simplify the code
@@ -697,7 +700,14 @@ namespace Duplicati.Library.Main.Operation
 
                             m_database.BuildLookupTable(m_options);
                             m_transaction = m_database.BeginTransaction();
+
+                            var repcnt = 0;
+                            while(repcnt < 100 && m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
+                                filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
         		            
+                            if (m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
+                                throw new Exception("Unable to generate a unique fileset name");
+
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
                             var filesetvolumeid = m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                             m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_transaction);
@@ -871,7 +881,14 @@ namespace Duplicati.Library.Main.Operation
                         Dictionary<string, string> metadata = GenerateMetadata(snapshot, path, attributes);
     
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                            metadata["CoreSymlinkTarget"] = snapshot.GetSymlinkTarget(path);
+						{
+							var p = snapshot.GetSymlinkTarget(path);
+
+							if (string.IsNullOrWhiteSpace(p))
+								m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
+							else
+                            	metadata["CoreSymlinkTarget"] = p;
+						}
     
                         var metahash = Utility.WrapMetadata(metadata, m_options);
                         AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);

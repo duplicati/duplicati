@@ -214,9 +214,9 @@ namespace Duplicati.Library.Main.Operation
                                      select n).ToList();
 
             log.KnownFileCount = remotelist.Count();
-            log.KnownFileSize = remotelist.Select(x => x.File.Size).Sum();
+            log.KnownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
             log.UnknownFileCount = unknownlist.Count();
-            log.UnknownFileSize = unknownlist.Select(x => x.Size).Sum();
+            log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
             log.BackupListCount = filesets.Count;
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
             
@@ -233,6 +233,16 @@ namespace Duplicati.Library.Main.Operation
                     
             var missing = new List<RemoteVolumeEntry>();
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
+            var cleanupRemovedRemoteVolumes = new HashSet<string>();
+
+            foreach(var e in database.DuplicateRemoteVolumes())
+            {
+                if (e.Value == RemoteVolumeState.Uploading || e.Value == RemoteVolumeState.Temporary)
+                    database.UnlinkRemoteVolume(e.Key, e.Value);
+                else
+                    throw new Exception(string.Format("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Key, e.Value.ToString()));
+            }
+
             var locallist = database.GetRemoteVolumes();
             foreach(var i in locallist)
             {
@@ -266,7 +276,7 @@ namespace Duplicati.Library.Main.Operation
                             else
                             {
                                 log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
-                                database.RemoveRemoteVolume(i.Name, null);
+                                cleanupRemovedRemoteVolumes.Add(i.Name);
                             }
                         }
                         break;
@@ -279,9 +289,8 @@ namespace Duplicati.Library.Main.Operation
                         else if (!remoteFound)
                         {
                             log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
-                            database.RemoveRemoteVolume(i.Name, null);
-                            database.RegisterRemoteVolume(i.Name, i.Type, RemoteVolumeState.Deleting, TimeSpan.FromHours(2), null);
-                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, null);
+                            cleanupRemovedRemoteVolumes.Add(i.Name);
+                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
                         }
                         else
                         {
@@ -316,6 +325,8 @@ namespace Duplicati.Library.Main.Operation
                 backend.FlushDbMessages();
             }
 
+            // cleanup deleted volumes in DB en block
+            database.RemoveRemoteVolumes(cleanupRemovedRemoteVolumes, null);
 
             foreach(var i in missingHash)
                 log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash), null);

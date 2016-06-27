@@ -44,4 +44,10 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
         AppService.post('/backup/' + id + '/createreport');
     };
 
+    $scope.formatDuration = function(duration) {
+        if (duration != null && duration.indexOf(".") > 0)
+            return duration.substring(0, duration.length - duration.indexOf("."));
+        else
+            return duration;
+    };
 });

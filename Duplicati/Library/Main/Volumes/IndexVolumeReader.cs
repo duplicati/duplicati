@@ -329,7 +329,7 @@ namespace Duplicati.Library.Main.Volumes
 
                     public IEnumerable<string> Blocklist
                     {
-                        get { return new BlocklistEnumerable(m_compression, m_filename, m_hashsize); }
+                        get { return VolumeReaderBase.ReadBlocklist(m_compression, m_filename, m_hashsize); }
                     }
                 }
 

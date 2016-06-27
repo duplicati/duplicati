@@ -73,13 +73,50 @@ namespace Duplicati.Library.Main.Database
         private Dictionary<long, long> m_proccessedVolumes;
         
         // SQL that finds index and block size for all blocklist hashes, based on the temporary hash list
-        private const string SELECT_BLOCKLIST_ENTRIES = 
-            @"SELECT ""B"".""Length"", ""A"".""BlocklistHash"", ""A"".""BlockHash"", ""C"".""Index"", ""A"".""Index"" AS ""BlocIndex"", ""B"".""Length""/{0} AS ""LastBlock"", ""B"".""Length"" - (""B"".""Length""/{0})*{0} AS ""LastBlockSize"", " +
-            @" CASE WHEN ""A"".""Index"" + (""C"".""Index"" * ({0}/{1})) = ""B"".""Length""/{0} THEN ""B"".""Length"" - (""B"".""Length""/{0})*{0} ELSE {0} END AS ""BlockSize"", " +
-            @" ""A"".""Index"" +  (""C"".""Index"" * ({0}/{1})) AS ""FullIndex"" " +
-            @" FROM ""Blockset"" B, ""BlocklistHash"" C, ""{2}"" A " +
-            @" WHERE ""B"".""ID"" = ""C"".""BlocksetID"" AND ""A"".""BlockListHash"" = ""C"".""Hash"" " +
-            @" ORDER BY ""A"".""BlockListHash"", ""A"".""Index"" ";
+        // with vars Used:
+        // {0} --> Blocksize
+        // {1} --> BlockHash-Size
+        // {2} --> Temp-Table
+        // {3} --> FullBlocklist-BlockCount [equals ({0} / {1}), if SQLite pays respect to ints]
+        private const string SELECT_BLOCKLIST_ENTRIES =
+            @" 
+        SELECT DISTINCT
+            ""E"".""BlocksetID"",
+            ""F"".""Index"" + (""E"".""BlocklistIndex"" * {3}) AS ""FullIndex"",
+            ""F"".""BlockHash"",
+            MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {3})) * {0})) AS ""BlockSize"",
+            ""E"".""Hash"",
+            ""E"".""BlocklistSize"",
+            ""E"".""BlocklistHash""
+        FROM
+            (
+                    SELECT * FROM
+                    (
+                        SELECT 
+                            ""A"".""BlocksetID"",
+                            ""A"".""Index"" AS ""BlocklistIndex"",
+                            MIN({3} * {1}, (((""B"".""Length"" + {0} - 1) / {0}) - (""A"".""Index"" * ({3}))) * {1}) AS ""BlocklistSize"",
+                            ""A"".""Hash"" AS ""BlocklistHash"",
+                            ""B"".""Length""
+                        FROM 
+                            ""BlocklistHash"" A,
+                            ""Blockset"" B
+                        WHERE 
+                            ""B"".""ID"" = ""A"".""BlocksetID""
+                    ) C,
+                    ""Block"" D
+                WHERE
+                   ""C"".""BlocklistHash"" = ""D"".""Hash""
+                   AND
+                   ""C"".""BlocklistSize"" = ""D"".""Size""
+            ) E,
+            ""{2}"" F
+        WHERE
+           ""F"".""BlocklistHash"" = ""E"".""Hash""
+        ORDER BY 
+           ""E"".""BlocksetID"",
+           ""FullIndex""
+";
 
         public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
             : base(parentdb)
@@ -177,7 +214,8 @@ namespace Duplicati.Library.Main.Database
                     @" )",
                     blocksize,
                     hashsize,
-                    m_tempblocklist
+                    m_tempblocklist,
+                    blocksize / hashsize
                 );
                                 
                 var selectAllBlocks = @"SELECT DISTINCT ""FullHash"", ""Length"" FROM (" + selectBlockHashes + " UNION " + selectSmallBlocks + " )";
@@ -209,14 +247,14 @@ namespace Duplicati.Library.Main.Database
                         }
                 }                
                                                 
-                
                 var selectBlocklistBlocksetEntries = string.Format(
                     @"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( " +
                     SELECT_BLOCKLIST_ENTRIES +
-                    @") D, ""BlocklistHash"" E, ""Block"" F WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
+                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
                     blocksize,
                     hashsize,
-                    m_tempblocklist
+                    m_tempblocklist,
+                    blocksize / hashsize
                     );
                     
                 var selectBlocksetEntries = string.Format(
@@ -327,7 +365,7 @@ namespace Duplicati.Library.Main.Database
                     return metadataid;
             }
             
-            var blocksetid = AddBlockset(metahash, metahashsize, null, transaction);
+            var blocksetid = AddBlockset(metahash, metahashsize, null, 0, transaction);
             
             m_insertMetadatasetCommand.Transaction = transaction;
             m_insertMetadatasetCommand.SetParameterValue(0, blocksetid);
@@ -339,7 +377,7 @@ namespace Duplicati.Library.Main.Database
             return metadataid;
         }
         
-        public long AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
+        public long AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes, System.Data.IDbTransaction transaction)
         {
             var blocksetid = -1L;
             if (m_fileHashLookup != null)
@@ -372,21 +410,31 @@ namespace Duplicati.Library.Main.Database
                 var index = 0L;
                 m_insertBlocklistHashCommand.Transaction = transaction;
                 m_insertBlocklistHashCommand.SetParameterValue(0, blocksetid);
+
+                long c = 0;
                 foreach(var hash in blocklisthashes)
                 {
                     if (!string.IsNullOrEmpty(hash))
                     {
-                        m_insertBlocklistHashCommand.SetParameterValue(1, index++);
-                        m_insertBlocklistHashCommand.SetParameterValue(2, hash);
-                        m_insertBlocklistHashCommand.ExecuteNonQuery();
+                        c++;
+                        if (c <= expectedblocklisthashes)
+                        {
+                            m_insertBlocklistHashCommand.SetParameterValue(1, index++);
+                            m_insertBlocklistHashCommand.SetParameterValue(2, hash);
+                            m_insertBlocklistHashCommand.ExecuteNonQuery();
+                        }
                     }
                 }
+
+                if (c != expectedblocklisthashes) // or is there a legacy with single element blocklist hashes? --> && !(c == 1 && hash == computeBlockHash(fullhash))
+                    m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
+
             }
                             
             return blocksetid;
         }
 
-        public void UpdateBlock(string hash, long size, long volumeID, System.Data.IDbTransaction transaction)
+        public bool UpdateBlock(string hash, long size, long volumeID, System.Data.IDbTransaction transaction)
         {
             var currentVolumeId = -2L;
             if (m_blockHashLookup != null)
@@ -403,7 +451,7 @@ namespace Duplicati.Library.Main.Database
             }
             
             if (currentVolumeId == volumeID)
-                return;
+                return false;
                 
             if (currentVolumeId == -2)
             {
@@ -416,6 +464,8 @@ namespace Duplicati.Library.Main.Database
                 
                 if (m_blockHashLookup != null)
                     m_blockHashLookup.Add(hash, size, volumeID);
+
+                return true;
             }
             else if (currentVolumeId == -1)
             {
@@ -430,6 +480,8 @@ namespace Duplicati.Library.Main.Database
                     
                 if (m_blockHashLookup != null)
                     m_blockHashLookup.Add(hash, size, volumeID);
+
+                return true;
             }
             else
             {
@@ -438,17 +490,18 @@ namespace Duplicati.Library.Main.Database
                 m_insertDuplicateBlockCommand.SetParameterValue(1, size);
                 m_insertDuplicateBlockCommand.SetParameterValue(2, volumeID);
                 m_insertDuplicateBlockCommand.ExecuteNonQuery();
-            }
-            
+
+                return false;
+            }            
         }
         
-        public void UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
+        public bool UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
         {
             if (m_blockListHashLookup != null)
             {
                 bool b;
                 if (m_blockListHashLookup.TryGet(hash, -1, out b))
-                    return;
+                    return false;
             }
             else
             {
@@ -456,7 +509,7 @@ namespace Duplicati.Library.Main.Database
                 m_findblocklisthashCommand.SetParameterValue(0, hash);
                 var r = m_findblocklisthashCommand.ExecuteScalar();
                 if (r != null && r != DBNull.Value)
-                    return;
+                    return false;
             }
             
             if (m_blockListHashLookup != null)
@@ -473,6 +526,8 @@ namespace Duplicati.Library.Main.Database
                 m_insertBlockset.SetParameterValue(2, index++);
                 m_insertBlockset.ExecuteNonQuery();
             }
+
+            return true;
         }            
 
 
@@ -480,7 +535,7 @@ namespace Duplicati.Library.Main.Database
         {
             using(var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = string.Format(@"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?");
+				cmd.CommandText = string.Format(@"SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?");
                 cmd.AddParameter(volumeid);
                 
                 using(var rd = cmd.ExecuteReader())
@@ -489,15 +544,18 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo)
+		public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize)
         {
             using(var cmd = m_connection.CreateCommand())
             {
                 var selectCommand = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
             
                 var missingBlocklistEntries = 
-                    @"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"" LEFT OUTER JOIN ""BlocksetEntry"" ON ""BlocksetEntry"".""Index"" = ""BlocklistHash"".""Index"" AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID"" WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL";
-                
+					string.Format(
+						@"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"" LEFT OUTER JOIN ""BlocksetEntry"" ON ""BlocksetEntry"".""Index"" = (""BlocklistHash"".""Index"" * {0}) AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID"" WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL",
+						blocksize / hashsize
+					);
+
                 var missingBlockInfo = 
                     @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""VolumeID"" < 0 ";
             
@@ -586,31 +644,6 @@ namespace Duplicati.Library.Main.Database
                     finally { m_tempblocklist = null; }
                     
             }
-            
-            foreach(var cmd in new IDisposable [] {
-                m_insertFileCommand,
-                m_insertFilesetEntryCommand,
-                m_insertMetadatasetCommand,
-                m_insertBlocksetCommand,
-                m_insertBlocklistHashCommand,
-                m_updateBlockVolumeCommand,
-                m_insertBlockset,
-                m_findBlocksetCommand,
-                m_findMetadatasetCommand,
-                m_findFilesetCommand,
-                m_findblocklisthashCommand,
-                m_findHashBlockCommand,
-                m_insertBlockCommand,
-                m_insertDuplicateBlockCommand
-                })
-                    try
-                    {
-                        if (cmd != null)
-                            cmd.Dispose();
-                    }
-                    catch
-                    {
-                    }
                     
             base.Dispose();
         }

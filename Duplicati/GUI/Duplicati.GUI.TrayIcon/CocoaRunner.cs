@@ -19,6 +19,8 @@ using MonoMac.Foundation;
 using MonoMac.AppKit;
 using MonoMac.ObjCRuntime;
 using System.Collections.Generic;
+using MonoMac.CoreGraphics;
+using System.IO;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -109,31 +111,48 @@ namespace Duplicati.GUI.TrayIcon
             base.Init(args);
         }
 
+        private NSImage LoadStream(System.IO.Stream s)
+        {
+            using(var ms = new MemoryStream())
+            {
+                s.CopyTo(ms);
+                ms.Flush();
+                ms.Close();
+
+                var b = ms.ToArray();
+
+                var dp = new CGDataProvider(b, 0, b.Length);
+                var img2 = CGImage.FromPNG(dp, null, false, CGColorRenderingIntent.Default);
+
+                return new NSImage(img2, new System.Drawing.SizeF(18, 18));
+            }
+        }
+
         private NSImage GetIcon(Duplicati.GUI.TrayIcon.TrayIcons icon)
         {
             if (!m_images.ContainsKey(icon))
             {
                 switch(icon)
                 {
-                case Duplicati.GUI.TrayIcon.TrayIcons.IdleError:
-                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_ERROR));
-                    break;
-                case Duplicati.GUI.TrayIcon.TrayIcons.Paused:
-                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));
-                    break;
-                case Duplicati.GUI.TrayIcon.TrayIcons.PausedError:
-                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));
-                    break;
-                case Duplicati.GUI.TrayIcon.TrayIcons.Running:
-                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_RUNNING));
-                    break;
-                case Duplicati.GUI.TrayIcon.TrayIcons.RunningError:
-                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_RUNNING));
-                    break;
-                case Duplicati.GUI.TrayIcon.TrayIcons.Idle:
-                default:
-                    m_images[icon] = NSImage.FromStream(ASSEMBLY.GetManifestResourceStream(ICON_NORMAL));
-                    break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.IdleError:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_ERROR));
+                        break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.Paused:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));
+                        break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.PausedError:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));
+                        break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.Running:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_RUNNING));
+                        break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.RunningError:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_RUNNING));
+                        break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.Idle:
+                    default:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_NORMAL));
+                        break;
                 }
             }
             

@@ -29,7 +29,9 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string DisplayName { get { return LC.L(@"Configure http requests"); } }
         public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
         public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh url."); } }
-    }
+		public static string SslversionsShort { get { return LC.L(@"Sets allowed SSL versions"); } }
+		public static string SslversionsLong { get { return LC.L(@"This option changes the default SSL versions allowed. This is an advanced option and should only be used if you want to enhance security or work around an issue with a particular SSL protocol."); } }
+		    }
     internal static class RunScript {
         public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
         public static string DisplayName { get { return LC.L(@"Run script"); } }
