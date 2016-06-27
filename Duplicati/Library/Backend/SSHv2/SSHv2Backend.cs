@@ -32,6 +32,7 @@ namespace Duplicati.Library.Backend
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         public const string SSH_KEYFILE_INLINE = "ssh-key";
         public const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
+        public const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "shh-accept-any-fingerprints";
         public const string KEYFILE_URI = "sshkey://";
 
         Dictionary<string, string> m_options;
@@ -41,6 +42,7 @@ namespace Duplicati.Library.Backend
         private string m_username;
         private string m_password;
         private string m_fingerprint;
+        private bool m_fingerprintallowall;
 
         private int m_port = 22;
 		
@@ -69,6 +71,8 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
             if (uri.QueryParameters != null && uri.QueryParameters[SSH_FINGERPRINT_OPTION] != null)
                 m_fingerprint = uri.QueryParameters[SSH_FINGERPRINT_OPTION];
+
+            m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
             m_path = uri.Path;
 
@@ -216,13 +220,16 @@ namespace Duplicati.Library.Backend
             {
                 e.CanTrust = false;
 
-                if (string.IsNullOrEmpty(m_fingerprint))
+                if (m_fingerprintallowall)
                 {
                     e.CanTrust = true;
                     return;
                 }
 
                 string hostFingerprint = e.HostKeyName + " " + e.KeyLength.ToString() + " " + BitConverter.ToString(e.FingerPrint).Replace('-', ':');
+
+                if (string.IsNullOrEmpty(m_fingerprint))
+                    throw new Exception(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower()));
 
                 if (hostFingerprint.ToLower() != m_fingerprint.ToLower())
                     throw new Exception(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()));

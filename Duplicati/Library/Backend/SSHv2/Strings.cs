@@ -33,5 +33,6 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DisplayName { get { return LC.L(@"SFTP (SSH)"); } }
         public static string FolderNotFoundManagedError(string foldername, string message) { return LC.L(@"Unable to set folder to {0}, error message: {1}", foldername, message); }
         public static string FingerprintNotMatchManagedError(string fingerprint) { return LC.L(@"Validation of server fingerprint failed. Server returned fingerprint ""{0}"". Cause of this message is either not correct configuration or Man-in-the-middle attack!", fingerprint); }
+        public static string FingerprintNotSpecifiedManagedError(string fingerprint) { return LC.L(@"Please add --ssh-fingerprint=""{0}"" to trust this host. Or --shh-accept-any-fingerprints (NOT SECURE) only for test reasons!", fingerprint); }   
     }
 }
