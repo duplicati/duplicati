@@ -117,7 +117,7 @@ namespace Duplicati.Server.WebServer
                     cert = Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
 
                     if (cert != null)
-                        certValid = cert.Verify();
+                        certValid = cert.HasPrivateKey;
                 }
                 catch (Exception ex)
                 {
