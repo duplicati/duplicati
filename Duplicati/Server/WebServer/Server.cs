@@ -137,7 +137,7 @@ namespace Duplicati.Server.WebServer
                     else
                         cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
 
-                    certValid = cert.Verify();
+                    certValid = cert.HasPrivateKey;
                 }
                 catch (Exception ex)
                 {
