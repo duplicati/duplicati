@@ -121,6 +121,7 @@ mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=
 
 xbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
 cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
+nuget restore Duplicati.sln
 xbuild /property:Configuration=Release Duplicati.sln
 
 # xbuild BuildTools/LocalizationTool/LocalizationTool.sln

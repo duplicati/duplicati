@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend
             if (!m_path.EndsWith("/"))
             	m_path += "/";
 
-            m_path = System.Web.HttpUtility.UrlDecode(m_path);
+            m_path = Library.Utility.Uri.UrlDecode(m_path);
             m_rawurl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
 
             int port = u.Port;
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Backend
                 {
                     //IIS uses %20 for spaces and %2B for +
                     //Apache uses %20 for spaces and + for +
-                    string name = System.Web.HttpUtility.UrlDecode(n.InnerText.Replace("+", "%2B"));
+                    string name = Library.Utility.Uri.UrlDecode(n.InnerText.Replace("+", "%2B"));
 
                     string cmp_path;
 					
@@ -334,7 +334,7 @@ namespace Duplicati.Library.Backend
 
         private System.Net.HttpWebRequest CreateRequest(string remotename)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + System.Web.HttpUtility.UrlEncode(remotename).Replace("+", "%20"));
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20"));
             if (m_useIntegratedAuthentication)
             {
                 req.UseDefaultCredentials = true;

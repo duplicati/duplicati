@@ -11,7 +11,7 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -45,19 +45,15 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="UnixSupport">
       <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="HttpServer">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -128,6 +124,7 @@
     <EmbeddedResource Include="Database\Database schema\1. Add Notifications.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
