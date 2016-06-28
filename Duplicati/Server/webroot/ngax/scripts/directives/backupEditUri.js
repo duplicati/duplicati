@@ -244,9 +244,31 @@ backupApp.directive('backupEditUri', function() {
 
 			var parts = AppUtils.decode_uri(scope.uri);
 
-			for(var n in scope.SystemInfo.GroupedBackendModules)
-				if (scope.SystemInfo.GroupedBackendModules[n].Key == parts['backend-type'])
+			for(var n in scope.SystemInfo.GroupedBackendModules) {
+				if (scope.SystemInfo.GroupedBackendModules[n].Key == parts['backend-type']) {
 					scope.Backend = $scope.SystemInfo.GroupedBackendModules[n];
+					break;
+				}
+
+				if ((scope.SystemInfo.GroupedBackendModules[n].Key + 's') == parts['backend-type']) {
+					var hasssl = false;
+					var bk = scope.SystemInfo.GroupedBackendModules[n];
+
+					for(var o in bk.Options) {
+						if (bk.Options[o].Name == 'use-ssl') {
+							hasssl = true;
+							break;
+						}
+					}
+
+					if (hasssl) {
+						scope.Backend = bk;
+						parts['--use-ssl'] = true;
+						break;
+					}
+				}
+			}
+
 
 			scope.Username = parts['--auth-username'];
 			scope.Password = parts['--auth-password'];

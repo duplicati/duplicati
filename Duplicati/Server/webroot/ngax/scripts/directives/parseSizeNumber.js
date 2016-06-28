@@ -2,6 +2,9 @@ backupApp.directive('parseSizeNumber', function(AppUtils) {
 	return {
 		restrict: 'A',
 		require: ['ngModel'],
+		scope: {
+        	parseSizeNumber: '@'
+      	},		
 		link: function(scope, element, attr, ctrl) {
 			var multiplier = null;
 
@@ -17,7 +20,12 @@ backupApp.directive('parseSizeNumber', function(AppUtils) {
 					return null;
 				}
 
-				multiplier = parts[1];
+				if (scope.parseSizeNumber == 'uppercase')
+					multiplier = parts[1].toUpperCase();
+				else if (scope.parseSizeNumber == 'lowercase')
+					multiplier = parts[1].toLowerCase();
+				else
+					multiplier = parts[1];
 
 				return parts[0];
 			});
@@ -28,6 +36,9 @@ backupApp.directive('parseSizeNumber', function(AppUtils) {
 backupApp.directive('parseSizeMultiplier', function(AppUtils) {
 	return {
 		restrict: 'A',
+		scope: {
+        	parseSizeMultiplier: '@'
+      	},		
 		require: ['ngModel'],
 		link: function(scope, element, attr, ctrl) {
 
@@ -45,7 +56,12 @@ backupApp.directive('parseSizeMultiplier', function(AppUtils) {
 				}
 
 				number = parts[0];
-				return parts[1];
+				if (scope.parseSizeMultiplier == 'uppercase')
+					return parts[1].toUpperCase();
+				else if (scope.parseSizeMultiplier == 'lowercase')
+					return parts[1].toLowerCase();
+				else
+					return parts[1];
 			});
 		}
 	};

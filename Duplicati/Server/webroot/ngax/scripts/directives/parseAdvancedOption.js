@@ -167,6 +167,9 @@ backupApp.directive('parseAdvancedOptionSizeNumber', function(AppUtils) {
 	return {
 		restrict: 'A',
 		require: ['ngModel'],
+		scope: {
+        	parseAdvancedOptionSizeNumber: '@'
+      	},		
 		link: function(scope, element, attr, ctrl) {
 
 			var name = null;
@@ -192,7 +195,12 @@ backupApp.directive('parseAdvancedOptionSizeNumber', function(AppUtils) {
 					}
 					else
 					{
-						multiplier = parts[1];
+						if (scope.parseAdvancedOptionSizeNumber == 'uppercase')
+							multiplier = parts[1].toUpperCase();
+						else if (scope.parseAdvancedOptionSizeNumber == 'lowercase')
+							multiplier = parts[1].toLowerCase();
+						else
+							multiplier = parts[1];
 						return parseInt(parts[0], 10);
 					}
 				}
@@ -211,6 +219,9 @@ backupApp.directive('parseAdvancedOptionSizeMultiplier', function(AppUtils) {
 	return {
 		restrict: 'A',
 		require: ['ngModel'],
+		scope: {
+        	parseAdvancedOptionSizeMultiplier: '@'
+      	},		
 		link: function(scope, element, attr, ctrl) {
 
 			var name = null;
@@ -237,7 +248,12 @@ backupApp.directive('parseAdvancedOptionSizeMultiplier', function(AppUtils) {
 					else
 					{
 						number = parseInt(parts[0]);
-						return parts[1];
+						if (scope.parseAdvancedOptionSizeMultiplier == 'uppercase')
+							return parts[1].toUpperCase();
+						else if (scope.parseAdvancedOptionSizeMultiplier == 'lowercase')
+							return parts[1].toLowerCase();
+						else
+							return parts[1];
 					}
 				}
 				else
