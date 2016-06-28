@@ -54,14 +54,14 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Net" />
-    <Reference Include="System.Security" />
-    <Reference Include="System.Xml" />
-    <Reference Include="agsXMPP">
-      <HintPath>..\..\..\..\thirdparty\agsXMPP\agsXMPP.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Security" />
+    <Reference Include="agsXMPP">
+      <HintPath>..\..\..\..\packages\agsXMPP.1.1.1.0\lib\agsXMPP.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsolePasswordInput.cs" />

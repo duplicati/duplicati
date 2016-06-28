@@ -13,7 +13,7 @@
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
@@ -45,7 +45,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NonSeekableStream.cs" />

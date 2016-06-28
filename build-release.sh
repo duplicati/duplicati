@@ -26,6 +26,7 @@ UPDATER_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-release.key"
 GPG_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-gpgkey.key"
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
+NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 GPG=/usr/local/bin/gpg2
 
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -89,7 +90,12 @@ fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-mono "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+${XBUILD} /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
+mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+
+${NUGET} restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+${NUGET} restore Duplicati.sln
+
 ${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
 ${XBUILD} /p:Configuration=Release Duplicati.sln

@@ -37,19 +37,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
     <Reference Include="AWSSDK.Core">
-      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.Core.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.1.7.0\lib\net45\AWSSDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.S3">
-      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.S3.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.1.7.2\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.IdentityManagement">
-      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.IdentityManagement.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.1.4.4\lib\net45\AWSSDK.IdentityManagement.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -77,6 +72,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

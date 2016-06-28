@@ -31,11 +31,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="MegaApiClient">
-      <HintPath>..\..\..\..\thirdparty\MegaApi\MegaApiClient.dll</HintPath>
+      <HintPath>..\..\..\..\packages\MegaApiClient.1.2.2\lib\net45\MegaApiClient.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -57,5 +57,8 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
