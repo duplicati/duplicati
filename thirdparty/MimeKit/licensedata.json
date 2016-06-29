@@ -1,0 +1,7 @@
+{
+    "name": "MimeKit",
+    "description": "A cross-platform .NET MIME creation and parser library with support for S/MIME, PGP, DKIM, TNEF and Unix mbox spools.",
+    "link": "https://github.com/jstedfast/MimeKit/",
+    "license": "MIT",
+    "notes": ""
+}

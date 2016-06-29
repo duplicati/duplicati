@@ -320,6 +320,30 @@
       <Link>licenses\MailKit\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\MimeKit\Homepage.txt">
+      <Link>licenses\MimeKit\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MimeKit\license.txt">
+      <Link>licenses\MimeKit\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MimeKit\licensedata.json">
+      <Link>licenses\MimeKit\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BoncyCastle\Homepage.txt">
+      <Link>licenses\BouncyCastle\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BoncyCastle\license.txt">
+      <Link>licenses\BouncyCastle\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BoncyCastle\licensedata.json">
+      <Link>licenses\BouncyCastle\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -348,5 +372,7 @@
     <Folder Include="licenses\CoCoL\" />
     <Folder Include="licenses\rumps\" />
     <Folder Include="licenses\System.Net.FtpClient\" />
+    <Folder Include="licenses\MimeKit\" />
+    <Folder Include="licenses\BouncyCastle\" />
   </ItemGroup>
 </Project>
