@@ -4,7 +4,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if ((scope.Server || '') != '') {
 			var p = scope.Path;
 			scope.Path = scope.Server;
-			if ((p || '') != '') 
+			if ((p || '') != '')
 				scope.Path += '/' + p;
 
 			delete scope.Server;
@@ -24,6 +24,44 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
 	EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
 	EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
+
+
+	EditUriBackendConfig.testers['s3'] = function(scope, callback) {
+
+		if (scope.s3_server != 's3.amazonaws.com')
+		{
+			callback();
+			return;
+		}
+
+		var dlg = null;
+
+		dlg = DialogService.dialog('Testing permissions...', 'Testing permissions ...', [], null, function() {	
+			AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CanCreateUser', 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
+				dlg.dismiss();
+
+				if (data.data.Result.isroot == 'True') {
+					DialogService.dialog('User has too many permissions', 'The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?', ['Cancel', 'No' ,'Yes'], function(ix) {
+						if (ix == 0 || ix == 1) {
+							callback();
+						} else {
+							scope.s3_directCreateIAMUser(function() {
+								scope.s3_bucket_check_name = scope.Server;
+								scope.s3_bucket_check_user = scope.Username;
+
+								callback();
+							});
+						}
+					});
+				} else {
+					callback();
+				}
+			}, function(data) { 
+				dlg.dismiss();
+				AppUtils.connectionError(data); 
+			});
+		});
+	}
 
 	// Loaders are a way for backends to request extra data from the server
 	EditUriBackendConfig.loaders['s3'] = function(scope) {
@@ -61,6 +99,41 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 				scope.s3_storageclass = '';
 		}
 
+		scope.s3_bucket_check_name = null;
+		scope.s3_bucket_check_user = null;
+
+		scope.s3_directCreateIAMUser = function(callback) {
+
+			var dlg = null;
+
+			dlg = DialogService.dialog('Creating user...', 'Creating new user with limited access ...', [], null, function() {
+				path = (scope.Server || '') + '/' + (scope.Path || '');
+
+				AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CreateIAMUser', 's3-path': path, 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
+					dlg.dismiss();
+
+					scope.Username = data.data.Result.accessid;
+					scope.Password = data.data.Result.secretkey;
+
+					DialogService.dialog('Created new limited user', 'New user name is ' + data.data.Result.username + '.\nUpdated credentials to use the new limited user', ['OK'], callback);
+
+				}, function(data) { 
+					dlg.dismiss();
+					AppUtils.connectionError(data);
+				});
+			});
+		};
+
+		scope.s3_createIAMPolicy = function() {
+			EditUriBackendConfig.validaters['s3'](scope, function() {
+				path = (scope.Server || '') + '/' + (scope.Path || '');
+
+				AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'GetPolicyDoc', 's3-path': path}).then(function(data) {
+					DialogService.dialog('AWS IAM Policy', data.data.Result.doc);
+				}, AppUtils.connectionError);
+			});
+
+		};
 	};
 
 	EditUriBackendConfig.loaders['oauth-base'] = function(scope) {
@@ -81,7 +154,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             var countDown = 100;
             var ft = scope.oauth_create_token;
             var left = (screen.width/2)-(w/2);
-            var top = (screen.height/2)-(h/2);                
+            var top = (screen.height/2)-(h/2);
             var wnd = window.open(url, '_blank', 'height=' + h +',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
 
             var recheck = function() {
@@ -94,7 +167,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		                    	scope.oauth_in_progress = false;
                     			wnd.close();
                     		} else {
-                    			setTimeout(recheck, 3000);	
+                    			setTimeout(recheck, 3000);
                     		}
                     	},
                     	function(response) {
@@ -105,10 +178,10 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
                 	scope.oauth_in_progress = false;
                     if (wnd != null)
                         wnd.close();
-                }                  
+                }
             };
 
-            setTimeout(recheck, 6000);                
+            setTimeout(recheck, 6000);
 
             return false;
 		};
@@ -229,7 +302,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		for(var x in nukeopts)
 			delete options[nukeopts[x]];
 
-		EditUriBackendConfig.mergeServerAndPath(scope);		
+		EditUriBackendConfig.mergeServerAndPath(scope);
 	};
 
 	EditUriBackendConfig.parsers['azure'] = function(scope, module, server, port, path, options) {
@@ -399,7 +472,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
 		// Slightly better error message
 		scope.Folder = scope.Server;
-		
+
 		var url = AppUtils.format('{0}://{1}/{2}{3}',
 			scope.Backend.Key,
 			scope.Server || '',
@@ -408,7 +481,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		);
 
 		return url;
-	};	
+	};
 
 	EditUriBackendConfig.builders['mega'] = function(scope) {
 		var opts = { };
@@ -432,18 +505,32 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 			continuation();
 	};
 
-	EditUriBackendConfig.validaters['ftp'] = function(scope, continuation) {
-		var res = 
+	EditUriBackendConfig.validaters['ftp'] = function (scope, continuation) {
+	    var res =
 			EditUriBackendConfig.require_server(scope) &&
 			EditUriBackendConfig.require_field(scope, 'Username', 'username');
 
-		if (res)
-			EditUriBackendConfig.recommend_path(scope, function() {
-				if ((scope.Password || '').trim().length == 0)
-					EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
-				else
-					continuation();
-			});
+	    if (res)
+	        EditUriBackendConfig.recommend_path(scope, function () {
+	            if ((scope.Password || '').trim().length == 0)
+	                EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
+	            else
+	                continuation();
+	        });
+	};
+
+	EditUriBackendConfig.validaters['aftp'] = function (scope, continuation) {
+	    var res =
+			EditUriBackendConfig.require_server(scope) &&
+			EditUriBackendConfig.require_field(scope, 'Username', 'username');
+
+	    if (res)
+	        EditUriBackendConfig.recommend_path(scope, function () {
+	            if ((scope.Password || '').trim().length == 0)
+	                EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
+	            else
+	                continuation();
+	        });
 	};
 
 	EditUriBackendConfig.validaters['ssh'] = function(scope, continuation) {
@@ -489,7 +576,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 				});
 			} else {
 				continuation();
-			}	
+			}
 		});
 
 	};
@@ -547,16 +634,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 		if (res) {
 
 			function checkUsernamePrefix() {
-				if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0) {
+				if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
 					DialogService.dialog('Adjust bucket name?', 'The bucket name should start with your username, prepend automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
 						if (ix == 2)
 							scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
 						if (ix == 1 || ix == 2)
+						{
+							scope.s3_bucket_check_name = scope.Server;
+							scope.s3_bucket_check_user = scope.Username;
 							continuation();
+						}
 					});
 				} else {
 					continuation();
-				}	
+				}
 			}
 
 			function checkLowerCase() {

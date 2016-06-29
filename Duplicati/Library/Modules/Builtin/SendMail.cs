@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Mail;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using DnsLib;
@@ -13,6 +11,9 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using MailKit.Net.Smtp;
+using MimeKit;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -306,23 +307,29 @@ namespace Duplicati.Library.Modules.Builtin
                 body = ReplaceTemplate(body, result, false);
                 subject = ReplaceTemplate(subject, result, true);
 
-                var message = new MailMessage();
-                foreach(string s in m_to.Split(new [] { "," }, StringSplitOptions.RemoveEmptyEntries))
-                    message.To.Add(new MailAddress(s.Replace("\"", "")));
+                var message = new MimeMessage();
+                MailboxAddress mailbox;
+                foreach (string s in m_to.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+                    if(MailboxAddress.TryParse(s.Replace("\"", ""), out mailbox))
+                        message.To.Add(mailbox);
 
-                string from = m_from.Trim();
+                MailboxAddress mailboxToFirst = (MailboxAddress) message.To[0];
+                string toMailDomain = mailboxToFirst.Address.Substring(mailboxToFirst.Address.LastIndexOf("@") + 1);
+                                
+                string from = m_from.Trim().Replace("\"", "");
                 if (from.IndexOf('@') < 0)
                 {
                     if (from.EndsWith(">"))
-                        from = from.Insert(from.Length - 1, "@" + message.To[0].Host);
+                        from = from.Insert(from.Length - 1, "@" + toMailDomain);
                     else
-                        from = string.Format("No Reply - Backup report <{0}@{1}>", from, message.To[0].Host);
+                        from = string.Format("No Reply - Backup report <{0}@{1}>", from, toMailDomain);
                 }
-                message.From = new MailAddress(from.Replace("\"", ""));
 
+                if (MailboxAddress.TryParse(from, out mailbox))
+                    message.From.Add(mailbox);
+                
                 message.Subject = subject;
-                message.Body = body;
-                message.BodyEncoding = message.SubjectEncoding = Encoding.UTF8;
+                message.Body = new TextPart("plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
 
                 List<string> servers = null;
                 if (string.IsNullOrEmpty(m_server))
@@ -359,8 +366,8 @@ namespace Duplicati.Library.Modules.Builtin
                         oldStyleList.Add(s);
                         
                     dnslite.setDnsServers(oldStyleList);
-
-                    servers = dnslite.getMXRecords(message.To[0].Host).OfType<MXRecord>().OrderBy(record => record.preference).Select(x => "smtp://" +  x.exchange).Distinct().ToList();
+                    
+                    servers = dnslite.getMXRecords(toMailDomain).OfType<MXRecord>().OrderBy(record => record.preference).Select(x => "smtp://" + x.exchange).Distinct().ToList();
                     if (servers.Count == 0)
                         throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
                 }
@@ -383,19 +390,30 @@ namespace Duplicati.Library.Modules.Builtin
                     lastServer = server;
                     try
                     {
-                        var serverUri = new System.Uri(server);
-                        var useTls = string.Equals(serverUri.Scheme, "smtptls", StringComparison.InvariantCultureIgnoreCase) || string.Equals(serverUri.Scheme, "tls", StringComparison.InvariantCultureIgnoreCase);
-                        var port = serverUri.Port <= 0 ? (useTls ? 587 : 25) : serverUri.Port;
-                        var client = new SmtpClient(serverUri.Host, port);
-                        client.Timeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
-                        if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
-                            client.Credentials = new NetworkCredential(m_username, m_password);
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            try
+                            {
+                                using (var client = new SmtpClient(new MailKit.ProtocolLogger(ms)))
+                                {
+                                    client.Timeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+
+                                    client.Connect(new System.Uri(server));
+
+                                    if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
+                                        client.Authenticate(m_username, m_password);
+
+                                    client.Send(message);
+                                    client.Disconnect(true);
+                                }
+                            }
+                            finally
+                            {
+                                var log = Encoding.UTF8.GetString(ms.GetBuffer());
+                                Logging.Log.WriteMessage(Strings.SendMail.SendMailLog(log), LogMessageType.Profiling);
+                            }
+                        }
                         
-                        //This ensures that you can override settings from an app.config file
-                        if (useTls)
-                            client.EnableSsl = true;
-        
-                        client.Send(message);
                         lastEx = null;
                         Logging.Log.WriteMessage(Strings.SendMail.SendMailSuccess(server), LogMessageType.Information);
                         break;

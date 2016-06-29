@@ -7,9 +7,8 @@
 WC_DMG=wc.dmg
 WC_DIR=wc
 TEMPLATE_DMG=template.dmg
-SOURCE_FILES=Duplicati.app
 OUTPUT=Duplicati.dmg
-UNWANTED_FILES="AlphaVSS.Common.dll AlphaFS.dll AlphaFS.dll.config AlphaVSS.Common.dll.config appindicator-sharp.dll SQLite win-tools alphavss control_dir Duplicati.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
+UNWANTED_FILES="AlphaVSS.Common.dll AlphaFS.dll AlphaFS.dll.config AlphaVSS.Common.dll.config appindicator-sharp.dll SQLite win-tools alphavss control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
 
 SHOW_USAGE_ERROR=
 
@@ -19,87 +18,141 @@ DELETE_DMG=0
 
 if [ -f "$TEMPLATE_DMG_BZ2" ]
 then
-	if [ -f "$TEMPLATE_DMG" ]
-	then
-		rm -rf "$TEMPLATE_DMG"
-	fi
-	
-	bzip2 --decompress --keep --quiet "$TEMPLATE_DMG_BZ2"
-	DELETE_DMG=1
+    if [ -f "$TEMPLATE_DMG" ]
+    then
+        rm -rf "$TEMPLATE_DMG"
+    fi
+    
+    bzip2 --decompress --keep --quiet "$TEMPLATE_DMG_BZ2"
+    DELETE_DMG=1
 fi
 
 if [ ! -f "$TEMPLATE_DMG" ]
 then
-	echo "Template file $TEMPLATE_DMG not found"
-	exit
+    echo "Template file $TEMPLATE_DMG not found"
+    exit
 fi
 
-OUTPUT="Duplicati.dmg"
+if [ ! -f "$1" ]
+then
+    echo "Please supply a packaged zip file as the first input argument"
+    exit
+fi
+
+VERSION_NUMBER=`echo "$1" | awk -F- '{print $2}' | awk -F_ '{print $1}'`
+
 VERSION_NAME="Duplicati"
 if [ -e "$OUTPUT" ]
 then
-	rm -rf "$OUTPUT"
+    rm -rf "$OUTPUT"
 fi
 
 # Remove any existing work copy
 if [ -e "Duplicati.app" ]
 then
-	rm -rf "Duplicati.app"
+    sudo rm -rf "Duplicati.app"
 fi
 
-# Get the current binary distribution
-echo "Not building, using existing build ..."
-#xbuild /property:Configuration=Release /target:Clean ../../Duplicati.sln
-#xbuild /property:Configuration=Release ../../Duplicati.sln
+# Create folder structure
+mkdir "Duplicati.app"
+mkdir "Duplicati.app/Contents"
+mkdir "Duplicati.app/Contents/MacOS"
+mkdir "Duplicati.app/Contents/Resources"
 
-if [ ! -e ../../Duplicati/GUI/Duplicati.GUI.MacTrayIcon/bin/Release/Duplicati.GUI.MacTrayIcon.app ]; then
-	echo "Please build the Duplicati.GUI.MacTrayIcon project in Release mode with Xamarin Studio"
-	exit
-fi
+# Extract the zip into the Resouces folder
+unzip -q "$1" -d "Duplicati.app/Contents/Resources"
 
-mv ../../Duplicati/GUI/Duplicati.GUI.MacTrayIcon/bin/Release/Duplicati.GUI.MacTrayIcon.app Duplicati.app
-cp -R ../../Duplicati/Server/webroot Duplicati.app/Contents/MonoBundle/
+# Install the Info.plist and icon
+SHORT_VERSION_NUMBER=`echo ${VERSION_NUMBER} | awk -F. '{printf $1; printf "."; printf $2; printf "."; print $3}'`
+PLIST=`cat "Info.plist"`
+PLIST=${PLIST/!LONG_VERSION!/${VERSION_NUMBER}}
+PLIST=${PLIST/!SHORT_VERSION!/${SHORT_VERSION_NUMBER}}
+echo ${PLIST} > "Duplicati.app/Contents/Info.plist"
+cp "Duplicati.icns" "Duplicati.app/Contents/Resources"
 
-if [ -e ./oem.js ]; then
-    echo "Installing OEM script"
-    cp ./oem.js Duplicati.app/Contents/MonoBundle/webroot/scripts/
-fi
+for n in "../oem" "../../oem" "../../../oem"
+do
+    if [ -d $n ]; then
+        echo "Installing OEM files"
+        cp -R $n Duplicati.app/Contents/Resources/webroot/
+    fi
+done
 
-if [ -e ../oem.js ]; then
-    echo "Installing OEM script"
-    cp ../oem.js Duplicati.app/Contents/MonoBundle/webroot/scripts/
-fi
+for n in "oem-app-name.txt" "oem-update-url.txt" "oem-update-key.txt" "oem-update-readme.txt" "oem-update-installid.txt"
+do
+    for p in "../$n" "../../$n" "../../../$n"
+    do
+        if [ -f $p ]; then
+            echo "Installing OEM override file"
+            cp $p Duplicati.app/Contents/Resources
+        fi
+    done
+done
 
-if [ -e ./oem.css ]; then
-    echo "Installing OEM stylesheet"
-    cp ./oem.css Duplicati.app/Contents/MonoBundle/webroot/stylesheets/
-fi
 
-if [ -e ../oem.css ]; then
-    echo "Installing OEM stylesheet"
-    cp ../oem.css Duplicati.app/Contents/MonoBundle/webroot/stylesheets/
-fi
+# Install the LauncAgent if anyone needs it
+cp -R "daemon" "Duplicati.app/Contents/Resources"
+
+# Install executables
+cp "run-with-mono.sh" "Duplicati.app/Contents/MacOS/"
+cp "Duplicati-trayicon-launcher" "Duplicati.app/Contents/MacOS/duplicati"
+cp "Duplicati-commandline-launcher" "Duplicati.app/Contents/MacOS/duplicati-cli"
+cp "Duplicati-server-launcher" "Duplicati.app/Contents/MacOS/duplicati-server"
+cp "uninstall.sh" "Duplicati.app/Contents/MacOS/"
+
+chmod +x "Duplicati.app/Contents/MacOS/run-with-mono.sh"
+chmod +x "Duplicati.app/Contents/MacOS/duplicati"
+chmod +x "Duplicati.app/Contents/MacOS/duplicati-cli"
+chmod +x "Duplicati.app/Contents/MacOS/duplicati-server"
+chmod +x "Duplicati.app/Contents/MacOS/uninstall.sh"
 
 # Remove some of the files that we do not like
 for FILE in $UNWANTED_FILES
 do
-	if [ -e "Duplicati.app/$FILE" ]
-	then
-		rm -rf "Duplicati.app/$FILE"
-	fi
+    if [ -e "Duplicati.app/Contents/Resources/${FILE}" ]
+    then
+        rm -rf "Duplicati.app/Contents/Resources/${FILE}"
+    fi
 done
+
+# Set permissions
+sudo chown -R root:admin "Duplicati.app"
+sudo chown -R root:wheel "daemon/com.duplicati.app.launchagent.plist"
+sudo chmod -R 644 "daemon/com.duplicati.app.launchagent.plist"
+sudo chmod +x daemon-scripts/postinstall
+sudo chmod +x daemon-scripts/preinstall
+sudo chmod +x app-scripts/postinstall
+sudo chmod +x app-scripts/preinstall
+
+# Make a PKG file, commented out lines can be uncommented to re-generate the lists
+#pkgbuild --analyze --root "./Duplicati.app" --install-location /Applications/Duplicati.app "InstallerComponent.plist"
+pkgbuild --scripts app-scripts --identifier com.duplicati.app --root "./Duplicati.app" --install-location /Applications/Duplicati.app --component-plist "InstallerComponent.plist" "DuplicatiApp.pkg"
+pkgbuild --scripts daemon-scripts --identifier com.duplicati.app.daemon --root "./daemon" --install-location /Library/LaunchAgents "DuplicatiDaemon.pkg"
+#productbuild --synthesize --package "DuplicatiApp.pkg" "Distribution.xml"
+productbuild --distribution "Distribution.xml" --package-path "." "Duplicati.pkg"
+
+# Alternate to allow fixing the package
+#productbuild --distribution "Distribution.xml" --package-path . "DuplicatiTmp.pkg"
+#pkgutil --expand "DuplicatiTmp.pkg" "DuplicatiIntermediate"
+#pkgutil --flatten "DuplicatiIntermediate" "Duplicati.pkg"
+#rm -rf "DuplicatiTmp.pkg"
+
+rm -rf "DuplicatiApp.pkg"
+rm -rf "DuplicatiDaemon.pkg"
+
+# For later, sign the package as well:
+#productsign --sign "Developer ID Installer: John Doe" "Duplicati.pkg" "Duplicati-signed.pkg"
 
 # Prepare a new dmg
 echo "Building dmg"
 if [ "$DELETE_DMG" -eq "1" ]
 then
-	# If we have just extracted the dmg, use that as working copy
-	WC_DMG=$TEMPLATE_DMG
+    # If we have just extracted the dmg, use that as working copy
+    WC_DMG=$TEMPLATE_DMG
 else
-	# Otherwise we want a copy so we kan keep the original fresh
-	cp "$TEMPLATE_DMG" "$WC_DMG"
+    # Otherwise we want a copy so we kan keep the original fresh
+    cp "$TEMPLATE_DMG" "$WC_DMG"
 fi
-
 
 # Make a mount point and mount the new dmg
 mkdir -p "$WC_DIR"
@@ -112,15 +165,11 @@ diskutil quiet rename wc "$VERSION_NAME"
 # Make the Duplicati.app structure, root folder should exist
 if [ -e "$WC_DIR/Duplicati.app" ]
 then
-	rm -rf "$WC_DIR/Duplicati.app"
+    rm -rf "$WC_DIR/Duplicati.app"
 fi
 
-mv "Duplicati.app" "$WC_DIR/Duplicati.app"
-cp "Duplicati-commandline-launcher" "$WC_DIR/Duplicati.app/Contents/MacOS/duplicati-cli"
-cp "Duplicati-server-launcher" "$WC_DIR/Duplicati.app/Contents/MacOS/duplicati-server"
-chmod +x "$WC_DIR/Duplicati.app/Contents/MacOS/duplicati-cli"
-chmod +x "$WC_DIR/Duplicati.app/Contents/MacOS/duplicati-server"
-
+# Move in the prepared folder
+sudo mv "Duplicati.app" "$WC_DIR/Duplicati.app"
 
 # Unmount the dmg
 hdiutil detach "$WC_DIR" -quiet -force

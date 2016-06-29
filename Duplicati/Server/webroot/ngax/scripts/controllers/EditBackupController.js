@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService) {
+backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService) {
 
 	$scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -151,6 +151,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 	};
 
 	$scope.save = function() {
+
+		if (!EditBackupService.preValidate($scope))
+			return false;
+
 		var result = {
 			Backup: angular.copy($scope.Backup),
 			Schedule: angular.copy($scope.Schedule)
@@ -161,16 +165,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		if (!$scope.ExcludeLargeFiles)
 			delete opts['--skip-files-larger-than'];
 
-		if (($scope.ExcludeAttributes || []).length > 0) {
-			opts['--exclude-files-attributes'] = $scope.ExcludeAttributes.join(',');
-			
-			while (opts['--exclude-files-attributes'].indexOf(',') == 0)
-				opts['--exclude-files-attributes'] = opts['--exclude-files-attributes'].substr(1);
-
-			if (opts['--exclude-files-attributes'] == '')
-				delete opts['--exclude-files-attributes'];
-		}
-
 		var encryptionEnabled = true;
 		if ((opts['encryption-module'] || '').length == 0) {
 			opts['--no-encryption'] = 'true';
@@ -179,6 +173,24 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
 		if (!AppUtils.parse_extra_options(scope.ExtendedOptions, opts))
 			return false;
+
+		var exclattr = ($scope.ExcludeAttributes || []).concat((opts['--exclude-files-attributes'] || '').split(','));
+		var exclmap = { '': true };
+
+		// Remove duplicates
+		for (var i = exclattr.length - 1; i >= 0; i--) {
+			exclattr[i] = (exclattr[i] || '').trim();
+			var cmp = exclattr[i].toLowerCase();
+			if (exclmap[cmp])
+				exclattr.splice(i, 1);
+			else
+				exclmap[cmp] = true;
+		}
+
+		if (exclattr.length == 0)
+			delete opts['--exclude-files-attributes'];
+		else
+			opts['--exclude-files-attributes'] = exclattr.join(',')
 
 		if (($scope.Backup.Name || '').trim().length == 0) {
 			DialogService.dialog('Missing name', 'You must enter a name for the backup');
@@ -360,7 +372,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			checkForGeneratedPassphrase(function() {
 				checkForDisabledEncryption(function() {
 					warnWeakPassphrase(function() {
-						checkForExistingDb(postDb);
+						checkForExistingDb(function() {
+							EditBackupService.postValidate($scope, postDb);
+						});
 					});
 				});
 			});
@@ -405,7 +419,38 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 		$scope.ExcludeLargeFiles = (extopts['--skip-files-larger-than'] || '').trim().length > 0;
 		if ($scope.ExcludeLargeFiles)
 			$scope.Options['--skip-files-larger-than'] = extopts['--skip-files-larger-than'];
-		$scope.ExcludeAttributes = (extopts['--exclude-files-attributes'] || '').split(',');
+
+		var exclattr = (extopts['--exclude-files-attributes'] || '').split(',');
+		var dispattr = [];
+		var dispmap = {};
+
+		for (var i = exclattr.length - 1; i >= 0; i--) {			
+			var cmp = (exclattr[i] || '').trim().toLowerCase();
+			
+			// Remove empty entries
+			if (cmp.length == 0) {
+				exclattr.splice(i, 1);
+				continue;
+			}
+
+			for (var j = scope.fileAttributes.length - 1; j >= 0; j--) {
+				if (scope.fileAttributes[j].value == cmp) {
+					// Remote duplicates
+					if (dispmap[cmp] == null) {
+						dispattr.push(scope.fileAttributes[j].value);
+						dispmap[cmp] = true;
+					}
+					exclattr.splice(i, 1);
+					break;					
+				}
+			}
+		}
+
+		$scope.ExcludeAttributes = dispattr;
+		if (exclattr.length == 0)
+			delete extopts['--exclude-files-attributes'];
+		else
+			extopts['--exclude-files-attributes'] = exclattr.join(',');
 
 		$scope.RepeatPasshrase = $scope.Options['passphrase'];
 
@@ -420,7 +465,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 			$scope.KeepType = 'versions';
 		}
 
-		var delopts = ['--skip-files-larger-than', '--exclude-files-attributes', '--no-encryption']
+		var delopts = ['--skip-files-larger-than', '--no-encryption']
 		for(var n in delopts)
 			delete extopts[delopts[n]];
 

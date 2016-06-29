@@ -3,14 +3,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{81765A64-3661-4E3E-B850-2F6F87A51F74}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.CommandLine</RootNamespace>
     <AssemblyName>Duplicati.CommandLine</AssemblyName>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
     <FileUpgradeFlags>
@@ -45,12 +43,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Help.cs" />
@@ -70,7 +63,7 @@
       <Name>Duplicati.Library.Backend.File</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
-      <Project>{59c8bbc5-6e42-46fb-ab3e-6c183a82459a}</Project>
+      <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">

@@ -1,45 +1,102 @@
-backupApp.directive('parseAdvancedOption', function(AppUtils) {
-	return {
-		restrict: 'A',
-		require: ['ngModel'],
-		link: function(scope, element, attr, ctrl) {
+backupApp.directive('parseAdvancedOption', function (AppUtils) {
+    return {
+        restrict: 'A',
+        require: ['ngModel'],
+        link: function (scope, element, attr, ctrl) {
 
-			var name = null;
-			var sc = scope;
+            var name = null;
+            var sc = scope;
 
-			ctrl[0].$parsers.push(function(txt) {
-				if (name == null)
-					return null;
+            ctrl[0].$parsers.push(function (txt) {
+                if (name == null)
+                    return null;
 
-				return name + '=' + txt;
-			});
+                return name + '=' + txt;
+            });
 
-			ctrl[0].$formatters.push(function(src) {
-				src = src || '';
-				var ix = src.indexOf('=');
-				if (ix >= 0) {
-					name = src.substr(0, ix);
-					val = src.substr(ix + 1);
+            ctrl[0].$formatters.push(function (src) {
+                src = src || '';
+                var ix = src.indexOf('=');
+                if (ix >= 0) {
+                    name = src.substr(0, ix);
+                    val = src.substr(ix + 1);
 
-					if (attr.parseAdvancedOption != '') {
-						var items = sc.$eval(attr.parseAdvancedOption);
-						for(var x in items) {
-							if (items[x].toLowerCase() == val.toLowerCase())
-								return items[x];
-						}
-					}
+                    if (attr.parseAdvancedOption != '') {
+                        var items = sc.$eval(attr.parseAdvancedOption);
+                        for (var x in items) {
+                            if (items[x].toLowerCase() == val.toLowerCase())
+                                return items[x];
+                        }
+                    }
 
-					return val;
+                    return val;
 
-				}
-				else
-				{
-					name = src;
-					return null;
-				}
-			});
-		}
-	};
+                }
+                else {
+                    name = src;
+                    return null;
+                }
+            });
+        }
+    };
+});
+
+backupApp.directive('parseAdvancedOptionFlags', function (AppUtils) {
+    return {
+        restrict: 'A',
+        require: ['ngModel'],
+        link: function (scope, element, attr, ctrl) {
+
+            var name = null;
+            var sc = scope;
+
+            ctrl[0].$parsers.push(function (txt) {
+                if (name == null)
+                    return null;
+
+                return name + '=' + txt;
+            });
+
+            ctrl[0].$formatters.push(function (src) {
+                src = src || '';
+                var ix = src.indexOf('=');
+                if (ix >= 0) {
+                    name = src.substr(0, ix);
+                    val = src.substr(ix + 1);
+
+                    if (attr.parseAdvancedOptionFlags != '') {
+                        var vals = [];
+
+                        if (val.indexOf(',') >= 0) {
+                            vals = val.split(',');
+                        } else {
+                            vals.push(val);
+                        }
+
+                        var items = sc.$eval(attr.parseAdvancedOptionFlags);
+                        var result = [];
+                        for (var i = 0; i < vals.length; i++) {
+                            val = vals[i];
+                            for (var x in items) {
+                                if (items[x].toLowerCase() == val.toLowerCase())
+                                    result.push(items[x]);
+                                else
+                                    result.push(val);
+                            }
+                        }
+
+                        return result;
+                    }
+
+                    return val.indexOf(',') >= 0 ? vals.split(',') : [val];
+                }
+                else {
+                    name = src;
+                    return [];
+                }
+            });
+        }
+    };
 });
 
 backupApp.directive('parseAdvancedOptionBool', function(AppUtils) {
@@ -110,6 +167,9 @@ backupApp.directive('parseAdvancedOptionSizeNumber', function(AppUtils) {
 	return {
 		restrict: 'A',
 		require: ['ngModel'],
+		scope: {
+        	parseAdvancedOptionSizeNumber: '@'
+      	},		
 		link: function(scope, element, attr, ctrl) {
 
 			var name = null;
@@ -135,7 +195,12 @@ backupApp.directive('parseAdvancedOptionSizeNumber', function(AppUtils) {
 					}
 					else
 					{
-						multiplier = parts[1];
+						if (scope.parseAdvancedOptionSizeNumber == 'uppercase')
+							multiplier = parts[1].toUpperCase();
+						else if (scope.parseAdvancedOptionSizeNumber == 'lowercase')
+							multiplier = parts[1].toLowerCase();
+						else
+							multiplier = parts[1];
 						return parseInt(parts[0], 10);
 					}
 				}
@@ -154,6 +219,9 @@ backupApp.directive('parseAdvancedOptionSizeMultiplier', function(AppUtils) {
 	return {
 		restrict: 'A',
 		require: ['ngModel'],
+		scope: {
+        	parseAdvancedOptionSizeMultiplier: '@'
+      	},		
 		link: function(scope, element, attr, ctrl) {
 
 			var name = null;
@@ -180,8 +248,13 @@ backupApp.directive('parseAdvancedOptionSizeMultiplier', function(AppUtils) {
 					else
 					{
 						number = parseInt(parts[0]);
-						return parts[1];
-					}				
+						if (scope.parseAdvancedOptionSizeMultiplier == 'uppercase')
+							return parts[1].toUpperCase();
+						else if (scope.parseAdvancedOptionSizeMultiplier == 'lowercase')
+							return parts[1].toLowerCase();
+						else
+							return parts[1];
+					}
 				}
 				else
 				{

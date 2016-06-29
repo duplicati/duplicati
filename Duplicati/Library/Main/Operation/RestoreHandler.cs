@@ -321,7 +321,7 @@ namespace Duplicati.Library.Main.Operation
                             m_systemIO.DirectoryCreate(folderpath);
                         }
 
-                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions);
+						ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.Dryrun);
                     }
                     catch (Exception ex)
                     {
@@ -508,7 +508,7 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions)
+		private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool dryrun)
         {
             using(var tr = new System.IO.StreamReader(stream))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -518,12 +518,19 @@ namespace Duplicati.Library.Main.Operation
                 long t;
                 System.IO.FileAttributes fa;
 
+				// If this is dry-run, we stop after having deserialized the metadata
+				if (dryrun)
+					return;
+
                 var isDirTarget = path.EndsWith(DIRSEP);
                 var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
                 // Make the symlink first, otherwise we cannot apply metadata to it
                 if (metadata.TryGetValue("CoreSymlinkTarget", out k))
                     m_systemIO.CreateSymlink(targetpath, k, isDirTarget);
+				// If the target is a folder, make sure we create it first
+				else if (isDirTarget && !m_systemIO.DirectoryExists(targetpath))
+					m_systemIO.DirectoryCreate(targetpath);
 
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
                 {

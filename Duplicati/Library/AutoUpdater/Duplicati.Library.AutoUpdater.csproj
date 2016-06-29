@@ -12,8 +12,6 @@
     <StartupObject>Duplicati.Library.AutoUpdater.Program</StartupObject>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -38,7 +36,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -64,6 +62,10 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj">
+      <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
+      <Name>Duplicati.License</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="AutoUpdateAppName.txt" />
@@ -71,8 +73,10 @@
     <EmbeddedResource Include="AutoUpdateURL.txt" />
     <EmbeddedResource Include="AutoUpdateFolderReadme.txt" />
     <EmbeddedResource Include="AutoUpdateInstallIDTemplate.txt" />
+    <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

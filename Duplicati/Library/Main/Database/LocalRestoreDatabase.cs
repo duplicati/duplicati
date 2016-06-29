@@ -20,8 +20,9 @@ namespace Duplicati.Library.Main.Database
 		public DateTime RestoreTime { get { return m_restoreTime; } } 
 
         public LocalRestoreDatabase(string path)
-            : this(new LocalDatabase(path, "Restore"))
+            : this(new LocalDatabase(path, "Restore", false))
         {
+            ShouldCloseConnection = true;
         }
 
         public LocalRestoreDatabase(LocalDatabase dbparent)
@@ -1112,6 +1113,11 @@ namespace Duplicati.Library.Main.Database
                     catch { }
                     finally { m_updateAsRestoredCommand = null; }
 
+                if (m_updateFileAsDataVerifiedCommand != null)
+                    try { m_updateFileAsDataVerifiedCommand.Dispose(); }
+                    catch { }
+                    finally { m_updateFileAsDataVerifiedCommand = null; }
+
                 if (m_statUpdateCommand != null)
                     try { m_statUpdateCommand.Dispose(); }
                     catch { }
@@ -1126,8 +1132,8 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            base.Dispose();
             DropRestoreTable();
+            base.Dispose();
         }
 
         public IEnumerable<string> GetTargetFolders()

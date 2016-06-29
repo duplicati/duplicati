@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Operation
             if (System.IO.File.Exists(path))
                 throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
 
-            using(var db = new LocalDatabase(path, "Recreate"))
+            using(var db = new LocalDatabase(path, "Recreate", true))
             {
                 m_result.SetDatabase(db);
                 DoRun(db, false, filter, filelistfilter, blockprocessor);
@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.RepairOnlyPaths)
                 throw new Exception(string.Format("Can only update with paths, try setting {0}", "--repair-only-paths"));
             
-            using(var db = new LocalDatabase(m_options.Dbpath, "Recreate"))
+            using(var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
                 m_result.SetDatabase(db);
 
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main.Operation
                     for(var i = 0; i < 3; i++)
                     {
                         // Grab the list matching the pass type
-                        var lst = restoredb.GetMissingBlockListVolumes(i).ToList();
+						var lst = restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize).ToList();
                         if (lst.Count > 0)
                         {
                             switch (i)

@@ -111,7 +111,7 @@ namespace Duplicati.Library.Backend
 
         private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (System.Web.HttpUtility.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
 
             req.KeepAlive = false;
             req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -151,17 +151,18 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                System.Net.HttpWebRequest req = CreateRequest("", "t=json");
+                var req = CreateRequest("", "t=json");
                 req.Method = System.Net.WebRequestMethods.Http.Get;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                var areq = new Utility.AsyncHttpRequest(req);
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    using (var sr = new System.IO.StreamReader(areq.GetResponseStream()))
+					using (var rs = areq.GetResponseStream())
+                    using (var sr = new System.IO.StreamReader(rs))
                     using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
                     {
                         var jsr  =new Newtonsoft.Json.JsonSerializer();
@@ -303,17 +304,17 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename, "");
+            var req = CreateRequest(remotename, "");
             req.Method = System.Net.WebRequestMethods.Http.Get;
 
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            var areq = new Utility.AsyncHttpRequest(req);
+            using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                     throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                using (System.IO.Stream s = areq.GetResponseStream())
+				using (var s = areq.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
             }
         }

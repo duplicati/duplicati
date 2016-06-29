@@ -245,8 +245,19 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         private static string MapToRestorePath(string path, string prefixpath, string restorepath)
         {
-            if (string.IsNullOrWhiteSpace(restorepath) || string.IsNullOrWhiteSpace(prefixpath))
+            if (string.IsNullOrWhiteSpace(restorepath))
                 return path;
+
+            if (string.IsNullOrWhiteSpace(prefixpath))
+            {
+                //Special case, restoring to new folder, but files are from different drives
+                // So we use the format <restore path> / <drive letter> / <source path>
+                // To avoid generating paths with a colon
+                if (path.Substring(1, 1) == ":")
+                    prefixpath = path.Substring(0, 1) + path.Substring(2);
+
+                return Path.Combine(restorepath, prefixpath);
+            }
 
             return Path.Combine(restorepath, path.Substring(prefixpath.Length));
         }

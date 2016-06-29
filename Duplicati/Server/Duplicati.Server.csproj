@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -13,7 +11,7 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -47,19 +45,15 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="UnixSupport">
       <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="HttpServer">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +124,7 @@
     <EmbeddedResource Include="Database\Database schema\1. Add Notifications.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
@@ -139,6 +134,10 @@
     <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
       <Name>Duplicati.CommandLine</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
+      <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
+      <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
@@ -156,12 +155,16 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+      <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
+      <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
-      <Project>{59c8bbc5-6e42-46fb-ab3e-6c183a82459a}</Project>
+      <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
@@ -211,6 +214,10 @@
     <ProjectReference Include="..\License\Duplicati.License.csproj">
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WindowsService\WindowsService.csproj">
+      <Project>{bef7af9a-3978-4f90-8592-198bf6ea6c6b}</Project>
+      <Name>WindowsService</Name>
     </ProjectReference>
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
       <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>

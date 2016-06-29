@@ -2,9 +2,9 @@
 source /root/.profile  # Get Environment Variables from Root Profile
 
 # Package Varables
-PACKAGE_NAME_SIMPLE="@package_name_simple@" # "$(echo "$SYNOPKG_PKGNAME" | awk '{print tolower($0)}' | sed -e 's/ /_/g')"
-PACKAGE_DIR="@package_dir@" # "$SYNOPKG_PKGDEST"
-PACKAGE_UPGRADE_FLAG="@package_upgrade_flag@"
+PACKAGE_NAME_SIMPLE="$(echo "$SYNOPKG_PKGNAME" | awk '{print tolower($0)}' | sed -e 's/ /_/g')"
+PACKAGE_DIR="${SYNOPKG_PKGDEST}"
+PACKAGE_UPGRADE_FLAG="/tmp/${PACKAGE_NAME_SIMPLE}.upgrade"
 
 # Start & Stop Varables
 PID_FILE="/var/run/${PACKAGE_NAME_SIMPLE}.pid"
@@ -14,7 +14,7 @@ DaemonStart() {
 	if [ $? == 0 ]; then
 		echo "Starting ${PACKAGE_NAME_SIMPLE}."
 				
-		mono /volume1/@appstore/Duplicati2/Duplicati.Server.exe &
+		mono "${PACKAGE_DIR}/Duplicati.Server.exe" &
 		echo $! > "$PID_FILE"		
 	else
 		echo "${PACKAGE_NAME_SIMPLE} already running."

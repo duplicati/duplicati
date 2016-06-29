@@ -39,6 +39,24 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK();
         }
 
+        private void UploadFile(string uri, RequestInfo info)
+        {
+            var data = info.Request.QueryString["data"].Value;
+            var remotename = info.Request.QueryString["filename"].Value;
+
+            using(var ms = new System.IO.MemoryStream())   
+            using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+            {
+                using(var tf = new Duplicati.Library.Utility.TempFile())
+                {
+                    System.IO.File.WriteAllText(tf, data);
+                    b.Put(remotename, tf);
+                }
+            }
+
+            info.OutputOK();
+        }
+
         private void ListFolder(string uri, RequestInfo info)
         {
             using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
@@ -55,7 +73,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             try
             {
                 var uri = new Library.Utility.Uri(url);
-                var qp = uri.QueryParameters;
+                var qp = uri.QueryParameters;   
 
                 var opts = new Dictionary<string, string>();
                 foreach(var k in qp.Keys.Cast<string>())
@@ -138,6 +156,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     return;
                 case "create":
                     CreateFolder(url, info);
+                    return;
+                case "put":
+                    UploadFile(url, info);
                     return;
                 case "test":
                     TestConnection(url, info);
