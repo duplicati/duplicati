@@ -518,6 +518,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	                continuation();
 	        });
 	};
+	EditUriBackendConfig.validaters['ftps'] = EditUriBackendConfig.validaters['ftp'];
 
 	EditUriBackendConfig.validaters['aftp'] = function (scope, continuation) {
 	    var res =
@@ -543,8 +544,10 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	};
 
 	EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['ssh'];
+	EditUriBackendConfig.validaters['webdavs'] = EditUriBackendConfig.validaters['webdav'];
 	EditUriBackendConfig.validaters['cloudfiles'] = EditUriBackendConfig.validaters['ssh'];
 	EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
+	EditUriBackendConfig.validaters['tahoes'] = EditUriBackendConfig.validaters['tahoe'];
 
 
 	EditUriBackendConfig.validaters['onedrive'] = function(scope, continuation) {
@@ -667,6 +670,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 			checkLowerCase();
 		}
 	};
+	EditUriBackendConfig.validaters['s3s'] = EditUriBackendConfig.validaters['s3'];
 
 	EditUriBackendConfig.validaters['b2'] = function(scope, continuation) {
 		var res =
