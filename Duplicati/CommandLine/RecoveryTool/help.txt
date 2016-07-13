@@ -88,6 +88,10 @@ Duplicati.RecoveryTool.exe recompress <targetcompression> <remoteurl> <localfold
 
 If --reupload is supplied it is advisable to specify --reencrypt for perfect security.
 
+Warning: Before recompress delete local database and after recompress recreate local database before executing any operation on backup. This allows Duplicati to read new file names from remote storage.
+
+
+
 Supported Options
 -----------------
 The backend modules support all their normal options.
