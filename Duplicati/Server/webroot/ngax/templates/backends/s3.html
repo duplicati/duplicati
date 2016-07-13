@@ -1,6 +1,6 @@
-<div class="input checkbox multple">
-    <input type="checkbox" id="s3_ssl" ng-model="$parent.UseSSL" />
+<div ng-show="SupportsSSL" class="input checkbox">
     <label for="s3_ssl">Use SSL</label>
+    <input type="checkbox" style="width: 15px; margin-right: 65%;" name="s3_ssl" id="s3_ssl" ng-model="$parent.UseSSL" />
 </div >
 
 <div class="input select">
