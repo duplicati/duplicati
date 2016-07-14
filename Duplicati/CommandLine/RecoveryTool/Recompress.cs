@@ -86,6 +86,9 @@ namespace Duplicati.CommandLine.RecoveryTool
                     return 100;
                 }
 
+                bool reencrypt = Library.Utility.Utility.ParseBoolOption(options, "reencrypt");
+                bool reupload = Library.Utility.Utility.ParseBoolOption(options, "reupload");
+
                 foreach (var entry in remotefiles)
                 {
                     try
@@ -173,9 +176,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                             File.Delete(local);
                         }
-
-                        bool reencrypt = Library.Utility.Utility.ParseBoolOption(options, "reencrypt");
-
+                        
                         if (reencrypt && entry.EncryptionModule != null)
                         {
                             Console.Write(" reencrypting ...");
@@ -186,9 +187,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 localNew = localNew + "." + m.FilenameExtension;
                             }
                         }
-
-                        bool reupload = Library.Utility.Utility.ParseBoolOption(options, "reupload");
-
+                        
                         if (reupload)
                         {
                             backend.Put((new FileInfo(localNew)).Name, localNew);
@@ -206,6 +205,17 @@ namespace Duplicati.CommandLine.RecoveryTool
                     }
 
                     i++;
+                }
+
+                if (reupload)
+                {
+                    var remoteverificationfileexist = rawlist.Any(x => x.Name == (m_Options.Prefix + "-verification.json"));
+
+                    if (remoteverificationfileexist)
+                    {
+                        Console.WriteLine("Found verification file {0} - deleting", m_Options.Prefix + "-verification.json");
+                        backend.Delete(m_Options.Prefix + "-verification.json");
+                    }
                 }
 
                 if (needspass > 0 && downloaded == 0)
