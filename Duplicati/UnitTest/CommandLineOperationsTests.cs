@@ -49,7 +49,8 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void RunCommands()
+		[Category("BulkData")]
+		public void RunCommands()
         {
             if (Directory.Exists(DATAFOLDER))
                 PrepareSourceData();
@@ -57,7 +58,8 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void RunCommandsWithoutSize()
+		[Category("BulkData")]
+		public void RunCommandsWithoutSize()
         {
             if (Directory.Exists(DATAFOLDER))
                 PrepareSourceData();

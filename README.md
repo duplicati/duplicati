@@ -27,7 +27,7 @@ Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 
 Download
 ========
 
-The latest version of Duplicati is an experiemental version for the Duplicati 2.0 release. 
+The latest version of Duplicati is an experimental version for the Duplicati 2.0 release. 
 
 [Click here to download the latest Duplicati 2.0 experimental release.](http://updates.duplicati.com/experimental/latest.zip)
 

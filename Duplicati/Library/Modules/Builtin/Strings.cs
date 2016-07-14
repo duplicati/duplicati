@@ -83,13 +83,14 @@ Mail Sender <sender@example.com>"); } }
         public static string OptionServerLong { get { return LC.L(@"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, seperated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
 If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
 
-To enable TLS, use the format smtptls://example.com or tls://example.com. If no port is specified, port 25 is used for non-ssl, and 587 for SSL connections. Note that only TLS/STARTTLS is supported and not SMTP over SSL."); } }
+To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 587 for SSL connections."); } }
         public static string OptionServerShort { get { return LC.L(@"SMTP Url"); } }
         public static string OptionSubjectLong(string optionname) { return LC.L(@"This setting supplies the email subject. Values are replaced as described in the description for --{0}.", optionname); }
         public static string OptionSubjectShort { get { return LC.L(@"The email subject"); } }
         public static string OptionUsernameLong { get { return LC.L(@"The username used to authenticate with the SMTP server if required."); } }
         public static string OptionUsernameShort { get { return LC.L(@"SMTP Username"); } }
         public static string SendMailFailedError(string message) { return LC.L(@"Failed to send email: {0}", message); }
+        public static string SendMailLog(string message) { return LC.L(@"Whole SMTP communication: {0}", message); }
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
     }

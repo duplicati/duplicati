@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.Database
 {
@@ -40,6 +41,7 @@ namespace Duplicati.Server.Database
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
+            public const string SERVER_SSL_CERTIFICATE = "server-ssl-certificate";
             public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
             public const string UPDATE_CHANNEL = "update-channel";
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
@@ -401,6 +403,41 @@ namespace Duplicati.Server.Database
             {
                 lock(m_connection.m_lock)
                     m_values[CONST.SERVER_LISTEN_INTERFACE] = value;
+                SaveSettings();
+            }
+        }
+
+        public X509Certificate2 ServerSSLCertificate
+        {
+            get
+            {
+                try
+                {
+                    if(String.IsNullOrEmpty(m_values[CONST.SERVER_SSL_CERTIFICATE]))
+                        return null;
+
+                    var cert = new X509Certificate2();
+                    
+                    cert.Import(Convert.FromBase64String(m_values[CONST.SERVER_SSL_CERTIFICATE]));
+                    return cert;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            set
+            {
+                if (value == null)
+                {
+                    lock (m_connection.m_lock)
+                        m_values[CONST.SERVER_SSL_CERTIFICATE] = String.Empty;
+                }
+                else
+                { 
+                    lock (m_connection.m_lock)
+                        m_values[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
+                }
                 SaveSettings();
             }
         }
