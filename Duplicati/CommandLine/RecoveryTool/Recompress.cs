@@ -137,9 +137,13 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         Console.Write(" - downloading ({0})...", Library.Utility.Utility.FormatSizeString(entry.File.Size));
 
+                        FileInfo originFileInfo;
+                        FileInfo destinationFileInfo;
+
                         using (var tf = new Library.Utility.TempFile())
                         {
                             backend.Get(entry.File.Name, tf);
+                            originFileInfo = new FileInfo(tf);
                             downloaded++;
 
                             if (entry.EncryptionModule != null)
@@ -157,6 +161,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 File.Copy(tf, local);
 
                             File.Delete(tf);
+                            destinationFileInfo = new FileInfo(local);
+                            destinationFileInfo.LastWriteTime = originFileInfo.LastWriteTime;
                         }
 
                         if (entry.CompressionModule != null)
@@ -175,6 +181,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                             }
 
                             File.Delete(local);
+                            destinationFileInfo = new FileInfo(localNew);
+                            destinationFileInfo.LastWriteTime = originFileInfo.LastWriteTime;
                         }
                         
                         if (reencrypt && entry.EncryptionModule != null)
@@ -186,6 +194,9 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 File.Delete(localNew);
                                 localNew = localNew + "." + m.FilenameExtension;
                             }
+
+                            destinationFileInfo = new FileInfo(localNew);
+                            destinationFileInfo.LastWriteTime = originFileInfo.LastWriteTime;
                         }
                         
                         if (reupload)
