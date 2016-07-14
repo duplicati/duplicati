@@ -137,13 +137,13 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         Console.Write(" - downloading ({0})...", Library.Utility.Utility.FormatSizeString(entry.File.Size));
 
-                        FileInfo originFileInfo;
+                        DateTime originLastWriteTime;
                         FileInfo destinationFileInfo;
 
                         using (var tf = new Library.Utility.TempFile())
                         {
                             backend.Get(entry.File.Name, tf);
-                            originFileInfo = new FileInfo(tf);
+                            originLastWriteTime = new FileInfo(tf).LastWriteTime;
                             downloaded++;
 
                             if (entry.EncryptionModule != null)
@@ -162,7 +162,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                             File.Delete(tf);
                             destinationFileInfo = new FileInfo(local);
-                            destinationFileInfo.LastWriteTime = originFileInfo.LastWriteTime;
+                            destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
 
                         if (entry.CompressionModule != null)
@@ -170,19 +170,30 @@ namespace Duplicati.CommandLine.RecoveryTool
                             Console.Write(" recompressing ...");
 
                             using (var cmOld = Library.DynamicLoader.CompressionLoader.GetModule(entry.CompressionModule, local, options))
-                            {
-                                using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localNew, options))
+                            using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localNew, options))
+                                foreach (var cmfile in cmOld.ListFiles(""))
                                 {
-                                    foreach (var cmfile in cmOld.ListFiles(""))
-                                        using (var sourceStream = cmOld.OpenRead(cmfile))
-                                        using (var cs = cmNew.CreateFile(cmfile, Duplicati.Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
+                                    string cmfileNew = cmfile;
+
+                                    if (entry.FileType == RemoteVolumeType.Index)
+                                    {
+                                        var cmFileVolume = Library.Main.Volumes.VolumeBase.ParseFilename(cmfileNew);
+                                        if (cmFileVolume != null)
+                                        {
+                                            cmfileNew = cmfileNew.Replace("." + cmFileVolume.CompressionModule, "." + target_compr_module);
+                                            if(!reencrypt)
+                                                cmfileNew = cmfileNew.Replace("." + cmFileVolume.EncryptionModule, "");
+                                        }
+                                    }
+
+                                    using (var sourceStream = cmOld.OpenRead(cmfile))
+                                        using (var cs = cmNew.CreateFile(cmfileNew, Duplicati.Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
                                             Library.Utility.Utility.CopyStream(sourceStream, cs);
                                 }
-                            }
-
+                              
                             File.Delete(local);
                             destinationFileInfo = new FileInfo(localNew);
-                            destinationFileInfo.LastWriteTime = originFileInfo.LastWriteTime;
+                            destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
                         
                         if (reencrypt && entry.EncryptionModule != null)
@@ -196,7 +207,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                             }
 
                             destinationFileInfo = new FileInfo(localNew);
-                            destinationFileInfo.LastWriteTime = originFileInfo.LastWriteTime;
+                            destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
                         
                         if (reupload)
