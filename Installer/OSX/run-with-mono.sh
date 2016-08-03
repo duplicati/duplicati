@@ -33,13 +33,19 @@ if [ "z${MONO_BIN}" == "z" ]; then
 	MONO_BIN=`which mono`
 
 	# Check if there was no mono found
-	if [ "z$MONO_BIN" == "z" ]
-	then
+	if [ "z$MONO_BIN" == "z" ]; then
 		# Check if there is a HomeBrew install of mono instead
-		MONO_VERSION="$(/usr/local/bin/mono --version | grep 'Mono JIT compiler version ' |  cut -f5 -d\ )"
-		if [ -f "/usr/local/bin/mono" ]
-		then
+		if [ -f "/usr/local/bin/mono" ]; then
 			MONO_BIN="/usr/local/bin/mono"
+
+		# Check if there is a system version of mono instead
+		elif [ -f "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono" ]; then
+			MONO_BIN="/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono"
+
+		# Set up some default that will likely fail
+		else
+			MONO_BIN="mono"
+
 		fi
 	fi
 fi
