@@ -82,8 +82,17 @@ then
 	exit $EXIT_CODE
 fi
 
-LV_SNAPSHOT=`lvdisplay "$LV_GROUP/$NAME" | grep "LV (Name|Path)" | awk '{ print $NF}'`
-if [ "$?" -ne 0 ]
+#
+# Get the path to the volume snapshot
+# The cases are here to support various versions of lvdisplay
+#
+LV_SNAPSHOT=`lvdisplay "$LV_GROUP/$NAME" | grep "LV Path" | awk '{ print $NF}'`
+if [ "$?" -ne 0 ] || [ -z "$LV_SNAPSHOT" ] || [ ! -e "$LV_SNAPSHOT" ]
+then
+	LV_SNAPSHOT=`lvdisplay "$LV_GROUP/$NAME" | grep "LV Name" | awk '{ print $NF}'`
+fi
+
+if [ "$?" -ne 0 ] || [ -z "$LV_SNAPSHOT" ] || [ ! -e "$LV_SNAPSHOT" ]
 then
 	EXIT_CODE=$?
 	echo "Error: Unable to determine LV path for volume $LV_GROUP/$NAME"
