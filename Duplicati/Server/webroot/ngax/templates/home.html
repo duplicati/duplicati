@@ -56,8 +56,9 @@
 
                     <dt>Advanced:</dt>
                     <dd>
-                        <p ng-click="doLocalDb(item.Backup.ID)">Manage local database ...</p>
-                        <p ng-click="doVerifyRemote(item.Backup.ID)">Verify backup files</p>
+                        <p ng-click="doLocalDb(item.Backup.ID)">Manage database ...</p>
+                        <p ng-click="doVerifyRemote(item.Backup.ID)">Verify files</p>
+                        <p ng-click="doCompact(item.Backup.ID)">Compact now</p>
                     </dd>
 
                     <dt>Reporting:</dt>
