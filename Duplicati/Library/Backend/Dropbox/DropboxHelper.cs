@@ -3,67 +3,50 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Duplicati.Library.Backend
 {
-    public class DropboxHelper : JSONWebHelper
+	public class DropboxHelper : OAuthHelper
     {
         private const string API_URL = "https://api.dropboxapi.com/2";
         private const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
-        private const int DROPBOX_MAX_CHUNK_UPLOAD = 10*1024 * 1024; // 1 MB max upload
-        private String m_accessToken;
+        private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 1 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
 
-        public DropboxHelper(String accessToken)
+        public DropboxHelper(string accessToken)
+			: base(accessToken, "dropbox")
         {
-            m_accessToken = accessToken;
         }
-
-        public override HttpWebRequest CreateRequest(string url, string method = null)
-        {
-            HttpWebRequest req = base.CreateRequest(url, method);
-            req.Headers["Authorization"] = String.Format("Bearer {0}", m_accessToken);
-            return req;
-        }
-
 
         public ListFolderResult ListFiles(string path)
         {
-            PathArg pa = new PathArg();
+            var pa = new PathArg();
             pa.path = path;
 
             var url = string.Format("{0}/files/list_folder", API_URL);
 
             try
             {
-                ListFolderResult lfr = PostAndGetJSONData<ListFolderResult>(url, pa);
-                return lfr;
+                return PostAndGetJSONData<ListFolderResult>(url, pa);
             }
             catch (Exception ex)
             {
-
                 handleDropboxException(ex);
                 throw;
             }
-
-
         }
-        public ListFolderResult ListFilesContinue(String cursor)
-        {
-            ListFolderContinueArg lfca = new ListFolderContinueArg();
-            lfca.cursor = cursor;
 
+        public ListFolderResult ListFilesContinue(string cursor)
+        {
+			var lfca = new ListFolderContinueArg() { cursor = cursor };
             var url = string.Format("{0}/files/list_folder/continue", API_URL);
 
             try
             {
-                ListFolderResult lfr = PostAndGetJSONData<ListFolderResult>(url, lfca);
-                return lfr;
+                return PostAndGetJSONData<ListFolderResult>(url, lfca);
             }
             catch (Exception ex)
             {
@@ -72,16 +55,14 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public FolderMetadata CreateFolder(String path)
+        public FolderMetadata CreateFolder(string path)
         {
-            PathArg pa = new PathArg();
-            pa.path = path;
-
+			var pa = new PathArg() { path = path };
             var url = string.Format("{0}/files/create_folder", API_URL);
+
             try
             {
-                FolderMetadata fm = PostAndGetJSONData<FolderMetadata>(url, pa);
-                return fm;
+				return PostAndGetJSONData<FolderMetadata>(url, pa);
             }
             catch (Exception ex)
             {
@@ -92,12 +73,11 @@ namespace Duplicati.Library.Backend
 
         public FileMetaData UploadFile(String path, Stream stream)
         {
-
             // start a session
-            UploadSessionStartArg ussa = new UploadSessionStartArg();
+            var ussa = new UploadSessionStartArg();
 
             var url = string.Format("{0}/files/upload_session/start", CONTENT_API_URL);
-            HttpWebRequest req = CreateRequest(url, "POST");
+            var req = CreateRequest(url, "POST");
             req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(ussa);
             req.ContentType = "application/octet-stream";
             req.ContentLength = Math.Min(DROPBOX_MAX_CHUNK_UPLOAD,stream.Length);
@@ -107,40 +87,34 @@ namespace Duplicati.Library.Backend
 
             byte[] buffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
-            UInt64 globalBytesRead = 0;
+            ulong globalBytesRead = 0;
             using (var rs = areq.GetRequestStream())
             {
                 int bytesRead = 0;
                 do
                 {
                     bytesRead = stream.Read(buffer, 0, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
-                    globalBytesRead += (UInt64)bytesRead;
+                    globalBytesRead += (ulong)bytesRead;
                     rs.Write(buffer, 0, bytesRead);
 
                 }
-                while (bytesRead > 0 && globalBytesRead < DROPBOX_MAX_CHUNK_UPLOAD);
-                
+                while (bytesRead > 0 && globalBytesRead < DROPBOX_MAX_CHUNK_UPLOAD);                
             }
 
-            //Console.WriteLine(((HttpWebResponse)areq.GetResponse()).StatusCode);
-
-            UploadSessionStartResult ussr = ReadJSONResponse<UploadSessionStartResult>(areq); // pun intended
+            var ussr = ReadJSONResponse<UploadSessionStartResult>(areq); // pun intended
 
             // keep appending until finished
             // 1) read into buffer
-            while (globalBytesRead < (UInt64)stream.Length)
+            while (globalBytesRead < (ulong)stream.Length)
             {
-
-
-                UInt64 remaining = (UInt64)stream.Length - globalBytesRead;
+                var remaining = (ulong)stream.Length - globalBytesRead;
 
                 // start an append request
-                UploadSessionAppendArg usaa = new UploadSessionAppendArg();
+                var usaa = new UploadSessionAppendArg();
                 usaa.cursor.session_id = ussr.session_id;
                 usaa.cursor.offset = globalBytesRead;
                 usaa.close = remaining < DROPBOX_MAX_CHUNK_UPLOAD;
                 url = string.Format("{0}/files/upload_session/append_v2", CONTENT_API_URL);
-
 
                 req = CreateRequest(url, "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usaa);
@@ -150,33 +124,32 @@ namespace Duplicati.Library.Backend
 
                 areq = new AsyncHttpRequest(req);
 
-                UInt64 bytesReadInRequest = 0;
+                ulong bytesReadInRequest = 0;
                 using (var rs = areq.GetRequestStream())
                 {
                     int bytesRead = 0;
                     do
                     {
                         bytesRead = stream.Read(buffer, 0, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
-                        bytesReadInRequest += (UInt64)bytesRead;
-                        globalBytesRead += (UInt64)bytesRead;
+                        bytesReadInRequest += (ulong)bytesRead;
+                        globalBytesRead += (ulong)bytesRead;
                         rs.Write(buffer, 0, bytesRead);
 
                     }
                     while (bytesRead > 0 && bytesReadInRequest < Math.Min(remaining, DROPBOX_MAX_CHUNK_UPLOAD));
                 }
-                HttpWebResponse response = GetResponse(areq);
-                StreamReader sr = new StreamReader(response.GetResponseStream());
-                sr.ReadToEnd();
 
-
+				using (var response = GetResponse(areq))
+				using (var sr = new StreamReader(response.GetResponseStream()))
+                	sr.ReadToEnd();
             }
 
             // finish session and commit
             try
             {
-                UploadSessionFinishArg usfa = new UploadSessionFinishArg();
+				var usfa = new UploadSessionFinishArg();
                 usfa.cursor.session_id = ussr.session_id;
-                usfa.cursor.offset = (UInt64)globalBytesRead;
+                usfa.cursor.offset = (ulong)globalBytesRead;
                 usfa.commit.path = path;
 
                 url = string.Format("{0}/files/upload_session/finish", CONTENT_API_URL);
@@ -185,63 +158,43 @@ namespace Duplicati.Library.Backend
                 req.ContentType = "application/octet-stream";
                 req.Timeout = 200000;
 
-                areq = new AsyncHttpRequest(req);
-
-                //using (var rs = areq.GetRequestStream())
-                //{
-                //    int bytesRead = 0;
-                //    do
-                //    {
-                //        bytesRead = stream.Read(buffer, 0, (int) Utility.Utility.DEFAULT_BUFFER_SIZE);
-                //        globalBytesRead += (UInt64)bytesRead;
-                //        rs.Write(buffer, 0, bytesRead);
-
-                //    } while (bytesRead > 0);
-                //}
-                FileMetaData fmd = ReadJSONResponse<FileMetaData>(areq);
-                return fmd;
+                return ReadJSONResponse<FileMetaData>(req);
             }
             catch (Exception ex)
             {
                 handleDropboxException(ex);
                 throw;
             }
-
-
-
         }
+
         public void DownloadFile(string path, Stream fs)
         {
             try
             {
-                PathArg pa = new PathArg();
-                pa.path = path;
-
+				var pa = new PathArg() { path = path };
                 var url = string.Format("{0}/files/download", CONTENT_API_URL);
                 var req = CreateRequest(url, "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
-                
-                HttpWebResponse response = GetResponse(req);
-                Utility.Utility.CopyStream(response.GetResponseStream(), fs);
+
+				using (var response = GetResponse(req))
+					Utility.Utility.CopyStream(response.GetResponseStream(), fs);
             }
             catch (Exception ex)
             {
                 handleDropboxException(ex);
                 throw;
             }
-
         }
 
         public void Delete(string path)
         {
             try
             {
-                PathArg pa = new PathArg();
-                pa.path = path;
-
+				var pa = new PathArg() { path = path };
                 var url = string.Format("{0}/files/delete", API_URL);
-                HttpWebResponse response = GetResponse(url, pa);
-                new StreamReader(response.GetResponseStream()).ReadToEnd();
+				using (var response = GetResponse(url, pa))
+				using(var sr = new StreamReader(response.GetResponseStream()))
+					sr.ReadToEnd();
             }
             catch (Exception ex)
             {
@@ -250,22 +203,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-
         private static void handleDropboxException(Exception ex)
         {
             if (ex is WebException)
-            {
-                DropboxException de = new DropboxException();
-                string errorBody = new StreamReader(((WebException)ex).Response.GetResponseStream()).ReadToEnd();
-                de.errorJSON = JObject.Parse(errorBody);
-                throw de;
-            }
+				using (var sr = new StreamReader(((WebException)ex).Response.GetResponseStream()))
+					throw new DropboxException() { errorJSON = JObject.Parse(sr.ReadToEnd()) };
         }
-
-        
     }
-
-
 
     public class DropboxException : Exception
     {
@@ -313,12 +257,11 @@ namespace Duplicati.Library.Backend
     public class UploadSessionCursor
     {
         public string session_id { get; set; }
-        public UInt64 offset { get; set; }
+        public ulong offset { get; set; }
     }
 
     public class CommitInfo
     {
-
         public CommitInfo()
         {
             mode = "overwrite";
@@ -353,7 +296,7 @@ namespace Duplicati.Library.Backend
 
     public class MetaData
     {
-        [Newtonsoft.Json.JsonProperty(".tag")]
+        [JsonProperty(".tag")]
         public string tag { get; set; }
         public string name { get; set; }
         public string path_lower { get; set; }
@@ -362,15 +305,14 @@ namespace Duplicati.Library.Backend
 
         public string server_modified { get; set; }
         public string rev { get; set; }
-        public UInt64 size { get; set; }
+        public ulong size { get; set; }
 
         public bool IsFile { get { return tag == "file"; } }
 
     }
 
-    public class FileMetaData : MetaData
-    {
+	public class FileMetaData : MetaData
+	{
 
-    }
-
+	}
 }
