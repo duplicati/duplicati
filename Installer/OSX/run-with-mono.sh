@@ -28,17 +28,22 @@ VERSION_TITLE="Cannot launch $APP_NAME"
 VERSION_MSG="$APP_NAME requires the Mono Framework version $REQUIRED_MAJOR.$REQUIRED_MINOR or later."
 DOWNLOAD_URL="http://www.go-mono.com/mono-downloads/download.html"
 
-# Try system default mono if an override was not supplied
+# Try to find system default Mono if an override was not supplied
 if [ "z${MONO_BIN}" == "z" ]; then
 	MONO_BIN=`which mono`
 
-	# Check if there was no mono found
-	if [ "z$MONO_BIN" == "z" ]; then
-		# Check if there is a HomeBrew install of mono instead
+    # If the result is broken, don't use it
+	if [ ! -f "${MONO_BIN}" ]; then
+		MONO_BIN=""
+	fi
+
+	# Check if there was no Mono found
+	if [ "z${MONO_BIN}" == "z" ]; then
+		# Check if there is a HomeBrew install of Mono
 		if [ -f "/usr/local/bin/mono" ]; then
 			MONO_BIN="/usr/local/bin/mono"
 
-		# Check if there is a system version of mono instead
+		# Check if there is a system version of Mono
 		elif [ -f "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono" ]; then
 			MONO_BIN="/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono"
 
