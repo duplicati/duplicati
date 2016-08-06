@@ -220,10 +220,7 @@
                 <div class="input multiple text select maxSize">
                     <label for="dblockSizeNumber">Max backup file size</label>
                     <input type="number" class="number" parse-size-number="uppercase" id="dblockSizeNumber" ng-model="Options['dblock-size']" />
-                    <select parse-size-multiplier="uppercase" id="dblockSizeMultiplier" ng-model="Options['dblock-size']" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers"></select>
-                        <option value="MB">MByte</option>
-                        <option value="GB">GByte</option>
-                        <option value="TB">TByte</option>
+                    <select parse-size-multiplier="uppercase" id="dblockSizeMultiplier" ng-model="Options['dblock-size']" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
                     </select>
                 </div>
                 <div class="input multiple text select keepBackups">
