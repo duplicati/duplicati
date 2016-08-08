@@ -418,8 +418,16 @@ namespace Duplicati.Library.Main
             m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
-            if (m_backend == null)
-            	throw new Exception(string.Format("Backend not supported: {0}", m_backendurl));
+			if (m_backend == null)
+			{
+				string shortname = m_backendurl;
+
+				// Try not to leak hostnames or other information in the error messages
+				try { shortname = new Library.Utility.Uri(shortname).Scheme; }
+				catch { }
+
+				throw new Exception(string.Format("Backend not supported: {0}", shortname));
+			}
 
             if (!m_options.NoEncryption)
             {

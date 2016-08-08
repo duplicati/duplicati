@@ -101,6 +101,23 @@ namespace Duplicati.UnitTest
             });
         }
 
+		[Test]
+		public void RunNoIndexFiles()
+		{
+			PrepareSourceData();
+			RunCommands(1024 * 10, modifyOptions: opts => {
+				opts["index-file-policy"] = "None";
+			});
+		}
+
+		[Test]
+		public void RunSlimIndexFiles()
+		{
+			PrepareSourceData();
+			RunCommands(1024 * 10, modifyOptions: opts => {
+				opts["index-file-policy"] = "Lookup";
+			});
+		}
 
         private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
@@ -188,8 +205,12 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
+            var newdb = Path.Combine(Path.GetDirectoryName(DBFILE), Path.ChangeExtension(Path.GetFileNameWithoutExtension(DBFILE) + "-recreated", Path.GetExtension(DBFILE)));
+            if (File.Exists(newdb))
+                File.Delete(newdb);
 
-            File.Delete(DBFILE);
+            testopts["dbpath"] = newdb;
+
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Repair();
 
@@ -240,8 +261,7 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(filenames.Count, r.FilesRestored);
                 }
             }
-
-        }    
+        }
     }
 }
 

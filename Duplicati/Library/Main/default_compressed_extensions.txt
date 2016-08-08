@@ -149,9 +149,14 @@
 
 
 # Encrypted Files
+.aes #AES encrypted file
+.axx #AxCrypt files
 .gpg #GnuPG Encrypted file
+.hc #Veracrypt encrypted file
 .kdbx #KeePass Password Database
 .tc #TrueCrypt Encrypted Volume
+.tpm #Bitlocker encrypted file
+.fve #Bitlocker encrypted file
 
 
 # Other Compressed or High-Entropy Files

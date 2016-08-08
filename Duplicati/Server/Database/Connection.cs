@@ -1127,6 +1127,12 @@ namespace Duplicati.Server.Database
         #region IDisposable implementation
         public void Dispose()
         {
+            if (m_errorcmd != null)
+                try { if (m_errorcmd != null) m_errorcmd.Dispose(); }
+                catch { }
+                finally { m_errorcmd = null; }
+
+
             try
             {
                 if (m_connection != null)

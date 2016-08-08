@@ -26,7 +26,7 @@ namespace Duplicati.Library.Main.Operation
                 System.IO.Directory.CreateDirectory(m_options.Restorepath);
         
             using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles"))
+            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);

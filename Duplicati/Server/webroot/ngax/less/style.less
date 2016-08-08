@@ -185,57 +185,57 @@ body
                         
                         a.add
                         {
-                            background: url('../img/mainmenu/add.png') no-repeat 8px 11px;
+                            background: url('../img/mainmenu/add.png') no-repeat 8px 7px;
                         }
                         
                         a.restore
                         {
-                            background: url('../img/mainmenu/restore.png') no-repeat 8px 11px;
+                            background: url('../img/mainmenu/restore.png') no-repeat 8px 7px;
                         }
                         
                         a.pause
                         {
-                            background: url('../img/mainmenu/pause.png') no-repeat 8px 11px;
+                            background: url('../img/mainmenu/pause.png') no-repeat 8px 7px;
                         }
                         
                         a.settings
                         {
-                            background: url('../img/mainmenu/settings.png') no-repeat 8px 11px;
+                            background: url('../img/mainmenu/settings.png') no-repeat 8px 7px;
                         }
                         
                         a.log
                         {
-                            background: url('../img/mainmenu/log.png') no-repeat 8px 11px;
+                            background: url('../img/mainmenu/log.png') no-repeat 8px 7px;
                         }
                         
                         a.add:hover,
                         a.add.active
                         {
-                            background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 11px;
+                            background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
                         }
                         
                         a.restore:hover,
                         a.restore.active
                         {
-                            background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 11px;
+                            background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
                         }
                         
                         a.pause:hover,
                         a.pause.active
                         {
-                            background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 11px;
+                            background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
                         }
                         
                         a.settings:hover,
                         a.settings.active
                         {
-                            background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 11px;
+                            background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
                         }
                         
                         a.log:hover,
                         a.log.active
                         {
-                            background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 11px;
+                            background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
                         }
                         
                         ul
@@ -286,6 +286,11 @@ body
                 padding-left: 50px;
                 padding-bottom: 50px;
                 max-width: 700px;
+                
+                ul.tabs > li
+                {
+                    display: inline-block;
+                }
                 
                 .state
                 {
@@ -475,8 +480,8 @@ body
                             {
                                 a
                                 {
-                                    float: right;
-                                    margin-right: 20px;
+                                    float: left;
+                                    margin-left: 20px;
                                     color: @tColor;
                                     
                                     i
@@ -504,7 +509,7 @@ body
                                 
                                 a:first-child
                                 {
-                                    margin-right: 0;
+                                    margin-left: 0;
                                 }
                             }
                             
@@ -586,10 +591,79 @@ body
                             
                             .advancedoptions
                             {
+                                padding-top: 15px;
+                                clear: both;
+                                
+                                li
+                                {
+                                    border-top: none;
+                                }
+                                
                                 li > a
                                 {
                                     .button;
                                 }
+                                
+                                li.advancedentry
+                                {
+                                    border-bottom: 1px solid lightgray;
+                                }
+                                
+                                li:last-child
+                                {
+                                    padding-top: 0;
+                                    
+                                    select
+                                    {
+                                        max-width: 400px;
+                                    }
+                                }
+                                
+                                label
+                                {
+                                    line-height: normal;
+                                }
+                                
+                                input,
+                                select
+                                {
+                                    width: auto;
+                                    max-width: 100%;
+                                    box-sizing: border-box;
+                                }
+                                
+                                .longdescription
+                                {
+                                    margin-top: 10px;
+                                }
+                            }
+                            
+                            .advanced-toggle
+                            {
+                                color: @tColor;
+                                line-height: normal;
+                                margin-top: 16px;
+                                clear: both;
+                                float: left;
+                                
+                                i.fa
+                                {
+                                    border: 2px solid;
+                                    border-color: @tColor;
+                                    border-radius: 2px;
+                                    font-size: 18px;
+                                    height: 18px;
+                                    vertical-align: top;
+                                    width: 18px;
+                                }
+                            }
+                            
+                            textarea
+                            {
+                                box-sizing: border-box;
+                                clear: both;
+                                margin-top: 15px;
+                                width: 100%;
                             }
                         }
                     }
@@ -697,7 +771,7 @@ body
                                 position: absolute;
                                 top: 0;
                                 right: 0;
-                                padding: 7px 12px;
+                                padding: 7px 12px 8px;
                             }
                         }
                         
@@ -761,7 +835,7 @@ body
                 
                 .logpage
                 {
-                    .tabs
+                    ul.tabs
                     {
                         padding: 15px 0;
                     }
@@ -825,15 +899,14 @@ body
             
             .donate
             {
-                display: none;
-                float: left;
-                padding-right: 20px;
+                float: right;
+                padding-right: 40px;
                 overflow: hidden;
                 
                 ul
                 {
                     overflow: hidden;
-                    float: left;
+                    float: right;
                     
                     li
                     {
@@ -965,6 +1038,17 @@ span.info
 .nofloat
 {
     float: none !important;
+}
+
+div.blocker
+{
+    z-index: 5000;
+}
+
+div.connection-lost,
+div.modal-dialog
+{
+    z-index: 5001;
 }
 
 
@@ -1359,9 +1443,9 @@ span.info
                         
                         a
                         {
-                            color: transparent;
+                            /*color: transparent;
                             height: 32px;
-                            width: 32px;
+                            width: 32px;*/
                         }
                     }
                     

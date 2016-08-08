@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{08D7E42D-285C-4010-9881-986125FE2F3E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Backend.AmazonCloudDrive</RootNamespace>
@@ -34,7 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -60,5 +58,8 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

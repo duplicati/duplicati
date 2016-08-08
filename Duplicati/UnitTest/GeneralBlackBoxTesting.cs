@@ -23,10 +23,15 @@ using System.Reflection;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
+	[TestFixture]
     public class GeneralBlackBoxTesting
     {
-        private static readonly string SOURCE_FOLDERS = Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata", "DSMCBE"));
+        private static readonly string SOURCE_FOLDERS =
+            Path.Combine(
+                string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
+                ? Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata"))
+                : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
+            , "DSMCBE");
 
         protected IEnumerable<string> TestFolders
         {
@@ -59,18 +64,21 @@ namespace Duplicati.UnitTest
             }
         }
         [Test]
+		[Category("SVNData")]
         public void TestWithSVNShort()
         {
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);
         }
         [Test]
-        public void TestWithSVNLong()
+		[Category("SVNData")]
+		public void TestWithSVNLong()
         {
             SVNCheckoutTest.RunTest(TestFolders.ToArray(), TestOptions, TestTarget);
         }
 
         [Test]
-        public void TestWithErrors()
+		[Category("SVNData")]
+		public void TestWithErrors()
         {
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             RandomErrorBackend.WrappedBackend = u.Scheme;
@@ -80,7 +88,8 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestWithoutSizeInfo()
+		[Category("SVNData")]
+		public void TestWithoutSizeInfo()
         {
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             SizeOmittingBackend.WrappedBackend = u.Scheme;

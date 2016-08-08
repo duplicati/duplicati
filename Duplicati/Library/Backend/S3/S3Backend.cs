@@ -73,7 +73,8 @@ namespace Duplicati.Library.Backend
 
         static S3() {
             var ns = new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("Standard", "STANDARD"),
+				new KeyValuePair<string, string>("(default)", ""),
+				new KeyValuePair<string, string>("Standard", "STANDARD"),
                 new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
                 new KeyValuePair<string, string>("Glacier", "GLACIER"),
                 new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),
@@ -200,7 +201,7 @@ namespace Duplicati.Library.Backend
 
                 if (host.ToLower() == s3host)
                 {
-                    m_bucket = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+                    m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
 
                     if (m_bucket.StartsWith("/"))
                         m_bucket = m_bucket.Substring(1);
@@ -218,7 +219,7 @@ namespace Duplicati.Library.Backend
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
-                        m_prefix = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+                        m_prefix = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
 
                         if (m_prefix.StartsWith("/"))
                             m_prefix = m_prefix.Substring(1);

@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Database
 	internal class LocalRepairDatabase : LocalDatabase
 	{
 		public LocalRepairDatabase(string path)
-			: base(LocalDatabase.CreateConnection(path), "Repair")
+			: base(path, "Repair", true)
 		{
 		
 		}

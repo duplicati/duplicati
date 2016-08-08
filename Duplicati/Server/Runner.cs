@@ -665,8 +665,8 @@ namespace Duplicati.Server
                     (from n in f2
                     let exp = 
                         n.Expression.StartsWith("[") && n.Expression.EndsWith("]")
-                        ? Library.Utility.Utility.ExpandEnvironmentVariablesRegexp(n.Expression)
-                        : Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
+                        ? SpecialFolders.ExpandEnvironmentVariablesRegexp(n.Expression)
+                        : SpecialFolders.ExpandEnvironmentVariables(n.Expression)
                     orderby n.Order
                     select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                     .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));

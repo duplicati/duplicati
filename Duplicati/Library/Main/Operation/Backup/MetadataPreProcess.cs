@@ -139,7 +139,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot, log);
 
                     if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                        metadata["CoreSymlinkTarget"] = snapshot.GetSymlinkTarget(path);
+                    {
+                        var p = snapshot.GetSymlinkTarget(path);
+
+                        if (string.IsNullOrWhiteSpace(p))
+                            m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
+                        else
+                            metadata["CoreSymlinkTarget"] = p;
+                    }
 
                     var metahash = Utility.WrapMetadata(metadata, options);
                     await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, blocksize, database, blockoutput);

@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Backend.Box</RootNamespace>
@@ -34,7 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -60,5 +58,8 @@
       <Project>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</Project>
       <Name>Duplicati.Library.OAuthHelper</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

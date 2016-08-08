@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Database
     internal class LocalTestDatabase : LocalDatabase
     {
         public LocalTestDatabase(string path)
-            : base(LocalDatabase.CreateConnection(path), "Test")
+            : base(path, "Test", true)
         {        
         }
         

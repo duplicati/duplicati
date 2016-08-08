@@ -28,7 +28,7 @@
 	<link rel="stylesheet" type="text/css" href="styles/smoothness/jquery-ui.min.css">
     <link rel="stylesheet" type="text/css" href="styles/styles2.css">
     <link rel="stylesheet" type="text/css" href="styles/style.css">
-    <link rel="stylesheet" type="text/css" href="styles/oem.css" />
+    <link rel="stylesheet" type="text/css" href="../oem/ngax/styles/oem.css" />
     <link rel="stylesheet" type="text/css" href="../customized/customized.css" />
 
     <script type="text/javascript" src="scripts/libs/oldbrowsersupport.js"></script>
@@ -50,6 +50,7 @@
 
     <script type="text/javascript" src="scripts/libs/modal.min.js"></script>
     <script type="text/javascript" src="scripts/libs/dxTree.js"></script>
+    <script type="text/javascript" src="scripts/libs/moment-with-locales.min.js"></script>
 
 	<script type="text/javascript" src="scripts/app.js"></script>
 	<script type="text/javascript" src="scripts/menu.js"></script>
@@ -65,6 +66,7 @@
 	<script type="text/javascript" src="scripts/services/EditUriBuiltins.js"></script>
 	<script type="text/javascript" src="scripts/services/NotificationService.js"></script>
 	<script type="text/javascript" src="scripts/services/DialogService.js"></script>
+	<script type="text/javascript" src="scripts/services/EditBackupService.js"></script>
 
 	<script type="text/javascript" src="scripts/controllers/AppController.js"></script>
 	<script type="text/javascript" src="scripts/controllers/AboutController.js"></script>
@@ -86,6 +88,7 @@
 	<script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
 	<script type="text/javascript" src="scripts/filters/highlight.js"></script>
 	<script type="text/javascript" src="scripts/filters/parsetimestamp.js"></script>
+	<script type="text/javascript" src="scripts/filters/moment.js"></script>
 
 	<script type="text/javascript" src="scripts/directives/backupEditUri.js"></script>
 	<script type="text/javascript" src="scripts/directives/sourceFolderPicker.js"></script>
@@ -101,7 +104,8 @@
 	<script type="text/javascript" src="scripts/directives/progressBar.js"></script>
 	<script type="text/javascript" src="scripts/directives/advancedOptionsEditor.js"></script>
 
-	<script type="text/javascript" src="scripts/oem.js"></script>
+    <script type="text/javascript" src="../package/ngax/package.js"></script>
+	<script type="text/javascript" src="../oem/ngax/scripts/oem.js"></script>
     <script type="text/javascript" src="../customized/customized.js"></script>
 
 </head>
@@ -111,7 +115,7 @@
 	    <div class="header">
 	        <div class="logo">
 	            <a href="#/" class="home">{{brandingService.appName}}</a>
-	            <div class="build-suffix" ng-hide="systemInfo.ServerVersionType == 'stable' || systemInfo.ServerVersionType == ''"> &gt; {{systemInfo.ServerVersionType}}</div>
+	            <div class="build-suffix" ng-hide="systemInfo.ServerVersionType == 'stable' || systemInfo.ServerVersionType == ''">{{systemInfo.ServerVersionType}}</div>
 				<div class="powered-by">{{brandingService.appSubtitle}}</div>	            
 	        </div>
 	        
@@ -160,10 +164,25 @@
 	        <div class="about-footer">
 	            <ul>
 	                <li>
-	                    <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank">{{'Support' | localize}}</a>
+	                    <a href="#/about">{{'About' | localize}}</a>
+	                </li>
+	            </ul>
+	        </div>
+	        
+	        <div class="social">
+	            {{'Visit us on' | localize}}
+	            <ul>
+	                <li>
+	                    <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank"><img src="img/social/ggroups.png" alt="Google Groups" width="28" /></a>
 	                </li>
 	                <li>
-	                    <a href="#/about">{{'About' | localize}}</a>
+	                    <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" /></a>
+	                </li>
+	                <li>
+	                    <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" /></a>
+	                </li>
+	                <li>
+	                    <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" /></a>
 	                </li>
 	            </ul>
 	        </div>
@@ -179,21 +198,6 @@
 	                </li>
 	            </ul>
 	        </div>	
-	        
-	        <div class="social">
-	            {{'Visit us on' | localize}}
-	            <ul>
-	                <li>
-	                    <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" /></a>
-	                </li>
-	                <li>
-	                    <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" /></a>
-	                </li>
-	                <li>
-	                    <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" /></a>
-	                </li>
-	            </ul>
-	        </div>
 	    </div>
 	</div>
 

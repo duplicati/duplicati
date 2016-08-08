@@ -16,6 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Security.AccessControl;
+
+
 #endregion
 using System;
 using System.Collections.Generic;
@@ -165,7 +168,7 @@ namespace Duplicati.Library.Snapshots
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             //TODO: We need to be able to seek to pos 0
-            return new Alphaleonis.Win32.Filesystem.BackupFileStream(hFile, Alphaleonis.Win32.Filesystem.FileSystemRights.Read);
+            return new Alphaleonis.Win32.Filesystem.BackupFileStream(hFile, FileSystemRights.Read);
         }
 
         /// <summary>
