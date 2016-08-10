@@ -1,3 +1,29 @@
+2016-08-10
+==========
+* OneDrive for Business now uploads files in chunks to prevent timeout, thanks @ReneHezer
+* Prevent using both --keep-version and --keep-time to avoid confusion
+* Fixed a number of usability issues with the WebUI
+* Fixed encoding of special characters for Amazon Cloud Drive, thanks @Xelio
+* Fixed an issue with the recovery tool not respecting the restore folder target, thanks @mnaiman
+* Fixed issues when including the "home" folder on Windows
+* Fixed expanding environment variables and special folder names for filters
+* Changed displaying the dates in the WebUI with the browser locale
+* Added option to re-compress and re-encrypt from the recovery tool, thanks @mnaiman
+* Updated AWS S3 library to latests version
+* Added option to create an un-priviledged S3 user via IAM, if the current user has permissions
+* Fixed an issue with the scheduler that cause high CPU usage for invalid schedules
+* Fixed an issue with the WebUI forgetting SSL settings in some cases
+* Upgraded support for sending email to use a new library with proper SSL support, thanks @mnaiman
+* Fixed spurious failures in SSH connections, caused by leaking open connections, thanks @mnaiman
+* Fixed a Mono dependency in the Debian package that has been renamed
+* Added a DropBox backend, thanks @wvc
+* Added option to serve the WebUI with an SSL certificate, thanks @mnaiman
+* Improments to the recovery tool, thanks @mnaiman
+* Fixed an issue where deleting a backup and creating a new could cause data to be pre-set from the delete backup on the new, thanks @4m1g0
+* Fixed an issue with LVM not working on newer versions of Ubuntu
+* Fixed an issue where Mono could not be located by the OSX app bundle
+* Fixes to WebUI layout, thansk @Vaporizer8
+
 2016-05-14
 ==========
 * Fixes for UI on Safari, thanks @alexfran
