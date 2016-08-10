@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         var p = snapshot.GetSymlinkTarget(path);
 
                         if (string.IsNullOrWhiteSpace(p))
-                            m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
+                            await log.WriteVerboseAsync("Ignoring empty symlink {0}", path);
                         else
                             metadata["CoreSymlinkTarget"] = p;
                     }
