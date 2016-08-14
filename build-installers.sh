@@ -137,7 +137,7 @@ if [ -f "${GPG_KEYFILE}" ]; then
 		echo
 	fi
 
-	GPGDATA=`mono thirdparty/SharpAESCrypt/SharpAESCrypt.exe d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
+	GPGDATA=`mono BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
 	if [ ! $? -eq 0 ]; then
 		echo "Decrypting GPG keyfile failed"
 		exit 1
@@ -159,6 +159,8 @@ aws ec2 start-instances --profile=duplicati-builder --instance-ids "${WINDOWS_IN
 echo ""
 echo ""
 echo "Building OSX package locally ..."
+echo ""
+echo "Enter local sudo password..."
 
 cd Installer/OSX
 bash "make-dmg.sh" "../../$1"

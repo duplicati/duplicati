@@ -89,6 +89,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService", "Duplicati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AlternativeFTP", "Duplicati\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj", "{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Dropbox", "Duplicati\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj", "{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -267,6 +269,10 @@ Global
 		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
@@ -281,6 +287,8 @@ Global
 		$3.TabsToSpaces = False
 		$3.inheritsSet = VisualStudio
 		$3.inheritsScope = text/plain
+		$3.EolMarker = Windows
+		$3.scope = text/plain
 		$0.TextStylePolicy = $4
 		$4.FileWidth = 120
 		$4.TabsToSpaces = False

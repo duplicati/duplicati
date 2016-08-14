@@ -190,7 +190,8 @@ namespace Duplicati.Server.WebServer
             fm.MimeTypes["html"] = "text/html; charset=utf-8";
             fm.MimeTypes["hbs"] = "application/x-handlebars-template";
             fm.MimeTypes["woff"] = "application/font-woff";
-        }
+			fm.MimeTypes["woff2"] = "application/font-woff";
+		}
             
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
