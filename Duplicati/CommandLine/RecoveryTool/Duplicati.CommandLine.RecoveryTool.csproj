@@ -150,6 +150,10 @@
       <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
       <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+      <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
+      <Name>Duplicati.Library.Backend.Dropbox</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="help.txt" />
