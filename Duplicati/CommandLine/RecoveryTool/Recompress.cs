@@ -49,7 +49,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 var rawlist = backend.List();
 
-                Console.WriteLine("Found {0} files", rawlist.Count);
+                Console.WriteLine("Found {0} files at remote storage", rawlist.Count);
 
                 var i = 0;
                 var downloaded = 0;
@@ -97,11 +97,13 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 remotefiles = files.Concat(blocks).ToArray().Concat(indexes).ToArray();
 
+                Console.WriteLine("Found {0} files which belongs to backup with prefix {1}", remotefiles.Count(), m_Options.Prefix);
+
                 foreach (var remoteFile in remotefiles)
                 {
                     try
                     {
-                        Console.Write("{0}: {1}", ++i, remoteFile.File.Name);
+                        Console.Write("{0}/{1}: {2}", ++i, remotefiles.Count(), remoteFile.File.Name);
 
                         var localFileSource = Path.Combine(targetfolder, remoteFile.File.Name);
                         string localFileTarget;
