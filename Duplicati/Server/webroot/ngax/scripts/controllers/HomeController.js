@@ -17,6 +17,10 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
         $location.path('/export/' + id);
     };
 
+    $scope.doCompact = function(id) {
+        AppService.post('/backup/' + id + '/compact');
+    };
+
     $scope.doDelete = function(id, name) {
         DialogService.dialog('Confirm delete', 'Do you really want to delete the backup: ' + name, ['No', 'Yes'], function(ix) {
             if (ix == 1)
