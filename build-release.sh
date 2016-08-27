@@ -98,6 +98,8 @@ ${NUGET} restore Duplicati.sln
 
 ${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
+${XBUILD} /p:Configuration=Release /target:Clean Duplicati.sln
+find Duplicati -type d -name Release -exec rm -rf {} \;
 ${XBUILD} /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
@@ -119,6 +121,12 @@ mkdir "${UPDATE_TARGET}"
 
 cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* "${UPDATE_SOURCE}"
 cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
+
+# We copy some files for alphavss manually as they are not picked up by xbuild
+mkdir "${UPDATE_SOURCE}/alphavss"
+for FN in "Duplicati/Library/Snapshots/bin/Release/SnapshotQuery.exe" "Duplicati/Library/Snapshots/bin/Release/AlphaShadow.exe" Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.*.dll; do
+	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
+done
 
 if [ -e "${UPDATE_SOURCE}/control_dir" ]; then rm -rf "${UPDATE_SOURCE}/control_dir"; fi
 if [ -e "${UPDATE_SOURCE}/Duplicati-server.sqlite" ]; then rm "${UPDATE_SOURCE}/Duplicati-server.sqlite"; fi
