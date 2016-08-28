@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.Operation
         public static void CreateVerificationFile(LocalDatabase db, System.IO.StreamWriter stream)
         {
             var s = new Newtonsoft.Json.JsonSerializer();
-            s.Serialize(stream, db.GetRemoteVolumes().Cast<IRemoteVolume>().ToArray());
+            s.Serialize(stream, db.GetRemoteVolumes().Where(x => x.State != RemoteVolumeState.Temporary).Cast<IRemoteVolume>().ToArray());
         }
         
         /// <summary>
