@@ -1,3 +1,9 @@
+2016-08-27
+==========
+* Fixed issue with files not being listed on Windows (AlphaFS and AlphaVSS issue)
+* Updated B2 API URL
+* Added compact command to WebUI
+
 2016-08-10
 ==========
 * OneDrive for Business now uploads files in chunks to prevent timeout, thanks @ReneHezer

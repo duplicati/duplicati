@@ -38,7 +38,8 @@ Error message: {0}", error); }
         public static string ListActualFiles { get { return LC.L(@"List actual files"); } }
         public static string ListBackupEntries { get { return LC.L(@"List backup entries"); } }
         public static string ListBackups { get { return LC.L(@"List backups"); } }
-    }
+		public static string CompactRemoteFiles { get { return LC.L(@"Compact remote files"); } }
+	}
     internal static class Scheduler {
         public static string InvalidTimeSetupError(System.DateTime startdate, string interval, string alloweddays) { return LC.L(@"Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}", startdate, interval, alloweddays); }
     }

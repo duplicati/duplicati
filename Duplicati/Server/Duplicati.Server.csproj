@@ -284,6 +284,10 @@
       <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
       <Name>Duplicati.Library.UsageReporter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+      <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
+      <Name>Duplicati.Library.Backend.Dropbox</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />

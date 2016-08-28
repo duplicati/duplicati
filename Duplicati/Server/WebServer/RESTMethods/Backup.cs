@@ -215,7 +215,16 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK(new {Status = "OK", ID = task.TaskID});
         }
 
-        private void DoRepair(IBackup backup, RequestInfo info, bool repairUpdate)
+		private void Compact(IBackup backup, RequestInfo info)
+		{
+			var task = Runner.CreateTask(DuplicatiOperation.Compact, backup);
+			Program.WorkThread.AddTask(task);
+			Program.StatusEventNotifyer.SignalNewEvent();
+
+			info.OutputOK(new { Status = "OK", ID = task.TaskID });
+		}
+
+		private void DoRepair(IBackup backup, RequestInfo info, bool repairUpdate)
         {
             var input = info.Request.Form;
             string[] filters = null;
@@ -415,7 +424,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             Verify(bk, info);
                             return;
 
-                        case "start":
+						case "compact":
+							Compact(bk, info);
+							return;
+
+						case "start":
                         case "run":
                             RunBackup(bk, info);
                             return;
