@@ -99,7 +99,7 @@ ${NUGET} restore Duplicati.sln
 ${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
 ${XBUILD} /p:Configuration=Release /target:Clean Duplicati.sln
-find Duplicati -type d -name Release -exec rm -rf {} \;
+find Duplicati -type d -name Release | xargs rm -rf
 ${XBUILD} /p:Configuration=Release Duplicati.sln
 BUILD_STATUS=$?
 
