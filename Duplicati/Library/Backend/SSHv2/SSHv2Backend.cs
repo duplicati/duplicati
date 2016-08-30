@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         public const string SSH_KEYFILE_INLINE = "ssh-key";
         public const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
-        public const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "shh-accept-any-fingerprints";
+        public const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "ssh-accept-any-fingerprints";
         public const string KEYFILE_URI = "sshkey://";
 
         Dictionary<string, string> m_options;
@@ -255,10 +255,10 @@ namespace Duplicati.Library.Backend
                 string hostFingerprint = e.HostKeyName + " " + e.KeyLength.ToString() + " " + BitConverter.ToString(e.FingerPrint).Replace('-', ':');
 
                 if (string.IsNullOrEmpty(m_fingerprint))
-                    throw new Exception(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower()));
+					throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
 
                 if (hostFingerprint.ToLower() != m_fingerprint.ToLower())
-                    throw new Exception(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()));
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()), hostFingerprint, m_fingerprint);
                 else
                     e.CanTrust = true;
             };
@@ -293,7 +293,7 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            List<IFileEntry> files = new List<IFileEntry>();
+            var files = new List<IFileEntry>();
 
             string path = ".";
 
