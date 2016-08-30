@@ -218,9 +218,10 @@ namespace Duplicati.Library.Snapshots
                 tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath);
             }
 
+            volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
 
             for (int i = 0; i < tmp.Length; i++)
-                tmp[i] = root + tmp[i].Substring(volumePath.Length);
+                tmp[i] = root + SystemIOWindows.PrefixWithUNC(tmp[i]).Substring(volumePath.Length);
             return tmp;
         }
 
@@ -254,8 +255,10 @@ namespace Duplicati.Library.Snapshots
                 tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath);
             }
 
+            volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
+
             for (int i = 0; i < tmp.Length; i++)
-                tmp[i] = root + tmp[i].Substring(volumePath.Length);
+                tmp[i] = root + SystemIOWindows.PrefixWithUNC(tmp[i]).Substring(volumePath.Length);
             return tmp;
         }
 

@@ -97,6 +97,12 @@ namespace Duplicati.Library.Main.Operation
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
             {
+                if ((attributes & Library.Utility.Utility.ATTRIBUTE_ERROR) == Library.Utility.Utility.ATTRIBUTE_ERROR)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddWarning(string.Format("Error reported while accessing file {0}", path), null);
+                }
+
                 try
                 {
                     if (m_snapshot.IsBlockDevice(path))
