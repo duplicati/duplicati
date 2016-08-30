@@ -128,6 +128,10 @@ for FN in "Duplicati/Library/Snapshots/bin/Release/SnapshotQuery.exe" "Duplicati
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
 done
 
+# Install the assembly redirects for all Duplicati .exe files
+find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
+
+# Clean some unwanted build files
 if [ -e "${UPDATE_SOURCE}/control_dir" ]; then rm -rf "${UPDATE_SOURCE}/control_dir"; fi
 if [ -e "${UPDATE_SOURCE}/Duplicati-server.sqlite" ]; then rm "${UPDATE_SOURCE}/Duplicati-server.sqlite"; fi
 if [ -e "${UPDATE_SOURCE}/Duplicati.debug.log" ]; then rm "${UPDATE_SOURCE}/Duplicati.debug.log"; fi
