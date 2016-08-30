@@ -70,40 +70,53 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 where n is Library.Interface.IConnectionModule
                 select n).ToArray();
 
-            try
-            {
-                var uri = new Library.Utility.Uri(url);
-                var qp = uri.QueryParameters;   
+			try
+			{
+				var uri = new Library.Utility.Uri(url);
+				var qp = uri.QueryParameters;
 
-                var opts = new Dictionary<string, string>();
-                foreach(var k in qp.Keys.Cast<string>())
-                    opts[k] = qp[k];
+				var opts = new Dictionary<string, string>();
+				foreach (var k in qp.Keys.Cast<string>())
+					opts[k] = qp[k];
 
-                foreach(var n in modules)
-                    n.Configure(opts);
-                    
-                using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
-                    b.Test();
-                
-                info.OutputOK();
-            }
-            catch (Duplicati.Library.Interface.FolderMissingException)
-            {
-                info.ReportServerError("missing-folder");
-            }
-            catch (Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException icex)
-            {
-                if (string.IsNullOrWhiteSpace(icex.Certificate))
-                    info.ReportServerError(icex.Message);
-                else
-                    info.ReportServerError("incorrect-cert:" + icex.Certificate);
-            }
-            finally
-            {
-                foreach(var n in modules)
-                    if (n is IDisposable)
-                        ((IDisposable)n).Dispose();
-            }
+				foreach (var n in modules)
+					n.Configure(opts);
+
+				using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
+					b.Test();
+
+				info.OutputOK();
+			}
+			catch (Duplicati.Library.Interface.FolderMissingException)
+			{
+				info.ReportServerError("missing-folder");
+			}
+			catch (Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException icex)
+			{
+				if (string.IsNullOrWhiteSpace(icex.Certificate))
+					info.ReportServerError(icex.Message);
+				else
+					info.ReportServerError("incorrect-cert:" + icex.Certificate);
+			}
+			catch (Duplicati.Library.Utility.HostKeyException hex)
+			{
+				if (string.IsNullOrWhiteSpace(hex.ReportedHostKey))
+					info.ReportServerError(hex.Message);
+				else
+				{
+					info.ReportServerError(string.Format(
+						@"incorrect-host-key:""{0}"", accepted-host-key:""{1}""",
+						hex.ReportedHostKey,
+						hex.AcceptedHostKey
+					));
+				}
+			}
+			finally
+			{
+				foreach (var n in modules)
+					if (n is IDisposable)
+						((IDisposable)n).Dispose();
+			}
         }
 
         public void GET(string key, RequestInfo info)
