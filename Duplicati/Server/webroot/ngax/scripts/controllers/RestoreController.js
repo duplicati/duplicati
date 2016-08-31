@@ -321,7 +321,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         }
 
         if (paths.length > 0)
-            p.paths = paths.join(pathSep);
+            p.paths = JSON.stringify(paths);
 
         if ($scope.IsBackupTemporary) {
 

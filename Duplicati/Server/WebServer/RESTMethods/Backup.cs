@@ -172,7 +172,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var input = info.Request.Form;
 
-            var filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+			string[] filters;
+            var rawpaths = (input["paths"].Value ?? string.Empty).Trim();
+
+			// We send the file list as a JSON array to avoid encoding issues with the path seperator 
+            // as it is an allowed character in file and path names.
+            // We also accept the old way, for compatibility with the greeno theme
+			if (!string.IsNullOrWhiteSpace(rawpaths) && rawpaths.StartsWith("[", StringComparison.Ordinal) && rawpaths.EndsWith("]", StringComparison.Ordinal))
+				filters = Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(rawpaths);
+			else
+	            filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+			
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
