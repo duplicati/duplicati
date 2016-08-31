@@ -41,7 +41,6 @@ namespace Duplicati.Library.Main.Operation
                 throw new Exception(Strings.Common.PassphraseChangeUnsupported);
         }
         
-
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
             try

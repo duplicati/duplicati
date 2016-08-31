@@ -1,18 +1,32 @@
 <configuration>
-	<runtime>
-		<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+    <runtime>
+        <loadFromRemoteSources enabled="true"/>
 
-			<dependentAssembly>
-				<assemblyIdentity name="Duplicati.Library.Utility"	publicKeyToken="8bfe994a39631a7b" />
-				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="2.0.0.7" />
-			</dependentAssembly>
+        <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
 
-			<dependentAssembly>
-				<assemblyIdentity name="Duplicati.Library.Interface"	publicKeyToken="8bfe994a39631a7b" />
-				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="2.0.0.7" />
-			</dependentAssembly>
+            <!-- Support for loading older backends with the current executable version -->
+            <dependentAssembly>
+                <assemblyIdentity name="Duplicati.Library.Utility" publicKeyToken="8bfe994a39631a7b" />
+                <bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="2.0.0.7" />
+            </dependentAssembly>
 
-		</assemblyBinding>
-	</runtime>
-	
+            <!-- Support for loading older backends with the current executable version -->
+            <dependentAssembly>
+                <assemblyIdentity name="Duplicati.Library.Interface" publicKeyToken="8bfe994a39631a7b" />
+                <bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="2.0.0.7" />
+            </dependentAssembly>
+
+            <!-- Support for backends that wants older versions of NewtonSoft.Json -->
+            <!-- The spaces near the equation sign are used to prevent the version being set to the current build by the VersionStamp tool -->
+            <dependentAssembly>
+                <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
+                <bindingRedirect oldVersion="1.0.0.0 - 8.0.0.0" newVersion = "9.0.0.0"/>
+            </dependentAssembly>
+
+        </assemblyBinding>
+    </runtime>
+
+    <startup useLegacyV2RuntimeActivationPolicy="true">
+        <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5"/>
+    </startup>
 </configuration>

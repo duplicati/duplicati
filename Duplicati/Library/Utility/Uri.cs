@@ -260,7 +260,7 @@ namespace Duplicati.Library.Utility
             
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host))
+                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/"))
                     s += "/";
                 s += path;
             }

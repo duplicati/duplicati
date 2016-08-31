@@ -110,8 +110,12 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="attributes">The file or folder attributes.</param>
         private static async Task<bool> AttributeFilterAsync(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, LogWrapper log, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, Queue<string> mixinqueue)
         {
-            // Step 1, exclude block devices
-            try
+			// Report errors
+			if ((attributes & Library.Utility.Utility.ATTRIBUTE_ERROR) == Library.Utility.Utility.ATTRIBUTE_ERROR)
+				await log.WriteWarningAsync(string.Format("Error reported while accessing path {0}", path), null);
+
+			// Step 1, exclude block devices
+			try
             {
                 if (snapshot.IsBlockDevice(path))
                 {
