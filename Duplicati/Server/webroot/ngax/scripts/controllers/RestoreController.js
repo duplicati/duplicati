@@ -359,6 +359,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             }, handleError);
 
         } else {
+            $scope.connecting = true;
             $scope.ConnectionProgress = 'Starting the restore process ...';
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
                 $scope.ConnectionProgress = 'Restoring files ...';
