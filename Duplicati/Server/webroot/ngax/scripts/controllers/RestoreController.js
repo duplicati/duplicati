@@ -292,7 +292,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var version = $scope.RestoreVersion + '';
         var stamp = filesetStamps[version];
         var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
-        var pathSep = $scope.SystemInfo.PathSeparator || '/';            
+        var pathSep = $scope.SystemInfo.PathSeparator || ':';       
 
         function handleError(resp) {
             var message = resp.statusText;
@@ -359,6 +359,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             }, handleError);
 
         } else {
+            $scope.connecting = true;
             $scope.ConnectionProgress = 'Starting the restore process ...';
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
                 $scope.ConnectionProgress = 'Restoring files ...';
