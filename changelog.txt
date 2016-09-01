@@ -1,3 +1,9 @@
+2016-09-01
+==========
+* Fixed VSS based backups no working after 2.0.1.17
+* Prevent including temporary files in verification file, thanks @mnaiman
+* Added host-key verification for SSH connections, thanks @mnaiman
+
 2016-08-27
 ==========
 * Fixed issue with files not being listed on Windows (AlphaFS and AlphaVSS issue)
