@@ -41,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void SearchFiles(IBackup backup, string filterstring, RequestInfo info)
         {
-            var filter = Library.Utility.Uri.UrlDecode(filterstring ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            var filter = filterstring.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
             var timestring = info.Request.QueryString["time"].Value;
             var allversion = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["all-versions"].Value, false);
 
