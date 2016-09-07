@@ -19,6 +19,7 @@ namespace Duplicati.Library.Backend
         public DropboxHelper(string accessToken)
 			: base(accessToken, "dropbox")
         {
+			base.AutoAuthHeader = true;
         }
 
         public ListFolderResult ListFiles(string path)
