@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-			get { return Strings.DropBox.DisplayName; }
+			get { return Strings.Dropbox.DisplayName; }
         }
 
         public string ProtocolKey
@@ -127,12 +127,12 @@ namespace Duplicati.Library.Backend
 			get
 			{
 				return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-					new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.DropBox.AuthidShort, Strings.DropBox.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("dropbox"))),
+					new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Dropbox.AuthidShort, Strings.Dropbox.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("dropbox"))),
 				});
 			}
 		}
 
-		public string Description { get { return Strings.DropBox.Description; } }
+		public string Description { get { return Strings.Dropbox.Description; } }
 
         public void Test()
         {
