@@ -586,6 +586,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 	};
 
 	EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['onedrive'];
+	EditUriBackendConfig.validaters['hubic']       = EditUriBackendConfig.validaters['onedrive'];
 	EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['onedrive'];
 	EditUriBackendConfig.validaters['amzcd']       = EditUriBackendConfig.validaters['onedrive'];
 	EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['onedrive'];
