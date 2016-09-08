@@ -20,6 +20,7 @@ namespace Duplicati.Library.Backend
 			: base(accessToken, "dropbox")
         {
 			base.AutoAuthHeader = true;
+			base.AccessTokenOnly = true;
         }
 
         public ListFolderResult ListFiles(string path)
@@ -35,7 +36,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex);
+                handleDropboxException(ex, false);
                 throw;
             }
         }
@@ -51,7 +52,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex);
+                handleDropboxException(ex, false);
                 throw;
             }
         }
@@ -67,7 +68,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex);
+                handleDropboxException(ex, false);
                 throw;
             }
         }
@@ -92,14 +93,14 @@ namespace Duplicati.Library.Backend
             using (var rs = areq.GetRequestStream())
             {
                 int bytesRead = 0;
-                do
-                {
-                    bytesRead = stream.Read(buffer, 0, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
-                    globalBytesRead += (ulong)bytesRead;
-                    rs.Write(buffer, 0, bytesRead);
+				do
+				{
+					bytesRead = stream.Read(buffer, 0, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
+					globalBytesRead += (ulong)bytesRead;
+					rs.Write(buffer, 0, bytesRead);
 
-                }
-                while (bytesRead > 0 && globalBytesRead < DROPBOX_MAX_CHUNK_UPLOAD);                
+				}
+				while (bytesRead > 0 && globalBytesRead < (ulong)req.ContentLength);                
             }
 
             var ussr = ReadJSONResponse<UploadSessionStartResult>(areq); // pun intended
@@ -163,7 +164,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex);
+                handleDropboxException(ex, true);
                 throw;
             }
         }
@@ -182,7 +183,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex);
+                handleDropboxException(ex, true);
                 throw;
             }
         }
@@ -199,16 +200,53 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex);
+                handleDropboxException(ex, true);
                 throw;
             }
         }
 
-        private static void handleDropboxException(Exception ex)
+        private void handleDropboxException(Exception ex, bool filerequest)
         {
-            if (ex is WebException)
-				using (var sr = new StreamReader(((WebException)ex).Response.GetResponseStream()))
-					throw new DropboxException() { errorJSON = JObject.Parse(sr.ReadToEnd()) };
+			if (ex is WebException)
+			{
+				string json = string.Empty;
+
+				try
+				{
+					using (var sr = new StreamReader(((WebException)ex).Response.GetResponseStream()))
+						json = sr.ReadToEnd();
+				}
+				catch { }
+
+				// Special mapping for exceptions:
+				//    https://www.dropbox.com/developers-v1/core/docs
+
+				if (((WebException)ex).Response is HttpWebResponse)
+				{
+					var httpResp = ((WebException)ex).Response as HttpWebResponse;
+
+					if (httpResp.StatusCode == HttpStatusCode.NotFound)
+					{
+						if (filerequest)
+							throw new Duplicati.Library.Interface.FileMissingException(json);
+						else
+							throw new Duplicati.Library.Interface.FolderMissingException(json);
+					}
+					if (httpResp.StatusCode == HttpStatusCode.Conflict)
+					{
+						if (filerequest)
+							throw new Duplicati.Library.Interface.FileMissingException(json);
+						else
+							throw new Duplicati.Library.Interface.FolderMissingException(json);
+					}
+					if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
+						ThrowAuthException(json, ex);
+					if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
+						ThrowOverQuotaError();
+				}
+
+				throw new DropboxException() { errorJSON = JObject.Parse(json) };
+			}
         }
     }
 
