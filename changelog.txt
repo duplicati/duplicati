@@ -1,6 +1,14 @@
+2016-09-09
+==========
+* Fixes to the Dropbox backend
+* Fixed restore of files/folders with semicolon and plus characters from the UI
+* Added visual feedback when clicking the restore button
+* Added assembly redirects to solve issues with loading SharpAESCrypt and Mega backend
+* Changed the label for dblocksize in the UI
+
 2016-09-01
 ==========
-* Fixed VSS based backups no working after 2.0.1.17
+* Fixed VSS based backups not working after 2.0.1.17
 * Prevent including temporary files in verification file, thanks @mnaiman
 * Added host-key verification for SSH connections, thanks @mnaiman
 
