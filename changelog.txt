@@ -1,3 +1,7 @@
+2016-09-12
+==========
+* Fixed a problem with restoring from the UI, thanks @4m1g0
+
 2016-09-09
 ==========
 * Fixes to the Dropbox backend
