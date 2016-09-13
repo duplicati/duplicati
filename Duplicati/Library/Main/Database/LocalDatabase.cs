@@ -683,6 +683,25 @@ namespace Duplicati.Library.Main.Database
                 SetDbOptions(opts);
             }
         }
+
+		public bool PartiallyRecreated
+		{
+			get
+			{
+				return GetDbOptions().ContainsKey("partially-recreated");
+			}
+			set
+			{
+				var opts = GetDbOptions();
+
+				if (value)
+					opts["partially-recreated"] = "true";
+				else
+					opts.Remove("partially-recreated");
+
+				SetDbOptions(opts);
+			}
+		}
 		
 		public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
 		{

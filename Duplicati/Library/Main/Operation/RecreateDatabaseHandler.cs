@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -53,29 +52,32 @@ namespace Duplicati.Library.Main.Operation
         {
             if (!m_options.RepairOnlyPaths)
                 throw new Exception(string.Format("Can only update with paths, try setting {0}", "--repair-only-paths"));
-            
+
             using(var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
-                m_result.SetDatabase(db);
+				m_result.SetDatabase(db);
 
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
                     throw new Exception(string.Format("The version(s) being updated to, already exists"));
 
-                Utility.UpdateOptionsFromDb(db, m_options, null);
+				// Mark as incomplete
+				db.PartiallyRecreated = true;
+
+				Utility.UpdateOptionsFromDb(db, m_options, null);
                 DoRun(db, true, filter, filelistfilter, blockprocessor);
                 db.WriteResults();
             }
         }
 
-        /// <summary>
-        /// Run the recreate procedure
-        /// </summary>
-        /// <param name="dbparent">The database to restore into</param>
-        /// <param name="updating">True if this is an update call, false otherwise</param>
-        /// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
-        /// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
-        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        internal void DoRun(LocalDatabase dbparent, bool updating, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+		/// <summary>
+		/// Run the recreate procedure
+		/// </summary>
+		/// <param name="dbparent">The database to restore into</param>
+		/// <param name="updating">True if this is an update call, false otherwise</param>
+		/// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
+		/// <param name="filelistfilter">Filters the files in a filelist to prevent downloading unwanted data</param>
+		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
+		internal void DoRun(LocalDatabase dbparent, bool updating, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Recreate_Running);
 
@@ -422,16 +424,23 @@ namespace Duplicati.Library.Main.Operation
                 
 				backend.WaitForComplete(restoredb, null);
 
-                m_result.AddMessage("Recreate completed, verifying the database consistency");
+				if (m_options.RepairOnlyPaths)
+				{
+					m_result.AddMessage("Recreate/path-update completed, not running consistency checks");
+				}
+				else
+				{
+					m_result.AddMessage("Recreate completed, verifying the database consistency");
 
-                //All done, we must verify that we have all blocklist fully intact
-                // if this fails, the db will not be deleted, so it can be used,
-                // except to continue a backup
-                restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
+					//All done, we must verify that we have all blocklist fully intact
+					// if this fails, the db will not be deleted, so it can be used,
+					// except to continue a backup
+					restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize);
 
-                m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
+					m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
 
-				restoredb.RepairInProgress = false;
+					restoredb.RepairInProgress = false;
+				}
             }
         }
 
