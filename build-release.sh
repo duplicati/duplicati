@@ -22,11 +22,15 @@ GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 
 UPDATE_ZIP_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;http://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
-UPDATER_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-release.key"
-GPG_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-gpgkey.key"
+UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
+GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
+AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
+AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
+
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
+MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
 
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -90,17 +94,17 @@ fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-${XBUILD} /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
-mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
+"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
-${NUGET} restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
-${NUGET} restore Duplicati.sln
+"${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+"${NUGET}" restore "Duplicati.sln"
 
-${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+"${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
-${XBUILD} /p:Configuration=Release /target:Clean Duplicati.sln
-find Duplicati -type d -name Release | xargs rm -rf
-${XBUILD} /p:Configuration=Release Duplicati.sln
+"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
+find "Duplicati" -type d -name "Release" | xargs rm -rf
+"${XBUILD}" /p:Configuration=Release "Duplicati.sln"
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
@@ -139,13 +143,50 @@ if [ -e "${UPDATE_SOURCE}/updates" ]; then rm -rf "${UPDATE_SOURCE}/updates"; fi
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
 
+if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
+	echo "Performing authenticode signing of executables and libraries"
+
+	authenticode_sign() {
+		NEST=""
+		for hashalg in sha1 sha256; do
+			SIGN_MSG=`osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile`
+			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
+			mv tmpfile "$1"
+			NEST="-nest"
+		done
+	}
+
+	PFX_PASS=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}"`
+
+	DECRYPT_STATUS=$?
+	if [ "${DECRYPT_STATUS}" -ne 0 ]; then
+	    echo "Failed to decrypt, SharpAESCrypt gave status ${DECRYPT_STATUS}, exiting"
+	    exit 4
+	fi
+
+	if [ "x${PFX_PASS}" == "x" ]; then
+	    echo "Failed to decrypt, SharpAESCrypt gave empty password, exiting"
+	    exit 4
+	fi
+
+	for exec in "${UPDATE_SOURCE}/Duplicati."*.exe; do
+		authenticode_sign "${exec}"
+	done
+	for exec in "${UPDATE_SOURCE}/Duplicati."*.dll; do
+		authenticode_sign "${exec}"
+	done
+
+else
+	echo "Skipped authenticode signing as files are missing"
+fi
+
 echo
 echo "Building signed package ..."
 
-mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"	
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"	
 	
 	echo "Something went wrong while building the package, no output found"
 	exit 5
@@ -162,7 +203,7 @@ cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.man
 cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
 cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 
-mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
+"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
 echo "Uploading binaries"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
