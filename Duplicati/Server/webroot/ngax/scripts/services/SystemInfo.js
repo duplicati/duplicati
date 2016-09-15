@@ -20,7 +20,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, AppService, AppUt
             'mega': null,
             'box': null,
             'od4b': null,
-            'mssp': null
+            'mssp': null,
+            'dropbox': null
         }
 	};
 

@@ -260,7 +260,7 @@ backupApp.directive('backupEditUri', function() {
                 return;
             }
 
-            var opts = angular.copy(scope.Backend.Options);
+            var opts = angular.copy(scope.Backend.Options || []);
             for(var n in opts)
                 opts[n].Category = scope.Backend.DisplayName;
 

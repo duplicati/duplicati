@@ -101,7 +101,10 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
-                if (db.RepairInProgress)
+				if (db.PartiallyRecreated)
+					throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+
+				if (db.RepairInProgress)
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
@@ -452,7 +455,7 @@ namespace Duplicati.Library.Main.Operation
 
                 Utility.UpdateOptionsFromDb(db, m_options);
 
-                if (db.RepairInProgress)
+				if (db.RepairInProgress || db.PartiallyRecreated)
                     m_result.AddWarning("The database is marked as \"in-progress\" and may be incomplete.", null);
 
                 db.FixDuplicateMetahash();

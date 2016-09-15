@@ -41,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void SearchFiles(IBackup backup, string filterstring, RequestInfo info)
         {
-            var filter = Library.Utility.Uri.UrlDecode(filterstring ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            var filter = filterstring.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
             var timestring = info.Request.QueryString["time"].Value;
             var allversion = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["all-versions"].Value, false);
 
@@ -172,7 +172,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var input = info.Request.Form;
 
-            var filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            string[] filters = parsePaths(input["paths"].Value ?? string.Empty);
+			
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
@@ -224,6 +225,22 @@ namespace Duplicati.Server.WebServer.RESTMethods
 			info.OutputOK(new { Status = "OK", ID = task.TaskID });
 		}
 
+        private string[] parsePaths(string paths)
+        {
+            string[] filters;
+            var rawpaths = (paths ?? string.Empty).Trim();
+            
+            // We send the file list as a JSON array to avoid encoding issues with the path seperator 
+            // as it is an allowed character in file and path names.
+            // We also accept the old way, for compatibility with the greeno theme
+            if (!string.IsNullOrWhiteSpace(rawpaths) && rawpaths.StartsWith("[", StringComparison.Ordinal) && rawpaths.EndsWith("]", StringComparison.Ordinal))
+                filters = Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(rawpaths);
+            else
+                filters = paths.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+
+            return filters;
+        }
+
 		private void DoRepair(IBackup backup, RequestInfo info, bool repairUpdate)
         {
             var input = info.Request.Form;
@@ -236,7 +253,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (input["version"].Value != null)
                 extra["version"] = input["version"].Value;
             if (input["paths"].Value != null)
-                filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                filters = parsePaths(input["paths"].Value);
 
             var task = Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters);
             Program.WorkThread.AddTask(task);
