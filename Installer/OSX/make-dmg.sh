@@ -7,8 +7,11 @@
 WC_DMG=wc.dmg
 WC_DIR=wc
 TEMPLATE_DMG=template.dmg
-OUTPUT=Duplicati.dmg
+OUTPUT_DMG=Duplicati.dmg
+OUTPUT_PKG=Duplicati.pkg
 UNWANTED_FILES="AlphaVSS.Common.dll AlphaFS.dll AlphaFS.dll.config AlphaVSS.Common.dll.config appindicator-sharp.dll SQLite win-tools alphavss control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
+
+CODESIGN_IDENTITY=2S6R28R577
 
 SHOW_USAGE_ERROR=
 
@@ -16,10 +19,8 @@ SHOW_USAGE_ERROR=
 TEMPLATE_DMG_BZ2=`echo "$TEMPLATE_DMG.bz2"`
 DELETE_DMG=0
 
-if [ -f "$TEMPLATE_DMG_BZ2" ]
-then
-    if [ -f "$TEMPLATE_DMG" ]
-    then
+if [ -f "$TEMPLATE_DMG_BZ2" ]; then
+    if [ -f "$TEMPLATE_DMG" ]; then
         rm -rf "$TEMPLATE_DMG"
     fi
     
@@ -27,14 +28,12 @@ then
     DELETE_DMG=1
 fi
 
-if [ ! -f "$TEMPLATE_DMG" ]
-then
+if [ ! -f "$TEMPLATE_DMG" ]; then
     echo "Template file $TEMPLATE_DMG not found"
     exit
 fi
 
-if [ ! -f "$1" ]
-then
+if [ ! -f "$1" ]; then
     echo "Please supply a packaged zip file as the first input argument"
     exit
 fi
@@ -42,14 +41,16 @@ fi
 VERSION_NUMBER=`echo "$1" | awk -F- '{print $2}' | awk -F_ '{print $1}'`
 
 VERSION_NAME="Duplicati"
-if [ -e "$OUTPUT" ]
-then
-    rm -rf "$OUTPUT"
+if [ -e "${OUTPUT_DMG}" ]; then
+    rm -rf "${OUTPUT_DMG}"
+fi
+
+if [ -e "${OUTPUT_PKG}" ]; then
+    rm -rf "${OUTPUT_PKG}"
 fi
 
 # Remove any existing work copy
-if [ -e "Duplicati.app" ]
-then
+if [ -e "Duplicati.app" ]; then
     sudo rm -rf "Duplicati.app"
 fi
 
@@ -115,6 +116,28 @@ do
     fi
 done
 
+# Codesign the app bundle
+if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
+    echo "Codesigning application bundle"
+
+    #Do a poke to get sudo prompt up before the long-running sign-process
+    UNUSED=`sudo ls`
+
+    # Codesign all resources in bundle (i.e. the actual code)
+    # Not required, but nice-to-have
+    find "Duplicati.app/Contents/Resources" -type f -print0 | xargs -0 codesign -s "${CODESIGN_IDENTITY}"
+
+    # These files have dependencies, so we need to sign them in the correct order
+    for file in "duplicati-cli" "duplicati-server" "run-with-mono.sh" "uninstall.sh"; do
+        codesign -s "${CODESIGN_IDENTITY}" "Duplicati.app/Contents/MacOS/${file}"
+    done
+
+    # Then sign the whole package
+    codesign -s "${CODESIGN_IDENTITY}" "Duplicati.app"
+else
+    echo "No codesign identity supplied, skipping bundle signing"
+fi
+
 # Set permissions
 sudo chown -R root:admin "Duplicati.app"
 sudo chown -R root:wheel "daemon/com.duplicati.app.launchagent.plist"
@@ -124,12 +147,22 @@ sudo chmod +x daemon-scripts/preinstall
 sudo chmod +x app-scripts/postinstall
 sudo chmod +x app-scripts/preinstall
 
+
+if [ -f "DuplicatiApp.pkg" ]; then
+    rm -rf "DuplicatiApp.pkg"
+fi
+
+if [ -f "DuplicatiDaemon.pkg" ]; then
+    rm -rf "DuplicatiDaemon.pkg"
+fi
+
 # Make a PKG file, commented out lines can be uncommented to re-generate the lists
 #pkgbuild --analyze --root "./Duplicati.app" --install-location /Applications/Duplicati.app "InstallerComponent.plist"
 pkgbuild --scripts app-scripts --identifier com.duplicati.app --root "./Duplicati.app" --install-location /Applications/Duplicati.app --component-plist "InstallerComponent.plist" "DuplicatiApp.pkg"
 pkgbuild --scripts daemon-scripts --identifier com.duplicati.app.daemon --root "./daemon" --install-location /Library/LaunchAgents "DuplicatiDaemon.pkg"
+
 #productbuild --synthesize --package "DuplicatiApp.pkg" "Distribution.xml"
-productbuild --distribution "Distribution.xml" --package-path "." "Duplicati.pkg"
+productbuild --distribution "Distribution.xml" --package-path "." --resources "." "${OUTPUT_PKG}"
 
 # Alternate to allow fixing the package
 #productbuild --distribution "Distribution.xml" --package-path . "DuplicatiTmp.pkg"
@@ -140,8 +173,13 @@ productbuild --distribution "Distribution.xml" --package-path "." "Duplicati.pkg
 rm -rf "DuplicatiApp.pkg"
 rm -rf "DuplicatiDaemon.pkg"
 
-# For later, sign the package as well:
-#productsign --sign "Developer ID Installer: John Doe" "Duplicati.pkg" "Duplicati-signed.pkg"
+if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
+    echo "Codesigning installer package"
+    productsign --sign "${CODESIGN_IDENTITY}" "${OUTPUT_PKG}" "${OUTPUT_PKG}.signed"
+    mv "${OUTPUT_PKG}.signed" "${OUTPUT_PKG}"
+else
+    echo "No codesign identity supplied, skipping package signing"
+fi
 
 # Prepare a new dmg
 echo "Building dmg"
@@ -175,10 +213,18 @@ sudo mv "Duplicati.app" "$WC_DIR/Duplicati.app"
 hdiutil detach "$WC_DIR" -quiet -force
 
 # Compress the dmg
-hdiutil convert "$WC_DMG" -quiet -format UDZO -imagekey zlib-level=9 -o "$OUTPUT"
+hdiutil convert "$WC_DMG" -quiet -format UDZO -imagekey zlib-level=9 -o "${OUTPUT_DMG}"
 
 # Clean up
 rm -rf "$WC_DMG"
 rm -rf "$WC_DIR"
 
-echo "Done, created $OUTPUT"
+if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
+    echo "Codesigning DMG image"
+    codesign -s "${CODESIGN_IDENTITY}" "${OUTPUT_DMG}"
+else
+    echo "No codesign identity supplied, skipping DMG signing"
+fi
+
+
+echo "Done, created ${OUTPUT_DMG}"
