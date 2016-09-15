@@ -73,8 +73,8 @@ namespace Duplicati.Library.Backend
 
         static S3() {
             var ns = new List<KeyValuePair<string, string>> {
-				new KeyValuePair<string, string>("(default)", ""),
-				new KeyValuePair<string, string>("Standard", "STANDARD"),
+                new KeyValuePair<string, string>("(default)", ""),
+                new KeyValuePair<string, string>("Standard", "STANDARD"),
                 new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
                 new KeyValuePair<string, string>("Glacier", "GLACIER"),
                 new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),
@@ -309,8 +309,8 @@ namespace Duplicati.Library.Backend
             {
                 Connection.AddFileStream(m_bucket, GetFullKey(remotename), input);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 //Catch "non-existing" buckets
                 Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
                 if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))

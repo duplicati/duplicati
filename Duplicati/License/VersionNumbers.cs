@@ -26,7 +26,7 @@ namespace Duplicati.License
     public static class VersionNumbers
     {
         public static readonly string TAG;
-		public static readonly string VERSION_NAME;
+        public static readonly string VERSION_NAME;
         
         static VersionNumbers()
         {
@@ -45,13 +45,13 @@ namespace Duplicati.License
             
             TAG = tag.Trim();
 
-			var v = VersionNumber;
-			if (!string.IsNullOrWhiteSpace(TAG))
-				v = " - " + TAG;
+            var v = VersionNumber;
+            if (!string.IsNullOrWhiteSpace(TAG))
+                v = " - " + TAG;
 #if DEBUG
-			v = " - debug";
+            v = " - debug";
 #endif
-			VERSION_NAME = v;
+            VERSION_NAME = v;
 
         }
         
@@ -59,7 +59,7 @@ namespace Duplicati.License
         {
             get
             {
-				return VERSION_NAME;
+                return VERSION_NAME;
             }
         }
 

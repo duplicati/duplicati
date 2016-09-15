@@ -2,13 +2,13 @@ backupApp.controller('PauseController', function ($scope, $location, AppService,
     $scope.state = ServerStatus.watch($scope);
 
     $scope.pause = function(duration) {
-    	ServerStatus.pause(duration).then(function() {
+        ServerStatus.pause(duration).then(function() {
             $location.path('/');
         }, AppUtils.connectionError);
     };
 
     $scope.resume = function() {
-    	ServerStatus.resume().then(function() {
+        ServerStatus.resume().then(function() {
             $location.path('/');
         }, AppUtils.connectionError);
     };

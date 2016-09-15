@@ -20,20 +20,20 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
-	internal class CreateBugReportHandler
-	{
+    internal class CreateBugReportHandler
+    {
         private string m_targetpath;
         private Options m_options;
         private CreateLogDatabaseResults m_result;
 
-		public CreateBugReportHandler(string targetpath, Options options, CreateLogDatabaseResults result)
-		{
+        public CreateBugReportHandler(string targetpath, Options options, CreateLogDatabaseResults result)
+        {
             m_targetpath = targetpath;
             m_options = options;
             m_result = result;
-		}
-		
-		public void Run()
+        }
+        
+        public void Run()
         {
             var ext = System.IO.Path.GetExtension(m_targetpath);
             var module = m_options.CompressionModule;
@@ -43,10 +43,10 @@ namespace Duplicati.Library.Main.Operation
         
             if (System.IO.File.Exists(m_targetpath))
                 throw new Exception(string.Format("Output file already exists, not overwriting: {0}", m_targetpath));
-				
+                
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
-				
+                
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.BugReport_Running);
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
@@ -73,8 +73,8 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.TargetPath = m_targetpath;
-            }				
-		}
-	}
+            }               
+        }
+    }
 }
 

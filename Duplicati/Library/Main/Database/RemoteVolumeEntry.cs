@@ -7,13 +7,13 @@ namespace Duplicati.Library.Main.Database
 {
     public struct RemoteVolumeEntry : IRemoteVolume
     {
-    	private readonly string m_name;
-    	private readonly string m_hash;
-    	private readonly long m_size;
-    	private readonly RemoteVolumeType m_type;
-    	private readonly RemoteVolumeState m_state;
+        private readonly string m_name;
+        private readonly string m_hash;
+        private readonly long m_size;
+        private readonly RemoteVolumeType m_type;
+        private readonly RemoteVolumeState m_state;
         private readonly DateTime m_deleteGracePeriod;
-    	
+        
         public string Name { get { return m_name; } }
         public string Hash { get { return m_hash; } }
         public long Size { get { return m_size; } }

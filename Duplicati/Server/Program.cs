@@ -621,9 +621,9 @@ namespace Duplicati.Server
                     return Strings.TaskType.ListActualFiles;
                 case Duplicati.Server.Serialization.DuplicatiOperation.Verify:
                     return Strings.TaskType.ListBackupEntries;
-				case Duplicati.Server.Serialization.DuplicatiOperation.Compact:
-					return Strings.TaskType.CompactRemoteFiles;
-				case Duplicati.Server.Serialization.DuplicatiOperation.Restore:
+                case Duplicati.Server.Serialization.DuplicatiOperation.Compact:
+                    return Strings.TaskType.CompactRemoteFiles;
+                case Duplicati.Server.Serialization.DuplicatiOperation.Restore:
                     return Strings.TaskType.ListBackups;
                 default:
                     return type.ToString();

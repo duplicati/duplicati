@@ -145,37 +145,37 @@ namespace Duplicati.Server
         /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
         public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition, DayOfWeek[] allowedDays)
         {
-			var res = basetime;
+            var res = basetime;
 
-			var i = 50000;
-			while (res < firstdate && i-- > 0)
-				res = Timeparser.ParseTimeInterval(repetition, res);
+            var i = 50000;
+            while (res < firstdate && i-- > 0)
+                res = Timeparser.ParseTimeInterval(repetition, res);
 
-			// If we arived somewhere after the first allowed date
-			if (res >= firstdate)
-			{
-				var ts = Timeparser.ParseTimeSpan(repetition);
+            // If we arived somewhere after the first allowed date
+            if (res >= firstdate)
+            {
+                var ts = Timeparser.ParseTimeSpan(repetition);
 
-				if (ts.TotalDays >= 1)
-				{
-					// We jump in days, so we pick the first valid day after firstdate
+                if (ts.TotalDays >= 1)
+                {
+                    // We jump in days, so we pick the first valid day after firstdate
 
-					for (var n = 0; n < 8; n++)
-						if (IsDateAllowed(res, allowedDays))
-							break;
-						else
-							res = res.AddDays(1);
-				}
-				else
-				{
-					// We jump less than a day, so we keep adding the repetition until
-					// we hit a valid day
+                    for (var n = 0; n < 8; n++)
+                        if (IsDateAllowed(res, allowedDays))
+                            break;
+                        else
+                            res = res.AddDays(1);
+                }
+                else
+                {
+                    // We jump less than a day, so we keep adding the repetition until
+                    // we hit a valid day
 
-					i = 50000;
-					while (!IsDateAllowed(res, allowedDays) && i-- > 0)
-						res = Timeparser.ParseTimeInterval(repetition, res);
-			}
-			}
+                    i = 50000;
+                    while (!IsDateAllowed(res, allowedDays) && i-- > 0)
+                        res = Timeparser.ParseTimeInterval(repetition, res);
+            }
+            }
 
             if (!IsDateAllowed(res, allowedDays) || res < firstdate)
             {
@@ -274,7 +274,7 @@ namespace Duplicati.Server
                             //Caluclate next time, by finding the first entry later than now
                             try
                             {
-								start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.Now.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
+                                start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.Now.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
                             }
                             catch(Exception ex)
                             {

@@ -71,10 +71,10 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     }
 
     this.resume = function() {
-		return AppService.post('/serverstate/resume');
+        return AppService.post('/serverstate/resume');
     };
 
-	this.pause = function(duration) {
+    this.pause = function(duration) {
         return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
     };
 

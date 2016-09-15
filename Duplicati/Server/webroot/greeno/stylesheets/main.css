@@ -477,7 +477,7 @@ div.main-icon-restore {
 }
 
 /* 
-*	custom CSS
+*    custom CSS
 */
 
 header {
@@ -487,28 +487,28 @@ header {
 }
 
 footer{
-	height: 50px;
-	width: 100%;
-	background-color: #3A5E30;
-	color: #F0F0F0;
-	bottom:0px;
-	position:fixed;
-	border-top: 10px solid #91AA8A;
+    height: 50px;
+    width: 100%;
+    background-color: #3A5E30;
+    color: #F0F0F0;
+    bottom:0px;
+    position:fixed;
+    border-top: 10px solid #91AA8A;
     z-index: 100;
 }
 
 a.link_extern:hover, a.link_extern:active , a.link_extern:visited, a.link_extern:link {
-	color: #F0F0F0;
+    color: #F0F0F0;
 }
 
 div.box-duplicati-copy{
-	float:left;
-	margin-left:5px; 
-	text-align: left; 
+    float:left;
+    margin-left:5px; 
+    text-align: left; 
 }
 
 div.box-visit-us{
-	float:right; 
-	margin-right: 5px;
-	text-align: right;
+    float:right; 
+    margin-right: 5px;
+    text-align: right;
 }

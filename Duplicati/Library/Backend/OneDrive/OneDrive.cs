@@ -167,7 +167,7 @@ namespace Duplicati.Library.Backend
                         }
 
                         using (var resp = (HttpWebResponse)areq.GetResponse())
-						using (var rs = areq.GetResponseStream())
+                        using (var rs = areq.GetResponseStream())
                         using (var tr = new System.IO.StreamReader(rs))
                         using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
@@ -357,7 +357,7 @@ namespace Duplicati.Library.Backend
                     var areq = new Utility.AsyncHttpRequest(req);
 
                     using(var resp = (HttpWebResponse)areq.GetResponse())
-					using(var rs = areq.GetResponseStream())
+                    using(var rs = areq.GetResponseStream())
                     using(var tr = new System.IO.StreamReader(rs))
                     using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         m_userid = new Newtonsoft.Json.JsonSerializer().Deserialize<WLID_UserInfo>(jr).id;
@@ -518,7 +518,7 @@ namespace Duplicati.Library.Backend
                     Utility.Utility.CopyStream(stream, reqs, true, m_copybuffer);
 
                 using(var resp = (HttpWebResponse)areq.GetResponse())
-				using(var rs = areq.GetResponseStream())
+                using(var rs = areq.GetResponseStream())
                 using(var tr = new System.IO.StreamReader(rs))
                 using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                 {
@@ -537,7 +537,7 @@ namespace Duplicati.Library.Backend
 
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
-			using (var rs = areq.GetResponseStream())
+            using (var rs = areq.GetResponseStream())
                 Utility.Utility.CopyStream(rs, stream, true, m_copybuffer);
         }
 

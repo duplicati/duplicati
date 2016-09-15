@@ -572,9 +572,9 @@ namespace Duplicati.Library.Main
         {
             get
             {
-            	string v;
-            	m_options.TryGetValue("control-files", out v);
-            	return v;
+                string v;
+                m_options.TryGetValue("control-files", out v);
+                return v;
             }
         }
 
@@ -740,12 +740,12 @@ namespace Duplicati.Library.Main
         {
             get
             {
-            	string v;
-            	m_options.TryGetValue("prefix", out v);
-            	if (!string.IsNullOrEmpty(v))
-            		return v;
-            		
-        		return "duplicati";
+                string v;
+                m_options.TryGetValue("prefix", out v);
+                if (!string.IsNullOrEmpty(v))
+                    return v;
+                    
+                return "duplicati";
             }
         }
 
@@ -802,8 +802,8 @@ namespace Duplicati.Library.Main
             var versions = this.Version;
             if (versions != null && versions.Length > 0) 
                 foreach (var ix in versions.Distinct())
-                	if (ix >= 0 && ix < backups.Length)
-                    	res.Add(backups[ix]);
+                    if (ix >= 0 && ix < backups.Length)
+                        res.Add(backups[ix]);
             
             var keepVersions = this.KeepVersions;
             if (keepVersions > 0 && keepVersions < backups.Length)
@@ -1663,10 +1663,10 @@ namespace Duplicati.Library.Main
         {
             get 
             {
-            	if (m_options.ContainsKey("dry-run"))
-            		return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
-            	else
-            		return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
+                if (m_options.ContainsKey("dry-run"))
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
+                else
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
             }
         }
         

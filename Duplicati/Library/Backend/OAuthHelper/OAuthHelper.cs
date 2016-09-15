@@ -25,7 +25,7 @@ namespace Duplicati.Library
     {
         private string m_token;
         private string m_authid;
-		private DateTime m_tokenExpires = DateTime.UtcNow;
+        private DateTime m_tokenExpires = DateTime.UtcNow;
 
         private static string _override_server = null;
 
@@ -45,14 +45,14 @@ namespace Duplicati.Library
             return string.Format(addr.ToString(), modulename); 
         }
 
-		/// <summary>
-		/// Set to true to automatically add the Authorization header to requets
-		/// </summary>
+        /// <summary>
+        /// Set to true to automatically add the Authorization header to requets
+        /// </summary>
         public bool AutoAuthHeader { get; set; }
-		/// <summary>
-		/// Set to true if the provider does not use refresh tokens, but only access tokens
-		/// </summary>
-		public bool AccessTokenOnly { get; set; }
+        /// <summary>
+        /// Set to true if the provider does not use refresh tokens, but only access tokens
+        /// </summary>
+        public bool AccessTokenOnly { get; set; }
 
         public OAuthHelper(string authid, string servicename, string useragent = null)
             : base(useragent)
@@ -85,8 +85,8 @@ namespace Duplicati.Library
         {
             get
             {
-				if (AccessTokenOnly)
-					return m_authid;
+                if (AccessTokenOnly)
+                    return m_authid;
 
                 if (m_token == null || m_tokenExpires < DateTime.UtcNow)
                 {
@@ -142,18 +142,18 @@ namespace Duplicati.Library
             }
         }
 
-		public void ThrowOverQuotaError()
-		{
-			throw new Exception(Strings.OAuthHelper.OverQuotaError);
-		}
+        public void ThrowOverQuotaError()
+        {
+            throw new Exception(Strings.OAuthHelper.OverQuotaError);
+        }
 
-		public void ThrowAuthException(string msg, Exception ex)
-		{
-			if (ex == null)
-				throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl));
-			else
-				throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
-		}
+        public void ThrowAuthException(string msg, Exception ex)
+        {
+            if (ex == null)
+                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl));
+            else
+                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+        }
 
 
 

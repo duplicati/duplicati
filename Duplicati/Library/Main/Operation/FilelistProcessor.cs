@@ -76,29 +76,29 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
         public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
-		{
-			var tp = RemoteListAnalysis(backend, options, database, log);
-			long extraCount = 0;
-			long missingCount = 0;
+        {
+            var tp = RemoteListAnalysis(backend, options, database, log);
+            long extraCount = 0;
+            long missingCount = 0;
             
-			foreach(var n in tp.ExtraVolumes)
-			{
-				log.AddWarning(string.Format("Extra unknown file: {0}", n.File.Name), null);
-				extraCount++;
-			}
+            foreach(var n in tp.ExtraVolumes)
+            {
+                log.AddWarning(string.Format("Extra unknown file: {0}", n.File.Name), null);
+                extraCount++;
+            }
 
-			foreach(var n in tp.MissingVolumes)
-			{
-				log.AddWarning(string.Format("Missing file: {0}", n.Name), null);
-				missingCount++;
-			}
+            foreach(var n in tp.MissingVolumes)
+            {
+                log.AddWarning(string.Format("Missing file: {0}", n.Name), null);
+                missingCount++;
+            }
 
-			if (extraCount > 0)
-			{
-				var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
-				log.AddError(s, null);
-				throw new Exception(s);
-			}
+            if (extraCount > 0)
+            {
+                var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
+                log.AddError(s, null);
+                throw new Exception(s);
+            }
 
             var lookup = new Dictionary<string, string>();
             var doubles = new Dictionary<string, string>();
@@ -119,11 +119,11 @@ namespace Duplicati.Library.Main.Operation
 
             if (missingCount > 0)
             {
-            	string s;
+                string s;
                 if (!tp.BackupPrefixes.Contains(options.Prefix) && tp.BackupPrefixes.Length > 0)
-                	s = string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes));
+                    s = string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes));
                 else
-                	s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
+                    s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
                 
                 log.AddError(s, null);
                 throw new Exception(s);

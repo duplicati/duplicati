@@ -215,7 +215,7 @@ namespace Duplicati.GUI.TrayIcon
 
             Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
             using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
-			using(var s = areq.GetResponseStream())
+            using(var s = areq.GetResponseStream())
             using (var sr = new System.IO.StreamReader(s, ENCODING, true))
                 return Serializer.Deserialize<SaltAndNonce>(sr);
         }
@@ -363,7 +363,7 @@ namespace Duplicati.GUI.TrayIcon
                 areq.Timeout = (int)(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(queryparams["duration"]) + TimeSpan.FromSeconds(5)).TotalMilliseconds;
 
             using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
-			using (var s = areq.GetResponseStream())
+            using (var s = areq.GetResponseStream())
                 if (typeof(T) == typeof(string))
                 {
                     using (System.IO.MemoryStream ms = new System.IO.MemoryStream())

@@ -76,12 +76,12 @@ namespace Duplicati.Server.WebServer
             m_prng.GetBytes(buf);
             var token = Convert.ToBase64String(buf);
 
-	        m_activexsrf.AddOrUpdate(token, key => expires, (key, existingExpires) =>
-	        {
-				// Simulate the original behavior => if the random token, against all odds, is already used
-				// we throw an ArgumentException
-		        throw new ArgumentException("An element with the same key already exists in the dictionary.");
-	        });
+            m_activexsrf.AddOrUpdate(token, key => expires, (key, existingExpires) =>
+            {
+                // Simulate the original behavior => if the random token, against all odds, is already used
+                // we throw an ArgumentException
+                throw new ArgumentException("An element with the same key already exists in the dictionary.");
+            });
 
             response.Cookies.Add(new HttpServer.ResponseCookie(XSRF_COOKIE_NAME, token, expires));
             return true;
@@ -104,10 +104,10 @@ namespace Duplicati.Server.WebServer
 
         private bool HasXSRFCookie(HttpServer.IHttpRequest request)
         {
-	        DateTime tmpExpirationTimeHolder;
+            DateTime tmpExpirationTimeHolder;
 
-			// Clean up expired XSRF cookies
-			foreach (var k in (from n in m_activexsrf where DateTime.UtcNow > n.Value select n.Key))
+            // Clean up expired XSRF cookies
+            foreach (var k in (from n in m_activexsrf where DateTime.UtcNow > n.Value select n.Key))
                 m_activexsrf.TryRemove(k, out tmpExpirationTimeHolder);
 
             var xsrfcookie = request.Cookies[XSRF_COOKIE_NAME] ?? request.Cookies[Library.Utility.Uri.UrlEncode(XSRF_COOKIE_NAME)];
@@ -146,16 +146,16 @@ namespace Duplicati.Server.WebServer
                     response.Reason = "Too Many Concurrent Request, try again later";
                     return true;
                 }
-			}
-			Tuple<DateTime, string> tmpTuple;
-			DateTime tmpDateTime;
+            }
+            Tuple<DateTime, string> tmpTuple;
+            DateTime tmpDateTime;
 
-			if (LOGOUT_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
+            if (LOGOUT_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
             {
                 if (!string.IsNullOrWhiteSpace(auth_token))
                 {
-					// Remove the active auth token
-	                m_activeTokens.TryRemove(auth_token, out tmpDateTime);
+                    // Remove the active auth token
+                    m_activeTokens.TryRemove(auth_token, out tmpDateTime);
                 }
 
                 response.Status = System.Net.HttpStatusCode.NoContent;
@@ -165,7 +165,7 @@ namespace Duplicati.Server.WebServer
             }
             else if (LOGIN_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
             {
-				// Remove expired nonces
+                // Remove expired nonces
                 foreach(var k in (from n in m_activeNonces where DateTime.UtcNow > n.Value.Item1 select n.Key))
                     m_activeNonces.TryRemove(k, out tmpTuple);
 
@@ -189,12 +189,12 @@ namespace Duplicati.Server.WebServer
                     sha256.TransformFinalBlock(buf, 0, buf.Length);
                     var pwd = Convert.ToBase64String(sha256.Hash);
 
-					m_activeNonces.AddOrUpdate(nonce, key => new Tuple<DateTime, string>(expires, pwd), (key, existingValue) =>
-					{
-						// Simulate the original behavior => if the nonce, against all odds, is already used
-						// we throw an ArgumentException
-						throw new ArgumentException("An element with the same key already exists in the dictionary.");
-					});
+                    m_activeNonces.AddOrUpdate(nonce, key => new Tuple<DateTime, string>(expires, pwd), (key, existingValue) =>
+                    {
+                        // Simulate the original behavior => if the nonce, against all odds, is already used
+                        // we throw an ArgumentException
+                        throw new ArgumentException("An element with the same key already exists in the dictionary.");
+                    });
 
                     response.Cookies.Add(new HttpServer.ResponseCookie(NONCE_COOKIE_NAME, nonce, expires));
                     using(var bw = new BodyWriter(response, request))
@@ -225,9 +225,9 @@ namespace Duplicati.Server.WebServer
                             return true;
                         }
 
-						var pwd = m_activeNonces[nonce].Item2;
+                        var pwd = m_activeNonces[nonce].Item2;
 
-						// Remove the nonce
+                        // Remove the nonce
                         m_activeNonces.TryRemove(nonce, out tmpTuple);
 
                         if (pwd != input["password"].Value)
@@ -245,14 +245,14 @@ namespace Duplicati.Server.WebServer
                         while (token.Length > 0 && token.EndsWith("="))
                             token = token.Substring(0, token.Length - 1);
 
-						m_activeTokens.AddOrUpdate(token, key => expires, (key, existingValue) =>
-						{
-							// Simulate the original behavior => if the token, against all odds, is already used
-							// we throw an ArgumentException
-							throw new ArgumentException("An element with the same key already exists in the dictionary.");
-						});
+                        m_activeTokens.AddOrUpdate(token, key => expires, (key, existingValue) =>
+                        {
+                            // Simulate the original behavior => if the token, against all odds, is already used
+                            // we throw an ArgumentException
+                            throw new ArgumentException("An element with the same key already exists in the dictionary.");
+                        });
 
-						response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
+                        response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
 
                         using(var bw = new BodyWriter(response, request))
                             bw.OutputOK();
@@ -307,7 +307,7 @@ namespace Duplicati.Server.WebServer
                 {
                     expires = DateTime.UtcNow.AddHours(1);
 
-					m_activeTokens[auth_token] = expires;
+                    m_activeTokens[auth_token] = expires;
                     response.Cookies.Add(new ResponseCookie(AUTH_COOKIE_NAME, auth_token, expires));
                     return false;
                 }

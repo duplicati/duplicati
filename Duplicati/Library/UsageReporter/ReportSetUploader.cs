@@ -94,19 +94,19 @@ namespace Duplicati.Library.UsageReporter
                         int rc;
                         using(var fs = File.OpenRead(f))
                         {
-							if (fs.Length > 0)
-							{
-	                            req.ContentLength = fs.Length;
-	                            var areq = new Library.Utility.AsyncHttpRequest(req);
+                            if (fs.Length > 0)
+                            {
+                                req.ContentLength = fs.Length;
+                                var areq = new Library.Utility.AsyncHttpRequest(req);
 
-	                            using(var rs =areq.GetRequestStream())
-	                                Library.Utility.Utility.CopyStream(fs, rs);
+                                using(var rs =areq.GetRequestStream())
+                                    Library.Utility.Utility.CopyStream(fs, rs);
 
-	                            using(var resp = (HttpWebResponse)areq.GetResponse())
-	                                rc = (int)resp.StatusCode;
-							}
-							else
-								rc = 200;
+                                using(var resp = (HttpWebResponse)areq.GetResponse())
+                                    rc = (int)resp.StatusCode;
+                            }
+                            else
+                                rc = 200;
                         }
 
                         if (rc >= 200 && rc <= 299)

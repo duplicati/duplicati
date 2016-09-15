@@ -41,9 +41,9 @@ namespace Duplicati.Library.AutoUpdater
         public static readonly string INSTALLDIR;
 
         private static readonly string INSTALLED_BASE_DIR = 
-			string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) 
-			? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
-			: Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+            string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) 
+            ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
+            : Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
         private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
 
@@ -58,8 +58,8 @@ namespace Duplicati.Library.AutoUpdater
         public static event Action<Exception> OnError;
 
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
-		private const string BASEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
-		private const string UPDATEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_UPDATE_ROOT";
+        private const string BASEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
+        private const string UPDATEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_UPDATE_ROOT";
         internal const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
         private const string RUN_UPDATED_FOLDER_PATH = "AUTOUPDATER_LOAD_UPDATE";
         private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
@@ -82,103 +82,103 @@ namespace Duplicati.Library.AutoUpdater
 
         static UpdaterManager()
         {
-			// Update folder strategy is a bit complicated,
-			// because it depends on the actual system,
-			// and because it tries to find a good spot
-			// by probing for locations
+            // Update folder strategy is a bit complicated,
+            // because it depends on the actual system,
+            // and because it tries to find a good spot
+            // by probing for locations
 
-			// The "overrides" paths are checked,
-			// to see if they exist and are writeable.
-			// The first existing and writeable path
-			// for "overrides" is chosen
+            // The "overrides" paths are checked,
+            // to see if they exist and are writeable.
+            // The first existing and writeable path
+            // for "overrides" is chosen
 
-			// If override was not found, the "legacypaths"
-			// are checked in the same way to see if
-			// we have previously used such a folder
-			// and if that folder has contents,
-			// which indicates that it has been used.
+            // If override was not found, the "legacypaths"
+            // are checked in the same way to see if
+            // we have previously used such a folder
+            // and if that folder has contents,
+            // which indicates that it has been used.
 
-			// Finally we check the "attempts",
-			// which are suitable candidates
-			// for storing the updates on each
-			// operating system
+            // Finally we check the "attempts",
+            // which are suitable candidates
+            // for storing the updates on each
+            // operating system
 
-			if (string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))))
-			{
-				string installdir = null;
-				var programfiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))))
+            {
+                string installdir = null;
+                var programfiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-				// The user can override updates by having a local updates folder
-				var overrides = new List<string>(new string [] {
-						System.IO.Path.Combine(InstalledBaseDir, "updates"),
-					});
+                // The user can override updates by having a local updates folder
+                var overrides = new List<string>(new string [] {
+                        System.IO.Path.Combine(InstalledBaseDir, "updates"),
+                    });
 
-				if (Library.Utility.Utility.IsClientWindows)
-				{
-					overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
-					overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
-				}
-				else
-				{
-					if (Library.Utility.Utility.IsClientOSX)
-						overrides.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME, "updates"));
-				
-					overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
-				}
+                if (Library.Utility.Utility.IsClientWindows)
+                {
+                    overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
+                    overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
+                }
+                else
+                {
+                    if (Library.Utility.Utility.IsClientOSX)
+                        overrides.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME, "updates"));
+                
+                    overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
+                }
 
-				// Previous locations that we don't want to use,
-				// but we keep them active to avoid breaking the update syste
-				var legacypaths = new List<string>();
+                // Previous locations that we don't want to use,
+                // but we keep them active to avoid breaking the update syste
+                var legacypaths = new List<string>();
 
-				if (!string.IsNullOrWhiteSpace(programfiles))
-					legacypaths.Add(System.IO.Path.Combine(programfiles, APPNAME, "updates"));
-				if (Library.Utility.Utility.IsClientLinux)
-					legacypaths.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
+                if (!string.IsNullOrWhiteSpace(programfiles))
+                    legacypaths.Add(System.IO.Path.Combine(programfiles, APPNAME, "updates"));
+                if (Library.Utility.Utility.IsClientLinux)
+                    legacypaths.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
 
-				// The real attempts that we probe for
-				var attempts = new List<string>();
+                // The real attempts that we probe for
+                var attempts = new List<string>();
 
-				// We do not want to install anything in the basedir, if the application is installed in "ProgramFiles"
-				if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Library.Utility.Utility.AppendDirSeparator(programfiles)))
-					attempts.Add(System.IO.Path.Combine(InstalledBaseDir, "updates"));
+                // We do not want to install anything in the basedir, if the application is installed in "ProgramFiles"
+                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Library.Utility.Utility.AppendDirSeparator(programfiles)))
+                    attempts.Add(System.IO.Path.Combine(InstalledBaseDir, "updates"));
 
-				if (Library.Utility.Utility.IsClientOSX)
-					attempts.Add(System.IO.Path.Combine("/", "Library", "Application Support", APPNAME, "updates"));
-				else
-					attempts.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), APPNAME, "updates"));
+                if (Library.Utility.Utility.IsClientOSX)
+                    attempts.Add(System.IO.Path.Combine("/", "Library", "Application Support", APPNAME, "updates"));
+                else
+                    attempts.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), APPNAME, "updates"));
 
-				attempts.AddRange(overrides.Skip(1));
+                attempts.AddRange(overrides.Skip(1));
 
-				// Check if the override folder exists, and choose that
-				foreach (var p in overrides)
-					if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p))
-					{
-						installdir = p;
-						break;
-					}
+                // Check if the override folder exists, and choose that
+                foreach (var p in overrides)
+                    if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p))
+                    {
+                        installdir = p;
+                        break;
+                    }
 
-				if (string.IsNullOrWhiteSpace(installdir))
-					foreach (var p in legacypaths)
-						if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Count() > 0 && TestDirectoryIsWriteable(p))
-						{
-							installdir = p;
-							break;
-						}
-			
-				if (string.IsNullOrWhiteSpace(installdir))
-					foreach (var p in attempts)
-						if (!string.IsNullOrWhiteSpace(p) && TestDirectoryIsWriteable(p))
-						{
-							installdir = p;
-							break;
-						}
+                if (string.IsNullOrWhiteSpace(installdir))
+                    foreach (var p in legacypaths)
+                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Count() > 0 && TestDirectoryIsWriteable(p))
+                        {
+                            installdir = p;
+                            break;
+                        }
             
-				INSTALLDIR = installdir;
-			}
-			else
-			{
-				INSTALLDIR = Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
-			}
+                if (string.IsNullOrWhiteSpace(installdir))
+                    foreach (var p in attempts)
+                        if (!string.IsNullOrWhiteSpace(p) && TestDirectoryIsWriteable(p))
+                        {
+                            installdir = p;
+                            break;
+                        }
+            
+                INSTALLDIR = installdir;
+            }
+            else
+            {
+                INSTALLDIR = Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+            }
 
 
             if (INSTALLDIR != null)
@@ -207,22 +207,22 @@ namespace Duplicati.Library.AutoUpdater
             {
             }
 
-			if (selfVersion == null)
-			{
-				selfVersion = new UpdateInfo() {
-					Displayname = string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
-					Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-					ReleaseTime = new DateTime(0),
-					ReleaseType = 
+            if (selfVersion == null)
+            {
+                selfVersion = new UpdateInfo() {
+                    Displayname = string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
+                    Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    ReleaseTime = new DateTime(0),
+                    ReleaseType = 
 #if DEBUG
                         "Debug"
 #else
-						string.IsNullOrWhiteSpace(AutoUpdateSettings.BuildUpdateChannel) ? "Nightly" : AutoUpdateSettings.BuildUpdateChannel
+                        string.IsNullOrWhiteSpace(AutoUpdateSettings.BuildUpdateChannel) ? "Nightly" : AutoUpdateSettings.BuildUpdateChannel
 #endif
-				};
+                };
 
 
-			}
+            }
 
             if (baseVersion == null)
                 baseVersion = selfVersion;
@@ -445,9 +445,9 @@ namespace Duplicati.Library.AutoUpdater
                         wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
                         wreq.Headers.Add("X-Install-ID", InstallID);
 
-						var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
+                        var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
                         using(var resp = areq.GetResponse())
-						using(var rss = areq.GetResponseStream())
+                        using(var rss = areq.GetResponseStream())
                         using(var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
                         using(var fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create))
                             Duplicati.Library.Utility.Utility.CopyStream(pgs, fs);
