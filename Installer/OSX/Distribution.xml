@@ -3,6 +3,8 @@
     <title>Duplicati</title>
     <organization>com.duplicati</organization>
 
+    <license file="LICENSE.html"/>
+
     <pkg-ref id="com.duplicati.app"/>
     <pkg-ref id="com.duplicati.app.daemon"/>
 
