@@ -10,15 +10,15 @@
 
 <div class="input text" ng-hide="HideFolderBrowser">
 
-	<div class="input" style="padding-bottom: 0px">
+    <div class="input" style="padding-bottom: 0px">
         <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">{{ShowHiddenFolders ? 'Hide' : 'Show'}} hidden folders</a>
 
         <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;">Manually type path</a>
     </div>
-	
+    
     <label for="folder_path_picker">Folder path</label>
     <div class="resizable filepicker">
-	   <destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="$parent.Path" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
+       <destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="$parent.Path" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
    </div>
 </div>
 

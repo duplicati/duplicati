@@ -44,12 +44,12 @@ namespace Duplicati.CommandLine
             bool verbose = false;
             try
             {
-            	List<string> cargs = new List<string>(args);
+                List<string> cargs = new List<string>(args);
 
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
-				var options = tmpparsed.Item1;
-				var filter = tmpparsed.Item2;
-				
+                var options = tmpparsed.Item1;
+                var filter = tmpparsed.Item2;
+                
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
                 verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
@@ -271,15 +271,15 @@ namespace Duplicati.CommandLine
 
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
                     if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
-					{
-						newsource.Add(value);
-						return false;
-					}
+                    {
+                        newsource.Add(value);
+                        return false;
+                    }
                     else if (key.Equals("target", StringComparison.OrdinalIgnoreCase))
-					{
-						newtarget = value;
-						return false;
-					}
+                    {
+                        newtarget = value;
+                        return false;
+                    }
                     else if (key.Equals("append-filter", StringComparison.OrdinalIgnoreCase))
                     {
                         appendfilter = value;
@@ -296,9 +296,9 @@ namespace Duplicati.CommandLine
                         return false;
                     }
 
-					return true;
-				});
-				
+                    return true;
+                });
+                
                 var opt = tmpparsed.Item1;
                 var newfilter = tmpparsed.Item2;
 
@@ -307,8 +307,8 @@ namespace Duplicati.CommandLine
                 if (!filter.Empty && !newfilter.Empty)
                     throw new Exception(Strings.Program.FiltersCannotBeUsedWithFileError2);
 
-				if (!newfilter.Empty)
-                	filter = newfilter;
+                if (!newfilter.Empty)
+                    filter = newfilter;
 
                 if (!string.IsNullOrWhiteSpace(prependfilter))
                     filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)), filter);
@@ -323,15 +323,15 @@ namespace Duplicati.CommandLine
                     options[keyvalue.Key] = keyvalue.Value;
                     
                 if (!string.IsNullOrEmpty(newtarget))
-               	{
-               		if (cargs.Count <= 1)
-               			cargs.Add(newtarget);
-               		else
-               			cargs[1] = newtarget;
-               	}
+                   {
+                       if (cargs.Count <= 1)
+                           cargs.Add(newtarget);
+                       else
+                           cargs[1] = newtarget;
+                   }
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.InvariantCultureIgnoreCase))
-                   	cargs.AddRange(newsource);
+                       cargs.AddRange(newsource);
                 else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
                     Console.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 

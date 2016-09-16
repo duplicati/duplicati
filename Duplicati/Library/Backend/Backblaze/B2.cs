@@ -36,7 +36,7 @@ namespace Duplicati.Library.Backend.Backblaze
 
         private string m_bucketname;
         private string m_prefix;
-		private string m_urlencodedprefix;
+        private string m_urlencodedprefix;
         private string m_bucketType;
         private B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
@@ -62,7 +62,7 @@ namespace Duplicati.Library.Backend.Backblaze
             while(m_prefix.StartsWith("/"))
                 m_prefix = m_prefix.Substring(1);
 
-			m_urlencodedprefix = string.Join("/", m_prefix.Split(new [] { '/' }).Select(x => Library.Utility.Uri.UrlPathEncode(x)));
+            m_urlencodedprefix = string.Join("/", m_prefix.Split(new [] { '/' }).Select(x => Library.Utility.Uri.UrlPathEncode(x)));
 
             m_bucketType = DEFAULT_BUCKET_TYPE;
             if (options.ContainsKey(B2_CREATE_BUCKET_TYPE_OPTION))
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend.Backblaze
                         req.Method = "POST";
                         req.Headers["Authorization"] = UploadUrlData.AuthorizationToken;
                         req.Headers["X-Bz-Content-Sha1"] = sha1;
-						req.Headers["X-Bz-File-Name"] = m_urlencodedprefix + Utility.Uri.UrlPathEncode(remotename);
+                        req.Headers["X-Bz-File-Name"] = m_urlencodedprefix + Utility.Uri.UrlPathEncode(remotename);
                         req.ContentType = "application/octet-stream";
                         req.ContentLength = stream.Length;
                     },
@@ -266,12 +266,12 @@ namespace Duplicati.Library.Backend.Backblaze
             if (m_filecache != null && m_filecache.ContainsKey(remotename))
                 req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", m_helper.DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
             else
-				req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", m_helper.DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
+                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", m_helper.DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
 
             try
             {
-				using(var resp = req.GetResponse())
-				using(var rs = req.GetResponseStream())
+                using(var resp = req.GetResponse())
+                using(var rs = req.GetResponseStream())
                     Library.Utility.Utility.CopyStream(rs, stream);
             }
             catch (Exception ex)

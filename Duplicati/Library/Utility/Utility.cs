@@ -330,7 +330,7 @@ namespace Duplicati.Library.Utility
                         {
                             callback(rootpath, f, ATTRIBUTE_ERROR);
                         }
-		
+        
                     if (files != null)
                         foreach(var s in files)
                         {
@@ -751,16 +751,16 @@ namespace Duplicati.Library.Utility
             }
         }
 
-		/// <summary>
-		/// Gets a value indicating if the client is Windows based
-		/// </summary>
-		public static bool IsClientWindows
-		{
-			get
-			{
-				return !IsClientLinux;
-			}
-		}
+        /// <summary>
+        /// Gets a value indicating if the client is Windows based
+        /// </summary>
+        public static bool IsClientWindows
+        {
+            get
+            {
+                return !IsClientLinux;
+            }
+        }
 
         /// <value>
         /// Returns a value indicating if the filesystem, is case sensitive 

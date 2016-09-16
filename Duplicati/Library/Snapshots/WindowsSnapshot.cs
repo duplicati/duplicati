@@ -298,9 +298,9 @@ namespace Duplicati.Library.Snapshots
         /// <param name="callback">The callback to invoke with each found path</param>
         public IEnumerable<string> EnumerateFilesAndFolders(Utility.Utility.EnumerationFilterDelegate callback)
         {
-        	return m_sourcepaths.SelectMany(
-        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
-        	);
+            return m_sourcepaths.SelectMany(
+                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+            );
         }
 
         /// <summary>
@@ -393,7 +393,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public Dictionary<string, string> GetMetadata(string file)
         {
-			return _ioWin.GetMetadata(GetSnapshotPath(file));
+            return _ioWin.GetMetadata(GetSnapshotPath(file));
         }
         
         /// <summary>

@@ -10,17 +10,17 @@ backupApp.service('NotificationService', function($rootScope, $timeout, AppServi
 
     function refresh_notifications() {
 
-    	if (isRefreshing) {
-    		needsRefresh = true;
-    		return;
-    	}
+        if (isRefreshing) {
+            needsRefresh = true;
+            return;
+        }
 
-    	needsRefresh = false;
-    	isRefreshing = true;
+        needsRefresh = false;
+        isRefreshing = true;
 
         AppService.get('/notifications').then(
-        	function(resp) {
-        		
+            function(resp) {
+                
                 var idmap = {};
                 for(var n in resp.data)
                     idmap[resp.data[n].ID] = resp.data[n];
@@ -44,18 +44,18 @@ backupApp.service('NotificationService', function($rootScope, $timeout, AppServi
                     else
                         return 0;
                 });
-        		
+                
                 $rootScope.$broadcast('notificationschanged');
 
-        		isRefreshing = false;
-        		if (needsRefresh)
-        			refresh_notifications();
+                isRefreshing = false;
+                if (needsRefresh)
+                    refresh_notifications();
 
-        	},
-        	function(resp) {
-        		isRefreshing = false;
-        	}
-    	);
+            },
+            function(resp) {
+                isRefreshing = false;
+            }
+        );
     };
 
     this.watch = function(scope, m) {

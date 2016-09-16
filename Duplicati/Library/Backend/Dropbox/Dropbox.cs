@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-			get { return Strings.Dropbox.DisplayName; }
+            get { return Strings.Dropbox.DisplayName; }
         }
 
         public string ProtocolKey
@@ -49,41 +49,41 @@ namespace Duplicati.Library.Backend
             get { return "dropbox"; }
         }
 
-		private FileEntry ParseEntry(MetaData md)
-		{
-			var ife = new FileEntry(md.name);
-			if (md.IsFile)
-			{
-				ife.IsFolder = false;
-				ife.Size = (long)md.size;
-			}
-			else
-			{
-				ife.IsFolder = true;
-			}
+        private FileEntry ParseEntry(MetaData md)
+        {
+            var ife = new FileEntry(md.name);
+            if (md.IsFile)
+            {
+                ife.IsFolder = false;
+                ife.Size = (long)md.size;
+            }
+            else
+            {
+                ife.IsFolder = true;
+            }
 
-			try { ife.LastModification = ife.LastAccess = DateTime.Parse(md.server_modified).ToUniversalTime(); }
-			catch { }
+            try { ife.LastModification = ife.LastAccess = DateTime.Parse(md.server_modified).ToUniversalTime(); }
+            catch { }
 
-			return ife;
-		}
+            return ife;
+        }
 
         public List<IFileEntry> List()
         {
             try
             {
-				var list = new List<IFileEntry>();
-				var lfr = dbx.ListFiles(m_path);
+                var list = new List<IFileEntry>();
+                var lfr = dbx.ListFiles(m_path);
               
                 foreach (var md in lfr.entries)
-					list.Add(ParseEntry(md));
+                    list.Add(ParseEntry(md));
 
                 while (lfr.has_more)
                 {
                     lfr = dbx.ListFilesContinue(lfr.cursor);
                     foreach (var md in lfr.entries)
-						list.Add(ParseEntry(md));
-				}
+                        list.Add(ParseEntry(md));
+                }
 
                 return list;
             }
@@ -91,7 +91,7 @@ namespace Duplicati.Library.Backend
             {
                 if (de.errorJSON["error"][".tag"].ToString() == "path" && de.errorJSON["error"]["path"][".tag"].ToString() == "not_found")
                     throw new FolderMissingException();
-				
+                
                 throw;
             }
         }
@@ -122,17 +122,17 @@ namespace Duplicati.Library.Backend
             }
         }
 
-		public IList<ICommandLineArgument> SupportedCommands
-		{
-			get
-			{
-				return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-					new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Dropbox.AuthidShort, Strings.Dropbox.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("dropbox"))),
-				});
-			}
-		}
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Dropbox.AuthidShort, Strings.Dropbox.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("dropbox"))),
+                });
+            }
+        }
 
-		public string Description { get { return Strings.Dropbox.Description; } }
+        public string Description { get { return Strings.Dropbox.Description; } }
 
         public void Test()
         {

@@ -9,18 +9,18 @@ using Newtonsoft.Json.Linq;
 
 namespace Duplicati.Library.Backend
 {
-	public class DropboxHelper : OAuthHelper
+    public class DropboxHelper : OAuthHelper
     {
         private const string API_URL = "https://api.dropboxapi.com/2";
         private const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
-		private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
+        private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
 
         public DropboxHelper(string accessToken)
-			: base(accessToken, "dropbox")
+            : base(accessToken, "dropbox")
         {
-			base.AutoAuthHeader = true;
-			base.AccessTokenOnly = true;
+            base.AutoAuthHeader = true;
+            base.AccessTokenOnly = true;
         }
 
         public ListFolderResult ListFiles(string path)
@@ -43,7 +43,7 @@ namespace Duplicati.Library.Backend
 
         public ListFolderResult ListFilesContinue(string cursor)
         {
-			var lfca = new ListFolderContinueArg() { cursor = cursor };
+            var lfca = new ListFolderContinueArg() { cursor = cursor };
             var url = string.Format("{0}/files/list_folder/continue", API_URL);
 
             try
@@ -59,12 +59,12 @@ namespace Duplicati.Library.Backend
 
         public FolderMetadata CreateFolder(string path)
         {
-			var pa = new PathArg() { path = path };
+            var pa = new PathArg() { path = path };
             var url = string.Format("{0}/files/create_folder", API_URL);
 
             try
             {
-				return PostAndGetJSONData<FolderMetadata>(url, pa);
+                return PostAndGetJSONData<FolderMetadata>(url, pa);
             }
             catch (Exception ex)
             {
@@ -78,7 +78,7 @@ namespace Duplicati.Library.Backend
             // start a session
             var ussa = new UploadSessionStartArg();
 
-			var chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, stream.Length);
+            var chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, stream.Length);
 
             var url = string.Format("{0}/files/upload_session/start", CONTENT_API_URL);
             var req = CreateRequest(url, "POST");
@@ -95,14 +95,14 @@ namespace Duplicati.Library.Backend
             using (var rs = areq.GetRequestStream())
             {
                 int bytesRead = 0;
-				do
-				{
-					bytesRead = stream.Read(buffer, 0, Math.Min((int)Utility.Utility.DEFAULT_BUFFER_SIZE, chunksize));
-					globalBytesRead += (ulong)bytesRead;
-					rs.Write(buffer, 0, bytesRead);
+                do
+                {
+                    bytesRead = stream.Read(buffer, 0, Math.Min((int)Utility.Utility.DEFAULT_BUFFER_SIZE, chunksize));
+                    globalBytesRead += (ulong)bytesRead;
+                    rs.Write(buffer, 0, bytesRead);
 
-				}
-				while (bytesRead > 0 && globalBytesRead < (ulong)chunksize);                
+                }
+                while (bytesRead > 0 && globalBytesRead < (ulong)chunksize);                
             }
 
             var ussr = ReadJSONResponse<UploadSessionStartResult>(areq); // pun intended
@@ -120,12 +120,12 @@ namespace Duplicati.Library.Backend
                 usaa.close = remaining < DROPBOX_MAX_CHUNK_UPLOAD;
                 url = string.Format("{0}/files/upload_session/append_v2", CONTENT_API_URL);
 
-				chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, (long)remaining);
+                chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, (long)remaining);
 
                 req = CreateRequest(url, "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usaa);
                 req.ContentType = "application/octet-stream";
-				req.ContentLength = chunksize;
+                req.ContentLength = chunksize;
                 req.Timeout = 200000;
 
                 areq = new AsyncHttpRequest(req);
@@ -136,24 +136,24 @@ namespace Duplicati.Library.Backend
                     int bytesRead = 0;
                     do
                     {
-						bytesRead = stream.Read(buffer, 0, Math.Min(chunksize, (int)Utility.Utility.DEFAULT_BUFFER_SIZE));
+                        bytesRead = stream.Read(buffer, 0, Math.Min(chunksize, (int)Utility.Utility.DEFAULT_BUFFER_SIZE));
                         bytesReadInRequest += bytesRead;
                         globalBytesRead += (ulong)bytesRead;
                         rs.Write(buffer, 0, bytesRead);
 
                     }
-					while (bytesRead > 0 && bytesReadInRequest < chunksize);
+                    while (bytesRead > 0 && bytesReadInRequest < chunksize);
                 }
 
-				using (var response = GetResponse(areq))
-				using (var sr = new StreamReader(response.GetResponseStream()))
-                	sr.ReadToEnd();
+                using (var response = GetResponse(areq))
+                using (var sr = new StreamReader(response.GetResponseStream()))
+                    sr.ReadToEnd();
             }
 
             // finish session and commit
             try
             {
-				var usfa = new UploadSessionFinishArg();
+                var usfa = new UploadSessionFinishArg();
                 usfa.cursor.session_id = ussr.session_id;
                 usfa.cursor.offset = (ulong)globalBytesRead;
                 usfa.commit.path = path;
@@ -177,13 +177,13 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-				var pa = new PathArg() { path = path };
+                var pa = new PathArg() { path = path };
                 var url = string.Format("{0}/files/download", CONTENT_API_URL);
                 var req = CreateRequest(url, "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
 
-				using (var response = GetResponse(req))
-					Utility.Utility.CopyStream(response.GetResponseStream(), fs);
+                using (var response = GetResponse(req))
+                    Utility.Utility.CopyStream(response.GetResponseStream(), fs);
             }
             catch (Exception ex)
             {
@@ -196,11 +196,11 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-				var pa = new PathArg() { path = path };
+                var pa = new PathArg() { path = path };
                 var url = string.Format("{0}/files/delete", API_URL);
-				using (var response = GetResponse(url, pa))
-				using(var sr = new StreamReader(response.GetResponseStream()))
-					sr.ReadToEnd();
+                using (var response = GetResponse(url, pa))
+                using(var sr = new StreamReader(response.GetResponseStream()))
+                    sr.ReadToEnd();
             }
             catch (Exception ex)
             {
@@ -211,47 +211,47 @@ namespace Duplicati.Library.Backend
 
         private void handleDropboxException(Exception ex, bool filerequest)
         {
-			if (ex is WebException)
-			{
-				string json = string.Empty;
+            if (ex is WebException)
+            {
+                string json = string.Empty;
 
-				try
-				{
-					using (var sr = new StreamReader(((WebException)ex).Response.GetResponseStream()))
-						json = sr.ReadToEnd();
-				}
-				catch { }
+                try
+                {
+                    using (var sr = new StreamReader(((WebException)ex).Response.GetResponseStream()))
+                        json = sr.ReadToEnd();
+                }
+                catch { }
 
-				// Special mapping for exceptions:
-				//    https://www.dropbox.com/developers-v1/core/docs
+                // Special mapping for exceptions:
+                //    https://www.dropbox.com/developers-v1/core/docs
 
-				if (((WebException)ex).Response is HttpWebResponse)
-				{
-					var httpResp = ((WebException)ex).Response as HttpWebResponse;
+                if (((WebException)ex).Response is HttpWebResponse)
+                {
+                    var httpResp = ((WebException)ex).Response as HttpWebResponse;
 
-					if (httpResp.StatusCode == HttpStatusCode.NotFound)
-					{
-						if (filerequest)
-							throw new Duplicati.Library.Interface.FileMissingException(json);
-						else
-							throw new Duplicati.Library.Interface.FolderMissingException(json);
-					}
-					if (httpResp.StatusCode == HttpStatusCode.Conflict)
-					{
-						//TODO: Should actually parse and see if something else happens
-						if (filerequest)
-							throw new Duplicati.Library.Interface.FileMissingException(json);
-						else
-							throw new Duplicati.Library.Interface.FolderMissingException(json);
-					}
-					if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
-						ThrowAuthException(json, ex);
-					if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
-						ThrowOverQuotaError();
-				}
+                    if (httpResp.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        if (filerequest)
+                            throw new Duplicati.Library.Interface.FileMissingException(json);
+                        else
+                            throw new Duplicati.Library.Interface.FolderMissingException(json);
+                    }
+                    if (httpResp.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        //TODO: Should actually parse and see if something else happens
+                        if (filerequest)
+                            throw new Duplicati.Library.Interface.FileMissingException(json);
+                        else
+                            throw new Duplicati.Library.Interface.FolderMissingException(json);
+                    }
+                    if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
+                        ThrowAuthException(json, ex);
+                    if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
+                        ThrowOverQuotaError();
+                }
 
-				throw new DropboxException() { errorJSON = JObject.Parse(json) };
-			}
+                throw new DropboxException() { errorJSON = JObject.Parse(json) };
+            }
         }
     }
 
@@ -355,8 +355,8 @@ namespace Duplicati.Library.Backend
 
     }
 
-	public class FileMetaData : MetaData
-	{
+    public class FileMetaData : MetaData
+    {
 
-	}
+    }
 }

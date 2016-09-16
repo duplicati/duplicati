@@ -32,17 +32,17 @@
     </div>
 
     <div ng-show="Page == 'changelog'">
-    	<div class="prewrapped-text fixed-width-font">{{ChangeLog || 'Loading ...'}}</div>
-	</div>
+        <div class="prewrapped-text fixed-width-font">{{ChangeLog || 'Loading ...'}}</div>
+    </div>
 
     <div ng-show="Page == 'licenses'" class="licenses">
-    	{{brandingService.appName}} is using the following third party libraries:
-	    <ul>
-	        <li ng-show="Licenses == null">Loading ...</li>
-	        <li ng-repeat="item in Licenses" class="licenseentry">
-	        	<a target="_blank" href="{{item.link}}" class="itemlink">{{item.name}}</a>: {{item.description}}. <a class="licenselink" target="_blank" href="{{item.licenselink}}">{{item.license}} licensed</a>
-	        </li>
-	    </ul>
+        {{brandingService.appName}} is using the following third party libraries:
+        <ul>
+            <li ng-show="Licenses == null">Loading ...</li>
+            <li ng-repeat="item in Licenses" class="licenseentry">
+                <a target="_blank" href="{{item.link}}" class="itemlink">{{item.name}}</a>: {{item.description}}. <a class="licenselink" target="_blank" href="{{item.licenselink}}">{{item.license}} licensed</a>
+            </li>
+        </ul>
     </div>
 
     <div ng-show="Page == 'sysinfo'">

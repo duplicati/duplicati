@@ -190,8 +190,8 @@ namespace Duplicati.Server.WebServer
             fm.MimeTypes["html"] = "text/html; charset=utf-8";
             fm.MimeTypes["hbs"] = "application/x-handlebars-template";
             fm.MimeTypes["woff"] = "application/font-woff";
-			fm.MimeTypes["woff2"] = "application/font-woff";
-		}
+            fm.MimeTypes["woff2"] = "application/font-woff";
+        }
             
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
@@ -260,19 +260,19 @@ namespace Duplicati.Server.WebServer
                 server.Add(customized_files);
             }
 
-			if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
-			{
-				var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
-				AddMimeTypes(oem_files);
-				server.Add(oem_files);
-			}
+            if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
+            {
+                var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
+                AddMimeTypes(oem_files);
+                server.Add(oem_files);
+            }
 
-			if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
-			{
-				var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
-				AddMimeTypes(proxy_files);
-				server.Add(proxy_files);
-			}
+            if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
+            {
+                var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
+                AddMimeTypes(proxy_files);
+                server.Add(proxy_files);
+            }
 
             var fh = new FileModule("/", webroot);
             AddMimeTypes(fh);

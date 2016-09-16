@@ -29,8 +29,8 @@ namespace Duplicati.Library.Backend
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
         private string m_path;
-		private string m_sanitizedUrl;
-		private string m_reverseProtocolUrl;
+        private string m_sanitizedUrl;
+        private string m_reverseProtocolUrl;
         private string m_rawurl;
         private string m_rawurlPort;
         private bool m_useIntegratedAuthentication = false;
@@ -96,9 +96,9 @@ namespace Duplicati.Library.Backend
 
             m_path = u.Path;
             if (!m_path.StartsWith("/"))
-            	m_path = "/" + m_path;
+                m_path = "/" + m_path;
             if (!m_path.EndsWith("/"))
-            	m_path += "/";
+                m_path += "/";
 
             m_path = Library.Utility.Uri.UrlDecode(m_path);
             m_rawurl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
@@ -108,8 +108,8 @@ namespace Duplicati.Library.Backend
                 port = m_useSSL ? 443 : 80;
 
             m_rawurlPort = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path, null, null, null, port).ToString();
-			m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
-			m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http" : "https", u.Host, m_path).ToString();
+            m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
+            m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http" : "https", u.Host, m_path).ToString();
             options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 
@@ -149,17 +149,17 @@ namespace Duplicati.Library.Backend
 
                     if (!string.IsNullOrEmpty(m_debugPropfindFile))
                     {
-						using (var rs = areq.GetResponseStream())
+                        using (var rs = areq.GetResponseStream())
                         using (var fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                             Utility.Utility.CopyStream(rs, fs, false, m_copybuffer);
 
                         doc.Load(m_debugPropfindFile);
                     }
                     else
-					{
-						using (var rs = areq.GetResponseStream())
-							doc.Load(rs);
-					}
+                    {
+                        using (var rs = areq.GetResponseStream())
+                            doc.Load(rs);
+                    }
                 }
 
                 System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
@@ -175,9 +175,9 @@ namespace Duplicati.Library.Backend
                     string name = Library.Utility.Uri.UrlDecode(n.InnerText.Replace("+", "%2B"));
 
                     string cmp_path;
-					
-					//TODO: This list is getting ridiculous, should change to regexps
-					
+                    
+                    //TODO: This list is getting ridiculous, should change to regexps
+                    
                     if (name.StartsWith(m_url))
                         cmp_path = m_url;
                     else if (name.StartsWith(m_rawurl))
@@ -186,9 +186,9 @@ namespace Duplicati.Library.Backend
                         cmp_path = m_rawurlPort;
                     else if (name.StartsWith(m_path))
                         cmp_path = m_path;
-					else if (name.StartsWith("/" + m_path))
-						cmp_path = "/" + m_path;
-					else if (name.StartsWith(m_sanitizedUrl))
+                    else if (name.StartsWith("/" + m_path))
+                        cmp_path = "/" + m_path;
+                    else if (name.StartsWith(m_sanitizedUrl))
                         cmp_path = m_sanitizedUrl;
                     else if (name.StartsWith(m_reverseProtocolUrl))
                         cmp_path = m_reverseProtocolUrl;
@@ -346,12 +346,12 @@ namespace Duplicati.Library.Backend
                 req.Credentials = cred;
             }
             else
-			{
+            {
                 req.Credentials = m_userInfo;
                 //We need this under Mono for some reason,
                 // and it appears some servers require this as well
-				req.PreAuthenticate = true; 
-			}
+                req.PreAuthenticate = true; 
+            }
 
             req.KeepAlive = false;
             req.UserAgent = "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -408,7 +408,7 @@ namespace Duplicati.Library.Backend
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-					using (var s = areq.GetResponseStream())
+                    using (var s = areq.GetResponseStream())
                         Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
                 }
             }

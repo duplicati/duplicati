@@ -281,7 +281,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 var areq = new AsyncHttpRequest(req);
 
                 using(var resp = areq.GetResponse())
-				using(var rs = areq.GetResponseStream())
+                using(var rs = areq.GetResponseStream())
                     Library.Utility.Utility.CopyStream(rs, stream);
             }
             catch (WebException wex)

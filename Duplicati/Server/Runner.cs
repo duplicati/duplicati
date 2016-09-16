@@ -464,14 +464,14 @@ namespace Duplicati.Server
                                 return r;
                             }
 
-						case DuplicatiOperation.Compact:
-							{
-							var r = controller.Compact();
-								UpdateMetadata(backup, r);
-								return r;
-							}
+                        case DuplicatiOperation.Compact:
+                            {
+                            var r = controller.Compact();
+                                UpdateMetadata(backup, r);
+                                return r;
+                            }
 
-						case DuplicatiOperation.CreateReport:
+                        case DuplicatiOperation.CreateReport:
                             {
                                 using(var tf = new Duplicati.Library.Utility.TempFile())
                                 {
