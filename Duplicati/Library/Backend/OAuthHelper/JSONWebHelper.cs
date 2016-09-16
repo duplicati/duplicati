@@ -211,7 +211,7 @@ namespace Duplicati.Library
 
         public virtual T ReadJSONResponse<T>(HttpWebResponse resp)
         {
-			using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
+            using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
             using(var tr = new System.IO.StreamReader(rs))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                 return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);

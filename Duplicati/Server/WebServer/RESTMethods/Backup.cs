@@ -173,7 +173,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var input = info.Request.Form;
 
             string[] filters = parsePaths(input["paths"].Value ?? string.Empty);
-			
+            
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
@@ -216,14 +216,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK(new {Status = "OK", ID = task.TaskID});
         }
 
-		private void Compact(IBackup backup, RequestInfo info)
-		{
-			var task = Runner.CreateTask(DuplicatiOperation.Compact, backup);
-			Program.WorkThread.AddTask(task);
-			Program.StatusEventNotifyer.SignalNewEvent();
+        private void Compact(IBackup backup, RequestInfo info)
+        {
+            var task = Runner.CreateTask(DuplicatiOperation.Compact, backup);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
 
-			info.OutputOK(new { Status = "OK", ID = task.TaskID });
-		}
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
+        }
 
         private string[] parsePaths(string paths)
         {
@@ -241,7 +241,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             return filters;
         }
 
-		private void DoRepair(IBackup backup, RequestInfo info, bool repairUpdate)
+        private void DoRepair(IBackup backup, RequestInfo info, bool repairUpdate)
         {
             var input = info.Request.Form;
             string[] filters = null;
@@ -441,11 +441,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             Verify(bk, info);
                             return;
 
-						case "compact":
-							Compact(bk, info);
-							return;
+                        case "compact":
+                            Compact(bk, info);
+                            return;
 
-						case "start":
+                        case "start":
                         case "run":
                             RunBackup(bk, info);
                             return;

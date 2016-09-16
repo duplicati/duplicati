@@ -138,7 +138,7 @@ namespace Duplicati.Library.Backend
             string time = m.Groups["timestamp"].Value;
             string dir = m.Groups["dir"].Value;
 
-			//Unused
+            //Unused
             //string permission = m.Groups["permission"].Value;
 
             if (dir != "" && dir != "-")
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Backend
                 var lst = new List<IFileEntry>();
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var resp = areq.GetResponse())
-				using (var rs = areq.GetResponseStream())
+                using (var rs = areq.GetResponseStream())
                 using (var sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
                 {
                     string line;
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Backend
 
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = areq.GetResponse())
-			using (var rs = areq.GetResponseStream())
+            using (var rs = areq.GetResponseStream())
                 Utility.Utility.CopyStream(rs, output, false, m_copybuffer);
         }
 
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Backend
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-			using (areq.GetResponse())
+            using (areq.GetResponse())
             { }
         }
 

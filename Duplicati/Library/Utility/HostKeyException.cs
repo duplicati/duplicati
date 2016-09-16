@@ -17,49 +17,49 @@
 using System;
 namespace Duplicati.Library.Utility
 {
-	/// <summary>
-	/// Class for reporting host-key violations
-	/// </summary>
-	[Serializable]
-	public class HostKeyException : Exception
-	{
-		/// <summary>
-		/// The key reported by the host, which is not accepted
-		/// </summary>
-		/// <value>The reported host key.</value>
-		public string ReportedHostKey { get; set; }
-		/// <summary>
-		/// The key which was expected
-		/// </summary>
-		/// <value>The acceptable host key.</value>
-		public string AcceptedHostKey { get; set; }
+    /// <summary>
+    /// Class for reporting host-key violations
+    /// </summary>
+    [Serializable]
+    public class HostKeyException : Exception
+    {
+        /// <summary>
+        /// The key reported by the host, which is not accepted
+        /// </summary>
+        /// <value>The reported host key.</value>
+        public string ReportedHostKey { get; set; }
+        /// <summary>
+        /// The key which was expected
+        /// </summary>
+        /// <value>The acceptable host key.</value>
+        public string AcceptedHostKey { get; set; }
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.HostKeyException"/> class.
-		/// </summary>
-		/// <param name="message">The error message to report.</param>
-		/// <param name="reportedkey">The reported host key.</param>
-		/// <param name="acceptedkey">The acceptable host key.</param>
-		/// <param name="innerexception">The inner exception.</param>
-		public HostKeyException(string message, string reportedkey, string acceptedkey, Exception innerexception)
-			: base(message, innerexception)
-		{
-			ReportedHostKey = reportedkey;
-			AcceptedHostKey = acceptedkey;
-		}
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.HostKeyException"/> class.
+        /// </summary>
+        /// <param name="message">The error message to report.</param>
+        /// <param name="reportedkey">The reported host key.</param>
+        /// <param name="acceptedkey">The acceptable host key.</param>
+        /// <param name="innerexception">The inner exception.</param>
+        public HostKeyException(string message, string reportedkey, string acceptedkey, Exception innerexception)
+            : base(message, innerexception)
+        {
+            ReportedHostKey = reportedkey;
+            AcceptedHostKey = acceptedkey;
+        }
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.HostKeyException"/> class.
-		/// </summary>
-		/// <param name="message">The error message to report.</param>
-		/// <param name="reportedkey">The reported host key.</param>
-		/// <param name="acceptedkey">The acceptable host key.</param>
-		public HostKeyException(string message, string reportedkey, string acceptedkey)
-			: base(message)
-		{
-			ReportedHostKey = reportedkey;
-			AcceptedHostKey = acceptedkey;
-		}
-	}
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.HostKeyException"/> class.
+        /// </summary>
+        /// <param name="message">The error message to report.</param>
+        /// <param name="reportedkey">The reported host key.</param>
+        /// <param name="acceptedkey">The acceptable host key.</param>
+        public HostKeyException(string message, string reportedkey, string acceptedkey)
+            : base(message)
+        {
+            ReportedHostKey = reportedkey;
+            AcceptedHostKey = acceptedkey;
+        }
+    }
 }
 

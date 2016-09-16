@@ -33,17 +33,17 @@ namespace Duplicati.Library.Main.Operation
                 
                 var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
                 
-            	try
-            	{
+                try
+                {
                     var filteredList = ListFilesHandler.ParseAndFilterFilesets(backend.List(), m_options);
                     if (filteredList.Count == 0)
                         throw new Exception("No filesets found on remote target");
     
-	                Exception lastEx = new Exception("No suitable files found on remote target");
-	
-	                foreach(var fileversion in filteredList)
-	                    try
-	                    {
+                    Exception lastEx = new Exception("No suitable files found on remote target");
+    
+                    foreach(var fileversion in filteredList)
+                        try
+                        {
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             {
                                 backend.WaitForComplete(db, null);
@@ -51,7 +51,6 @@ namespace Duplicati.Library.Main.Operation
                             }    
                         
                             var file = fileversion.Value.File;
-                            
                             var entry = db.GetRemoteVolume(file.Name);
 
                             var res = new List<string>();
@@ -61,30 +60,30 @@ namespace Duplicati.Library.Main.Operation
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
                                     {
                                         var targetpath = System.IO.Path.Combine(m_options.Restorepath, cf.Key);
-    	                                using (var ts = System.IO.File.Create(targetpath))
-    	                                    Library.Utility.Utility.CopyStream(cf.Value, ts);
+                                        using (var ts = System.IO.File.Create(targetpath))
+                                            Library.Utility.Utility.CopyStream(cf.Value, ts);
                                         res.Add(targetpath);
                                     }
-	                        
+                            
                             m_result.SetResult(res);
                             
-	                        lastEx = null;
-	                        break;
-	                    }
-	                    catch(Exception ex)
-	                    {
-	                        lastEx = ex;
+                            lastEx = null;
+                            break;
+                        }
+                        catch(Exception ex)
+                        {
+                            lastEx = ex;
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
-	                    }
-	
-	                if (lastEx != null)
-	                    throw lastEx;
-	        	}
-	        	finally
-	        	{
-	        		backend.WaitForComplete(db, null);
-	        	}
+                        }
+    
+                    if (lastEx != null)
+                        throw lastEx;
+                }
+                finally
+                {
+                    backend.WaitForComplete(db, null);
+                }
 
                 db.WriteResults();
             }

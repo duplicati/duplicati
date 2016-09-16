@@ -44,7 +44,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string DisplayName { get { return LC.L(@"Google Drive"); } }
         public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID, you can get it from: {0}", url); }
-		public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}""", folder, parent); }
+        public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}""", folder, parent); }
     }
 }
 

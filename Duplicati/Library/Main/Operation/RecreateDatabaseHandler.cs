@@ -55,29 +55,29 @@ namespace Duplicati.Library.Main.Operation
 
             using(var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
-				m_result.SetDatabase(db);
+                m_result.SetDatabase(db);
 
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
                     throw new Exception(string.Format("The version(s) being updated to, already exists"));
 
-				// Mark as incomplete
-				db.PartiallyRecreated = true;
+                // Mark as incomplete
+                db.PartiallyRecreated = true;
 
-				Utility.UpdateOptionsFromDb(db, m_options, null);
+                Utility.UpdateOptionsFromDb(db, m_options, null);
                 DoRun(db, true, filter, filelistfilter, blockprocessor);
                 db.WriteResults();
             }
         }
 
-		/// <summary>
-		/// Run the recreate procedure
-		/// </summary>
-		/// <param name="dbparent">The database to restore into</param>
-		/// <param name="updating">True if this is an update call, false otherwise</param>
-		/// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
-		/// <param name="filelistfilter">Filters the files in a filelist to prevent downloading unwanted data</param>
-		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-		internal void DoRun(LocalDatabase dbparent, bool updating, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+        /// <summary>
+        /// Run the recreate procedure
+        /// </summary>
+        /// <param name="dbparent">The database to restore into</param>
+        /// <param name="updating">True if this is an update call, false otherwise</param>
+        /// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
+        /// <param name="filelistfilter">Filters the files in a filelist to prevent downloading unwanted data</param>
+        /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
+        internal void DoRun(LocalDatabase dbparent, bool updating, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Recreate_Running);
 
@@ -85,12 +85,12 @@ namespace Duplicati.Library.Main.Operation
             using(var restoredb = new LocalRecreateDatabase(dbparent, m_options))
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
-				restoredb.RepairInProgress = true;
+                restoredb.RepairInProgress = true;
 
                 var volumeIds = new Dictionary<string, long>();
 
                 var rawlist = backend.List();
-		
+        
                 //First step is to examine the remote storage to see what
                 // kind of data we can find
                 var remotefiles =
@@ -109,10 +109,10 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         var tmp = 
-					(from x in rawlist
-                		let n = VolumeBase.ParseFilename(x)
-                	where
-                    	n != null
+                    (from x in rawlist
+                        let n = VolumeBase.ParseFilename(x)
+                    where
+                        n != null
                     select n.Prefix).ToArray();
                 
                         var types = tmp.Distinct().ToArray();
@@ -356,7 +356,7 @@ namespace Duplicati.Library.Main.Operation
                     for(var i = 0; i < 3; i++)
                     {
                         // Grab the list matching the pass type
-						var lst = restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize).ToList();
+                        var lst = restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize).ToList();
                         if (lst.Count > 0)
                         {
                             switch (i)
@@ -422,25 +422,25 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
                 
-				backend.WaitForComplete(restoredb, null);
+                backend.WaitForComplete(restoredb, null);
 
-				if (m_options.RepairOnlyPaths)
-				{
-					m_result.AddMessage("Recreate/path-update completed, not running consistency checks");
-				}
-				else
-				{
-					m_result.AddMessage("Recreate completed, verifying the database consistency");
+                if (m_options.RepairOnlyPaths)
+                {
+                    m_result.AddMessage("Recreate/path-update completed, not running consistency checks");
+                }
+                else
+                {
+                    m_result.AddMessage("Recreate completed, verifying the database consistency");
 
-	                //All done, we must verify that we have all blocklist fully intact
-	                // if this fails, the db will not be deleted, so it can be used,
-	                // except to continue a backup
-	                restoredb.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, null);
+                    //All done, we must verify that we have all blocklist fully intact
+                    // if this fails, the db will not be deleted, so it can be used,
+                    // except to continue a backup
+                    restoredb.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, null);
 
-					m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
+                    m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
 
-					restoredb.RepairInProgress = false;
-				}
+                    restoredb.RepairInProgress = false;
+                }
             }
         }
 

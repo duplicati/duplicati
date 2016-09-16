@@ -65,9 +65,9 @@ namespace Duplicati.Library.Main.Database
                 m_connection = owner.m_connection;
                 m_filesets = owner.FilesetTimes.ToArray();
                 m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-				var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
-				string query = tmp.Item1;
-				var args = tmp.Item2;
+                var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
+                string query = tmp.Item1;
+                var args = tmp.Item2;
                 
                 using(var cmd = m_connection.CreateCommand())
                 {

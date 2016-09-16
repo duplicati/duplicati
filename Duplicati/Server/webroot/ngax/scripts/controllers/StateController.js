@@ -17,7 +17,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     $scope.$on('serverstatechanged.pauseTimeRemain', function() { $timeout(function() {$scope.$digest(); }) });
 
     $scope.sendResume = function() {
-    	ServerStatus.resume().then(function() {}, AppUtils.connectionError);
+        ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };
 
     function updateStateDisplay() {

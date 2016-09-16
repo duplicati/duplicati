@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 {
                     string rawdata = null;
                     var hs = (ex as WebException).Response as HttpWebResponse;
-					using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
+                    using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                     using(var sr = new System.IO.StreamReader(rs))
                         rawdata = sr.ReadToEnd();
 

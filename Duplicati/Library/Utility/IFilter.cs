@@ -19,16 +19,16 @@ using System;
 
 namespace Duplicati.Library.Utility
 {
-	/// <summary>
-	/// Common interface for a filter
-	/// </summary>
-	public interface IFilter
-	{
-		/// <summary>
-		/// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.IFilter"/> is empty.
-		/// </summary>
-		/// <value><c>true</c> if empty; otherwise, <c>false</c>.</value>
-		bool Empty { get; }
+    /// <summary>
+    /// Common interface for a filter
+    /// </summary>
+    public interface IFilter
+    {
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.IFilter"/> is empty.
+        /// </summary>
+        /// <value><c>true</c> if empty; otherwise, <c>false</c>.</value>
+        bool Empty { get; }
         /// <summary>
         /// Performs a test to see if the entry matches the filter
         /// </summary>
@@ -36,6 +36,6 @@ namespace Duplicati.Library.Utility
         /// <param name="result">The match result</param>
         /// <param name="match">The filter that matched</param>
         bool Matches(string entry, out bool result, out IFilter match);
-	}
+    }
 }
 

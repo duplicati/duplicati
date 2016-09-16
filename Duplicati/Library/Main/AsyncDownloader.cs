@@ -6,52 +6,52 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
-	internal interface IAsyncDownloadedFile : IRemoteVolume
-	{
-		Library.Utility.TempFile TempFile { get; }
-	}
+    internal interface IAsyncDownloadedFile : IRemoteVolume
+    {
+        Library.Utility.TempFile TempFile { get; }
+    }
 
     internal class AsyncDownloader : IEnumerable<IAsyncDownloadedFile>
     {
         private class AsyncDownloaderEnumerator : IEnumerator<IAsyncDownloadedFile>
         {
-        	private class AsyncDownloadedFile : IAsyncDownloadedFile
-        	{
-        		private Exception m_exception;
-        		private Library.Utility.TempFile m_file;
-        		
-        		public string Name { get; private set; }
-        		public string Hash { get; private set; }
-        		public long Size { get; private set; }
-        		
-        		public void DisposeTempFile()
-				{
-					if (m_file != null)
-						try { m_file.Dispose(); }
-						finally { m_file = null; }
-				}
-				
+            private class AsyncDownloadedFile : IAsyncDownloadedFile
+            {
+                private Exception m_exception;
+                private Library.Utility.TempFile m_file;
+                
+                public string Name { get; private set; }
+                public string Hash { get; private set; }
+                public long Size { get; private set; }
+                
+                public void DisposeTempFile()
+                {
+                    if (m_file != null)
+                        try { m_file.Dispose(); }
+                        finally { m_file = null; }
+                }
+                
 
-        		public Library.Utility.TempFile TempFile
-        		{
-        			get
-        			{
-        				if (m_exception != null)
-        					throw m_exception;
+                public Library.Utility.TempFile TempFile
+                {
+                    get
+                    {
+                        if (m_exception != null)
+                            throw m_exception;
 
-        				return m_file;
-        			}
-        		}
-        		
-        		public AsyncDownloadedFile(string name, string hash, long size, Library.Utility.TempFile tempfile, Exception exception)
-        		{
-        			this.Name = name;
-        			this.Hash = hash;
-        			this.Size = size;
-        			m_exception = exception;
-        			m_file = tempfile;
-        		}
-        	}
+                        return m_file;
+                    }
+                }
+                
+                public AsyncDownloadedFile(string name, string hash, long size, Library.Utility.TempFile tempfile, Exception exception)
+                {
+                    this.Name = name;
+                    this.Hash = hash;
+                    this.Size = size;
+                    m_exception = exception;
+                    m_file = tempfile;
+                }
+            }
         
             private IList<IRemoteVolume> m_volumes;
             private BackendManager.IDownloadWaitHandle m_handle;
@@ -86,33 +86,33 @@ namespace Duplicati.Library.Main
             }
 
             public bool MoveNext()
-			{
-				if (m_current != null)
-				{
-					m_current.DisposeTempFile();
-					m_current = null;
-				}
+            {
+                if (m_current != null)
+                {
+                    m_current.DisposeTempFile();
+                    m_current = null;
+                }
 
-				if (m_index >= m_volumes.Count)
-					return false;
+                if (m_index >= m_volumes.Count)
+                    return false;
 
-				if (m_handle == null)
-					m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash);
+                if (m_handle == null)
+                    m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash);
                 
-				string hash = null;
-				long size = -1;
-				Library.Utility.TempFile file = null;
-				Exception exception = null;
-				try
-				{
-					file = m_handle.Wait(out hash, out size);
-	                
-				}
-				catch (Exception ex)
-				{
-					exception = ex;
-				}
-				
+                string hash = null;
+                long size = -1;
+                Library.Utility.TempFile file = null;
+                Exception exception = null;
+                try
+                {
+                    file = m_handle.Wait(out hash, out size);
+                    
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+                
                 m_current = new AsyncDownloadedFile(m_volumes[m_index].Name, hash, size, file, exception);
                 m_handle = null;
 

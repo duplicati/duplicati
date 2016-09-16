@@ -101,10 +101,10 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
-				if (db.PartiallyRecreated)
-					throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                if (db.PartiallyRecreated)
+                    throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
-				if (db.RepairInProgress)
+                if (db.RepairInProgress)
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
                     throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
-				
+                
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
 
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main.Operation
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
                         }
-							
+                            
                     foreach(var n in tp.MissingVolumes)
                     {
                         IDisposable newEntry = null;
@@ -275,7 +275,7 @@ namespace Duplicati.Library.Main.Operation
                                 var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
-								
+
                                 db.WriteFileset(w, filesetId, null);
 	
                                 w.Close();
@@ -294,15 +294,15 @@ namespace Duplicati.Library.Main.Operation
                                 w.SetRemoteFilename(n.Name);
 
                                 var h = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-								
+                                
                                 foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
-                                {								
+                                {                               
                                     w.StartVolume(blockvolume.Name);
                                     var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
-									
+                                    
                                     foreach(var b in db.GetBlocks(volumeid))
                                         w.AddBlock(b.Hash, b.Size);
-										
+                                        
                                     w.FinishVolume(blockvolume.Hash, blockvolume.Size);
                                     
                                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
@@ -315,9 +315,9 @@ namespace Duplicati.Library.Main.Operation
                                             w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
                                         }
                                 }
-								
+                                
                                 w.Close();
-								
+                                
                                 if (m_options.Dryrun)
                                     m_result.AddDryrunMessage(string.Format("would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
                                 else
@@ -436,10 +436,10 @@ namespace Duplicati.Library.Main.Operation
                     m_result.AddMessage("Destination and database are synchronized, not making any changes");
                 }
 
-                m_result.OperationProgressUpdater.UpdateProgress(1);				
-				backend.WaitForComplete(db, null);
+                m_result.OperationProgressUpdater.UpdateProgress(1);                
+                backend.WaitForComplete(db, null);
                 db.WriteResults();
-			}
+            }
         }
 
         public void RunRepairCommon()
@@ -455,7 +455,7 @@ namespace Duplicati.Library.Main.Operation
 
                 Utility.UpdateOptionsFromDb(db, m_options);
 
-				if (db.RepairInProgress || db.PartiallyRecreated)
+                if (db.RepairInProgress || db.PartiallyRecreated)
                     m_result.AddWarning("The database is marked as \"in-progress\" and may be incomplete.", null);
 
                 db.FixDuplicateMetahash();

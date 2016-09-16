@@ -241,10 +241,10 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
-				if (m_database.PartiallyRecreated)
-					throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
-				
-				if (m_database.RepairInProgress)
+                if (m_database.PartiallyRecreated)
+                    throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                
+                if (m_database.RepairInProgress)
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
 
                 // If there is no filter, we set an empty filter to simplify the code
@@ -335,7 +335,7 @@ namespace Duplicati.Library.Main.Operation
     		                                        
                         if (await m_result.TaskReader.ProgressAsync)
                             CompactIfRequired(backend, lastVolumeSize);
-    		            
+
                         if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
@@ -391,7 +391,7 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
         }
-            
+
         public void Dispose()
         {
             m_result.EndTime = DateTime.UtcNow;

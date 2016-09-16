@@ -82,8 +82,8 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-		
-		private HashLookupHelper<KeyValuePair<long, long>> m_blockHashLookup;
+        
+        private HashLookupHelper<KeyValuePair<long, long>> m_blockHashLookup;
         private HashLookupHelper<long> m_fileHashLookup;
         private HashLookupHelper<long> m_metadataLookup;
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
@@ -97,9 +97,9 @@ namespace Duplicati.Library.Main.Database
         {
             this.ShouldCloseConnection = true;
         }
-       	
+           
         public LocalBackupDatabase(LocalDatabase db, Options options)
-        	: base(db)
+            : base(db)
         {
             m_findblockCommand = m_connection.CreateCommand();
             m_insertblockCommand = m_connection.CreateCommand();
@@ -116,8 +116,8 @@ namespace Duplicati.Library.Main.Database
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
-				
-			m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
+                
+            m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
 
             m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
@@ -766,7 +766,7 @@ namespace Duplicati.Library.Main.Database
         {
             return m_filesetId = base.CreateFileset(volumeid, timestamp, transaction);
         }
-								
+                                
         public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand())
