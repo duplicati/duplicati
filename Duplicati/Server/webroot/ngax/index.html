@@ -225,7 +225,7 @@
         <div class="info">
             <div class="title">{{'Connection lost' | localize}}</div>
             <div class="content" ng-show="state.connectionState !='connecting'">
-                {{'The connection to the server is lost, attempting again in {0} ...' | localize: state.connectionAttemptTimer + 1000 | timeremaining }}
+                {{'The connection to the server is lost, attempting again in {0} ...' | localize: ((state.connectionAttemptTimer + 1000) | timeremaining) }}
             </div>
             <div class="content" ng-hide="state.connectionState !='connecting'">
                 {{'Connnecting to server ...' | localize }}
