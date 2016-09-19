@@ -123,10 +123,10 @@
                 <span>{{'Donate' | localize}}</span>
                 <ul>
                     <li>
-                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="Donate with Bitcoins" /></a>
+                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | localize}}" /></a>
                     </li>
                     <li>
-                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="Donate with PayPal" /></a>
+                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | localize}}" /></a>
                     </li>
                 </ul>
             </div>
@@ -191,10 +191,10 @@
                 <span>{{'Donate' | localize}}</span>
                 <ul>
                     <li>
-                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="Donate with Bitcoins" /></a>
+                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | localize}}" /></a>
                     </li>
                     <li>
-                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="Donate with PayPal" /></a>
+                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | localize}}" /></a>
                     </li>
                 </ul>
             </div>    
@@ -206,7 +206,7 @@
     <div ng-controller="DialogController">
         <div ng-show="state.CurrentItem != null" class="blocker" ng-click=""></div>
 
-        <div ng-show="state.CurrentItem != null" class="modal-dialog">
+        <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
                 <div class="content">{{state.CurrentItem.message}}</div>
@@ -221,20 +221,35 @@
 
     <div ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
 
-    <div ng-show="state.connectionState != 'connected'" class="connection-lost">
+    <div ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
-            <div class="title">Connection lost</div>
+            <div class="title">{{'Connection lost' | localize}}</div>
             <div class="content" ng-show="state.connectionState !='connecting'">
-                The connection to the server is lost, attempting again in {{ state.connectionAttemptTimer + 1000 | timeremaining }} ...
+                {{'The connection to the server is lost, attempting again in {0} ...' | localize: state.connectionAttemptTimer + 1000 | timeremaining }}
             </div>
             <div class="content" ng-hide="state.connectionState !='connecting'">
-                Connnecting to server ...
+                {{'Connnecting to server ...' | localize }}
             </div>
             <div class="content buttons">
-                <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button">Connect now</a>
-                <a href ng-hide="state.connectionState != 'connecting'" class="button" style="cursor: default;">Connecting...</a>
+                <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button">{{'Connect now' | localize}}</a>
+                <a href ng-hide="state.connectionState != 'connecting'" class="button" style="cursor: default;">{{'Connecting...' | localize}}</a>
             </div>
         </div>
     </div>
+
+    <div ng-show="false" class="blocker" ng-click=""></div>
+
+    <div ng-show="false" class="connection-lost" ng-click="">
+        <div class="info">
+            <div class="title">Not loaded ...</div>
+            <div class="content">
+                The page is not yet loaded, this can be caused by a defective install, a browser issue or a slow connection.
+            </div>
+            <div class="content buttons">
+                <a href class="button">Reload page</a>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

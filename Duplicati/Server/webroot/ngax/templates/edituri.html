@@ -1,7 +1,7 @@
-<a href ng-click="hide()" ng-hide="Testing">&lt; Back</a>
+<a href ng-click="hide()" ng-hide="Testing">{{'&lt; Back' | localize }}</a>
 
 <div class="input select">
-    <label for="type">Storage Type</label>
+    <label for="type">{{'Storage Type' | localize }}</label>
     <select name="type" id="type" ng-model="Backend" ng-options="backend.DisplayName group by backend.GroupType for backend in SystemInfo.GroupedBackendModules | orderBy: ['OrderKey', 'GroupType', 'DisplayName'] track by backend.Key">
     </select>
 </div>
@@ -10,31 +10,31 @@
 </div>
 
 <div ng-show="TemplateUrl == null &amp;&amp; Backend != null">
-    <h3>No editor found for the &quot;{{Backend.DisplayName}}&quot; storage type</h3>
+    <h3>{{'No editor found for the &quot;{0}&quot; storage type' | localize: Backend.DisplayName }}</h3>
 </div>
 
 <div ng-show="Backend == null">
-    <h3>Chose a storage type to get started</h3>
+    <h3>{{'Chose a storage type to get started' | localize }}</h3>
 </div>
 
 <div class="input textarea" ng-show="ShowAdvancedTextArea">
-    <label for="targetOptions">Options</label>
-    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">Edit as list</a>
+    <label for="targetOptions">{{'Options' | localize }}</label>
+    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">{{'Edit as list' | localize }}</a>
     <textarea id="targetOptions" name="targetOptions" string-array-as-text ng-model="AdvancedOptions"></textarea>
 </div>
 
 <div class="input" ng-hide="ShowAdvancedTextArea">
-    <label for="backupOptions">Options</label>
-    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle">Edit as text</a>
+    <label for="backupOptions">{{'Options' | localize }}</label>
+    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle">{{'Edit as text' | localize }}</a>
     <advanced-options-editor ng-option-list="AdvanceOptionList" ng-model="AdvancedOptions"></advanced-options-editor>
 </div>
 
 <div class="buttons" ng-hide="Testing">
-    <a href ng-click="save()" class="save">OK</a>
-    <a href ng-click="testConnection()" class="test-connection" >Test connection</a>
-    <a href ng-click="hide()" class="warning cancel">Cancel</a>
+    <a href ng-click="save()" class="save">{{'OK' | localize }}</a>
+    <a href ng-click="testConnection()" class="test-connection" >{{'Test connection' | localize }}</a>
+    <a href ng-click="hide()" class="warning cancel">{{'Cancel' | localize }}</a>
 </div>
 
 <div class="button testmessage" ng-show="Testing">
-    <h3>Testing ...</h3>
+    <h3>{{'Testing ...' | localize }}</h3>
 </div>

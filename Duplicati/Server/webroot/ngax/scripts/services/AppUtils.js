@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function(DialogService) {
+backupApp.service('AppUtils', function($rootScope, DialogService, Localization) {
 
     var apputils = this;
 
@@ -24,32 +24,90 @@ backupApp.service('AppUtils', function(DialogService) {
         return val + ' ' + bytes;
     };
 
-    this.fileSizeMultipliers = [
-        {name: 'byte', value: ''},
-        {name: 'KByte', value: 'KB'},
-        {name: 'MByte', value: 'MB'},
-        {name: 'GByte', value: 'GB'},
-        {name: 'TByte', value: 'TB'}
-    ];
+    function reloadTexts() {
+        this.fileSizeMultipliers = [
+            {name: Localization.localize('byte'), value: ''},
+            {name: Localization.localize('KByte'), value: 'KB'},
+            {name: Localization.localize('MByte'), value: 'MB'},
+            {name: Localization.localize('GByte'), value: 'GB'},
+            {name: Localization.localize('TByte'), value: 'TB'}
+        ];
 
-    this.timerangeMultipliers = [
-        {name: 'Minute', value: 'm'},
-        {name: 'Hour', value: 'h'},
-        {name: 'Day', value: 'D'},
-        {name: 'Week', value: 'W'},
-        {name: 'Month', value: 'M'},
-        {name: 'Year', value: 'Y'}
-    ];
+        this.timerangeMultipliers = [
+            {name: Localization.localize('Minute'), value: 'm'},
+            {name: Localization.localize('Hour'), value: 'h'},
+            {name: Localization.localize('Day'), value: 'D'},
+            {name: Localization.localize('Week'), value: 'W'},
+            {name: Localization.localize('Month'), value: 'M'},
+            {name: Localization.localize('Year'), value: 'Y'}
+        ];
 
-    this.daysOfWeek = [
-        {name: 'Mon', value: 'mon'}, 
-        {name: 'Tue', value: 'tue'}, 
-        {name: 'Wed', value: 'wed'}, 
-        {name: 'Thu', value: 'thu'}, 
-        {name: 'Fri', value: 'fri'}, 
-        {name: 'Sat', value: 'sat'}, 
-        {name: 'Sun', value: 'sun'}
-    ];
+        this.daysOfWeek = [
+            {name: Localization.localize('Mon'), value: 'mon'}, 
+            {name: Localization.localize('Tue'), value: 'tue'}, 
+            {name: Localization.localize('Wed'), value: 'wed'}, 
+            {name: Localization.localize('Thu'), value: 'thu'}, 
+            {name: Localization.localize('Fri'), value: 'fri'}, 
+            {name: Localization.localize('Sat'), value: 'sat'}, 
+            {name: Localization.localize('Sun'), value: 'sun'}
+        ];
+
+        this.filterClasses = [{
+            name: Localization.localize('Exclude directories whose names contain'),
+            key: '-dir*',
+            prefix: '-*',
+            suffix: '*!',
+            rx: '\\-\\*([^\\!]+)\\*\\!'
+        }, {
+            name: Localization.localize('Exclude files whose names contain'),
+            key: '-file*',
+            prefix: '-[.*',
+            suffix: '.*[^!]]',
+            rx: '\\-\\[\\.\\*([^\\!]+)\\.\\*\\[\\^\\!\\]\\]'
+        }, {
+            name: Localization.localize('Exclude folder'),
+            key: '-folder',
+            prefix: '-',
+            suffix: '!',
+            rx: '\\-(.*)\\!'
+        }, {
+            name: Localization.localize('Exclude file'),
+            key: '-path',
+            prefix: '-',
+            exclude: ['*', '?'],
+            rx: '\\-([^\\[\\*\\?]+)'
+        }, {
+            name: Localization.localize('Exclude file extension'),
+            key: '-ext',
+            rx: '\\-\\*\.(.*)',
+            prefix: '-*.'
+        }, {
+            name: Localization.localize('Exclude regular expression'),
+            key: '-[]',
+            prefix: '-[',
+            suffix: ']'
+        }, {
+            name: Localization.localize('Include regular expression'),
+            key: '+[]',
+            prefix: '+[',
+            suffix: ']'
+        }, {
+            name: Localization.localize('Include expression'),
+            key: '+',
+            prefix: '+'
+        }, {
+            name: Localization.localize('Exclude expression'),
+            key: '-',
+            prefix: '-'
+        }];
+
+        this.filterTypeMap = {};
+        for (var i = this.filterClasses.length - 1; i >= 0; i--)
+            this.filterTypeMap[this.filterClasses[i].key] = this.filterClasses[i];        
+    };
+
+    reloadTexts();
+    Localization.watch($rootScope, reloadTexts);
 
     this.parseBoolString = function(txt, def) {
         txt = (txt || '').toLowerCase();
@@ -134,7 +192,7 @@ backupApp.service('AppUtils', function(DialogService) {
     this.parse_extra_options = function(str, dict) {
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
-                DialogService.dialog('Error', 'Duplicate option ' + k);
+                DialogService.dialog(Localization.localize('Error'), Localization.localize('Duplicate option {0}', k));
                 return false;
             }
 
@@ -180,9 +238,9 @@ backupApp.service('AppUtils', function(DialogService) {
             if (msg == null)
                 return function(msg) {
                     if (msg && msg.data && msg.data.Message)
-                        DialogService.dialog('Error', txt + msg.data.Message);
+                        DialogService.dialog(Localization.localize('Error'), txt + msg.data.Message);
                     else
-                        DialogService.dialog('Error', txt + msg.statusText);
+                        DialogService.dialog(Localization.localize('Error'), txt + msg.statusText);
                 };
         } else {
             msg = txt;
@@ -190,9 +248,9 @@ backupApp.service('AppUtils', function(DialogService) {
         }
 
         if (msg && msg.data && msg.data.Message)
-            DialogService.dialog('Error', txt + msg.data.Message);
+            DialogService.dialog(Localization.localize('Error'), txt + msg.data.Message);
         else
-            DialogService.dialog('Error', txt + msg.statusText);
+            DialogService.dialog(Localization.localize('Error'), txt + msg.statusText);
     };
 
     this.generatePassphrase = function() {
@@ -372,59 +430,6 @@ backupApp.service('AppUtils', function(DialogService) {
         return x;       
     };
 
-    this.filterClasses = [{
-        name: 'Exclude directories whose names contain',
-        key: '-dir*',
-        prefix: '-*',
-        suffix: '*!',
-        rx: '\\-\\*([^\\!]+)\\*\\!'
-    }, {
-        name: 'Exclude files whose names contain',
-        key: '-file*',
-        prefix: '-[.*',
-        suffix: '.*[^!]]',
-        rx: '\\-\\[\\.\\*([^\\!]+)\\.\\*\\[\\^\\!\\]\\]'
-    }, {
-        name: 'Exclude folder',
-        key: '-folder',
-        prefix: '-',
-        suffix: '!',
-        rx: '\\-(.*)\\!'
-    }, {
-        name: 'Exclude file',
-        key: '-path',
-        prefix: '-',
-        exclude: ['*', '?'],
-        rx: '\\-([^\\[\\*\\?]+)'
-    }, {
-        name: 'Exclude file extension',
-        key: '-ext',
-        rx: '\\-\\*\.(.*)',
-        prefix: '-*.'
-    }, {
-        name: 'Exclude regular expression',
-        key: '-[]',
-        prefix: '-[',
-        suffix: ']'
-    }, {
-        name: 'Include regular expression',
-        key: '+[]',
-        prefix: '+[',
-        suffix: ']'
-    }, {
-        name: 'Include expression',
-        key: '+',
-        prefix: '+'
-    }, {
-        name: 'Exclude expression',
-        key: '-',
-        prefix: '-'
-    }];
-
-    this.filterTypeMap = {};
-    for (var i = this.filterClasses.length - 1; i >= 0; i--)
-        this.filterTypeMap[this.filterClasses[i].key] = this.filterClasses[i];
-
     this.splitFilterIntoTypeAndBody = function(src, dirsep) {
         if (src == null)
             return null;
@@ -525,7 +530,7 @@ backupApp.service('AppUtils', function(DialogService) {
 
         var items = angular.copy(sysinfo.Options);
         for(var n in items)
-            items[n].Category = 'Core options';
+            items[n].Category = Localization.localize('Core options');
 
         function copyToList(lst, key) {
             for(var n in lst)

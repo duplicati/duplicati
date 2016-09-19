@@ -1,15 +1,15 @@
 <div ng-controller="UpdateChangelogController">
-    <h1>Changelog for {{brandingService.appName}} {{Version || '-unknown-'}}</h1>
+    <h1>{{'Changelog for {0} {1}' | localize: brandingService.appName: Version || '-unknown-'}}</h1>
 
     <div>
-        Current version is {{systeminfo.ServerVersionName}} ({{systeminfo.ServerVersion}})
+        {{'Current version is {0} ({1})' | localize: systeminfo.ServerVersionName: systeminfo.ServerVersion}}
     </div>
 
-    <div class="prewrapped-text fixed-width-font">{{ChangeLog || 'Loading ...'}}</div>
+    <div class="prewrapped-text fixed-width-font">{{ChangeLog || Localization.localize('Loading ...')}}</div>
 
     <div class="buttons">
-        <a href class="button" ng-show="serverstate.UpdaterState == 'Waiting' &amp;&amp; serverstate.UpdatedVersion != null" ng-click="doInstall()">Install</a>
-        <a href class="button" ng-show="serverstate.UpdateReady" ng-click="doActivate()">Activate</a>
+        <a href class="button" ng-show="serverstate.UpdaterState == 'Waiting' &amp;&amp; serverstate.UpdatedVersion != null" ng-click="doInstall()">{{'Install' | localize}}</a>
+        <a href class="button" ng-show="serverstate.UpdateReady" ng-click="doActivate()">{{'Activate' | localize}}</a>
     </div>
 
 

@@ -13,35 +13,35 @@
             <div ng-if="getInputType(item) == 'size'" class="input type multiple">
                 <input type="number" parse-advanced-option-size-number="lowercase" ng-model="$parent.ngModel[$index]" />
                 <select parse-advanced-option-size-multiplier="lowercase" ng-model="$parent.ngModel[$index]">
-                    <option value="kb">KByte</option>
-                    <option value="mb">MByte</option>
-                    <option value="gb">GByte</option>
-                    <option value="tb">TByte</option>
+                    <option value="kb">{{'KByte' | localize }}</option>
+                    <option value="mb">{{'MByte' | localize }}</option>
+                    <option value="gb">{{'GByte' | localize }}</option>
+                    <option value="tb">{{'TByte' | localize }}</option>
                 </select>
             </div>
 
             <div ng-if="getInputType(item) == 'timespan'" class="input type multiple">
                 <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
                 <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]">
-                    <option value="D">Days</option>
-                    <option value="W">Weeks</option>
-                    <option value="M">Months</option>
-                    <option value="Y">Years</option>
-                    <option value="">custom</option>
+                    <option value="D">{{'Days' | localize }}</option>
+                    <option value="W">{{'Weeks' | localize }}</option>
+                    <option value="M">{{'Months' | localize }}</option>
+                    <option value="Y">{{'Years' | localize }}</option>
+                    <option value="">{{'custom' | localize }}</option>
                 </select>
             </div>
 
         </div>
 
-        <a href ng-click="deleteItem(item)" title="Remove option">x</a>
+        <a href ng-click="deleteItem(item)" title="{{'Remove option' | localize}}">x</a>
 
         <div class="longdescription">{{getLongDescription(item)}}</div>
     </li>
 
     <li>
-        <label>Add advanced option</label>
+        <label>{{'Add advanced option' | localize }}</label>
         <select ng-options="getDisplayName(opt.Name) group by opt.Category for opt in ngOptionList | orderBy: 'Name' " ng-model="NewItem">
-            <option value="">- pick an option -</option>
+            <option value="">{{'- pick an option -' | localize }}</option>
         </select>
     </li>
 </ul>

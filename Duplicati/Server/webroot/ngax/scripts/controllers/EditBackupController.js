@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService) {
+backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, Localization, AppService, AppUtils, SystemInfo, DialogService, EditBackupService) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -15,9 +15,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     $scope.ExcludeLargeFiles = false;
 
     $scope.fileAttributes = [
-        {'name': 'Hidden files', 'value': 'hidden'}, 
-        {'name': 'System files', 'value': 'system'}, 
-        {'name': 'Temporary files', 'value': 'temporary'}
+        {'name': Localization.localize('Hidden files'), 'value': 'hidden'}, 
+        {'name': Localization.localize('System files'), 'value': 'system'}, 
+        {'name': Localization.localize('Temporary files'), 'value': 'temporary'}
     ];
 
     var scope = $scope;
@@ -25,13 +25,13 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     function computePassPhraseStrength() {
 
         var strengthMap = {
-            '': "Empty",
-            'x': "Passwords do not match",
-            0: "Useless",
-            1: "Very weak",
-            2: "Weak",
-            3: "Strong",
-            4: "Very strong"
+            '': Localization.localize("Empty"),
+            'x': Localization.localize("Passwords do not match"),
+            0: Localization.localize("Useless"),
+            1: Localization.localize("Very weak"),
+            2: Localization.localize("Weak"),
+            3: Localization.localize("Strong"),
+            4: Localization.localize("Very strong")
         };
 
         var passphrase = scope.Options == null ? '' : scope.Options['passphrase'];
@@ -43,7 +43,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         else
             scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
 
-        scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || 'Unknown';    
+        scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || Localization.localize('Unknown');
     }
 
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
@@ -103,7 +103,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         if (dirsep == '/') {
             if (scope.manualSourcePath.substr(0, 1) != '/' && scope.manualSourcePath.substr(0, 1) != '%') {
-                DialogService.dialog('Relative paths not allowed', "The path must be an absolute path, i.e. it must start with a forward slash '/' ");
+                DialogService.dialog(Localization.localize('Relative paths not allowed'), Localization.localize("The path must be an absolute path, i.e. it must start with a forward slash '/' "));
                 return;
             }
         }
@@ -118,7 +118,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             }, function() {
                 scope.validatingSourcePath = false;
 
-                DialogService.dialog('Path not found', 'The path does not appear to exist, do you want to add it anyway?', ['No', 'Yes'], function(ix) {
+                DialogService.dialog(Localization.localize('Path not found'), Localization.localize('The path does not appear to exist, do you want to add it anyway?'), [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                     if (ix == 1) {
                         scope.Backup.Sources.push(scope.manualSourcePath);
                         scope.manualSourcePath = null;
@@ -128,7 +128,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         };
 
         if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
-            DialogService.dialog('Include a file?', "The path does not end with a '" + dirsep + "' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", ['No', 'Yes'], function(ix) {
+            DialogService.dialog(Localization.localize('Include a file?'), Localization.localize("The path does not end with a '{0}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", dirsep), [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                 if (ix == 1)
                     continuation();
             });
@@ -193,7 +193,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             opts['--exclude-files-attributes'] = exclattr.join(',')
 
         if (($scope.Backup.Name || '').trim().length == 0) {
-            DialogService.dialog('Missing name', 'You must enter a name for the backup');
+            DialogService.dialog(Localization.localize('Missing name'), Localization.localize('You must enter a name for the backup'));
             $scope.CurrentStep = 0;
             return;
         }
@@ -201,26 +201,26 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         if (encryptionEnabled) {
             if ($scope.PassphraseScore === '') {
-                DialogService.dialog('Missing passphrase', 'You must enter a passphrase or disable encryption');
+                DialogService.dialog(Localization.localize('Missing passphrase'), Localization.localize('You must enter a passphrase or disable encryption'));
                 $scope.CurrentStep = 0;
                 return;
             }
 
             if ($scope.PassphraseScore == 'x') {
-                DialogService.dialog('Non-matching passphrase', 'Passphrases are not matching');
+                DialogService.dialog(Localization.localize('Non-matching passphrase'), Localization.localize('Passphrases are not matching'));
                 $scope.CurrentStep = 0;
                 return;
             }
         }
 
         if (($scope.Backup.TargetURL || '').trim().length == 0) {
-            DialogService.dialog('Missing destination', 'You must enter a destination where the backups are stored');
+            DialogService.dialog(Localization.localize('Missing destination'), Localization.localize('You must enter a destination where the backups are stored'));
             $scope.CurrentStep = 0;
             return;
         }
 
         if ($scope.Backup.Sources == null || $scope.Backup.Sources.length == 0) {
-            DialogService.dialog('Missing sources', 'You must choose at least one source folder');
+            DialogService.dialog(Localization.localize('Missing sources'), Localization.localize('You must choose at least one source folder'));
             $scope.CurrentStep = 1;
             return;
         }
@@ -260,7 +260,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         function warnWeakPassphrase(continuation) {
             if (encryptionEnabled && ($scope.PassphraseScore == 0 || $scope.PassphraseScore == 1 || $scope.PassphraseScore == 2)) {
-                DialogService.dialog('Weak passphrase', 'Your passphrase is easy to guess. Consider changing passphrase.', ['Cancel', 'Use weak passphrase'], function(ix) {
+                DialogService.dialog(Localization.localize('Weak passphrase'), Localization.localize('Your passphrase is easy to guess. Consider changing passphrase.'), [Localization.localize('Cancel'), Localization.localize('Use weak passphrase')], function(ix) {
                     if (ix == 0)
                         $scope.CurrentStep = 0;
                     else
@@ -275,7 +275,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             if (!$scope.HasGeneratedPassphrase || !encryptionEnabled)
                 continuation();
             else
-                DialogService.dialog('Autogenerated passphrase', 'You have generated a strong passphrase. Make sure you have made a safe copy of the passphrase, as the data cannot be recovered if you loose the passphrase.', ['Cancel', 'Yes, I have stored the passphrase safely'], function(ix) {
+                DialogService.dialog(Localization.localize('Autogenerated passphrase'), Localization.localize('You have generated a strong passphrase. Make sure you have made a safe copy of the passphrase, as the data cannot be recovered if you loose the passphrase.'), [Localization.localize('Cancel'), Localization.localize('Yes, I have stored the passphrase safely')], function(ix) {
                     if (ix == 0)
                         $scope.CurrentStep = 0;
                     else
@@ -309,7 +309,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
             if (encryptionEnabled && previousEncryptionEnabled && prevPassphrase != opts['passphrase'])
             {
-                DialogService.dialog('Passphrase changed', 'You have changed the passphrase, which is not supported. You are encouraged to create a new backup instead.', ['Cancel', 'Yes, please break my backup!'], function(ix) {
+                DialogService.dialog(Localization.localize('Passphrase changed'), Localization.localize('You have changed the passphrase, which is not supported. You are encouraged to create a new backup instead.'), [Localization.localize('Cancel'), Localization.localize('Yes, please break my backup!')], function(ix) {
                     if (ix == 0)
                         $scope.CurrentStep = 0;
                     else
@@ -318,7 +318,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             }
             else if (encryptionEnabled != previousEncryptionEnabled || encryptionModule != previousEncryptionModule)
             {
-                DialogService.dialog('Encryption changed', 'You have changed the encryption mode. This may break stuff. You are encouraged to create a new backup instead', ['Cancel', 'Yes, I\'m brave!'], function(ix) {
+                DialogService.dialog(Localization.localize('Encryption changed'), Localization.localize('You have changed the encryption mode. This may break stuff. You are encouraged to create a new backup instead'), [Localization.localize('Cancel'), Localization.localize('Yes, I\'m brave!')], function(ix) {
                     if (ix == 1)
                         continuation();
                 });    
@@ -332,7 +332,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             if (encryptionEnabled || $scope.Backup.TargetURL.indexOf('file://') == 0 || $scope.SystemInfo.EncryptionModules.length == 0)
                 continuation();
             else
-                DialogService.dialog('No encryption', 'You have chosen not to encrypt the backup. Encryption is recommended for all data stored on a remote server.', ['Cancel', 'Continue without encryption'], function(ix) {
+                DialogService.dialog(Localization.localize('No encryption'), Localization.localize('You have chosen not to encrypt the backup. Encryption is recommended for all data stored on a remote server.'), [Localization.localize('Cancel'), Localization.localize('Continue without encryption')], function(ix) {
                     if (ix == 0)
                         $scope.CurrentStep = 0;
                     else
@@ -353,7 +353,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
                 AppService.post('/remoteoperation/dbpath', $scope.Backup.TargetURL, {'headers': {'Content-Type': 'application/text'}}).then(
                     function(resp) {
                         if (resp.data.Exists) {
-                            DialogService.dialog('Use existing database?', 'An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?', ['Cancel', 'Yes', 'No'], function(ix) {
+                            DialogService.dialog(Localization.localize('Use existing database?'), Localization.localize('An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?'), [Localization.localize('Cancel'), Localization.localize('Yes'), Localization.localize('No')], function(ix) {
                                 if (ix == 2)
                                     result.Backup.DBPath = resp.data.Path;
 
@@ -531,7 +531,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             setupScope($scope.rawddata);
 
         }, function(data) {
-            AppUtils.connectionError('Failed to read backup defaults', data);
+            AppUtils.connectionError(Localization.localize('Failed to read backup defaults:') + ' ', data);
             $location.path('/');
         });
 
