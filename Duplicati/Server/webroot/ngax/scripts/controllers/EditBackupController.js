@@ -522,6 +522,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     $scope.$watch("Options['--compression-module']", reloadOptionsList);
     $scope.$watch("Backup.TargetURL", reloadOptionsList);
     $scope.$on('systeminfochanged', reloadOptionsList);
+    $scope.$watch('ExcludeLargeFiles', function() {
+        if ($scope.Options != null && $scope.Options['--skip-files-larger-than'] == null)
+            $scope.Options['--skip-files-larger-than'] = '100MB';
+    });
 
     if ($routeParams.backupid == null) {
 
