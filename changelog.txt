@@ -1,3 +1,12 @@
+2016-09-16
+==========
+* Fixed a restore issue from a partially reconstructed database
+* Implemented Auhtenticode signing for all executables and libraries
+* Implemented Authenticode signing for Windows MSI files
+* Implmented Codesign for OSX pkg and dmg files
+* Updated Mono check for existing certificates, to avoid showing mozroots message
+* Added support for installing Duplicati.WindowsService.exe as a service from the commandline
+
 2016-09-12
 ==========
 * Fixed a problem with restoring from the UI, thanks @4m1g0
