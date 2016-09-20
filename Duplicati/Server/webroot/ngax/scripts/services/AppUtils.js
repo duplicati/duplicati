@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function($rootScope, DialogService, Localization) {
+backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Localization) {
 
     var apputils = this;
 
@@ -24,8 +24,21 @@ backupApp.service('AppUtils', function($rootScope, DialogService, Localization) 
         return val + ' ' + bytes;
     };
 
+    this.watch = function(scope, m) {
+        scope.$on('apputillookupschanged', function() {
+            if (m) m();
+
+            $timeout(function() {
+                scope.$digest();
+            });
+        });
+
+        if (m) $timeout(m);
+    };
+
+
     function reloadTexts() {
-        this.fileSizeMultipliers = [
+        apputils.fileSizeMultipliers = [
             {name: Localization.localize('byte'), value: ''},
             {name: Localization.localize('KByte'), value: 'KB'},
             {name: Localization.localize('MByte'), value: 'MB'},
@@ -33,16 +46,16 @@ backupApp.service('AppUtils', function($rootScope, DialogService, Localization) 
             {name: Localization.localize('TByte'), value: 'TB'}
         ];
 
-        this.timerangeMultipliers = [
-            {name: Localization.localize('Minute'), value: 'm'},
-            {name: Localization.localize('Hour'), value: 'h'},
-            {name: Localization.localize('Day'), value: 'D'},
-            {name: Localization.localize('Week'), value: 'W'},
-            {name: Localization.localize('Month'), value: 'M'},
-            {name: Localization.localize('Year'), value: 'Y'}
+        apputils.timerangeMultipliers = [
+            {name: Localization.localize('Minutes'), value: 'm'},
+            {name: Localization.localize('Hours'), value: 'h'},
+            {name: Localization.localize('Days'), value: 'D'},
+            {name: Localization.localize('Weeks'), value: 'W'},
+            {name: Localization.localize('Months'), value: 'M'},
+            {name: Localization.localize('Years'), value: 'Y'}
         ];
 
-        this.daysOfWeek = [
+        apputils.daysOfWeek = [
             {name: Localization.localize('Mon'), value: 'mon'}, 
             {name: Localization.localize('Tue'), value: 'tue'}, 
             {name: Localization.localize('Wed'), value: 'wed'}, 
@@ -52,7 +65,7 @@ backupApp.service('AppUtils', function($rootScope, DialogService, Localization) 
             {name: Localization.localize('Sun'), value: 'sun'}
         ];
 
-        this.filterClasses = [{
+        apputils.filterClasses = [{
             name: Localization.localize('Exclude directories whose names contain'),
             key: '-dir*',
             prefix: '-*',
@@ -101,9 +114,11 @@ backupApp.service('AppUtils', function($rootScope, DialogService, Localization) 
             prefix: '-'
         }];
 
-        this.filterTypeMap = {};
-        for (var i = this.filterClasses.length - 1; i >= 0; i--)
-            this.filterTypeMap[this.filterClasses[i].key] = this.filterClasses[i];        
+        apputils.filterTypeMap = {};
+        for (var i = apputils.filterClasses.length - 1; i >= 0; i--)
+            apputils.filterTypeMap[apputils.filterClasses[i].key] = apputils.filterClasses[i];        
+
+        $rootScope.$broadcast('apputillookupschanged');        
     };
 
     reloadTexts();

@@ -1,4 +1,4 @@
-<a href ng-click="hide()" ng-hide="Testing">{{'&lt; Back' | localize }}</a>
+<a href ng-click="hide()" ng-hide="Testing">&lt; {{'Back' | localize }}</a>
 
 <div class="input select">
     <label for="type">{{'Storage Type' | localize }}</label>
@@ -10,7 +10,7 @@
 </div>
 
 <div ng-show="TemplateUrl == null &amp;&amp; Backend != null">
-    <h3>{{'No editor found for the &quot;{0}&quot; storage type' | localize: Backend.DisplayName }}</h3>
+    <h3>{{'No editor found for the {0} storage type' | localize: ('&quot;' + Backend.DisplayName + '&quot;')}}</h3>
 </div>
 
 <div ng-show="Backend == null">

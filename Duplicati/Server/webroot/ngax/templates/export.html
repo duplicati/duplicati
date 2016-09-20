@@ -40,7 +40,7 @@
             <div ng-show="DownloadURL != null">
                 <div>{{'If the backup file was not downloaded automatically,' | localize}}</div>
                 <div>
-                    <a href="{{DownloadURL}}" target="_blank">{{'right click and choose &quot;Save as ...&quot;' | localize}}</a>
+                    <a href="{{DownloadURL}}" target="_blank">{{'right click and choose {0}' | localize: ('&quot;' + ('Save as ...' | localize) + '&quot;')}}</a>
                 </div>
             </div>
 

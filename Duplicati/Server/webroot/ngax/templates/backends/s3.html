@@ -26,7 +26,7 @@
     <label for="s3_region">{{'Bucket create region' | localize}}</label>
 
     <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k" title="{{'The region parameter is only applied when creating a new bucket' | localize}}">
-        <option value="">{{'Custom region value: ({0})' | localize: s3_region_custom || ''}}</option>
+        <option value="">{{'Custom region value ({0})' | localize: s3_region_custom || ''}}</option>
     </select>
 
     <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom" ng-model="$parent.s3_region_custom" placeholder="{{'Custom region for creating buckets' | localize}}"/>
@@ -38,7 +38,7 @@
     <label for="s3_storageclass">{{'Storage class' | localize}}</label>
 
     <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k" title="{{'The storage class affects the availability and price for a stored file' | localize}}">
-        <option value="">{{'Custom storage class: ({0})' | localize: s3_storageclass_custom || ''}}</option>
+        <option value="">{{'Custom storage class ({0})' | localize: s3_storageclass_custom || ''}}</option>
     </select>
 
     <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom" ng-model="$parent.s3_storageclass_custom" placeholder="Custom bucket storage class"/>

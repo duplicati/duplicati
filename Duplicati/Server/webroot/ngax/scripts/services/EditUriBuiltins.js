@@ -571,7 +571,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
             var p = (scope.Path || '').trim();
 
             if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
-                DialogService.dialog(Localization.localize('Adjust path name?'), Localization.localize('The path should start with "{0}" or "default", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', prefix), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
+                DialogService.dialog(Localization.localize('Adjust path name?'), Localization.localize('The path should start with "{0}" or "{1}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', prefix, 'default'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                     if (ix == 2) {
                         while (p.indexOf('/') == 0)
                             p = p.substr(1);

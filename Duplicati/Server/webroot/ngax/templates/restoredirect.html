@@ -7,8 +7,8 @@
             <div ng-hide="EditUriState">
                 <h1>{{'Restore files' | localize}}</h1>
                 <div class="input textarea linklabel">
-                    <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Connect to &gt;' | localize}}</a></label>
-                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'Connect to&gt;\' link' | localize}}"></textarea>
+                    <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Connect to' | localize}} &gt;</a></label>
+                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'{0}\' link' | localize: (('Connect to' | localize) + ' &gt;')}}"></textarea>
                 </div>
                 <div class="input password">
                     <label for="password">{{'Passphrase' | localize}}</label>
@@ -16,7 +16,7 @@
                 </div>
                 <div class="input textarea">
                     <label for="options">{{'Advanced Options' | localize}}<span class="info">i</span></label>
-                    <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="{{'Enter one option per line in command-line format, eg. --prefix=backup' | localize}}"></textarea>
+                    <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="{{'Enter one option per line in command-line format, eg. {0}' | localize: '--prefix=backup'}}"></textarea>
                 </div>
                 <div class="buttons" ng-hide="connecting">
                     <a href="#" class="submit">{{'Cancel' | localize}}</a>

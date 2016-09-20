@@ -6,7 +6,7 @@
             <div ng-show="item.DownloadLink != null">
                 <div>{{'If the backup file was not downloaded automatically,' | localize}}</div>
                 <div>
-                    <a href="{{item.DownloadLink}}" target="_blank">{{'right click and choose &quot;Save as ...&quot;' | localize}}</a>
+                    <a href="{{item.DownloadLink}}" target="_blank">{{'right click and choose {0}' | localize: ('&quot;' + ('Save as ...' | localize) + '&quot;')}}</a>
                 </div>
             </div>
             <div ng-if="item.Action != 'update:new'" class="buttons">

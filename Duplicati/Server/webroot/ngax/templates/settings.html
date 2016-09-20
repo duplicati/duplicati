@@ -99,7 +99,7 @@
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
             <label for="backupOptions">{{'Options' | localize}}</label>
             <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle">{{'Edit as list' | localize}}</a>
-            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | localize: '--dblock-size=100MB'}}"></textarea>
         </div>
 
         <div class="input" ng-hide="ShowAdvancedTextArea">
@@ -110,7 +110,7 @@
         
         <div class="buttons">
             <a href="#" id="cancel" class="submit">{{'Cancel' | localize}}</a>
-            <input type="button" id="save" class="submit" value="{{'Ok' | localize}}" ng-click="save()" />
+            <input type="button" id="save" class="submit" value="{{'OK' | localize}}" ng-click="save()" />
         </div>
     </form>
 </div>

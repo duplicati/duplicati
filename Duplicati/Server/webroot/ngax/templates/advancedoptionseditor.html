@@ -11,22 +11,14 @@
             <input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$index]" parse-advanced-option-integer ></input>
 
             <div ng-if="getInputType(item) == 'size'" class="input type multiple">
-                <input type="number" parse-advanced-option-size-number="lowercase" ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier="lowercase" ng-model="$parent.ngModel[$index]">
-                    <option value="kb">{{'KByte' | localize }}</option>
-                    <option value="mb">{{'MByte' | localize }}</option>
-                    <option value="gb">{{'GByte' | localize }}</option>
-                    <option value="tb">{{'TByte' | localize }}</option>
+                <input type="number" parse-advanced-option-size-number="uppercase" ng-model="$parent.ngModel[$index]" />
+                <select parse-advanced-option-size-multiplier="uppercase" ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in fileSizeMultipliers">
                 </select>
             </div>
 
             <div ng-if="getInputType(item) == 'timespan'" class="input type multiple">
                 <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]">
-                    <option value="D">{{'Days' | localize }}</option>
-                    <option value="W">{{'Weeks' | localize }}</option>
-                    <option value="M">{{'Months' | localize }}</option>
-                    <option value="Y">{{'Years' | localize }}</option>
+                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in timerangeMultipliers">
                     <option value="">{{'custom' | localize }}</option>
                 </select>
             </div>
