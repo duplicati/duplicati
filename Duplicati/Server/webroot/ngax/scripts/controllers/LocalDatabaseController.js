@@ -1,4 +1,4 @@
-backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $location, AppService, DialogService, BackupList, AppUtils) {
+backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $location, Localization, AppService, DialogService, BackupList, AppUtils) {
 
     $scope.BackupID = $routeParams.backupid;
     
@@ -25,7 +25,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
     resetBackupItem();
 
     $scope.doDelete = function(continuation) {
-        DialogService.dialog('Confirm delete', 'Do you really want to delete the local database for: ' + $scope.Backup.Backup.Name, ['No', 'Yes'], function(ix) {
+        DialogService.dialog(Localization.localize('Confirm delete'), Localization.localize('Do you really want to delete the local database for: {0}', $scope.Backup.Backup.Name), [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
             if (ix == 1)
                 AppService.post('/backup/' + $scope.BackupID + '/deletedb').then(
                     function() {
@@ -35,7 +35,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
                     },
                     function(resp) { 
                         resetBackupItem();
-                        AppUtils.connectionError('Failed to delete: ', resp); 
+                        AppUtils.connectionError(Localization.localize('Failed to delete:') + ' ', resp); 
                     }
                 );
         });
@@ -63,13 +63,13 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
                     if (continuation != null)
                         continuation();
 
-                }, AppUtils.connectionError((move ? 'Move' : 'Update') + ' failed: ')
+                }, AppUtils.connectionError(Localization.localize(move ? 'Move failed:' : 'Update failed:') + ' ')
             );
         };
 
         function doCheckTarget() {
             AppService.post('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
-                DialogService.dialog('Existing file found', 'An existing file was found at the new location\nAre you sure you want the database to point to an existing file?', ['Cancel', 'No', 'Yes'], function(ix) {
+                DialogService.dialog(Localization.localize('Existing file found'), Localization.localize('An existing file was found at the new location\nAre you sure you want the database to point to an existing file?'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                     if (ix == 2) {
                         doUpdate();
                     }
@@ -85,7 +85,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
             if ($scope.NoLocalDB)
                 doCheckTarget();
             else
-                DialogService.dialog('Updating with existing database', 'You are changing the database path away from an existing database.\nAre you sure this is what you want?', ['Cancel', 'No', 'Yes'], function(ix) {
+                DialogService.dialog(Localization.localize('Updating with existing database'), Localization.localize('You are changing the database path away from an existing database.\nAre you sure this is what you want?'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                     if (ix == 2)
                         doCheckTarget();
                 });
@@ -100,7 +100,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
 
     $scope.doMove = function() {
         AppService.post('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
-            DialogService.dialog('Cannot move to existing file', 'An existing file was found at the new location');
+            DialogService.dialog(Localization.localize('Cannot move to existing file'), Localization.localize('An existing file was found at the new location'));
         }, function() {
             $scope.doSave(null, true);
         });

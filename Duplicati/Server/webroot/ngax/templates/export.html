@@ -1,35 +1,34 @@
 <div ng-controller="ExportController" class="exportpage">
-    <h1>Export backup configuration</h1>
+    <h1>{{'Export backup configuration' | localize}}</h1>
     <form class="styled">
         <div ng-hide="Completed">
             <div class="input checkbox multiple">
                 <div style="display: inline-block">
                     <input type="radio" name="export-type" value="commandline" id="type-commandline" ng-model="ExportType" />
-                    <label for="type-commandline">As Command-line</label>
+                    <label for="type-commandline">{{'As Command-line' | localize}}</label>
                 </div>
             </div>
 
-
             <div class="input checkbox multiple">
                 <input type="radio" name="export-type" value="file" id="type-file" ng-model="ExportType"/>
-                <label for="type-file">To File</label>
+                <label for="type-file">{{'To File' | localize}}</label>
             </div>
             <div class="input checkbox multiple" ng-show="ExportType == 'file'">
                 <input type="checkbox" name="use-encryption" id="use-encryption" ng-model="UseEncryption"  />
-                <label for="use-encryption">Encrypt file</label>
+                <label for="use-encryption">{{'Encrypt file' | localize}}</label>
             </div>
             <div class="input text" ng-show="UseEncryption">            
-                <label for="encryption-passphrase">Passphrase</label>
-                <input type="password" name="encryption-password" id="encryption-passphrase" ng-model="Passphrase" placeholder="Enter encryption passphrase" >
+                <label for="encryption-passphrase">{{'Passphrase' | localize}}</label>
+                <input type="password" name="encryption-password" id="encryption-passphrase" ng-model="Passphrase" placeholder="{{'Enter encryption passphrase' | localize}}" >
             </div>
 
             <div class="buttons" ng-hide="Connecting">
-                <a href="#" class="submit">Cancel</a>
-                <a href ng-click="doExport()">Export</a>
+                <a href="#" class="submit">{{'Cancel' | localize}}</a>
+                <a href ng-click="doExport()">{{'Export' | localize}}</a>
             </div>
 
             <div class="buttons" ng-show="Connecting">
-                <a href>Exporting ...</a>
+                <a href>{{'Exporting ...' | localize}}</a>
             </div>
         </div>
 
@@ -39,14 +38,14 @@
             </div>
 
             <div ng-show="DownloadURL != null">
-                <div>If the backup file was not downloaded automatically,</div>
+                <div>{{'If the backup file was not downloaded automatically,' | localize}}</div>
                 <div>
-                    <a href="{{DownloadURL}}" target="_blank">right click and choose &quot;Save as ...&quot;</a>
+                    <a href="{{DownloadURL}}" target="_blank">{{'right click and choose {0}' | localize: ('&quot;' + ('Save as ...' | localize) + '&quot;')}}</a>
                 </div>
             </div>
 
             <div class="buttons">
-                <a href="#" class="submit">Done</a>
+                <a href="#" class="submit">{{'Done' | localize}}</a>
             </div>
         </div>
 

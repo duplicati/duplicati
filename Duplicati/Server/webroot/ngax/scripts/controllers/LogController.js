@@ -1,4 +1,4 @@
-backupApp.controller('LogController', function($scope, $routeParams, SystemInfo, ServerStatus, AppService, DialogService) {
+backupApp.controller('LogController', function($scope, $routeParams, Localization, SystemInfo, ServerStatus, AppService, DialogService) {
     $scope.state = ServerStatus.watch($scope);
     $scope.BackupID = $routeParams.backupid;
     $scope.SystemInfo = SystemInfo.watch($scope);
@@ -71,7 +71,7 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
                     message = resp.data.Message;
 
                 $scope.LoadingData = false;
-                DialogService.dialog('Error', 'Failed to connect: ' + message);
+                DialogService.dialog('Error', Localization.localize('Failed to connect: {0}', message));
             });        
     };
 

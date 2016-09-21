@@ -1,4 +1,4 @@
-backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils) {
+backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils, Localization) {
 
     var longpolltime = 5 * 60 * 1000;
 
@@ -27,36 +27,41 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
     this.state = state;
 
-    this.progress_state_text = {
-        'Backup_Begin': 'Starting ...',
-        'Backup_PreBackupVerify': 'Verifying backend data ...',
-        'Backup_PostBackupTest': 'Verifying remote data ...',
-        'Backup_PreviousBackupFinalize': 'Completing previous backup ...',
-        'Backup_ProcessingFiles': null,
-        'Backup_Finalize': 'Completing backup ...',
-        'Backup_WaitForUpload': 'Waiting for upload ...',
-        'Backup_Delete': 'Deleting unwanted files ...',
-        'Backup_Compact': 'Compacting remote data ...',
-        'Backup_VerificationUpload': 'Uploading verification file ...',
-        'Backup_PostBackupVerify': 'Verifying backend data ...',
-        'Backup_Complete': 'Finished!',
-        'Restore_Begin': 'Starting ...',
-        'Restore_RecreateDatabase': 'Rebuilding local database ...',
-        'Restore_PreRestoreVerify': 'Verifying remote data ...',
-        'Restore_CreateFileList': 'Building list of files to restore ...',
-        'Restore_CreateTargetFolders': 'Creating target folders ...',
-        'Restore_ScanForExistingFiles': 'Scanning existing files ...',
-        'Restore_ScanForLocalBlocks': 'Scanning for local blocks ...',
-        'Restore_PatchWithLocalBlocks': 'Patching files with local blocks ...',
-        'Restore_DownloadingRemoteFiles': 'Downloading files ...',
-        'Restore_PostRestoreVerify': 'Verifying restored files ...',
-        'Restore_Complete': 'Finished!',
-        'Recreate_Running': 'Recreating database ...',
-        'Repair_Running': 'Reparing ...',
-        'Verify_Running': 'Verifying ...',
-        'BugReport_Running': 'Creating bug report ...',
-        'Error': 'Error!'
+    function reloadTexts() {
+        this.progress_state_text = {
+            'Backup_Begin': Localization.localize('Starting ...'),
+            'Backup_PreBackupVerify': Localization.localize('Verifying backend data ...'),
+            'Backup_PostBackupTest': Localization.localize('Verifying remote data ...'),
+            'Backup_PreviousBackupFinalize': Localization.localize('Completing previous backup ...'),
+            'Backup_ProcessingFiles': null,
+            'Backup_Finalize': Localization.localize('Completing backup ...'),
+            'Backup_WaitForUpload': Localization.localize('Waiting for upload ...'),
+            'Backup_Delete': Localization.localize('Deleting unwanted files ...'),
+            'Backup_Compact': Localization.localize('Compacting remote data ...'),
+            'Backup_VerificationUpload': Localization.localize('Uploading verification file ...'),
+            'Backup_PostBackupVerify': Localization.localize('Verifying backend data ...'),
+            'Backup_Complete': Localization.localize('Finished!'),
+            'Restore_Begin': Localization.localize('Starting ...'),
+            'Restore_RecreateDatabase': Localization.localize('Rebuilding local database ...'),
+            'Restore_PreRestoreVerify': Localization.localize('Verifying remote data ...'),
+            'Restore_CreateFileList': Localization.localize('Building list of files to restore ...'),
+            'Restore_CreateTargetFolders': Localization.localize('Creating target folders ...'),
+            'Restore_ScanForExistingFiles': Localization.localize('Scanning existing files ...'),
+            'Restore_ScanForLocalBlocks': Localization.localize('Scanning for local blocks ...'),
+            'Restore_PatchWithLocalBlocks': Localization.localize('Patching files with local blocks ...'),
+            'Restore_DownloadingRemoteFiles': Localization.localize('Downloading files ...'),
+            'Restore_PostRestoreVerify': Localization.localize('Verifying restored files ...'),
+            'Restore_Complete': Localization.localize('Finished!'),
+            'Recreate_Running': Localization.localize('Recreating database ...'),
+            'Repair_Running': Localization.localize('Reparing ...'),
+            'Verify_Running': Localization.localize('Verifying ...'),
+            'BugReport_Running': Localization.localize('Creating bug report ...'),
+            'Error': Localization.localize('Error!')
+        };
     };
+
+    reloadTexts();
+    Localization.watch($rootScope, reloadTexts);
 
     this.watch = function(scope, m) {
         scope.$on('serverstatechanged', function() {
