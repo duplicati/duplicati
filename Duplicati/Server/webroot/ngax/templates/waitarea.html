@@ -1,7 +1,7 @@
 <div class="waitarea">
-    <div ng-show="serverstate.activeTask == null || serverstate.activeTask.Item1 != taskid">Waiting for task to begin</div>
+    <div ng-show="serverstate.activeTask == null || serverstate.activeTask.Item1 != taskid">{{'Waiting for task to begin' | localize}}</div>
     <div ng-show="serverstate.activeTask != null &amp;&amp; serverstate.activeTask.Item1 == taskid">
-        <div>{{text || 'Task is running'}}</div>
+        <div>{{text || Localization.localize('Task is running')}}</div>
         <div class="progress" style="border: 1px solid;">
             <span>{{ServerStatus.progress_state_text[serverstate.lastPgEvent.Phase] || serverstate.lastPgEvent.Phase}}</span>
 
@@ -11,11 +11,11 @@
     </div>
 
     <div ng-show="serverstate.programState == 'Paused'" >
-        Server is currently paused, <a style="cursor: pointer" ng-click="ServerStatus.resume()">resume now</a>
+        {{'Server is currently paused,' | localize}} <a style="cursor: pointer" ng-click="ServerStatus.resume()">{{'resume now' | localize}}</a>
     </div>
 
     <div ng-show="allowCancel">
-        <a href class="button" ng-click="cancelTask()">Cancel</a>
+        <a href class="button" ng-click="cancelTask()">{{'Cancel' | localize}}</a>
     </div>
 
 </div>

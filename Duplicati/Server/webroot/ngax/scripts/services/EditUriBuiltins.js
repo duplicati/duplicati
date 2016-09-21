@@ -1,4 +1,4 @@
-backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http) {
+backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization, SystemInfo, EditUriBackendConfig, DialogService, $http) {
 
     EditUriBackendConfig.mergeServerAndPath = function(scope) {
         if ((scope.Server || '') != '') {
@@ -37,12 +37,12 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
         var dlg = null;
 
-        dlg = DialogService.dialog('Testing permissions...', 'Testing permissions ...', [], null, function() {    
+        dlg = DialogService.dialog(Localization.localize('Testing permissions...'), Localization.localize('Testing permissions ...'), [], null, function() {    
             AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CanCreateUser', 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
                 dlg.dismiss();
 
                 if (data.data.Result.isroot == 'True') {
-                    DialogService.dialog('User has too many permissions', 'The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?', ['Cancel', 'No' ,'Yes'], function(ix) {
+                    DialogService.dialog(Localization.localize('User has too many permissions'), Localization.localize('The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?'), [Localization.localize('Cancel'), Localization.localize('No') ,Localization.localize('Yes')], function(ix) {
                         if (ix == 0 || ix == 1) {
                             callback();
                         } else {
@@ -107,7 +107,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
             var dlg = null;
 
-            dlg = DialogService.dialog('Creating user...', 'Creating new user with limited access ...', [], null, function() {
+            dlg = DialogService.dialog(Localization.localize('Creating user...'), Localization.localize('Creating new user with limited access ...'), [], null, function() {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
                 AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CreateIAMUser', 's3-path': path, 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
@@ -116,7 +116,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
                     scope.Username = data.data.Result.accessid;
                     scope.Password = data.data.Result.secretkey;
 
-                    DialogService.dialog('Created new limited user', 'New user name is ' + data.data.Result.username + '.\nUpdated credentials to use the new limited user', ['OK'], callback);
+                    DialogService.dialog(Localization.localize('Created new limited user'), Localization.localize('New user name is {0}.\nUpdated credentials to use the new limited user', data.data.Result.username), [Localization.localize('OK')], callback);
 
                 }, function(data) { 
                     dlg.dismiss();
@@ -130,7 +130,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
                 AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'GetPolicyDoc', 's3-path': path}).then(function(data) {
-                    DialogService.dialog('AWS IAM Policy', data.data.Result.doc);
+                    DialogService.dialog(Localization.localize('AWS IAM Policy'), data.data.Result.doc);
                 }, AppUtils.connectionError);
             });
 
@@ -199,6 +199,21 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         if (scope.openstack_providers == null) {
             AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function(data) {
                 scope.openstack_providers = data.data.Result;
+                if (scope.openstack_providers != null && scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
+                    var first = null;
+                    var rs = null;
+
+                    for (var k in scope.openstack_providers) {
+                        if (first == null)
+                            first = scope.openstack_providers[k];
+                        if (scope.openstack_providers[k] != null && scope.openstack_providers[k].indexOf('https://identity.api.rackspacecloud.com/') == 0)
+                            rs = scope.openstack_providers[k];
+                    }
+
+                    if (rs != null)
+                        scope.openstack_server = rs;
+                    else if (first != null)
+                        scope.openstack_server = first;
 
             }, AppUtils.connectionError);
         }
@@ -512,30 +527,18 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.validaters['ftp'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_server(scope) &&
-            EditUriBackendConfig.require_field(scope, 'Username', 'username');
+            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Username'));
 
         if (res)
             EditUriBackendConfig.recommend_path(scope, function () {
                 if ((scope.Password || '').trim().length == 0)
-                    EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
+                    EditUriBackendConfig.show_warning_dialog(Localization.localize('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?'), continuation);
                 else
                     continuation();
             });
     };
 
-    EditUriBackendConfig.validaters['aftp'] = function (scope, continuation) {
-        var res =
-            EditUriBackendConfig.require_server(scope) &&
-            EditUriBackendConfig.require_field(scope, 'Username', 'username');
-
-        if (res)
-            EditUriBackendConfig.recommend_path(scope, function () {
-                if ((scope.Password || '').trim().length == 0)
-                    EditUriBackendConfig.show_warning_dialog('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?', continuation);
-                else
-                    continuation();
-            });
-    };
+    EditUriBackendConfig.validaters['aftp'] = EditUriBackendConfig.validaters['ftp'];
 
     EditUriBackendConfig.validaters['ssh'] = function(scope, continuation) {
         var res =
@@ -553,7 +556,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['onedrive'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'AuthID', 'AuthID');
+            EditUriBackendConfig.require_field(scope, 'AuthID', Localization.localize('AuthID'));
 
         if (res)
             EditUriBackendConfig.recommend_path(scope, continuation);
@@ -568,7 +571,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             var p = (scope.Path || '').trim();
 
             if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
-                DialogService.dialog('Adjust path name?', 'The path should start with "' + prefix + '" or "default", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
+                DialogService.dialog(Localization.localize('Adjust path name?'), Localization.localize('The path should start with "{0}" or "{1}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', prefix, 'default'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                     if (ix == 2) {
                         while (p.indexOf('/') == 0)
                             p = p.substr(1);
@@ -594,9 +597,9 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['azure'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', 'Account name') &&
-            EditUriBackendConfig.require_field(scope, 'Password', 'Access Key') &&
-            EditUriBackendConfig.require_field(scope, 'Path', 'Container name');
+            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Account name')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('Access Key')) &&
+            EditUriBackendConfig.require_field(scope, 'Path', Localization.localize('Container name'));
 
         if (res)
             continuation();
@@ -604,23 +607,23 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['openstack'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', 'username') &&
-            EditUriBackendConfig.require_field(scope, 'Path', 'bucket name');
+            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Username')) &&
+            EditUriBackendConfig.require_field(scope, 'Path', Localization.localize('Bucket Name'));
 
         if (res && (scope['openstack_server'] || '').trim().length == 0 && (scope['openstack_server_custom'] || '').trim().length == 0)
-            res = EditUriBackendConfig.show_error_dialog('You must select or fill in the AuthURI');
+            res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must select or fill in the AuthURI'));
 
         if (((scope.openstack_apikey) || '').trim().length == 0) {
 
             if (res && (scope.Password || '').trim().length == 0)
-                res = EditUriBackendConfig.show_error_dialog('You must enter either a password or an API Key');
+                res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must enter either a password or an API Key'));
 
             if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                res = EditUriBackendConfig.show_error_dialog('You must enter a tenant name if you do not provide an API Key');
+                res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must enter a tenant name if you do not provide an API Key'));
 
         } else {
             if (res && (scope.Password || '').trim().length != 0)
-                res = EditUriBackendConfig.show_error_dialog('You must enter either a password or an API Key, not both');
+                res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must enter either a password or an API Key, not both'));
         }
 
         if (res)
@@ -629,19 +632,19 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['s3'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
-            EditUriBackendConfig.require_field(scope, 'Username', 'AWS Access ID') &&
-            EditUriBackendConfig.require_field(scope, 'Password', 'AWS Access Key');
+            EditUriBackendConfig.require_field(scope, 'Server', Localization.localize('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('AWS Access ID')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('AWS Access Key'));
 
         if (res && (scope['s3_server'] || '').trim().length == 0 && (scope['s3_server_custom'] || '').trim().length == 0)
-            res = EditUriBackendConfig.show_error_dialog('You must select or fill in the server');
+            res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must select or fill in the server'));
 
 
         if (res) {
 
             function checkUsernamePrefix() {
                 if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
-                    DialogService.dialog('Adjust bucket name?', 'The bucket name should start with your username, prepend automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
+                    DialogService.dialog(Localization.localize('Adjust bucket name?'), Localization.localize('The bucket name should start with your username, prepend automatically?'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                         if (ix == 2)
                             scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
                         if (ix == 1 || ix == 2)
@@ -658,7 +661,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
             function checkLowerCase() {
                 if (scope.Server.toLowerCase() != scope.Server) {
-                    DialogService.dialog('Adjust bucket name?', 'The bucket name should be all lower-case, convert automatically?', ['Cancel', 'No', 'Yes'], function(ix) {
+                    DialogService.dialog(Localization.localize('Adjust bucket name?'), Localization.localize('The bucket name should be all lower-case, convert automatically?'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
                         if (ix == 2)
                             scope.Server = scope.Server.toLowerCase();
 
@@ -676,9 +679,9 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['b2'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', 'bucket name') &&
-            EditUriBackendConfig.require_field(scope, 'Username', 'B2 Cloud Storage Account ID') &&
-            EditUriBackendConfig.require_field(scope, 'Password', 'B2 Cloud Storage Application Key');
+            EditUriBackendConfig.require_field(scope, 'Server', Localization.localize('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('B2 Cloud Storage Account ID')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('B2 Cloud Storage Application Key'));
 
         if (res)
             continuation();
@@ -687,8 +690,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.validaters['mega'] = function(scope, continuation) {
         scope.Path = scope.Path || '';
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', 'Username') &&
-            EditUriBackendConfig.require_field(scope, 'Password', 'Password');
+            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Username')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('Password'));
 
         if (res)
             continuation();

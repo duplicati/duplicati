@@ -62,7 +62,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
 
                 $location.path('/');
             },
-            AppUtils.connectionError(Localization.localize('Failed to save: '))
+            AppUtils.connectionError(Localization.localize('Failed to save:') + ' ')
         );
     };
 
@@ -73,7 +73,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
                 $scope.SystemInfo.SuppressDonationMessages = true; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError('Operation failed: ')
+            AppUtils.connectionError(Localization.localize('Operation failed:') + ' ')
         );
     };
 
@@ -84,7 +84,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
                 $scope.SystemInfo.SuppressDonationMessages = false; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError('Operation failed: ')
+            AppUtils.connectionError(Localization.localize('Operation failed:' + ' '))
         );
     };
 });

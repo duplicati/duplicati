@@ -2,35 +2,35 @@
     <div class="state" ng-controller="StateController">
 
         <div ng-hide="state.programState == 'Running'">
-            <strong style="margin-right: 0px;">Backups are currently paused,</strong>
-            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">resuming in {{state.pauseTimeRemain | timeremaining}}</div>
-            <a href ng-click="sendResume()">click to resume now</a>
+            <strong style="margin-right: 0px;">{{'Backups are currently paused,' | localize}}</strong>
+            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">{{'resuming in' | localize}} {{state.pauseTimeRemain | timeremaining}}</div>
+            <a href ng-click="sendResume()">{{'click to resume now' | localize}}</a>
         </div>
 
         <div ng-hide="activeBackup == null">
-            <strong>Running task: </strong>
+            <strong>{{'Running task:' | localize}} </strong>
             {{activeBackup.Backup.Name}}
 
-            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop'}}</a>
+            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop' | localize}}</a>
 
             <progress-bar ng-text="StateText" ng-progress="Progress"></progress-bar>
 
         </div>
 
         <div ng-show="activeBackup == null &amp;&amp; state.activeTask != null">
-            <strong>Running task</strong>
+            <strong>{{'Running task' | localize}}</strong>
 
-            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop'}}</a>
+            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop' | localize}}</a>
         </div>
 
         <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">
-            <strong>Next task:</strong>
+            <strong>{{'Next task:' | localize}} </strong>
             {{nextTask.Backup.Name}}
         </div>
 
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | moment: 'calendar'}}</span></div>
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong>{{'Next scheduled task:' | localize}}</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | moment: 'calendar'}}</span></div>
 
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null">No scheduled tasks, you can manually start a task</div>
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null">{{'No scheduled tasks, you can manually start a task' | localize}}</div>
 
     </div>
 
@@ -40,52 +40,52 @@
                 <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}</a>
 
                 <dl class="contextmenu" ng-show="$parent.ContextMenuID == item.Backup.ID">
-                    <dt>Operations:</dt>
+                    <dt>{{'Operations:' | localize}}</dt>
                     <dd>
-                        <p ng-click="doRun(item.Backup.ID)">Run now</p>
-                        <p ng-click="doRestore(item.Backup.ID)">Restore files ...</p>
+                        <p ng-click="doRun(item.Backup.ID)">{{'Run now' | localize}}</p>
+                        <p ng-click="doRestore(item.Backup.ID)">{{'Restore files ...' | localize}}</p>
                     </dd>
 
-                    <dt>Configuration:</dt>
+                    <dt>{{'Configuration:' | localize}}</dt>
                     <dd>
-                        <p ng-click="doEdit(item.Backup.ID)">Edit ...</p>
-                        <p ng-click="doExport(item.Backup.ID)">Export ...</p>
-                        <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)">Delete</p>
+                        <p ng-click="doEdit(item.Backup.ID)">{{'Edit ...' | localize}}</p>
+                        <p ng-click="doExport(item.Backup.ID)">{{'Export ...' | localize}}</p>
+                        <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)">{{'Delete' | localize}}</p>
                         
                     </dd>
 
-                    <dt>Advanced:</dt>
+                    <dt>{{'Advanced:' | localize}}</dt>
                     <dd>
-                        <p ng-click="doLocalDb(item.Backup.ID)">Manage database ...</p>
-                        <p ng-click="doVerifyRemote(item.Backup.ID)">Verify files</p>
-                        <p ng-click="doCompact(item.Backup.ID)">Compact now</p>
+                        <p ng-click="doLocalDb(item.Backup.ID)">{{'Manage database ...' | localize}}</p>
+                        <p ng-click="doVerifyRemote(item.Backup.ID)">{{'Verify files' | localize}}</p>
+                        <p ng-click="doCompact(item.Backup.ID)">{{'Compact now' | localize}}</p>
                     </dd>
 
-                    <dt>Reporting:</dt>
+                    <dt>{{'Reporting:' | localize}}</dt>
                     <dd>
-                        <p ng-click="doShowLog(item.Backup.ID)">Show log ...</p>
-                        <p ng-click="doCreateBugReport(item.Backup.ID)">Create bug report ...</p>
+                        <p ng-click="doShowLog(item.Backup.ID)">{{'Show log ...' | localize}}</p>
+                        <p ng-click="doCreateBugReport(item.Backup.ID)">{{'Create bug report ...' | localize}}</p>
                     </dd>
                 </dl>
 
                 <dl>
-                    <dt>Last successful run:</dt>
-                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}">{{item.Backup.Metadata.LastBackupFinished | moment: 'calendar'}} (took {{formatDuration(item.Backup.Metadata.LastDuration)}})</dd>
+                    <dt>{{'Last successful run:' | localize}}</dt>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}">{{item.Backup.Metadata.LastBackupFinished | moment: 'calendar'}} ({{'took {0}' | localize: formatDuration(item.Backup.Metadata.LastDuration)}})</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
-                    Never - <a href class="action-link" ng-click="doRun(item.Backup.ID)">Run now</a>
+                    {{'Never' | localize}} - <a href class="action-link" ng-click="doRun(item.Backup.ID)">{{'Run now' | localize}}</a>
                     </dd>
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
-                        <dt>Next scheduled run:</dt>
+                        <dt>{{'Next scheduled run:' | localize}}</dt>
                         <dd title="{{item.Backup.Metadata.NextScheduledRun | parsetimestamp }}">{{item.Backup.Metadata.NextScheduledRun | moment: 'calendar'}}</dd>
                     </div>
                     <div ng-hide="item.Backup.Metadata == null">
                         <div ng-hide="item.Backup.Metadata.SourceSizeString == null">
-                            <dt>Source:</dt>
+                            <dt>{{'Source:' | localize}}</dt>
                             <dd>{{item.Backup.Metadata.SourceSizeString}}</dd>
                         </div>
                         <div ng-hide="item.Backup.Metadata.TargetSizeString == null">
-                            <dt>Backup:</dt>
+                            <dt>{{'Backup:' | localize}}</dt>
                             <dd>{{item.Backup.Metadata.TargetSizeString}}</dd>
                         </div>
                     </div>

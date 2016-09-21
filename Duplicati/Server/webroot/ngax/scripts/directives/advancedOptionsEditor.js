@@ -6,8 +6,15 @@ backupApp.directive('advancedOptionsEditor', function() {
             ngOptionList: '='
         },
         templateUrl: 'templates/advancedoptionseditor.html',
-        controller: function($scope, $timeout) {
+        controller: function($scope, $timeout, AppUtils) {
             $scope.NewItem = null;
+            $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
+            $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
+
+            AppUtils.watch($scope, function() {
+                $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
+                $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
+            });
 
             var optionmap = null;
 
