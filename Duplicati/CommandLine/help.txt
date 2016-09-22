@@ -11,7 +11,7 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, repair
+  Commands: backup, find, restore, delete, compact, test, compare, repair, affected
   Debugging: debug, logging, create-report, test-filters, system-info
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
