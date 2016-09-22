@@ -240,8 +240,6 @@ Duplicati provides information for debugging and logging purposes. By default, a
     The path to the log file e.g. "D:\duplicati\log.txt".
   --log-level = Profiling | Information | Warning | Error 
     Specifies the log level.
-  --backend-log-database = <path>
-    Duplicati can log all actions related to storing, deleting files on the backend. <path> specifies where this log is written e.g. "D:\duplicati\backend.xml".
 
     
 # =============================================================================
