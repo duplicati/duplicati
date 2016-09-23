@@ -9,11 +9,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
-if not "SAUCE_USERNAME" in os.environ:
-    print "No sauce labs login credentials found. Stopping tests..."
-    sys.exit(0)
-
 if "TRAVIS_BUILD_NUMBER" in os.environ:
+    if not "SAUCE_USERNAME" in os.environ:
+        print "No sauce labs login credentials found. Stopping tests..."
+        sys.exit(0)
+
     capabilities = {'browserName': "firefox"}
     capabilities['platform'] = "Windows 7"
     capabilities['version'] = "48.0"
