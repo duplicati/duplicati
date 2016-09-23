@@ -1,3 +1,8 @@
+2016-09-21
+==========
+* Change default TrayIcon on OSX to work on 32bit Mono
+* Added localization support calls to all strings in the UI
+
 2016-09-16
 ==========
 * Fixed a restore issue from a partially reconstructed database

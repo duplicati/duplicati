@@ -215,7 +215,12 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencyblockhashersLong { get { return LC.L(@"Use this option to set the number of processes that perform hashing of data."); } }
         public static string ConcurrencycompressorsShort{ get { return LC.L(@"Specify the number of concurrent compression processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
-    }
+		public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of HyperV machines (Windows only)"); } }
+		public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the names of machines to include in the backup. Specify multiple machine names with a semicolon separator."); } }
+		public static string HypervbackupnomergeShort { get { return LC.L(@"Do not merge the HyperV VHD (Windows only)"); } }
+		public static string HypervbackupnomergeLong { get { return LC.L(@"Use this option to disable the merge of HyperV VHD's prior to performing the backup."); } }
+
+	}
 
     internal static class Common
     {
