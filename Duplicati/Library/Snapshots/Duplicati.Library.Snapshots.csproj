@@ -43,6 +43,7 @@
       <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="AlphaFS">
       <HintPath>..\..\..\packages\AlphaFS.2.0.1\lib\net45\AlphaFS.dll</HintPath>
     </Reference>
@@ -73,9 +74,12 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
+    <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />
     <Compile Include="Program.cs" />
@@ -109,6 +113,10 @@
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
