@@ -43,6 +43,7 @@
       <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="AlphaFS">
       <HintPath>..\..\..\packages\AlphaFS.2.0.1\lib\net45\AlphaFS.dll</HintPath>
     </Reference>
@@ -73,9 +74,12 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
+    <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />
     <Compile Include="Program.cs" />
