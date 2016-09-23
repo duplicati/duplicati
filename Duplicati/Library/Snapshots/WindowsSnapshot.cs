@@ -43,7 +43,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The list of paths that will be shadow copied
         /// </summary>
-        private List<string> m_sourcepaths = new List<string>();
+        private List<string> m_sourcepaths;
         /// <summary>
         /// The list of snapshot ids for each volume, key is the path root, eg C:\.
         /// The dictionary is case insensitive
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// A list off Hyper-V Machines that we will back up
         /// </summary>
-        private readonly IDictionary<string, string> _hyperVMachines = null;
+        private readonly IDictionary<string, string> m_hyperVMachines = null;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -89,13 +89,9 @@ namespace Duplicati.Library.Snapshots
                 string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
                 IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
 
-                List<Guid> excludedWriters = new List<Guid>();
-                if (options.ContainsKey("vss-exclude-writers"))
-                {
-                    foreach (string s in options["vss-exclude-writers"].Split(';'))
-                        if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
-                            excludedWriters.Add(new Guid(s));
-                }
+				var excludedWriters = new Guid[0];
+				if (options.ContainsKey("vss-exclude-writers"))
+					excludedWriters = options["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
 
                 //Check if we should map any drives
                 bool useSubst = Utility.Utility.ParseBoolOption(options, "vss-use-mapping");
@@ -104,32 +100,29 @@ namespace Duplicati.Library.Snapshots
                 m_backup = vss.CreateVssBackupComponents();
                 m_backup.InitializeForBackup(null);
 
-                if (excludedWriters.Count > 0)
+				if (excludedWriters.Length > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
-                for (int i = 0; i < sourcepaths.Length; i++)
-                {
-                    m_sourcepaths.Add(System.IO.Directory.Exists(sourcepaths[i]) ? Utility.Utility.AppendDirSeparator(sourcepaths[i]) : sourcepaths[i]);
-                }
+				m_sourcepaths = sourcepaths.Select(x => Directory.Exists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
 
+				var requestedHyperVMs = new List<string>();
+				if (options.ContainsKey("hyperv-backup-vm"))
+					requestedHyperVMs = options["hyperv-backup-vm"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
+				
                 //Check if we are backing up HyperV machines
-                options.Add("hyperv-backup-vm", "true");
-                if (options.ContainsKey("hyperv-backup-vm"))
-                {
-                    //Do not hardcode the VM in the future, the front-end will provide this.
-                    var requestedVMs = new List<string> {"testmerge"};
-                    var hyperVUtility = new HyperVUtility(requestedVMs);
-                    _hyperVMachines = hyperVUtility.GetHyperVMachines();
+				if (requestedHyperVMs.Count > 0)
+				{
+					var hyperVUtility = new HyperVUtility(requestedHyperVMs);
+					m_hyperVMachines = hyperVUtility.GetHyperVMachines();
 
+					#region Testing Features
+					if (!Utility.Utility.ParseBoolOption(options, "hyperv-backup-no-merge"))
+						hyperVUtility.MergeVhd(requestedHyperVMs);
 
-                    #region Testing Features
-                    //Option: Merge-vhd-before-backup
-                    hyperVUtility.MergeVhd(requestedVMs);
-
-                    //Option: Create-new-vm-after-restore, 
-                    //hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
-                    #endregion Testing Features
-                }
+					//Option: Create-new-vm-after-restore, 
+					//hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
+					#endregion Testing Features
+				}
 
                 m_backup.StartSnapshotSet();
 
@@ -138,9 +131,8 @@ namespace Duplicati.Library.Snapshots
                     //Gather information on all Vss writers
                     m_backup.GatherWriterMetadata();
 
-#region HyperVBackup
                     //Update the sourcepaths if we're backing up Hyper-V Machines
-                    if (options.ContainsKey("hyperv-backup-vm"))
+                    if (requestedHyperVMs.Count > 0)
                     {
                         //Find sourcepaths in Hyper-V WriterMetaData
                         var m_backup_wmd = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
@@ -148,15 +140,17 @@ namespace Duplicati.Library.Snapshots
                             foreach (var component in m_backup_wmd.Components)
                             {
                                 //Cross reference the requested Hyper-V Machines to backup and add the sources
-                                if (!_hyperVMachines.ContainsKey(component.ComponentName)) continue;
+                                if (!m_hyperVMachines.ContainsKey(component.ComponentName)) 
+									continue;
+							
                                 foreach (var file in component.Files)
                                 {
-                                    if (file.FileSpecification.Contains("*")) continue;
+                                    if (file.FileSpecification.Contains("*")) 
+										continue;
                                     m_sourcepaths.Add(file.Path + file.FileSpecification);
                                 }
                             }
                     }
-#endregion
 
                     m_backup.FreeWriterMetadata();
                 }
