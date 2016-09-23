@@ -164,7 +164,7 @@ namespace Duplicati.Server
         /// Constructs a new instance of the LiveControl
         /// </summary>
         /// <param name="initialTimeout">The duration that the backups should be initially suspended</param>
-        public LiveControls(Database.ApplicationSettings settings)
+        public LiveControls(Database.ServerSettings settings)
         {
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
