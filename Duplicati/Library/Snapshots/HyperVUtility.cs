@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Text;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -80,8 +81,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>List of Hyper-V Machines</returns>
         public IDictionary<string, string> GetHyperVMachines()
         {
-            ManagementObjectCollection moCollection = GetWmiObjects(WmiQueryHyperVMachines());
-            foreach (ManagementBaseObject mObject in moCollection)
+            var moCollection = GetWmiObjects(WmiQueryHyperVMachines());
+            foreach (var mObject in moCollection)
                 using (mObject)
                     _hyperVMachines.Add((string) mObject[_vmIdField], (string) mObject["ElementName"]);
 
@@ -94,7 +95,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>WMI query</returns>
         private string WmiQueryHyperVMachines()
         {
-            string wmiQuery = _wmiv2Namespace
+            var wmiQuery = _wmiv2Namespace
                 ? "SELECT VirtualSystemIdentifier, ElementName FROM Msvm_VirtualSystemSettingData WHERE VirtualSystemType = 'Microsoft:Hyper-V:System:Realized'"
                 : "SELECT SystemName, ElementName FROM Msvm_VirtualSystemSettingData WHERE SettingType = 3";
 
@@ -121,8 +122,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A collection of results</returns>
         private ManagementObjectCollection GetWmiObjects(string query)
         {
-            ManagementObjectSearcher moSearcher = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(query));
-            ManagementObjectCollection resultset = moSearcher.Get();
+            var moSearcher = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(query));
+            var resultset = moSearcher.Get();
             return resultset;
         }
 
@@ -134,46 +135,39 @@ namespace Duplicati.Library.Snapshots
         /// <returns></returns>
         private ManagementObject GetMsVMObject(string className, string where)
         {
-            var query = @where != null
-                ? $"select * from {className} where {@where}"
-                : $"select * from {className}";
+            var query = where != null
+				? string.Format("select * from {0} where {1}", className, where)
+	            : string.Format("select * from {0}", className);
 
-            ManagementObjectCollection resultset = GetWmiObjects(query);
+            var resultset = GetWmiObjects(query);
 
             if (resultset.Count != 1)
                 throw new InvalidOperationException(string.Format("Cannot locate {0} where {1}", className, where));
 
             try
             {
-                ManagementObjectCollection.ManagementObjectEnumerator en = resultset.GetEnumerator();
-                en.MoveNext();
-                return en.Current as ManagementObject;
-            }
-            catch (Exception)
+				foreach (var instance in resultset)
+					return instance as ManagementObject;
+				return null;
+			}
+            catch (Exception ex)
             {
-                throw new InvalidOperationException(string.Format("Failure retrieving {0} where {1}", className, where));
+                throw new InvalidOperationException(string.Format("Failure retrieving {0} where {1}", className, where), ex);
             }
         }
 
         private ManagementObject GetTargetVmObject(string vmElementName)
         {
-            string query = $"select * from Msvm_ComputerSystem where ElementName = '{vmElementName}'";
+			var query = string.Format("select * from Msvm_ComputerSystem where ElementName = '{0}'", vmElementName);
+            var computers = GetWmiObjects(query);
 
-            ManagementObjectCollection computers = GetWmiObjects(query);
+			foreach (var instance in computers)
+				return (ManagementObject)instance;
 
-            ManagementObject computer = null;
-
-            foreach (ManagementObject instance in computers)
-            {
-                computer = instance;
-                break;
-            }
-            return computer;
+			return null;
         }
 
         # endregion Management Object helpers
-
-
 
 
 
@@ -187,41 +181,33 @@ namespace Duplicati.Library.Snapshots
         /// <param name="vmNotes"></param>
         public void CreateHyperVMachine(string vmDisplayName, string vmNotes)
         {
-            try
-            {
-                ManagementObject sysManService = GetMsVMObject(WmiClasses.MsVM_VSMS, null);
+            var sysManService = GetMsVMObject(WmiClasses.MsVM_VSMS, null);
 
-                //Defining a VM with empty settings
-                ManagementBaseObject hyperVM = sysManService.InvokeMethod(Methods.DefineVirtualSystem,
-                    sysManService.GetMethodParameters(Methods.DefineVirtualSystem), null);
+            //Defining a VM with empty settings
+            var hyperVM = sysManService.InvokeMethod(Methods.DefineVirtualSystem,
+                sysManService.GetMethodParameters(Methods.DefineVirtualSystem), null);
 
-                if ((uint) hyperVM["ReturnValue"] != ReturnCode.ERROR_SUCCESS)
-                    throw new InvalidOperationException(
-                        $"DefineVirtualSystem failed. ReturnValue: {(uint) hyperVM["ReturnValue"]}");
+            if ((uint) hyperVM["ReturnValue"] != ReturnCode.ERROR_SUCCESS)
+                throw new InvalidOperationException(
+                    $"DefineVirtualSystem failed. ReturnValue: {(uint) hyperVM["ReturnValue"]}");
 
-                ManagementObject hyperVMTemplate = new ManagementObject((string) hyperVM["DefinedSystem"]);
+            var hyperVMTemplate = new ManagementObject((string) hyperVM["DefinedSystem"]);
 
-                // this is GUID; will need to locate settings for this VM and edit the settings
-                ManagementObject hyperVMSettings = GetMsVMObject(WmiClasses.MsVM_VSSD,
-                    string.Format("systemname = '{0}'", (string) hyperVMTemplate["name"]));
-                hyperVMSettings["elementname"] = vmDisplayName;
-                hyperVMSettings["notes"] = vmNotes;
-                hyperVMSettings["BIOSGUID"] = new Guid();
-                hyperVMSettings["BIOSNumLock"] = "true";
-                hyperVMSettings["Description"] = "Hyper-V Machine restored from machine xxxx by Duplicati";
-                hyperVMSettings.Put();
+            // this is GUID; will need to locate settings for this VM and edit the settings
+            var hyperVMSettings = GetMsVMObject(WmiClasses.MsVM_VSSD,
+                string.Format("systemname = '{0}'", (string) hyperVMTemplate["name"]));
+            hyperVMSettings["elementname"] = vmDisplayName;
+            hyperVMSettings["notes"] = vmNotes;
+            hyperVMSettings["BIOSGUID"] = new Guid();
+            hyperVMSettings["BIOSNumLock"] = "true";
+            hyperVMSettings["Description"] = "Hyper-V Machine restored from machine xxxx by Duplicati";
+            hyperVMSettings.Put();
 
-                ManagementBaseObject hyperVMParams = sysManService.GetMethodParameters(Methods.ModifyVirtualSystem);
-                string settingsText = hyperVMSettings.GetText(TextFormat.WmiDtd20);
-                hyperVMParams["ComputerSystem"] = hyperVMTemplate;
-                hyperVMParams["SystemSettingData"] = settingsText;
-                sysManService.InvokeMethod(Methods.ModifyVirtualSystem, hyperVMParams, null);
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine("Failed to create Hyper-V machine");
-                throw new Exception(exception.ToString());
-            }
+            var hyperVMParams = sysManService.GetMethodParameters(Methods.ModifyVirtualSystem);
+            var settingsText = hyperVMSettings.GetText(TextFormat.WmiDtd20);
+            hyperVMParams["ComputerSystem"] = hyperVMTemplate;
+            hyperVMParams["SystemSettingData"] = settingsText;
+            sysManService.InvokeMethod(Methods.ModifyVirtualSystem, hyperVMParams, null);
         }
 
         #endregion
@@ -229,22 +215,20 @@ namespace Duplicati.Library.Snapshots
         #region Merging VHD
         public void MergeVhd(List<string> VmNames)
         {
-            List<string> vhdPaths = new List<string>();
-            foreach (string vmName in VmNames)
-            {
-                vhdPaths.AddRange(GetAllVmVhdPaths(vmName));
-            }
+			var vhdPaths = VmNames.SelectMany(x => GetAllVmVhdPaths(x)).ToArray();
 
-            ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
-            ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.MergeVirtualHardDisk);
+            var imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
+            var inParams = imgMan.GetMethodParameters(Methods.MergeVirtualHardDisk);
             inParams["DestinationPath"] = vhdPaths.First();
             inParams["SourcePath"] = vhdPaths.Last();
-            ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.MergeVirtualHardDisk, inParams, null);
+            var outParams = imgMan.InvokeMethod(Methods.MergeVirtualHardDisk, inParams, null);
             if (outParams != null && (uint)outParams["ReturnValue"] == ReturnCode.ERROR_JOBSTARTED)
             {
-                var result = JobCompleted(outParams, _wmiScope)
+				JobCompleted(outParams, _wmiScope);
+                /*var result = JobCompleted(outParams, _wmiScope)
                     ? $"{inParams["SourcePath"]} was merged successfully."
                     : $"{inParams["SourcePath"]} failed merging.";
+                */
             }
 
             //Remove the snapshots since they are no longer valid.
@@ -253,15 +237,7 @@ namespace Duplicati.Library.Snapshots
 
         private void RemoveSnapshotTree()
         {
-            ManagementObject sysMan = GetTargetVmObject("merge");
-        }
-
-        private void EditVhdPath(XDocument xmlDocument)
-        {
-            ManagementObject sysMan = GetMsVMObject(WmiClasses.MsVM_VSMS, null);
-            ManagementBaseObject inParams = sysMan.GetMethodParameters(Methods.ModifyVirtualSystem);
-
-            //ManagementObject vm = GetTargetVmObject()
+            GetTargetVmObject("merge");
         }
 
         public static bool JobCompleted(ManagementBaseObject outParams, ManagementScope scope)
@@ -269,25 +245,24 @@ namespace Duplicati.Library.Snapshots
             bool jobCompleted = true;
             
             //Retrieve msvc_StorageJob path. This is a full wmi path
-            string JobPath = (string)outParams["Job"];
-            ManagementObject Job = new ManagementObject(scope, new ManagementPath(JobPath), null);
+            var JobPath = (string)outParams["Job"];
+            var Job = new ManagementObject(scope, new ManagementPath(JobPath), null);
             //Try to get storage job information
             Job.Get();
             while ((UInt16)Job["JobState"] == JobState.Starting
                 || (UInt16)Job["JobState"] == JobState.Running)
             {
-                Console.WriteLine("In progress... {0}% completed.", Job["PercentComplete"]);
+				Logging.Log.WriteMessage(string.Format("HyperV in progress... {0}% completed.", Job["PercentComplete"]), Logging.LogMessageType.Information);
                 System.Threading.Thread.Sleep(1000);
                 Job.Get();
             }
 
             //Figure out if job failed
-            UInt16 jobState = (UInt16)Job["JobState"];
+            var jobState = (UInt16)Job["JobState"];
             if (jobState != JobState.Completed)
             {
-                UInt16 jobErrorCode = (UInt16)Job["ErrorCode"];
-                Console.WriteLine("Error Code:{0}", jobErrorCode);
-                Console.WriteLine("ErrorDescription: {0}", (string)Job["ErrorDescription"]);
+                var jobErrorCode = (UInt16)Job["ErrorCode"];
+				Logging.Log.WriteMessage(string.Format("HyperV Error, code: {0}, message: {1}", jobErrorCode, Job["ErrorDescription"]), Logging.LogMessageType.Error);
                 jobCompleted = false;
             }
             return jobCompleted;
@@ -296,13 +271,13 @@ namespace Duplicati.Library.Snapshots
         private List<string> GetAllVmVhdPaths(string vmName)
         {
 
-            List<string> ParentPaths = new List<string>();
-            ManagementObject vm = GetTargetVmObject(vmName);
-            ManagementObject imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
+            var ParentPaths = new List<string>();
+            var vm = GetTargetVmObject(vmName);
+            var imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
 
-            foreach (ManagementObject sysSettings in vm.GetRelated(WmiClasses.MsVM_VSSD))
+            foreach (var sysSettings in vm.GetRelated(WmiClasses.MsVM_VSSD))
             {
-                ManagementObjectCollection systemObjCollection = sysSettings.GetRelated(WmiClasses.MsVM_RASD);
+				var systemObjCollection = ((ManagementObject)sysSettings).GetRelated(WmiClasses.MsVM_RASD);
                 var tempvhd = from ManagementBaseObject systemBaseObj in systemObjCollection
                     where ((UInt16) systemBaseObj["ResourceType"] == 21
                             && (string) systemBaseObj["ResourceSubType"] == "Microsoft Virtual Hard Disk")
@@ -310,20 +285,20 @@ namespace Duplicati.Library.Snapshots
                 ParentPaths.Add(((IEnumerable<object>) tempvhd.First()["Connection"]).First().ToString());
             }
 
-            List<string> result = new List<string>() {ParentPaths.First()};
+            var result = new List<string>() {ParentPaths.First()};
 
-            ManagementBaseObject inParams = imgMan.GetMethodParameters(Methods.GetVirtualHardDiskInfo);
+            var inParams = imgMan.GetMethodParameters(Methods.GetVirtualHardDiskInfo);
             foreach (var vhdPath in ParentPaths)
             {
                 inParams["Path"] = vhdPath;
-                ManagementBaseObject outParams = imgMan.InvokeMethod(Methods.GetVirtualHardDiskInfo, inParams,
+                var outParams = imgMan.InvokeMethod(Methods.GetVirtualHardDiskInfo, inParams,
                     null);
 
                 if (outParams != null)
                 {
-                    XmlDocument doc = new XmlDocument();
+                    var doc = new XmlDocument();
                     doc.LoadXml((string) outParams["Info"]);
-                    XmlNode node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
+                    var node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
                     if (node == null)
                     {
                         if (result.Contains(vhdPath)) continue;
@@ -339,39 +314,6 @@ namespace Duplicati.Library.Snapshots
         }
 
         #endregion
-
-        #region XML Reader Helpers
-        /// <summary>
-        /// Copies the xml to a temp folder so that we can load the xml
-        /// </summary>
-        /// <param name="filepath"></param>
-        /// <returns></returns>
-        private XDocument GetXml(string filepath)
-        {
-            string tempFilepath = $"{Path.GetTempPath()}{Path.GetFileName(filepath)}";
-            File.Copy(filepath, tempFilepath);
-            XDocument xmlDocument = XDocument.Load(tempFilepath);
-            File.Delete(tempFilepath);
-            return xmlDocument;
-        }
-
-        /// <summary>
-        /// This will retrieve the respected active VHD of the machine
-        /// </summary>
-        /// <param name="xmlDocument"></param>
-        /// <returns></returns>
-        private string GetVhdPathFromXml(XDocument xmlDocument)
-        {
-            return
-                xmlDocument.Descendants("type")
-                    .Where(x => x.Value == "VHD")
-                    .Select(x => x.Parent)
-                    .FirstOrDefault()
-                    .Element("pathname")
-                    .Value;
-        }
-
-#endregion
     }
 }
 
