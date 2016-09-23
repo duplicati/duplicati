@@ -124,11 +124,11 @@ namespace Duplicati.CommandLine
             }
         }
 
-		public static int Examples(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
-		{
-			Duplicati.CommandLine.Help.PrintUsage("example", options);
-			return 0;
-		}
+        public static int Examples(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            Duplicati.CommandLine.Help.PrintUsage("example", options);
+            return 0;
+        }
     
         public static int Help(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {

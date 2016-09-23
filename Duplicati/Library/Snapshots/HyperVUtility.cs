@@ -136,8 +136,8 @@ namespace Duplicati.Library.Snapshots
         private ManagementObject GetMsVMObject(string className, string where)
         {
             var query = where != null
-				? string.Format("select * from {0} where {1}", className, where)
-	            : string.Format("select * from {0}", className);
+                ? string.Format("select * from {0} where {1}", className, where)
+                : string.Format("select * from {0}", className);
 
             var resultset = GetWmiObjects(query);
 
@@ -146,10 +146,10 @@ namespace Duplicati.Library.Snapshots
 
             try
             {
-				foreach (var instance in resultset)
-					return instance as ManagementObject;
-				return null;
-			}
+                foreach (var instance in resultset)
+                    return instance as ManagementObject;
+                return null;
+            }
             catch (Exception ex)
             {
                 throw new InvalidOperationException(string.Format("Failure retrieving {0} where {1}", className, where), ex);
@@ -158,13 +158,13 @@ namespace Duplicati.Library.Snapshots
 
         private ManagementObject GetTargetVmObject(string vmElementName)
         {
-			var query = string.Format("select * from Msvm_ComputerSystem where ElementName = '{0}'", vmElementName);
+            var query = string.Format("select * from Msvm_ComputerSystem where ElementName = '{0}'", vmElementName);
             var computers = GetWmiObjects(query);
 
-			foreach (var instance in computers)
-				return (ManagementObject)instance;
+            foreach (var instance in computers)
+                return (ManagementObject)instance;
 
-			return null;
+            return null;
         }
 
         # endregion Management Object helpers
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Snapshots
         #region Merging VHD
         public void MergeVhd(List<string> VmNames)
         {
-			var vhdPaths = VmNames.SelectMany(x => GetAllVmVhdPaths(x)).ToArray();
+            var vhdPaths = VmNames.SelectMany(x => GetAllVmVhdPaths(x)).ToArray();
 
             var imgMan = GetMsVMObject(WmiClasses.MsVM_IMS, null);
             var inParams = imgMan.GetMethodParameters(Methods.MergeVirtualHardDisk);
@@ -224,7 +224,7 @@ namespace Duplicati.Library.Snapshots
             var outParams = imgMan.InvokeMethod(Methods.MergeVirtualHardDisk, inParams, null);
             if (outParams != null && (uint)outParams["ReturnValue"] == ReturnCode.ERROR_JOBSTARTED)
             {
-				JobCompleted(outParams, _wmiScope);
+                JobCompleted(outParams, _wmiScope);
                 /*var result = JobCompleted(outParams, _wmiScope)
                     ? $"{inParams["SourcePath"]} was merged successfully."
                     : $"{inParams["SourcePath"]} failed merging.";
@@ -252,7 +252,7 @@ namespace Duplicati.Library.Snapshots
             while ((UInt16)Job["JobState"] == JobState.Starting
                 || (UInt16)Job["JobState"] == JobState.Running)
             {
-				Logging.Log.WriteMessage(string.Format("HyperV in progress... {0}% completed.", Job["PercentComplete"]), Logging.LogMessageType.Information);
+                Logging.Log.WriteMessage(string.Format("HyperV in progress... {0}% completed.", Job["PercentComplete"]), Logging.LogMessageType.Information);
                 System.Threading.Thread.Sleep(1000);
                 Job.Get();
             }
@@ -262,7 +262,7 @@ namespace Duplicati.Library.Snapshots
             if (jobState != JobState.Completed)
             {
                 var jobErrorCode = (UInt16)Job["ErrorCode"];
-				Logging.Log.WriteMessage(string.Format("HyperV Error, code: {0}, message: {1}", jobErrorCode, Job["ErrorDescription"]), Logging.LogMessageType.Error);
+                Logging.Log.WriteMessage(string.Format("HyperV Error, code: {0}, message: {1}", jobErrorCode, Job["ErrorDescription"]), Logging.LogMessageType.Error);
                 jobCompleted = false;
             }
             return jobCompleted;
@@ -277,7 +277,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var sysSettings in vm.GetRelated(WmiClasses.MsVM_VSSD))
             {
-				var systemObjCollection = ((ManagementObject)sysSettings).GetRelated(WmiClasses.MsVM_RASD);
+                var systemObjCollection = ((ManagementObject)sysSettings).GetRelated(WmiClasses.MsVM_RASD);
                 var tempvhd = from ManagementBaseObject systemBaseObj in systemObjCollection
                     where ((UInt16) systemBaseObj["ResourceType"] == 21
                             && (string) systemBaseObj["ResourceSubType"] == "Microsoft Virtual Hard Disk")
