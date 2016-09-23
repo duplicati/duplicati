@@ -20,27 +20,27 @@ namespace Duplicati.WindowsService
             });
         }
 
-		public override void Install(IDictionary stateSaver)
-		{
-			var commandline = Context.Parameters["commandline"];
-			if (!string.IsNullOrWhiteSpace(commandline))
-			{
-				var rawpath = Context.Parameters["assemblypath"];
-				var path = new StringBuilder(rawpath);
-				if (!rawpath.StartsWith("\"", StringComparison.Ordinal) || !rawpath.EndsWith("\"", StringComparison.Ordinal))
-				{
-					path.Insert(0, '"');
-					path.Append('"');
-				}
+        public override void Install(IDictionary stateSaver)
+        {
+            var commandline = Context.Parameters["commandline"];
+            if (!string.IsNullOrWhiteSpace(commandline))
+            {
+                var rawpath = Context.Parameters["assemblypath"];
+                var path = new StringBuilder(rawpath);
+                if (!rawpath.StartsWith("\"", StringComparison.Ordinal) || !rawpath.EndsWith("\"", StringComparison.Ordinal))
+                {
+                    path.Insert(0, '"');
+                    path.Append('"');
+                }
 
-				path.Append(" ");
-				path.Append(commandline);
+                path.Append(" ");
+                path.Append(commandline);
 
-				Context.Parameters["assemblypath"] = path.ToString();
-			}
+                Context.Parameters["assemblypath"] = path.ToString();
+            }
 
-			base.Install(stateSaver);
-		}
+            base.Install(stateSaver);
+        }
 
     }
 }

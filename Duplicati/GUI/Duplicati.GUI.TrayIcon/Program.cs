@@ -30,7 +30,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static string GetDefaultToolKit(bool printwarnings)
         {
-			// No longer using Cocoa directly as it fails on 32bit as well            
+            // No longer using Cocoa directly as it fails on 32bit as well            
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
                     return TOOLKIT_RUMPS;
 

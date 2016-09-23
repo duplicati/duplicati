@@ -34,9 +34,9 @@ namespace Duplicati.WindowsService
             m_eventLog.Source = LOG_SOURCE;
             m_eventLog.Log = LOG_NAME;
             m_verbose_messages = args != null && args.Any(x => string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase));
-			m_cmdargs = (args ?? new string[0]).Where(x => !string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).ToArray();
+            m_cmdargs = (args ?? new string[0]).Where(x => !string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).ToArray();
 
-		}
+        }
 
         protected override void OnStart(string[] args)
         {
@@ -55,7 +55,7 @@ namespace Duplicati.WindowsService
 
         private void DoStart(string[] args)
         {
-			var startargs = (args ?? new string[0]).Union(m_cmdargs ?? new string[0]).ToArray();
+            var startargs = (args ?? new string[0]).Union(m_cmdargs ?? new string[0]).ToArray();
 
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");

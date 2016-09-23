@@ -26,56 +26,56 @@ namespace Duplicati.Library.Modules.Builtin
         {
         }
 
-		private int CheckStore(StoreName storename, StoreLocation storelocation)
-		{
-			X509Store store = null;
-			try
-			{
-				store = new X509Store(storename, storelocation);
-				store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
-				return store.Certificates.Count;
-			}
-			catch
-			{
-			}
-			finally
-			{
-				if (store != null)
-					try { store.Close(); }
-					catch { }
-			}
+        private int CheckStore(StoreName storename, StoreLocation storelocation)
+        {
+            X509Store store = null;
+            try
+            {
+                store = new X509Store(storename, storelocation);
+                store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
+                return store.Certificates.Count;
+            }
+            catch
+            {
+            }
+            finally
+            {
+                if (store != null)
+                    try { store.Close(); }
+                    catch { }
+            }
 
-			return 0;
-		}
+            return 0;
+        }
 
-		// Prevent inlining, so we can catch loader errors from the caller
-		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-		private int CheckMonoCerts()
-		{
-			return
+        // Prevent inlining, so we can catch loader errors from the caller
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private int CheckMonoCerts()
+        {
+            return
 #if __MonoCS__
-				Mono.Security.X509.X509StoreManager.LocalMachine.TrustedRoot.Certificates.Count +
-				Mono.Security.X509.X509StoreManager.CurrentUser.TrustedRoot.Certificates.Count +
-				Mono.Security.X509.X509StoreManager.TrustedRootCertificates.Count +
+                Mono.Security.X509.X509StoreManager.LocalMachine.TrustedRoot.Certificates.Count +
+                Mono.Security.X509.X509StoreManager.CurrentUser.TrustedRoot.Certificates.Count +
+                Mono.Security.X509.X509StoreManager.TrustedRootCertificates.Count +
 #endif
-				0;
-		}
+                0;
+        }
 
         private int CheckForInstalledCerts()
         {
-			var count =
-				CheckStore(StoreName.Root, StoreLocation.CurrentUser) +
-				CheckStore(StoreName.AuthRoot, StoreLocation.CurrentUser) +
-				CheckStore(StoreName.CertificateAuthority, StoreLocation.CurrentUser) +
-				CheckStore(StoreName.Root, StoreLocation.LocalMachine) +
-				CheckStore(StoreName.AuthRoot, StoreLocation.LocalMachine) +
-				CheckStore(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+            var count =
+                CheckStore(StoreName.Root, StoreLocation.CurrentUser) +
+                CheckStore(StoreName.AuthRoot, StoreLocation.CurrentUser) +
+                CheckStore(StoreName.CertificateAuthority, StoreLocation.CurrentUser) +
+                CheckStore(StoreName.Root, StoreLocation.LocalMachine) +
+                CheckStore(StoreName.AuthRoot, StoreLocation.LocalMachine) +
+                CheckStore(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
 
-			try { count += CheckMonoCerts(); }
-			catch { }
+            try { count += CheckMonoCerts(); }
+            catch { }
 
-			return count;
-		}
+            return count;
+        }
 
 #region IGenericModule implementation
 
