@@ -136,8 +136,12 @@ namespace Duplicati.CommandLine
                 
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
                 knownCommands["help"] = Commands.Help;                
-                knownCommands["find"] = Commands.List;
+				knownCommands["example"] = Commands.Examples;
+				knownCommands["examples"] = Commands.Examples;
+
+				knownCommands["find"] = Commands.List;
                 knownCommands["list"] = Commands.List;
+
                 knownCommands["delete"] = Commands.Delete;
                 knownCommands["backup"] = Commands.Backup;
                 knownCommands["restore"] = Commands.Restore;
