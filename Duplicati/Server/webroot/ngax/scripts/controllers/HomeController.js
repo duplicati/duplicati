@@ -22,10 +22,7 @@ backupApp.controller('HomeController', function ($scope, $location, Localization
     };
 
     $scope.doDelete = function(id, name) {
-        DialogService.dialog(Localization.localize('Confirm delete'), Localization.localize('Do you really want to delete the backup: {0}', name), [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
-            if (ix == 1)
-                AppService.delete('/backup/' + id);
-        });
+        $location.path('/delete/' + id);
     };
 
     $scope.doLocalDb = function(id) {
