@@ -89,9 +89,9 @@ namespace Duplicati.Library.Snapshots
                 string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
                 IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
 
-				var excludedWriters = new Guid[0];
-				if (options.ContainsKey("vss-exclude-writers"))
-					excludedWriters = options["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
+                var excludedWriters = new Guid[0];
+                if (options.ContainsKey("vss-exclude-writers"))
+                    excludedWriters = options["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
 
                 //Check if we should map any drives
                 bool useSubst = Utility.Utility.ParseBoolOption(options, "vss-use-mapping");
@@ -100,29 +100,29 @@ namespace Duplicati.Library.Snapshots
                 m_backup = vss.CreateVssBackupComponents();
                 m_backup.InitializeForBackup(null);
 
-				if (excludedWriters.Length > 0)
+                if (excludedWriters.Length > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
-				m_sourcepaths = sourcepaths.Select(x => Directory.Exists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
+                m_sourcepaths = sourcepaths.Select(x => Directory.Exists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
 
-				var requestedHyperVMs = new List<string>();
-				if (options.ContainsKey("hyperv-backup-vm"))
-					requestedHyperVMs = options["hyperv-backup-vm"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
-				
+                var requestedHyperVMs = new List<string>();
+                if (options.ContainsKey("hyperv-backup-vm"))
+                    requestedHyperVMs = options["hyperv-backup-vm"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
+                
                 //Check if we are backing up HyperV machines
-				if (requestedHyperVMs.Count > 0)
-				{
-					var hyperVUtility = new HyperVUtility(requestedHyperVMs);
-					m_hyperVMachines = hyperVUtility.GetHyperVMachines();
+                if (requestedHyperVMs.Count > 0)
+                {
+                    var hyperVUtility = new HyperVUtility(requestedHyperVMs);
+                    m_hyperVMachines = hyperVUtility.GetHyperVMachines();
 
-					#region Testing Features
-					if (!Utility.Utility.ParseBoolOption(options, "hyperv-backup-no-merge"))
-						hyperVUtility.MergeVhd(requestedHyperVMs);
+                    #region Testing Features
+                    if (!Utility.Utility.ParseBoolOption(options, "hyperv-backup-no-merge"))
+                        hyperVUtility.MergeVhd(requestedHyperVMs);
 
-					//Option: Create-new-vm-after-restore, 
-					//hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
-					#endregion Testing Features
-				}
+                    //Option: Create-new-vm-after-restore, 
+                    //hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
+                    #endregion Testing Features
+                }
 
                 m_backup.StartSnapshotSet();
 
@@ -141,12 +141,12 @@ namespace Duplicati.Library.Snapshots
                             {
                                 //Cross reference the requested Hyper-V Machines to backup and add the sources
                                 if (!m_hyperVMachines.ContainsKey(component.ComponentName)) 
-									continue;
-							
+                                    continue;
+                            
                                 foreach (var file in component.Files)
                                 {
                                     if (file.FileSpecification.Contains("*")) 
-										continue;
+                                        continue;
                                     m_sourcepaths.Add(file.Path + file.FileSpecification);
                                 }
                             }

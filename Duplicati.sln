@@ -284,12 +284,10 @@ Global
 		$2.ResourceNamePolicy = FileFormatDefault
 		$0.TextStylePolicy = $3
 		$3.FileWidth = 120
-		$3.TabsToSpaces = False
 		$3.inheritsSet = VisualStudio
 		$3.inheritsScope = text/plain
 		$3.EolMarker = Windows
 		$3.scope = text/plain
-		$3.NoTabsAfterNonTabs = True
 		$0.TextStylePolicy = $4
 		$4.FileWidth = 120
 		$4.TabsToSpaces = False

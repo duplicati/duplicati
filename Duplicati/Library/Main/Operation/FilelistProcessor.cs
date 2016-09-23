@@ -219,12 +219,14 @@ namespace Duplicati.Library.Main.Operation
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
             log.BackupListCount = filesets.Count;
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
-            
-            if (backend is Library.Interface.IQuotaEnabledBackend)
-            {
-                log.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).TotalQuotaSpace;
-                log.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).FreeQuotaSpace;
-            }
+
+			// TODO: We should query through the backendmanager
+			using (var bk = DynamicLoader.BackendLoader.GetBackend(backend.BackendUrl, options.RawOptions))
+				if (bk is Library.Interface.IQuotaEnabledBackend)
+	            {
+	                log.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)bk).TotalQuotaSpace;
+	                log.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)bk).FreeQuotaSpace;
+	            }
 
             log.AssignedQuotaSpace = options.QuotaSize;
             
