@@ -34,6 +34,9 @@ namespace LocalizationTool2
 
 			var map = new Dictionary<string, LocalizationEntry>();
 
+            if (!sourcefolder.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                sourcefolder += Path.DirectorySeparatorChar;
+
 			foreach (var ext in searchlist.Keys)
 			{
 				var re = searchlist[ext];
@@ -46,7 +49,7 @@ namespace LocalizationTool2
 						var str = match.Groups["sourcestring"].Value;
 						LocalizationEntry le;
 						if (!map.TryGetValue(str, out le))
-							map[str] = new LocalizationEntry(str, Path.GetFileName(f), linepos);
+                            map[str] = new LocalizationEntry(str, f.Substring(sourcefolder.Length), linepos);
 						else
 							le.AddSource(Path.GetFileName(f), linepos);						
 					}
@@ -55,6 +58,28 @@ namespace LocalizationTool2
 
 			File.WriteAllText(Path.Combine(sourcefolder, "translations.json"), Newtonsoft.Json.JsonConvert.SerializeObject(map.Values.OrderBy(x => x.SourceLocations.FirstOrDefault()).ToArray(), Newtonsoft.Json.Formatting.Indented));
 			File.WriteAllText(Path.Combine(sourcefolder, "translations-list.json"), Newtonsoft.Json.JsonConvert.SerializeObject(map.Select(x => x.Key).OrderBy(x => x).ToArray(), Newtonsoft.Json.Formatting.Indented));
+
+			File.WriteAllLines(
+				Path.Combine(sourcefolder, "translations.po"),
+                map.OrderBy(x => x.Key).Select(x => x.Value).SelectMany(x => new string[] { 
+					"#: " + x.SourceLocations.FirstOrDefault(),
+                    string.Format("msgid: \"{0}\"", (x.SourceString ?? "")),
+                    string.Format("msgstr: \"{0}\"", (x.SourceString ?? "")),
+                    ""
+				}),
+				System.Text.Encoding.UTF8
+			);
+
+            File.WriteAllLines(
+                Path.Combine(sourcefolder, "translations-by-file.po"),
+                map.OrderBy(x => x.Value.SourceLocations.FirstOrDefault()).Select(x => x.Value).SelectMany(x => new string[] {
+                    "#: " + x.SourceLocations.FirstOrDefault(),
+                    string.Format("msgid: \"{0}\"", (x.SourceString ?? "")),
+                    string.Format("msgstr: \"{0}\"", (x.SourceString ?? "")),
+                    ""
+                }),
+                System.Text.Encoding.UTF8
+            );
 
 			return 0;
 
