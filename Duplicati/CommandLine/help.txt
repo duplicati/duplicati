@@ -223,7 +223,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaning what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damahed or deleted.
+  Returns a report explaning what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
   
   
 # =============================================================================
