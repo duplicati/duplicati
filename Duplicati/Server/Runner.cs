@@ -688,8 +688,8 @@ namespace Duplicati.Server
         {
             return 
                 (from n in Program.DataConnection.Settings
-                where TestIfOptionApplies(backup, mode, n.Filter)
-                select n).ToDictionary(k => k.Name.StartsWith("--") ? k.Name.Substring(2) : k.Name, k => k.Value);
+                 where TestIfOptionApplies(backup, mode, n.Filter)
+                 select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
         }
         
         private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
