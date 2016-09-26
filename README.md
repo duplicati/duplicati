@@ -13,6 +13,7 @@ These are currently not working ...
 [![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=4870652)](https://www.bountysource.com/teams/duplicati?tracker_ids=4870652&utm_medium=shield&utm_campaign=TRACKER_BADGE)
 [![Coverage Status](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
 [![License](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![Join the chat at https://gitter.im/duplicati/Lobby](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
