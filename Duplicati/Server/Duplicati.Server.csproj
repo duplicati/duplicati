@@ -70,7 +70,7 @@
     <Compile Include="Database\Connection.cs" />
     <Compile Include="Database\Filter.cs" />
     <Compile Include="Database\Setting.cs" />
-    <Compile Include="Database\ApplicationSettings.cs" />
+    <Compile Include="Database\ServerSettings.cs" />
     <Compile Include="Runner.cs" />
     <Compile Include="Database\Schedule.cs" />
     <Compile Include="SpecialFolders.cs" />

@@ -29,7 +29,7 @@ namespace Duplicati.Server.Database
         private System.Data.IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
-        public const int APP_SETTINGS_ID = -2;
+        public const int SERVER_SETTINGS_ID = -2;
         private Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
 
         public Connection(System.Data.IDbConnection connection)
@@ -40,7 +40,7 @@ namespace Duplicati.Server.Database
             for(var i = 0; i < 4; i++)
                 m_errorcmd.Parameters.Add(m_errorcmd.CreateParameter());
             
-            this.ApplicationSettings = new ApplicationSettings(this);
+            this.ApplicationSettings = new ServerSettings(this);
         }
                 
         internal void LogError(string backupid, string message, Exception ex)
@@ -117,7 +117,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public ApplicationSettings ApplicationSettings { get; private set; }
+        public ServerSettings ApplicationSettings { get; private set; }
         
         internal IDictionary<string, string> GetMetadata(long id)
         {
