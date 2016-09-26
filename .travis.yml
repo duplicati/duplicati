@@ -12,6 +12,13 @@ env:
   general:
     - USAGEREPORTER_Duplicati_LEVEL=none
     - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
+notifications:
+  webhooks:
+    urls:
+      - $GITTER_WEBHOOK_URL
+    on_success: always
+    on_failure: always
+    on_start: never
 script:
 # build duplicati
   - echo "travis_fold:start:build_duplicati"
