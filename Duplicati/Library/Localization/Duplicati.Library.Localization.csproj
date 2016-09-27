@@ -41,6 +41,8 @@
     <Compile Include="ILocalizationService.cs" />
     <Compile Include="MockLocalizationService.cs" />
     <Compile Include="Short.cs" />
+    <Compile Include="PoLocalizationService.cs" />
+    <Compile Include="LocalizationContext.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
