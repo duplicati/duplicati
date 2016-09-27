@@ -33,13 +33,15 @@ Show the last changes to Duplicati
 
 # =============================================================================
 > duplicati.commandline.exe help system-info
+> duplicati.commandline.exe help systeminfo
 
 Show system information as seen by Duplicati
-==================================
+============================================
   Issue the following command to see a variety of system information relevant to Duplicati. 
   
   %MONO%"%APP_PATH%" system-info
 
+# =============================================================================
 > duplicati.commandline.exe help example
 > duplicati.commandline.exe help examples
 
