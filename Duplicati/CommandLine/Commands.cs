@@ -834,9 +834,11 @@ namespace Duplicati.CommandLine
                 foreach(var line in i.SystemInfo().Lines)
                     Console.WriteLine(line);    
 
+            Console.WriteLine("Know locales: {0}", string.Join(", ", Library.Localization.LocalizationService.AllLocales));
+            Console.WriteLine("Translated locales: {0}", string.Join(", ", Library.Localization.LocalizationService.SupportedCultures));
+
             return 0;
         }
-
     }
 }
 

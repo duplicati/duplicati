@@ -1,4 +1,4 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, AppService, AppUtils, Localization, SystemInfo) {
+backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, Localization, SystemInfo) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
@@ -9,6 +9,21 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
     reloadOptionsList();
 
     $scope.$on('systeminfochanged', reloadOptionsList);
+
+    $scope.uiLanguage = $cookies.get('ui-locale');
+
+    function setUILanguage() {
+        if (($scope.uiLanguage || '').trim().length == 0) {
+            $cookies.remove('ui-locale');
+            Localization.setLocale(null);
+        } else {
+            $cookies.put('ui-locale', $scope.uiLanguage);
+            Localization.setLocale($scope.uiLanguage);
+        }
+    };
+
+    // Uncomment for immediate change
+    //$scope.$watch('uiLanguage', setUILanguage);
 
     AppService.get('/serversettings').then(function(data) {
 
@@ -56,6 +71,8 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {
+                setUILanguage();
+
                 // Check for updates if we changed the channel
                 if ($scope.updateChannel != $scope.originalUpdateChannel)
                     AppService.post('/updates/check');
