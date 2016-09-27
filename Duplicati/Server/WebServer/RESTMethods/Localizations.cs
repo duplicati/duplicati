@@ -14,12 +14,29 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class Localizations : IRESTMethodGET, IRESTMethodDocumented
     {
-        public void GET(string key, RequestInfo info)        {            info.OutputOK(new Dictionary<string, string>());        }        public string Description { get { return "Returns a list of localizable strings."; } }        public IEnumerable<KeyValuePair<string, Type>> Types        {            get            {                return new KeyValuePair<string, Type>[] {                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(Dictionary<string, string>))                };            }        }        }
+        public void GET(string key, RequestInfo info)
+        {
+            info.OutputOK(Library.Localization.LocalizationService.Current.AllStrings);
+        }
+
+        public string Description { get { return "Returns a list of localizable strings."; } }
+
+        public IEnumerable<KeyValuePair<string, Type>> Types
+        {
+            get
+            {
+                return new KeyValuePair<string, Type>[] {
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(Dictionary<string, string>))
+                };
+            }
+        }    
+    }
 }
 

@@ -33,6 +33,16 @@
                 <option value="h">{{'Hours' | localize}}</option>
             </select>
         </div>
+
+        <h2>{{'User interface language' | localize}}</h2>
+        <div class="input mixed multiple">
+            <label for="userinterfacelanguage">{{'Language in user interface' | localize}}</label>
+
+            <select id="userinterfacelanguage" ng-model="uiLanguage" ng-options="item.Code as item.DisplayName + ' (' + item.Code + ', ' + item.EnglishName + ')' for item in SystemInfo.SupportedLocales">
+                <option value="">{{'Browser default ({0}, {1})' | localize: SystemInfo.BrowserLocale.DisplayName: SystemInfo.BrowserLocale.Code}}</option>
+            </select>
+        </div>
+
         
         <h2>{{'Donation messages' | localize}}</h2>
         <div class="input checkbox">

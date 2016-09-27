@@ -1,6 +1,7 @@
 backupApp.service('Localization', function($rootScope, $timeout, AppService) {
     this.strings = {};
 
+    var self = this;
 
     this.preg_quote = function( str ) {
         // http://kevin.vanzonneveld.net
@@ -38,7 +39,7 @@ backupApp.service('Localization', function($rootScope, $timeout, AppService) {
             return '';
 
         if (this.strings[arguments[0]] != null)
-            arguments[0] = this.strings[msg];
+            arguments[0] = this.strings[arguments[0]];
 
         return this.format.apply(this, arguments);
     };
@@ -57,7 +58,7 @@ backupApp.service('Localization', function($rootScope, $timeout, AppService) {
 
     this.setLocale = function(locale) {
         AppService.get('/localizations/' + locale).then(function(data) {
-            angular.copy(this.strings, data.data);
+            angular.copy(data.data, self.strings);
             $rootScope.$broadcast('localizationchanged');
         }, function(msg) { 
             if (msg && msg.data && msg.data.Message)
