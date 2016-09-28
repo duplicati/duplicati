@@ -163,7 +163,7 @@ namespace Duplicati.Library.Utility
             return new TempFile(System.IO.Path.Combine(path, GenerateUniqueName()));
         }
 
-        public static TempFile CreateWritePrefix(string prefix)
+        public static TempFile CreateWithPrefix(string prefix)
         {
             return new TempFile(System.IO.Path.Combine(TempFolder.SystemTempPath, prefix + GenerateUniqueName()));
         }
