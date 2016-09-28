@@ -2,7 +2,7 @@ language: csharp
 solution: Duplicati.sln
 install:
   - nuget restore Duplicati.sln
-  - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
+  - nuget install NUnit.Runners -Version 3.4.1 -OutputDirectory testrunner
   - sudo pip install selenium
 addons:
   sauce_connect:
@@ -43,7 +43,7 @@ script:
   - echo "travis_fold:end:download_extract_testdata"
 # run unit tests
   - echo "travis_fold:start:unit_tests"
-  - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe /framework:net-4.5 ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll /where:cat==Targeted
   - echo "travis_fold:end:unit_tests"
 # start server and run gui tests
   - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
