@@ -123,6 +123,12 @@ namespace Duplicati.CommandLine
                 }
             }
         }
+
+        public static int Examples(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            Duplicati.CommandLine.Help.PrintUsage("example", options);
+            return 0;
+        }
     
         public static int Help(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
@@ -349,34 +355,34 @@ namespace Duplicati.CommandLine
         }
         
         public static int Delete(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
-		{
-			var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
+        {
+            var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
             
-			if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
-			{
-				Console.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
-				return 200;
-			}
+            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
+            {
+                Console.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
+                return 200;
+            }
         
-			using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
-			{
-				args.RemoveAt(0);
-				var res = i.Delete();
+            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
+            {
+                args.RemoveAt(0);
+                var res = i.Delete();
                 
-				if (res.DeletedSets.Count() == 0)
-				{
-					Console.WriteLine(Strings.Program.NoFilesetsMatching);
-				}
-				else
-				{
-					if (res.Dryrun)
-						Console.WriteLine(Strings.Program.WouldDeleteBackups);
-					else
-						Console.WriteLine(Strings.Program.DeletedBackups);
-						
-					foreach(var f in res.DeletedSets)
-						Console.WriteLine(string.Format("{0}: {1}", f.Item1, f.Item2));
-				}
+                if (res.DeletedSets.Count() == 0)
+                {
+                    Console.WriteLine(Strings.Program.NoFilesetsMatching);
+                }
+                else
+                {
+                    if (res.Dryrun)
+                        Console.WriteLine(Strings.Program.WouldDeleteBackups);
+                    else
+                        Console.WriteLine(Strings.Program.DeletedBackups);
+                        
+                    foreach(var f in res.DeletedSets)
+                        Console.WriteLine(string.Format("{0}: {1}", f.Item1, f.Item2));
+                }
             }
             
             return 0;
@@ -828,9 +834,11 @@ namespace Duplicati.CommandLine
                 foreach(var line in i.SystemInfo().Lines)
                     Console.WriteLine(line);    
 
+            Console.WriteLine("Know locales: {0}", string.Join(", ", Library.Localization.LocalizationService.AllLocales));
+            Console.WriteLine("Translated locales: {0}", string.Join(", ", Library.Localization.LocalizationService.SupportedCultures));
+
             return 0;
         }
-
     }
 }
 

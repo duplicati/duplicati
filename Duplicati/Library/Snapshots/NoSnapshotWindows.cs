@@ -46,11 +46,11 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string file)
         {
-			try { return File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName; }
-			catch (NotAReparsePointException) { }
-			catch (UnrecognizedReparsePointException) { }
+            try { return File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName; }
+            catch (NotAReparsePointException) { }
+            catch (UnrecognizedReparsePointException) { }
 
-			return null;
+            return null;
         }
 
         /// <summary>

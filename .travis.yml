@@ -3,8 +3,31 @@ solution: Duplicati.sln
 install:
   - nuget restore Duplicati.sln
   - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
+  - sudo pip install selenium
+addons:
+  sauce_connect:
+    username: $SAUCE_USERNAME
+    access_key: $SAUCE_ACCESS_KEY
+env:
+  general:
+    - USAGEREPORTER_Duplicati_LEVEL=none
+    - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
+notifications:
+  webhooks:
+    urls:
+      - $GITTER_WEBHOOK_URL
+    on_success: always
+    on_failure: always
+    on_start: never
 script:
+# build duplicati
+  - echo "travis_fold:start:build_duplicati"
   - xbuild /p:Configuration=Release Duplicati.sln
+  - echo "travis_fold:end:build_duplicati"
+  - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+# download and extract testdata
+  - echo "travis_fold:start:download_extract_testdata"
+  - ls -la .
   - mkdir ~/testdata
   - mkdir ~/testdata/data
   - mkdir ~/testdata/DSMCBE
@@ -17,5 +40,11 @@ script:
   - ls -la ~/testdata
   - ls -la ~/testdata/DSMCBE
   - ls -la ~/testdata/data
-  - export USAGEREPORTER_Duplicati_LEVEL=none
+  - echo "travis_fold:end:download_extract_testdata"
+# run unit tests
+  - echo "travis_fold:start:unit_tests"
   - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
+  - echo "travis_fold:end:unit_tests"
+# start server and run gui tests
+  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
+  - python guiTests/guiTest.py

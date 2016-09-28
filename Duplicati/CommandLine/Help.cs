@@ -158,7 +158,7 @@ namespace Duplicati.CommandLine
 
                     tp = tp.Replace("%ALLOPTIONS%", string.Join(Environment.NewLine, lines.ToArray()));
                 }
-				
+                
                 if (tp.Contains("%MODULEOPTIONS%"))
                 {
                     //Figure out which module we are in

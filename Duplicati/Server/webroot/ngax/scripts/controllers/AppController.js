@@ -6,6 +6,6 @@ backupApp.controller('AppController', function($scope, BrandingService, ServerSt
     $scope.localized = {};
 
     $scope.doReconnect = function() {
-    	ServerStatus.reconnect();
+        ServerStatus.reconnect();
     };
 });

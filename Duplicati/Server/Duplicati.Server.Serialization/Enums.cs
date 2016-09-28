@@ -46,7 +46,7 @@ namespace Duplicati.Server.Serialization
         Repair,
         RepairUpdate,
         Verify,
-		Compact,
+        Compact,
         CreateReport
     }
 

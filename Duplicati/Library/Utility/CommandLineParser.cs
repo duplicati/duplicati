@@ -59,8 +59,8 @@ namespace Duplicati.Library.Utility
                         value = value.Substring(1, value.Length - 2);
 
                     //Last argument overwrites the current
-					if (parserCallback == null || parserCallback(key, value))
-	                    options[key] = value;
+                    if (parserCallback == null || parserCallback(key, value))
+                        options[key] = value;
 
                     args.RemoveAt(i);
                     i--;

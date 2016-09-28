@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
                               
-			m_result.AddMessage("No local database, accessing remote store");
+            m_result.AddMessage("No local database, accessing remote store");
 
             //TODO: Add prefix and foldercontents
             if (m_options.ListFolderContents)

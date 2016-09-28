@@ -1,4 +1,4 @@
-backupApp.controller('StateController', function($scope, $timeout, ServerStatus, BackupList, AppService, AppUtils) {
+backupApp.controller('StateController', function($scope, $timeout, Localization, ServerStatus, BackupList, AppService, AppUtils) {
     $scope.state = ServerStatus.watch($scope);
     $scope.backups = BackupList.watch($scope);
     $scope.ServerStatus = ServerStatus;
@@ -17,11 +17,11 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     $scope.$on('serverstatechanged.pauseTimeRemain', function() { $timeout(function() {$scope.$digest(); }) });
 
     $scope.sendResume = function() {
-    	ServerStatus.resume().then(function() {}, AppUtils.connectionError);
+        ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };
 
     function updateStateDisplay() {
-        var text = 'Running ...';
+        var text = Localization.localize('Running ...');
         var pg = -1;
         if ($scope.state.lastPgEvent != null)
         {
@@ -30,7 +30,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
 
             if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles') {
                 if ($scope.state.lastPgEvent.StillCounting) {
-                    text = 'Counting (' + $scope.state.lastPgEvent.TotalFileCount + ' files found, ' + AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize) + ')';
+                    text = Localization.localize('Counting ({0} files found, {1})', $scope.state.lastPgEvent.TotalFileCount, AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize));
                     pg = 0;
                 } else {
                     var filesleft = $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount;
@@ -42,7 +42,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                     else if (pg >= 1)
                         pg = 0.95;
 
-                    text = filesleft + ' files (' + AppUtils.formatSizeString(sizeleft) + ') to go';
+                    text = Localization.localize('{0} files ({1}) to go', filesleft, AppUtils.formatSizeString(sizeleft));
                 }
             }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload') {

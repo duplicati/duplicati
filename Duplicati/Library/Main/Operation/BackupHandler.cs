@@ -44,8 +44,8 @@ namespace Duplicati.Library.Main.Operation
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
-        	EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-        	
+            EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
+            
             m_options = options;
             m_result = results;
             m_backendurl = backendurl;
@@ -97,6 +97,12 @@ namespace Duplicati.Library.Main.Operation
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
             {
+                if ((attributes & Library.Utility.Utility.ATTRIBUTE_ERROR) == Library.Utility.Utility.ATTRIBUTE_ERROR)
+                {
+                    if (m_logWriter != null)
+                        m_logWriter.AddWarning(string.Format("Error reported while accessing file {0}", path), null);
+                }
+
                 try
                 {
                     if (m_snapshot.IsBlockDevice(path))
@@ -416,10 +422,13 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
-                    if (m_options.NoBackendverification) 
-                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
-                    else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+					if (m_options.NoBackendverification)
+					{
+						FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+						UpdateStorageStatsFromDatabase();
+					}
+					else
+						FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
                 }
                 catch (Exception ex)
                 {
@@ -631,6 +640,34 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+		/// <summary>
+		/// Handler for computing backend statistics, without relying on a remote folder listing
+		/// </summary>
+		private void UpdateStorageStatsFromDatabase()
+		{
+			if (m_result.BackendWriter != null)
+			{
+				m_result.BackendWriter.KnownFileCount = m_database.GetRemoteVolumes().Count();
+				m_result.BackendWriter.KnownFileSize = m_database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
+
+				m_result.BackendWriter.UnknownFileCount = 0;
+				m_result.BackendWriter.UnknownFileSize = 0;
+
+				m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
+				m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
+
+				// TODO: If we have a BackendManager, we should query through that
+				using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
+					if (backend is Library.Interface.IQuotaEnabledBackend)
+					{
+						m_result.BackendWriter.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).TotalQuotaSpace;
+						m_result.BackendWriter.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).FreeQuotaSpace;
+				}
+			}
+
+			m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
+		}
+
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
@@ -643,6 +680,9 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                if (m_database.PartiallyRecreated)
+                    throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                
                 if (m_database.RepairInProgress)
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
 
@@ -669,7 +709,7 @@ namespace Duplicati.Library.Main.Operation
                 // If there is a filter, we make sure that the sources are included
                 m_filter = filter ?? new Library.Utility.FilterExpression();
                 m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
-            	
+                
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                 System.Threading.Thread parallelScanner = null;
 
@@ -704,14 +744,14 @@ namespace Duplicati.Library.Main.Operation
                             var repcnt = 0;
                             while(repcnt < 100 && m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
                                 filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
-        		            
+                            
                             if (m_database.GetRemoteVolumeID(filesetvolume.RemoteFilename) >= 0)
                                 throw new Exception("Unable to generate a unique fileset name");
 
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
                             var filesetvolumeid = m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                             m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_transaction);
-        	
+            
                             RunMainOperation(snapshot, backend);
 
                             //If the scanner is still running for some reason, make sure we kill it now 
@@ -720,21 +760,21 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         var lastVolumeSize = FinalizeRemoteVolumes(backend);
-    		            
+                        
                         using(new Logging.Timer("UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
                         using(new Logging.Timer("VerifyConsistency"))
                             m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize);
     
                         UploadRealFileList(backend, filesetvolume);
-    									
+                                        
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
                         using(new Logging.Timer("Async backend wait"))
                             backend.WaitForComplete(m_database, m_transaction);
                             
                         if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
                             CompactIfRequired(backend, lastVolumeSize);
-    		            
+                        
                         if (m_options.UploadVerificationFile)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
@@ -753,12 +793,14 @@ namespace Duplicati.Library.Main.Operation
                                 
                             m_transaction = null;
                             m_database.Vacuum();
-                            
-                            if (m_result.TaskControlRendevouz() != TaskControlState.Stop && !m_options.NoBackendverification)
-                            {
-                                PostBackupVerification();
-                            }
 
+							if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
+							{
+								if (m_options.NoBackendverification)
+									UpdateStorageStatsFromDatabase();
+								else
+									PostBackupVerification();
+							}
                         }
                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
@@ -881,14 +923,14 @@ namespace Duplicati.Library.Main.Operation
                         Dictionary<string, string> metadata = GenerateMetadata(snapshot, path, attributes);
     
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
-						{
-							var p = snapshot.GetSymlinkTarget(path);
+                        {
+                            var p = snapshot.GetSymlinkTarget(path);
 
-							if (string.IsNullOrWhiteSpace(p))
-								m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
-							else
-                            	metadata["CoreSymlinkTarget"] = p;
-						}
+                            if (string.IsNullOrWhiteSpace(p))
+                                m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
+                            else
+                                metadata["CoreSymlinkTarget"] = p;
+                        }
     
                         var metahash = Utility.WrapMetadata(metadata, m_options);
                         AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);
@@ -1026,17 +1068,17 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 m_result.AddedFiles++;
                                 m_result.SizeOfAddedFiles += filesize;
-					            
-					            if (m_options.Dryrun)
-					            	m_result.AddDryrunMessage(string.Format("Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
+                                
+                                if (m_options.Dryrun)
+                                    m_result.AddDryrunMessage(string.Format("Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
                             }
                             else
                             {
                                 m_result.ModifiedFiles++;
                                 m_result.SizeOfModifiedFiles += filesize;
-					            
-					            if (m_options.Dryrun)
-					            	m_result.AddDryrunMessage(string.Format("Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
+                                
+                                if (m_options.Dryrun)
+                                    m_result.AddDryrunMessage(string.Format("Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
                             }
 
                             AddFileToOutput(backend, path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
@@ -1117,35 +1159,35 @@ namespace Duplicati.Library.Main.Operation
                     
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Blocksize)
                 {
-                	if (m_options.Dryrun)
-                	{
+                    if (m_options.Dryrun)
+                    {
                         m_blockvolume.Close();
-                		m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
-                		
-                		if (m_indexvolume != null)
-                		{
-		            		UpdateIndexVolume();
-                			m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-                			m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
-                			m_indexvolume.Dispose();
-                			m_indexvolume = null;
-                		}
+                        m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
+                        
+                        if (m_indexvolume != null)
+                        {
+                            UpdateIndexVolume();
+                            m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
+                            m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
+                            m_indexvolume.Dispose();
+                            m_indexvolume = null;
+                        }
                         
                         m_blockvolume.Dispose();
                         m_blockvolume = null;
                         m_indexvolume.Dispose();
                         m_indexvolume = null;
-                	}
-                	else
-                	{
-	                	//When uploading a new volume, we register the volumes and then flush the transaction
-	                	// this ensures that the local database and remote storage are as closely related as possible
-                		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+                    }
+                    else
+                    {
+                        //When uploading a new volume, we register the volumes and then flush the transaction
+                        // this ensures that the local database and remote storage are as closely related as possible
+                        m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
                         m_blockvolume.Close();
-	            		UpdateIndexVolume();
-	                	
-	                	backend.FlushDbMessages(m_database, m_transaction);
-        				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
+                        UpdateIndexVolume();
+                        
+                        backend.FlushDbMessages(m_database, m_transaction);
+                        m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
 
                         using(new Logging.Timer("CommitAddBlockToOutputFlush"))
                             m_transaction.Commit();
@@ -1156,10 +1198,10 @@ namespace Duplicati.Library.Main.Operation
                         m_indexvolume = null;
 
                         using(new Logging.Timer("CommitAddBlockToOutputFlush"))
-	                    	m_transaction.Commit();
-	                	m_transaction = m_database.BeginTransaction();
-	                	
-	                }
+                            m_transaction.Commit();
+                        m_transaction = m_database.BeginTransaction();
+                        
+                    }
                 }
 
                 return true;
@@ -1250,16 +1292,16 @@ namespace Duplicati.Library.Main.Operation
 
         private void UpdateIndexVolume()
         {
-        	if (m_indexvolume != null)
-        	{
-	            m_database.AddIndexBlockLink(m_indexvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
-	            m_indexvolume.StartVolume(m_blockvolume.RemoteFilename);
-	            
-	            foreach(var b in m_database.GetBlocks(m_blockvolume.VolumeID))
-	            	m_indexvolume.AddBlock(b.Hash, b.Size);
+            if (m_indexvolume != null)
+            {
+                m_database.AddIndexBlockLink(m_indexvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
+                m_indexvolume.StartVolume(m_blockvolume.RemoteFilename);
+                
+                foreach(var b in m_database.GetBlocks(m_blockvolume.VolumeID))
+                    m_indexvolume.AddBlock(b.Hash, b.Size);
 
-    			m_database.UpdateRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-        	}
+                m_database.UpdateRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+            }
         }
 
         public void Dispose()

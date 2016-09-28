@@ -31,6 +31,8 @@ namespace Duplicati.Library.Backend
     {
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         public const string SSH_KEYFILE_INLINE = "ssh-key";
+        public const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
+        public const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "ssh-accept-any-fingerprints";
         public const string KEYFILE_URI = "sshkey://";
 
         Dictionary<string, string> m_options;
@@ -39,6 +41,8 @@ namespace Duplicati.Library.Backend
         private string m_path;
         private string m_username;
         private string m_password;
+        private string m_fingerprint;
+        private bool m_fingerprintallowall;
 
         private int m_port = 22;
 
@@ -59,10 +63,16 @@ namespace Duplicati.Library.Backend
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 m_password = options["auth-password"];
+            if (options.ContainsKey(SSH_FINGERPRINT_OPTION))
+                m_fingerprint = options[SSH_FINGERPRINT_OPTION];
             if (!string.IsNullOrEmpty(uri.Username))
                 m_username = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
                 m_password = uri.Password;
+            if (uri.QueryParameters != null && uri.QueryParameters[SSH_FINGERPRINT_OPTION] != null)
+                m_fingerprint = uri.QueryParameters[SSH_FINGERPRINT_OPTION];
+
+            m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
             m_path = uri.Path;
 
@@ -139,6 +149,7 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(SSH_FINGERPRINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionFingerprintShort, Strings.SSHv2Backend.DescriptionFingerprintLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
                     new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
                 });
@@ -231,6 +242,27 @@ namespace Duplicati.Library.Backend
             else
                 con = new SftpClient(m_server, m_port, m_username, m_password);
 
+            con.HostKeyReceived += delegate (object sender, HostKeyEventArgs e)
+            {
+                e.CanTrust = false;
+
+                if (m_fingerprintallowall)
+                {
+                    e.CanTrust = true;
+                    return;
+                }
+
+                string hostFingerprint = e.HostKeyName + " " + e.KeyLength.ToString() + " " + BitConverter.ToString(e.FingerPrint).Replace('-', ':');
+
+                if (string.IsNullOrEmpty(m_fingerprint))
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
+
+                if (hostFingerprint.ToLower() != m_fingerprint.ToLower())
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()), hostFingerprint, m_fingerprint);
+                else
+                    e.CanTrust = true;
+            };
+
             con.Connect();
 
             m_con = con;
@@ -261,7 +293,7 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            List<IFileEntry> files = new List<IFileEntry>();
+            var files = new List<IFileEntry>();
 
             string path = ".";
 

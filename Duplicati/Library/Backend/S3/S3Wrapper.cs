@@ -36,7 +36,7 @@ namespace Duplicati.Library.Backend
 
         protected string m_locationConstraint;
         protected string m_storageClass;
-		protected AmazonS3Client m_client;
+        protected AmazonS3Client m_client;
 
         public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {

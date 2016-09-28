@@ -7,7 +7,11 @@ then
 fi
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
-GPG_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-gpgkey.key"
+GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
+AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
+AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
+MONO=/Library/Frameworks/Mono.framework/Commands/mono
+
 GPG=/usr/local/bin/gpg2
 
 FEDORA_INSTANCE_ID=i-deef5352
@@ -137,7 +141,7 @@ if [ -f "${GPG_KEYFILE}" ]; then
 		echo
 	fi
 
-	GPGDATA=`mono BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
+	GPGDATA=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
 	if [ ! $? -eq 0 ]; then
 		echo "Decrypting GPG keyfile failed"
 		exit 1
@@ -286,6 +290,45 @@ stop_aws_instance "${WINDOWS_INSTANCE_ID}"
 
 mv "./tmp/Duplicati.msi" "${UPDATE_TARGET}/${MSI64NAME}"
 mv "./tmp/Duplicati-32bit.msi" "${UPDATE_TARGET}/${MSI32NAME}"
+
+if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
+	echo "Performing authenticode signing of installers"
+
+	if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+		echo -n "Enter keyfile password: "
+		read -s KEYFILE_PASSWORD
+		echo
+	fi
+
+	authenticode_sign() {
+		NEST=""
+		for hashalg in sha1 sha256; do
+			SIGN_MSG=`osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile`
+			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
+			mv tmpfile "$1"
+			NEST="-nest"
+		done
+	}
+
+	PFX_PASS=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}"`
+
+	DECRYPT_STATUS=$?
+	if [ "${DECRYPT_STATUS}" -ne 0 ]; then
+	    echo "Failed to decrypt, SharpAESCrypt gave status ${DECRYPT_STATUS}, exiting"
+	    exit 4
+	fi
+
+	if [ "x${PFX_PASS}" == "x" ]; then
+	    echo "Failed to decrypt, SharpAESCrypt gave empty password, exiting"
+	    exit 4
+	fi
+
+	authenticode_sign "${UPDATE_TARGET}/${MSI64NAME}"
+	authenticode_sign "${UPDATE_TARGET}/${MSI32NAME}"
+
+else
+	echo "Skipped authenticode signing as files are missing"
+fi
 
 echo ""
 echo ""

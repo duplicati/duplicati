@@ -121,7 +121,7 @@ namespace Duplicati.Library.Utility
             m_asyncRequest = new AsyncWrapper(this, true);
             m_state = RequestStates.GetRequest;
 
-			return TrySetTimeout((Stream)m_asyncRequest.GetResponseOrStream(), m_activity_timeout);
+            return TrySetTimeout((Stream)m_asyncRequest.GetResponseOrStream(), m_activity_timeout);
         }
 
         /// <summary>
@@ -145,17 +145,17 @@ namespace Duplicati.Library.Utility
 
         public Stream GetResponseStream()
         {
-			return TrySetTimeout(GetResponse().GetResponseStream(), m_activity_timeout);
+            return TrySetTimeout(GetResponse().GetResponseStream(), m_activity_timeout);
         }
 
-		public static Stream TrySetTimeout(Stream str, int timeoutmilliseconds = 30000)
-		{
-			try { str.ReadTimeout = timeoutmilliseconds; }
-			catch { }
+        public static Stream TrySetTimeout(Stream str, int timeoutmilliseconds = 30000)
+        {
+            try { str.ReadTimeout = timeoutmilliseconds; }
+            catch { }
 
-			return str;
-		}
-			
+            return str;
+        }
+            
         /// <summary>
         /// Wrapper class for getting request and respone objects in a async manner
         /// </summary>

@@ -500,10 +500,10 @@ namespace Duplicati.Library.Backend
 
         }
 
-		/// <summary>
-		/// Upload in chunks to bypass filesize limit.
-		/// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
-		/// </summary>
+        /// <summary>
+        /// Upload in chunks to bypass filesize limit.
+        /// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
+        /// </summary>
         private SP.File uploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName)
         {
             // Each sliced upload requires a unique ID.
@@ -591,7 +591,7 @@ namespace Duplicati.Library.Backend
             return uploadFile;
         }
 
-		public void CreateFolder() { doCreateFolder(false); }
+        public void CreateFolder() { doCreateFolder(false); }
         private void doCreateFolder(bool useNewContext)
         {
             SP.ClientContext ctx = getSpClientContext(useNewContext);

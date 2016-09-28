@@ -206,9 +206,14 @@ namespace Duplicati.Library.Main.Strings
         public static string RepaironlypathsShort { get { return LC.L(@"Repair database with paths"); } }
         public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
-        public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Cultute""."); } }
+        public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
         public static string DisablepipingShort{ get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
+        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of HyperV machines (Windows only)"); } }
+        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the names of machines to include in the backup. Specify multiple machine names with a semicolon separator."); } }
+        public static string HypervbackupnomergeShort { get { return LC.L(@"Do not merge the HyperV VHD (Windows only)"); } }
+        public static string HypervbackupnomergeLong { get { return LC.L(@"Use this option to disable the merge of HyperV VHD's prior to performing the backup."); } }
+
     }
 
     internal static class Common

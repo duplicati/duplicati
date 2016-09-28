@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
 
             size = size.ToLower().Trim();
 
-            if (size.EndsWith("gb") || size.EndsWith("mb") || size.EndsWith("kb") || size.EndsWith("b"))
+            if (size.EndsWith("tb") || size.EndsWith("gb") || size.EndsWith("mb") || size.EndsWith("kb") || size.EndsWith("b"))
                 return ParseSize(size);
             else
                 return ParseSize(size + " " + defaultSuffix);
@@ -49,7 +49,12 @@ namespace Duplicati.Library.Utility
             
             long factor = 1;
 
-            if (size.EndsWith("gb"))
+            if (size.EndsWith("tb"))
+            {
+                factor = 1024L * 1024 * 1024 * 1024;
+                size = size.Substring(0, size.Length - 2).Trim();
+            }
+            else if (size.EndsWith("gb"))
             {
                 factor = 1024 * 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();

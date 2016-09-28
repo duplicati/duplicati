@@ -22,7 +22,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.Database
 {
-    public class ApplicationSettings
+    public class ServerSettings
     {
         private class CONST
         {
@@ -51,7 +51,7 @@ namespace Duplicati.Server.Database
         private Database.Connection m_connection;
         private Library.AutoUpdater.UpdateInfo m_latestUpdate;
 
-        internal ApplicationSettings(Connection con)
+        internal ServerSettings(Connection con)
         {
             m_values = new Dictionary<string, string>();
             m_connection = con;
@@ -65,7 +65,7 @@ namespace Duplicati.Server.Database
                 m_values.Clear();
                 foreach(var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
                     m_values[n] = null;
-                foreach(var n in m_connection.GetSettings(Connection.APP_SETTINGS_ID))
+                foreach(var n in m_connection.GetSettings(Connection.SERVER_SETTINGS_ID))
                     m_values[n.Name] = n.Value;
             }
         }
@@ -102,7 +102,7 @@ namespace Duplicati.Server.Database
                     Filter = "",
                     Name = n.Key,
                     Value = n.Value
-                }, Database.Connection.APP_SETTINGS_ID);
+            }, Database.Connection.SERVER_SETTINGS_ID);
 
             // In case the usage reporter is enabled or disabled, refresh now
             Program.StartOrStopUsageReporter();

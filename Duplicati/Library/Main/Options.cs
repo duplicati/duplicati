@@ -243,6 +243,8 @@ namespace Duplicati.Library.Main
                     "vss-exclude-writers",
                     "vss-use-mapping",
                     "usn-policy",
+                    "hyperv-backup-vm",
+                    "hyperv-backup-no-merge",
                     "symlink-policy",
                     "hardlink-policy",
                     "exclude-files-attributes",
@@ -437,6 +439,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
                     new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
                     new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
+                    new CommandLineArgument("hyperv-backup-vm", CommandLineArgument.ArgumentType.String, Strings.Options.HypervbackupvmShort, Strings.Options.HypervbackupvmLong),
+                    new CommandLineArgument("hyperv-backup-no-merge", CommandLineArgument.ArgumentType.Boolean, Strings.Options.HypervbackupnomergeShort, Strings.Options.HypervbackupnomergeLong),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -572,9 +576,9 @@ namespace Duplicati.Library.Main
         {
             get
             {
-            	string v;
-            	m_options.TryGetValue("control-files", out v);
-            	return v;
+                string v;
+                m_options.TryGetValue("control-files", out v);
+                return v;
             }
         }
 
@@ -740,12 +744,12 @@ namespace Duplicati.Library.Main
         {
             get
             {
-            	string v;
-            	m_options.TryGetValue("prefix", out v);
-            	if (!string.IsNullOrEmpty(v))
-            		return v;
-            		
-        		return "duplicati";
+                string v;
+                m_options.TryGetValue("prefix", out v);
+                if (!string.IsNullOrEmpty(v))
+                    return v;
+                    
+                return "duplicati";
             }
         }
 
@@ -802,8 +806,8 @@ namespace Duplicati.Library.Main
             var versions = this.Version;
             if (versions != null && versions.Length > 0) 
                 foreach (var ix in versions.Distinct())
-                	if (ix >= 0 && ix < backups.Length)
-                    	res.Add(backups[ix]);
+                    if (ix >= 0 && ix < backups.Length)
+                        res.Add(backups[ix]);
             
             var keepVersions = this.KeepVersions;
             if (keepVersions > 0 && keepVersions < backups.Length)
@@ -1663,10 +1667,10 @@ namespace Duplicati.Library.Main
         {
             get 
             {
-            	if (m_options.ContainsKey("dry-run"))
-            		return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
-            	else
-            		return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
+                if (m_options.ContainsKey("dry-run"))
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
+                else
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
             }
         }
         

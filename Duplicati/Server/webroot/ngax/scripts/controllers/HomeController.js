@@ -1,4 +1,4 @@
-backupApp.controller('HomeController', function ($scope, $location, BackupList, AppService, DialogService) {
+backupApp.controller('HomeController', function ($scope, $location, Localization, BackupList, AppService, DialogService) {
     $scope.backups = BackupList.watch($scope);
 
     $scope.doRun = function(id) {
@@ -22,7 +22,7 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
     };
 
     $scope.doDelete = function(id, name) {
-        DialogService.dialog('Confirm delete', 'Do you really want to delete the backup: ' + name, ['No', 'Yes'], function(ix) {
+        DialogService.dialog(Localization.localize('Confirm delete'), Localization.localize('Do you really want to delete the backup: {0}', name), [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
             if (ix == 1)
                 AppService.delete('/backup/' + id);
         });

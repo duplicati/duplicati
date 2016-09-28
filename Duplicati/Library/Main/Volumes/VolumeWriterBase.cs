@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.Volumes
         
         public void SetRemoteFilename(string name)
         {
-        	m_volumename = name;
+            m_volumename = name;
         }
 
         public VolumeWriterBase(Options options)
@@ -32,12 +32,12 @@ namespace Duplicati.Library.Main.Volumes
         
         public static string GenerateGuid(Options options)
         {
-        	var s = Guid.NewGuid().ToString("N");
-        	
-        	//We can choose shorter GUIDs here
-        	
-        	return s;
-        	
+            var s = Guid.NewGuid().ToString("N");
+            
+            //We can choose shorter GUIDs here
+            
+            return s;
+            
         }
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)

@@ -40,17 +40,17 @@ namespace Duplicati.UnitTest
         /// </summary>
         private class LogHelper : StreamLog
         {
-			private string m_backupset;
-			
-			public static long WarningCount = 0;
-			public static long ErrorCount = 0;
-			
+            private string m_backupset;
+            
+            public static long WarningCount = 0;
+            public static long ErrorCount = 0;
+            
             public string Backupset 
-			{ 
-				get { return m_backupset; }
-				set { m_backupset = value; }
-			}
-			
+            { 
+                get { return m_backupset; }
+                set { m_backupset = value; }
+            }
+            
             public LogHelper(string file)
                 : base(file)
             {
@@ -59,10 +59,10 @@ namespace Duplicati.UnitTest
 
             public override void WriteMessage(string message, LogMessageType type, Exception exception)
             {
-            	if (type == LogMessageType.Error)
-            		System.Threading.Interlocked.Increment(ref ErrorCount);
-            	else if (type == LogMessageType.Warning)
-            		System.Threading.Interlocked.Increment(ref WarningCount);
+                if (type == LogMessageType.Error)
+                    System.Threading.Interlocked.Increment(ref ErrorCount);
+                else if (type == LogMessageType.Warning)
+                    System.Threading.Interlocked.Increment(ref WarningCount);
                 base.WriteMessage(this.Backupset + ", " + message, type, exception);
             }
         }
@@ -365,13 +365,13 @@ namespace Duplicati.UnitTest
                 
                 foreach(string s in Utility.EnumerateFiles(tempdir))
                 {
-                	if (s == options["dbpath"])
-                		continue;
-                	if (s.StartsWith(Utility.AppendDirSeparator(tf)))
-                		continue;
-                		
-                	Log.WriteMessage(string.Format("Found left-over temp file: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
-                	Console.WriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), 
+                    if (s == options["dbpath"])
+                        continue;
+                    if (s.StartsWith(Utility.AppendDirSeparator(tf)))
+                        continue;
+                        
+                    Log.WriteMessage(string.Format("Found left-over temp file: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
+                    Console.WriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), 
 #if DEBUG
                         TempFile.GetStackTraceForTempFile(System.IO.Path.GetFileName(s))
 #else
@@ -381,22 +381,22 @@ namespace Duplicati.UnitTest
                 }
                 
                 foreach(string s in Utility.EnumerateFolders(tempdir))
-                	if (!s.StartsWith(Utility.AppendDirSeparator(tf)) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
-                	{
-                		Log.WriteMessage(string.Format("Found left-over temp folder: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
-                		Console.WriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));
-                	}
+                    if (!s.StartsWith(Utility.AppendDirSeparator(tf)) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
+                    {
+                        Log.WriteMessage(string.Format("Found left-over temp folder: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
+                        Console.WriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));
+                    }
             }
 
             (Log.CurrentLog as StreamLog).Dispose();
             Log.CurrentLog = null;
             
             if (LogHelper.ErrorCount > 0)
-        		Console.WriteLine("Unittest completed, but with {0} errors, see logfile for details", LogHelper.ErrorCount);
+                Console.WriteLine("Unittest completed, but with {0} errors, see logfile for details", LogHelper.ErrorCount);
             else if (LogHelper.WarningCount > 0)
-        		Console.WriteLine("Unittest completed, but with {0} warnings, see logfile for details", LogHelper.WarningCount);
-        	else
-        		Console.WriteLine("Unittest completed successfully - Have some cake!");            	
+                Console.WriteLine("Unittest completed, but with {0} warnings, see logfile for details", LogHelper.WarningCount);
+            else
+                Console.WriteLine("Unittest completed successfully - Have some cake!");                
         }
 
         private static void VerifyPartialRestore(string source, IEnumerable<string> testfiles, string[] actualfolders, string tempfolder, string rootfolder, bool verifymetadata)
@@ -461,8 +461,8 @@ namespace Duplicati.UnitTest
 
         private static void RunRestore(string source, string target, string tempfolder, Dictionary<string, string> options)
         {
-        	var tops = new Dictionary<string, string>(options);
-        	tops["restore-path"] = tempfolder;
+            var tops = new Dictionary<string, string>(options);
+            tops["restore-path"] = tempfolder;
             using (new Timer("Restore of " + source))
             using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(options)))
                 Log.WriteMessage(i.Restore(null).ToString(), LogMessageType.Information);
@@ -470,8 +470,8 @@ namespace Duplicati.UnitTest
 
         private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> options, string[] files)
         {
-        	var tops = new Dictionary<string, string>(options);
-        	tops["restore-path"] = tempfolder;
+            var tops = new Dictionary<string, string>(options);
+            tops["restore-path"] = tempfolder;
             using (new Timer("Partial restore of " + source))
             using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(options)))
                 Log.WriteMessage(i.Restore(files).ToString(), LogMessageType.Information);

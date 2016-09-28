@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -23,24 +24,59 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void GET(string key, RequestInfo info)
         {
-            var prop = typeof(Database.ApplicationSettings).GetProperty(key);
-            if (prop == null)
-                info.OutputError(null, System.Net.HttpStatusCode.NotFound, "Not found");
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                info.OutputError(null, System.Net.HttpStatusCode.BadRequest, "Key is missing");
+                return;
+            }
+
+            if (key.StartsWith("--", StringComparison.Ordinal))
+            {
+                var prop = Program.DataConnection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.InvariantCultureIgnoreCase));
+                info.OutputOK(prop == null ? null : prop.Value);
+            }
             else
-                info.OutputOK(prop.GetValue(Program.DataConnection.ApplicationSettings));
+            {
+                var prop = typeof(Database.ServerSettings).GetProperty(key);
+                if (prop == null)
+                    info.OutputError(null, System.Net.HttpStatusCode.NotFound, "Not found");
+                else
+                    info.OutputOK(prop.GetValue(Program.DataConnection.ApplicationSettings));
+            }
         }
 
         public void PUT(string key, RequestInfo info)
         {
-            var prop = typeof(Database.ApplicationSettings).GetProperty(key);
-            if (prop == null)
-                info.OutputError(null, System.Net.HttpStatusCode.NotFound, "Not found");
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                info.OutputError(null, System.Net.HttpStatusCode.BadRequest, "Key is missing");
+                return;
+            }
+
+            if (key.StartsWith("--", StringComparison.Ordinal))
+            {
+                var settings = Program.DataConnection.Settings.ToList();
+
+                var prop = settings.Where(x => string.Equals(key, x.Name, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                if (prop == null)
+                    settings.Add(prop = new Database.Setting() { Name = key, Value = info.Request.Form["data"].Value });
+                else
+                    prop.Value = info.Request.Form["data"].Value;
+                
+                info.OutputOK(prop == null ? null : prop.Value);
+            }
             else
             {
-                var dict = new Dictionary<string, string>();
-                dict[key] = info.Request.Form["data"].Value;
-                Program.DataConnection.ApplicationSettings.UpdateSettings(dict, false);
-                info.OutputOK();
+                var prop = typeof(Database.ServerSettings).GetProperty(key);
+                if (prop == null)
+                    info.OutputError(null, System.Net.HttpStatusCode.NotFound, "Not found");
+                else
+                {
+                    var dict = new Dictionary<string, string>();
+                    dict[key] = info.Request.Form["data"].Value;
+                    Program.DataConnection.ApplicationSettings.UpdateSettings(dict, false);
+                    info.OutputOK();
+                }
             }
         }
 
@@ -55,7 +91,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     new KeyValuePair<string, Type>(HttpServer.Method.Put, typeof(string))
                 };
             }
-        }    
+        }
     }
 }
 

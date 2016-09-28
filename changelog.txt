@@ -1,3 +1,42 @@
+2016-09-26
+==========
+* Fixed some issues in commandline help (thanks @agrajaghh)
+* Added support for backing up HyperV machines (thanks @GNicho)
+* Fixed showing backend statistics when --no-remote-verification is specified
+* Fixed global options not being applied
+
+2016-09-21
+==========
+* Change default TrayIcon on OSX to work on 32bit Mono
+* Added localization support calls to all strings in the UI
+
+2016-09-16
+==========
+* Fixed a restore issue from a partially reconstructed database
+* Implemented Auhtenticode signing for all executables and libraries
+* Implemented Authenticode signing for Windows MSI files
+* Implmented Codesign for OSX pkg and dmg files
+* Updated Mono check for existing certificates, to avoid showing mozroots message
+* Added support for installing Duplicati.WindowsService.exe as a service from the commandline
+
+2016-09-12
+==========
+* Fixed a problem with restoring from the UI, thanks @4m1g0
+
+2016-09-09
+==========
+* Fixes to the Dropbox backend
+* Fixed restore of files/folders with semicolon and plus characters from the UI
+* Added visual feedback when clicking the restore button
+* Added assembly redirects to solve issues with loading SharpAESCrypt and Mega backend
+* Changed the label for dblocksize in the UI
+
+2016-09-01
+==========
+* Fixed VSS based backups not working after 2.0.1.17
+* Prevent including temporary files in verification file, thanks @mnaiman
+* Added host-key verification for SSH connections, thanks @mnaiman
+
 2016-08-27
 ==========
 * Fixed issue with files not being listed on Windows (AlphaFS and AlphaVSS issue)
@@ -208,246 +247,3 @@
 * Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
 * Added mentions of the mozroots utility on Linux in various places
 * Added the storage-class option to S3
-
-2015-09-15
-==========
-* Improved use of non-default --oauth-url
-* Bugfixes to the REST API
-* Improved checks when repairing the database
-* Improved handling of tmpdir
-* Improved handling the tilde charater in input paths
-* Fixed a bug with relative paths and the recovery tool
-* Improved handling of RESULT template item in email templates
-* Fixed multiple locations where the system calendar was affecting the date format
-* Added more system info, and a system-info CLI command
-* Added a --force-locale option to force another locale
-* Fixed an issue with restoring, which would give "No filesets found on remote target"
-
-2015-08-24
-==========
-* Fixes to improve the use of the OAuth handler
-* Added a REST API
-* Changed access mode when reading files to not prevent concurrent write access
-* Added a recovery tool as a slower, but more robust restore method
-* Fixed an issue with recreating a partial database that would record missing file sizes in the database.
-* Fixed an issue where a recreated database would miss some files and repair for an extensive period of time.
-* Fixed an issue where repair would fail if the files were decrypted
-
-2015-07-02
-==========
-* Added handling for WebDAV timeouts
-* Updated list of compressed file extensions
-* Improved speed of searching without a local database
-* Improved speed of restore without a local database
-* Improved Web UI
-* Fixed issues with loading SQLite on newer versions of Mono
-* Added status code to email and XMPP messages
-* Fixed an issue with non-ascii filenames
-* Fixed an issue with crashes caused by incomplete remote file data
-* Added Google Drive backend and removed Google Docs backend
-* Added BITS transfer of large files to OneDrive
-* Added Google Cloud Storage backend
-* Added an OpenStack backend
-* Added HubiC backend
-
-2015-03-07
-==========
-* Fixed an issue with file-length not being set correctly when restoring into an existing file
-* Fixed an issue where metadata was attempted applied before the file was created
-* Fixed an issue where repair failed
-* Now suppressing error messages about extended attributes not being supported on Linux
-* Fixed reading metadata for long paths on Windows
-* Fixed an issue where the Zip compression did not honor the compressed extensions exclusion list
-* Updated 7z to support the --7z-compression-level option
-* Fixed some issues where options and filters were displayed incorrectly in IE and Firefox
-* Fixed an issue where filters were not exported to the commandline
-* Added paging to OneDrive file-lists so large OneDrive folders can now be listed
-* Fixed an issue with constant reloading due to a missing XSRF token
-
-2015-02-26
-==========
-* Added XSRF protection
-
-2015-02-15
-==========
-* Fixed an issue with many warnings
-* Fixed an issue where new backups were incorrectly saved
-* Added automatic log purging
-
-2015-02-04
-==========
-* Change the scanning method to look at the current timestamp instead of the last scantime
-* Added a delay for deleting partial remote files to work around a strange Apache bug
-* Removed .pdf from the list of compressed extensions
-* Various fixes for storing/restoring metadata
-* Fixed the errorlevel/exit code for restore with warnings
-* Exposed the --no-local-blocks option to release builds
-* Added a --full-block-verification option to help trace the cause of incorrect blocks
-* Added a new consistency check for missing BlocklistHash entries
-* Added a new repair method for recovering from missing BlocklistHash entries
-* Fixed an issue when multiple source folders resolves to the same path
-* Added control files to synthetic filelist uploads
-
-2015-01-19
-==========
-* Fixed an issue with multiple file prefixes
-* Change the UI to simplify restoring permissions
-* Updated AWSSDK and added the dinCloud provider
-* Fixed an issue where interrupted upload requires a repair
-
-2015-01-05
-==========
-* Added option to avoid verifying restored files
-* Various fixes to prevent broken databases and remote files during interrupted backups
-* Improved the use of uploaded files after an interrupted backup
-* Fixed the throttle-upload and throttle-download options
-* Improved robustness for uses with no remote backend verification
-* Improved recreate database for setups with no dindex files
-* Added automatic generation of missing dindex files
-* Reduced attempts to delete non-existing files
-* Added a checkbox to control restore of permissions in the GUI
-
-2014-12-01
-==========
-* Improved metadata collection to include more timestamps and permissions
-* Implemented metadata restore
-* Fixed an issue with interrupted backups attempting to delete a non-existing file
-* Fixed a unique constraint violation on repair
-* Improved the filter rules to prevent including empty folders
-* Fixed an issue where a restore would create empty folders
-
-2014-11-11
-==========
-* Fixed another broken SQL
-* Reduced memory allocations
-
-2014-11-06
-==========
-* Fixed a broken SQL
-
-2014-10-31
-==========
-* Fixed the display of restore times so it no longer shows todays backups as last week
-* Updated the login page with something fancier, thanks to @sfahrenholz!
-* Improved handling of files and folders with no date information
-* Fixed a few bugs related to storing metadata
-* Added some auto-healing routines to the repair command
-* Added some better error messages with correction suggestions
-* Improved the speed of backups and restores by a factor of 30
-* Default is now no in-memory lookups with same speed and lower memory footprint
-
-
-2014-10-14
-==========
-* Improved symlink handling
-* Fixed a warning with --send-mail-level
-* Improved support for portable installs
-* Fixed the issue with failed backups due to file://
-* Fixed a problem with recreating the local database
-* Adjusted display to use fixed header and footer
-
-
-2014-08-26
-==========
-* Added an updater tool to allow manual update control for the commandline interface
-* Disabled automatic update for the commandline
-* Fixed a bunch of typos
-* Fixed an issue with temporary files being deleted
-* Improved the tracking of remote files
-* Improved speed of listing the backup fileset times in the UI
-* Added a commandline method for listing what backups depends on a particular remote file
-* Fixed problem with clearing options on server startup
-* Fixed an issue where the S3 dialog did not generate valid URLs
-* Improved filter performance
-* Fixed an issue where the S3 server list occasionally did not drop down
-* Simplified filter logic
-* Implemented direct restore
-* Fixed generating invalid commandline commands on Windows
-* Improved the repair and verify routines for certain errors
-* Fixed handling file:// prefixed paths
-* Added progress indicator for restore and verify
-
-2014-08-16
-==========
-* Fixed the copyright statement on all assemblies, this should fix some cases where Antivirus would flag it
-* Fixed a problem with login when using a password to protect the service
-* Fixed handling extended/accented character in source and target input
-* Fixed an issue on older Mono installs where System.Numerics.BigInteger.Parse is missing from the framework (updated to Json.Net 6.0r4 .Net3.5 version)
-* Better display of advanced options and filters
-* Improved the way times are displayed in the restore dialog
-* Added saving the commandline option for server listen interface
-* Added a dialog for setting application-wide options
-* Improved the index handler to allow for new UI versions in subfolders
-* Added tooltips to many common options
-* Added options to specify retention without needing to use the advanced options
-
-2014-08-12
-==========
-* Fixed a crash on Windows after running a backup
-* Improved logging in the live-log area
-* Improved execution time when counting modified files
-
-2014-08-11
-==========
-* Fixed a stuck progress issue on Windows
-
-2014-08-10
-==========
-* Now stores app crash exceptions in a file
-* Added support for local stored update packages
-* Added Jabber (XMPP) notification support
-* Implemented method to delete the local db
-* Fixed problem where restore always used newest version
-
-2014-08-07
-==========
-* Azure Blob Storage support, thanks Don Lockhart!
-* Changed the lock dir name, so 2.0 can co-exist with 1.3.x
-* Added a live log monitor
-* Added import/export jobs to file and commandline
-* Implemented a notification system
-* Added desktop notifications (not working on OSX)
-* Changed so the customized folder is read from the base install dir instead of the update dir
-* Implemented the method for using the bug report creation feature
-* Added automatic removal of leftover temporary files
-* Added acknowledgements to the about dialog
-
-2014-07-25
-==========
-* Filters can now use Windows style environment variables,
-  e.g. %APPDATA%
-* AlphaVSS was updated to avoid crash
-* Fixed layout issues with Firefox and others.
-* Fixed an issue with UrlEncode and UrlDecode in HttpServer
-* Added a service.exe which runs the server.exe
-* Fixed some issues with OneDrive
-* Fixed that the cancel button changes text
-* Added ssl-certificate options to the URI dialog
-
-2014-07-19
-==========
-* Changed status from "Experimental" to "preview"
-* Added filters in source dialog
-* Changed location of duplicati-server.sqlite to 
-  ~/.config/Duplicati/Duplicati-server.sqlite resp. 
-  %APPDATA%\Duplicati\Duplicati-server.sqlite
-* Fixed some issues with auto-update (wrong webroot, 
-  tracking ID, recurring popups, ...)
-* Recompiled http server dll
-* Added connector for OneDrive
-* Connected with OneDrive auth-token service
-* Redesigned the target dropdown a bit
-* Advanced options can be deleted again
-* Problem with looooong paths fixed
-
-
-2014-07-09
-==========
-* Added automatic updater
-* Added timestamps to logfiles
-* Fixed additional / in connection URI
-* Reworked progress bar
-* Reworked "General" dialog
-* Reworked tray icon for OSX
-* Added support for "remote login". Start server or 
-  tray icon with --webservice-password=<password>

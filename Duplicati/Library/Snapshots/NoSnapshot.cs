@@ -109,9 +109,9 @@ namespace Duplicati.Library.Snapshots
         /// <param name="callback">The callback to invoke with each found path</param>
         public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
         {
-        	return m_sources.SelectMany(
-        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
-        	);
+            return m_sources.SelectMany(
+                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+            );
         }
 
         /// <summary>

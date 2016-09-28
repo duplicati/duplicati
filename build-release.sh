@@ -22,11 +22,15 @@ GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 
 UPDATE_ZIP_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;http://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
-UPDATER_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-release.key"
-GPG_KEYFILE="${HOME}/Dropbox/Privat/Duplicati-updater-gpgkey.key"
+UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
+GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
+AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
+AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
+
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
+MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
 
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -62,6 +66,11 @@ echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
 echo
 
+if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+	echo "No password entered, quitting"
+	exit 0
+fi
+
 RELEASE_CHANGEINFO_NEWS=`cat "${RELEASE_CHANGELOG_NEWS_FILE}"`
 
 git stash save "${GIT_STASH_NAME}"
@@ -90,17 +99,17 @@ fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-${XBUILD} /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
-mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
+"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
-${NUGET} restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
-${NUGET} restore Duplicati.sln
+"${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+"${NUGET}" restore "Duplicati.sln"
 
-${XBUILD} /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+"${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
-${XBUILD} /p:Configuration=Release /target:Clean Duplicati.sln
-find Duplicati -type d -name Release -exec rm -rf {} \;
-${XBUILD} /p:Configuration=Release Duplicati.sln
+"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
+find "Duplicati" -type d -name "Release" | xargs rm -rf
+"${XBUILD}" /p:Configuration=Release "Duplicati.sln"
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
@@ -128,20 +137,68 @@ for FN in "Duplicati/Library/Snapshots/bin/Release/SnapshotQuery.exe" "Duplicati
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
 done
 
-if [ -e "${UPDATE_SOURCE}/control_dir" ]; then rm -rf "${UPDATE_SOURCE}/control_dir"; fi
-if [ -e "${UPDATE_SOURCE}/Duplicati-server.sqlite" ]; then rm "${UPDATE_SOURCE}/Duplicati-server.sqlite"; fi
-if [ -e "${UPDATE_SOURCE}/Duplicati.debug.log" ]; then rm "${UPDATE_SOURCE}/Duplicati.debug.log"; fi
-if [ -e "${UPDATE_SOURCE}/updates" ]; then rm -rf "${UPDATE_SOURCE}/updates"; fi
+# Install the assembly redirects for all Duplicati .exe files
+find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
+
+# Clean some unwanted build files
+for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+done
+
+# Clean the localization spam from Azure
+for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+done
+
+# Clean debug files, if any
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
+
+# Sign all files with Authenticode
+if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
+	echo "Performing authenticode signing of executables and libraries"
+
+	authenticode_sign() {
+		NEST=""
+		for hashalg in sha1 sha256; do
+			SIGN_MSG=`osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile`
+			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
+			mv tmpfile "$1"
+			NEST="-nest"
+		done
+	}
+
+	PFX_PASS=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}"`
+
+	DECRYPT_STATUS=$?
+	if [ "${DECRYPT_STATUS}" -ne 0 ]; then
+	    echo "Failed to decrypt, SharpAESCrypt gave status ${DECRYPT_STATUS}, exiting"
+	    exit 4
+	fi
+
+	if [ "x${PFX_PASS}" == "x" ]; then
+	    echo "Failed to decrypt, SharpAESCrypt gave empty password, exiting"
+	    exit 4
+	fi
+
+	for exec in "${UPDATE_SOURCE}/Duplicati."*.exe; do
+		authenticode_sign "${exec}"
+	done
+	for exec in "${UPDATE_SOURCE}/Duplicati."*.dll; do
+		authenticode_sign "${exec}"
+	done
+
+else
+	echo "Skipped authenticode signing as files are missing"
+fi
 
 echo
 echo "Building signed package ..."
 
-mono BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"	
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"	
 	
 	echo "Something went wrong while building the package, no output found"
 	exit 5
@@ -158,7 +215,7 @@ cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.man
 cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
 cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 
-mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="2.0.0.7"
+"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
 echo "Uploading binaries"
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
@@ -244,6 +301,9 @@ echo "    in folder: ${UPDATE_TARGET}"
 echo
 echo
 echo "Building installers ..."
+
+# Send the password along to avoid typing it again
+export KEYFILE_PASSWORD
 
 bash "build-installers.sh" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 
