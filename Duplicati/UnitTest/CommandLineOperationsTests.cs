@@ -45,10 +45,11 @@ namespace Duplicati.UnitTest
         [TestFixtureSetUp()]
         public override void PrepareSourceData()
         {
-            Console.WriteLine("*********** From Console.WriteLine");
+            Console.WriteLine("*********** From ConsoleWriteLine");
             System.Diagnostics.Trace.WriteLine("From Trace WriteLine");
             System.Diagnostics.Debug.WriteLine("*********** From Debug WriteLine");
             Assert.That(true, "*********** From Assert");
+            TestContext.Progress.WriteLine("*********** From TestContext.Progress");
 
             base.PrepareSourceData();
         }
@@ -73,6 +74,12 @@ namespace Duplicati.UnitTest
             DoRunCommands(new SizeOmittingBackend().ProtocolKey + "://" + TARGETFOLDER);
         }
 
+        private void ConsoleWriteLine(string msg, params object[] args)
+        {
+            Console.WriteLine(msg, args);
+            TestContext.Progress.WriteLine(msg, args);
+        }
+
         private void DoRunCommands(string target)
         {
             var opts = from n in TestOptions select string.Format("--{0}=\"{1}\"", n.Key, n.Value);
@@ -82,17 +89,17 @@ namespace Duplicati.UnitTest
             {
                 var foldername = Path.GetFileName(n);
                 var targetfolder = Path.Combine(DATAFOLDER, foldername);
-                Console.WriteLine("Adding folder {0} to source", foldername);
+                ConsoleWriteLine("Adding folder {0} to source", foldername);
                 TestUtils.CopyDirectoryRecursive(n, targetfolder);
 
                 var size = Directory.EnumerateFiles(targetfolder, "*", SearchOption.AllDirectories).Select(x => new FileInfo(x).Length).Sum();
 
-                Console.WriteLine("Running backup with {0} data added ...", Duplicati.Library.Utility.Utility.FormatSizeString(size));
+                ConsoleWriteLine("Running backup with {0} data added ...", Duplicati.Library.Utility.Utility.FormatSizeString(size));
                 using(new Library.Logging.Timer(string.Format("Backup with {0} data added", Duplicati.Library.Utility.Utility.FormatSizeString(size))))
                     Duplicati.CommandLine.Program.RealMain(backupargs);
             }
 
-            Console.WriteLine("Running unchanged backup ...");
+            ConsoleWriteLine("Running unchanged backup ...");
             using(new Library.Logging.Timer("Unchanged backup"))
                 Duplicati.CommandLine.Program.RealMain(backupargs);
 
@@ -100,16 +107,16 @@ namespace Duplicati.UnitTest
 
             var f = datafolders.Skip(datafolders.Count() / 2).First();
 
-            Console.WriteLine("Renaming folder {0}", Path.GetFileName(f));
+            ConsoleWriteLine("Renaming folder {0}", Path.GetFileName(f));
             Directory.Move(f, Path.Combine(Path.GetDirectoryName(f), Path.GetFileName(f) + "-renamed"));
 
-            Console.WriteLine("Running backup with renamed folder...");
+            ConsoleWriteLine("Running backup with renamed folder...");
             using(new Library.Logging.Timer("Backup with renamed folder"))
                 Duplicati.CommandLine.Program.RealMain(backupargs);
 
             datafolders = Directory.EnumerateDirectories(DATAFOLDER);
 
-            Console.WriteLine("Deleting data");
+            ConsoleWriteLine("Deleting data");
             var rm1 = datafolders.First();
             var rm2 = datafolders.Skip(1).First();
             var rm3 = datafolders.Skip(2).First();
@@ -120,24 +127,24 @@ namespace Duplicati.UnitTest
             foreach(var n in rmfiles.Take(rmfiles.Count() / 2))
                 File.Delete(n);
 
-            Console.WriteLine("Running backup with deleted data...");
+            ConsoleWriteLine("Running backup with deleted data...");
             using(new Library.Logging.Timer("Backup with deleted data"))
                 Duplicati.CommandLine.Program.RealMain(backupargs);
 
-            Console.WriteLine("Testing the compare method ...");
+            ConsoleWriteLine("Testing the compare method ...");
             using(new Library.Logging.Timer("Compare method"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "compare", target, "0", "1" }.Union(opts)).ToArray());
 
             for(var i = 0; i < 5; i++)
             {
-                Console.WriteLine("Running backup with changed logfile {0} of {1} ...", i + 1, 5);
+                ConsoleWriteLine("Running backup with changed logfile {0} of {1} ...", i + 1, 5);
                 File.Copy(LOGFILE, Path.Combine(SOURCEFOLDER, Path.GetFileName(LOGFILE)), true);
 
                 using(new Library.Logging.Timer(string.Format("Backup with logfilechange {0}", i + 1)))
                     Duplicati.CommandLine.Program.RealMain(backupargs);                
             }
 
-            Console.WriteLine("Compacting data ...");
+            ConsoleWriteLine("Compacting data ...");
             using(new Library.Logging.Timer("Compacting"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());
 
@@ -148,33 +155,33 @@ namespace Duplicati.UnitTest
             if (Directory.Exists(RESTOREFOLDER))
                 Directory.Delete(RESTOREFOLDER, true);
 
-            Console.WriteLine("Partial restore of {0} ...", Path.GetFileName(rf));
+            ConsoleWriteLine("Partial restore of {0} ...", Path.GetFileName(rf));
             using(new Library.Logging.Timer("Partial restore"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
 
-            Console.WriteLine("Verifying partial restore ...");
+            ConsoleWriteLine("Verifying partial restore ...");
             using (new Library.Logging.Timer("Verification of partial restored files"))
                 TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
 
             if (Directory.Exists(RESTOREFOLDER))
                 Directory.Delete(RESTOREFOLDER, true);
 
-            Console.WriteLine("Partial restore of {0} without local db...", Path.GetFileName(rf));
+            ConsoleWriteLine("Partial restore of {0} without local db...", Path.GetFileName(rf));
             using(new Library.Logging.Timer("Partial restore without local db"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"", "--no-local-db" }.Union(opts)).ToArray());
 
-            Console.WriteLine("Verifying partial restore ...");
+            ConsoleWriteLine("Verifying partial restore ...");
             using (new Library.Logging.Timer("Verification of partial restored files"))
                 TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
             
             if (Directory.Exists(RESTOREFOLDER))
                 Directory.Delete(RESTOREFOLDER, true);
 
-            Console.WriteLine("Full restore ...");
+            ConsoleWriteLine("Full restore ...");
             using(new Library.Logging.Timer("Full restore"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
 
-            Console.WriteLine("Verifying full restore ...");
+            ConsoleWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer("Verification of restored files"))
                 foreach(var s in Directory.EnumerateDirectories(DATAFOLDER))
                     TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
@@ -182,16 +189,16 @@ namespace Duplicati.UnitTest
             if (Directory.Exists(RESTOREFOLDER))
                 Directory.Delete(RESTOREFOLDER, true);
 
-            Console.WriteLine("Full restore without local db...");
+            ConsoleWriteLine("Full restore without local db...");
             using(new Library.Logging.Timer("Full restore without local db"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, "*", "--restore-path=\"" + RESTOREFOLDER + "\"", "--no-local-db" }.Union(opts)).ToArray());
 
-            Console.WriteLine("Verifying full restore ...");
+            ConsoleWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer("Verification of restored files"))
                 foreach(var s in Directory.EnumerateDirectories(DATAFOLDER))
                     TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
             
-            Console.WriteLine("Testing data ...");
+            ConsoleWriteLine("Testing data ...");
             using(new Library.Logging.Timer("Test remote data"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray());
 
