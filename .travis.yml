@@ -12,6 +12,9 @@ env:
   general:
     - USAGEREPORTER_Duplicati_LEVEL=none
     - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
+  matrix:
+  - JOB=job1
+  - JOB=job2
 notifications:
   webhooks:
     urls:
@@ -43,23 +46,23 @@ script:
   - echo "travis_fold:end:download_extract_testdata"
 # run unit tests
   - echo "travis_fold:start:unit_tests_border"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Border --workers=1
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Border --workers=1; fi
   - echo "travis_fold:end:unit_tests_border"
   - echo "travis_fold:start:unit_tests_bulknormal"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNormal --workers=1
+  - if [[ "$JOB" == "job2" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNormal --workers=1; fi
   - echo "travis_fold:end:unit_tests_bulknormal"
   - echo "travis_fold:start:unit_tests_bulknosize"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNoSize --workers=1
+  - if [[ "$JOB" == "job2" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNoSize --workers=1; fi
   - echo "travis_fold:end:unit_tests_bulknosize"
   - echo "travis_fold:start:unit_tests_svndata"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNData --workers=1
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNData --workers=1; fi
   - echo "travis_fold:end:unit_tests_svndata"
   - echo "travis_fold:start:unit_tests_svndatalong"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNDataLong --workers=1
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNDataLong --workers=1; fi
   - echo "travis_fold:end:unit_tests_svndatalong"
   - echo "travis_fold:start:unit_tests_targeted"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Targeted --workers=1
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Targeted --workers=1; fi
   - echo "travis_fold:end:unit_tests_targeted"
 # start server and run gui tests
   - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
-  - python guiTests/guiTest.py
+  - if [[ "$JOB" == "job2" ]]; then python guiTests/guiTest.py; fi
