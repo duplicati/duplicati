@@ -43,11 +43,12 @@ script:
   - echo "travis_fold:end:download_extract_testdata"
 # run unit tests
   - echo "travis_fold:start:unit_tests"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Border
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkData --output --verbose
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll /where:cat==SVNData
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll /where:cat==SVNDataLong
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll /where:cat==Targeted
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Border --workers=1
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNormal --workers=1 --output --verbose
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNoSize --workers=1 --output --verbose
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNData --workers=1
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNDataLong --workers=1
+  - mono ./testrunner/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Targeted --workers=1
   - echo "travis_fold:end:unit_tests"
 # start server and run gui tests
   - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &

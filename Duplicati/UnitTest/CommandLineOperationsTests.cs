@@ -45,11 +45,17 @@ namespace Duplicati.UnitTest
         [TestFixtureSetUp()]
         public override void PrepareSourceData()
         {
+            Console.WriteLine("*********** From Console.WriteLine");
+            System.Diagnostics.Trace.WriteLine("From Trace WriteLine");
+            System.Diagnostics.Debug.WriteLine("*********** From Debug WriteLine");
+            Assert.That(true, "*********** From Assert");
+
             base.PrepareSourceData();
         }
 
         [Test]
         [Category("BulkData")]
+        [Category("BulkNormal")]
         public void RunCommands()
         {
             if (Directory.Exists(DATAFOLDER))
@@ -59,6 +65,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("BulkData")]
+        [Category("BulkNoSize")]
         public void RunCommandsWithoutSize()
         {
             if (Directory.Exists(DATAFOLDER))
