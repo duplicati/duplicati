@@ -39,15 +39,28 @@ backupApp.controller('StateController', function($scope, $timeout, Localization,
 
                     if ($scope.state.lastPgEvent.ProcessedFileCount == 0)
                         pg = 0;
-                    else if (pg >= 1)
-                        pg = 0.95;
+                    else if (pg >= 0.90)
+                        pg = 0.90;
 
                     text = Localization.localize('{0} files ({1}) to go', filesleft, AppUtils.formatSizeString(sizeleft));
                 }
             }
-            else if ($scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload') {
+            else if ($scope.state.lastPgEvent.Phase == 'Backup_Finalize' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
+            {
+                pg = 0.90;
+            } 
+            else if ($scope.state.lastPgEvent.Phase == 'Backup_Delete' || $scope.state.lastPgEvent.Phase == 'Backup_Compact')
+            {
+                pg = 0.95;
+            } 
+            else if ($scope.state.lastPgEvent.Phase == 'Backup_VerificationUpload' || $scope.state.lastPgEvent.Phase == 'Backup_PostBackupVerify')
+            {
+                pg = 0.98;
+            } 
+            else if ($scope.state.lastPgEvent.Phase == 'Backup_Complete' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
+            {
                 pg = 1;
-            }
+            } 
             else if ($scope.state.lastPgEvent.OverallProgress > 0) {
                 pg = $scope.state.lastPgEvent.OverallProgress;
             }

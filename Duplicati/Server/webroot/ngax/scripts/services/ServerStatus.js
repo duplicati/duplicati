@@ -26,9 +26,10 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     };
 
     this.state = state;
+    var self = this;
 
     function reloadTexts() {
-        this.progress_state_text = {
+        self.progress_state_text = {
             'Backup_Begin': Localization.localize('Starting ...'),
             'Backup_PreBackupVerify': Localization.localize('Verifying backend data ...'),
             'Backup_PostBackupTest': Localization.localize('Verifying remote data ...'),

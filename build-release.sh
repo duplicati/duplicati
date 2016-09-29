@@ -66,6 +66,11 @@ echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
 echo
 
+if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+	echo "No password entered, quitting"
+	exit 0
+fi
+
 RELEASE_CHANGEINFO_NEWS=`cat "${RELEASE_CHANGELOG_NEWS_FILE}"`
 
 git stash save "${GIT_STASH_NAME}"
@@ -136,13 +141,20 @@ done
 find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
 
 # Clean some unwanted build files
-if [ -e "${UPDATE_SOURCE}/control_dir" ]; then rm -rf "${UPDATE_SOURCE}/control_dir"; fi
-if [ -e "${UPDATE_SOURCE}/Duplicati-server.sqlite" ]; then rm "${UPDATE_SOURCE}/Duplicati-server.sqlite"; fi
-if [ -e "${UPDATE_SOURCE}/Duplicati.debug.log" ]; then rm "${UPDATE_SOURCE}/Duplicati.debug.log"; fi
-if [ -e "${UPDATE_SOURCE}/updates" ]; then rm -rf "${UPDATE_SOURCE}/updates"; fi
+for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+done
+
+# Clean the localization spam from Azure
+for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+done
+
+# Clean debug files, if any
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
 
+# Sign all files with Authenticode
 if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 	echo "Performing authenticode signing of executables and libraries"
 
@@ -289,6 +301,9 @@ echo "    in folder: ${UPDATE_TARGET}"
 echo
 echo
 echo "Building installers ..."
+
+# Send the password along to avoid typing it again
+export KEYFILE_PASSWORD
 
 bash "build-installers.sh" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 

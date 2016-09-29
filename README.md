@@ -1,11 +1,19 @@
 # Duplicati
 Store securely encrypted backups on cloud storage services!
 
-[![Build Status](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
+<!---
+These are currently not working ...
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/pr)](http://www.issuestats.com/github/duplicati/duplicati/)
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
+-->
 
 
+[![Build Status on Travis-CI](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
+[![Build status on AppVeyor](https://ci.appveyor.com/api/projects/status/h8s5nau9mn311hq0/branch/master?svg=true)](https://ci.appveyor.com/project/kenkendk/duplicati/branch/master)
+[![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=4870652)](https://www.bountysource.com/teams/duplicati?tracker_ids=4870652&utm_medium=shield&utm_campaign=TRACKER_BADGE)
+[![Coverage Status](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
+[![License](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![Join the chat at https://gitter.im/duplicati/Lobby](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
@@ -29,11 +37,11 @@ Download
 
 The latest version of Duplicati is an experimental version for the Duplicati 2.0 release. 
 
-[Click here to download the latest Duplicati 2.0 experimental release.](http://updates.duplicati.com/experimental/latest.zip)
+[Click here to download the latest Duplicati 2.0 experimental release.](https://github.com/duplicati/duplicati/releases/tag/v2.0.1.22-2.0.1.22_experimental_2016-09-12)
 
-The preview release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
+The experimental release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
 
-All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The [latest signature file](http://updates.duplicati.com/experimental/latest.zip.sig) and [latest ASCII signature file](http://updates.duplicati.com/experimental/latest.zip.sig.asc) are also available.
+All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
 For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
 

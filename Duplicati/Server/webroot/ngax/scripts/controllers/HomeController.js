@@ -1,8 +1,16 @@
-backupApp.controller('HomeController', function ($scope, $location, Localization, BackupList, AppService, DialogService) {
+backupApp.controller('HomeController', function ($scope, $location, ServerStatus, Localization, BackupList, AppService, DialogService) {
     $scope.backups = BackupList.watch($scope);
 
     $scope.doRun = function(id) {
-        AppService.post('/backup/' + id + '/run');
+        AppService.post('/backup/' + id + '/run').then(function() {
+            if (ServerStatus.state.programState == 'Paused') {
+                DialogService.dialog(Localization.localize('Server paused'), Localization.localize('Server is currently paused, do you want to resume now?', name), [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
+                    if (ix == 1)
+                        ServerStatus.resume();
+                });
+
+            }
+        }, function() {});
     };
 
     $scope.doRestore = function(id) {

@@ -1201,7 +1201,20 @@ namespace Duplicati.Library.Main.Database
             if (m_connection != null && m_result != null)
             {
                 m_result.FlushLog();
-                LogMessage("Result", Library.Utility.Utility.PrintSerializeObject(m_result, (StringBuilder)null, x => !typeof(System.Collections.IEnumerable).IsAssignableFrom(x.PropertyType)).ToString(), null, null);
+                LogMessage("Result", 
+                    Library.Utility.Utility.PrintSerializeObject(
+                        m_result, 
+                        (StringBuilder)null, 
+                        x => 
+                            !typeof(IBackendProgressUpdater).IsAssignableFrom(x.PropertyType) && 
+                            !typeof(IMessageSink).IsAssignableFrom(x.PropertyType) && 
+                            !typeof(ILogWriter).IsAssignableFrom(x.PropertyType), 
+                        recurseobjects: true, 
+                        collectionlimit: 5
+                    ).ToString(),
+                    null,
+                    null
+                );
             }
         }
     }

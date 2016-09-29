@@ -34,6 +34,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run10k()
         {
             PrepareSourceData();
@@ -41,6 +42,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run100k()
         {
             PrepareSourceData();
@@ -48,6 +50,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run12345_1()
         {
             PrepareSourceData();
@@ -55,6 +58,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run12345_2()
         {
             PrepareSourceData();
@@ -62,6 +66,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void RunMD5()
         {
             PrepareSourceData();
@@ -72,6 +77,7 @@ namespace Duplicati.UnitTest
         }
             
         [Test]
+        [Category("Border")]
         public void RunSHA384()
         {
             PrepareSourceData();
@@ -82,6 +88,7 @@ namespace Duplicati.UnitTest
         }
 
         //[Test]
+        [Category("Border")]
         public void RunMixedBlockFile_1()
         {
             PrepareSourceData();
@@ -92,6 +99,7 @@ namespace Duplicati.UnitTest
         }
 
         //[Test]
+        [Category("Border")]
         public void RunMixedBlockFile_2()
         {
             PrepareSourceData();
@@ -102,6 +110,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void RunNoIndexFiles()
         {
             PrepareSourceData();
@@ -111,6 +120,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void RunSlimIndexFiles()
         {
             PrepareSourceData();
@@ -192,16 +202,16 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("Newest before deleting:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("Newest before deleting:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("Newest without db:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("Newest without db:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
@@ -220,24 +230,24 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("V2 after delete:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("V2 after delete:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 1) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("V1 after delete:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("V1 after delete:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 2) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("Newest after delete:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("Newest after delete:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 

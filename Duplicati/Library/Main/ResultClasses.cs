@@ -599,7 +599,14 @@ namespace Duplicati.Library.Main
         /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.</returns>
         public override string ToString()
         {
-            return Library.Utility.Utility.PrintSerializeObject(this).ToString();
+            return Library.Utility.Utility.PrintSerializeObject(
+                this, 
+                filter: x =>
+                    !typeof(IBackendProgressUpdater).IsAssignableFrom(x.PropertyType) &&
+                    !typeof(IMessageSink).IsAssignableFrom(x.PropertyType) &&
+                    !typeof(ILogWriter).IsAssignableFrom(x.PropertyType),
+                recurseobjects: true
+            ).ToString();
         }
     }
     

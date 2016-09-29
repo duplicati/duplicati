@@ -89,11 +89,16 @@ namespace Duplicati.Library.Main
         private void OperationRunning(bool isRunning)
         {
             if (m_options != null && !m_options.AllowSleep && !Duplicati.Library.Utility.Utility.IsClientLinux)
+            {
                 try
                 {
                     Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
                 }
-                catch { } //TODO: Report this somehow
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
+                }
+            }
         }
 
         /// <summary>
@@ -354,7 +359,6 @@ namespace Duplicati.Library.Main
                 using(m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                 {
                     SetupCommonOptions(result, ref paths, ref filter);
-                    OperationRunning(true);
 
                     method(result);
 
@@ -362,17 +366,20 @@ namespace Duplicati.Library.Main
                     result.SetDatabase(null);
 
                     OnOperationComplete(result);
+
+                    Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
+
                     return result;
                 }
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteMessage("Terminated with error: " + ex.Message, Duplicati.Library.Logging.LogMessageType.Error, ex);
-
                 OnOperationComplete(ex);
 
                 try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
                 catch { }
+
+                Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
 
                 throw;
             }

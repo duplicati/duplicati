@@ -67,6 +67,19 @@ namespace Duplicati.Server.WebServer
         public const string PASSWORD_PLACEHOLDER = "**********";
 
         /// <summary>
+        /// Writes a log message to Console, Service-hook and normal log
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="type">The message type.</param>
+        /// <param name="ex">The exception, if any.</param>
+        public static void WriteLogMessage(string message, Library.Logging.LogMessageType type, Exception ex)
+        {
+            System.Console.WriteLine(message);
+            Library.Logging.Log.WriteMessage(message, type, ex);
+            Program.LogHandler.WriteMessage(message, type, ex);
+        }
+
+        /// <summary>
         /// Sets up the webserver and starts it
         /// </summary>
         /// <param name="options">A set of options</param>
@@ -121,7 +134,7 @@ namespace Duplicati.Server.WebServer
                 }
                 catch (Exception ex)
                 {
-                    Library.Logging.Log.WriteMessage("Unable to create SSL certificate using data from database. Starting without SSL.", Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                    WriteLogMessage(Strings.Server.DefectSSLCertInDatabase, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                 }
             }
             else if (certificateFile.Length == 0)
@@ -141,7 +154,7 @@ namespace Duplicati.Server.WebServer
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception("Unable to create SSL certificate using provided parameters. Exception detail: " + ex.Message);
+                    throw new Exception(Strings.Server.SSLCertificateFailure(ex.Message), ex);
                 }
             }
 
@@ -162,7 +175,7 @@ namespace Duplicati.Server.WebServer
                         server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.Tls | System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12, null, false);
 
                     m_server = server;
-                    m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                    m_server.ServerName = string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
                     this.Port = p;
 
                     if (interfacestring !=  Program.DataConnection.ApplicationSettings.ServerListenInterface)
@@ -171,13 +184,15 @@ namespace Duplicati.Server.WebServer
                     if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
                         Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
 
+                    WriteLogMessage(Strings.Server.StartedServer(listenInterface.ToString(), p), Library.Logging.LogMessageType.Information, null);
+                    
                     return;
                 }
                 catch (System.Net.Sockets.SocketException)
                 {
                 }
                 
-            throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
+            throw new Exception(Strings.Server.ServerStartFailure(ports));
         }
 
         private static void AddMimeTypes(FileModule fm)
