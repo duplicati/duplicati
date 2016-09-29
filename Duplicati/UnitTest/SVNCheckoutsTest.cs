@@ -396,7 +396,9 @@ namespace Duplicati.UnitTest
             else if (LogHelper.WarningCount > 0)
                 BasicSetupHelper.ProgressWriteLine("Unittest completed, but with {0} warnings, see logfile for details", LogHelper.WarningCount);
             else
-                BasicSetupHelper.ProgressWriteLine("Unittest completed successfully - Have some cake!");                
+                BasicSetupHelper.ProgressWriteLine("Unittest completed successfully - Have some cake!");
+
+            System.Diagnostics.Debug.Assert(LogHelper.ErrorCount == 0);
         }
 
         private static void VerifyPartialRestore(string source, IEnumerable<string> testfiles, string[] actualfolders, string tempfolder, string rootfolder, bool verifymetadata)
