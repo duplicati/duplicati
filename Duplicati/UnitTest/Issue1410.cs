@@ -25,7 +25,7 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class Issue1410 : BasicSetupHelper
     {
-        [TestFixtureSetUp()]
+        [OneTimeSetUp]
         public override void PrepareSourceData()
         {
             base.PrepareSourceData();
@@ -35,6 +35,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Targeted")]
         public void RunCommands()
         {
 			var testopts = TestOptions;
