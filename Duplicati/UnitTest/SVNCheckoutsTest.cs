@@ -177,7 +177,7 @@ namespace Duplicati.UnitTest
                 }
                 else
                 {
-                    Console.WriteLine("Removing old backups");
+                    BasicSetupHelper.ProgressWriteLine("Removing old backups");
                     Dictionary<string, string> tmp = new Dictionary<string, string>(options);
                     tmp["keep-versions"] = "0";
                     tmp["force"] = "";
@@ -235,7 +235,7 @@ namespace Duplicati.UnitTest
                         if (fe.Size > opts.VolumeSize)
                         {
                             string msg = string.Format("The file {0} is {1} bytes larger than allowed", fe.Name, fe.Size - opts.VolumeSize);
-                            Console.WriteLine(msg);
+                            BasicSetupHelper.ProgressWriteLine(msg);
                             Log.WriteMessage(msg, LogMessageType.Error);
                         }
 
@@ -258,14 +258,14 @@ namespace Duplicati.UnitTest
                         using (TempFolder ttf = new TempFolder())
                         {
                             log.Backupset = "Restore " + folders[i];
-                            Console.WriteLine("Restoring the copy: " + folders[i]);
+                            BasicSetupHelper.ProgressWriteLine("Restoring the copy: " + folders[i]);
     
                             options["time"] = entries[entries.Count - i - 1].ToString();
     
                             string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);    
                             if (!skippartialrestore)
                             {
-                                Console.WriteLine("Partial restore of: " + folders[i]);
+                                BasicSetupHelper.ProgressWriteLine("Partial restore of: " + folders[i]);
                                 using (TempFolder ptf = new TempFolder())
                                 {
                                     List<string> testfiles = new List<string>();
@@ -341,7 +341,7 @@ namespace Duplicati.UnitTest
                                     if (!skipverify)
                                     {
                                         //Call function to simplify profiling
-                                        Console.WriteLine("Verifying partial restore of: " + folders[i]);
+                                        BasicSetupHelper.ProgressWriteLine("Verifying partial restore of: " + folders[i]);
                                         VerifyPartialRestore(folders[i], testfiles, actualfolders, ptf, folders[0], verifymetadata);
                                     }
                                 }
@@ -355,7 +355,7 @@ namespace Duplicati.UnitTest
                                 if (!skipverify)
                                 {
                                     //Call function to simplify profiling
-                                    Console.WriteLine("Verifying the copy: " + folders[i]);
+                                    BasicSetupHelper.ProgressWriteLine("Verifying the copy: " + folders[i]);
                                     VerifyFullRestore(folders[i], actualfolders, new string[] { ttf }, verifymetadata);
                                 }
                             }
@@ -371,7 +371,7 @@ namespace Duplicati.UnitTest
                         continue;
                         
                     Log.WriteMessage(string.Format("Found left-over temp file: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
-                    Console.WriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), 
+                    BasicSetupHelper.ProgressWriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), 
 #if DEBUG
                         TempFile.GetStackTraceForTempFile(System.IO.Path.GetFileName(s))
 #else
@@ -384,7 +384,7 @@ namespace Duplicati.UnitTest
                     if (!s.StartsWith(Utility.AppendDirSeparator(tf)) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
                     {
                         Log.WriteMessage(string.Format("Found left-over temp folder: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
-                        Console.WriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));
+                        BasicSetupHelper.ProgressWriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));
                     }
             }
 
@@ -392,11 +392,13 @@ namespace Duplicati.UnitTest
             Log.CurrentLog = null;
             
             if (LogHelper.ErrorCount > 0)
-                Console.WriteLine("Unittest completed, but with {0} errors, see logfile for details", LogHelper.ErrorCount);
+                BasicSetupHelper.ProgressWriteLine("Unittest completed, but with {0} errors, see logfile for details", LogHelper.ErrorCount);
             else if (LogHelper.WarningCount > 0)
-                Console.WriteLine("Unittest completed, but with {0} warnings, see logfile for details", LogHelper.WarningCount);
+                BasicSetupHelper.ProgressWriteLine("Unittest completed, but with {0} warnings, see logfile for details", LogHelper.WarningCount);
             else
-                Console.WriteLine("Unittest completed successfully - Have some cake!");                
+                BasicSetupHelper.ProgressWriteLine("Unittest completed successfully - Have some cake!");
+
+            System.Diagnostics.Debug.Assert(LogHelper.ErrorCount == 0);
         }
 
         private static void VerifyPartialRestore(string source, IEnumerable<string> testfiles, string[] actualfolders, string tempfolder, string rootfolder, bool verifymetadata)
@@ -422,21 +424,21 @@ namespace Duplicati.UnitTest
                     if (!System.IO.File.Exists(restoredname))
                     {
                         Log.WriteMessage("Partial restore missing file: " + restoredname, LogMessageType.Error);
-                        Console.WriteLine("Partial restore missing file: " + restoredname);
+                        BasicSetupHelper.ProgressWriteLine("Partial restore missing file: " + restoredname);
                     }
                     else
                     {
                         if (!System.IO.File.Exists(sourcename))
                         {
                             Log.WriteMessage("Partial restore missing file: " + sourcename, LogMessageType.Error);
-                            Console.WriteLine("Partial restore missing file: " + sourcename);
+                            BasicSetupHelper.ProgressWriteLine("Partial restore missing file: " + sourcename);
                             throw new Exception("Unittest is broken");
                         }
 
                         if (!TestUtils.CompareFiles(sourcename, restoredname, s, verifymetadata))
                         {
                             Log.WriteMessage("Partial restore file differs: " + s, LogMessageType.Error);
-                            Console.WriteLine("Partial restore file differs: " + s);
+                            BasicSetupHelper.ProgressWriteLine("Partial restore file differs: " + s);
                         }
                     }
                 }
@@ -453,7 +455,7 @@ namespace Duplicati.UnitTest
 
         private static void RunBackup(string source, string target, Dictionary<string, string> options, string sourcename)
         {
-            Console.WriteLine("Backing up the copy: " + sourcename);
+            BasicSetupHelper.ProgressWriteLine("Backing up the copy: " + sourcename);
             using (new Timer("Backup of " + sourcename))
             using(var i = new Duplicati.Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(options)))
                 Log.WriteMessage(i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString(), LogMessageType.Information);
