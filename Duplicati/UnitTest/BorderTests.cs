@@ -34,6 +34,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run10k()
         {
             PrepareSourceData();
@@ -41,6 +42,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run100k()
         {
             PrepareSourceData();
@@ -48,6 +50,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run12345_1()
         {
             PrepareSourceData();
@@ -55,6 +58,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run12345_2()
         {
             PrepareSourceData();
@@ -62,6 +66,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void RunMD5()
         {
             PrepareSourceData();
@@ -72,6 +77,7 @@ namespace Duplicati.UnitTest
         }
             
         [Test]
+        [Category("Border")]
         public void RunSHA384()
         {
             PrepareSourceData();
@@ -82,6 +88,7 @@ namespace Duplicati.UnitTest
         }
 
         //[Test]
+        [Category("Border")]
         public void RunMixedBlockFile_1()
         {
             PrepareSourceData();
@@ -92,6 +99,7 @@ namespace Duplicati.UnitTest
         }
 
         //[Test]
+        [Category("Border")]
         public void RunMixedBlockFile_2()
         {
             PrepareSourceData();
@@ -102,6 +110,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void RunNoIndexFiles()
         {
             PrepareSourceData();
@@ -111,6 +120,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void RunSlimIndexFiles()
         {
             PrepareSourceData();
