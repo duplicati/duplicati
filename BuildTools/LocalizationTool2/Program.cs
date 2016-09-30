@@ -49,7 +49,7 @@ namespace LocalizationTool2
                     var txt = File.ReadAllText(f);
                     foreach (Match match in re.Matches(txt))
                     {
-                        var linepos = txt.Substring(match.Index).Count(x => x == '\n');
+                        var linepos = txt.Substring(0, match.Index).Count(x => x == '\n') + 1;
                         var str = match.Groups["sourcestring"].Value.Replace("\n", "\\n").Replace("\r", "\\r");
                         LocalizationEntry le;
                         if (!map.TryGetValue(str, out le))
