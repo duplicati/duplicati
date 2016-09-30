@@ -71,7 +71,7 @@ namespace LocalizationTool2
                     string.Format("msgstr \"{0}\"", (x.SourceString ?? "")),
                     ""
                 }),
-                System.Text.Encoding.UTF8
+                new System.Text.UTF8Encoding(false)
             );
 
             Console.WriteLine("Wrote {0} strings to {1}", map.Count, Path.Combine(targetfolder, "localization.po"));
@@ -84,7 +84,7 @@ namespace LocalizationTool2
                     string.Format("msgstr \"{0}\"", (x.SourceString ?? "")),
                     ""
                 }),
-                System.Text.Encoding.UTF8
+                new System.Text.UTF8Encoding(false)
             );*/
 
             return 0;
