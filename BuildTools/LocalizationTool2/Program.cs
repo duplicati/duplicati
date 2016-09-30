@@ -66,7 +66,7 @@ namespace LocalizationTool2
             File.WriteAllLines(
                 Path.Combine(targetfolder, "localization.po"),
                 map.OrderBy(x => x.Key).Select(x => x.Value).SelectMany(x => new string[] {
-                    "#: " + x.SourceLocations.FirstOrDefault(),
+                    "#: " + x.SourceLocations.FirstOrDefault().Replace("\\", "/"),
                     string.Format("msgid \"{0}\"", (x.SourceString ?? "")),
                     string.Format("msgstr \"{0}\"", (x.SourceString ?? "")),
                     ""
@@ -79,7 +79,7 @@ namespace LocalizationTool2
             /*File.WriteAllLines(
                 Path.Combine(sourcefolder, "localization-by-file.po"),
                 map.OrderBy(x => x.Value.SourceLocations.FirstOrDefault()).Select(x => x.Value).SelectMany(x => new string[] {
-                    "#: " + x.SourceLocations.FirstOrDefault(),
+                    "#: " + x.SourceLocations.FirstOrDefault().Replace("\\", "/"),                    
                     string.Format("msgid \"{0}\"", (x.SourceString ?? "")),
                     string.Format("msgstr \"{0}\"", (x.SourceString ?? "")),
                     ""
