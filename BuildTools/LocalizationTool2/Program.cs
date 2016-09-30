@@ -50,7 +50,8 @@ namespace LocalizationTool2
                     foreach (Match match in re.Matches(txt))
                     {
                         var linepos = txt.Substring(0, match.Index).Count(x => x == '\n') + 1;
-                        var str = match.Groups["sourcestring"].Value.Replace("\n", "\\n").Replace("\r", "\\r");
+                        var str = match.Groups["sourcestring"].Value.Replace("\\'", "'");
+                        str = Regex.Replace(str, "(\\\\+)([^rn])", "$1$1$2").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
                         LocalizationEntry le;
                         if (!map.TryGetValue(str, out le))
                             map[str] = new LocalizationEntry(str, f.Substring(sourcefolder.Length), linepos);
