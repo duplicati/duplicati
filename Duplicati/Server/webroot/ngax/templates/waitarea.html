@@ -1,7 +1,8 @@
 <div class="waitarea">
     <div ng-show="serverstate.activeTask == null || serverstate.activeTask.Item1 != taskid" translate>Waiting for task to begin</div>
     <div ng-show="serverstate.activeTask != null &amp;&amp; serverstate.activeTask.Item1 == taskid">
-        <div>{{text || Localization.localize('Task is running')}}</div>
+        <div ng-show="text">{{text}}</div>
+        <div ng-hide="text" translate>Task is running</div>
         <div class="progress" style="border: 1px solid;">
             <span>{{ServerStatus.progress_state_text[serverstate.lastPgEvent.Phase] || serverstate.lastPgEvent.Phase}}</span>
 

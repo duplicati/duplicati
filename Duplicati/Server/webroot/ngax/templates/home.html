@@ -11,7 +11,8 @@
             <strong>{{'Running task:' | translate}} </strong>
             {{activeBackup.Backup.Name}}
 
-            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop' | localize}}</a>
+            <a class="button" ng-click="stopTask()" ng-show="StopReqId == state.activeTask.Item1" translate>Force stop</a>
+            <a class="button" ng-click="stopTask()" ng-hide="StopReqId == state.activeTask.Item1" translate>Stop</a>
 
             <progress-bar ng-text="StateText" ng-progress="Progress"></progress-bar>
 
@@ -20,7 +21,8 @@
         <div ng-show="activeBackup == null &amp;&amp; state.activeTask != null">
             <strong translate>Running task</strong>
 
-            <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop' | localize}}</a>
+            <a class="button" ng-click="stopTask()" ng-show="StopReqId == state.activeTask.Item1" translate>Force stop</a>
+            <a class="button" ng-click="stopTask()" ng-hide="StopReqId == state.activeTask.Item1" translate>Stop</a>
         </div>
 
         <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">

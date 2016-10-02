@@ -11,7 +11,10 @@
 <div class="input text" ng-hide="HideFolderBrowser">
 
     <div class="input" style="padding-bottom: 0px">
-        <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">{{ShowHiddenFolders ? 'Hide hidden folders' : 'Show hidden folders' | localize}}</a>
+        <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">
+            <span ng-show="ShowHiddenFolders" translate>Hide hidden folders</span>
+            <span ng-hide="ShowHiddenFolders" translate>Show hidden folders</span>
+        </a>
 
         <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
     </div>

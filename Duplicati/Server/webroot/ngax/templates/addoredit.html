@@ -67,7 +67,8 @@
                             <div class="tools">
                                 <ul>
                                     <li>
-                                        <a href ng-click="togglePassphraseVisibility()">{{ShowPassphrase ? 'Hide' : 'Show' | localize}}</a>
+                                        <a href ng-click="togglePassphraseVisibility()" ng-show="ShowPassphrase" translate>Hide</a>
+                                        <a href ng-click="togglePassphraseVisibility()" ng-hide="ShowPassphrase" translate>Show</a>
                                     </li>
                                     <li>|</li>
                                     <li>
@@ -105,7 +106,10 @@
                     </div>
                     <div class="input text overlayButton">
                         <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
-                        <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">{{validatingSourcePath ? 'Validating ...' : 'Add path' | localize}}</a>
+                        <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">
+                            <span ng-show="validatingSourcePath" translate>Validating ...</span>
+                            <span ng-hide="validatingSourcePath" translate>Add path</span>
+                        </a>
                     </div>
                 </div>
                 <div class="box filters">

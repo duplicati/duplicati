@@ -5,7 +5,8 @@
         {{'Current version is {0} ({1})' | translate | args: systeminfo.ServerVersionName: systeminfo.ServerVersion}}
     </div>
 
-    <div class="prewrapped-text fixed-width-font">{{ChangeLog || Localization.localize('Loading ...')}}</div>
+    <div class="prewrapped-text fixed-width-font" ng-show="ChangeLog">{{ChangeLog}}</div>
+    <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate>Loading ...</div>
 
     <div class="buttons">
         <a href class="button" ng-show="serverstate.UpdaterState == 'Waiting' &amp;&amp; serverstate.UpdatedVersion != null" ng-click="doInstall()" translate>Install</a>

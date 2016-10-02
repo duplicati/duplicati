@@ -28,11 +28,13 @@
 
         <div>&nbsp;</div>
 
-        <div class="prewrapped-text">{{Acknowledgements || Localization.localize('Loading ...')}}</div>
+        <div class="prewrapped-text" ng-show="Acknowledgements">{{Acknowledgements}}</div>
+        <div class="prewrapped-text" ng-hide="Acknowledgements" translate="">Loading ...</div>
     </div>
 
     <div ng-show="Page == 'changelog'">
-        <div class="prewrapped-text fixed-width-font">{{ChangeLog || Localization.localize('Loading ...')}}</div>
+        <div class="prewrapped-text fixed-width-font" ng-show="ChangeLog">{{ChangeLog}}</div>
+        <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate="">Loading ...</div>
     </div>
 
     <div ng-show="Page == 'licenses'" class="licenses">
