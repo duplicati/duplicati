@@ -1,4 +1,4 @@
-backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, AppService, AppUtils) {
+backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, AppService, AppUtils, gettextCatalog) {
 
     var state = {};
     this.state = state;
@@ -47,9 +47,9 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
                 'ftp': null, 
                 'ssh': null, 
                 'webdav': null, 
-                'openstack': Localization.localize('OpenStack Object Storage / Swift'), 
-                's3': Localization.localize('S3 Compatible'), 
-                'aftp': Localization.localize('FTP (Alternative)')
+                'openstack': gettextCatalog.getString('OpenStack Object Storage / Swift'), 
+                's3': gettextCatalog.getString('S3 Compatible'), 
+                'aftp': gettextCatalog.getString('FTP (Alternative)')
             },
             local: {'file': null},
             prop: {
@@ -72,10 +72,10 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
         };
 
         state.GroupTypes = this.GroupTypes = [
-            Localization.localize('Local storage'),
-            Localization.localize('Standard protocols'),
-            Localization.localize('Proprietary'),
-            Localization.localize('Others')
+            gettextCatalog.getString('Local storage'),
+            gettextCatalog.getString('Standard protocols'),
+            gettextCatalog.getString('Proprietary'),
+            gettextCatalog.getString('Others')
         ];
 
         reloadBackendConfig();

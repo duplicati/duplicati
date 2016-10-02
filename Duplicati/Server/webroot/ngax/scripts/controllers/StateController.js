@@ -1,4 +1,4 @@
-backupApp.controller('StateController', function($scope, $timeout, Localization, ServerStatus, BackupList, AppService, AppUtils) {
+backupApp.controller('StateController', function($scope, $timeout, Localization, ServerStatus, BackupList, AppService, AppUtils, gettextCatalog) {
     $scope.state = ServerStatus.watch($scope);
     $scope.backups = BackupList.watch($scope);
     $scope.ServerStatus = ServerStatus;
@@ -21,7 +21,7 @@ backupApp.controller('StateController', function($scope, $timeout, Localization,
     };
 
     function updateStateDisplay() {
-        var text = Localization.localize('Running ...');
+        var text = gettextCatalog.getString('Running ...');
         var pg = -1;
         if ($scope.state.lastPgEvent != null)
         {

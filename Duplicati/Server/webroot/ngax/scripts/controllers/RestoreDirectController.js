@@ -1,4 +1,4 @@
-backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $location, Localization, AppService, AppUtils, SystemInfo, ServerStatus, DialogService) {
+backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $location, Localization, AppService, AppUtils, SystemInfo, ServerStatus, DialogService, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -13,7 +13,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
 
     $scope.doConnect = function() {
         $scope.connecting = true;
-        $scope.ConnectionProgress = Localization.localize('Registering temporary backup ...');
+        $scope.ConnectionProgress = gettextCatalog.getString('Registering temporary backup ...');
 
         var opts = {};
         var obj = {'Backup': {'TargetURL':  $scope.TargetURL } };
@@ -37,7 +37,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
         AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
             function(resp) {
 
-                $scope.ConnectionProgress = Localization.localize('Listing backup dates ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Listing backup dates ...');
                 $scope.BackupID = resp.data.ID;
                 $scope.fetchBackupTimes();
             }, function(resp) {
@@ -47,7 +47,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to connect: {0}', message));
+                DialogService.dialog(gettextCatalog.getString('Error'), Localization.localize('Failed to connect: {0}', message));
             }
         );
     };
@@ -68,11 +68,11 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
                     message = resp.data.Message;
 
                 if (message == 'encrypted-storage')
-                    message = Localization.localize('The target folder contains encrypted files, please supply the passphrase');
+                    message = gettextCatalog.getString('The target folder contains encrypted files, please supply the passphrase');
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to connect: {0}', message));
+                DialogService.dialog(gettextCatalog.getString('Error'), Localization.localize('Failed to connect: {0}', message));
             }
         );
     };
