@@ -1,11 +1,11 @@
 <div ng-show="SupportsSSL" class="input checkbox">
-    <label for="s3_ssl">{{'Use SSL' | localize}}</label>
+    <label for="s3_ssl" translate>Use SSL</label>
     <input type="checkbox" style="width: 15px; margin-right: 65%;" name="s3_ssl" id="s3_ssl" ng-model="$parent.UseSSL" />
 </div >
 
 <div class="input select">
 
-    <label for="s3_server">{{'Server' | localize}}</label>
+    <label for="s3_server" translate>Server</label>
 
     <select name="s3_server" id="s3_server" ng-model="$parent.s3_server" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_providers | orderBy: k">
         <option value="">{{'Custom server url ({0})' | localize: s3_server_custom || ''}}</option>
@@ -16,14 +16,14 @@
 </div>
 
 <div class="input text">
-    <label for="s3_bucket">{{'Bucket name' | localize}}</label>
+    <label for="s3_bucket" translate>Bucket name</label>
     <input type="text" id="s3_bucket" ng-model="$parent.Server" placeholder="{{'Bucket name' | localize}}" />
 </div>
 
 
 <div class="input select">
 
-    <label for="s3_region">{{'Bucket create region' | localize}}</label>
+    <label for="s3_region" translate>Bucket create region</label>
 
     <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k" title="{{'The region parameter is only applied when creating a new bucket' | localize}}">
         <option value="">{{'Custom region value ({0})' | localize: s3_region_custom || ''}}</option>
@@ -35,7 +35,7 @@
 
 <div class="input select">
 
-    <label for="s3_storageclass">{{'Storage class' | localize}}</label>
+    <label for="s3_storageclass" translate>Storage class</label>
 
     <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k" title="{{'The storage class affects the availability and price for a stored file' | localize}}">
         <option value="">{{'Custom storage class ({0})' | localize: s3_storageclass_custom || ''}}</option>
@@ -46,19 +46,19 @@
 </div>
 
 <div class="input text">
-    <label for="s3_path">{{'Folder path' | localize}}</label>
+    <label for="s3_path" translate>Folder path</label>
     <input type="text" name="s3_path" id="s3_path" ng-model="$parent.Path" placeholder="{{'Path or subfolder in the bucket' | localize}}" />
 </div>
 
 <div class="input text">
-    <label for="s3_username">{{'AWS Access ID' | localize}}</label>
+    <label for="s3_username" translate>AWS Access ID</label>
     <input type="text" name="s3_username" id="s3_username" ng-model="$parent.Username" placeholder="{{'AWS Access ID' | localize}}" />
 </div>
 <div class="input password">
-    <label for="s3_password">{{'AWS Access Key' | localize}}</label>
+    <label for="s3_password" translate>AWS Access Key</label>
     <input type="text" name="s3_password" id="s3_password" ng-model="$parent.Password" placeholder="{{'AWS Access Key' | localize}}" />
 </div>
 
 <div class="buttons">
-    <a href ng-click="s3_createIAMPolicy()" ng-show="$parent.s3_server == 's3.amazonaws.com'" >{{'Generate IAM access policy' | localize}}</a>
+    <a href ng-click="s3_createIAMPolicy()" ng-show="$parent.s3_server == 's3.amazonaws.com'"  translate>Generate IAM access policy</a>
 </div>

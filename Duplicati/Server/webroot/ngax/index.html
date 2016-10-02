@@ -125,7 +125,7 @@
             </div>
             
             <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
-                <span>{{'Donate' | localize}}</span>
+                <span translate>Donate</span>
                 <ul>
                     <li>
                         <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | localize}}" /></a>
@@ -136,20 +136,20 @@
                 </ul>
             </div>
             
-            <a href class="menubutton hidden" data-target="mainmenu">{{'Menu' | localize}}</a>
+            <a href class="menubutton hidden" data-target="mainmenu" translate>Menu</a>
         </div>
 
         <div class="body">
             <div class="mainmenu menu" id="mainmenu">
                 <ul>
                     <li>
-                        <a href="#/add" class="add">{{'Add new backup' | localize}}</a>
+                        <a href="#/add" class="add" translate>Add new backup</a>
                     </li>
                     <li>
-                        <a href="#/restoredirect" class="restore">{{'Restore backup' | localize}}</a>
+                        <a href="#/restoredirect" class="restore" translate>Restore backup</a>
                     </li>
                     <li>
-                        <a href="#/pause" id="pause" class="pause">{{'Pause' | localize}}</a>
+                        <a href="#/pause" id="pause" class="pause" translate>Pause</a>
                     </li>
                     <li>
                         <a href="#/settings" class="settings">{{'Settings' | translate}}</a>
@@ -169,7 +169,7 @@
             <div class="about-footer">
                 <ul>
                     <li>
-                        <a href="#/about">{{'About' | localize}}</a>
+                        <a href="#/about" translate>About</a>
                     </li>
                 </ul>
             </div>
@@ -193,7 +193,7 @@
             </div>
             
             <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
-                <span>{{'Donate' | localize}}</span>
+                <span translate>Donate</span>
                 <ul>
                     <li>
                         <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | localize}}" /></a>
@@ -228,7 +228,7 @@
 
     <div ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
-            <div class="title">{{'Connection lost' | localize}}</div>
+            <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState !='connecting'">
                 {{'The connection to the server is lost, attempting again in {0} ...' | localize: ((state.connectionAttemptTimer + 1000) | timeremaining) }}
             </div>
@@ -236,8 +236,8 @@
                 {{'Connnecting to server ...' | localize }}
             </div>
             <div class="content buttons">
-                <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button">{{'Connect now' | localize}}</a>
-                <a href ng-hide="state.connectionState != 'connecting'" class="button" style="cursor: default;">{{'Connecting...' | localize}}</a>
+                <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button" translate>Connect now</a>
+                <a href ng-hide="state.connectionState != 'connecting'" class="button" style="cursor: default;" translate>Connecting...</a>
             </div>
         </div>
     </div>

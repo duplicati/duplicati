@@ -19,7 +19,7 @@
             <div ng-if="getInputType(item) == 'timespan'" class="input type multiple">
                 <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
                 <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in timerangeMultipliers">
-                    <option value="">{{'custom' | localize }}</option>
+                    <option value="" translate>custom</option>
                 </select>
             </div>
 
@@ -31,9 +31,9 @@
     </li>
 
     <li>
-        <label>{{'Add advanced option' | localize }}</label>
+        <label translate>Add advanced option</label>
         <select ng-options="getDisplayName(opt.Name) group by opt.Category for opt in ngOptionList | orderBy: 'Name' " ng-model="NewItem">
-            <option value="">{{'- pick an option -' | localize }}</option>
+            <option value="" translate>- pick an option -</option>
         </select>
     </li>
 </ul>

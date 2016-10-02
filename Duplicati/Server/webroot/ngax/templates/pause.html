@@ -1,11 +1,11 @@
 <div class="pause" ng-controller="PauseController">
-    <h1>{{'Pause controls' | localize}}</h1>
+    <h1 translate>Pause controls</h1>
     
     <form class="styled">
 
         <ul>
             <li ng-show="state.programState != 'Running'">
-                <a href ng-click="resume()" class="resume">{{'Resume now' | localize}}</a>
+                <a href ng-click="resume()" class="resume" translate>Resume now</a>
             </li>
 
             <li>
@@ -24,7 +24,7 @@
                 <a href ng-click="pause('1h')" class="pause-60">{{'{0} Hour' | localize:1 }}</a>
             </li>
             <li>
-                <a href ng-click="pause()" class="pause-x">{{'Until resumed' | localize}}</a>
+                <a href ng-click="pause()" class="pause-x" translate>Until resumed</a>
             </li>
         </ul>
     </form>
