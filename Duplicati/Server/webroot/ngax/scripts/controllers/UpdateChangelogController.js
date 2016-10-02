@@ -1,4 +1,4 @@
-backupApp.controller('UpdateChangelogController', function($scope, Localization, BrandingService, ServerStatus, AppService, AppUtils, SystemInfo, gettextCatalog) {
+backupApp.controller('UpdateChangelogController', function($scope, BrandingService, ServerStatus, AppService, AppUtils, SystemInfo, gettextCatalog) {
     $scope.brandingService = BrandingService.watch($scope);
     $scope.systeminfo = SystemInfo.watch($scope);
     $scope.serverstate = ServerStatus.watch($scope);

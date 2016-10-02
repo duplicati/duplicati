@@ -1,4 +1,4 @@
-backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemInfo, DialogService, Localization, gettextCatalog) {
+backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemInfo, DialogService, gettextCatalog) {
 
     var self = this;
 

@@ -1,4 +1,4 @@
-backupApp.controller('LogController', function($scope, $routeParams, Localization, SystemInfo, ServerStatus, AppService, DialogService, gettextCatalog) {
+backupApp.controller('LogController', function($scope, $routeParams, SystemInfo, ServerStatus, AppService, DialogService, gettextCatalog) {
     $scope.state = ServerStatus.watch($scope);
     $scope.BackupID = $routeParams.backupid;
     $scope.SystemInfo = SystemInfo.watch($scope);

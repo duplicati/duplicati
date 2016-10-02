@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, Localization, AppService, AppUtils, SystemInfo, DialogService, EditBackupService, gettext, gettextCatalog) {
+backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService, gettext, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;

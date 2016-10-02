@@ -1,4 +1,4 @@
-backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, Localization, AppService, AppUtils, SystemInfo, ServerStatus, DialogService, gettextCatalog) {
+backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus, DialogService, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;

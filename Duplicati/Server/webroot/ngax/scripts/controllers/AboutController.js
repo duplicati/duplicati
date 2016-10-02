@@ -1,4 +1,4 @@
-backupApp.controller('AboutController', function($scope, $location, Localization, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils, gettextCatalog) {
+backupApp.controller('AboutController', function($scope, $location, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils, gettextCatalog) {
     $scope.brandingService = BrandingService.watch($scope);
     $scope.Page = 'general';
     $scope.sysinfo = SystemInfo.watch($scope);

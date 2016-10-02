@@ -1,4 +1,4 @@
-backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $location, Localization, AppService, DialogService, BackupList, AppUtils, gettextCatalog) {
+backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $location, AppService, DialogService, BackupList, AppUtils, gettextCatalog) {
 
     $scope.BackupID = $routeParams.backupid;
     

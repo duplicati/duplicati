@@ -1,4 +1,4 @@
-backupApp.controller('StateController', function($scope, $timeout, Localization, ServerStatus, BackupList, AppService, AppUtils, gettextCatalog) {
+backupApp.controller('StateController', function($scope, $timeout, ServerStatus, BackupList, AppService, AppUtils, gettextCatalog) {
     $scope.state = ServerStatus.watch($scope);
     $scope.backups = BackupList.watch($scope);
     $scope.ServerStatus = ServerStatus;

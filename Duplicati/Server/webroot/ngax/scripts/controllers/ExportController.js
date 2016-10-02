@@ -1,4 +1,4 @@
-backupApp.controller('ExportController', function($scope, $routeParams, Localization, AppService, DialogService, gettextCatalog) {
+backupApp.controller('ExportController', function($scope, $routeParams, AppService, DialogService, gettextCatalog) {
     $scope.ExportType = 'file';
     $scope.Connecting = false;
     $scope.BackupID = $routeParams.backupid;

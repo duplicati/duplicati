@@ -1,4 +1,4 @@
-backupApp.controller('HomeController', function ($scope, $location, ServerStatus, Localization, BackupList, AppService, DialogService, gettextCatalog) {
+backupApp.controller('HomeController', function ($scope, $location, ServerStatus, BackupList, AppService, DialogService, gettextCatalog) {
     $scope.backups = BackupList.watch($scope);
 
     $scope.doRun = function(id) {

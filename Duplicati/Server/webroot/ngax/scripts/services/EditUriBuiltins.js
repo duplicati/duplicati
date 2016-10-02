@@ -1,4 +1,4 @@
-backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization, SystemInfo, EditUriBackendConfig, DialogService, $http, gettextCatalog) {
+backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http, gettextCatalog) {
 
     EditUriBackendConfig.mergeServerAndPath = function(scope) {
         if ((scope.Server || '') != '') {
