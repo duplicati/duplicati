@@ -1,8 +1,8 @@
 <div ng-controller="UpdateChangelogController">
-    <h1>{{'Changelog for {0} {1}' | localize: brandingService.appName: Version || '-unknown-'}}</h1>
+    <h1>{{'Changelog for {0} {1}' | translate | args: brandingService.appName: Version || '-unknown-'}}</h1>
 
     <div>
-        {{'Current version is {0} ({1})' | localize: systeminfo.ServerVersionName: systeminfo.ServerVersion}}
+        {{'Current version is {0} ({1})' | translate | args: systeminfo.ServerVersionName: systeminfo.ServerVersion}}
     </div>
 
     <div class="prewrapped-text fixed-width-font">{{ChangeLog || Localization.localize('Loading ...')}}</div>

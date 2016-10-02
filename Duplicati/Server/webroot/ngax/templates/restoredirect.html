@@ -8,7 +8,7 @@
                 <h1 translate>Restore files</h1>
                 <div class="input textarea linklabel">
                     <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Connect to' | translate}} &gt;</a></label>
-                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'{0}\' link' | localize: (('Connect to' | localize) + ' &gt;')}}"></textarea>
+                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'{0}\' link' | translate | args: (('Connect to' | localize) + ' &gt;')}}"></textarea>
                 </div>
                 <div class="input password">
                     <label for="password" translate>Passphrase</label>
@@ -16,7 +16,7 @@
                 </div>
                 <div class="input textarea">
                     <label for="options">{{'Advanced Options' | translate}}<span class="info">i</span></label>
-                    <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="{{'Enter one option per line in command-line format, eg. {0}' | localize: '--prefix=backup'}}"></textarea>
+                    <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="{{'Enter one option per line in command-line format, eg. {0}' | translate | args: '--prefix=backup'}}"></textarea>
                 </div>
                 <div class="buttons" ng-hide="connecting">
                     <a href="#" class="submit" translate>Cancel</a>

@@ -93,9 +93,9 @@
             <h3>
                 <div class="hint-text" translate>Your files and folders have been restored successfully.</div>
                 <div ng-hide="SystemInfo.SuppressDonationMessages">
-                    <div id="restore-hint-donate" class="hint-text">{{'Did we help save your files? If so, please consider supporting Duplicati with a donation. We suggest {0} for private use and {1} for commercial use.' | localize: '10€' : '100€'}}</div>
+                    <div id="restore-hint-donate" class="hint-text">{{'Did we help save your files? If so, please consider supporting Duplicati with a donation. We suggest {0} for private use and {1} for commercial use.' | translate | args: '10€' : '100€'}}</div>
                     <div id="restore-hint-paypal" class="hint-text"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="blank" translate>VISA, Mastercard, ... via Paypal</a></div>
-                    <div id="restore-hint-bitcoin" class="hint-text"><a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="blank">{{'Bitcoin: {0}' | localize: '1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf'}}</a></div>
+                    <div id="restore-hint-bitcoin" class="hint-text"><a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="blank">{{'Bitcoin: {0}' | translate | args: '1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf'}}</a></div>
                 </div>
             </h3>
             <div class="buttons">

@@ -230,7 +230,7 @@
         <div class="info">
             <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState !='connecting'">
-                {{'The connection to the server is lost, attempting again in {0} ...' | localize: ((state.connectionAttemptTimer + 1000) | timeremaining) }}
+                {{'The connection to the server is lost, attempting again in {0} ...' | translate | args: ((state.connectionAttemptTimer + 1000) | timeremaining)}}
             </div>
             <div class="content" ng-hide="state.connectionState !='connecting'">
                 {{'Connnecting to server ...' | translate}}

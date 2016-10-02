@@ -10,7 +10,7 @@
 </div>
 
 <div ng-show="TemplateUrl == null &amp;&amp; Backend != null">
-    <h3>{{'No editor found for the {0} storage type' | localize: ('&quot;' + Backend.DisplayName + '&quot;')}}</h3>
+    <h3>{{'No editor found for the {0} storage type' | translate | args: ('&quot;' + Backend.DisplayName + '&quot;')}}</h3>
 </div>
 
 <div ng-show="Backend == null">

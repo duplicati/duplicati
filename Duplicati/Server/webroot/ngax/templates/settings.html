@@ -39,7 +39,7 @@
             <label for="userinterfacelanguage" translate>Language in user interface</label>
 
             <select id="userinterfacelanguage" ng-model="uiLanguage" ng-options="item.Code as item.DisplayName + ' (' + item.Code + ', ' + item.EnglishName + ')' for item in SystemInfo.SupportedLocales">
-                <option value="">{{'Browser default ({0}, {1})' | localize: SystemInfo.BrowserLocale.DisplayName: SystemInfo.BrowserLocale.Code}}</option>
+                <option value="">{{'Browser default ({0}, {1})' | translate | args: SystemInfo.BrowserLocale.DisplayName: SystemInfo.BrowserLocale.Code}}</option>
             </select>
         </div>
 
@@ -54,8 +54,8 @@
         <h2 translate>Update channel</h2>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelDefault" value="" name="updateChannel" ng-model="updateChannel" />
-            <label for="updateChannelDefault">{{'Default ({0})' | localize: SystemInfo.DefaultUpdateChannel}}</label>
-            <div class="sublabel" class="">{{'Same as the base install version: {0}' | localize: SystemInfo.BaseVersionName}}</div>
+            <label for="updateChannelDefault">{{'Default ({0})' | translate | args: SystemInfo.DefaultUpdateChannel}}</label>
+            <div class="sublabel" class="">{{'Same as the base install version: {0}' | translate | args: SystemInfo.BaseVersionName}}</div>
         </div>
         
         <!--
@@ -92,7 +92,7 @@
         <div class="input mixed multiple">
             <label for="usagereporterlevel" translate>Anonymous usage reports</label>
             <select id="usagereporterlevel" ng-model="usageReporterLevel">
-                <option value="">{{'System default ({0})' | localize: SystemInfo.DefaultUsageReportLevel}}</option>
+                <option value="">{{'System default ({0})' | translate | args: SystemInfo.DefaultUsageReportLevel}}</option>
                 <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
                 <option value="warning" translate>Warnings, errors and crashes</option>
                 <option value="error" translate>Errors and crashes</option>
@@ -109,7 +109,7 @@
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
             <label for="backupOptions" translate>Options</label>
             <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle" translate>Edit as list</a>
-            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | localize: '--dblock-size=100MB'}}"></textarea>
+            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | translate | args: '--dblock-size=100MB'}}"></textarea>
         </div>
 
         <div class="input" ng-hide="ShowAdvancedTextArea">

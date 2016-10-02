@@ -246,7 +246,7 @@
                 <div class="input textarea" ng-show="ShowAdvancedTextArea">
                     <h2><label for="backupOptions" translate>Advanced options</label></h2>
                     <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> {{'Edit as text' | translate}}</a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | localize: '--dblock-size=100MB'}}"></textarea>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | translate | args: '--dblock-size=100MB'}}"></textarea>
                 </div>
                 
                 <div class="input" ng-hide="ShowAdvancedTextArea">

@@ -8,7 +8,7 @@
     <label for="s3_server" translate>Server</label>
 
     <select name="s3_server" id="s3_server" ng-model="$parent.s3_server" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_providers | orderBy: k">
-        <option value="">{{'Custom server url ({0})' | localize: s3_server_custom || ''}}</option>
+        <option value="">{{'Custom server url ({0})' | translate | args: s3_server_custom || ''}}</option>
     </select>
 
     <input ng-hide="contains_value(s3_providers, s3_server)" type="text" id="s3_server_custom" ng-model="$parent.s3_server_custom" placeholder="{{'Custom S3 endpoint' | translate}}"/>
@@ -26,7 +26,7 @@
     <label for="s3_region" translate>Bucket create region</label>
 
     <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k" title="{{'The region parameter is only applied when creating a new bucket' | translate}}">
-        <option value="">{{'Custom region value ({0})' | localize: s3_region_custom || ''}}</option>
+        <option value="">{{'Custom region value ({0})' | translate | args: s3_region_custom || ''}}</option>
     </select>
 
     <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom" ng-model="$parent.s3_region_custom" placeholder="{{'Custom region for creating buckets' | translate}}"/>
@@ -38,7 +38,7 @@
     <label for="s3_storageclass" translate>Storage class</label>
 
     <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k" title="{{'The storage class affects the availability and price for a stored file' | translate}}">
-        <option value="">{{'Custom storage class ({0})' | localize: s3_storageclass_custom || ''}}</option>
+        <option value="">{{'Custom storage class ({0})' | translate | args: s3_storageclass_custom || ''}}</option>
     </select>
 
     <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom" ng-model="$parent.s3_storageclass_custom" placeholder="Custom bucket storage class"/>
