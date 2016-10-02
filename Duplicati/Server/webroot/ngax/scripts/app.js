@@ -11,7 +11,7 @@ var backupApp = angular.module(
 
 angular.module('backupApp').run(function (gettextCatalog) {
     gettextCatalog.setCurrentLanguage('de');
-    gettextCatalog.debug = true;
+    // gettextCatalog.debug = true;
 });
 
 backupApp.constant('appConfig', {
