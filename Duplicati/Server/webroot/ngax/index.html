@@ -52,9 +52,13 @@
     <script type="text/javascript" src="scripts/libs/dxTree.js"></script>
     <script type="text/javascript" src="scripts/libs/moment-with-locales.min.js"></script>
 
+    <script type="text/javascript" src="scripts/libs/angular-gettext.min.js"></script>    
+
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/menu.js"></script>
     
+    <script type="text/javascript" src="scripts/angular-gettext-cli_compiled_js_output.js"></script>
+
     <script type="text/javascript" src="scripts/services/AppUtils.js"></script>
     <script type="text/javascript" src="scripts/services/BrandingService.js"></script>
     <script type="text/javascript" src="scripts/services/BackupList.js"></script>
@@ -84,6 +88,7 @@
     <script type="text/javascript" src="scripts/controllers/DialogController.js"></script>
     <script type="text/javascript" src="scripts/controllers/LocalDatabaseController.js"></script>
 
+    <script type="text/javascript" src="scripts/filters/args.js"></script>
     <script type="text/javascript" src="scripts/filters/localize.js"></script>
     <script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
     <script type="text/javascript" src="scripts/filters/highlight.js"></script>
@@ -147,10 +152,10 @@
                         <a href="#/pause" id="pause" class="pause">{{'Pause' | localize}}</a>
                     </li>
                     <li>
-                        <a href="#/settings" class="settings">{{'Settings' | localize}}</a>
+                        <a href="#/settings" class="settings">{{'Settings' | translate}}</a>
                     </li>
                     <li>
-                        <a href="#/log" class="log">{{'Show log' | localize}}</a>
+                        <a href="#/log" class="log">{{'Show log (not translated)' | translate}}</a>
                     </li>
 
                 </ul>

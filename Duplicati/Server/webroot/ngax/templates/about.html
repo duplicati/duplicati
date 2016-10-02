@@ -1,5 +1,5 @@
 <div ng-controller="AboutController">
-    <h1>{{'About {0}' | localize: brandingService.appName}}</h1>
+    <h1>{{'About {0}' | translate | args: brandingService.appName}}</h1>
     <ul class="tabs">
         <li ng-class="{active: Page=='general'}"><a href ng-click="Page='general'">{{'General' | localize}}</a></li>
         <li ng-class="{active: Page=='changelog'}"><a href ng-click="Page='changelog'">{{'Changelog' | localize}}</a></li>
@@ -11,7 +11,7 @@
         <div ng-bind-html="'{0} was primarily developed by {1} and {2}. {0} can be downloaded from {3}. {0} is licensed under the {4}.' | localize: brandingService.appName: '<a href=&quot;mailto:kenneth@duplicati.com&quot;>Kenneth Skovhede</a>': '<a href=&quot;mailto:rene@duplicati.com&quot;>Rene Stach</a>': '<a href=&quot;http://www.duplicati.com&quot; target=&quot;blank&quot;>duplicati.com</a>': '<a href=&quot;https://www.gnu.org/licenses/lgpl.html&quot;>GNU Lesser General Public License</a>' "></div>
 
         <div>&nbsp;</div>
-        <div>{{'You are currently running {0} {1}' | localize: brandingService.appName: sysinfo.ServerVersionName || 'unknown'}}</div>
+        <div>{{'You are currently running {0} {1}' | translate | args: brandingService.appName: sysinfo.ServerVersionName || 'unknown'}}</div>
 
         <div ng-show="state.updatedVersion != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
             Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href ng-click="doStartUpdateDownload()">download now</a>

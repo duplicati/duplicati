@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Project-Id-Version: \n"
+
+#: Server/webroot/ngax/templates/about.html:2
+msgid "About {0}"
+msgstr ""
+
+#: Server/webroot/ngax/index.html:155
+msgid "Settings"
+msgstr ""
+
+#: Server/webroot/ngax/index.html:158
+msgid "Show log (not translated)"
+msgstr ""
+
+#: Server/webroot/ngax/templates/about.html:14
+msgid "You are currently running {0} {1}"
+msgstr ""
