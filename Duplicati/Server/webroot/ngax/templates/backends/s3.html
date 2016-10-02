@@ -11,13 +11,13 @@
         <option value="">{{'Custom server url ({0})' | localize: s3_server_custom || ''}}</option>
     </select>
 
-    <input ng-hide="contains_value(s3_providers, s3_server)" type="text" id="s3_server_custom" ng-model="$parent.s3_server_custom" placeholder="{{'Custom S3 endpoint' | localize}}"/>
+    <input ng-hide="contains_value(s3_providers, s3_server)" type="text" id="s3_server_custom" ng-model="$parent.s3_server_custom" placeholder="{{'Custom S3 endpoint' | translate}}"/>
 
 </div>
 
 <div class="input text">
     <label for="s3_bucket" translate>Bucket name</label>
-    <input type="text" id="s3_bucket" ng-model="$parent.Server" placeholder="{{'Bucket name' | localize}}" />
+    <input type="text" id="s3_bucket" ng-model="$parent.Server" placeholder="{{'Bucket name' | translate}}" />
 </div>
 
 
@@ -25,11 +25,11 @@
 
     <label for="s3_region" translate>Bucket create region</label>
 
-    <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k" title="{{'The region parameter is only applied when creating a new bucket' | localize}}">
+    <select name="s3_region" id="s3_region" ng-model="$parent.s3_region" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k" title="{{'The region parameter is only applied when creating a new bucket' | translate}}">
         <option value="">{{'Custom region value ({0})' | localize: s3_region_custom || ''}}</option>
     </select>
 
-    <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom" ng-model="$parent.s3_region_custom" placeholder="{{'Custom region for creating buckets' | localize}}"/>
+    <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom" ng-model="$parent.s3_region_custom" placeholder="{{'Custom region for creating buckets' | translate}}"/>
 
 </div>
 
@@ -37,7 +37,7 @@
 
     <label for="s3_storageclass" translate>Storage class</label>
 
-    <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k" title="{{'The storage class affects the availability and price for a stored file' | localize}}">
+    <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k" title="{{'The storage class affects the availability and price for a stored file' | translate}}">
         <option value="">{{'Custom storage class ({0})' | localize: s3_storageclass_custom || ''}}</option>
     </select>
 
@@ -47,16 +47,16 @@
 
 <div class="input text">
     <label for="s3_path" translate>Folder path</label>
-    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.Path" placeholder="{{'Path or subfolder in the bucket' | localize}}" />
+    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.Path" placeholder="{{'Path or subfolder in the bucket' | translate}}" />
 </div>
 
 <div class="input text">
     <label for="s3_username" translate>AWS Access ID</label>
-    <input type="text" name="s3_username" id="s3_username" ng-model="$parent.Username" placeholder="{{'AWS Access ID' | localize}}" />
+    <input type="text" name="s3_username" id="s3_username" ng-model="$parent.Username" placeholder="{{'AWS Access ID' | translate}}" />
 </div>
 <div class="input password">
     <label for="s3_password" translate>AWS Access Key</label>
-    <input type="text" name="s3_password" id="s3_password" ng-model="$parent.Password" placeholder="{{'AWS Access Key' | localize}}" />
+    <input type="text" name="s3_password" id="s3_password" ng-model="$parent.Password" placeholder="{{'AWS Access Key' | translate}}" />
 </div>
 
 <div class="buttons">

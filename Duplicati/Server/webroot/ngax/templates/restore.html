@@ -15,7 +15,7 @@
 
             <div class="input text search overlayButton multiple" style="max-width: none">
                 <label for="searchfilter" translate>Search for files</label>
-                <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="{{'Type to highlight files' | localize}}" ng-on-enter-press="doSearch()" ng-on-escape-press="clearSearch()" />
+                <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="{{'Type to highlight files' | translate}}" ng-on-enter-press="doSearch()" ng-on-escape-press="clearSearch()" />
                 <a href id="searchfiltersubmit" class="button" ng-click="doSearch()" ng-cancelsearch="clearSearch()" ng-enabled="!Searching">{{ Searching ? 'Busy...' : 'Search' | localize}}</a>
             </div>
 
@@ -45,7 +45,7 @@
 
             <div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
                 <label for="restore_path" translate>Folder path</label>
-                <input type="text" name="restore_path" id="restore_path" ng-model="RestorePath" placeholder="{{'Enter the destination path' | localize}}" />
+                <input type="text" name="restore_path" id="restore_path" ng-model="RestorePath" placeholder="{{'Enter the destination path' | translate}}" />
                 <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false" translate>Browse</a>
             </div>
 

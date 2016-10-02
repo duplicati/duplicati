@@ -4,7 +4,7 @@
 
 <div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
     <label for="file_path" translate>Folder path</label>
-    <input type="text" name="file_path" id="file_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | localize}}" />
+    <input type="text" name="file_path" id="file_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | translate}}" />
     <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false" translate>Browse</a>
 </div>
 
@@ -24,9 +24,9 @@
 
 <div class="input text">
     <label for="file_username" translate>Username</label>
-    <input type="text" name="file_username" id="file_username" ng-model="$parent.Username" placeholder="{{'Optional authentication username' | localize}}" />
+    <input type="text" name="file_username" id="file_username" ng-model="$parent.Username" placeholder="{{'Optional authentication username' | translate}}" />
 </div>
 <div class="input password">
     <label for="file_password" translate>Password</label>
-    <input type="text" name="file_password" id="file_password" ng-model="$parent.Password" placeholder="{{'Optional authentication password' | localize}}"  />
+    <input type="text" name="file_password" id="file_password" ng-model="$parent.Password" placeholder="{{'Optional authentication password' | translate}}"  />
 </div>

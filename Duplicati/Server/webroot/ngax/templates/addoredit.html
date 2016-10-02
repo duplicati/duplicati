@@ -39,10 +39,10 @@
                         
                         <div class="input text">
                             <label for="name" translate>Name</label>
-                            <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | localize}}"/>
+                            <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
                         </div>
                         <div class="input textarea linklabel">
-                            <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Backup to' | localize}} &gt;</a></label>
+                            <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Backup to' | translate}} &gt;</a></label>
                             <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="{{'Enter a url, or click the \'{0}\' link' | localize: ('Backup to' | localize) + ' &gt;'}}"></textarea>
                         </div>
                         <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
@@ -80,7 +80,7 @@
                         </div>
                         
                         <div class="buttons">
-                            <input class="submit next" type="button" id="nextStep1" ng-click="nextPage()" value="{{'Next' | localize}} &gt;" />
+                            <input class="submit next" type="button" id="nextStep1" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
                         </div>
                     </div>
                 </form>
@@ -93,8 +93,8 @@
                 <div class="box browser">
                     <h2 translate>Folders</h2>
                     <div class="input checklinks">
-                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | localize}}</a>
-                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced"><i class="fa {{EditSourceAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | localize}}</a>
+                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
+                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced"><i class="fa {{EditSourceAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced" ng-show-hidden="showhiddenfolders">
                         <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters"></source-folder-picker>
@@ -111,7 +111,7 @@
                 <div class="box filters">
                     <h2 translate>Filters</h2>
                     <div class="input link">
-                        <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced"><i class="fa {{EditFilterAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | localize}}</a>
+                        <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced"><i class="fa {{EditFilterAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
                     </div>
                     <div class="input textarea" ng-show="EditFilterAdvanced">
                         <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
@@ -123,9 +123,9 @@
                                 <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
                                 </select>
     
-                                <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | localize}}"/>
+                                <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
     
-                                <a class="button" href title="{{'Remove' | localize}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
+                                <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
                             </li>
     
                         </ul>
@@ -158,8 +158,8 @@
                     </div>
                 </div>
                 <div class="buttons">
-                    <input class="submit next" type="button" id="nextStep2" ng-click="nextPage()" value="{{'Next' | localize}} &gt;" />
-                    <input class="submit prev" type="button" id="prevStep2" ng-click="prevPage()" value="&lt; {{'Previous' | localize}}" />
+                    <input class="submit next" type="button" id="nextStep2" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    <input class="submit prev" type="button" id="prevStep2" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
                 </div>
             </form>
         </div>
@@ -207,8 +207,8 @@
                 </div>
 
                 <div class="buttons">
-                    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="{{'Next' | localize}} &gt;" />
-                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; {{'Previous' | localize}}" />
+                    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
                 </div>
             </form>
         </div>
@@ -245,19 +245,19 @@
                 </div>
                 <div class="input textarea" ng-show="ShowAdvancedTextArea">
                     <h2><label for="backupOptions" translate>Advanced options</label></h2>
-                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> {{'Edit as text' | localize}}</a>
+                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> {{'Edit as text' | translate}}</a>
                     <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | localize: '--dblock-size=100MB'}}"></textarea>
                 </div>
                 
                 <div class="input" ng-hide="ShowAdvancedTextArea">
                     <h2><label for="backupOptions" translate>Advanced options</label></h2>
-                    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> {{'Edit as text' | localize}}</a>
+                    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> {{'Edit as text' | translate}}</a>
                     <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
                 </div>
 
                 <div class="buttons">
-                    <input class="submit save" type="submit" id="save" ng-click="save()" value="{{'Save' | localize}}" />
-                    <input class="submit prev" type="button" id="prevStep4" ng-click="prevPage()" value="&lt; {{'Previous' | localize}}" />
+                    <input class="submit save" type="submit" id="save" ng-click="save()" value="{{'Save' | translate}}" />
+                    <input class="submit prev" type="button" id="prevStep4" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
                 </div>
             </form>
         </div>

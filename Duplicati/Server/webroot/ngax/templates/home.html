@@ -3,12 +3,12 @@
 
         <div ng-hide="state.programState == 'Running'">
             <strong style="margin-right: 0px;" translate>Backups are currently paused,</strong>
-            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">{{'resuming in' | localize}} {{state.pauseTimeRemain | timeremaining}}</div>
+            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">{{'resuming in' | translate}} {{state.pauseTimeRemain | timeremaining}}</div>
             <a href ng-click="sendResume()" translate>click to resume now</a>
         </div>
 
         <div ng-hide="activeBackup == null">
-            <strong>{{'Running task:' | localize}} </strong>
+            <strong>{{'Running task:' | translate}} </strong>
             {{activeBackup.Backup.Name}}
 
             <a class="button" ng-click="stopTask()">{{StopReqId == state.activeTask.Item1 ? 'Force stop' : 'Stop' | localize}}</a>
@@ -24,7 +24,7 @@
         </div>
 
         <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">
-            <strong>{{'Next task:' | localize}} </strong>
+            <strong>{{'Next task:' | translate}} </strong>
             {{nextTask.Backup.Name}}
         </div>
 
@@ -72,7 +72,7 @@
                     <dt translate>Last successful run:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}">{{item.Backup.Metadata.LastBackupFinished | moment: 'calendar'}} ({{'took {0}' | localize: formatDuration(item.Backup.Metadata.LastDuration)}})</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
-                    {{'Never' | localize}} - <a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
+                    {{'Never' | translate}} - <a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
                     </dd>
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
