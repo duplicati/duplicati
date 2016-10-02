@@ -231,6 +231,7 @@ ZIP_SHA256=`shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' '
 
 cat > "latest.json" <<EOF
 {
+	"version": "${RELEASE_VERSION}",
 	"zip": "${RELEASE_FILE_NAME}.zip",
 	"zipsig": "${RELEASE_FILE_NAME}.zip.sig",
 	"zipsigasc": "${RELEASE_FILE_NAME}.zip.sig.asc",
@@ -243,9 +244,12 @@ cat > "latest.json" <<EOF
 }
 EOF
 
+echo "duplicati_version_info =" > "latest.js"
+cat "latest.json" >> "latest.js"
+echo ";" >> "latest.js"
 
-echo "${RELEASE_FILE_NAME}" > "latest.json"
 aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
+aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
 
 echo "Propagating to other build types"
 for OTHER in ${OTHER_UPLOADS}; do
