@@ -75,7 +75,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 
     this.require_field = function(scope, field, label) {
         if ((scope[field] || '').trim().length == 0)
-            return self.show_error_dialog(Localization.localize('You must fill in {0}', label || field));
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in {{field}}', { field: label || field }));
 
         return true;
     };

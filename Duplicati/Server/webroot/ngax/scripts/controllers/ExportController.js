@@ -25,7 +25,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, Localiza
                     if (resp.data != null && resp.data.Message != null)
                         message = resp.data.Message;
 
-                    DialogService.dialog(gettextCatalog.getString('Error'), Localization.localize('Failed to connect: {0}', message));
+                    DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
                 }
             );
         } else {

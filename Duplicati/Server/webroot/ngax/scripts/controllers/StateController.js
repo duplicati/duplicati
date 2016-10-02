@@ -30,7 +30,7 @@ backupApp.controller('StateController', function($scope, $timeout, Localization,
 
             if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles') {
                 if ($scope.state.lastPgEvent.StillCounting) {
-                    text = Localization.localize('Counting ({0} files found, {1})', $scope.state.lastPgEvent.TotalFileCount, AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize));
+                    text = gettextCatalog.getString('Counting ({{files}} files found, {{size}})', { files: $scope.state.lastPgEvent.TotalFileCount, size: AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize) });
                     pg = 0;
                 } else {
                     var filesleft = $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount;
@@ -42,7 +42,7 @@ backupApp.controller('StateController', function($scope, $timeout, Localization,
                     else if (pg >= 0.90)
                         pg = 0.90;
 
-                    text = Localization.localize('{0} files ({1}) to go', filesleft, AppUtils.formatSizeString(sizeleft));
+                    text = gettextCatalog.getString('{{files}} files ({{size}}) to go', { files: filesleft, size: AppUtils.formatSizeString(sizeleft) });
                 }
             }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Finalize' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')

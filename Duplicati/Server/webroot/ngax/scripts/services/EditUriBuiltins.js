@@ -116,7 +116,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
                     scope.Username = data.data.Result.accessid;
                     scope.Password = data.data.Result.secretkey;
 
-                    DialogService.dialog(gettextCatalog.getString('Created new limited user'), Localization.localize('New user name is {0}.\nUpdated credentials to use the new limited user', data.data.Result.username), [gettextCatalog.getString('OK')], callback);
+                    DialogService.dialog(gettextCatalog.getString('Created new limited user'), gettextCatalog.getString('New user name is {{user}}.\nUpdated credentials to use the new limited user', { user: data.data.Result.username}), [gettextCatalog.getString('OK')], callback);
 
                 }, function(data) { 
                     dlg.dismiss();
@@ -571,7 +571,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
             var p = (scope.Path || '').trim();
 
             if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
-                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), Localization.localize('The path should start with "{0}" or "{1}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', prefix, 'default'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix}}" or "{{def}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {prefix: prefix, def: 'default' }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                     if (ix == 2) {
                         while (p.indexOf('/') == 0)
                             p = p.substr(1);

@@ -207,7 +207,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
     this.parse_extra_options = function(str, dict) {
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
-                DialogService.dialog(gettextCatalog.getString('Error'), Localization.localize('Duplicate option {0}', k));
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Duplicate option {{opt}}', { opt: k }));
                 return false;
             }
 

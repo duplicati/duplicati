@@ -25,7 +25,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
     resetBackupItem();
 
     $scope.doDelete = function(continuation) {
-        DialogService.dialog(gettextCatalog.getString('Confirm delete'), Localization.localize('Do you really want to delete the local database for: {0}', $scope.Backup.Backup.Name), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+        DialogService.dialog(gettextCatalog.getString('Confirm delete'), gettextCatalog.getString('Do you really want to delete the local database for: {{name}}', { name: $scope.Backup.Backup.Name }), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
             if (ix == 1)
                 AppService.post('/backup/' + $scope.BackupID + '/deletedb').then(
                     function() {
@@ -63,7 +63,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
                     if (continuation != null)
                         continuation();
 
-                }, AppUtils.connectionError(Localization.localize(move ? 'Move failed:' : 'Update failed:') + ' ')
+                }, AppUtils.connectionError(move ? gettextCatalog.getString('Move failed:') : gettextCatalog.getString('Update failed:') + ' ')
             );
         };
 
