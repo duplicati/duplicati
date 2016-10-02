@@ -131,7 +131,8 @@ namespace Duplicati.Library.Localization
                     }
                     else if (string.Equals(key, "msgstr", StringComparison.OrdinalIgnoreCase))
                     {
-                        m_messages[msgid] = value;
+                        if (!string.IsNullOrWhiteSpace(value))
+                            m_messages[msgid] = value;
                     }
                 }
             }
