@@ -8,7 +8,7 @@
     </ul>
 
     <div ng-show="Page == 'general'">
-        <div ng-bind-html="'{0} was primarily developed by {1} and {2}. {0} can be downloaded from {3}. {0} is licensed under the {4}.' | localize: brandingService.appName: '<a href=&quot;mailto:kenneth@duplicati.com&quot;>Kenneth Skovhede</a>': '<a href=&quot;mailto:rene@duplicati.com&quot;>Rene Stach</a>': '<a href=&quot;http://www.duplicati.com&quot; target=&quot;blank&quot;>duplicati.com</a>': '<a href=&quot;https://www.gnu.org/licenses/lgpl.html&quot;>GNU Lesser General Public License</a>' "></div>
+        <div ng-bind-html="'{0} was primarily developed by {1} and {2}. {0} can be downloaded from {3}. {0} is licensed under the {4}.' | translate | args: brandingService.appName: '<a href=&quot;mailto:kenneth@duplicati.com&quot;>Kenneth Skovhede</a>': '<a href=&quot;mailto:rene@duplicati.com&quot;>Rene Stach</a>': '<a href=&quot;http://www.duplicati.com&quot; target=&quot;blank&quot;>duplicati.com</a>': '<a href=&quot;https://www.gnu.org/licenses/lgpl.html&quot;>GNU Lesser General Public License</a>'"></div>
 
         <div>&nbsp;</div>
         <div>{{'You are currently running {0} {1}' | translate | args: brandingService.appName: sysinfo.ServerVersionName || 'unknown'}}</div>

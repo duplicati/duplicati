@@ -6,7 +6,7 @@
             <div ng-show="item.DownloadLink != null">
                 <div translate>If the backup file was not downloaded automatically,</div>
                 <div>
-                    <a href="{{item.DownloadLink}}" target="_blank">{{'right click and choose {0}' | translate | args: ('&quot;' + ('Save as ...' | localize) + '&quot;')}}</a>
+                    <a href="{{item.DownloadLink}}" target="_blank">{{'right click and choose {0}\'Save as ...\'{0}' | translate | args: '&quot;'}}</a>
                 </div>
             </div>
             <div ng-if="item.Action != 'update:new'" class="buttons">
@@ -21,7 +21,7 @@
             <div ng-if="item.Action == 'update:new'">
                 <div class="message">{{'New update found: {0}' | translate | args: item.Message}}</div>
 
-                <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update...' | localize" ng-progress="state.updateDownloadProgress"></progress-bar>
+                <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update...' | translate" ng-progress="state.updateDownloadProgress"></progress-bar>
 
                 <div class="buttons">
                     <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>

@@ -8,7 +8,7 @@
                 <h1 translate>Restore files</h1>
                 <div class="input textarea linklabel">
                     <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Connect to' | translate}} &gt;</a></label>
-                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'{0}\' link' | translate | args: (('Connect to' | localize) + ' &gt;')}}"></textarea>
+                    <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'Connect to {0}\' link' | translate | args: '&gt;'}}"></textarea>
                 </div>
                 <div class="input password">
                     <label for="password" translate>Passphrase</label>

@@ -43,7 +43,7 @@
                         </div>
                         <div class="input textarea linklabel">
                             <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Backup to' | translate}} &gt;</a></label>
-                            <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="{{'Enter a url, or click the \'{0}\' link' | localize: ('Backup to' | localize) + ' &gt;'}}"></textarea>
+                            <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="{{'Enter a url, or click the \'Backup to {0}\' link' | translate | args: '&gt;'}}"></textarea>
                         </div>
                         <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
                             <label for="encryption" translate>Encryption</label>
