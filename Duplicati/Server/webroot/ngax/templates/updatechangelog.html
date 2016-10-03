@@ -1,9 +1,7 @@
 <div ng-controller="UpdateChangelogController">
-    <h1>{{'Changelog for {0} {1}' | translate | args: brandingService.appName: Version || '-unknown-'}}</h1>
+    <h1 translate translate-params-appname="brandingService.appName" translate-params-version="Version || '-unknown-'">Changelog for {{appname}} {{version}}</h1>
 
-    <div>
-        {{'Current version is {0} ({1})' | translate | args: systeminfo.ServerVersionName: systeminfo.ServerVersion}}
-    </div>
+    <div translate translate-params-versionname="systeminfo.ServerVersionName" translate-params-versionnumber="systeminfo.ServerVersion">Current version is {{versionname}} ({{versionnumber}})</div>
 
     <div class="prewrapped-text fixed-width-font" ng-show="ChangeLog">{{ChangeLog}}</div>
     <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate>Loading ...</div>

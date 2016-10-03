@@ -1,5 +1,5 @@
 <div ng-controller="AboutController">
-    <h1>{{'About {0}' | translate | args: brandingService.appName}}</h1>
+    <h1 translate translate-params-appname="brandingService.appName">About {{appname}}</h1>
     <ul class="tabs">
         <li ng-class="{active: Page=='general'}"><a href ng-click="Page='general'" translate>General</a></li>
         <li ng-class="{active: Page=='changelog'}"><a href ng-click="Page='changelog'" translate>Changelog</a></li>
@@ -8,10 +8,22 @@
     </ul>
 
     <div ng-show="Page == 'general'">
-        <div ng-bind-html="'{0} was primarily developed by {1} and {2}. {0} can be downloaded from {3}. {0} is licensed under the {4}.' | translate | args: brandingService.appName: '<a href=&quot;mailto:kenneth@duplicati.com&quot;>Kenneth Skovhede</a>': '<a href=&quot;mailto:rene@duplicati.com&quot;>Rene Stach</a>': '<a href=&quot;http://www.duplicati.com&quot; target=&quot;blank&quot;>duplicati.com</a>': '<a href=&quot;https://www.gnu.org/licenses/lgpl.html&quot;>GNU Lesser General Public License</a>'"></div>
+        <div translate
+            translate-params-appname="brandingService.appName" 
+            translate-params-dev1="'Kenneth Skovhede'" 
+            translate-params-dev2="'Rene Stach'" 
+            translate-params-mail1="'mailto:kenneth@duplicati.com'"
+            translate-params-mail2="'mailto:rene@duplicati.com'"
+            translate-params-websitename="'duplicati.com'" 
+            translate-params-websitelink="'http://www.duplicati.com'" 
+            translate-params-licensename="'GNU Lesser General Public License'" 
+            translate-params-licenselink="'https://www.gnu.org/licenses/lgpl.html'" 
+            >
+            {{appname}} was primarily developed by <a href="mail1">{{dev1}}</a> and <a href="mail2">{{dev2}}</a>. {{appname}} can be downloaded from <a href="{websitelink}">{{websitename}}</a>. {{appname}} is licensed under the <a href="{{licenselink}}">{{licensename}}</a>.
+        </div>
 
         <div>&nbsp;</div>
-        <div>{{'You are currently running {0} {1}' | translate | args: brandingService.appName: sysinfo.ServerVersionName || 'unknown'}}</div>
+        <div translate translate-params-appname="brandingService.appName" translate-params-version="sysinfo.ServerVersionName || 'unknown'">You are currently running {{appname}} {{version}}</div>
 
         <div ng-show="state.updatedVersion != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
             Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href ng-click="doStartUpdateDownload()">download now</a>

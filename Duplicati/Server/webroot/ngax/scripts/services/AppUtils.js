@@ -1,6 +1,8 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Localization, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gettextCatalog) {
 
     var apputils = this;
+
+    this.exampleOptionString = '--dblock-size=100MB';
 
     try {
         moment.locale(
@@ -36,7 +38,6 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
         if (m) $timeout(m);
     };
 
-
     function reloadTexts() {
         apputils.fileSizeMultipliers = [
             {name: gettextCatalog.getString('byte'), value: ''},
@@ -64,6 +65,8 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
             {name: gettextCatalog.getString('Sat'), value: 'sat'}, 
             {name: gettextCatalog.getString('Sun'), value: 'sun'}
         ];
+
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
 
         apputils.filterClasses = [{
             name: gettextCatalog.getString('Exclude directories whose names contain'),
@@ -122,7 +125,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
     };
 
     reloadTexts();
-    Localization.watch($rootScope, reloadTexts);
+    $rootScope.$on('gettextLanguageChanged', reloadTexts); 
 
     this.parseBoolString = function(txt, def) {
         txt = (txt || '').toLowerCase();

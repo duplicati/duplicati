@@ -1,4 +1,4 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, Localization, SystemInfo, gettextCatalog) {
+backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
@@ -15,10 +15,10 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
     function setUILanguage() {
         if (($scope.uiLanguage || '').trim().length == 0) {
             $cookies.remove('ui-locale');
-            Localization.setLocale(null);
+            gettextCatalog.setCurrentLanguage(null)
         } else {
             $cookies.put('ui-locale', $scope.uiLanguage);
-            Localization.setLocale($scope.uiLanguage);
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage)
         }
     };
 

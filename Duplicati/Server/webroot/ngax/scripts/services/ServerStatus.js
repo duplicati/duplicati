@@ -1,4 +1,4 @@
-backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils, Localization, gettextCatalog) {
+backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
     var longpolltime = 5 * 60 * 1000;
 
@@ -62,7 +62,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     };
 
     reloadTexts();
-    Localization.watch($rootScope, reloadTexts);
+    $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
     this.watch = function(scope, m) {
         scope.$on('serverstatechanged', function() {

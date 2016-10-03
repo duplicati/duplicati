@@ -64,7 +64,6 @@
     <script type="text/javascript" src="scripts/services/BackupList.js"></script>
     <script type="text/javascript" src="scripts/services/AppService.js"></script>
     <script type="text/javascript" src="scripts/services/ServerStatus.js"></script>
-    <script type="text/javascript" src="scripts/services/Localization.js"></script>
     <script type="text/javascript" src="scripts/services/SystemInfo.js"></script>
     <script type="text/javascript" src="scripts/services/EditUriBackendConfig.js"></script>
     <script type="text/javascript" src="scripts/services/EditUriBuiltins.js"></script>
@@ -88,7 +87,6 @@
     <script type="text/javascript" src="scripts/controllers/DialogController.js"></script>
     <script type="text/javascript" src="scripts/controllers/LocalDatabaseController.js"></script>
 
-    <script type="text/javascript" src="scripts/filters/args.js"></script>
     <script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
     <script type="text/javascript" src="scripts/filters/highlight.js"></script>
     <script type="text/javascript" src="scripts/filters/parsetimestamp.js"></script>
@@ -228,11 +226,11 @@
     <div ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
             <div class="title" translate>Connection lost</div>
-            <div class="content" ng-show="state.connectionState !='connecting'">
-                {{'The connection to the server is lost, attempting again in {0} ...' | translate | args: ((state.connectionAttemptTimer + 1000) | timeremaining)}}
+            <div class="content" ng-show="state.connectionState !='connecting'" translate translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining">
+                The connection to the server is lost, attempting again in {{time}} ...
             </div>
-            <div class="content" ng-hide="state.connectionState !='connecting'">
-                {{'Connnecting to server ...' | translate}}
+            <div class="content" translate ng-hide="state.connectionState !='connecting'">
+                Connnecting to server ...
             </div>
             <div class="content buttons">
                 <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button" translate>Connect now</a>

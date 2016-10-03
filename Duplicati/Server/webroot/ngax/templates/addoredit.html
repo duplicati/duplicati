@@ -42,8 +42,8 @@
                             <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
                         </div>
                         <div class="input textarea linklabel">
-                            <label for="target"><a href class="target" ng-click="EditUriState = true">{{'Backup to' | translate}} &gt;</a></label>
-                            <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="{{'Enter a url, or click the \'Backup to {0}\' link' | translate | args: '&gt;'}}"></textarea>
+                            <label for="target"><a href class="target" ng-click="EditUriState = true" translate>Backup to &gt;</a></label>
+                            <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="{{'Enter a url, or click the \'Backup to &gt;\' link' | translate }}"></textarea>
                         </div>
                         <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
                             <label for="encryption" translate>Encryption</label>
@@ -249,8 +249,8 @@
                 </div>
                 <div class="input textarea" ng-show="ShowAdvancedTextArea">
                     <h2><label for="backupOptions" translate>Advanced options</label></h2>
-                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> {{'Edit as text' | translate}}</a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. {0}' | translate | args: '--dblock-size=100MB'}}"></textarea>
+                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> <span translate>Edit as text</span></a>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
                 </div>
                 
                 <div class="input" ng-hide="ShowAdvancedTextArea">

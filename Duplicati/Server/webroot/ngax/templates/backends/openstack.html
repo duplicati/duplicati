@@ -7,7 +7,7 @@
     <label for="openstack_server" translate>OpenStack AuthURI</label>
 
     <select name="openstack_server" id="openstack_server" ng-model="$parent.openstack_server" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_providers | orderBy: k">
-        <option value="">{{'Custom server url ({0})' | translate | args: openstack_server_custom || ''}}</option>
+        <option value="" translate translate-params-server="openstack_server_custom || ''">Custom server url ({{server}})</option>
     </select>
 
     <input ng-hide="contains_value(openstack_providers, openstack_server)" type="text" id="openstack_server_custom" ng-model="$parent.openstack_server_custom" placeholder="{{'Custom authentication url' | translate}}" />

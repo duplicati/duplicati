@@ -1,4 +1,4 @@
-backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, AppService, AppUtils, gettextCatalog) {
+backupApp.service('SystemInfo', function($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
     var state = {};
     this.state = state;
@@ -88,7 +88,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
     };
 
     reloadTexts();
-    Localization.watch($rootScope, reloadTexts);
+    $rootScope.$on('gettextLanguageChanged', reloadTexts);
+
 
     this.watch = function(scope, m) {
         scope.$on('systeminfochanged', function() {

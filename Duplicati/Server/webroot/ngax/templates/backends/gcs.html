@@ -15,7 +15,7 @@
     <label for="gcs_location" translate>Bucket create location</label>
 
     <select name="gcs_location" id="gcs_location" ng-model="$parent.gcs_location" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_locations | orderBy: k">
-        <option value="">{{'Custom location ({0})' | translate | args: gcs_server_custom}}</option>
+        <option value="" translate translate-params-server="gcs_server_custom || ''">Custom location ({{server}})</option>
     </select>
 
     <input ng-hide="contains_value(gcs_locations, gcs_location)" type="text" id="gcs_location_custom" ng-model="$parent.gcs_location_custom" placeholder="{{'Location where buckets are created' | translate}}"/>
@@ -26,7 +26,7 @@
     <label for="gcs_storageclass" translate>Bucket storage class</label>
 
     <select name="gcs_storageclass" id="gcs_storageclass" ng-model="$parent.gcs_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_storageclasses | orderBy: k">
-        <option value="">{{'Custom storage class ({0})' | translate | args: gcs_storageclass_custom}}</option>
+        <option value="" translate translate-params-class="gcs_storageclass_custom">Custom storage class ({{class}})</option>
     </select>
 
     <input ng-hide="contains_value(gcs_storageclasses, gcs_storageclass)" type="text" id="gcs_storageclass_custom" ng-model="$parent.gcs_storageclass_custom" placeholder="{{'Storage class for creating a bucket' | translate}}"/>
