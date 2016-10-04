@@ -1,1 +1,0 @@
-angular-gettext-cli --files "../../Duplicati/Server/webroot/ngax/**/*.+(js|html)" --dest extracted_html_js.pot
