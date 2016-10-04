@@ -77,11 +77,6 @@ namespace Duplicati.Library.Localization
         {
             return string.Format(message, args);
         }
-
-        /// <summary>
-        /// Gets all strings.
-        /// </summary>
-        public IDictionary<string, string> AllStrings { get { return new Dictionary<string, string>(); } }
     }
 }
 

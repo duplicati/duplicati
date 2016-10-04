@@ -163,11 +163,6 @@ namespace Duplicati.Library.Localization
             return catalog.GetString(message, args);
         }
 
-        /// <summary>
-        /// Gets all strings.
-        /// </summary>
-        public IDictionary<string, string> AllStrings { get { return null; } }
-
         private static List<String> m_supportedcultures = null;
 
         /// <summary>
