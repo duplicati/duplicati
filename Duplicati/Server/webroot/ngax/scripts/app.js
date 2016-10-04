@@ -9,11 +9,6 @@ var backupApp = angular.module(
     ]
 );
 
-angular.module('backupApp').run(function (gettextCatalog) {
-    gettextCatalog.setCurrentLanguage('de');
-    // gettextCatalog.debug = true;
-});
-
 backupApp.constant('appConfig', {
     login_url: '/login.html'
 });

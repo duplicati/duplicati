@@ -1,4 +1,4 @@
-backupApp.service('SystemInfo', function($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
+backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppService, AppUtils, gettextCatalog) {
 
     var state = {};
     this.state = state;
@@ -111,6 +111,13 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, AppService, AppUt
     AppService.get('/systeminfo').then(function(data) {
 
         angular.copy(data.data, state);
+        
+        uiLanguage = $cookies.get('ui-locale');    
+        if ((uiLanguage || '').trim().length == 0) {
+            gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code);
+        } else {            
+            gettextCatalog.setCurrentLanguage(uiLanguage);
+        }   
 
         reloadTexts();
         reloadBackendConfig();
