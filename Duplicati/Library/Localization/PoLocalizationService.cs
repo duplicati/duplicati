@@ -21,26 +21,27 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using NGettext;
 
 namespace Duplicati.Library.Localization
 {
     /// <summary>
-    /// Class for reading embedded PO files
+    /// Class for reading embedded MO files
     /// </summary>
     public class PoLocalizationService : ILocalizationService
     {
         /// <summary>
-        /// The environment variable used to locate PO files
+        /// The catalog containing the translations
+        /// </summary>
+        private ICatalog catalog = new Catalog();
+
+        /// <summary>
+        /// The environment variable used to locate MO files
         /// </summary>
         public const string LOCALIZATIONDIR_ENVNAME = "LOCALIZATION_FOLDER";
 
         /// <summary>
-        /// A cached copy of all strings
-        /// </summary>
-        private Dictionary<string, string> m_messages = new Dictionary<string, string>();
-
-        /// <summary>
-        /// Path to search for extra .po files in
+        /// Path to search for extra .mo files in
         /// </summary>
         public static string[] SearchPaths =
             string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.GetData(LOCALIZATIONDIR_ENVNAME) as string)
@@ -49,19 +50,14 @@ namespace Duplicati.Library.Localization
 
 
         /// <summary>
-        /// Assembly to look for .po files in
+        /// Assembly to look for .mo files in
         /// </summary>
         public static Assembly SearchAssembly = Assembly.GetExecutingAssembly();
 
         /// <summary>
-        /// Regular expression to match a PO line entry
-        /// </summary>
-        private static readonly Regex PO_MATCHER = new Regex(@"(?<key>\w+(\[(?<index>[0-9]+)\])?)\s+""(?<value>(?:\\.|""""|[^""\\])*)""");
-
-        /// <summary>
         /// Regular expression to match a locale from a filename
         /// </summary>
-        private static readonly Regex CI_MATCHER = new Regex(@"localization-(?<culture>" + LocalizationService.CI_MATCHER + @")\.po");
+        private static readonly Regex CI_MATCHER = new Regex(@"localization-(?<culture>" + LocalizationService.CI_MATCHER + @")\.mo");
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Localization.PoLocalizationService"/> class.
@@ -71,14 +67,25 @@ namespace Duplicati.Library.Localization
         {
             var filenames = new string[] { 
                 // Load the generic country version first
-                string.Format("localization-{0}.po", ci.Name), 
+                string.Format("localization-{0}.mo", ci.Name), 
                 // Then the specialized version with overrides
-                string.Format("localization-{0}.po", ci.TwoLetterISOLanguageName) 
+                string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName) 
             };
 
             foreach(var fn in filenames)
             {
-                // Use embedded version first
+                // search first in external files
+                foreach (var sp in SearchPaths)
+                {
+                    if (!string.IsNullOrWhiteSpace(sp) && File.Exists(Path.Combine(sp, fn)))
+                    {
+                        Stream moFileStream = File.OpenRead(Path.Combine(sp, fn));
+                        catalog = new Catalog(moFileStream, ci);
+                        return; 
+                    }
+                }
+
+                // search in embedded files
                 if (SearchAssembly != null)
                 {
                     // Find the localization streams inside the assembly
@@ -92,63 +99,12 @@ namespace Duplicati.Library.Localization
                     foreach (var sn in names)
                         using (var s = SearchAssembly.GetManifestResourceStream(sn))
                             if (s != null)
-                                using (var sr = new StreamReader(s, System.Text.Encoding.UTF8, true))
-                                    ParseStream(sr);
-                }
-
-                // Then override with external
-                foreach(var sp in SearchPaths)
-                    if (!string.IsNullOrWhiteSpace(sp) && File.Exists(Path.Combine(sp, fn)))
-                        using (var fs = new StreamReader(Path.Combine(sp, fn), System.Text.Encoding.UTF8, true))
-                            ParseStream(fs);
-            }
-        }
-
-        /// <summary>
-        /// Parses a PO file by reading each line
-        /// </summary>
-        /// <param name="rd">The reader to extract data from.</param>
-        private void ParseStream(TextReader rd)
-        {
-            string ln;
-            string msgid = null;
-
-            while ((ln = rd.ReadLine()) != null)
-            {
-                var m = PO_MATCHER.Match(ln);
-                if (m.Success)
-                {
-                    var key = m.Groups["key"].Value;
-                    var value = m.Groups["value"].Value;
-
-                    if (!string.IsNullOrEmpty(value))
-                        value = value.Replace("\"\"", "\"").Replace("\\\"", "\"").Replace("\\t", "\t").Replace("\\r", "\r").Replace("\\n", "\n");
-
-
-                    if (string.Equals(key, "msgid", StringComparison.OrdinalIgnoreCase))
-                    {
-                        msgid = value;
-                    }
-                    else if (string.Equals(key, "msgstr", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (!string.IsNullOrWhiteSpace(value))
-                            m_messages[msgid] = value;
-                    }
+                            {
+                                catalog = new Catalog(s, ci);
+                                return;
+                            }
                 }
             }
-        }
-
-        /// <summary>
-        /// Performs the actual translation
-        /// </summary>
-        /// <param name="msg">The message to translate.</param>
-        private string Transform(string msg)
-        {
-            string res;
-            if (string.IsNullOrWhiteSpace(msg) || !m_messages.TryGetValue(msg, out res))
-                return msg;
-            
-            return res;
         }
 
         /// <summary>
@@ -158,7 +114,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message)
         {
-            return string.Format(Transform(message));
+            return catalog.GetString(message);
         }
 
         /// <summary>
@@ -169,7 +125,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0)
         {
-            return string.Format(Transform(message), arg0);
+            return catalog.GetString(message, arg0);
         }
 
         /// <summary>
@@ -181,7 +137,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1)
         {
-            return string.Format(Transform(message), arg0, arg1);
+            return catalog.GetString(message, arg0, arg1);
         }
 
         /// <summary>
@@ -194,7 +150,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1, object arg2)
         {
-            return string.Format(Transform(message), arg0, arg1, arg2);
+            return catalog.GetString(message, arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -204,15 +160,15 @@ namespace Duplicati.Library.Localization
         /// <param name="args">The arguments</param>
         public string Localize(string message, params object[] args)
         {
-            return string.Format(Transform(message), args);
+            return catalog.GetString(message, args);
         }
 
         /// <summary>
         /// Gets all strings.
         /// </summary>
-        public IDictionary<string, string> AllStrings { get { return m_messages; } }
+        public IDictionary<string, string> AllStrings { get { return null; } }
 
-        private static string[] m_supportedcultures = null;
+        private static List<String> m_supportedcultures = null;
 
         /// <summary>
         /// Gets a list of all the supported cultures
@@ -221,7 +177,6 @@ namespace Duplicati.Library.Localization
         {
             get
             {
-
                 if (m_supportedcultures == null)
                 {
                     var lst = new string[0].AsEnumerable();
@@ -230,7 +185,7 @@ namespace Duplicati.Library.Localization
                         lst = lst.Union(SearchAssembly.GetManifestResourceNames());
                     foreach (var sp in SearchPaths)
                         if (Directory.Exists(sp))
-                            lst = lst.Union(Directory.GetFiles(sp, "localization-*.po"));
+                            lst = lst.Union(Directory.GetFiles(sp, "localization-*.mo"));
 
                     var allcultures =
                         from name in lst
@@ -239,15 +194,15 @@ namespace Duplicati.Library.Localization
                         where ci != null
                         select ci;
 
-                    m_supportedcultures = 
+                    m_supportedcultures =
                         allcultures
                             .Select(x => x.TwoLetterISOLanguageName).Distinct().OrderBy(x => x)
                             .Union(
                                 allcultures.Select(x => x.Name).Distinct().OrderBy(x => x)
-                        ).ToArray();
-                        
-                }
+                        ).ToList();
 
+                    m_supportedcultures.Add("en");
+                }
                 return m_supportedcultures;
             }
         }
