@@ -15,7 +15,8 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
     function setUILanguage() {
         if (($scope.uiLanguage || '').trim().length == 0) {
             $cookies.remove('ui-locale');
-            gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code);
+            // ignore country codes for default language: de-DE -> de
+            gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.substring(0, 2));
         } else {
             $cookies.put('ui-locale', $scope.uiLanguage);
             gettextCatalog.setCurrentLanguage($scope.uiLanguage);

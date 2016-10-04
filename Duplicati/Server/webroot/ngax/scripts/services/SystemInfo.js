@@ -114,7 +114,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
         
         uiLanguage = $cookies.get('ui-locale');    
         if ((uiLanguage || '').trim().length == 0) {
-            gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code);
+            // ignore country codes for default language: de-DE -> de
+            gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.substring(0, 2));
         } else {            
             gettextCatalog.setCurrentLanguage(uiLanguage);
         }   
