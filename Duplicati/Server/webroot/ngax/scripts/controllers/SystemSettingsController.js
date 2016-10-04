@@ -1,4 +1,4 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, Localization, SystemInfo) {
+backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
@@ -15,10 +15,10 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
     function setUILanguage() {
         if (($scope.uiLanguage || '').trim().length == 0) {
             $cookies.remove('ui-locale');
-            Localization.setLocale(null);
+            gettextCatalog.setCurrentLanguage(null)
         } else {
             $cookies.put('ui-locale', $scope.uiLanguage);
-            Localization.setLocale($scope.uiLanguage);
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage)
         }
     };
 
@@ -79,7 +79,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
 
                 $location.path('/');
             },
-            AppUtils.connectionError(Localization.localize('Failed to save:') + ' ')
+            AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
     };
 
@@ -90,7 +90,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
                 $scope.SystemInfo.SuppressDonationMessages = true; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError(Localization.localize('Operation failed:') + ' ')
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 
@@ -101,7 +101,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
                 $scope.SystemInfo.SuppressDonationMessages = false; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError(Localization.localize('Operation failed:' + ' '))
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 });

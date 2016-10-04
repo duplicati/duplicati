@@ -1,4 +1,4 @@
-backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemInfo, DialogService, Localization) {
+backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemInfo, DialogService, gettextCatalog) {
 
     var self = this;
 
@@ -63,7 +63,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
     }
 
     this.show_warning_dialog = function(msg, continuation) {
-        DialogService.dialog(Localization.localize('Confirmation required'), msg, [Localization.localize('No'), Localization.localize('Yes')], function(ix) {
+        DialogService.dialog(gettextCatalog.getString('Confirmation required'), msg, [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
             if (ix == 1)
                 continuation();
         });
@@ -75,37 +75,37 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 
     this.require_field = function(scope, field, label) {
         if ((scope[field] || '').trim().length == 0)
-            return self.show_error_dialog(Localization.localize('You must fill in {0}', label || field));
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in {{field}}', { field: label || field }));
 
         return true;
     };
 
     this.require_server = function(scope) {
         if ((scope.Server || '').trim().length == 0)
-            return self.show_error_dialog(Localization.localize('You must fill in the server name or address'));
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in the server name or address'));
 
         return true;
     };
 
     this.require_path = function(scope) {
         if ((scope.Path || '').trim().length == 0)
-            return self.show_error_dialog(Localization.localize('You must fill in the path'));
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in the path'));
 
         return true;
     };
 
     this.recommend_path = function(scope, continuation) {
         if ((scope.Path || '').trim().length == 0)
-            return self.show_warning_dialog(Localization.localize('If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?'), continuation);
+            return self.show_warning_dialog(gettextCatalog.getString('If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?'), continuation);
         else
             continuation();
     };
 
     this.require_username_and_password = function(scope) {
         if ((scope.Username || '').trim().length == 0)
-            return self.show_error_dialog(Localization.localize('You must fill in the username'));
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in the username'));
         if ((scope.Password || '').trim().length == 0)
-            return self.show_error_dialog(Localization.localize('You must fill in the password'));
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in the password'));
 
         return true;
     };

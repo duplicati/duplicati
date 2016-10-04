@@ -126,7 +126,7 @@ wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
 
 # Restore
 driver.find_element_by_link_text(BACKUP_NAME).click()
-driver.find_element_by_xpath("//p[contains(text(),'Restore files ...')]").click()
+driver.find_element_by_xpath("//span[contains(text(),'Restore files ...')]").click()
 driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 time.sleep(1)
 driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
