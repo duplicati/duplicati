@@ -1,32 +1,13 @@
-﻿We would like to thank all contributors who made Duplicati what it is today.
-
-Software Development:
-  Livio Bertacco
-  Daniel Halan
-  Birunthan Mohanathas
-  James Colton
-  Nicolas Hatier, Niversoft idées logicielles
-  Tobias Käes
-  Don Lockhart
-  Sebastian Fahrenholz
-  Malte Neumann
-  Mostafa Aghajani
-  Stefan Lück
-  Tim Mylemans
-  Xelio Cheong
-  Michal Naiman
+﻿We would like to thank all contributors who made Duplicati what it is today. 
+  This are the contributors to Duplicati 1.x that got it all started.
+  This are the people who help others to get their backups up and running. 
+  This are the testers and translators.
+  This are the people who give us hints how to improve Duplicati futher.
+  This are the people who just say "thank you".
   
-The theme for Duplicati (ngax):
-  Alexander Franzelin
-  
-Translations:
-  Brazilian, pt-BR: Gabriell Hahmann
-  Chinese, zh-CN: Born Kanas
-  Danish, da-DK: Kenneth Skovhede
-  French, fr-FR: Matthieu Weber
-  German, de-DE: Ernst Mair, Mathias Block, DooM ElHado, Leo nowhere
-  Italian, it-IT: Riccardo Stoppani
-  Russian, ru-RU: Philip Torchinsky, Semonix
-  Spanish, es-ES: JosepV
+You are the reason why this project gets ahead. You do not only contribute to the software but also keep us involved and motivated. Thank you!
 
-A special thanks to the many users who let us know how they are using Duplicati, ask for new features, test development builds and thus help us improve Duplicati further.
+Due to their recent contributions to Duplicati 2.0 we would like to thank some people in particular:
+  Stefan Lück (aka footstark) for providing great performance optimizations to Duplicati 2.0
+  Tobias Käs for his C# library that implements LZMA2 and 7z
+  Alexander Franzelin for the design of the Duplicati UI and the website
