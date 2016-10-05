@@ -114,7 +114,7 @@ namespace Duplicati.Library.Localization
 
             ILocalizationService service;
             if (!Services.TryGetValue(ci, out service))
-                service = Services[ci] = new PoLocalizationService(ci);
+                service = Services[ci] = new MoLocalizationService(ci);
 
             return service;
         }
@@ -136,7 +136,7 @@ namespace Duplicati.Library.Localization
         /// </summary>
         public static IEnumerable<string> SupportedCultures
         {
-            get { return PoLocalizationService.SupportedCultures; }
+            get { return MoLocalizationService.SupportedCultures; }
         }
     }
 }
