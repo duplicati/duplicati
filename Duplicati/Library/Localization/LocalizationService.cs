@@ -20,6 +20,7 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Localization
 {
@@ -52,7 +53,8 @@ namespace Duplicati.Library.Localization
         {
             if (ci == null)
                 return null;
-            
+
+            LC.setCulture(ci);
             return new LocalizationContext(ci);
         }
 
