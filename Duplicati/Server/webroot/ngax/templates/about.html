@@ -61,7 +61,7 @@
 
     <div ng-show="Page == 'sysinfo'">
         <h2 translate>System properties</h2>
-        <ul>
+        <ul style="overflow: auto;">
             <li ng-repeat="(key,value) in sysinfo" ng-if="key != 'Options' &amp;&amp; key != 'CompressionModules' &amp;&amp; key != 'EncryptionModules' &amp;&amp; key != 'BackendModules' &amp;&amp; key != 'GenericModules' &amp;&amp; key != 'WebModules' &amp;&amp; key != 'ConnectionModules' &amp;&amp; key != 'GroupedBackendModules'">{{key}} : {{value}}</li>
             <li>{{'Backend modules:' | translate}} <p style="display: inline" ng-repeat="item in sysinfo.BackendModules">{{item.Key}} </p></li>
             <li>{{'Compression modules:' | translate}} <p style="display: inline" ng-repeat="item in sysinfo.CompressionModules">{{item.Key}} </p></li>
@@ -69,7 +69,7 @@
         </ul>
 
         <h2 translate>Server state properties</h2>
-        <ul>
+        <ul style="overflow: auto;">
             <li ng-repeat="(key,value) in state">{{key}} : {{value}}</li>
 
         </ul>
