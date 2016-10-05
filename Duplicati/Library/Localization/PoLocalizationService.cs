@@ -66,9 +66,9 @@ namespace Duplicati.Library.Localization
         public PoLocalizationService(CultureInfo ci)
         {
             var filenames = new string[] { 
-                // Load the generic country version first
+                // Load the specialized version first
                 string.Format("localization-{0}.mo", ci.Name), 
-                // Then the specialized version with overrides
+                // Then try the generic language version
                 string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName) 
             };
 
@@ -79,8 +79,8 @@ namespace Duplicati.Library.Localization
                 {
                     if (!string.IsNullOrWhiteSpace(sp) && File.Exists(Path.Combine(sp, fn)))
                     {
-                        Stream moFileStream = File.OpenRead(Path.Combine(sp, fn));
-                        catalog = new Catalog(moFileStream, ci);
+                        using (var moFileStream = File.OpenRead(Path.Combine(sp, fn)))
+                            catalog = new Catalog(moFileStream, ci);
                         return; 
                     }
                 }
