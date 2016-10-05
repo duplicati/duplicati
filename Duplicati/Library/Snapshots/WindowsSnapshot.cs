@@ -117,13 +117,15 @@ namespace Duplicati.Library.Snapshots
                     Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V.", hyperVGuests.Count), Logging.LogMessageType.Information);
 
                     bool bNotFound = false;
+                    List<string> notFoundVM = new List<string>();
                     foreach (var requestedHyperVM in requestedHyperVMs)
                     {
-                        var foundVMs = hyperVGuests.FindAll(x => (x.ID == requestedHyperVM));
+                        var foundVMs = hyperVGuests.FindAll(x => (x.ID.ToLower() == requestedHyperVM.ToLower()));
 
                         if (foundVMs.Count != 1)
                         {
                             bNotFound = true;
+                            notFoundVM.Add(requestedHyperVM);
                             Logging.Log.WriteMessage(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", requestedHyperVM), Logging.LogMessageType.Error);
                         }
                         else
@@ -131,7 +133,7 @@ namespace Duplicati.Library.Snapshots
                     }
 
                     if (bNotFound)
-                        throw new Exception("Cannot find virtual machine with on Hyper-V.");
+                        throw new Exception(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", string.Join(", ", notFoundVM.ToArray())));
 
                     var productType = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
                         .Get().OfType<ManagementObject>()
