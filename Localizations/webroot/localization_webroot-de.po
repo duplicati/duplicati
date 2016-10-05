@@ -1497,8 +1497,6 @@ msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
 msgstr ""
-"Some OpenStack providers allow an API key instead of a password and tenant "
-"name"
 
 #: templates/addoredit.html:22
 msgid "Source Data"
@@ -1924,7 +1922,7 @@ msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
 msgstr ""
-"Du hast das Passwort geändert. Dadurch kann das bestehende BAckup "
+"Du hast das Passwort geändert. Dadurch kann das bestehende Backup "
 "unbenutzbar sein. Erstelle lieber ein neues Backup."
 
 #: scripts/controllers/EditBackupController.js:335
