@@ -250,6 +250,8 @@ namespace Duplicati.Library.Main.Operation
         {
             try
             {
+                if (options.RawOptions.ContainsKey("hyperv-backup-vm") && options.SnapShotStrategy == Options.OptimizationStrategy.Off)
+                    throw new Exception("Snapshot strategy cannot be Off when backuping Hyper-V using hyperv-backup-vm"); //VSS is required for Hyper-V backups
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
                     return Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(sources, options.RawOptions);
             }
@@ -257,6 +259,8 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
+                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On && options.RawOptions.ContainsKey("hyperv-backup-vm"))
+                    throw; //VSS is required for Hyper-V backups
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
                     log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);

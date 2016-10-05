@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Alphaleonis.Win32.Vss;
+using System.Management;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -70,10 +71,6 @@ namespace Duplicati.Library.Snapshots
         /// The Hyper-V VSS Writer Guid
         /// </summary>
         private static readonly Guid HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
-        /// <summary>
-        /// A list off Hyper-V Machines that we will back up
-        /// </summary>
-        private readonly IDictionary<string, string> m_hyperVMachines = null;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -108,59 +105,92 @@ namespace Duplicati.Library.Snapshots
                 var requestedHyperVMs = new List<string>();
                 if (options.ContainsKey("hyperv-backup-vm"))
                     requestedHyperVMs = options["hyperv-backup-vm"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
-                
+
                 //Check if we are backing up HyperV machines
                 if (requestedHyperVMs.Count > 0)
                 {
-                    var hyperVUtility = new HyperVUtility(requestedHyperVMs);
-                    m_hyperVMachines = hyperVUtility.GetHyperVMachines();
+                    Logging.Log.WriteMessage("Starting to gather Hyper-V information.", Logging.LogMessageType.Information);
 
-                    #region Testing Features
-                    if (!Utility.Utility.ParseBoolOption(options, "hyperv-backup-no-merge"))
-                        hyperVUtility.MergeVhd(requestedHyperVMs);
+                    var hyperVUtility = new HyperVUtility();
+                    var hyperVGuests = hyperVUtility.GetHyperVGuests();
 
-                    //Option: Create-new-vm-after-restore, 
-                    //hyperVUtility.CreateHyperVMachine("TestVM", xmlpath);
-                    #endregion Testing Features
+                    Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V.", hyperVGuests.Count), Logging.LogMessageType.Information);
+
+                    bool bNotFound = false;
+                    foreach (var requestedHyperVM in requestedHyperVMs)
+                    {
+                        var foundVMs = hyperVGuests.FindAll(x => (x.ID == requestedHyperVM));
+
+                        if (foundVMs.Count != 1)
+                        {
+                            bNotFound = true;
+                            Logging.Log.WriteMessage(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", requestedHyperVM), Logging.LogMessageType.Error);
+                        }
+                        else
+                            Logging.Log.WriteMessage(string.Format("Found virtual machine {0} with ID {1} on Hyper-V.", foundVMs[0].Name, requestedHyperVM), Logging.LogMessageType.Information);
+                    }
+
+                    if (bNotFound)
+                        throw new Exception("Cannot find virtual machine with on Hyper-V.");
+
+                    var productType = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
+                        .Get().OfType<ManagementObject>()
+                        .Select(o => (uint)o.GetPropertyValue("ProductType")).First();
+
+                    if (productType != 1) // Hyper-V writer is present only on Server version of Windows
+                    {
+                        try
+                        {
+                            m_backup.GatherWriterMetadata();
+                            var m_backup_wmd = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
+
+                            if (m_backup_wmd != null)
+                            {
+                                foreach (var component in m_backup_wmd.Components)
+                                    if (requestedHyperVMs.Contains(component.ComponentName))
+                                        foreach (var file in component.Files)
+                                            if (file.FileSpecification.Contains("*"))
+                                            {
+                                                if (Directory.Exists(file.Path + "\\"))
+                                                {
+                                                    m_sourcepaths.Add(file.Path + "\\");
+                                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", component.ComponentName, file.Path + "\\"), Logging.LogMessageType.Profiling);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (File.Exists(Path.Combine(file.Path, file.FileSpecification)))
+                                                {
+                                                    m_sourcepaths.Add(Path.Combine(file.Path, file.FileSpecification));
+                                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", component.ComponentName, Path.Combine(file.Path, file.FileSpecification)), Logging.LogMessageType.Profiling);
+                                                }
+                                            }
+                            }
+                            else
+                                throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
+                        }
+                        finally
+                        {
+                            m_backup.FreeWriterMetadata();
+                        }
+                    }
+                    else
+                    {
+                        Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version.", Logging.LogMessageType.Warning);
+
+                        foreach (var hyperVGuest in hyperVGuests)
+                            if (requestedHyperVMs.Contains(hyperVGuest.ID))
+                                foreach (var path in hyperVGuest.DataPaths)
+                                {
+                                    m_sourcepaths.Add(path);
+                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", hyperVGuest.ID, path), Logging.LogMessageType.Profiling);
+                                }
+                    }
+
+                    m_sourcepaths = m_sourcepaths.Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(a => a).ToList();
                 }
 
                 m_backup.StartSnapshotSet();
-
-                try
-                {
-                    //Gather information on all Vss writers
-                    m_backup.GatherWriterMetadata();
-
-                    //Update the sourcepaths if we're backing up Hyper-V Machines
-                    if (requestedHyperVMs.Count > 0)
-                    {
-                        //Find sourcepaths in Hyper-V WriterMetaData
-                        var m_backup_wmd = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
-                        if (m_backup_wmd != null)
-                            foreach (var component in m_backup_wmd.Components)
-                            {
-                                //Cross reference the requested Hyper-V Machines to backup and add the sources
-                                if (!m_hyperVMachines.ContainsKey(component.ComponentName)) 
-                                    continue;
-                            
-                                foreach (var file in component.Files)
-                                {
-                                    if (file.FileSpecification.Contains("*")) 
-                                        continue;
-                                    m_sourcepaths.Add(file.Path + file.FileSpecification);
-                                }
-                            }
-                    }
-
-                    m_backup.FreeWriterMetadata();
-                }
-                catch
-                {
-                    try { m_backup.FreeWriterMetadata(); }
-                    catch { }
-
-                    throw;
-                }
 
                 //Figure out which volumes are in the set
                 m_volumes = new Dictionary<string, Guid>(StringComparer.InvariantCultureIgnoreCase);
