@@ -107,17 +107,19 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
     this.notifyChanged = function() {
         $rootScope.$broadcast('systeminfochanged');
     };
-    
-    uiLanguage = $cookies.get('ui-locale');
-    if ((uiLanguage || '').trim().length == 0) {
-        gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
-    } else {
-        gettextCatalog.setCurrentLanguage(uiLanguage);
-    }
 
-    function loadSystemInfo() {
+    function loadSystemInfo(reload) {
         AppService.get('/systeminfo').then(function(data) {
             angular.copy(data.data, state);
+            
+            if (reload !== true) {
+                uiLanguage = $cookies.get('ui-locale');
+                if ((uiLanguage || '').trim().length == 0) {
+                    gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
+                } else {
+                    gettextCatalog.setCurrentLanguage(uiLanguage);
+                }
+            }
 
             reloadTexts();
             reloadBackendConfig();
@@ -126,5 +128,7 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
     }
     
     loadSystemInfo();
-    $rootScope.$on('gettextLanguageChanged', loadSystemInfo);
+    $rootScope.$on('ui_language_changed', function() {
+        loadSystemInfo(true);
+    });
 });
