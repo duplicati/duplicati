@@ -1,3 +1,3 @@
 # transifex client in PATH necessary
 cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-tx pull --all
+tx pull --language=de,da

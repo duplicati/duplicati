@@ -52,13 +52,8 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="..\..\..\Localizations\duplicati\localization-de.mo">
-      <Link>Localizations\duplicati\localization-de.mo</Link>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\..\..\Localizations\duplicati\localization-da.mo">
-      <Link>Localizations\duplicati\localization-da.mo</Link>
-    </EmbeddedResource>
+  <ItemGroup>    
+    <EmbeddedResource Include="..\..\..\Localizations\duplicati\*.mo" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
