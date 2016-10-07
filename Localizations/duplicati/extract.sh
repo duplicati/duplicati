@@ -1,3 +1,4 @@
+#!/bin/bash
 # gettext in PATH necessary
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $SCRIPT_DIR
