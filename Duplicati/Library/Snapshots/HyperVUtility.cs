@@ -94,7 +94,7 @@ namespace Duplicati.Library.Snapshots
                             path = Path.Combine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
                             if (File.Exists(path))
                                 result.Add(path);
-                            path = Path.Combine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]) + "\\";
+                            path = Utility.Utility.AppendDirSeparator(Path.Combine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
                             if (Directory.Exists(path))
                                 result.Add(path);
                         }
@@ -105,7 +105,7 @@ namespace Duplicati.Library.Snapshots
                     path = Path.Combine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
                     if (File.Exists(path))
                         result.Add(path);
-                    path = Path.Combine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + "\\");
+                    path = Utility.Utility.AppendDirSeparator(Path.Combine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
                     if (Directory.Exists(path))
                         result.Add(path);
 
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Snapshots
                         path = Path.Combine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
                         if (File.Exists(path))
                             result.Add(path);
-                        path = Path.Combine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")) + "\\";
+                        path = Utility.Utility.AppendDirSeparator(Path.Combine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
                         if (Directory.Exists(path))
                             result.Add(path);
                     }

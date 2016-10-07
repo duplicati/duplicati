@@ -196,7 +196,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var requestedHyperVM in requestedHyperVMs)
             {
-                var foundVMs = hyperVGuests.FindAll(x => (x.ID.ToLower() == requestedHyperVM.ToLower()));
+                var foundVMs = hyperVGuests.FindAll(x => (string.Equals(requestedHyperVM, x.ID, StringComparison.CurrentCultureIgnoreCase)));
 
                 if (foundVMs.Count != 1)
                 {
@@ -221,14 +221,14 @@ namespace Duplicati.Library.Snapshots
                     throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
 
                 foreach (var component in writerMetaData.Components)
-                    if (requestedHyperVMs.Contains(component.ComponentName))
+                    if (requestedHyperVMs.Contains(component.ComponentName, StringComparer.CurrentCultureIgnoreCase))
                         foreach (var file in component.Files)
                             if (file.FileSpecification.Contains("*"))
                             {
-                                if (Directory.Exists(file.Path + "\\"))
+                                if (Directory.Exists(Utility.Utility.AppendDirSeparator(file.Path)))
                                 {
-                                    resultPaths.Add(file.Path + "\\");
-                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", component.ComponentName, file.Path + "\\"), Logging.LogMessageType.Profiling);
+                                    resultPaths.Add(Utility.Utility.AppendDirSeparator(file.Path));
+                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", component.ComponentName, Utility.Utility.AppendDirSeparator(file.Path)), Logging.LogMessageType.Profiling);
                                 }
                             }
                             else
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Snapshots
                 Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version.", Logging.LogMessageType.Warning);
 
                 foreach (var hyperVGuest in hyperVGuests)
-                    if (requestedHyperVMs.Contains(hyperVGuest.ID))
+                    if (requestedHyperVMs.Contains(hyperVGuest.ID, StringComparer.CurrentCultureIgnoreCase))
                         foreach (var path in hyperVGuest.DataPaths)
                         {
                             resultPaths.Add(path);
