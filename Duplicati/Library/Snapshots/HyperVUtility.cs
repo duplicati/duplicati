@@ -124,7 +124,7 @@ namespace Duplicati.Library.Snapshots
                     }
                 }
 
-            return result.Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+            return result.Distinct(Utility.Utility.ClientFilenameStringComparer).ToList();
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace Duplicati.Library.Snapshots
                 result.AddRange(ParentPaths);
             }
 
-            return result.Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+            return result.Distinct(Utility.Utility.ClientFilenameStringComparer).ToList();
         }
     }
 }
