@@ -125,7 +125,8 @@ namespace Duplicati.Library.Snapshots
                 foreach(var pathDuplicate in pathDuplicates)
                     Logging.Log.WriteMessage(string.Format("Removing duplicate source: {0}", pathDuplicate), Logging.LogMessageType.Information);
 
-                m_sourcepaths = m_sourcepaths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
+                if(pathDuplicates.Count > 0)
+                    m_sourcepaths = m_sourcepaths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
 
                 //Sanity check for multiple inclusions of the same files/folders
                 var pathIncludedPaths = m_sourcepaths.Where(x => m_sourcepaths.Where(y => y != x).Any(z => x.StartsWith(z, Utility.Utility.ClientFilenameStringComparision))).ToList();
@@ -133,7 +134,8 @@ namespace Duplicati.Library.Snapshots
                 foreach (var pathIncluded in pathIncludedPaths)
                     Logging.Log.WriteMessage(string.Format("Removing already included source: {0}", pathIncluded), Logging.LogMessageType.Information);
 
-                m_sourcepaths = m_sourcepaths.Except(pathIncludedPaths, Utility.Utility.ClientFilenameStringComparer).ToList();
+                if (pathIncludedPaths.Count > 0)
+                    m_sourcepaths = m_sourcepaths.Except(pathIncludedPaths, Utility.Utility.ClientFilenameStringComparer).ToList();
 
                 m_backup.StartSnapshotSet();
 
