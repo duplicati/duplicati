@@ -118,6 +118,23 @@ namespace Duplicati.Library.Snapshots
                 if (hypervPaths != null)
                     m_sourcepaths.AddRange(hypervPaths);
 
+                //Sanity check for duplicate files/folders
+                var pathDuplicates = m_sourcepaths.GroupBy(x => x, Utility.Utility.ClientFilenameStringComparer)
+                      .Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+
+                foreach(var pathDuplicate in pathDuplicates)
+                    Logging.Log.WriteMessage(string.Format("Removing duplicate source: {0}", pathDuplicate), Logging.LogMessageType.Information);
+
+                m_sourcepaths = m_sourcepaths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
+
+                //Sanity check for multiple inclusions of the same files/folders
+                var pathIncludedPaths = m_sourcepaths.Where(x => m_sourcepaths.Where(y => y != x).Any(z => x.StartsWith(z, Utility.Utility.ClientFilenameStringComparision))).ToList();
+
+                foreach (var pathIncluded in pathIncludedPaths)
+                    Logging.Log.WriteMessage(string.Format("Removing already included source: {0}", pathIncluded), Logging.LogMessageType.Information);
+
+                m_sourcepaths = m_sourcepaths.Except(pathIncludedPaths, Utility.Utility.ClientFilenameStringComparer).ToList();
+
                 m_backup.StartSnapshotSet();
 
                 //Figure out which volumes are in the set
