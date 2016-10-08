@@ -14,27 +14,27 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/advancedoptionseditor.html:36
 msgid "- pick an option -"
-msgstr ""
+msgstr "- Option auswählen -"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:32
 msgid "API Key"
-msgstr ""
+msgstr "API Schlüssel"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:636
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:54
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:55
 msgid "AWS Access ID"
-msgstr ""
+msgstr "AWS Access ID"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:637
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:58
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:59
 msgid "AWS Access Key"
-msgstr ""
+msgstr "AWS Access Schlüssel"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:133
 msgid "AWS IAM Policy"
-msgstr ""
+msgstr "AWS IAM Richtlinie"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:172
 msgid "About"
@@ -47,60 +47,60 @@ msgstr "Über {0}"
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:601
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/azure.html:11
 msgid "Access Key"
-msgstr ""
+msgstr "Zugriffsschlüssel"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:5
 msgid "Access to user interface"
-msgstr ""
+msgstr "Zugriff zur Benutzeroberfläche"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:600
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/azure.html:7
 msgid "Account name"
-msgstr ""
+msgstr "Kontoname"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/notificationarea.html:29
 #: ../../Duplicati/Server/webroot/ngax/templates/updatechangelog.html:12
 msgid "Activate"
-msgstr ""
+msgstr "Aktivieren"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/AboutController.js:54
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/UpdateChangelogController.js:18
 msgid "Activate failed:"
-msgstr ""
+msgstr "Aktivierung fehlgeschlagen:"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/advancedoptionseditor.html:34
 msgid "Add advanced option"
-msgstr ""
+msgstr "Erweiterte Option hinzufügen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:132
 msgid "Add filter"
-msgstr ""
+msgstr "Filter hinzufügen"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:146
 msgid "Add new backup"
-msgstr ""
+msgstr "Neues Backup erstellen"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:647
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:664
 msgid "Adjust bucket name?"
-msgstr ""
+msgstr "Bucket-Name anpassen?"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:574
 msgid "Adjust path name?"
-msgstr ""
+msgstr "Pfadname anpassen?"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restoredirect.html:18
 msgid "Advanced Options"
-msgstr ""
+msgstr "Erweitere Optionen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:247
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:253
 msgid "Advanced options"
-msgstr ""
+msgstr "Erweitere Optionen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:57
 msgid "Advanced:"
-msgstr ""
+msgstr "Erweitert:"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:104
 msgid ""
@@ -113,15 +113,15 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:13
 msgid "Allow remote access (requires restart)"
-msgstr ""
+msgstr "Erlaube Remotezugriff (erfordert Neustart)"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:192
 msgid "Allowed days"
-msgstr ""
+msgstr "Erlaube Tage"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
-msgstr ""
+msgstr "Es existieren bereits Dateien am angegeben Ort"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:72
 msgid ""
@@ -140,11 +140,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:93
 msgid "Anonymous usage reports"
-msgstr ""
+msgstr "Anomisierte Nutzungsberichte"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/export.html:8
 msgid "As Command-line"
-msgstr ""
+msgstr "Als Kommandozeile"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:559
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/gcs.html:8
@@ -152,17 +152,17 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/oauth.html:8
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/oauth.html:9
 msgid "AuthID"
-msgstr ""
+msgstr "AuthID"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/generic.html:23
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:23
 msgid "Authentication password"
-msgstr ""
+msgstr "Passwort für Anmeldung"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/generic.html:19
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:19
 msgid "Authentication username"
-msgstr ""
+msgstr "Benutzername für Anmeldung"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:278
 msgid "Autogenerated passphrase"
@@ -194,7 +194,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:28
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:87
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:52
 msgid "Backend modules:"
@@ -202,11 +202,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:45
 msgid "Backup to"
-msgstr ""
+msgstr "Backup nach"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:88
 msgid "Backup:"
-msgstr ""
+msgstr "Backup:"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:5
 msgid "Backups are currently paused,"
@@ -214,16 +214,16 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:70
 msgid "Beta"
-msgstr ""
+msgstr "Beta"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:98
 msgid "Bitcoin: {0}"
-msgstr ""
+msgstr "Bitcoin: {0}"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/file.html:8
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:49
 msgid "Browse"
-msgstr ""
+msgstr "Durchsuchen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:42
 msgid "Browser default ({0}, {1})"
@@ -266,7 +266,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:80
 msgid "Canary"
-msgstr ""
+msgstr "Canary"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:263
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:278
@@ -287,7 +287,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:122
 #: ../../Duplicati/Server/webroot/ngax/templates/waitarea.html:18
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
@@ -295,7 +295,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:5
 msgid "Changelog"
-msgstr ""
+msgstr "Changelog"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/updatechangelog.html:2
 msgid "Changelog for {0} {1}"
@@ -307,11 +307,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:23
 msgid "Check for updates now"
-msgstr ""
+msgstr "Prüfe jetzt nach Aktualisierungen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:24
 msgid "Checking for updates ..."
-msgstr ""
+msgstr "Prüfe nach Aktualisierungen..."
 
 #: ../../Duplicati/Server/webroot/ngax/templates/edituri.html:17
 msgid "Chose a storage type to get started"
@@ -348,7 +348,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:49
 msgid "Configuration:"
-msgstr ""
+msgstr "Konfiguration:"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/HomeController.js:33
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:28
@@ -361,27 +361,27 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restoredirect.html:23
 msgid "Connect"
-msgstr ""
+msgstr "Verbinde"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:239
 msgid "Connect now"
-msgstr ""
+msgstr "Jetzt verbinden"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restoredirect.html:10
 msgid "Connect to"
-msgstr ""
+msgstr "Verbinde nach"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:240
 msgid "Connecting..."
-msgstr ""
+msgstr "Verbinde..."
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:231
 msgid "Connection lost"
-msgstr ""
+msgstr "Verbindung verloren"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:236
 msgid "Connnecting to server ..."
-msgstr ""
+msgstr "Verbinde mit dem Server..."
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:602
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/azure.html:2
@@ -394,7 +394,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:27
 msgid "Continue"
-msgstr ""
+msgstr "Fortfahren"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:335
 msgid "Continue without encryption"
@@ -490,7 +490,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:53
 #: ../../Duplicati/Server/webroot/ngax/templates/localdatabase.html:16
 msgid "Delete"
-msgstr ""
+msgstr "Löschen"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files ..."
@@ -504,12 +504,12 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/log.html:27
 msgid "Disabled"
-msgstr ""
+msgstr "Deaktiviert"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/notificationarea.html:13
 #: ../../Duplicati/Server/webroot/ngax/templates/notificationarea.html:27
 msgid "Dismiss"
-msgstr ""
+msgstr "Ausblenden"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/HomeController.js:33
 msgid "Do you really want to delete the backup: {{name}}"
@@ -522,17 +522,17 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/index.html:128
 #: ../../Duplicati/Server/webroot/ngax/index.html:196
 msgid "Donate"
-msgstr ""
+msgstr "Spenden"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:131
 #: ../../Duplicati/Server/webroot/ngax/index.html:199
 msgid "Donate with Bitcoins"
-msgstr ""
+msgstr "Spenden per Bitcoin"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:134
 #: ../../Duplicati/Server/webroot/ngax/index.html:202
 msgid "Donate with PayPal"
-msgstr ""
+msgstr "Spenden per PayPal"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:47
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:49
@@ -1450,7 +1450,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:31
 msgid "Seconds"
-msgstr ""
+msgstr "Sekunden"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/log.html:25
 msgid "Select a log level and see messages as they happen:"
@@ -1570,7 +1570,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:65
 msgid "Sun"
-msgstr ""
+msgstr "So"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:95
 msgid "System default ({0})"
@@ -1590,7 +1590,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:46
 msgid "TByte"
-msgstr ""
+msgstr "TByte"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:20
 msgid "Temporary files"
@@ -1679,15 +1679,15 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/RestoreController.js:35
 msgid "This month"
-msgstr ""
+msgstr "Diesen Monat"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/RestoreController.js:34
 msgid "This week"
-msgstr ""
+msgstr "Diese Woche"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:62
 msgid "Thu"
-msgstr ""
+msgstr "Do"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/export.html:14
 msgid "To File"
@@ -1699,7 +1699,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/RestoreController.js:32
 msgid "Today"
-msgstr ""
+msgstr "Heute"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:71
 msgid ""
@@ -1708,7 +1708,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:60
 msgid "Tue"
-msgstr ""
+msgstr "Di"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:18
 msgid "Type to highlight files"
@@ -1716,7 +1716,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:46
 msgid "Unknown"
-msgstr ""
+msgstr "Unbekannt"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/pause.html:27
 msgid "Until resumed"
@@ -1759,7 +1759,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/generic.html:2
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:2
 msgid "Use SSL"
-msgstr ""
+msgstr "Benutze SSL"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:356
 msgid "Use existing database?"
@@ -1790,7 +1790,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/mega.html:8
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:18
 msgid "Username"
-msgstr ""
+msgstr "Benutzername"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:97
 msgid "VISA, Mastercard, ... via Paypal"
@@ -1821,11 +1821,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
-msgstr ""
+msgstr "Sehr stark"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:31
 msgid "Very weak"
-msgstr ""
+msgstr "Sehr schwach"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:178
 msgid "Visit us on"
@@ -1849,20 +1849,20 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:32
 msgid "Weak"
-msgstr ""
+msgstr "Schwach"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:263
 msgid "Weak passphrase"
-msgstr ""
+msgstr "Schwaches Passwort"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:61
 msgid "Wed"
-msgstr ""
+msgstr "Mi"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:53
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:239
 msgid "Weeks"
-msgstr ""
+msgstr "Wochen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:36
 msgid "Where do you want to restore the files to?"
@@ -1871,7 +1871,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:55
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:241
 msgid "Years"
-msgstr ""
+msgstr "Jahre"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:121
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:131
@@ -1903,7 +1903,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/RestoreController.js:33
 msgid "Yesterday"
-msgstr ""
+msgstr "Gestern"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:88
 msgid ""
@@ -2006,7 +2006,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:231
 msgid "a specific number"
-msgstr ""
+msgstr "eine Anzahl"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/gcs.html:3
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:3
@@ -2015,30 +2015,30 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/AppUtils.js:42
 msgid "byte"
-msgstr ""
+msgstr "Byte"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:7
 msgid "click to resume now"
-msgstr ""
+msgstr "Jetzt starten"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:186
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:242
 #: ../../Duplicati/Server/webroot/ngax/templates/advancedoptionseditor.html:22
 msgid "custom"
-msgstr ""
+msgstr "benutzerdefiniert"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:230
 msgid "for a specific time"
-msgstr ""
+msgstr "eine Dauer"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:229
 msgid "forever"
-msgstr ""
+msgstr "immer"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restoredirect.html:34
 #: ../../Duplicati/Server/webroot/ngax/templates/waitarea.html:14
 msgid "resume now"
-msgstr ""
+msgstr "Jetzt starten"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:6
 msgid "resuming in"
@@ -2058,14 +2058,14 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/pause.html:24
 msgid "{0} Hour"
-msgstr ""
+msgstr "{0} Stunden"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/pause.html:12
 #: ../../Duplicati/Server/webroot/ngax/templates/pause.html:15
 #: ../../Duplicati/Server/webroot/ngax/templates/pause.html:18
 #: ../../Duplicati/Server/webroot/ngax/templates/pause.html:21
 msgid "{0} Minutes"
-msgstr ""
+msgstr "{0} Minuten"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:11
 msgid ""
