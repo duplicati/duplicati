@@ -39,7 +39,9 @@
             <label for="userinterfacelanguage" translate>Language in user interface</label>
 
             <select id="userinterfacelanguage" ng-model="uiLanguage" ng-options="item.Code as item.DisplayName + ' (' + item.Code + ', ' + item.EnglishName + ')' for item in SystemInfo.SupportedLocales">
-                <option value="" translate translate-params-displayname="SystemInfo.BrowserLocale.DisplayName" translate-params-code="SystemInfo.BrowserLocale.Code">Browser default ({{displayname}}, {{code}})</option>
+                <option value="">{{ SystemInfo.BrowserLocaleSupported ?
+                                    lang_browser_default + " (" + SystemInfo.BrowserLocale.DisplayName + ", " + SystemInfo.BrowserLocale.Code + ")" :
+                                    lang_default + " (en, English)" }}</option>
             </select>
         </div>
 

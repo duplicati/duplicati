@@ -62,11 +62,6 @@ namespace Duplicati.Library.Localization
         /// <param name="message">The string to localize</param>
         /// <param name="args">The arguments</param>
         string Localize(string message, params object[] args);
-
-        /// <summary>
-        /// Gets a lookup table with all strings
-        /// </summary>
-        IDictionary<string, string> AllStrings { get; }
     }
 }
 
