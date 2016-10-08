@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using Duplicati.Library.Localization.Short;
+using System.Linq;
+
 namespace Duplicati.Server.Strings {
     internal static class Program {
         public static string AnotherInstanceDetected { get { return LC.L(@"Another instance is running, and was notified"); } }
@@ -43,4 +46,12 @@ Error message: {0}", error); }
     internal static class Scheduler {
         public static string InvalidTimeSetupError(System.DateTime startdate, string interval, string alloweddays) { return LC.L(@"Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}", startdate, interval, alloweddays); }
     }
+    internal static class Server
+    {
+        public static string DefectSSLCertInDatabase { get { return @"Unable to create SSL certificate using data from database. Starting without SSL."; } }
+        public static string StartedServer(string ip, int port) { return LC.L(@"Server has started and is listening on {0}, port {1}", ip, port); }
+        public static string SSLCertificateFailure(string errormessage) { return LC.L(@"Unable to create SSL certificate using provided parameters. Exception detail: {0}", errormessage); }
+        public static string ServerStartFailure(IEnumerable<int> portstried) { return LC.L(@"Unable to open a socket for listening, tried ports: {0}", string.Join(",", from n in (portstried ?? new int[0]) select n.ToString())); }
+    }
+
 }

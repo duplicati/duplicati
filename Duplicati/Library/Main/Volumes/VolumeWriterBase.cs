@@ -48,7 +48,10 @@ namespace Duplicati.Library.Main.Volumes
         public VolumeWriterBase(Options options, DateTime timestamp)
             : base(options)
         {
-            m_localfile = new Library.Utility.TempFile();
+            if (!string.IsNullOrWhiteSpace(options.AsynchronousUploadFolder))
+                m_localfile = Library.Utility.TempFile.CreateInFolder(options.AsynchronousUploadFolder);
+            else
+                m_localfile = new Library.Utility.TempFile();
 
             ResetRemoteFilename(options, timestamp);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);

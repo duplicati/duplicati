@@ -367,11 +367,16 @@ process_installer "${MSI32NAME}" "msi86"
 process_installer "${MSI64NAME}" "msi64"
 
 cat >> "./tmp/latest-installers.json" <<EOF
-	"done": true
+	"version": "${VERSION}"
 }
 EOF
 
+echo "duplicati_installers =" > "./tmp/latest-installers.js"
+cat "./tmp/latest-installers.json" >> "./tmp/latest-installers.js"
+echo ";" >> "./tmp/latest-installers.js"
+
 aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.json" "s3://updates.duplicati.com/${BUILDTYPE}/latest-installers.json"
+aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.js" "s3://updates.duplicati.com/${BUILDTYPE}/latest-installers.js"
 
 if [ -d "./tmp" ]; then
 	rm -rf "./tmp"

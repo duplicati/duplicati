@@ -1,4 +1,4 @@
-backupApp.controller('AboutController', function($scope, $location, Localization, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils) {
+backupApp.controller('AboutController', function($scope, $location, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils, gettextCatalog) {
     $scope.brandingService = BrandingService.watch($scope);
     $scope.Page = 'general';
     $scope.sysinfo = SystemInfo.watch($scope);
@@ -51,7 +51,7 @@ backupApp.controller('AboutController', function($scope, $location, Localization
     };
 
     $scope.doStartUpdateActivate = function() {
-        AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError(Localization.localize('Activate failed:') + ' '));
+        AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError(gettextCatalog.getString('Activate failed:') + ' '));
     };
 
     $scope.doCheckForUpdates = function() {

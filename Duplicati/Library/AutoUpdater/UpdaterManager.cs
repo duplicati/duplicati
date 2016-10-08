@@ -1071,6 +1071,8 @@ namespace Duplicati.Library.AutoUpdater
                                  false
                              );
 
+                domain.SetData("LOCALIZATION_FOLDER", InstalledBaseDir);
+
                 result = domain.ExecuteAssemblyByName(method.DeclaringType.Assembly.GetName().Name, cmdargs);
 
                 folder = (string)domain.GetData(RUN_UPDATED_FOLDER_PATH);

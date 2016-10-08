@@ -1,6 +1,8 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Localization) {
+backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gettextCatalog) {
 
     var apputils = this;
+
+    this.exampleOptionString = '--dblock-size=100MB';
 
     try {
         moment.locale(
@@ -36,80 +38,81 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
         if (m) $timeout(m);
     };
 
-
     function reloadTexts() {
         apputils.fileSizeMultipliers = [
-            {name: Localization.localize('byte'), value: ''},
-            {name: Localization.localize('KByte'), value: 'KB'},
-            {name: Localization.localize('MByte'), value: 'MB'},
-            {name: Localization.localize('GByte'), value: 'GB'},
-            {name: Localization.localize('TByte'), value: 'TB'}
+            {name: gettextCatalog.getString('byte'), value: ''},
+            {name: gettextCatalog.getString('KByte'), value: 'KB'},
+            {name: gettextCatalog.getString('MByte'), value: 'MB'},
+            {name: gettextCatalog.getString('GByte'), value: 'GB'},
+            {name: gettextCatalog.getString('TByte'), value: 'TB'}
         ];
 
         apputils.timerangeMultipliers = [
-            {name: Localization.localize('Minutes'), value: 'm'},
-            {name: Localization.localize('Hours'), value: 'h'},
-            {name: Localization.localize('Days'), value: 'D'},
-            {name: Localization.localize('Weeks'), value: 'W'},
-            {name: Localization.localize('Months'), value: 'M'},
-            {name: Localization.localize('Years'), value: 'Y'}
+            {name: gettextCatalog.getString('Minutes'), value: 'm'},
+            {name: gettextCatalog.getString('Hours'), value: 'h'},
+            {name: gettextCatalog.getString('Days'), value: 'D'},
+            {name: gettextCatalog.getString('Weeks'), value: 'W'},
+            {name: gettextCatalog.getString('Months'), value: 'M'},
+            {name: gettextCatalog.getString('Years'), value: 'Y'}
         ];
 
         apputils.daysOfWeek = [
-            {name: Localization.localize('Mon'), value: 'mon'}, 
-            {name: Localization.localize('Tue'), value: 'tue'}, 
-            {name: Localization.localize('Wed'), value: 'wed'}, 
-            {name: Localization.localize('Thu'), value: 'thu'}, 
-            {name: Localization.localize('Fri'), value: 'fri'}, 
-            {name: Localization.localize('Sat'), value: 'sat'}, 
-            {name: Localization.localize('Sun'), value: 'sun'}
+            {name: gettextCatalog.getString('Mon'), value: 'mon'}, 
+            {name: gettextCatalog.getString('Tue'), value: 'tue'}, 
+            {name: gettextCatalog.getString('Wed'), value: 'wed'}, 
+            {name: gettextCatalog.getString('Thu'), value: 'thu'}, 
+            {name: gettextCatalog.getString('Fri'), value: 'fri'}, 
+            {name: gettextCatalog.getString('Sat'), value: 'sat'}, 
+            {name: gettextCatalog.getString('Sun'), value: 'sun'}
         ];
 
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
+
         apputils.filterClasses = [{
-            name: Localization.localize('Exclude directories whose names contain'),
+            name: gettextCatalog.getString('Exclude directories whose names contain'),
             key: '-dir*',
             prefix: '-*',
             suffix: '*!',
             rx: '\\-\\*([^\\!]+)\\*\\!'
         }, {
-            name: Localization.localize('Exclude files whose names contain'),
+            name: gettextCatalog.getString('Exclude files whose names contain'),
             key: '-file*',
             prefix: '-[.*',
             suffix: '.*[^!]]',
             rx: '\\-\\[\\.\\*([^\\!]+)\\.\\*\\[\\^\\!\\]\\]'
         }, {
-            name: Localization.localize('Exclude folder'),
+            name: gettextCatalog.getString('Exclude folder'),
             key: '-folder',
             prefix: '-',
             suffix: '!',
             rx: '\\-(.*)\\!'
         }, {
-            name: Localization.localize('Exclude file'),
+            name: gettextCatalog.getString('Exclude file'),
             key: '-path',
             prefix: '-',
             exclude: ['*', '?'],
             rx: '\\-([^\\[\\*\\?]+)'
         }, {
-            name: Localization.localize('Exclude file extension'),
+            name: gettextCatalog.getString('Exclude file extension'),
             key: '-ext',
             rx: '\\-\\*\.(.*)',
             prefix: '-*.'
         }, {
-            name: Localization.localize('Exclude regular expression'),
+            name: gettextCatalog.getString('Exclude regular expression'),
             key: '-[]',
             prefix: '-[',
             suffix: ']'
         }, {
-            name: Localization.localize('Include regular expression'),
+            name: gettextCatalog.getString('Include regular expression'),
             key: '+[]',
             prefix: '+[',
             suffix: ']'
         }, {
-            name: Localization.localize('Include expression'),
+            name: gettextCatalog.getString('Include expression'),
             key: '+',
             prefix: '+'
         }, {
-            name: Localization.localize('Exclude expression'),
+            name: gettextCatalog.getString('Exclude expression'),
             key: '-',
             prefix: '-'
         }];
@@ -122,7 +125,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
     };
 
     reloadTexts();
-    Localization.watch($rootScope, reloadTexts);
+    $rootScope.$on('gettextLanguageChanged', reloadTexts); 
 
     this.parseBoolString = function(txt, def) {
         txt = (txt || '').toLowerCase();
@@ -207,7 +210,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
     this.parse_extra_options = function(str, dict) {
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
-                DialogService.dialog(Localization.localize('Error'), Localization.localize('Duplicate option {0}', k));
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Duplicate option {{opt}}', { opt: k }));
                 return false;
             }
 
@@ -253,9 +256,9 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
             if (msg == null)
                 return function(msg) {
                     if (msg && msg.data && msg.data.Message)
-                        DialogService.dialog(Localization.localize('Error'), txt + msg.data.Message);
+                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
                     else
-                        DialogService.dialog(Localization.localize('Error'), txt + msg.statusText);
+                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
                 };
         } else {
             msg = txt;
@@ -263,9 +266,9 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
         }
 
         if (msg && msg.data && msg.data.Message)
-            DialogService.dialog(Localization.localize('Error'), txt + msg.data.Message);
+            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
         else
-            DialogService.dialog(Localization.localize('Error'), txt + msg.statusText);
+            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
     };
 
     this.generatePassphrase = function() {
@@ -545,7 +548,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, Loca
 
         var items = angular.copy(sysinfo.Options);
         for(var n in items)
-            items[n].Category = Localization.localize('Core options');
+            items[n].Category = gettextCatalog.getString('Core options');
 
         function copyToList(lst, key) {
             for(var n in lst)

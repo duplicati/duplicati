@@ -1,3 +1,22 @@
+2016-09-29
+==========
+* Updated help file for commandline
+* Fixed a problem with showing progress / crashing UI
+* Support for localization
+* Added messages in the log when finishing an operation
+* Added log message after starting the webserver
+* Support for the --asynchronous-upload-folder setting
+* Added a dialog in the UI when clicking Run and the server is paused
+* Improved formating of the logged result message
+* Updated bundled GPG for Windows
+
+2016-09-26
+==========
+* Fixed some issues in commandline help (thanks @agrajaghh)
+* Added support for backing up HyperV machines (thanks @GNicho)
+* Fixed showing backend statistics when --no-remote-verification is specified
+* Fixed global options not being applied
+
 2016-09-21
 ==========
 * Change default TrayIcon on OSX to work on 32bit Mono

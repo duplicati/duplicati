@@ -33,13 +33,15 @@ Show the last changes to Duplicati
 
 # =============================================================================
 > duplicati.commandline.exe help system-info
+> duplicati.commandline.exe help systeminfo
 
 Show system information as seen by Duplicati
-==================================
+============================================
   Issue the following command to see a variety of system information relevant to Duplicati. 
   
   %MONO%"%APP_PATH%" system-info
 
+# =============================================================================
 > duplicati.commandline.exe help example
 > duplicati.commandline.exe help examples
 
@@ -223,7 +225,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaning what backup sets and files are affected by a remote file. You 
+  Returns a report explaning what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
   
   
 # =============================================================================

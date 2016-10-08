@@ -1,0 +1,1 @@
+angular-gettext-cli --compile --files "*.po" --dest ../../Duplicati/Server/webroot/ngax/scripts/angular-gettext-cli_compiled_js_output.js --format javascript --module backupApp
