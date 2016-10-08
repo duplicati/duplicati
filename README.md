@@ -70,3 +70,17 @@ Keep your data safe! Bad guys on the Internet seem to look for interesting data 
 Store your backup far away! The best backup is useless when it is destroyed together with it's original data. Just assume that a fire destroys your office - would your backup survive? Duplicati stores backups on various remote file servers and it supports incremental backups so that only changed parts need to be transfered. This makes it easy to use a destination far away from the original data.
 
 Backup regularly! The worst case is that your backup is outdated simply because someone forgot to make a backup at the right time. Duplicati has a built-in scheduler, so that it's easy to have a regular, up-to-date backup. Furthermore, Duplicati uses file compression and is able to store incremental backups to save storage space and bandwidth.
+
+Contributing
+==================
+
+## Contributing Bug reports
+We use GitHub for bug tracking. Please search the existing issues for your bug and create a new one if the issue is not yet tracked:
+https://github.com/duplicati/duplicati/issues
+
+## Contributing Translations
+Interested in helping to translate duplicati? Help is always welcome at transifex:
+https://www.transifex.com/duplicati/duplicati/dashboard/
+
+## Contributing Code
+Instructions on how to setup your development environment and build duplicati can be found in the [wiki](https://github.com/duplicati/duplicati/wiki/How-to-build-from-source). Pull requests fixing bugs or improving duplicati in another way are appreciated.
