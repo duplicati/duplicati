@@ -163,12 +163,12 @@ namespace Duplicati.Library.Localization
             return catalog.GetString(message, args);
         }
 
-        private static List<String> m_supportedcultures = null;
+        private static IEnumerable<CultureInfo> m_supportedcultures = null;
 
         /// <summary>
         /// Gets a list of all the supported cultures
         /// </summary>
-        public static IEnumerable<string> SupportedCultures
+        private static IEnumerable<CultureInfo> SupportedCultureInfos
         {
             get
             {
@@ -189,17 +189,38 @@ namespace Duplicati.Library.Localization
                         where ci != null
                         select ci;
 
-                    m_supportedcultures =
-                        allcultures
-                            .Select(x => x.TwoLetterISOLanguageName).Distinct().OrderBy(x => x)
-                            .Union(
-                                allcultures.Select(x => x.Name).Distinct().OrderBy(x => x)
-                        ).ToList();
-
-                    m_supportedcultures.Add("en");
+                    m_supportedcultures = allcultures.Concat(new[] { new CultureInfo("en") })
+                                                     .Distinct();
                 }
                 return m_supportedcultures;
             }
+        }
+
+        /// <summary>
+        /// Gets a list of all the supported cultures
+        /// </summary>
+        public static IEnumerable<string> SupportedCultures
+        {
+            get
+            {
+                return SupportedCultureInfos
+                    .Select(x => x.Name).Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+            }
+        }
+        
+        /// <summary>
+        /// Returns true if the culture has localization support
+        /// </summary>
+        public static Boolean isCultureSupported(CultureInfo culture)
+        {
+            foreach (var supportedCulture in SupportedCultureInfos)
+            {
+                if (supportedCulture.TwoLetterISOLanguageName == culture.TwoLetterISOLanguageName)
+                    return true;
+            }
+            return false;            
         }
     }
 }

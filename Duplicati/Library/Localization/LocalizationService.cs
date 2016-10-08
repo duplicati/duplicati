@@ -138,6 +138,14 @@ namespace Duplicati.Library.Localization
         {
             get { return MoLocalizationService.SupportedCultures; }
         }
+
+        /// <summary>
+        /// Returns true if the culture has localization support
+        /// </summary>
+        public static Boolean isCultureSupported(CultureInfo culture)
+        {
+            return MoLocalizationService.isCultureSupported(culture);
+        }
     }
 }
 

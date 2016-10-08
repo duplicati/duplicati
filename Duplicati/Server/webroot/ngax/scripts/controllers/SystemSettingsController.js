@@ -4,13 +4,15 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
-    };
+    }
 
     reloadOptionsList();
 
     $scope.$on('systeminfochanged', reloadOptionsList);
 
     $scope.uiLanguage = $cookies.get('ui-locale');
+    $scope.lang_browser_default = gettextCatalog.getString('Browser default');
+    $scope.lang_default = gettextCatalog.getString('Default');
 
     function setUILanguage() {
         if (($scope.uiLanguage || '').trim().length == 0) {
@@ -21,10 +23,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             gettextCatalog.setCurrentLanguage($scope.uiLanguage);
         }
         $rootScope.$broadcast('ui_language_changed');
-    };
-
-    // Uncomment for immediate change
-    //$scope.$watch('uiLanguage', setUILanguage);
+    }
 
     AppService.get('/serversettings').then(function(data) {
 
@@ -55,7 +54,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel
-        }
+        };
 
 
         if ($scope.requireRemotePassword) {
