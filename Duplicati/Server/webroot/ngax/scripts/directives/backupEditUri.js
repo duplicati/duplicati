@@ -9,6 +9,7 @@ backupApp.directive('backupEditUri', function() {
     controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
 
         var scope = $scope;
+        scope.AppUtils = AppUtils;
 
         var builduri = function(callback) {
 

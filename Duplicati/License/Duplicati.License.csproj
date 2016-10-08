@@ -344,6 +344,18 @@
       <Link>licenses\BouncyCastle\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
+      <Link>licenses\AngularGettext\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\angular-gettext\License.txt">
+      <Link>licenses\AngularGettext\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\angular-gettext\licensedata.json">
+      <Link>licenses\AngularGettext\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -374,5 +386,6 @@
     <Folder Include="licenses\System.Net.FtpClient\" />
     <Folder Include="licenses\MimeKit\" />
     <Folder Include="licenses\BouncyCastle\" />
+    <Folder Include="licenses\AngularGettext\" />
   </ItemGroup>
 </Project>

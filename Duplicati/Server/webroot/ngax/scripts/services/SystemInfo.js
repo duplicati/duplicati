@@ -1,4 +1,4 @@
-backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, AppService, AppUtils) {
+backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppService, AppUtils, gettextCatalog) {
 
     var state = {};
     this.state = state;
@@ -43,13 +43,13 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
 
     function reloadTexts() {
         state.backendgroups = this.backendgroups = {
-            std: { 
-                'ftp': null, 
-                'ssh': null, 
-                'webdav': null, 
-                'openstack': Localization.localize('OpenStack Object Storage / Swift'), 
-                's3': Localization.localize('S3 Compatible'), 
-                'aftp': Localization.localize('FTP (Alternative)')
+            std: {
+                'ftp': null,
+                'ssh': null,
+                'webdav': null,
+                'openstack': gettextCatalog.getString('OpenStack Object Storage / Swift'),
+                's3': gettextCatalog.getString('S3 Compatible'),
+                'aftp': gettextCatalog.getString('FTP (Alternative)')
             },
             local: {'file': null},
             prop: {
@@ -72,10 +72,10 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
         };
 
         state.GroupTypes = this.GroupTypes = [
-            Localization.localize('Local storage'),
-            Localization.localize('Standard protocols'),
-            Localization.localize('Proprietary'),
-            Localization.localize('Others')
+            gettextCatalog.getString('Local storage'),
+            gettextCatalog.getString('Standard protocols'),
+            gettextCatalog.getString('Proprietary'),
+            gettextCatalog.getString('Others')
         ];
 
         reloadBackendConfig();
@@ -88,7 +88,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
     };
 
     reloadTexts();
-    Localization.watch($rootScope, reloadTexts);
+    $rootScope.$on('gettextLanguageChanged', reloadTexts);
+
 
     this.watch = function(scope, m) {
         scope.$on('systeminfochanged', function() {
@@ -107,13 +108,27 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, Localization, App
         $rootScope.$broadcast('systeminfochanged');
     };
 
-    AppService.get('/systeminfo').then(function(data) {
+    function loadSystemInfo(reload) {
+        AppService.get('/systeminfo').then(function(data) {
+            angular.copy(data.data, state);
+            
+            if (reload !== true) {
+                uiLanguage = $cookies.get('ui-locale');
+                if ((uiLanguage || '').trim().length == 0) {
+                    gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
+                } else {
+                    gettextCatalog.setCurrentLanguage(uiLanguage);
+                }
+            }
 
-        angular.copy(data.data, state);
-
-        reloadTexts();
-        reloadBackendConfig();
-        $rootScope.$broadcast('systeminfochanged');        
-
-    }, AppUtils.connectionError)
+            reloadTexts();
+            reloadBackendConfig();
+            $rootScope.$broadcast('systeminfochanged');
+        }, AppUtils.connectionError)
+    }
+    
+    loadSystemInfo();
+    $rootScope.$on('ui_language_changed', function() {
+        loadSystemInfo(true);
+    });
 });

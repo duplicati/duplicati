@@ -254,7 +254,6 @@ namespace Duplicati.Library.Main
                     "vss-use-mapping",
                     "usn-policy",
                     "hyperv-backup-vm",
-                    "hyperv-backup-no-merge",
                     "symlink-policy",
                     "hardlink-policy",
                     "exclude-files-attributes",
@@ -450,7 +449,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
                     new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
                     new CommandLineArgument("hyperv-backup-vm", CommandLineArgument.ArgumentType.String, Strings.Options.HypervbackupvmShort, Strings.Options.HypervbackupvmLong),
-                    new CommandLineArgument("hyperv-backup-no-merge", CommandLineArgument.ArgumentType.Boolean, Strings.Options.HypervbackupnomergeShort, Strings.Options.HypervbackupnomergeLong),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -465,7 +463,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
 
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
-                    new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
+                    new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),

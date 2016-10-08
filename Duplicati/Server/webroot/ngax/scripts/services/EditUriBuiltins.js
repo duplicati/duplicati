@@ -1,4 +1,4 @@
-backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization, SystemInfo, EditUriBackendConfig, DialogService, $http) {
+backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http, gettextCatalog) {
 
     EditUriBackendConfig.mergeServerAndPath = function(scope) {
         if ((scope.Server || '') != '') {
@@ -37,12 +37,12 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
         var dlg = null;
 
-        dlg = DialogService.dialog(Localization.localize('Testing permissions...'), Localization.localize('Testing permissions ...'), [], null, function() {    
+        dlg = DialogService.dialog(gettextCatalog.getString('Testing permissions...'), gettextCatalog.getString('Testing permissions ...'), [], null, function() {    
             AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CanCreateUser', 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
                 dlg.dismiss();
 
                 if (data.data.Result.isroot == 'True') {
-                    DialogService.dialog(Localization.localize('User has too many permissions'), Localization.localize('The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?'), [Localization.localize('Cancel'), Localization.localize('No') ,Localization.localize('Yes')], function(ix) {
+                    DialogService.dialog(gettextCatalog.getString('User has too many permissions'), gettextCatalog.getString('The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No') ,gettextCatalog.getString('Yes')], function(ix) {
                         if (ix == 0 || ix == 1) {
                             callback();
                         } else {
@@ -107,7 +107,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
             var dlg = null;
 
-            dlg = DialogService.dialog(Localization.localize('Creating user...'), Localization.localize('Creating new user with limited access ...'), [], null, function() {
+            dlg = DialogService.dialog(gettextCatalog.getString('Creating user...'), gettextCatalog.getString('Creating new user with limited access ...'), [], null, function() {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
                 AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'CreateIAMUser', 's3-path': path, 's3-username': scope.Username, 's3-password': scope.Password}).then(function(data) {
@@ -116,7 +116,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
                     scope.Username = data.data.Result.accessid;
                     scope.Password = data.data.Result.secretkey;
 
-                    DialogService.dialog(Localization.localize('Created new limited user'), Localization.localize('New user name is {0}.\nUpdated credentials to use the new limited user', data.data.Result.username), [Localization.localize('OK')], callback);
+                    DialogService.dialog(gettextCatalog.getString('Created new limited user'), gettextCatalog.getString('New user name is {{user}}.\nUpdated credentials to use the new limited user', { user: data.data.Result.username}), [gettextCatalog.getString('OK')], callback);
 
                 }, function(data) { 
                     dlg.dismiss();
@@ -130,7 +130,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
                 AppService.post('/webmodule/s3-iamconfig', {'s3-operation': 'GetPolicyDoc', 's3-path': path}).then(function(data) {
-                    DialogService.dialog(Localization.localize('AWS IAM Policy'), data.data.Result.doc);
+                    DialogService.dialog(gettextCatalog.getString('AWS IAM Policy'), data.data.Result.doc);
                 }, AppUtils.connectionError);
             });
 
@@ -527,12 +527,12 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
     EditUriBackendConfig.validaters['ftp'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_server(scope) &&
-            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Username'));
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username'));
 
         if (res)
             EditUriBackendConfig.recommend_path(scope, function () {
                 if ((scope.Password || '').trim().length == 0)
-                    EditUriBackendConfig.show_warning_dialog(Localization.localize('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?'), continuation);
+                    EditUriBackendConfig.show_warning_dialog(gettextCatalog.getString('It is possible to connect to some FTP without a password.\nAre you sure your FTP server supports password-less logins?'), continuation);
                 else
                     continuation();
             });
@@ -556,7 +556,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
     EditUriBackendConfig.validaters['onedrive'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'AuthID', Localization.localize('AuthID'));
+            EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
 
         if (res)
             EditUriBackendConfig.recommend_path(scope, continuation);
@@ -571,7 +571,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
             var p = (scope.Path || '').trim();
 
             if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
-                DialogService.dialog(Localization.localize('Adjust path name?'), Localization.localize('The path should start with "{0}" or "{1}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', prefix, 'default'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
+                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix}}" or "{{def}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {prefix: prefix, def: 'default' }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                     if (ix == 2) {
                         while (p.indexOf('/') == 0)
                             p = p.substr(1);
@@ -597,9 +597,9 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
     EditUriBackendConfig.validaters['azure'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Account name')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('Access Key')) &&
-            EditUriBackendConfig.require_field(scope, 'Path', Localization.localize('Container name'));
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Account name')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Access Key')) &&
+            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Container name'));
 
         if (res)
             continuation();
@@ -607,23 +607,23 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
     EditUriBackendConfig.validaters['openstack'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Path', Localization.localize('Bucket Name'));
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
+            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket Name'));
 
         if (res && (scope['openstack_server'] || '').trim().length == 0 && (scope['openstack_server_custom'] || '').trim().length == 0)
-            res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must select or fill in the AuthURI'));
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must select or fill in the AuthURI'));
 
         if (((scope.openstack_apikey) || '').trim().length == 0) {
 
             if (res && (scope.Password || '').trim().length == 0)
-                res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must enter either a password or an API Key'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key'));
 
             if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must enter a tenant name if you do not provide an API Key'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API Key'));
 
         } else {
             if (res && (scope.Password || '').trim().length != 0)
-                res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must enter either a password or an API Key, not both'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key, not both'));
         }
 
         if (res)
@@ -632,19 +632,19 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
     EditUriBackendConfig.validaters['s3'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', Localization.localize('Bucket Name')) &&
-            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('AWS Access ID')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('AWS Access Key'));
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('AWS Access ID')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('AWS Access Key'));
 
         if (res && (scope['s3_server'] || '').trim().length == 0 && (scope['s3_server_custom'] || '').trim().length == 0)
-            res = EditUriBackendConfig.show_error_dialog(Localization.localize('You must select or fill in the server'));
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must select or fill in the server'));
 
 
         if (res) {
 
             function checkUsernamePrefix() {
                 if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
-                    DialogService.dialog(Localization.localize('Adjust bucket name?'), Localization.localize('The bucket name should start with your username, prepend automatically?'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
+                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('The bucket name should start with your username, prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                         if (ix == 2)
                             scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
                         if (ix == 1 || ix == 2)
@@ -661,7 +661,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
             function checkLowerCase() {
                 if (scope.Server.toLowerCase() != scope.Server) {
-                    DialogService.dialog(Localization.localize('Adjust bucket name?'), Localization.localize('The bucket name should be all lower-case, convert automatically?'), [Localization.localize('Cancel'), Localization.localize('No'), Localization.localize('Yes')], function(ix) {
+                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('The bucket name should be all lower-case, convert automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                         if (ix == 2)
                             scope.Server = scope.Server.toLowerCase();
 
@@ -679,9 +679,9 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
 
     EditUriBackendConfig.validaters['b2'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', Localization.localize('Bucket Name')) &&
-            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('B2 Cloud Storage Account ID')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('B2 Cloud Storage Application Key'));
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('B2 Cloud Storage Account ID')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('B2 Cloud Storage Application Key'));
 
         if (res)
             continuation();
@@ -690,8 +690,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, Localization
     EditUriBackendConfig.validaters['mega'] = function(scope, continuation) {
         scope.Path = scope.Path || '';
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', Localization.localize('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', Localization.localize('Password'));
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
 
         if (res)
             continuation();

@@ -69,7 +69,7 @@ namespace Duplicati.Server.WebServer
         private static System.Globalization.CultureInfo ParseRequestCulture(RequestInfo info)
         {
             // Inject the override
-            return ParseRequestCulture(string.Format("{0}, {1}", info.Request.Headers["X-UI-Language"], info.Request.Headers["Accept-Language"]));
+            return ParseRequestCulture(string.Format("{0},{1}", info.Request.Headers["X-UI-Language"], info.Request.Headers["Accept-Language"]));
         }
 
         public static System.Globalization.CultureInfo ParseDefaultRequestCulture(RequestInfo info)

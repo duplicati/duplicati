@@ -98,6 +98,15 @@ namespace Duplicati.Library.Localization.Short
         private static ILocalizationService LS = LocalizationService.Current;
 
         /// <summary>
+        /// Sets the culture
+        /// </summary>
+        /// <param name="ci">CultureInfo</param>
+        public static void setCulture(System.Globalization.CultureInfo ci)
+        {
+            LS = LocalizationService.Get(ci);
+        }
+
+        /// <summary>
         /// Localizes the string similar to how string.Format works
         /// </summary>
         /// <param name="message">The string to localize</param>

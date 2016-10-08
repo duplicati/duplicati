@@ -94,7 +94,6 @@ dos2unix Tools/Verification/DuplicatiVerify.py
 %patch1 -p1
 
 # removing own duplicati binaries:
-rm Duplicati/Localization/LocalizationTool.exe
 rm -f Duplicati/Localization/Duplicati.Library.Utility.dll
 
 # platform settings:

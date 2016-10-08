@@ -135,12 +135,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <Compile Include="WinFormsRunner.cs" />
-    <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
-    <EmbeddedResource Include="Resources\Pause.png" />
-    <EmbeddedResource Include="Resources\Play.png" />
-    <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
     <Compile Include="RumpsRunner.cs" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Resources\context_menu_open.ico" />
+    <EmbeddedResource Include="Resources\context_menu_pause.ico" />
+    <EmbeddedResource Include="Resources\context_menu_play.ico" />
+    <EmbeddedResource Include="Resources\context_menu_quit.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

@@ -36,7 +36,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
         public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders, use this option to restore to another folder"); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
-        public static string AllowsleepShort { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only)"); } }
+        public static string AllowsleepShort { get { return LC.L(@"Toggles system sleep mode"); } }
+        public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows/OSX only)"); } }
         public static string ThrottledownloadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
         public static string ThrottledownloadShort { get { return LC.L(@"Max number of kilobytes to download pr. second"); } }
         public static string ThrottleuploadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
@@ -217,10 +218,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencyblockhashersLong { get { return LC.L(@"Use this option to set the number of processes that perform hashing of data."); } }
         public static string ConcurrencycompressorsShort{ get { return LC.L(@"Specify the number of concurrent compression processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
-        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of HyperV machines (Windows only)"); } }
-        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the names of machines to include in the backup. Specify multiple machine names with a semicolon separator."); } }
-        public static string HypervbackupnomergeShort { get { return LC.L(@"Do not merge the HyperV VHD (Windows only)"); } }
-        public static string HypervbackupnomergeLong { get { return LC.L(@"Use this option to disable the merge of HyperV VHD's prior to performing the backup."); } }
+        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of Hyper-V machines (Windows only)"); } }
+        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the IDs of machines to include in the backup. Specify multiple machine IDs with a semicolon separator. (You can use this Powershell command to get ID 'Get-VM | ft VMName, ID')"); } }
     }
 
     internal static class Common

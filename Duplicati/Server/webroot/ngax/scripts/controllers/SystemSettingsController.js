@@ -1,29 +1,29 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, Localization, SystemInfo) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
-    };
+    }
 
     reloadOptionsList();
 
     $scope.$on('systeminfochanged', reloadOptionsList);
 
     $scope.uiLanguage = $cookies.get('ui-locale');
+    $scope.lang_browser_default = gettextCatalog.getString('Browser default');
+    $scope.lang_default = gettextCatalog.getString('Default');
 
     function setUILanguage() {
         if (($scope.uiLanguage || '').trim().length == 0) {
             $cookies.remove('ui-locale');
-            Localization.setLocale(null);
+            gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.replace("-", "_"));
         } else {
             $cookies.put('ui-locale', $scope.uiLanguage);
-            Localization.setLocale($scope.uiLanguage);
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage);
         }
-    };
-
-    // Uncomment for immediate change
-    //$scope.$watch('uiLanguage', setUILanguage);
+        $rootScope.$broadcast('ui_language_changed');
+    }
 
     AppService.get('/serversettings').then(function(data) {
 
@@ -54,7 +54,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel
-        }
+        };
 
 
         if ($scope.requireRemotePassword) {
@@ -79,7 +79,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
 
                 $location.path('/');
             },
-            AppUtils.connectionError(Localization.localize('Failed to save:') + ' ')
+            AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
     };
 
@@ -90,7 +90,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
                 $scope.SystemInfo.SuppressDonationMessages = true; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError(Localization.localize('Operation failed:') + ' ')
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 
@@ -101,7 +101,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
                 $scope.SystemInfo.SuppressDonationMessages = false; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError(Localization.localize('Operation failed:' + ' '))
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 });
