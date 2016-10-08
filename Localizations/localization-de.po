@@ -448,11 +448,11 @@ msgstr "Ordner ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:502
 msgid "Exclude files whose names contain"
-msgstr "Dateien, welche folgenden Namen beinhalten, ausschließen"
+msgstr "Dateien ausschließen, die folgenden Namen beinhalten"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:508
 msgid "Exclude directories whose names contain"
-msgstr "Ordner, welche folgenden Namen beinhalten, ausschließen"
+msgstr "Ordner ausschließen, die folgenden Namen beinhalten"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:512
 msgid "Sun"
@@ -1328,7 +1328,7 @@ msgstr "Pause"
 
 #: Server/webroot/ngax/templates/pause.html:5
 msgid "Until resumed"
-msgstr "Bis zur wiederaufnahme"
+msgstr "Bis zur Wiederaufnahme"
 
 #: Server/webroot/ngax/templates/pause.html:8
 msgid "{0} Hour"
