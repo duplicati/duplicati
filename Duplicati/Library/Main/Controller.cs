@@ -206,13 +206,13 @@ namespace Duplicati.Library.Main
                 for(int i = 0; i < sources.Count - 1; i++)
                 {
                     for(int j = i + 1; j < sources.Count; j++)
-                        if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                        if (sources[i].Equals(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
                         {
                             result.AddVerboseMessage("Removing duplicate source: {0}", sources[j]);
                             sources.RemoveAt(j);
                             j--;
                         }
-                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
                         {
                             bool includes;
                             bool excludes;
