@@ -1,19 +1,14 @@
 # Translators:
 # Kenneth Skovhede <kenneth@hexad.dk>, 2016
-# agrajaghh <agrajaghh@gmail.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: agrajaghh <agrajaghh@gmail.com>, 2016\n"
+"Last-Translator: Kenneth Skovhede <kenneth@hexad.dk>, 2016\n"
 "Language-Team: Danish (https://www.transifex.com/duplicati/teams/67655/da/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: da\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-#: templates/notificationarea.html:9
-msgid "'right click and choose &quot;Save as ...&quot;"
-msgstr ""
 
 #: templates/advancedoptionseditor.html:36
 msgid "- pick an option -"
@@ -43,11 +38,11 @@ msgstr ""
 
 #: index.html:169
 msgid "About"
-msgstr "Danish TEST - About"
+msgstr ""
 
 #: templates/about.html:2
 msgid "About {{appname}}"
-msgstr "Danish TEST - About {{appname}}"
+msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:601 templates/backends/azure.html:11
 msgid "Access Key"
@@ -107,7 +102,7 @@ msgstr ""
 msgid "Advanced:"
 msgstr ""
 
-#: templates/settings.html:104
+#: templates/settings.html:106
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -142,7 +137,7 @@ msgid ""
 " Do you wish to use the existing database?"
 msgstr ""
 
-#: templates/settings.html:93
+#: templates/settings.html:95
 msgid "Anonymous usage reports"
 msgstr ""
 
@@ -209,7 +204,7 @@ msgstr ""
 msgid "Backups are currently paused,"
 msgstr ""
 
-#: templates/settings.html:70
+#: templates/settings.html:72
 msgid "Beta"
 msgstr ""
 
@@ -221,8 +216,8 @@ msgstr ""
 msgid "Browse"
 msgstr ""
 
-#: templates/settings.html:42
-msgid "Browser default ({{displayname}}, {{code}})"
+#: scripts/controllers/SystemSettingsController.js:14
+msgid "Browser default"
 msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:611
@@ -261,7 +256,7 @@ msgstr ""
 msgid "Busy ..."
 msgstr ""
 
-#: templates/settings.html:80
+#: templates/settings.html:82
 msgid "Canary"
 msgstr ""
 
@@ -278,7 +273,7 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:647
 #: scripts/services/EditUriBuiltins.js:664 templates/edituri.html:35
 #: templates/export.html:26 templates/import.html:18
-#: templates/restoredirect.html:22 templates/settings.html:122
+#: templates/restoredirect.html:22 templates/settings.html:124
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr ""
@@ -400,7 +395,7 @@ msgstr ""
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr ""
 
-#: templates/settings.html:99
+#: templates/settings.html:101
 msgid "Crashes only"
 msgstr ""
 
@@ -468,11 +463,15 @@ msgstr ""
 msgid "Days"
 msgstr ""
 
-#: templates/settings.html:57
+#: scripts/controllers/SystemSettingsController.js:15
+msgid "Default"
+msgstr ""
+
+#: templates/settings.html:59
 msgid "Default ({{channelname}})"
 msgstr ""
 
-#: templates/settings.html:108
+#: templates/settings.html:110
 msgid "Default options"
 msgstr ""
 
@@ -519,15 +518,15 @@ msgstr ""
 msgid "Donate with PayPal"
 msgstr ""
 
-#: templates/settings.html:47 templates/settings.html:49
+#: templates/settings.html:49 templates/settings.html:51
 msgid "Donation messages"
 msgstr ""
 
-#: templates/settings.html:51
+#: templates/settings.html:53
 msgid "Donation messages are hidden, click to show"
 msgstr ""
 
-#: templates/settings.html:50
+#: templates/settings.html:52
 msgid "Donation messages are visible, click to hide"
 msgstr ""
 
@@ -567,12 +566,12 @@ msgstr ""
 msgid "Edit ..."
 msgstr ""
 
-#: templates/edituri.html:22 templates/settings.html:111
+#: templates/edituri.html:22 templates/settings.html:113
 msgid "Edit as list"
 msgstr ""
 
 #: templates/addoredit.html:252 templates/addoredit.html:258
-#: templates/edituri.html:28 templates/settings.html:117
+#: templates/edituri.html:28 templates/settings.html:119
 msgid "Edit as text"
 msgstr ""
 
@@ -662,7 +661,7 @@ msgstr ""
 msgid "Error!"
 msgstr ""
 
-#: templates/settings.html:98
+#: templates/settings.html:100
 msgid "Errors and crashes"
 msgstr ""
 
@@ -702,7 +701,7 @@ msgstr ""
 msgid "Existing file found"
 msgstr ""
 
-#: templates/settings.html:75
+#: templates/settings.html:77
 msgid "Experimental"
 msgstr ""
 
@@ -895,7 +894,7 @@ msgstr ""
 msgid "Include regular expression"
 msgstr ""
 
-#: templates/settings.html:81
+#: templates/settings.html:83
 msgid "Individual builds for developers only."
 msgstr ""
 
@@ -1127,12 +1126,12 @@ msgstr ""
 msgid "Non-matching passphrase"
 msgstr ""
 
-#: templates/settings.html:100
+#: templates/settings.html:102
 msgid "None / disabled"
 msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:119 templates/edituri.html:33
-#: templates/restore.html:108 templates/settings.html:123
+#: templates/restore.html:108 templates/settings.html:125
 msgid "OK"
 msgstr ""
 
@@ -1162,8 +1161,8 @@ msgid "Optional authentication username"
 msgstr ""
 
 #: templates/addoredit.html:24 templates/edituri.html:21
-#: templates/edituri.html:27 templates/settings.html:110
-#: templates/settings.html:116
+#: templates/edituri.html:27 templates/settings.html:112
+#: templates/settings.html:118
 msgid "Options"
 msgstr ""
 
@@ -1373,7 +1372,7 @@ msgstr ""
 msgid "S3 Compatible"
 msgstr ""
 
-#: templates/settings.html:58
+#: templates/settings.html:60
 msgid "Same as the base install version: {{channelname}}"
 msgstr ""
 
@@ -1493,7 +1492,7 @@ msgstr ""
 msgid "Source:"
 msgstr ""
 
-#: templates/settings.html:76
+#: templates/settings.html:78
 msgid "Specific builds for developers only."
 msgstr ""
 
@@ -1538,7 +1537,7 @@ msgstr ""
 msgid "Sun"
 msgstr ""
 
-#: templates/settings.html:95
+#: templates/settings.html:97
 msgid "System default ({{levelname}})"
 msgstr ""
 
@@ -1670,7 +1669,7 @@ msgstr ""
 msgid "Today"
 msgstr ""
 
-#: templates/settings.html:71
+#: templates/settings.html:73
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
 msgstr ""
@@ -1691,7 +1690,7 @@ msgstr ""
 msgid "Until resumed"
 msgstr ""
 
-#: templates/settings.html:54
+#: templates/settings.html:56
 msgid "Update channel"
 msgstr ""
 
@@ -1711,18 +1710,18 @@ msgstr ""
 msgid "Uploading verification file ..."
 msgstr ""
 
-#: templates/settings.html:102
+#: templates/settings.html:104
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <a href=\"{{link}}\" "
 "target=\"_blank\">public usage statistics</a>"
 msgstr ""
 
-#: templates/settings.html:91
+#: templates/settings.html:93
 msgid "Usage statistics"
 msgstr ""
 
-#: templates/settings.html:96
+#: templates/settings.html:98
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr ""
 
@@ -1806,7 +1805,7 @@ msgstr ""
 msgid "Waiting for upload ..."
 msgstr ""
 
-#: templates/settings.html:97
+#: templates/settings.html:99
 msgid "Warnings, errors and crashes"
 msgstr ""
 
@@ -2006,7 +2005,7 @@ msgstr ""
 msgid "resuming in"
 msgstr ""
 
-#: templates/export.html:43
+#: templates/export.html:43 templates/notificationarea.html:9
 msgid "right click and choose &quot;Save as ...&quot;"
 msgstr ""
 
