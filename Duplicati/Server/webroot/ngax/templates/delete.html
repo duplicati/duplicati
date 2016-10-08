@@ -1,45 +1,53 @@
 <div ng-controller="DeleteController">
     <form class="styled">
 
-        <h1>{{'Delete backup' | localize}} <b>{{Backup.Backup.Name || ('...loading...' | localize)}}</b></h1>
+        <h1>
+            <span translate>Delete backup</span>
+            <b>
+                <span translate ng-hide="Backup.Backup.Name">...loading...</span>
+                <span ng-show="Backup.Backup.Name">{{Backup.Backup.Name}}</span>
+            </b>
+        </h1>
 
         <div ng-show="NoLocalDB">
-            <h2>{{'Delete local database' | localize}}</h2>
+            <h2 translate>Delete local database</h2>
 
-            {{'Each backup has a local database associated with it, which stores information about the remote backup on the local machine.' | localize}}
-            {{'When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.' | localize}}
-            {{'If you are using the local database for backups from the commandline, you should keep the database.' | localize}}
+            <div translate>
+            Each backup has a local database associated with it, which stores information about the remote backup on the local machine.
+            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.
+            If you are using the local database for backups from the commandline, you should keep the database.
+            </div>
 
             <div class="input checkbox multiple">
-                <label for="deleteLocalDB">{{'Delete the local database' | localize}}</label>
+                <label for="deleteLocalDB" translate>Delete the local database</label>
                 <input type="checkbox" id="deleteLocalDB" ng-model="DeleteLocalDatabase" />
             </div>
         </div>
 
-        <h2>{{'Export configuration' | localize}}</h2>
-        <div class="buttons">
-            {{'If you want to use the backup later, you can export the configuration before deleting it.' | localize}}
-            <input class="submit" type="button" ng-click="doExport()" value="{{'Export configuration' | localize}} &gt;" />
+        <h2 translate>Export configuration</h2>
+        <div translate>If you want to use the backup later, you can export the configuration before deleting it</div>
+        <div class="buttons" translate>
+            <input class="submit" type="button" ng-click="doExport()" value="{{'Export configuration' | translate}} &gt;" />
         </div>
 
         <div ng-show="NoLocalDB">
-            <h2>{{'Delete remote files' | localize}}</h2>
+            <h2 translate>Delete remote files</h2>
 
-            <div ng-show="RemoteFileCount == null">{{'Loading remote storage usage ...' | localize}}</div>
-            <div ng-show="RemoteFileCount != null">
-                {{'Delete {0} files ({1}) from the remote storage?' | localize: RemoteFileCount: AppUtils.formatSizeString(RemoteFileSize)}}
-                {{'WARNING: This will prevent you from restoring the data in the future.'}}
+            <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage ...</div>
+            <div ng-show="Backup.Backup.Metadata.TargetFilesCount != null" translate translate-params-filecount="Backup.Backup.Metadata.TargetFilesCount" translate-params-filesize="Backup.Backup.Metadata.TargetSizeString">
+                Delete {{filecount}} files ({{filesize}}) from the remote storage?
+                <p translate>WARNING: This will prevent you from restoring the data in the future.</p>
             </div>
 
             <div class="input checkbox multiple">
-                <label for="deleteRemoteFiles">{{'WARNING:\nDelete remote files' | localize}}</label>
+                <label for="deleteRemoteFiles" translate>WARNING:<br/>Delete remote files</label>
                 <input type="checkbox" id="deleteRemoteFiles" ng-model="DeleteRemoteFiles" />
             </div>
         </div>    
 
         <div class="buttons">
-            <input class="submit" type="button" ng-click="doDelete()" value="{{'Delete backup' | localize}} &gt;" />
-            <input class="cancel" type="button" ng-click="goBack()" value="{{'Cancel' | localize}}" />
+            <input class="submit" type="button" ng-click="doDelete()" value="{{'Delete backup' | translate}} &gt;" />
+            <input class="cancel" type="button" ng-click="goBack()" value="{{'Cancel' | translate}}" />
         </div>
 
     </form>
