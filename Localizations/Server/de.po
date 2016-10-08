@@ -83,7 +83,7 @@ msgstr "Neues Backup erstellen"
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:647
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:664
 msgid "Adjust bucket name?"
-msgstr "Bucket Name anpassen?"
+msgstr "Bucket-Name anpassen?"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:574
 msgid "Adjust path name?"
@@ -113,11 +113,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:13
 msgid "Allow remote access (requires restart)"
-msgstr ""
+msgstr "Erlaube Remotezugriff (erfordert Neustart)"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:192
 msgid "Allowed days"
-msgstr ""
+msgstr "Erlaube Tage"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
@@ -140,11 +140,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:93
 msgid "Anonymous usage reports"
-msgstr ""
+msgstr "Anomisierte Nutzungsberichte"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/export.html:8
 msgid "As Command-line"
-msgstr ""
+msgstr "Als Kommandozeile"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:559
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/gcs.html:8
@@ -152,7 +152,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/oauth.html:8
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/oauth.html:9
 msgid "AuthID"
-msgstr ""
+msgstr "AuthID"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/generic.html:23
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:23
@@ -194,7 +194,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:28
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:87
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:52
 msgid "Backend modules:"
@@ -202,11 +202,11 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:45
 msgid "Backup to"
-msgstr ""
+msgstr "Backup nach"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:88
 msgid "Backup:"
-msgstr ""
+msgstr "Backup:"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:5
 msgid "Backups are currently paused,"
@@ -214,7 +214,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:70
 msgid "Beta"
-msgstr ""
+msgstr "Beta"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:98
 msgid "Bitcoin: {0}"
@@ -223,7 +223,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/file.html:8
 #: ../../Duplicati/Server/webroot/ngax/templates/restore.html:49
 msgid "Browse"
-msgstr ""
+msgstr "Durchsuchen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:42
 msgid "Browser default ({0}, {1})"
@@ -266,7 +266,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:80
 msgid "Canary"
-msgstr ""
+msgstr "Canary"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:263
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/EditBackupController.js:278
@@ -287,7 +287,7 @@ msgstr ""
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:122
 #: ../../Duplicati/Server/webroot/ngax/templates/waitarea.html:18
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
@@ -295,7 +295,7 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/about.html:5
 msgid "Changelog"
-msgstr ""
+msgstr "Changelog"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/updatechangelog.html:2
 msgid "Changelog for {0} {1}"
