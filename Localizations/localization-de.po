@@ -48,7 +48,7 @@ msgstr "Verbinde mit Server..."
 
 #: Server/webroot/ngax/index.html:28
 msgid "The connection to the server is lost, attempting again in {0} ..."
-msgstr "Die Verbindung zum Server wurde verloren. Versuch erneut in {0}..."
+msgstr "Die Verbindung zum Server wurde verloren. Erneuter Versuch in {0}..."
 
 #: Server/webroot/ngax/index.html:30
 msgid "Connection lost"
@@ -104,7 +104,7 @@ msgstr "Passwort gändert"
 
 #: Server/webroot/ngax/scripts/controllers/EditBackupController.js:243
 msgid "You have changed the passphrase, which is not supported. You are encouraged to create a new backup instead."
-msgstr "Du hast das Passwort geändert. Dadurch kann das bestehende BAckup unbenutzbar sein. Erstelle lieber ein neues Backup."
+msgstr "Du hast das Passwort geändert. Dadurch kann das bestehende Backup unbenutzbar sein. Erstelle lieber ein neues Backup."
 
 #: Server/webroot/ngax/scripts/controllers/EditBackupController.js:243
 msgid "Yes, please break my backup!"
@@ -128,7 +128,7 @@ msgstr "Schwaches Passwort"
 
 #: Server/webroot/ngax/scripts/controllers/EditBackupController.js:292
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
-msgstr "Dein Passwort is leicht zu erraten. Nimm lieber etwas Komplizierteres."
+msgstr "Dein Passwort is leicht zu erraten. Nimm lieber etwas komplizierteres."
 
 #: Server/webroot/ngax/scripts/controllers/EditBackupController.js:292
 msgid "Use weak passphrase"
@@ -176,7 +176,7 @@ msgstr "Gib einen Namen für das Backup an"
 
 #: Server/webroot/ngax/scripts/controllers/EditBackupController.js:424
 msgid "Include a file?"
-msgstr "Include a file?"
+msgstr "Datei einfügen?"
 
 #: Server/webroot/ngax/scripts/controllers/EditBackupController.js:424
 msgid "The path does not end with a '{0}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?"
@@ -368,15 +368,15 @@ msgstr "Temporäre Datenbank wird erstellt..."
 
 #: Server/webroot/ngax/scripts/controllers/RestoreController.js:86
 msgid "Creating temporary backup ..."
-msgstr "Creating temporary backup ..."
+msgstr "Temporäres Backup erstellen..."
 
 #: Server/webroot/ngax/scripts/controllers/RestoreDirectController.js:40
 msgid "Listing backup dates ..."
-msgstr "BAckups werden aufgelistet..."
+msgstr "Backups werden aufgelistet..."
 
 #: Server/webroot/ngax/scripts/controllers/RestoreDirectController.js:64
 msgid "Registering temporary backup ..."
-msgstr "Registering temporary backup ..."
+msgstr "Temporäres Backup registrieren..."
 
 #: Server/webroot/ngax/scripts/controllers/RestoreDirectController.js:9
 msgid "The target folder contains encrypted files, please supply the passphrase"
@@ -388,7 +388,7 @@ msgstr "Noch {0} Dateien ({1})"
 
 #: Server/webroot/ngax/scripts/controllers/StateController.js:45
 msgid "Counting ({0} files found, {1})"
-msgstr "BAckupgröße ermitteln ({0} Dateien gefunden, {1})"
+msgstr "Backupgröße ermitteln ({0} Dateien gefunden, {1})"
 
 #: Server/webroot/ngax/scripts/controllers/StateController.js:54
 msgid "Running ..."
@@ -420,39 +420,39 @@ msgstr "Duplicate option {0}"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:465
 msgid "Exclude expression"
-msgstr "Exclude expression"
+msgstr "Audruck ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:469
 msgid "Include expression"
-msgstr "Include expression"
+msgstr "Ausdruck einfügen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:474
 msgid "Include regular expression"
-msgstr "Include regular expression"
+msgstr "Regulären Ausdruck einfügen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:479
 msgid "Exclude regular expression"
-msgstr "Exclude regular expression"
+msgstr "Regulären Ausdruck ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:484
 msgid "Exclude file extension"
-msgstr "Exclude file extension"
+msgstr "Dateinamen ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:490
 msgid "Exclude file"
-msgstr "Exclude file"
+msgstr "Datei ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:496
 msgid "Exclude folder"
-msgstr "Exclude folder"
+msgstr "Ordner ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:502
 msgid "Exclude files whose names contain"
-msgstr "Exclude files whose names contain"
+msgstr "Dateien, welche folgenden Namen beinhalten, ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:508
 msgid "Exclude directories whose names contain"
-msgstr "Exclude directories whose names contain"
+msgstr "Ordner, welche folgenden Namen beinhalten, ausschließen"
 
 #: Server/webroot/ngax/scripts/services/AppUtils.js:512
 msgid "Sun"
@@ -684,7 +684,7 @@ msgstr "Backup fertigstellen..."
 
 #: Server/webroot/ngax/scripts/services/ServerStatus.js:258
 msgid "Completing previous backup ..."
-msgstr "Vorheriges BAckup fertigstellen..."
+msgstr "Vorheriges Backup fertigstellen..."
 
 #: Server/webroot/ngax/scripts/services/ServerStatus.js:259
 msgid "Verifying remote data ..."
@@ -692,7 +692,7 @@ msgstr "Backupdaten prüfen..."
 
 #: Server/webroot/ngax/scripts/services/ServerStatus.js:260
 msgid "Verifying backend data ..."
-msgstr "Verifying backend data ..."
+msgstr "Verifiziere Backend-Daten..."
 
 #: Server/webroot/ngax/scripts/services/ServerStatus.js:261
 msgid "Starting ..."
@@ -784,7 +784,7 @@ msgstr "Über {0}"
 
 #: Server/webroot/ngax/templates/about.html:9
 msgid "Server state properties"
-msgstr "Server state properties"
+msgstr "Server Zustandseigenschaften"
 
 #: Server/webroot/ngax/templates/addoredit.html:10
 msgid "Save"
@@ -852,7 +852,7 @@ msgstr "Passwort wiederholen"
 
 #: Server/webroot/ngax/templates/addoredit.html:209
 msgid "Passphrase"
-msgstr "Paswort"
+msgstr "Passwort"
 
 #: Server/webroot/ngax/templates/addoredit.html:21
 msgid "Edit as text"
@@ -1328,7 +1328,7 @@ msgstr "Pause"
 
 #: Server/webroot/ngax/templates/pause.html:5
 msgid "Until resumed"
-msgstr "Until resumed"
+msgstr "Bis zur wiederaufnahme"
 
 #: Server/webroot/ngax/templates/pause.html:8
 msgid "{0} Hour"
@@ -1364,7 +1364,7 @@ msgstr "Wiederherstellen"
 
 #: Server/webroot/ngax/templates/restore.html:34
 msgid "Restore read/write permissions"
-msgstr "Scheib- und Leserechter wiederherstellen"
+msgstr "Scheib- und Leserechte wiederherstellen"
 
 #: Server/webroot/ngax/templates/restore.html:37
 msgid "Permissions"
@@ -1396,7 +1396,7 @@ msgstr "Ziel-Pfad angeben"
 
 #: Server/webroot/ngax/templates/restore.html:68
 msgid "Folder path"
-msgstr "Folder path"
+msgstr "Ordnerpfad"
 
 #: Server/webroot/ngax/templates/restore.html:72
 msgid "Pick location"
