@@ -14,27 +14,27 @@ msgstr ""
 
 #: ../../Duplicati/Server/webroot/ngax/templates/advancedoptionseditor.html:36
 msgid "- pick an option -"
-msgstr ""
+msgstr "- Option auswählen -"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/openstack.html:32
 msgid "API Key"
-msgstr ""
+msgstr "API Schlüssel"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:636
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:54
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:55
 msgid "AWS Access ID"
-msgstr ""
+msgstr "AWS Access ID"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:637
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:58
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/s3.html:59
 msgid "AWS Access Key"
-msgstr ""
+msgstr "AWS Access Schlüssel"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:133
 msgid "AWS IAM Policy"
-msgstr ""
+msgstr "AWS IAM Richtlinie"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:172
 msgid "About"
@@ -47,56 +47,56 @@ msgstr "Über {0}"
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:601
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/azure.html:11
 msgid "Access Key"
-msgstr ""
+msgstr "Zugriffsschlüssel"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/settings.html:5
 msgid "Access to user interface"
-msgstr ""
+msgstr "Zugriff zur Benutzeroberfläche"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:600
 #: ../../Duplicati/Server/webroot/ngax/templates/backends/azure.html:7
 msgid "Account name"
-msgstr ""
+msgstr "Kontoname"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/notificationarea.html:29
 #: ../../Duplicati/Server/webroot/ngax/templates/updatechangelog.html:12
 msgid "Activate"
-msgstr ""
+msgstr "Aktivieren"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/AboutController.js:54
 #: ../../Duplicati/Server/webroot/ngax/scripts/controllers/UpdateChangelogController.js:18
 msgid "Activate failed:"
-msgstr ""
+msgstr "Aktivierung fehlgeschlagen:"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/advancedoptionseditor.html:34
 msgid "Add advanced option"
-msgstr ""
+msgstr "Erweiterte Option hinzufügen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:132
 msgid "Add filter"
-msgstr ""
+msgstr "Filter hinzufügen"
 
 #: ../../Duplicati/Server/webroot/ngax/index.html:146
 msgid "Add new backup"
-msgstr ""
+msgstr "Neues Backup erstellen"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:647
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:664
 msgid "Adjust bucket name?"
-msgstr ""
+msgstr "Bucket Name anpassen?"
 
 #: ../../Duplicati/Server/webroot/ngax/scripts/services/EditUriBuiltins.js:574
 msgid "Adjust path name?"
-msgstr ""
+msgstr "Pfadname anpassen?"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/restoredirect.html:18
 msgid "Advanced Options"
-msgstr ""
+msgstr "Erweitere Optionen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:247
 #: ../../Duplicati/Server/webroot/ngax/templates/addoredit.html:253
 msgid "Advanced options"
-msgstr ""
+msgstr "Erweitere Optionen"
 
 #: ../../Duplicati/Server/webroot/ngax/templates/home.html:57
 msgid "Advanced:"
