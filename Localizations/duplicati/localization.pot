@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-08 17:36+0200\n"
+"POT-Creation-Date: 2016-10-09 21:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2859,42 +2859,33 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:215
-msgid "Perform backup of HyperV machines (Windows only)"
+msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr ""
 
 #: Library/Main/Strings.cs:216
 msgid ""
-"Use this option to specify the names of machines to include in the backup. "
-"Specify multiple machine names with a semicolon separator."
+"Use this option to specify the IDs of machines to include in the backup. "
+"Specify multiple machine IDs with a semicolon separator. (You can use this "
+"Powershell command to get ID 'Get-VM | ft VMName, ID')"
 msgstr ""
 
-#: Library/Main/Strings.cs:217
-msgid "Do not merge the HyperV VHD (Windows only)"
-msgstr ""
-
-#: Library/Main/Strings.cs:218
-msgid ""
-"Use this option to disable the merge of HyperV VHD's prior to performing the "
-"backup."
-msgstr ""
-
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:221
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:222
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:223
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:224
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
@@ -3654,49 +3645,25 @@ msgid ""
 msgstr ""
 
 #: Server/Strings.cs:39
-msgid "Full backup"
-msgstr ""
-
-#: Server/Strings.cs:40
-msgid "Incremental backup"
-msgstr ""
-
-#: Server/Strings.cs:41
-msgid "List actual files"
-msgstr ""
-
-#: Server/Strings.cs:42
-msgid "List backup entries"
-msgstr ""
-
-#: Server/Strings.cs:43
-msgid "List backups"
-msgstr ""
-
-#: Server/Strings.cs:44
-msgid "Compact remote files"
-msgstr ""
-
-#: Server/Strings.cs:47
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
 
-#: Server/Strings.cs:52
+#: Server/Strings.cs:44
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr ""
 
-#: Server/Strings.cs:53
+#: Server/Strings.cs:45
 #, csharp-format
 msgid ""
 "Unable to create SSL certificate using provided parameters. Exception "
 "detail: {0}"
 msgstr ""
 
-#: Server/Strings.cs:54
+#: Server/Strings.cs:46
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""
