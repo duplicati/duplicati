@@ -1,1 +1,0 @@
-﻿# Empty file to ensure the user can select English language

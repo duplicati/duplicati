@@ -83,17 +83,77 @@ namespace Duplicati.Library.Main
         private bool m_doResetLocale;
 
         /// <summary>
+        /// The caffeinate process runner
+        /// </summary>
+        private System.Diagnostics.Process m_caffeinate;
+
+        /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
         /// </summary>
         /// <param name="isRunning">Flag indicating execution state</param>
         private void OperationRunning(bool isRunning)
         {
-            if (m_options != null && !m_options.AllowSleep && !Duplicati.Library.Utility.Utility.IsClientLinux)
-                try
+            if (m_options != null && !m_options.AllowSleep)
+            {
+                if (Duplicati.Library.Utility.Utility.IsClientWindows)
                 {
-                    Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
+                    try
+                    {
+                        Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
+                    }
                 }
-                catch { } //TODO: Report this somehow
+                else if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                {
+                    if (isRunning)
+                    {
+                        try
+                        {
+                            if (m_caffeinate == null)
+                            {
+                                // -s prevents sleep on AC, -i prevents sleep generally
+                                var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s");
+                                psi.RedirectStandardInput = true;
+                                psi.UseShellExecute = false;
+                                m_caffeinate = System.Diagnostics.Process.Start(psi);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            if (m_caffeinate != null && !m_caffeinate.HasExited)
+                            {
+                                // Send CTRL+C
+                                m_caffeinate.StandardInput.Write("\x3");
+                                m_caffeinate.StandardInput.Flush();
+                                m_caffeinate.WaitForExit(500);
+
+                                if (!m_caffeinate.HasExited)
+                                {
+                                    m_caffeinate.Kill();
+                                    m_caffeinate.WaitForExit(500);
+                                    if (!m_caffeinate.HasExited)
+                                        throw new Exception("Failed to kill the caffeinate process");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteMessage("Failed to unset sleep prevention", Logging.LogMessageType.Warning, ex);
+                        }
+                            
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -146,13 +206,13 @@ namespace Duplicati.Library.Main
                 for(int i = 0; i < sources.Count - 1; i++)
                 {
                     for(int j = i + 1; j < sources.Count; j++)
-                        if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                        if (sources[i].Equals(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
                         {
                             result.AddVerboseMessage("Removing duplicate source: {0}", sources[j]);
                             sources.RemoveAt(j);
                             j--;
                         }
-                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
                         {
                             bool includes;
                             bool excludes;
@@ -352,7 +412,6 @@ namespace Duplicati.Library.Main
                 using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
                 {
                     SetupCommonOptions(result, ref paths, ref filter);
-                    OperationRunning(true);
 
                     method(result);
 
@@ -360,17 +419,20 @@ namespace Duplicati.Library.Main
                     result.SetDatabase(null);
 
                     OnOperationComplete(result);
+
+                    Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
+
                     return result;
                 }
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteMessage("Terminated with error: " + ex.Message, Duplicati.Library.Logging.LogMessageType.Error, ex);
-
                 OnOperationComplete(ex);
 
                 try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
                 catch { }
+
+                Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
 
                 throw;
             }

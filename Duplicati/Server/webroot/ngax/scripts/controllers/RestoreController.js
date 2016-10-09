@@ -1,4 +1,4 @@
-backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, Localization, AppService, AppUtils, SystemInfo, ServerStatus, DialogService) {
+backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus, DialogService, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -29,11 +29,11 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var lastmonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 2)));
 
         var dateBuckets = [
-            {text: Localization.localize('Today'), stamp: today}, 
-            {text: Localization.localize('Yesterday'), stamp: yesterday},
-            {text: Localization.localize('This week'), stamp: week},
-            {text: Localization.localize('This month'), stamp: thismonth},
-            {text: Localization.localize('Last month'), stamp: lastmonth}
+            {text: gettextCatalog.getString('Today'), stamp: today}, 
+            {text: gettextCatalog.getString('Yesterday'), stamp: yesterday},
+            {text: gettextCatalog.getString('This week'), stamp: week},
+            {text: gettextCatalog.getString('This month'), stamp: thismonth},
+            {text: gettextCatalog.getString('Last month'), stamp: lastmonth}
         ];
 
         var stamp = dateStamp(dt);
@@ -52,7 +52,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         for(var n in $scope.Filesets) {
             var item = $scope.Filesets[n];
             item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
-            item.GroupLabel = n == 0 ? Localization.localize('Latest') : createGroupLabel(AppUtils.parseDate(item.Time));
+            item.GroupLabel = n == 0 ? gettextCatalog.getString('Latest') : createGroupLabel(AppUtils.parseDate(item.Time));
 
             filesetStamps[item.Version + ''] = item.Time;
         }
@@ -82,7 +82,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to connect: {0}', message));
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
             }
         );
     };
@@ -108,13 +108,13 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             var message = resp.statusText;
             if (resp.data != null && resp.data.Message != null)
                 message = resp.data.Message;
-            DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to fetch path information: {0}', message));
+            DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to fetch path information: {{message}}', { message: message }));
         };
 
         if (filesetsBuilt[version] == null) {
             if ($scope.IsBackupTemporary && filesetsRepaired[version] == null) {
                 $scope.connecting = true;
-                $scope.ConnectionProgress = Localization.localize('Fetching path information ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information ...');
                 inProgress[version] = true;
 
                 AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
@@ -138,7 +138,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                 }
                                 else
                                 {
-                                    DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to fetch path information: {0}', resp.data.ErrorMessage));
+                                    DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to fetch path information: {{message}}', { message: resp.data.ErrorMessage }));
                                 }
 
                             }, handleError);
@@ -153,7 +153,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                     return;
 
                 $scope.connecting = true;
-                $scope.ConnectionProgress = Localization.localize('Fetching path information ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information ...');
                 inProgress[version] = true;
 
                 AppService.get('/backup/' + $scope.BackupID + '/files/*?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
@@ -183,7 +183,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     $scope.onClickNext = function() {
         var results =  $scope.Selected;
         if (results.length == 0) {
-            DialogService.dialog(Localization.localize('No items selected'), Localization.localize('No items to restore, please select one or more items'));
+            DialogService.dialog(gettextCatalog.getString('No items selected'), gettextCatalog.getString('No items to restore, please select one or more items'));
         } else {
             $scope.restore_step = 1;
         }
@@ -283,7 +283,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
-                DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to connect: {0}', message));
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
             }
         );
     };
@@ -301,7 +301,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
-            DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to connect: {0}', message));
+            DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
         };
 
         var p = {
@@ -326,29 +326,29 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if ($scope.IsBackupTemporary) {
 
             $scope.connecting = true;
-            $scope.ConnectionProgress = Localization.localize('Creating temporary backup ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Creating temporary backup ...');
 
             AppService.post('/backup/' + $scope.BackupID + '/copytotemp').then(function(resp) {
                 var backupid = resp.data.ID;
 
-                $scope.ConnectionProgress = Localization.localize('Building partial temporary database ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Building partial temporary database ...');
                 AppService.post('/backup/' + backupid + '/repair', p).then(function(resp) {
                     var taskid = $scope.taskid = resp.data.ID;
                     ServerStatus.callWhenTaskCompletes(taskid, function() {
                         AppService.get('/task/' + taskid).then(function(resp) {
 
-                            $scope.ConnectionProgress = Localization.localize('Starting the restore process ...');
+                            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process ...');
                             if (resp.data.Status == 'Completed')
                             {
                                 AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
-                                    $scope.ConnectionProgress = Localization.localize('Restoring files ...');
+                                    $scope.ConnectionProgress = gettextCatalog.getString('Restoring files ...');
                                     var t2 = $scope.taskid = resp.data.TaskID;
                                     ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
                                 }, handleError);
                             }
                             else
                             {
-                                DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to build temporary database: {0}', resp.data.ErrorMessage));
+                                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to build temporary database: {{message}}', { message: resp.data.ErrorMessage }));
                                 $scope.connecting = false;
                                 $scope.ConnectionProgress = '';
                             }
@@ -360,9 +360,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
         } else {
             $scope.connecting = true;
-            $scope.ConnectionProgress = Localization.localize('Starting the restore process ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process ...');
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
-                $scope.ConnectionProgress = Localization.localize('Restoring files ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Restoring files ...');
                 var t2 = $scope.taskid = resp.data.TaskID;
                 ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
             }, handleError);
@@ -380,7 +380,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             }
             else
             {
-                DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to restore files: {0}', resp.data.ErrorMessage));
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to restore files: {{message}}', { message: resp.data.ErrorMessage }));
             }
         }, function(resp) {
             var message = resp.statusText;
@@ -389,7 +389,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
-            DialogService.dialog(Localization.localize('Error'), Localization.localize('Failed to connect: {0}', message));
+            DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
         });
     };
 

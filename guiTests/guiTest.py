@@ -9,11 +9,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
-if not "SAUCE_USERNAME" in os.environ:
-    print "No sauce labs login credentials found. Stopping tests..."
-    sys.exit(0)
-
 if "TRAVIS_BUILD_NUMBER" in os.environ:
+    if not "SAUCE_USERNAME" in os.environ:
+        print "No sauce labs login credentials found. Stopping tests..."
+        sys.exit(0)
+
     capabilities = {'browserName': "firefox"}
     capabilities['platform'] = "Windows 7"
     capabilities['version'] = "48.0"
@@ -126,7 +126,7 @@ wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
 
 # Restore
 driver.find_element_by_link_text(BACKUP_NAME).click()
-driver.find_element_by_xpath("//p[contains(text(),'Restore files ...')]").click()
+driver.find_element_by_xpath("//span[contains(text(),'Restore files ...')]").click()
 driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 time.sleep(1)
 driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox

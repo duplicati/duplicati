@@ -81,10 +81,10 @@ namespace Duplicati.GUI.TrayIcon
         public const string PauseIcon = "Resources.TrayNormalPause.ico";
         public const string WorkingIcon = "Resources.TrayWorking.ico";
 
-        public static Bitmap Pause { get { return LoadImage("Resources.Pause.png"); } }
-        public static Bitmap Play { get { return LoadImage("Resources.Play.png"); } }
-        public static Bitmap CloseMenuIcon { get { return LoadImage("Resources.CloseMenuIcon.png"); } }
-        public static Bitmap StatusMenuIcon { get { return LoadImage("Resources.StatusMenuIcon.png"); } }
+        public static Bitmap Pause { get { return LoadImage("Resources.context_menu_pause.ico"); } }
+        public static Bitmap Play { get { return LoadImage("Resources.context_menu_play.ico"); } }
+        public static Bitmap CloseMenuIcon { get { return LoadImage("Resources.context_menu_quit.ico"); } }
+        public static Bitmap StatusMenuIcon { get { return LoadImage("Resources.context_menu_open.ico"); } }
         
     }
 }

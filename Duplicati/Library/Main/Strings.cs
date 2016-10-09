@@ -20,6 +20,8 @@ namespace Duplicati.Library.Main.Strings
         public static string UnsupportedSizeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid size", optionname, value); }
         public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); }
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
+        public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
+        public static string FailedOperationMessage(OperationMode operationname, string errormessage) { return LC.L(@"The operation {0} has failed with error: {1}", operationname, errormessage); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
     }
@@ -34,7 +36,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
         public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders, use this option to restore to another folder"); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
-        public static string AllowsleepShort { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only)"); } }
+        public static string AllowsleepShort { get { return LC.L(@"Toggles system sleep mode"); } }
+        public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows/OSX only)"); } }
         public static string ThrottledownloadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
         public static string ThrottledownloadShort { get { return LC.L(@"Max number of kilobytes to download pr. second"); } }
         public static string ThrottleuploadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
@@ -209,11 +212,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
         public static string DisablepipingShort{ get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
-        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of HyperV machines (Windows only)"); } }
-        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the names of machines to include in the backup. Specify multiple machine names with a semicolon separator."); } }
-        public static string HypervbackupnomergeShort { get { return LC.L(@"Do not merge the HyperV VHD (Windows only)"); } }
-        public static string HypervbackupnomergeLong { get { return LC.L(@"Use this option to disable the merge of HyperV VHD's prior to performing the backup."); } }
-
+        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of Hyper-V machines (Windows only)"); } }
+        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the IDs of machines to include in the backup. Specify multiple machine IDs with a semicolon separator. (You can use this Powershell command to get ID 'Get-VM | ft VMName, ID')"); } }
     }
 
     internal static class Common

@@ -100,7 +100,6 @@
     <Compile Include="WebServer\RESTMethods\Changelog.cs" />
     <Compile Include="WebServer\RESTMethods\Tags.cs" />
     <Compile Include="WebServer\RESTMethods\ServerSetting.cs" />
-    <Compile Include="WebServer\RESTMethods\Localizations.cs" />
     <Compile Include="WebServer\RESTMethods\Filesystem.cs" />
     <Compile Include="WebServer\RESTMethods\LogData.cs" />
     <Compile Include="WebServer\RESTMethods\RemoteOperation.cs" />
@@ -287,6 +286,10 @@
     <ProjectReference Include="..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
       <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
       <Name>Duplicati.Library.Backend.Dropbox</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tools\Duplicati.Tools.csproj">
+      <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
+      <Name>Duplicati.Tools</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

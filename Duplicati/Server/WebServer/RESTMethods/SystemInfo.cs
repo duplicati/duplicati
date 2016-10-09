@@ -113,7 +113,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                                 EnglishName = new System.Globalization.CultureInfo(x).EnglishName,
                                 DisplayName = new System.Globalization.CultureInfo(x).NativeName
                                 }
-                            )
+                            ),
+                BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage)
             };
         }
     }

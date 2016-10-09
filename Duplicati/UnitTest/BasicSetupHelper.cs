@@ -18,6 +18,7 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Duplicati.UnitTest
 {
@@ -54,15 +55,39 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected readonly string DBFILE = Path.Combine(BASEFOLDER, "autotest.sqlite");
 
-        [TestFixtureSetUp()]
+        /// <summary>
+        /// Value indicating if all output is redirected to TestContext.Progress,
+        /// this can be used to diagnose errors on a CI build instance by setting
+        /// the environment variable DEBUG_OUTPUT=1 and running the job
+        /// </summary>
+        public static readonly bool DEBUG_OUTPUT =
+            new[] { "1", "true", "on", "yes" }
+            .Contains(Environment.GetEnvironmentVariable("DEBUG_OUTPUT") ?? "", StringComparer.InvariantCultureIgnoreCase);
+
+        /// <summary>
+        /// Writes a message to TestContext.Progress and Console.Out
+        /// </summary>
+        /// <param name="msg">The string to write.</param>
+        /// <param name="args">The passed arguments.</param>
+        public static void ProgressWriteLine(string msg, params object[] args)
+        {
+            if (!DEBUG_OUTPUT)
+                TestContext.Progress.WriteLine(msg, args);
+            Console.WriteLine(msg, args);
+        }
+
+        [OneTimeSetUp]
         public virtual void PrepareSourceData()
         {
-            Console.WriteLine("Deleting backup data and log...");
+            if (DEBUG_OUTPUT)
+                Console.SetOut(TestContext.Progress);
+
+            ProgressWriteLine("Deleting backup data and log...");
             if (Directory.Exists(DATAFOLDER))
                 Directory.Delete(DATAFOLDER, true);
             if (File.Exists(LOGFILE))
                 File.Delete(LOGFILE);
-            Console.WriteLine("Deleting older data");
+            ProgressWriteLine("Deleting older data");
             if (File.Exists(DBFILE))
                 File.Delete(DBFILE);
             if (Directory.Exists(TARGETFOLDER))

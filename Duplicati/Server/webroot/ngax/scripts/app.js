@@ -4,7 +4,8 @@ var backupApp = angular.module(
         'ngRoute', 
         'dotjem.angular.tree',
         'ngCookies',
-        'ngSanitize'
+        'ngSanitize',
+        'gettext'
     ]
 );
 
