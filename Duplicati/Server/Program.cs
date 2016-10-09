@@ -605,32 +605,6 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// Returns a localized name for a task type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static string LocalizeTaskType(Duplicati.Server.Serialization.DuplicatiOperation type)
-        {
-            switch (type)
-            {
-                case Duplicati.Server.Serialization.DuplicatiOperation.Backup:
-                    return Strings.TaskType.FullBackup;
-                case Duplicati.Server.Serialization.DuplicatiOperation.List:
-                    return Strings.TaskType.IncrementalBackup;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Remove:
-                    return Strings.TaskType.ListActualFiles;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Verify:
-                    return Strings.TaskType.ListBackupEntries;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Compact:
-                    return Strings.TaskType.CompactRemoteFiles;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Restore:
-                    return Strings.TaskType.ListBackups;
-                default:
-                    return type.ToString();
-            }
-        }
-
-        /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
