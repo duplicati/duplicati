@@ -13,6 +13,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
         var scope = $scope;
         scope.systeminfo = SystemInfo.watch($scope);
+        var sourceNodeChildren = null;
 
         $scope.treedata = { };
 
@@ -149,7 +150,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         function syncTreeWithLists() {
-            if (scope.ngSources == null || scope.treedata.children.length < 3)
+            if (scope.ngSources == null || sourceNodeChildren != null)
                 return;
 
             dirsep = scope.systeminfo.DirectorySeparator || '/';            
@@ -175,11 +176,7 @@ backupApp.directive('sourceFolderPicker', function() {
             if (anySpecials)
                 filterList = AppUtils.filterListToRegexps(scope.ngFilters, scope.systeminfo.CaseSensitiveFilesystem);
 
-            for (var i in scope.treedata.children)
-                if (scope.treedata.children[i].isSourcenode === true)
-                    var sources = scope.treedata.children[i].children;
-
-            sources.length = 0;
+            sourceNodeChildren.length = 0;
 
             function findInList(lst, path) {
                 for(var x in lst)
@@ -215,7 +212,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 setIconCls(n);
 
-                sources.push(n);
+                sourceNodeChildren.push(n);
 
                 if (defunctmap[k] == null) {
                     defunctmap[k] = true;
@@ -374,6 +371,7 @@ backupApp.directive('sourceFolderPicker', function() {
                 isSourcenode: true
             };
 
+            sourceNodeChildren = sourcenode.children;
             scope.treedata.children.push(usernode, systemnode, sourcenode);
 
             displayMap = {};
