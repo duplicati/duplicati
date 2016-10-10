@@ -150,7 +150,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         function syncTreeWithLists() {
-            if (scope.ngSources == null || sourceNodeChildren != null)
+            if (scope.ngSources == null || sourceNodeChildren == null)
                 return;
 
             dirsep = scope.systeminfo.DirectorySeparator || '/';            
