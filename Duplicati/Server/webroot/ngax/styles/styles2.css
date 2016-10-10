@@ -550,6 +550,7 @@ ul.notification {
 
 .resizable {
   margin-bottom: 6px;
+  max-width: 100%;
 }
 
 .advanced-toggle {
