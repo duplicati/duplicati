@@ -421,6 +421,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     displayMap[cp] = data.data[i].name;
                     hypervnode.children.push(node);
                 }
+                syncTreeWithLists();
             }
         }, AppUtils.connectionError);
     }
