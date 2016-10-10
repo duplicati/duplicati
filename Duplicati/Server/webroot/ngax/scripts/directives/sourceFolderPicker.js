@@ -374,8 +374,6 @@ backupApp.directive('sourceFolderPicker', function() {
             sourceNodeChildren = sourcenode.children;
             scope.treedata.children.push(usernode, systemnode, sourcenode);
 
-            displayMap = {};
-
             for(var i = 0; i < data.data.length; i++) {
                 if (data.data[i].id.indexOf('%') == 0) {
                     usernode.children.push(data.data[i]);
