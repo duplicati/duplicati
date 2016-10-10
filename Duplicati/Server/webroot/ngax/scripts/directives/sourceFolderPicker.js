@@ -396,10 +396,13 @@ backupApp.directive('sourceFolderPicker', function() {
             if (data.data.length > 0) {
                 var hypervnode = {
                     text: gettextCatalog.getString('Hyper-V Machines'),
-                    root: true,
                     iconCls: 'x-tree-icon-hyperv',
+                    id: "%HYPERV:*%",
                     children: []
                 };
+                var cp = compareablePath(hypervnode.id);
+                displayMap[cp] = hypervnode.text;
+                defunctmap[cp] = false;
 
                 // add HyperV at the beginning
                 if (scope.treedata.children.length < 1)
@@ -415,7 +418,7 @@ backupApp.directive('sourceFolderPicker', function() {
                         tooltip: gettextCatalog.getString("ID:") + " " + data.data[i].id,
                         text: data.data[i].name};
 
-                    var cp = compareablePath(node.id);
+                    cp = compareablePath(node.id);
                     displayMap[cp] = data.data[i].name;
                     defunctmap[cp] = false;
                     hypervnode.children.push(node);
