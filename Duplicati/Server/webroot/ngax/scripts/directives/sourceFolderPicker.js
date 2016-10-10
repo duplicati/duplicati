@@ -214,7 +214,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 sourceNodeChildren.push(n);
 
-                if (defunctmap[k] == null) {
+                if (defunctmap[k] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine") {
                     defunctmap[k] = true;
 
                     var p = scope.ngSources[i];
@@ -402,7 +402,6 @@ backupApp.directive('sourceFolderPicker', function() {
                 };
                 var cp = compareablePath(hypervnode.id);
                 displayMap[cp] = hypervnode.text;
-                defunctmap[cp] = false;
 
                 // add HyperV at the beginning
                 if (scope.treedata.children.length < 1)
@@ -420,7 +419,6 @@ backupApp.directive('sourceFolderPicker', function() {
 
                     cp = compareablePath(node.id);
                     displayMap[cp] = data.data[i].name;
-                    defunctmap[cp] = false;
                     hypervnode.children.push(node);
                 }
             }
