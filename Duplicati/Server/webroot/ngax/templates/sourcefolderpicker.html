@@ -2,10 +2,10 @@
   <li ng-repeat="node in $dxPrior.children" ng-class="{hidden: (node.hidden &amp;&amp; !ngShowHidden)}">
       <div ng-class="{selected: node.selected}">
           <a class="nav" ng-click="toggleExpanded(node)" ng-class="{expanded: node.expanded, leaf: node.leaf}"></a>
-        <a class="check" ng-click="toggleCheck(node)" ng-class="{include: node.include == '+', exclude: node.include == '-', partial: node.include == ' ', root: node.root}"></a>
+          <a class="check" ng-click="toggleCheck(node)" ng-class="{include: node.include == '+', exclude: node.include == '-', partial: node.include == ' ', root: node.root}"></a>
           <a class="type {{node.iconCls}}" ng-class="{invisible: node.hidden, loading: node.loading}"></a>
 
-          <span ng-click="toggleSelected(node)">{{ node.text }}</span>
+          <span ng-click="toggleSelected(node)" title="{{ node.tooltip }}">{{ node.text }}</span>
     </div>
     <ul ng-class="{expanded: node.expanded, include: node.include, exclude: node.exclude}" dx-connect="node"/>
   </li>

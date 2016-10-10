@@ -35,14 +35,6 @@ Error message: {0}", error); }
         public static string ServerencryptionkeyShort { get { return LC.L(@"Sets the database encryption key"); } }
         public static string ServerencryptionkeyLong(string envname, string decryptionoption) { return LC.L(@"This option sets the encryption key used to scramble the local settings database. This option can also be set with the environment variable {0}. Use the option --{1} to disable the database scrambling.", envname, decryptionoption); }
     }
-    internal static class TaskType {
-        public static string FullBackup { get { return LC.L(@"Full backup"); } }
-        public static string IncrementalBackup { get { return LC.L(@"Incremental backup"); } }
-        public static string ListActualFiles { get { return LC.L(@"List actual files"); } }
-        public static string ListBackupEntries { get { return LC.L(@"List backup entries"); } }
-        public static string ListBackups { get { return LC.L(@"List backups"); } }
-        public static string CompactRemoteFiles { get { return LC.L(@"Compact remote files"); } }
-    }
     internal static class Scheduler {
         public static string InvalidTimeSetupError(System.DateTime startdate, string interval, string alloweddays) { return LC.L(@"Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}", startdate, interval, alloweddays); }
     }

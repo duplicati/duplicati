@@ -9,10 +9,11 @@ backupApp.directive('sourceFolderPicker', function() {
     },
     templateUrl: 'templates/sourcefolderpicker.html',
 
-    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils) {
+    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils, gettextCatalog) {
 
         var scope = $scope;
         scope.systeminfo = SystemInfo.watch($scope);
+        var sourceNodeChildren = null;
 
         $scope.treedata = { };
 
@@ -30,7 +31,7 @@ backupApp.directive('sourceFolderPicker', function() {
                 path += dirsep;
 
             return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
-        };
+        }
 
         function setIconCls(n) {
             var cp = compareablePath(n.id);
@@ -49,6 +50,11 @@ backupApp.directive('sourceFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-broken';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
+            else if (n.id.substr(0, 8) == "%HYPERV:") {
+                n.iconCls = 'x-tree-icon-hypervmachine';
+                n.tooltip = gettextCatalog.getString("ID:") + " " + n.id.substring(8, n.id.length - 1);
+            }
+
         }
 
         function indexOfPathInArray(array, item) {
@@ -59,7 +65,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
             return -1;
 
-        };
+        }
 
         function removePathFromArray(array, item) {
             var ix = indexOfPathInArray(array, item);
@@ -69,7 +75,7 @@ backupApp.directive('sourceFolderPicker', function() {
             }
 
             return false;
-        };
+        }
 
         function traversenodes(m, start) {
             var root = (start || scope.treedata);
@@ -94,7 +100,7 @@ backupApp.directive('sourceFolderPicker', function() {
                         work.push([x[1], x[1].children[v]]);
                 }
             }
-        };
+        }
 
         function buildidlookup(sources, map) {
             var dirsep = scope.systeminfo.DirectorySeparator || '/';            
@@ -116,7 +122,7 @@ backupApp.directive('sourceFolderPicker', function() {
             }
 
             return map;    
-        };
+        }
 
         function updateIncludeFlags(root, parentFlag) {
             if (root != null)
@@ -141,10 +147,10 @@ backupApp.directive('sourceFolderPicker', function() {
                 else
                     n.include = null;
             }, root);            
-        };
+        }
 
         function syncTreeWithLists() {
-            if (scope.ngSources == null || scope.treedata.children == null)
+            if (scope.ngSources == null || sourceNodeChildren == null)
                 return;
 
             dirsep = scope.systeminfo.DirectorySeparator || '/';            
@@ -170,8 +176,7 @@ backupApp.directive('sourceFolderPicker', function() {
             if (anySpecials)
                 filterList = AppUtils.filterListToRegexps(scope.ngFilters, scope.systeminfo.CaseSensitiveFilesystem);
 
-            var sources = scope.treedata.children[2].children;
-            sources.length = 0;
+            sourceNodeChildren.length = 0;
 
             function findInList(lst, path) {
                 for(var x in lst)
@@ -179,7 +184,7 @@ backupApp.directive('sourceFolderPicker', function() {
                         return x;
 
                 return false;
-            };
+            }
 
             for(var i = 0; i < scope.ngSources.length; i++) {
                 var k = compareablePath(scope.ngSources[i]);
@@ -207,7 +212,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 setIconCls(n);
 
-                sources.push(n);
+                sourceNodeChildren.push(n);
 
                 if (defunctmap[k] == null) {
                     defunctmap[k] = true;
@@ -306,12 +311,13 @@ backupApp.directive('sourceFolderPicker', function() {
             } else if (node.include == '-') {
                 removePathFromArray(scope.ngFilters, '-' + node.id);
             }
-        }
+        };
 
         $scope.toggleExpanded = function(node) {
             node.expanded = !node.expanded;
 
-            if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked')
+            if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
+                || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine')
                 return;
 
             if (!node.children && !node.loading) {
@@ -338,35 +344,35 @@ backupApp.directive('sourceFolderPicker', function() {
             scope.selectednode = node;
             scope.selectednode.selected = true;
         };
-        
+
+        scope.treedata.children = [];
+
         AppService.post('/filesystem?onlyfolders=false&showhidden=true', {path: '/'}).then(function(data) {
 
             var usernode = {
-                text: 'User data',
+                text: gettextCatalog.getString('User data'),
                 root: true,
                 iconCls: 'x-tree-icon-userdata',
                 expanded: true,
                 children: []
             };
             var systemnode = {
-                text: 'Computer',
+                text: gettextCatalog.getString('Computer'),
                 root: true,
                 iconCls: 'x-tree-icon-computer',
                 children: []
             };
             var sourcenode = {
-                text: 'Source data',
+                text: gettextCatalog.getString('Source data'),
                 root: true,
                 iconCls: 'x-tree-icon-others',
                 expanded: true,
-                children: []
+                children: [],
+                isSourcenode: true
             };
 
-            scope.treedata.children = [
-                usernode, 
-                systemnode, 
-                sourcenode
-            ];
+            sourceNodeChildren = sourcenode.children;
+            scope.treedata.children.push(usernode, systemnode, sourcenode);
 
             displayMap = {};
 
@@ -384,6 +390,40 @@ backupApp.directive('sourceFolderPicker', function() {
 
             syncTreeWithLists();
 
+        }, AppUtils.connectionError);
+
+        AppService.get('/hyperv', {path: '/'}).then(function(data) {
+            if (data.data.length > 0) {
+                var hypervnode = {
+                    text: gettextCatalog.getString('Hyper-V Machines'),
+                    iconCls: 'x-tree-icon-hyperv',
+                    id: "%HYPERV:*%",
+                    children: []
+                };
+                var cp = compareablePath(hypervnode.id);
+                displayMap[cp] = hypervnode.text;
+                defunctmap[cp] = false;
+
+                // add HyperV at the beginning
+                if (scope.treedata.children.length < 1)
+                    scope.treedata.children.push(hypervnode);
+                else
+                    scope.treedata.children = [hypervnode].concat(scope.treedata.children);
+
+                for (var i = 0; i < data.data.length; i++) {
+                    var node = {
+                        iconCls: "x-tree-icon-hypervmachine",
+                        leaf: true,
+                        id: "%HYPERV:" + data.data[i].id + "%",
+                        tooltip: gettextCatalog.getString("ID:") + " " + data.data[i].id,
+                        text: data.data[i].name};
+
+                    cp = compareablePath(node.id);
+                    displayMap[cp] = data.data[i].name;
+                    defunctmap[cp] = false;
+                    hypervnode.children.push(node);
+                }
+            }
         }, AppUtils.connectionError);
     }
   }
