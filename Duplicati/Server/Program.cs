@@ -162,7 +162,7 @@ namespace Duplicati.Server
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
-            if (!Library.Utility.Utility.IsClientLinux)
+            if (Library.Utility.Utility.IsClientWindows)
             {
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
@@ -257,6 +257,7 @@ namespace Duplicati.Server
                 {
                     //Portable mode uses a data folder in the application home dir
                     Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(StartupPath, "data"));
+                    System.IO.Directory.SetCurrentDirectory(System.IO.Path.GetDirectoryName(StartupPath));
                 }
                 else
                 {
