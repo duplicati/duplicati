@@ -19,9 +19,15 @@ using System;
 
 namespace Duplicati.Service
 {
-    class MainClass
+    public class Program
     {
-        public static void Main(string[] args)
+        [STAThread]
+        public static int Main(string[] args)
+        {
+            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
+        }
+
+        public static void RealMain(string[] args)
         {
             using(var runner = new Runner(args))
                 runner.Wait();
