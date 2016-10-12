@@ -43,12 +43,12 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
 
     function reloadTexts() {
         state.backendgroups = this.backendgroups = {
-            std: { 
-                'ftp': null, 
-                'ssh': null, 
-                'webdav': null, 
-                'openstack': gettextCatalog.getString('OpenStack Object Storage / Swift'), 
-                's3': gettextCatalog.getString('S3 Compatible'), 
+            std: {
+                'ftp': null,
+                'ssh': null,
+                'webdav': null,
+                'openstack': gettextCatalog.getString('OpenStack Object Storage / Swift'),
+                's3': gettextCatalog.getString('S3 Compatible'),
                 'aftp': gettextCatalog.getString('FTP (Alternative)')
             },
             local: {'file': null},
@@ -108,20 +108,27 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
         $rootScope.$broadcast('systeminfochanged');
     };
 
-    AppService.get('/systeminfo').then(function(data) {
+    function loadSystemInfo(reload) {
+        AppService.get('/systeminfo').then(function(data) {
+            angular.copy(data.data, state);
+            
+            if (reload !== true) {
+                uiLanguage = $cookies.get('ui-locale');
+                if ((uiLanguage || '').trim().length == 0) {
+                    gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
+                } else {
+                    gettextCatalog.setCurrentLanguage(uiLanguage);
+                }
+            }
 
-        angular.copy(data.data, state);
-        
-        uiLanguage = $cookies.get('ui-locale');    
-        if ((uiLanguage || '').trim().length == 0) {
-            gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
-        } else {            
-            gettextCatalog.setCurrentLanguage(uiLanguage);
-        }   
-
-        reloadTexts();
-        reloadBackendConfig();
-        $rootScope.$broadcast('systeminfochanged');        
-
-    }, AppUtils.connectionError)
+            reloadTexts();
+            reloadBackendConfig();
+            $rootScope.$broadcast('systeminfochanged');
+        }, AppUtils.connectionError)
+    }
+    
+    loadSystemInfo();
+    $rootScope.$on('ui_language_changed', function() {
+        loadSystemInfo(true);
+    });
 });

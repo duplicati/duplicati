@@ -75,6 +75,7 @@
     <Compile Include="Database\Schedule.cs" />
     <Compile Include="SpecialFolders.cs" />
     <Compile Include="WebServer\AuthenticationHandler.cs" />
+    <Compile Include="WebServer\RESTMethods\HyperV.cs" />
     <Compile Include="WebServer\Server.cs" />
     <Compile Include="WebServer\BodyWriter.cs" />
     <Compile Include="WebServer\IndexHtmlHandler.cs" />
@@ -100,7 +101,6 @@
     <Compile Include="WebServer\RESTMethods\Changelog.cs" />
     <Compile Include="WebServer\RESTMethods\Tags.cs" />
     <Compile Include="WebServer\RESTMethods\ServerSetting.cs" />
-    <Compile Include="WebServer\RESTMethods\Localizations.cs" />
     <Compile Include="WebServer\RESTMethods\Filesystem.cs" />
     <Compile Include="WebServer\RESTMethods\LogData.cs" />
     <Compile Include="WebServer\RESTMethods\RemoteOperation.cs" />

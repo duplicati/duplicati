@@ -4,7 +4,6 @@ OUTPUT_ARGS=/property:OutputPath=bin/Release
 SOURCE_DIR=../../.
 PACKAGE_DIR=./pkg
 PKG_TARGET=$(PACKAGE_DIR)/usr/lib/duplicati
-LOCALIZATION_TOOL=mono $(SOURCE_DIR)/Duplicati/Localization/bin/Release/LocalizationTool.exe
 
 all: package
 

@@ -1,16 +1,18 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
-    };
+    }
 
     reloadOptionsList();
 
     $scope.$on('systeminfochanged', reloadOptionsList);
 
     $scope.uiLanguage = $cookies.get('ui-locale');
+    $scope.lang_browser_default = gettextCatalog.getString('Browser default');
+    $scope.lang_default = gettextCatalog.getString('Default');
 
     function setUILanguage() {
         if (($scope.uiLanguage || '').trim().length == 0) {
@@ -20,10 +22,8 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
             $cookies.put('ui-locale', $scope.uiLanguage);
             gettextCatalog.setCurrentLanguage($scope.uiLanguage);
         }
-    };
-
-    // Uncomment for immediate change
-    //$scope.$watch('uiLanguage', setUILanguage);
+        $rootScope.$broadcast('ui_language_changed');
+    }
 
     AppService.get('/serversettings').then(function(data) {
 
@@ -54,7 +54,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, $co
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel
-        }
+        };
 
 
         if ($scope.requireRemotePassword) {
