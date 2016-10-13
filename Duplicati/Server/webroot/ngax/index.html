@@ -222,9 +222,9 @@
         </div>
     </div>
 
-    <div ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
+    <div id="connection-lost-blocker" ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
 
-    <div ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
+    <div id="connection-lost-dialog"  ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
             <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState !='connecting'" translate translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining">
