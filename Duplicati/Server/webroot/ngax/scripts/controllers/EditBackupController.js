@@ -230,6 +230,21 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         if ($scope.KeepType == 'versions' || $scope.KeepType == '')
             delete opts['keep-time'];
 
+        if ($scope.KeepType == 'time' && (opts['keep-time'] || '').trim().length == 0)
+        {
+            DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid duration for the time to keep backups'));
+            $scope.CurrentStep = 3;
+            return;
+        }
+
+        if ($scope.KeepType == 'versions' && (parseInt(opts['keep-versions']) <= 0 || isNaN(parseInt(opts['keep-versions']))))
+        {
+            DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a positive number of backups to keep'));
+            $scope.CurrentStep = 3;
+            return;
+        }
+
+
         result.Backup.Settings = [];
         for(var k in opts) {
             var origfilter = "";
