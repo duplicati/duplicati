@@ -66,6 +66,15 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gett
             {name: gettextCatalog.getString('Sun'), value: 'sun'}
         ];
 
+        apputils.speedMultipliers = [
+            {name: gettextCatalog.getString('byte/s'), value: ''},
+            {name: gettextCatalog.getString('KByte/s'), value: 'KB'},
+            {name: gettextCatalog.getString('MByte/s'), value: 'MB'},
+            {name: gettextCatalog.getString('GByte/s'), value: 'GB'},
+            {name: gettextCatalog.getString('TByte/s'), value: 'TB'}
+        ];
+
+
         apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
 
         apputils.filterClasses = [{
