@@ -108,6 +108,7 @@
     <script type="text/javascript" src="scripts/directives/notificationArea.js"></script>
     <script type="text/javascript" src="scripts/directives/progressBar.js"></script>
     <script type="text/javascript" src="scripts/directives/advancedOptionsEditor.js"></script>
+    <script type="text/javascript" src="scripts/directives/timeFormatFixer.js"></script>
 
     <script type="text/javascript" src="../package/ngax/package.js"></script>
     <script type="text/javascript" src="../oem/ngax/scripts/oem.js"></script>
@@ -228,7 +229,7 @@
         </div>
     </div>
 
-    <div id="connection-lost-blocker" ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
+    <div id="connection-lost-blocker" ng-show="state.connectionState != 'connected'" class="blocker ng-cloak" ng-click=""></div>
 
     <div id="connection-lost-dialog"  ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
