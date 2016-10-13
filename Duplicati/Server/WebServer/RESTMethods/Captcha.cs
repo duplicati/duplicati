@@ -1,0 +1,129 @@
+﻿//  Copyright (C) 2016, The Duplicati Team
+//  http://www.duplicati.com, info@duplicati.com
+//
+//  This library is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU Lesser General Public License as
+//  published by the Free Software Foundation; either version 2.1 of the
+//  License, or (at your option) any later version.
+//
+//  This library is distributed in the hope that it will be useful, but
+//  WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+//  Lesser General Public License for more details.
+//
+//  You should have received a copy of the GNU Lesser General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+namespace Duplicati.Server.WebServer.RESTMethods
+{
+    public class Captcha : IRESTMethodGET
+    {
+        private class CaptchaEntry
+        {
+            public readonly string Answer;
+            public readonly string Target;
+            public int Attempts;
+            public readonly DateTime Expires;
+
+            public CaptchaEntry(string target, string answer)
+            {
+                Answer = answer;
+                Target = target;
+                Attempts = 3;
+                Expires = DateTime.Now.AddMinutes(2);
+            }
+        }
+
+        private static object m_lock = new object();
+        private static Dictionary<string, CaptchaEntry> m_captchas;
+
+        public static bool SolvedCaptcha(string token, string target, string answer)
+        {
+            lock(m_lock)
+            {
+                CaptchaEntry tp;
+                m_captchas.TryGetValue(token, out tp);
+                if (tp.Attempts > 0)
+                    tp.Attempts--;
+                
+                return tp != null && tp.Attempts >= 0 && tp.Answer == answer && tp.Target == target && tp.Expires >= DateTime.Now;
+            }
+        }
+
+        public void GET(string key, RequestInfo info)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                var target = info.Request.Param["target"].Value;
+                if (string.IsNullOrWhiteSpace(target))
+                    info.ReportClientError("Missing target parameter");
+                    
+                var answer = CaptchaUtil.CreateRandomAnswer(minlength: 6, maxlength: 6);
+                var nonce = Guid.NewGuid().ToString();
+
+                string token;
+                using (var ms = new System.IO.MemoryStream())
+                {
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(answer + nonce);
+                    ms.Write(bytes, 0, bytes.Length);
+                    token = Library.Utility.Utility.CalculateHash(ms);
+                }
+
+                lock(m_lock)
+                {
+                    var expired = m_captchas.Where(x => x.Value.Expires < DateTime.Now).Select(x => x.Key).ToArray();
+                    foreach(var x in expired)
+                        m_captchas.Remove(x);
+
+                    if (m_captchas.Count > 3)
+                    {
+                        info.ReportClientError("Too many captchas, wait 2 minutes and try again", System.Net.HttpStatusCode.ServiceUnavailable);
+                        return;
+                    }
+
+                    m_captchas[token] = new CaptchaEntry(answer, target);
+                }
+
+                info.OutputOK(new
+                {
+                    token = token
+                });
+            }
+            else
+            {
+                string answer = null;
+                lock (m_lock)
+                {
+                    CaptchaEntry tp;
+                    m_captchas.TryGetValue(key, out tp);
+                    if (tp != null && tp.Expires > DateTime.Now)
+                        answer = tp.Answer;
+                }
+
+                if (string.IsNullOrWhiteSpace(answer))
+                {
+                    info.ReportClientError("No such entry", System.Net.HttpStatusCode.NotFound);
+                    return;
+                }
+
+                using (var bmp = CaptchaUtil.CreateCaptcha(answer))
+                using (var ms = new System.IO.MemoryStream())
+                {
+                    info.Response.ContentType = "image/jpeg";
+                    info.Response.ContentLength = ms.Length;
+                    bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    ms.Position = 0;
+
+                    info.Response.ContentType = "image/jpeg";
+                    info.Response.ContentLength = ms.Length;
+                    info.Response.SendHeaders();
+                    ms.CopyTo(info.Response.Body);
+                }
+            }
+        }
+    }
+}

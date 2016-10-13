@@ -564,6 +564,23 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-remote-files"].Value))
+            {
+                var captcha_token = info.Request.Param["captcha-token"].Value;
+                var captcha_answer = info.Request.Param["captcha-answer"].Value;
+                if (string.IsNullOrWhiteSpace(captcha_token) || string.IsNullOrWhiteSpace(captcha_answer))
+                {
+                    info.ReportClientError("Missing captcha");
+                    return;
+                }
+
+                if (!Captcha.SolvedCaptcha(captcha_token, "DELETE /backup/" + backup.ID, captcha_answer))
+                {
+                    info.ReportClientError("Invalid captcha", System.Net.HttpStatusCode.Forbidden);
+                    return;
+                }
+            }
+
             if (Program.WorkThread.Active)
             {
                 try
