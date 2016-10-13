@@ -40,11 +40,11 @@
             <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage ...</div>
             <div ng-show="Backup.Backup.Metadata.TargetFilesCount != null" translate translate-params-filecount="Backup.Backup.Metadata.TargetFilesCount" translate-params-filesize="Backup.Backup.Metadata.TargetSizeString">
                 Delete {{filecount}} files ({{filesize}}) from the remote storage?
-                <p translate>WARNING: This will prevent you from restoring the data in the future.</p>
             </div>
+            <div class="warning" translate ng-show="DeleteRemoteFiles">WARNING: This will prevent you from restoring the data in the future.</div>
 
             <div class="input checkbox multiple">
-                <label for="deleteRemoteFiles" translate>WARNING:<br/>Delete remote files</label>
+                <label for="deleteRemoteFiles" translate>Delete remote files</label>
                 <input type="checkbox" id="deleteRemoteFiles" ng-model="DeleteRemoteFiles" />
             </div>
         </div>    

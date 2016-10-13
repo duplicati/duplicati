@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class Captcha : IRESTMethodGET
+    public class Captcha : IRESTMethodGET, IRESTMethodPOST
     {
         private class CaptchaEntry
         {
@@ -29,28 +29,31 @@ namespace Duplicati.Server.WebServer.RESTMethods
             public int Attempts;
             public readonly DateTime Expires;
 
-            public CaptchaEntry(string target, string answer)
+            public CaptchaEntry(string answer, string target)
             {
                 Answer = answer;
                 Target = target;
-                Attempts = 3;
+                Attempts = 4;
                 Expires = DateTime.Now.AddMinutes(2);
             }
         }
 
         private static object m_lock = new object();
-        private static Dictionary<string, CaptchaEntry> m_captchas;
+        private static Dictionary<string, CaptchaEntry> m_captchas = new Dictionary<string, CaptchaEntry>();
 
         public static bool SolvedCaptcha(string token, string target, string answer)
         {
             lock(m_lock)
             {
                 CaptchaEntry tp;
-                m_captchas.TryGetValue(token, out tp);
+                m_captchas.TryGetValue(token ?? string.Empty, out tp);
+                if (tp == null)
+                    return false;
+                
                 if (tp.Attempts > 0)
                     tp.Attempts--;
                 
-                return tp != null && tp.Attempts >= 0 && tp.Answer == answer && tp.Target == target && tp.Expires >= DateTime.Now;
+                return tp.Attempts >= 0 && string.Equals(tp.Answer, answer, StringComparison.InvariantCultureIgnoreCase) && tp.Target == target && tp.Expires >= DateTime.Now;
             }
         }
 
@@ -58,40 +61,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             if (string.IsNullOrWhiteSpace(key))
             {
-                var target = info.Request.Param["target"].Value;
-                if (string.IsNullOrWhiteSpace(target))
-                    info.ReportClientError("Missing target parameter");
-                    
-                var answer = CaptchaUtil.CreateRandomAnswer(minlength: 6, maxlength: 6);
-                var nonce = Guid.NewGuid().ToString();
-
-                string token;
-                using (var ms = new System.IO.MemoryStream())
-                {
-                    var bytes = System.Text.Encoding.UTF8.GetBytes(answer + nonce);
-                    ms.Write(bytes, 0, bytes.Length);
-                    token = Library.Utility.Utility.CalculateHash(ms);
-                }
-
-                lock(m_lock)
-                {
-                    var expired = m_captchas.Where(x => x.Value.Expires < DateTime.Now).Select(x => x.Key).ToArray();
-                    foreach(var x in expired)
-                        m_captchas.Remove(x);
-
-                    if (m_captchas.Count > 3)
-                    {
-                        info.ReportClientError("Too many captchas, wait 2 minutes and try again", System.Net.HttpStatusCode.ServiceUnavailable);
-                        return;
-                    }
-
-                    m_captchas[token] = new CaptchaEntry(answer, target);
-                }
-
-                info.OutputOK(new
-                {
-                    token = token
-                });
+                info.ReportClientError("Missing token value");
+                return;
             }
             else
             {
@@ -122,7 +93,73 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     info.Response.ContentLength = ms.Length;
                     info.Response.SendHeaders();
                     ms.CopyTo(info.Response.Body);
+                    info.Response.Send();
                 }
+            }        
+        }
+
+        public void POST(string key, RequestInfo info)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                var target = info.Request.Param["target"].Value;
+                if (string.IsNullOrWhiteSpace(target))
+                {
+                    info.ReportClientError("Missing target parameter");
+                    return;
+                }
+
+                var answer = CaptchaUtil.CreateRandomAnswer(minlength: 6, maxlength: 6);
+                var nonce = Guid.NewGuid().ToString();
+
+                string token;
+                using (var ms = new System.IO.MemoryStream())
+                {
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(answer + nonce);
+                    ms.Write(bytes, 0, bytes.Length);
+                    ms.Position = 0;
+                    token = Library.Utility.Utility.Base64PlainToBase64Url(Library.Utility.Utility.CalculateHash(ms));
+                }
+
+                lock (m_lock)
+                {
+                    var expired = m_captchas.Where(x => x.Value.Expires < DateTime.Now).Select(x => x.Key).ToArray();
+                    foreach (var x in expired)
+                        m_captchas.Remove(x);
+
+                    if (m_captchas.Count > 3)
+                    {
+                        info.ReportClientError("Too many captchas, wait 2 minutes and try again", System.Net.HttpStatusCode.ServiceUnavailable);
+                        return;
+                    }
+
+                    m_captchas[token] = new CaptchaEntry(answer, target);
+                }
+
+                info.OutputOK(new
+                {
+                    token = token
+                });
+            }
+            else
+            {
+                var answer = info.Request.Param["answer"].Value;
+                var target = info.Request.Param["target"].Value;
+                if (string.IsNullOrWhiteSpace(answer))
+                {
+                    info.ReportClientError("Missing answer parameter");
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(target))
+                {
+                    info.ReportClientError("Missing target parameter");
+                    return;
+                }
+
+                if (SolvedCaptcha(key, target, answer))
+                    info.OutputOK();
+                else
+                    info.ReportClientError("Incorrect");
             }
         }
     }

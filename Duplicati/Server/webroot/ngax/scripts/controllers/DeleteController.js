@@ -1,4 +1,4 @@
-backupApp.controller('DeleteController', function($scope, $routeParams, $location, gettextCatalog, DialogService, ServerStatus, SystemInfo, BackupList, AppService, AppUtils) {
+backupApp.controller('DeleteController', function($scope, $routeParams, $location, gettextCatalog, CaptchaService, DialogService, ServerStatus, SystemInfo, BackupList, AppService, AppUtils) {
     $scope.BackupID = $routeParams.backupid;
     $scope.DeleteLocalDatabase = true;
     $scope.DeleteRemoteFiles = false;
@@ -59,17 +59,29 @@ backupApp.controller('DeleteController', function($scope, $routeParams, $locatio
     };
 
     $scope.doDelete = function() {
-        var question =
-            $scope.DeleteRemoteFiles
-            ? 'Do you really want to delete the backup: "{{name}}" and all remote files, making it impossible to restore this backup later ?'
-            : 'Do you really want to delete the backup: "{{name}}" ?';
-
-        DialogService.dialog(gettextCatalog.getString('Confirm delete'), gettextCatalog.getString(question, {name: $scope.Backup.Backup.Name}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
-            if (ix == 1) {
-                AppService.delete('/backup/' + $scope.BackupID + '?delete-local-db=' + $scope.DeleteLocalDatabase + '&delete-remote-files=' + $scope.DeleteRemoteFiles);
-                $location.path('/');
-            }
-        });
+        if ($scope.DeleteRemoteFiles)
+        {
+            CaptchaService.Authorize(
+                gettextCatalog.getString('Confirm delete'), 
+                gettextCatalog.getString('To confirm you want to delete all remote files for "{{name}}", please enter the word you see below', {name: $scope.Backup.Backup.Name}),
+                'DELETE /backup/' + $scope.BackupID,
+                function(token, answer) {
+                    AppService.delete('/backup/' + $scope.BackupID + '?delete-local-db=' + $scope.DeleteLocalDatabase + '&delete-remote-files=' + $scope.DeleteRemoteFiles + '&captcha-token=' + token + '&captcha-answer=' + answer).then(function() {
+                        $location.path('/');
+                    }, AppUtils.connectionError);
+                }
+            );
+        }
+        else
+        {
+            DialogService.dialog(gettextCatalog.getString('Confirm delete'), gettextCatalog.getString('Do you really want to delete the backup: "{{name}}" ?', {name: $scope.Backup.Backup.Name}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+                if (ix == 1) {
+                    AppService.delete('/backup/' + $scope.BackupID + '?delete-local-db=' + $scope.DeleteLocalDatabase + '&delete-remote-files=' + $scope.DeleteRemoteFiles).then(function() {
+                        $location.path('/');
+                    }, AppUtils.connectionError);
+                }
+            });
+        }
     };
 
     $scope.goBack = function() {

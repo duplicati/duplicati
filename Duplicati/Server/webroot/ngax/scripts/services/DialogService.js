@@ -21,7 +21,7 @@ backupApp.service('DialogService', function() {
 
 
     this.enqueueDialog = function(config) {
-        if (config == null || config.message == null)
+        if (config == null || (config.message == null && config.htmltemplate == null))
             return;
 
         config.title = config.title || 'Information';
@@ -62,6 +62,16 @@ backupApp.service('DialogService', function() {
     this.dialog = function(title, message, buttons, callback, onshow) {
         return this.enqueueDialog({
             'message': message, 
+            'title': title,
+            'callback': callback, 
+            'buttons': buttons,
+            'onshow': onshow
+        });
+    };
+
+    this.htmlDialog = function(title, htmltemplate, buttons, callback, onshow) {
+        return this.enqueueDialog({
+            'htmltemplate': htmltemplate,
             'title': title,
             'callback': callback, 
             'buttons': buttons,
