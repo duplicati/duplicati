@@ -544,6 +544,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             return;
                         }
 
+                        var err = Program.DataConnection.ValidateBackup(data.Backup, data.Schedule);
+                        if (!string.IsNullOrWhiteSpace(err))
+                        {
+                            info.ReportClientError(err);
+                            return;
+                        }
+
                         //TODO: Merge in real passwords where the placeholder is found
                         Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
 
