@@ -10,11 +10,19 @@ backupApp.directive('advancedOptionsEditor', function() {
             $scope.NewItem = null;
             $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
             $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
+            $scope.speedMultipliers = AppUtils.speedMultipliers;
 
             AppUtils.watch($scope, function() {
                 $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
                 $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
+                $scope.speedMultipliers = AppUtils.speedMultipliers;
             });
+
+            // Overrides to display a custom layout for a specific option
+            var overrides = {
+                'throttle-upload': 'speed',
+                'throttle-download': 'speed'
+            };
 
             var optionmap = null;
 
@@ -58,6 +66,9 @@ backupApp.directive('advancedOptionsEditor', function() {
                 var item = $scope.getEntry(item);
                 if (item == null)
                     return 'text';
+
+                if (overrides[item.Name])
+                    return overrides[item.Name];
 
                 if (item.Type == 'Enumeration')
                     return 'enum';
