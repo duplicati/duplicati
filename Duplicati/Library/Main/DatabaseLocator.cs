@@ -183,6 +183,20 @@ namespace Duplicati.Library.Main
                 
             return backupname;
         }
+
+        public static bool IsDatabasePathInUse(string path)
+        {
+            var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
+            if (!System.IO.Directory.Exists(folder))
+                return false;
+
+            var file = System.IO.Path.Combine(folder, "dbconfig.json");
+            List<BackendEntry> configs;
+            if (!System.IO.File.Exists(file))
+                return false;
+
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)).Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparision));
+        }
     }
 }
 

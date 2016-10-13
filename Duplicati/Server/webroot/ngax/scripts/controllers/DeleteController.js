@@ -11,6 +11,7 @@ backupApp.controller('DeleteController', function($scope, $routeParams, $locatio
         
         if ($scope.Backup == null || $scope.Backup.Backup == null) {
             $scope.NoLocalDB = true;
+            $scope.DbUsedElsewhere = false;
         } else { 
             $scope.DBPath = $scope.Backup.Backup.DBPath;
 
@@ -19,6 +20,17 @@ backupApp.controller('DeleteController', function($scope, $routeParams, $locatio
                     $scope.NoLocalDB = false;
                 }, function() {
                     $scope.NoLocalDB = true;
+                });
+
+            if ($scope.DBPath != prev || force)
+                AppService.get('/backup/' + $scope.BackupID + '/isdbusedelsewhere', {path: $scope.DBPath}).then(function(resp) {
+                    $scope.DbUsedElsewhere = resp.data.inuse;
+                    // Default to not delete the db if others use it
+                    if (resp.data.inuse)
+                        $scope.DeleteLocalDatabase = false;
+
+                }, function() {
+                    $scope.DbUsedElsewhere = true;
                 });
         }
 

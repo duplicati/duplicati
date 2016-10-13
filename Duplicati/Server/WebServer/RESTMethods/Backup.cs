@@ -121,6 +121,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
             }
         }
+        private void IsDBUsedElseWhere(IBackup backup, RequestInfo info)
+        {
+            info.OutputOK(new { inuse = Library.Main.DatabaseLocator.IsDatabasePathInUse(backup.DBPath) });
+        }
 
         private void Export(IBackup backup, RequestInfo info)
         {
@@ -375,7 +379,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "export":
                             Export(bk, info);
                             return;
-                        case "isactive":
+                        case "isdbusedelsewhere":
+                            IsDBUsedElseWhere(bk, info);
+                            return;
+                    case "isactive":
                             IsActive(bk, info);
                             return;
                         default:
