@@ -70,6 +70,7 @@
     <script type="text/javascript" src="scripts/services/NotificationService.js"></script>
     <script type="text/javascript" src="scripts/services/DialogService.js"></script>
     <script type="text/javascript" src="scripts/services/EditBackupService.js"></script>
+    <script type="text/javascript" src="scripts/services/CaptchaService.js"></script>
 
     <script type="text/javascript" src="scripts/controllers/AppController.js"></script>
     <script type="text/javascript" src="scripts/controllers/AboutController.js"></script>
@@ -86,6 +87,8 @@
     <script type="text/javascript" src="scripts/controllers/UpdateChangelogController.js"></script>
     <script type="text/javascript" src="scripts/controllers/DialogController.js"></script>
     <script type="text/javascript" src="scripts/controllers/LocalDatabaseController.js"></script>
+    <script type="text/javascript" src="scripts/controllers/DeleteController.js"></script>
+    <script type="text/javascript" src="scripts/controllers/CaptchaController.js"></script>
 
     <script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
     <script type="text/javascript" src="scripts/filters/highlight.js"></script>
@@ -211,7 +214,8 @@
         <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
-                <div class="content">{{state.CurrentItem.message}}</div>
+                <div class="content" ng-show="state.CurrentItem.message">{{state.CurrentItem.message}}</div>
+                <div class="content" ng-show="state.CurrentItem.htmltemplate" ng-include="state.CurrentItem.htmltemplate"></div>
                 <div class="content buttons">
                     <ul>
                         <li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)" >{{btn}}</a></li>
@@ -221,9 +225,9 @@
         </div>
     </div>
 
-    <div ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
+    <div id="connection-lost-blocker" ng-show="state.connectionState != 'connected'" class="blocker" ng-click=""></div>
 
-    <div ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
+    <div id="connection-lost-dialog"  ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
             <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState !='connecting'" translate translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining">

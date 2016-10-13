@@ -771,6 +771,14 @@ namespace Duplicati.Library.Main
         public void SetResult(IEnumerable<string> files) { this.Files = files; }
     }   
 
+    internal class ListRemoteResults : BasicResults, Library.Interface.IListRemoteResults
+    {
+        public IEnumerable<IFileEntry> Files { get; private set; }
+
+        public override OperationMode MainOperation { get { return OperationMode.ListRemote; } }
+        public void SetResult(IEnumerable<IFileEntry> files) { this.Files = files; }
+    }
+
     internal class RepairResults : BasicResults, Library.Interface.IRepairResults
     {
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }

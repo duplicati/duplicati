@@ -34,6 +34,7 @@ namespace Duplicati.Server.WebServer
 
         public const string LOGIN_SCRIPT_URI = "/login.cgi";
         public const string LOGOUT_SCRIPT_URI = "/logout.cgi";
+        public const string CAPTCHA_IMAGE_URI = RESTHandler.API_URI_PATH + "/captcha/";
 
         private const int XSRF_TIMEOUT_MINUTES = 10;
         private const int AUTH_TIMEOUT_MINUTES = 10;
@@ -267,6 +268,10 @@ namespace Duplicati.Server.WebServer
                 ||
                 request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
             ;
+
+            // Override to allow the CAPTCHA call to go through
+            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI) && request.Method == "GET")
+                limitedAccess = false;
 
             if (limitedAccess)
             {

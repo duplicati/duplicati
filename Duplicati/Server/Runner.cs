@@ -494,7 +494,33 @@ namespace Duplicati.Server
                                     return r;
                                 }
                             }
-                        default:
+
+                        case DuplicatiOperation.ListRemote:
+                            {
+                                var r = controller.ListRemote();
+                                UpdateMetadata(backup, r);
+                                return r;
+                            }
+
+                    case DuplicatiOperation.Delete:
+                        {
+                            if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-remote-files"))
+                                controller.DeleteAllRemoteFiles();
+
+                            if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
+                            {
+                                string dbpath;
+                                options.TryGetValue("db-path", out dbpath);
+
+                                if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
+                                    System.IO.File.Delete(dbpath);
+                            }
+                            Program.DataConnection.DeleteBackup(backup);
+                            Program.Scheduler.Reschedule();
+                            return null;
+                        }
+
+                    default:
                             //TODO: Log this
                             return null;
                     }
@@ -572,6 +598,13 @@ namespace Duplicati.Server
                 var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
                 UpdateMetadata(backup, r);
             }
+
+            if (o is Duplicati.Library.Interface.IBackendStatsticsReporter)
+            {
+                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)o;
+                if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
+                    UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
+            }
             
             if (o is Duplicati.Library.Interface.IBackupResults)
             {
@@ -582,9 +615,6 @@ namespace Duplicati.Server
                 backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
                 backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
                  
-                if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
-                    UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
-
                 if (r.FilesWithError > 0 || r.Warnings.Any())
                 {
                     Program.DataConnection.RegisterNotification(

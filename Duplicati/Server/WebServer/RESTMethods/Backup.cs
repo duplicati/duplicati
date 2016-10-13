@@ -121,6 +121,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
             }
         }
+        private void IsDBUsedElseWhere(IBackup backup, RequestInfo info)
+        {
+            info.OutputOK(new { inuse = Library.Main.DatabaseLocator.IsDatabasePathInUse(backup.DBPath) });
+        }
 
         private void Export(IBackup backup, RequestInfo info)
         {
@@ -191,6 +195,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void CreateReport(IBackup backup, RequestInfo info)
         {
             var task = Runner.CreateTask(DuplicatiOperation.CreateReport, backup);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
+
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
+        }
+
+        private void ReportRemoteSize(IBackup backup, RequestInfo info)
+        {
+            var task = Runner.CreateTask(DuplicatiOperation.ListRemote, backup);
             Program.WorkThread.AddTask(task);
             Program.StatusEventNotifyer.SignalNewEvent();
 
@@ -366,7 +379,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "export":
                             Export(bk, info);
                             return;
-                        case "isactive":
+                        case "isdbusedelsewhere":
+                            IsDBUsedElseWhere(bk, info);
+                            return;
+                    case "isactive":
                             IsActive(bk, info);
                             return;
                         default:
@@ -450,6 +466,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             RunBackup(bk, info);
                             return;
 
+                        case "report-remote-size":
+                            ReportRemoteSize(bk, info);
+                            return;
 
                         case "copytotemp":
                             var ipx = Serializer.Deserialize<Database.Backup>(new StringReader(Newtonsoft.Json.JsonConvert.SerializeObject(bk)));
@@ -552,6 +571,23 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-remote-files"].Value))
+            {
+                var captcha_token = info.Request.Param["captcha-token"].Value;
+                var captcha_answer = info.Request.Param["captcha-answer"].Value;
+                if (string.IsNullOrWhiteSpace(captcha_token) || string.IsNullOrWhiteSpace(captcha_answer))
+                {
+                    info.ReportClientError("Missing captcha");
+                    return;
+                }
+
+                if (!Captcha.SolvedCaptcha(captcha_token, "DELETE /backup/" + backup.ID, captcha_answer))
+                {
+                    info.ReportClientError("Invalid captcha", System.Net.HttpStatusCode.Forbidden);
+                    return;
+                }
+            }
+
             if (Program.WorkThread.Active)
             {
                 try
@@ -615,28 +651,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
             }
 
+            var extra = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-local-db"].Value))
+                extra["delete-local-db"] = info.Request.Param["delete-local-db"].Value;
+            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-remote-files"].Value))
+                extra["delete-remote-files"] = info.Request.Param["delete-remote-files"].Value;
 
-            //var dbpath = backup.DBPath;
-            Program.DataConnection.DeleteBackup(backup);
+            var task = Runner.CreateTask(DuplicatiOperation.Delete, backup, extra);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
 
-            // TODO: Before we activate this, 
-            // we need some strategy to figure out
-            // if the db is shared with something else
-            // like the commandline or another backup
-            /*try
-            {
-                if (System.IO.File.Exists(dbpath))
-                    System.IO.File.Delete(dbpath);
-            }
-            catch (Exception ex)
-            {
-                Program.DataConnection.LogError(null, string.Format("Failed to delete database: {0}", dbpath), ex);
-            }*/
-
-            //We have fiddled with the schedules
-            Program.Scheduler.Reschedule();
-
-            info.OutputOK();
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
         }
         public string Description { get { return "Retrieves, updates or deletes an existing backup and schedule"; } }
 

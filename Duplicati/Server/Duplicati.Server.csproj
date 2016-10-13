@@ -55,6 +55,7 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventPollNotify.cs" />
@@ -115,6 +116,8 @@
     <Compile Include="WebServer\RESTMethods\WebModule.cs" />
     <Compile Include="WebServer\RESTMethods\WebModules.cs" />
     <Compile Include="WebServer\RESTMethods\Licenses.cs" />
+    <Compile Include="WebServer\CaptchaUtil.cs" />
+    <Compile Include="WebServer\RESTMethods\Captcha.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

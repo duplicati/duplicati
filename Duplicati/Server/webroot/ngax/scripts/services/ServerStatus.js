@@ -57,6 +57,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Repair_Running': gettextCatalog.getString('Reparing ...'),
             'Verify_Running': gettextCatalog.getString('Verifying ...'),
             'BugReport_Running': gettextCatalog.getString('Creating bug report ...'),
+            'Delete_Listing': gettextCatalog.getString('Listing remote files ...'),
+            'Delete_Deleting': gettextCatalog.getString('Deleting remote files ...'),
             'Error': gettextCatalog.getString('Error!')
         };
     };
