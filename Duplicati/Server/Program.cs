@@ -257,7 +257,7 @@ namespace Duplicati.Server
                 {
                     //Portable mode uses a data folder in the application home dir
                     Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(StartupPath, "data"));
-                    System.IO.Directory.SetCurrentDirectory(System.IO.Path.GetDirectoryName(StartupPath));
+                    System.IO.Directory.SetCurrentDirectory(StartupPath);
                 }
                 else
                 {
