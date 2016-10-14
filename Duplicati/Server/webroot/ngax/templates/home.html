@@ -39,7 +39,10 @@
     <div class="tasks" ng-controller="HomeController">
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
-                <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}</a>
+                <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}
+                    <img ng-show="$parent.ContextMenuID == item.Backup.ID" src="img/arrow_collapse.png">
+                    <img ng-show="$parent.ContextMenuID != item.Backup.ID" src="img/arrow_expand.png">
+                </a>
 
                 <dl class="contextmenu" ng-show="$parent.ContextMenuID == item.Backup.ID">
                     <dt translate>Operations:</dt>
@@ -72,7 +75,7 @@
 
                 <dl>
                     <dt translate>Last successful run:</dt>
-                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}" translate translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'" translate-params-duration="formatDuration(item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})</dd>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}"  translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'" translate-params-duration="formatDuration(item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})</dd>
                     <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
                     {{'Never' | translate}} - <a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
                     </dd>
