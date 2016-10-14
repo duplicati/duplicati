@@ -128,7 +128,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         };
 
         if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
-            DialogService.dialog(gettextCatalog.getString('Include a file?'), gettextCatalog.getString("The path does not end with a '{0}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", dirsep), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+            DialogService.dialog(gettextCatalog.getString('Include a file?'), gettextCatalog.getString("The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", {dirsep: dirsep}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                 if (ix == 1)
                     continuation();
             });
