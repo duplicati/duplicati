@@ -379,15 +379,16 @@ namespace Duplicati.Library.Utility
             includes = false;
             excludes = false;
 
-            Tuple<bool, bool> cacheLookup;
+            Tuple<bool, bool> cacheLookup = null;
 
             // Check for cached results
-            lock(_matchLock)
-                if (_matchFallbackLookup.TryGetValue(filter, out cacheLookup))
-                {
-                    includes = cacheLookup.Item1;
-                    excludes = cacheLookup.Item2;
-                }
+            if (filter != null)
+                lock(_matchLock)
+                    if (_matchFallbackLookup.TryGetValue(filter, out cacheLookup))
+                    {
+                        includes = cacheLookup.Item1;
+                        excludes = cacheLookup.Item2;
+                    }
 
             // Figure out what components are in the filter
             if (cacheLookup == null)
