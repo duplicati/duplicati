@@ -379,7 +379,7 @@ namespace Duplicati.Library.Utility
             includes = false;
             excludes = false;
 
-            Tuple<bool, bool> cacheLookup;
+            Tuple<bool, bool> cacheLookup = null;
 
             // Check for cached results
             if (filter != null)
