@@ -202,41 +202,45 @@ namespace Duplicati.Library.Main
                         sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
                 }
 
-                //Sanity check for duplicate folders and multiple inclusions of the same folder
-                for(int i = 0; i < sources.Count - 1; i++)
-                {
-                    for(int j = i + 1; j < sources.Count; j++)
-                        if (sources[i].Equals(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
-                        {
-                            result.AddVerboseMessage("Removing duplicate source: {0}", sources[j]);
-                            sources.RemoveAt(j);
-                            j--;
-                        }
-                        else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
-                        {
-                            bool includes;
-                            bool excludes;
+                //Sanity check for duplicate files/folders
+                var pathDuplicates = sources.GroupBy(x => x, Library.Utility.Utility.ClientFilenameStringComparer)
+                      .Where(g => g.Count() > 1).Select(y => y.Key).ToList();
 
-                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                foreach (var pathDuplicate in pathDuplicates)
+                    result.AddVerboseMessage(string.Format("Removing duplicate source: {0}", pathDuplicate));
 
-                            // If there are no excludes, there is no need to keep the folder as a filter
-                            if (excludes)
+                sources = sources.Distinct(Library.Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
+
+                //Sanity check for multiple inclusions of the same folder
+                for (int i = 0; i < sources.Count; i++)
+                    for (int j = 0; j < sources.Count; j++)
+                        if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
+                        {
+                            if (filter != null)
                             {
-                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
-                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                                bool includes;
+                                bool excludes;
+
+                                FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+
+                                // If there are no excludes, there is no need to keep the folder as a filter
+                                if (excludes)
+                                {
+                                    result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                    filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                                }
+                                else
+                                    result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
                             }
                             else
-                            {
-                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
-                            }
+                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
 
                             sources.RemoveAt(i);
                             i--;
                             break;
                         }
-                }
 
-                using(var h = new Operation.BackupHandler(m_backend, m_options, result))
+                using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                     h.Run(sources.ToArray(), filter);
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -300,6 +304,48 @@ namespace Duplicati.Library.Main
                 new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
+
+        public Duplicati.Library.Interface.IListRemoteResults ListRemote()
+        {
+            return RunAction(new ListRemoteResults(), (result) =>
+            {
+                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
+                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                    result.SetResult(bk.List());
+            });
+        }
+
+        public Duplicati.Library.Interface.IListRemoteResults DeleteAllRemoteFiles()
+        {
+            return RunAction(new ListRemoteResults(), (result) =>
+            {
+                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
+                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
+                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                {
+                    var list = bk.List();
+                    result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
+                    result.OperationProgressUpdater.UpdateProgress(0);
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        try
+                        {
+                            bk.Delete(list[i].Name, list[i].Size, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to delete remote file: {0}", list[i].Name), ex);
+                        }
+                        result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
+                    }
+                    result.OperationProgressUpdater.UpdateProgress(1);
+                }
+            });
+        }
+
+
 
         public Duplicati.Library.Interface.ICompactResults Compact()
         {

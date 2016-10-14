@@ -21,8 +21,8 @@ export GDIPLUS_NOX=1
 
 #mono version check
 
-REQUIRED_MAJOR=2
-REQUIRED_MINOR=8
+REQUIRED_MAJOR=3
+REQUIRED_MINOR=0
 
 VERSION_TITLE="Cannot launch $APP_NAME"
 VERSION_MSG="$APP_NAME requires the Mono Framework version $REQUIRED_MAJOR.$REQUIRED_MINOR or later."

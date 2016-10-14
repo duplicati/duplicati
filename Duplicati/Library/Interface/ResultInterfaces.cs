@@ -56,6 +56,11 @@ namespace Duplicati.Library.Interface
         long AssignedQuotaSpace { get; }
     }
 
+    public interface IBackendStatsticsReporter
+    {
+        IBackendStatstics BackendStatistics { get; }
+    }
+
     public interface IListResultFile
     {
         string Path { get; }
@@ -103,7 +108,7 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
     }
         
-    public interface IBackupResults : IBasicResults
+    public interface IBackupResults : IBasicResults, IBackendStatsticsReporter
     {
         long DeletedFiles { get; }
         long DeletedFolders { get; }
@@ -129,7 +134,6 @@ namespace Duplicati.Library.Interface
         ICompactResults CompactResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
-        IBackendStatstics BackendStatistics { get; }
     }
     
     public interface IRestoreResults : IBasicResults
@@ -149,7 +153,12 @@ namespace Duplicati.Library.Interface
     public interface IRecreateDatabaseResults : IBasicResults
     {
     }
-    
+
+    public interface IListRemoteResults : IBasicResults, IBackendStatsticsReporter
+    {
+        IEnumerable<IFileEntry> Files { get; }
+    }
+
     public interface ICompactResults : IBasicResults
     {
         long DeletedFileCount { get; }

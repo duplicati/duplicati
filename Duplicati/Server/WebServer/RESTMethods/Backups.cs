@@ -110,6 +110,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             info.BodyWriter.Write(output_template.Replace("MSG", "There already exists a backup with the name: " + basename.Replace("\'", "\\'")));
                         }
 
+                        var err = Program.DataConnection.ValidateBackup(ipx.Backup, ipx.Schedule);
+                        if (!string.IsNullOrWhiteSpace(err))
+                        {
+                            info.ReportClientError(err);
+                            return;
+                        }
+
                         Program.DataConnection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                     }
 
@@ -178,6 +185,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
                         {
                             info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name);
+                            return;
+                        }
+
+                        var err = Program.DataConnection.ValidateBackup(data.Backup, data.Schedule);
+                        if (!string.IsNullOrWhiteSpace(err))
+                        {
+                            info.ReportClientError(err);
                             return;
                         }
 

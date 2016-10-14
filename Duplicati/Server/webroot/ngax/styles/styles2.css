@@ -398,6 +398,14 @@ div.connection-lost, div.blocker, div.modal-dialog {
   margin: auto;
 }
 
+#connection-lost-dialog {
+  z-index: 5200;
+}
+
+#connection-lost-blocker {
+  z-index: 5100;
+}
+
 div.connection-lost {
   width: 250px;
   height: 200px;
@@ -550,6 +558,7 @@ ul.notification {
 
 .resizable {
   margin-bottom: 6px;
+  max-width: 100%;
 }
 
 .advanced-toggle {
@@ -622,3 +631,21 @@ ul.notification {
         margin-left: 0;
     }
 }
+
+.warning {
+  margin: 10px;
+  font-style: italic;
+  color: #f49b42;
+}
+
+div.captcha .details {
+    padding-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 180px;
+}
+
+.centered-text {
+  text-align: center;
+}
+

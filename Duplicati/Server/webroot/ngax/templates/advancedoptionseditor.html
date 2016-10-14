@@ -16,6 +16,12 @@
                 </select>
             </div>
 
+            <div ng-if="getInputType(item) == 'speed'" class="input type multiple">
+                <input type="number" parse-advanced-option-size-number="uppercase" ng-model="$parent.ngModel[$index]" />
+                <select parse-advanced-option-size-multiplier="uppercase" ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in speedMultipliers">
+                </select>
+            </div>
+
             <div ng-if="getInputType(item) == 'timespan'" class="input type multiple">
                 <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
                 <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in timerangeMultipliers">

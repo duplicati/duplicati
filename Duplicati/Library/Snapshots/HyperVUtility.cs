@@ -26,9 +26,17 @@ namespace Duplicati.Library.Snapshots
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost";
         private readonly bool _wmiv2Namespace;
+        public bool IsHyperVInstalled { get; }
 
         public HyperVUtility()
         {
+            if (!Library.Utility.Utility.IsClientWindows)
+            {
+                IsHyperVInstalled = false;
+                Logging.Log.WriteMessage("Hyper-V Guests are supported only on Windows.", Logging.LogMessageType.Information);
+                return;
+            }
+
             //Set the namespace depending off host OS
             _wmiv2Namespace = Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2;
 
@@ -40,6 +48,18 @@ namespace Duplicati.Library.Snapshots
             _vmIdField = _wmiv2Namespace ? "VirtualSystemIdentifier" : "SystemName";
 
             Logging.Log.WriteMessage(string.Format("Using WMI provider {0}", _wmiScope.Path), Logging.LogMessageType.Profiling);
+            
+            try
+            {
+                var classesCount = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
+                        "SELECT * FROM meta_class")).Get().OfType<ManagementObject>().Count();
+
+                IsHyperVInstalled = classesCount > 0;
+            }
+            catch { IsHyperVInstalled = false; }
+
+            if (!IsHyperVInstalled)
+                Logging.Log.WriteMessage(string.Format("Cannot open WMI provider {0}. Hyper-V is probably not installed.", _wmiScope.Path), Logging.LogMessageType.Information);
         }
 
         /// <summary>
@@ -49,6 +69,10 @@ namespace Duplicati.Library.Snapshots
         public List<HyperVGuest> GetHyperVGuests()
         {
             var hyperVMachines = new List<HyperVGuest>();
+
+            if(!IsHyperVInstalled)
+                return hyperVMachines;
+
             var wmiQuery = _wmiv2Namespace
                 ? "SELECT * FROM Msvm_VirtualSystemSettingData WHERE VirtualSystemType = 'Microsoft:Hyper-V:System:Realized'"
                 : "SELECT * FROM Msvm_VirtualSystemSettingData WHERE SettingType = 3";
