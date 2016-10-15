@@ -555,6 +555,7 @@ namespace Duplicati.Library.Main
 
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
+            var pristinepaths = paths;
 
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                 if (mx.Key)
@@ -563,6 +564,9 @@ namespace Duplicati.Library.Main
                         mx.Value.Configure(conopts);
                     else
                         mx.Value.Configure(m_options.RawOptions);
+
+                    if (mx.Value is Library.Interface.IGenericSourceModule)
+                        ((Library.Interface.IGenericSourceModule)mx.Value).ParseSource(ref paths, ref conopts);
 
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
