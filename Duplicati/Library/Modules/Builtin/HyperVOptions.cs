@@ -19,14 +19,13 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class HyperVOptions : Interface.IGenericModule, Interface.IGenericSourceModule
+    public class HyperVOptions : Interface.IGenericSourceModule
     {
         private const string OPTION_SOURCE = "hyperv-backup-vm";
 
@@ -39,12 +38,12 @@ namespace Duplicati.Library.Modules.Builtin
 
         public string DisplayName
         {
-            get { return Strings.HttpOptions.DisplayName; }
+            get { return Strings.HyperVOptions.DisplayName; }
         }
 
         public string Description
         {
-            get { return Strings.HttpOptions.Description; }
+            get { return Strings.HyperVOptions.Description; }
         }
 
         public bool LoadAsDefault
@@ -52,9 +51,9 @@ namespace Duplicati.Library.Modules.Builtin
             get { return true; }
         }
 
-        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
+        public IList<Interface.ICommandLineArgument> SupportedCommands
         {
-            get { return new List<Duplicati.Library.Interface.ICommandLineArgument>(); }
+            get { return new List<Interface.ICommandLineArgument>(); }
         }
 
         public void Configure(IDictionary<string, string> commandlineOptions)
@@ -64,12 +63,13 @@ namespace Duplicati.Library.Modules.Builtin
         #endregion
         
         #region Implementation of IGenericSourceModule
-        public void ParseSource(ref string[] paths, ref Dictionary<string, string> commandlineOptions)
+        public Dictionary<string, string> ParseSource(ref string[] paths, ref string filter)
         {
             var hypervpathguidexp = @"%HYPERV:(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}%";
             var hypervguidexp = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
             var hypervpathallexp = @"%HYPERV:*%";
             var pathshyperv = new List<string>();
+            var ret = new Dictionary<string, string>();
 
             if (paths.Contains(hypervpathallexp, StringComparer.OrdinalIgnoreCase))
                 pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format("%HYPERV:{0}%", x.ID)).ToList();
@@ -78,20 +78,33 @@ namespace Duplicati.Library.Modules.Builtin
 
             paths = paths.Where(x => !x.Equals(hypervpathallexp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
             
-            if (commandlineOptions.Keys.Contains("filter"))
+            if (!string.IsNullOrEmpty(filter))
             {
-                var filters = commandlineOptions["filter"].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+
                 var filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
                 var filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
 
                 var remainingfilters = filters.Where(x => !Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase)).ToArray();
-                commandlineOptions["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
+                filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
 
                 pathshyperv = pathshyperv.Union(filtersInclude).Except(filtersExclude).ToList();
             }
 
             pathshyperv = pathshyperv.Select(x => Regex.Match(x, hypervguidexp).Value).ToList();
-            commandlineOptions[OPTION_SOURCE] = string.Join(System.IO.Path.PathSeparator.ToString(), pathshyperv);
+            ret[OPTION_SOURCE] = string.Join(System.IO.Path.PathSeparator.ToString(), pathshyperv);
+            return ret;
+        }
+        
+        public bool ContainFiles(Dictionary<string, string> commandlineOptions)
+        {
+            if (commandlineOptions != null && !commandlineOptions.Keys.Contains(OPTION_SOURCE))
+                return false;
+
+            if (commandlineOptions[OPTION_SOURCE].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Count() > 0)
+                return true;
+            else
+                return false;
         }
 
         #endregion

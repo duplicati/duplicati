@@ -173,10 +173,17 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
-
+            
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
-                if (inputsources == null || inputsources.Length == 0)
+                var bModulesFiles = false;
+
+                foreach (var mx in m_options.LoadedModules)
+                    if (mx.Key && mx.Value is Library.Interface.IGenericSourceModule)
+                        if(!bModulesFiles)
+                            bModulesFiles = ((Library.Interface.IGenericSourceModule)mx.Value).ContainFiles(m_options.RawOptions);
+                    
+                if (!bModulesFiles && (inputsources == null || inputsources.Length == 0))
                     throw new Exception(Strings.Controller.NoSourceFoldersError);
 
                 var sources = new List<string>(inputsources);
@@ -597,9 +604,8 @@ namespace Duplicati.Library.Main
 
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
-            var pristinepaths = paths;
 
-            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+            foreach (var mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
                     if (mx.Value is Library.Interface.IConnectionModule)
@@ -608,7 +614,12 @@ namespace Duplicati.Library.Main
                         mx.Value.Configure(m_options.RawOptions);
 
                     if (mx.Value is Library.Interface.IGenericSourceModule)
-                        ((Library.Interface.IGenericSourceModule)mx.Value).ParseSource(ref paths, ref conopts);
+                    {
+                        var sourceoptions = ((Library.Interface.IGenericSourceModule)mx.Value).ParseSource(ref paths, ref pristinefilter);
+
+                        foreach (var sourceoption in sourceoptions)
+                            m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                    }
 
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
@@ -616,7 +627,7 @@ namespace Duplicati.Library.Main
 
             // If the filters were changed, read them back in
             if (pristinefilter != conopts["filter"])
-                filter = FilterExpression.Deserialize(conopts["filter"].Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+                filter = FilterExpression.Deserialize(pristinefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
 
             OperationRunning(true);
 

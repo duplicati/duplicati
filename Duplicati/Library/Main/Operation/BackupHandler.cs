@@ -720,11 +720,9 @@ namespace Duplicati.Library.Main.Operation
                 
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                 System.Threading.Thread parallelScanner = null;
-
     
                 try
                 {
-
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
@@ -1012,7 +1010,6 @@ namespace Duplicati.Library.Main.Operation
 
                             m_filehasher.Initialize();
 
-                            
                             var offset = 0;
                             var remaining = fs.Readblock();
                             
