@@ -31,6 +31,11 @@ namespace Duplicati.Library.Interface
     public interface IGenericSourceModule : IGenericModule
     {
         /// <summary>
+        /// Gets a list of hidden arguments to prevent reporting them as unsupported
+        /// </summary>
+        IList<ICommandLineArgument> HiddenCommands { get; }
+
+        /// <summary>
         /// This method parse and alter backup source paths, apply and alter filters and returns changed or added options values.
         /// </summary>
         /// <param name="paths">Backup source paths</param>

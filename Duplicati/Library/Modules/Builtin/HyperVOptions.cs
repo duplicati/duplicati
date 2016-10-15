@@ -53,7 +53,16 @@ namespace Duplicati.Library.Modules.Builtin
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
         {
-            get { return new List<Interface.ICommandLineArgument>(); }
+            get { return null; }
+        }
+
+        public IList<Interface.ICommandLineArgument> HiddenCommands
+        {
+            get {
+                return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_SOURCE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, "", "")
+                });
+            }
         }
 
         public void Configure(IDictionary<string, string> commandlineOptions)

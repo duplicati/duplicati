@@ -352,8 +352,6 @@ namespace Duplicati.Library.Main
             });
         }
 
-
-
         public Duplicati.Library.Interface.ICompactResults Compact()
         {
             return RunAction(new CompactResults(), (result) => {
@@ -726,11 +724,17 @@ namespace Duplicati.Library.Main
             Dictionary<string, string> disabledModuleOptions = new Dictionary<string, string>();
 
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> m in m_options.LoadedModules)
-                if (m.Value.SupportedCommands != null)
-                    if (m.Key)
+                if (m.Key)
+                {
+                    if (m.Value.SupportedCommands != null)
                         moduleOptions.AddRange(m.Value.SupportedCommands);
-                    else
-                    {
+
+                    if (m.Value is Library.Interface.IGenericSourceModule)
+                        moduleOptions.AddRange(((Library.Interface.IGenericSourceModule)m.Value).HiddenCommands);
+                }
+                else
+                {
+                    if (m.Value.SupportedCommands != null)
                         foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
                         {
                             disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
@@ -739,7 +743,7 @@ namespace Duplicati.Library.Main
                                 foreach (string s in c.Aliases)
                                     disabledModuleOptions[s] = disabledModuleOptions[c.Name];
                         }
-                    }
+                }
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
