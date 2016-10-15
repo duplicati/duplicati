@@ -25,7 +25,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     function computePassPhraseStrength() {
 
         var strengthMap = {
-            '': gettextCatalog.getString("Empty"),
             'x': gettextCatalog.getString("Passwords do not match"),
             0: gettextCatalog.getString("Useless"),
             1: gettextCatalog.getString("Very weak"),
@@ -43,7 +42,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         else
             scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
 
-        scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || gettextCatalog.getString('Unknown');
+        scope.PassphraseScoreString = strengthMap[scope.PassphraseScore];
     }
 
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
