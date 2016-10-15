@@ -201,6 +201,11 @@ body
                         {
                             background: url('../img/mainmenu/pause.png') no-repeat 8px 7px;
                         }
+
+                        a.resume
+                        {
+                            background: url('../img/mainmenu/resume.png') no-repeat 8px 7px;
+                        }
                         
                         a.settings
                         {
@@ -228,6 +233,12 @@ body
                         a.pause.active
                         {
                             background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
+                        }
+
+                        a.resume:hover,
+                        a.resume.active
+                        {
+                            background: @lColor url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
                         }
                         
                         a.settings:hover,

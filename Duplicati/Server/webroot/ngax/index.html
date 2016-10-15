@@ -149,8 +149,11 @@
                     <li>
                         <a href="#/restoredirect" class="restore" translate>Restore backup</a>
                     </li>
-                    <li>
+                    <li ng-show="state.programState == 'Running'">
                         <a href="#/pause" id="pause" class="pause" translate>Pause</a>
+                    </li>
+                    <li ng-hide="state.programState == 'Running'">
+                        <a href ng-click="sendResume()" id="resume" class="resume" translate>Resume</a>
                     </li>
                     <li>
                         <a href="#/settings" class="settings">{{'Settings' | translate}}</a>
