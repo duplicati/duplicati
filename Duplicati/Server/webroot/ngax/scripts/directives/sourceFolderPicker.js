@@ -46,15 +46,16 @@ backupApp.directive('sourceFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-desktop';
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
+            else if (n.id.substr(0, 9) == "%HYPERV%\\" && n.id.length >= 10) {
+                n.iconCls = 'x-tree-icon-hypervmachine';
+                n.tooltip = gettextCatalog.getString("ID:") + " " + n.id.substring(9, n.id.length);
+            }
+            else if (n.id.substr(0, 8) == "%HYPERV%")
+                n.iconCls = 'x-tree-icon-hyperv';
             else if (defunctmap[cp])
                 n.iconCls = 'x-tree-icon-broken';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
-            else if (n.id.substr(0, 8) == "%HYPERV:") {
-                n.iconCls = 'x-tree-icon-hypervmachine';
-                n.tooltip = gettextCatalog.getString("ID:") + " " + n.id.substring(8, n.id.length - 1);
-            }
-
         }
 
         function indexOfPathInArray(array, item) {
@@ -198,7 +199,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     var nx = k.substr(1).indexOf('%') + 2;
                     if (nx > 1) {
                         var key = compareablePath(k.substr(0, nx));
-                        txt = (displayMap[compareablePath(key)] || key) + txt.substr(nx);
+                        txt = displayMap[compareablePath(k)] || ((displayMap[compareablePath(key)] || key) + txt.substr(nx));
                     }
                 }
 
@@ -374,8 +375,6 @@ backupApp.directive('sourceFolderPicker', function() {
             sourceNodeChildren = sourcenode.children;
             scope.treedata.children.push(usernode, systemnode, sourcenode);
 
-            displayMap = {};
-
             for(var i = 0; i < data.data.length; i++) {
                 if (data.data[i].id.indexOf('%') == 0) {
                     usernode.children.push(data.data[i]);
@@ -396,12 +395,12 @@ backupApp.directive('sourceFolderPicker', function() {
             if (data.data.length > 0) {
                 var hypervnode = {
                     text: gettextCatalog.getString('Hyper-V Machines'),
-                    iconCls: 'x-tree-icon-hyperv',
-                    id: "%HYPERV:*%",
+                    id: "%HYPERV%",
                     children: []
                 };
+                setIconCls(hypervnode);
                 var cp = compareablePath(hypervnode.id);
-                displayMap[cp] = hypervnode.text;
+                displayMap[cp] = gettextCatalog.getString('All Hyper-V Machines');
 
                 // add HyperV at the beginning
                 if (scope.treedata.children.length < 1)
@@ -411,14 +410,13 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 for (var i = 0; i < data.data.length; i++) {
                     var node = {
-                        iconCls: "x-tree-icon-hypervmachine",
                         leaf: true,
-                        id: "%HYPERV:" + data.data[i].id + "%",
-                        tooltip: gettextCatalog.getString("ID:") + " " + data.data[i].id,
+                        id: "%HYPERV%\\" + data.data[i].id,
                         text: data.data[i].name};
 
                     cp = compareablePath(node.id);
-                    displayMap[cp] = data.data[i].name;
+                    displayMap[cp] = gettextCatalog.getString('Hyper-V Machine:') + " " + node.text;
+                    setIconCls(node);
                     hypervnode.children.push(node);
                 }
                 syncTreeWithLists();
