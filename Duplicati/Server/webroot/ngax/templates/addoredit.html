@@ -235,9 +235,9 @@
                         <option value="versions" translate>a specific number</option>
                     </select>
 
-                    <input type="number" ng-model="Options['keep-versions']" ng-show="KeepType == 'versions'" />
+                    <input type="number" ng-model="Options['keep-versions']" ng-show="KeepType == 'versions'" min="1" />
                     <div ng-show="KeepType == 'time'">
-                        <input type="number" class="number" parse-size-number ng-model="Options['keep-time']" />
+                        <input type="text" class="number" parse-size-number ng-model="Options['keep-time']" />
                         <select parse-size-multiplier ng-model="Options['keep-time']" >
                             <option value="D" translate>Days</option>
                             <option value="W" translate>Weeks</option>

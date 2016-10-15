@@ -150,6 +150,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
                     new CommandLineArgument(SSH_FINGERPRINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionFingerprintShort, Strings.SSHv2Backend.DescriptionFingerprintLong),
+                    new CommandLineArgument(SSH_FINGERPRINT_ACCEPT_ANY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHv2Backend.DescriptionAnyFingerprintShort, Strings.SSHv2Backend.DescriptionAnyFingerprintLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
                     new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
                 });

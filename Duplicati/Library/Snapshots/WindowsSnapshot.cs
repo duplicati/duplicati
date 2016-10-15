@@ -96,6 +96,8 @@ namespace Duplicati.Library.Snapshots
                 //Prepare the backup
                 m_backup = vss.CreateVssBackupComponents();
                 m_backup.InitializeForBackup(null);
+                m_backup.SetContext(VssSnapshotContext.Backup);
+                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
 
                 if (excludedWriters.Length > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
@@ -152,9 +154,6 @@ namespace Duplicati.Library.Snapshots
                         m_volumes.Add(drive, m_backup.AddToSnapshotSet(drive));
                     }
                 }
-
-                //Signal that we want to do a backup
-                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
 
                 //Make all writers aware that we are going to do the backup
                 m_backup.PrepareForBackup();

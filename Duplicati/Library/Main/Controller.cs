@@ -305,6 +305,48 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Duplicati.Library.Interface.IListRemoteResults ListRemote()
+        {
+            return RunAction(new ListRemoteResults(), (result) =>
+            {
+                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
+                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                    result.SetResult(bk.List());
+            });
+        }
+
+        public Duplicati.Library.Interface.IListRemoteResults DeleteAllRemoteFiles()
+        {
+            return RunAction(new ListRemoteResults(), (result) =>
+            {
+                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
+                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
+                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                {
+                    var list = bk.List();
+                    result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
+                    result.OperationProgressUpdater.UpdateProgress(0);
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        try
+                        {
+                            bk.Delete(list[i].Name, list[i].Size, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to delete remote file: {0}", list[i].Name), ex);
+                        }
+                        result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
+                    }
+                    result.OperationProgressUpdater.UpdateProgress(1);
+                }
+            });
+        }
+
+
+
         public Duplicati.Library.Interface.ICompactResults Compact()
         {
             return RunAction(new CompactResults(), (result) => {

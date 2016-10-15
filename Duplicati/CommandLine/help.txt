@@ -439,8 +439,8 @@ Duplicati offers more options than listed in the other topics. Those additional 
 
 Duplicati reports the following return/exit codes:
   0 - Success
-  1 - Successful backup, but no files were changed
-  2 - Successful backup, with warnings
+  1 - Successful operation, but no files were changed
+  2 - Successful operation, but with warnings
   50 - Backup uploaded some files, but did not finish
   100 - An error occurred
   200 - Invalid commandline arguments found

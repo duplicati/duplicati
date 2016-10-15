@@ -100,6 +100,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
                 LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)),
                 SuppressDonationMessages = Duplicati.Library.Main.Utility.SuppressDonationMessages,
+                SpecialFolders = from n in SpecialFolders.Nodes select new { ID = n.id, Path = n.resolvedpath },
                 BrowserLocale = new
                 {
                     Code = browserlanguage.Name,

@@ -354,14 +354,97 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        internal void AddOrUpdateBackup(IBackup item)
-        {
-            AddOrUpdateBackup(item, false, null);
-        }
-        
         internal void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
         {
             AddOrUpdateBackup(item, true, schedule);
+        }
+
+        internal string ValidateBackup(IBackup item, ISchedule schedule)
+        {
+            if (string.IsNullOrWhiteSpace(item.Name))
+                return "Missing a name";
+
+            if (string.IsNullOrWhiteSpace(item.TargetURL))
+                return "Missing a target";
+
+            if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
+                return "Invalid source list";
+            
+            var disabled_encryption = false;
+            var passphrase = string.Empty;
+            if (item.Settings != null)
+            {
+                foreach (var s in item.Settings)
+                    if (string.Equals(s.Name, "--no-encryption", StringComparison.InvariantCultureIgnoreCase))
+                        disabled_encryption = string.IsNullOrWhiteSpace(s.Value) ? true : Library.Utility.Utility.ParseBool(s.Value, false);
+                    else if (string.Equals(s.Name, "passphrase", StringComparison.InvariantCultureIgnoreCase))
+                        passphrase = s.Value;
+                    else if (string.Equals(s.Name, "keep-versions", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        int i;
+                        if (!int.TryParse(s.Value, out i) || i <= 0)
+                            return "Retention value must be a positive integer";
+                    }
+                    else if (string.Equals(s.Name, "keep-time", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            var ts = Library.Utility.Timeparser.ParseTimeSpan(s.Value);
+                            if (ts <= TimeSpan.FromMinutes(5))
+                                return "Retention value must be more than 5 minutes";
+                        }
+                        catch
+                        {
+                            return "Retention value must be a valid timespan";
+                        }
+                    }
+                    else if (string.Equals(s.Name, "dblock-size", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
+                            if (ds <= 1024*1024)
+                                return "DBlock size must be at least 1MB";
+                        }
+                        catch
+                        {
+                            return "DBlock value must be a valid size string";
+                        }
+                    }
+                    else if (string.Equals(s.Name, "blocksize", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
+                            if (ds <= 1024 || ds > int.MaxValue)
+                                return "The blocksize must be at least 1KB";
+                        }
+                        catch
+                        {
+                            return "The blocksize value must be a valid size string";
+                        }
+                    }
+            }
+
+            if (!disabled_encryption && string.IsNullOrWhiteSpace(passphrase))
+                return "Missing passphrase";
+
+            if (schedule != null)
+            {
+                try
+                {
+                    var ts = Library.Utility.Timeparser.ParseTimeSpan(schedule.Repeat);
+                    if (ts <= TimeSpan.FromMinutes(5))
+                        return "Schedule repetition time must be more than 5 minutes";
+                }
+                catch
+                {
+                    return "Schedule repetition value must be a valid timespan";
+                }
+
+            }
+
+            return null;
         }
 
         internal void UpdateBackupDBPath(IBackup item, string path)

@@ -30,10 +30,7 @@ backupApp.controller('HomeController', function ($scope, $location, ServerStatus
     };
 
     $scope.doDelete = function(id, name) {
-        DialogService.dialog(gettextCatalog.getString('Confirm delete'), gettextCatalog.getString('Do you really want to delete the backup: {{name}}', {name: name}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
-            if (ix == 1)
-                AppService.delete('/backup/' + id);
-        });
+        $location.path('/delete/' + id);
     };
 
     $scope.doLocalDb = function(id) {
