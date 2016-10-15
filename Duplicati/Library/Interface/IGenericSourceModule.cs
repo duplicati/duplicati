@@ -40,8 +40,9 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="paths">Backup source paths</param>
         /// <param name="filter">Filters that are applied to backup paths (include, exclude)</param>
+        /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
         /// <returns>A list of changed or added options values</returns>
-        Dictionary<string, string> ParseSource(ref string[] paths, ref string filter);
+        Dictionary<string, string> ParseSource(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions);
 
         /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.

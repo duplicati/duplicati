@@ -613,7 +613,7 @@ namespace Duplicati.Library.Main
 
                     if (mx.Value is Library.Interface.IGenericSourceModule)
                     {
-                        var sourceoptions = ((Library.Interface.IGenericSourceModule)mx.Value).ParseSource(ref paths, ref pristinefilter);
+                        var sourceoptions = ((Library.Interface.IGenericSourceModule)mx.Value).ParseSource(ref paths, ref pristinefilter, m_options.RawOptions);
 
                         foreach (var sourceoption in sourceoptions)
                             m_options.RawOptions[sourceoption.Key] = sourceoption.Value;

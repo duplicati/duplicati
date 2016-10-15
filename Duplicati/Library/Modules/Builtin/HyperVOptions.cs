@@ -72,7 +72,7 @@ namespace Duplicati.Library.Modules.Builtin
         #endregion
         
         #region Implementation of IGenericSourceModule
-        public Dictionary<string, string> ParseSource(ref string[] paths, ref string filter)
+        public Dictionary<string, string> ParseSource(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             var hypervpathguidexp = @"%HYPERV:(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}%";
             var hypervguidexp = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
@@ -81,7 +81,10 @@ namespace Duplicati.Library.Modules.Builtin
             var ret = new Dictionary<string, string>();
 
             if (paths.Contains(hypervpathallexp, StringComparer.OrdinalIgnoreCase))
-                pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format("%HYPERV:{0}%", x.ID)).ToList();
+            {
+                if (Utility.Utility.IsClientWindows)
+                    pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format("%HYPERV:{0}%", x.ID)).ToList();
+            }
             else
                 pathshyperv = paths.Where(x => Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
 
@@ -101,7 +104,21 @@ namespace Duplicati.Library.Modules.Builtin
             }
 
             pathshyperv = pathshyperv.Select(x => Regex.Match(x, hypervguidexp).Value).ToList();
-            ret[OPTION_SOURCE] = string.Join(System.IO.Path.PathSeparator.ToString(), pathshyperv);
+
+            if (pathshyperv.Count != 0 && Utility.Utility.IsClientWindows && (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required"))
+            {
+                Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue.", Logging.LogMessageType.Information);
+                ret["snapshot-policy"] = "required";
+            }
+
+            if (pathshyperv.Count != 0)
+            {
+                if (Utility.Utility.IsClientWindows)
+                    ret[OPTION_SOURCE] = string.Join(System.IO.Path.PathSeparator.ToString(), pathshyperv);
+                else
+                    Logging.Log.WriteMessage("Hyper-V backup works only on Windows OS.", Logging.LogMessageType.Warning);
+            }
+
             return ret;
         }
         
