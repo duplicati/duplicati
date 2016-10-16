@@ -23,9 +23,26 @@ namespace Duplicati.Server.WebServer.RESTMethods
     public class HyperV : IRESTMethodGET, IRESTMethodDocumented
     {
         public void GET(string key, RequestInfo info)        {
+            var hypervUtility = new HyperVUtility();
+
             try
             {
-                info.OutputOK(new HyperVUtility().GetHyperVGuests().Select(x => new { id = x.ID, name = x.Name }).ToList());
+                if (string.IsNullOrEmpty(key))
+                {
+                    hypervUtility.QueryHyperVGuestsInfo();
+                    info.OutputOK(hypervUtility.Guests.Select(x => new { id = x.ID, name = x.Name }).ToList());
+
+                }
+                else
+                {
+                    var parts = (key ?? "").Split(new char[] { '/' });
+                    var path = Duplicati.Library.Utility.Uri.UrlDecode((parts.Length == 2 ? parts.FirstOrDefault() : key ?? ""));
+                    var command = parts.Length == 2 ? parts.Last() : null;
+                    
+                    hypervUtility.QueryHyperVGuestsInfo(true);
+                    info.OutputOK(hypervUtility.Guests.Select(x => new { id = x.ID, name = x.Name }).ToList());
+
+                }
             }
             catch (Exception ex)
             {

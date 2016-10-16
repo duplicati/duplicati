@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Alphaleonis.Win32.Vss;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,13 +27,32 @@ namespace Duplicati.Library.Snapshots
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost";
         private readonly bool _wmiv2Namespace;
+        /// <summary>
+        /// The Hyper-V VSS Writer Guid
+        /// </summary>
+        public static readonly Guid HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
+        /// <summary>
+        /// Hyper-V is supported only on Windows platform
+        /// </summary>
         public bool IsHyperVInstalled { get; }
+        /// <summary>
+        /// Hyper-V writer is supported only on Server version of Windows
+        /// </summary>
+        public bool IsVSSWriterSupported { get; }
+        /// <summary>
+        /// Enumerated Hyper-V guests
+        /// </summary>
+        public List<HyperVGuest> Guests { get { return m_Guests; } }
+        private List<HyperVGuest> m_Guests;
 
         public HyperVUtility()
         {
-            if (!Library.Utility.Utility.IsClientWindows)
+            m_Guests = new List<HyperVGuest>();
+
+            if (!Utility.Utility.IsClientWindows)
             {
                 IsHyperVInstalled = false;
+                IsVSSWriterSupported = false;
                 Logging.Log.WriteMessage("Hyper-V Guests are supported only on Windows.", Logging.LogMessageType.Information);
                 return;
             }
@@ -48,7 +68,11 @@ namespace Duplicati.Library.Snapshots
             _vmIdField = _wmiv2Namespace ? "VirtualSystemIdentifier" : "SystemName";
 
             Logging.Log.WriteMessage(string.Format("Using WMI provider {0}", _wmiScope.Path), Logging.LogMessageType.Profiling);
-            
+
+            IsVSSWriterSupported = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
+                    .Get().OfType<ManagementObject>()
+                    .Select(o => (uint)o.GetPropertyValue("ProductType")).First() != 1;
+
             try
             {
                 var classesCount = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
@@ -63,38 +87,107 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
-        /// We query the Hyper-V for all requested Virtual Machines
+        /// Query Hyper-V for all Virtual Machines info
         /// </summary>
+        /// <param name="bIncludePaths">Specify if returned data should contain VM paths</param>
         /// <returns>List of Hyper-V Machines</returns>
-        public List<HyperVGuest> GetHyperVGuests()
+        public void QueryHyperVGuestsInfo(bool bIncludePaths = false)
         {
-            var hyperVMachines = new List<HyperVGuest>();
+            if (!IsHyperVInstalled)
+                return;
 
-            if(!IsHyperVInstalled)
-                return hyperVMachines;
-
+            m_Guests.Clear();
             var wmiQuery = _wmiv2Namespace
                 ? "SELECT * FROM Msvm_VirtualSystemSettingData WHERE VirtualSystemType = 'Microsoft:Hyper-V:System:Realized'"
                 : "SELECT * FROM Msvm_VirtualSystemSettingData WHERE SettingType = 3";
-
-            using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
-                foreach (var mObject in moCollection)
-                {
-                    var paths = GetAllVmVhdPaths((string)mObject[_vmIdField]);
-                    paths.AddRange(GetAllVmConfigPaths((string)mObject[_vmIdField]));
-
-                    hyperVMachines.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], paths));
-                }
-
-            return hyperVMachines;
+            
+            if (IsVSSWriterSupported)
+                using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
+                    foreach (var mObject in moCollection)
+                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject["ElementName"]] : null));
+            else
+                using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
+                    foreach (var mObject in moCollection)
+                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], bIncludePaths ? 
+                            GetVMVhdPathsWMI((string)mObject[_vmIdField])
+                                .Union(GetVMConfigPathsWMI((string)mObject[_vmIdField]))
+                                .Distinct(Utility.Utility.ClientFilenameStringComparer)
+                                .OrderBy(a => a).ToList() : null));
         }
 
         /// <summary>
-        /// For given Hyper-V guest it enumerate all associated configuration files
+        /// For all Hyper-V guests it enumerate all associated paths using VSS data
         /// </summary>
-        /// <param name="query"></param>
+        /// <returns>A collection of VMs and paths</returns>
+        private Dictionary<string, List<string>> GetAllVMsPathsVSS()
+        {
+            IVssBackupComponents m_backup = null;
+            var ret = new Dictionary<string, List<string>>();
+
+            try
+            {
+                //Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
+                string alphadir = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "alphavss");
+                string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
+                IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
+
+                m_backup = vss.CreateVssBackupComponents();
+                m_backup.InitializeForBackup(null);
+                m_backup.SetContext(VssSnapshotContext.Backup);
+                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
+                m_backup.EnableWriterClasses(new Guid[] { HyperVWriterGuid });
+
+                try
+                {
+                    m_backup.GatherWriterMetadata();
+                    var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
+
+                    if (writerMetaData == null)
+                        throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
+
+                    foreach (var component in writerMetaData.Components)
+                    {
+                        var paths = new List<string>();
+
+                        foreach (var file in component.Files)
+                            if (file.FileSpecification.Contains("*"))
+                            {
+                                if (Directory.Exists(Utility.Utility.AppendDirSeparator(file.Path)))
+                                    paths.Add(Utility.Utility.AppendDirSeparator(file.Path));
+                            }
+                            else
+                            {
+                                if (File.Exists(Path.Combine(file.Path, file.FileSpecification)))
+                                    paths.Add(Path.Combine(file.Path, file.FileSpecification));
+                            }
+
+                        ret.Add(component.ComponentName, paths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList());
+                    }
+                }
+                finally
+                {
+                    m_backup.FreeWriterMetadata();
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (m_backup != null)
+                        m_backup.Dispose();
+                }
+                catch { }
+            }
+
+            return ret;
+        }
+
+        /// <summary>
+        /// For given Hyper-V guest it enumerate all associated configuration files using WMI data
+        /// </summary>
+        /// <param name="vmID">ID of VM to get paths for</param>
         /// <returns>A collection of configuration paths</returns>
-        private List<string> GetAllVmConfigPaths(string vmID)
+        private List<string> GetVMConfigPathsWMI(string vmID)
         {
             var result = new List<string>();
             string path;
@@ -148,15 +241,15 @@ namespace Duplicati.Library.Snapshots
                     }
                 }
 
-            return result.Distinct(Utility.Utility.ClientFilenameStringComparer).ToList();
+            return result;
         }
 
         /// <summary>
-        /// For given Hyper-V guest it enumerate all associated VHD files
+        /// For given Hyper-V guest it enumerate all associated VHD files using WMI data
         /// </summary>
-        /// <param name="query"></param>
+        /// <param name="vmID">ID of VM to get paths for</param>
         /// <returns>A collection of VHD paths</returns>
-        private List<string> GetAllVmVhdPaths(string vmID)
+        private List<string> GetVMVhdPathsWMI(string vmID)
         {
             var result = new List<string>();
             using (var vm = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(string.Format("select * from Msvm_ComputerSystem where Name = '{0}'", vmID)))
@@ -208,7 +301,7 @@ namespace Duplicati.Library.Snapshots
                 result.AddRange(ParentPaths);
             }
 
-            return result.Distinct(Utility.Utility.ClientFilenameStringComparer).ToList();
+            return result;
         }
     }
 }

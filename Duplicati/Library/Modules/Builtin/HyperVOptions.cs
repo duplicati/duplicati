@@ -83,7 +83,11 @@ namespace Duplicati.Library.Modules.Builtin
             if (paths.Contains(m_HyperVPathAllRegExp, StringComparer.OrdinalIgnoreCase))
             {
                 if (Utility.Utility.IsClientWindows)
-                    pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format(@"%HYPERV%\{0}", x.ID)).ToList();
+                {
+                    var hypervUtility = new HyperVUtility();
+                    hypervUtility.QueryHyperVGuestsInfo();
+                    pathshyperv = hypervUtility.Guests.Select(x => string.Format(@"%HYPERV%\{0}", x.ID)).ToList();
+                }
             }
             else
                 pathshyperv = paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();

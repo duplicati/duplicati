@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Alphaleonis.Win32.Vss;
-using System.Management;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -68,17 +67,21 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private static readonly SystemIOWindows _ioWin = new SystemIOWindows();
         /// <summary>
-        /// The Hyper-V VSS Writer Guid
-        /// </summary>
-        private static readonly Guid HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
-
-        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
         /// <param name="options">A set of commandline options</param>
         public WindowsSnapshot(string[] sourcepaths, Dictionary<string, string> options)
         {
+            HyperVUtility hypervUtility = null;
+            List<string> hypervPaths = null;
+
+            if (options.ContainsKey("hyperv-backup-vm"))
+            {
+                hypervUtility = new HyperVUtility();
+                hypervUtility.QueryHyperVGuestsInfo(true);
+            }
+
             try
             {
                 //Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
@@ -103,14 +106,17 @@ namespace Duplicati.Library.Snapshots
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
                 m_sourcepaths = sourcepaths.Select(x => Directory.Exists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
-
-                List<string> hypervPaths;
-
+                
                 try
                 {
                     m_backup.GatherWriterMetadata();
 
-                    hypervPaths = PrepareHyperVBackup(options, m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid)));
+                    if (hypervUtility != null)
+                    {
+                        var requestedHyperVMs = options["hyperv-backup-vm"].Split(Path.PathSeparator).Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
+                        if (requestedHyperVMs.Count == 0)
+                            hypervPaths = PrepareHyperVBackup(hypervUtility, requestedHyperVMs, m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVUtility.HyperVWriterGuid)));
+                    }
                 }
                 finally
                 {
@@ -192,29 +198,19 @@ namespace Duplicati.Library.Snapshots
             }
         }
 
-        private List<string> PrepareHyperVBackup(Dictionary<string, string> options, IVssExamineWriterMetadata writerMetaData)
+        private List<string> PrepareHyperVBackup(HyperVUtility hypervUtility, List<string> requestedHyperVMs, IVssExamineWriterMetadata writerMetaData)
         {
             var resultPaths = new List<string>();
-            var requestedHyperVMs = new List<string>();
-
-            if (options.ContainsKey("hyperv-backup-vm"))
-                requestedHyperVMs = options["hyperv-backup-vm"].Split(Path.PathSeparator).Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
-
-            if (requestedHyperVMs.Count == 0)
-                return resultPaths;
-
+            
             Logging.Log.WriteMessage("Starting to gather Hyper-V information.", Logging.LogMessageType.Information);
-
-            var hyperVGuests = new HyperVUtility().GetHyperVGuests();
-
-            Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V.", hyperVGuests.Count), Logging.LogMessageType.Information);
+            Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V.", hypervUtility.Guests.Count), Logging.LogMessageType.Information);
 
             bool bNotFound = false;
             var notFoundVM = new List<string>();
 
             foreach (var requestedHyperVM in requestedHyperVMs)
             {
-                var foundVMs = hyperVGuests.FindAll(x => (string.Equals(requestedHyperVM, x.ID, StringComparison.OrdinalIgnoreCase)));
+                var foundVMs = hypervUtility.Guests.FindAll(x => (string.Equals(requestedHyperVM, x.ID, StringComparison.OrdinalIgnoreCase)));
 
                 if (foundVMs.Count != 1)
                 {
@@ -229,11 +225,7 @@ namespace Duplicati.Library.Snapshots
             if (bNotFound)
                 throw new Exception(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", string.Join(", ", notFoundVM.ToArray())));
 
-            var productType = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
-                .Get().OfType<ManagementObject>()
-                .Select(o => (uint)o.GetPropertyValue("ProductType")).First();
-
-            if (productType != 1) // Hyper-V writer is present only on Server version of Windows
+            if (hypervUtility.IsVSSWriterSupported)
             {
                 if (writerMetaData == null)
                     throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
@@ -262,7 +254,7 @@ namespace Duplicati.Library.Snapshots
             {
                 Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version.", Logging.LogMessageType.Warning);
 
-                foreach (var hyperVGuest in hyperVGuests)
+                foreach (var hyperVGuest in hypervUtility.Guests)
                     if (requestedHyperVMs.Contains(hyperVGuest.ID, StringComparer.OrdinalIgnoreCase))
                         foreach (var path in hyperVGuest.DataPaths)
                         {
