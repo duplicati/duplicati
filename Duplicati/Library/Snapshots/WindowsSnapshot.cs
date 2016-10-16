@@ -223,7 +223,7 @@ namespace Duplicati.Library.Snapshots
                     Logging.Log.WriteMessage(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", requestedHyperVM), Logging.LogMessageType.Error);
                 }
                 else
-                    Logging.Log.WriteMessage(string.Format("Found virtual machine {0} with ID {1} on Hyper-V.", foundVMs[0].Name, requestedHyperVM), Logging.LogMessageType.Information);
+                    Logging.Log.WriteMessage(string.Format("Adding virtual machine {0} with ID {1} to backup.", foundVMs[0].Name, requestedHyperVM), Logging.LogMessageType.Information);
             }
 
             if (bNotFound)

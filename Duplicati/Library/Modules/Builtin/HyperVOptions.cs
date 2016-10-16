@@ -28,6 +28,9 @@ namespace Duplicati.Library.Modules.Builtin
     public class HyperVOptions : Interface.IGenericSourceModule
     {
         private const string OPTION_SOURCE = "hyperv-backup-vm";
+        private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
+        private const string m_HyperVGuidRegExp = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
+        private const string m_HyperVPathAllRegExp = @"%HYPERV%";
 
         #region IGenericModule Members
 
@@ -74,36 +77,33 @@ namespace Duplicati.Library.Modules.Builtin
         #region Implementation of IGenericSourceModule
         public Dictionary<string, string> ParseSource(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
-            var hypervpathguidexp = @"%HYPERV:(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}%";
-            var hypervguidexp = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
-            var hypervpathallexp = @"%HYPERV:*%";
             var pathshyperv = new List<string>();
             var ret = new Dictionary<string, string>();
 
-            if (paths.Contains(hypervpathallexp, StringComparer.OrdinalIgnoreCase))
+            if (paths.Contains(m_HyperVPathAllRegExp, StringComparer.OrdinalIgnoreCase))
             {
                 if (Utility.Utility.IsClientWindows)
-                    pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format("%HYPERV:{0}%", x.ID)).ToList();
+                    pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format(@"%HYPERV%\{0}", x.ID)).ToList();
             }
             else
-                pathshyperv = paths.Where(x => Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
+                pathshyperv = paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
 
-            paths = paths.Where(x => !x.Equals(hypervpathallexp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
+            paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
             
             if (!string.IsNullOrEmpty(filter))
             {
                 var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
 
-                var filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
-                var filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
+                var filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
+                var filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
 
-                var remainingfilters = filters.Where(x => !Regex.IsMatch(x, hypervpathguidexp, RegexOptions.IgnoreCase)).ToArray();
+                var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase)).ToArray();
                 filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
 
                 pathshyperv = pathshyperv.Union(filtersInclude).Except(filtersExclude).ToList();
             }
 
-            pathshyperv = pathshyperv.Select(x => Regex.Match(x, hypervguidexp).Value).ToList();
+            pathshyperv = pathshyperv.Select(x => Regex.Match(x, m_HyperVGuidRegExp).Value).ToList();
 
             if (pathshyperv.Count != 0 && Utility.Utility.IsClientWindows && (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required"))
             {
