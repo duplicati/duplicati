@@ -1183,8 +1183,6 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_blockvolume.Dispose();
                         m_blockvolume = null;
-                        m_indexvolume.Dispose();
-                        m_indexvolume = null;
                     }
                     else
                     {
