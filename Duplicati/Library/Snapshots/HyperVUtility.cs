@@ -104,7 +104,7 @@ namespace Duplicati.Library.Snapshots
             if (IsVSSWriterSupported)
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject["ElementName"]] : null));
+                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
             else
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
