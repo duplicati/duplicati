@@ -36,9 +36,10 @@ script:
 # download and extract testdata
   - echo "travis_fold:start:download_extract_testdata"
   - ls -la .
-  - if [ ! -d ~/download ]; then mkdir ~/download fi
-  - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" fi
-  - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" fi
+  - if [ ! -d ~/download ]; then mkdir ~/download; fi
+  - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip"; fi
+  - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip"; fi
+  - ls -la .
   - mkdir ~/testdata
   - mkdir ~/testdata/data
   - mkdir ~/testdata/DSMCBE
