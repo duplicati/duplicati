@@ -587,7 +587,14 @@ namespace Duplicati.Library.Main
         /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.</returns>
         public override string ToString()
         {
-            return Library.Utility.Utility.PrintSerializeObject(this).ToString();
+            return Library.Utility.Utility.PrintSerializeObject(
+                this, 
+                filter: x =>
+                    !typeof(IBackendProgressUpdater).IsAssignableFrom(x.PropertyType) &&
+                    !typeof(IMessageSink).IsAssignableFrom(x.PropertyType) &&
+                    !typeof(ILogWriter).IsAssignableFrom(x.PropertyType),
+                recurseobjects: true
+            ).ToString();
         }
     }
     
@@ -763,6 +770,14 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.RestoreControlfiles; } }
         public void SetResult(IEnumerable<string> files) { this.Files = files; }
     }   
+
+    internal class ListRemoteResults : BasicResults, Library.Interface.IListRemoteResults
+    {
+        public IEnumerable<IFileEntry> Files { get; private set; }
+
+        public override OperationMode MainOperation { get { return OperationMode.ListRemote; } }
+        public void SetResult(IEnumerable<IFileEntry> files) { this.Files = files; }
+    }
 
     internal class RepairResults : BasicResults, Library.Interface.IRepairResults
     {

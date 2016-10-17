@@ -27,7 +27,7 @@ namespace Duplicati.Library.Localization.Short
         /// <summary>
         /// The instance for translation
         /// </summary>
-        private static ILocalizationService LS = LocalizationService.Default;
+        private static ILocalizationService LS = LocalizationService.Invariant;
 
         /// <summary>
         /// Localizes the string similar to how string.Format works
@@ -96,6 +96,15 @@ namespace Duplicati.Library.Localization.Short
         /// The instance for translation
         /// </summary>
         private static ILocalizationService LS = LocalizationService.Current;
+
+        /// <summary>
+        /// Sets the culture
+        /// </summary>
+        /// <param name="ci">CultureInfo</param>
+        public static void setCulture(System.Globalization.CultureInfo ci)
+        {
+            LS = LocalizationService.Get(ci);
+        }
 
         /// <summary>
         /// Localizes the string similar to how string.Format works

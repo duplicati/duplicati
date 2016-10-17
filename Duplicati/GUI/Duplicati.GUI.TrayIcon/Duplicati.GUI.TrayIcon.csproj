@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{17566860-3D98-4604-AA5B-47661F75609F}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -66,13 +64,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
     <Reference Include="appindicator-sharp">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
       <Private>False</Private>
@@ -91,6 +84,13 @@
     <Reference Include="notify-sharp">
       <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="CoCoL">
+      <HintPath>..\..\..\packages\CoCoL.1.5.0\lib\net45\CoCoL.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -135,10 +135,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <Compile Include="WinFormsRunner.cs" />
-    <EmbeddedResource Include="Resources\CloseMenuIcon.png" />
-    <EmbeddedResource Include="Resources\Pause.png" />
-    <EmbeddedResource Include="Resources\Play.png" />
-    <EmbeddedResource Include="Resources\StatusMenuIcon.png" />
+    <Compile Include="RumpsRunner.cs" />
+    <None Include="packages.config" />
+    <EmbeddedResource Include="Resources\context_menu_open.ico" />
+    <EmbeddedResource Include="Resources\context_menu_pause.ico" />
+    <EmbeddedResource Include="Resources\context_menu_play.ico" />
+    <EmbeddedResource Include="Resources\context_menu_quit.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -157,12 +159,16 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+      <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
+      <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
-      <Project>{59c8bbc5-6e42-46fb-ab3e-6c183a82459a}</Project>
+      <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
@@ -293,6 +299,22 @@
       <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
       <Name>Duplicati.Library.UsageReporter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\WindowsService\WindowsService.csproj">
+      <Project>{bef7af9a-3978-4f90-8592-198bf6ea6c6b}</Project>
+      <Name>WindowsService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
+      <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
+      <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+      <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
+      <Name>Duplicati.Library.Backend.Dropbox</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj">
+      <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
+      <Name>Duplicati.Tools</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
@@ -341,6 +363,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SVGIcons\dark\normal.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="OSXTrayHost\osx-trayicon-rumps.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\rumps\rumps.py">
+      <Link>OSXTrayHost\rumps.py</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

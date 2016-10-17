@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -30,11 +31,49 @@ namespace Duplicati.Library.Modules.Builtin
         private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash";
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate";
         private const string OPTION_OAUTH_URL = "oauth-url";
+        private const string OPTION_SSL_VERSIONS = "allowed-ssl-versions";
 
         private IDisposable m_certificateValidator;
         private bool m_useNagle;
         private bool m_useExpect;
         private bool m_dispose;
+        private System.Net.SecurityProtocolType m_securityProtocol;
+
+        // Copied from system reference
+        [Flags]
+        private enum CopySecurityProtocolType
+        {
+            Ssl3 = 48,
+            Tls = 192,
+            Tls11 = 768,
+            Tls12 = 3072,
+        }
+
+        private static Dictionary<string, int> SecurityProtocols
+        {
+            get
+            {
+                var res = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (var val in Enum.GetNames(typeof(CopySecurityProtocolType)).Zip(Enum.GetValues(typeof(CopySecurityProtocolType)).Cast<int>(), (x,y) => new KeyValuePair<string, int>(x, y)))
+                    res[val.Key] = val.Value;
+
+                foreach (var val in Enum.GetNames(typeof(System.Net.SecurityProtocolType)).Zip(Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<int>(), (x,y) => new KeyValuePair<string, int>(x, y)))
+                    res[val.Key] = val.Value;
+
+                return res;
+            }
+        }
+
+        private static System.Net.SecurityProtocolType ParseSSLProtocols(string names)
+        {
+            var ptr = SecurityProtocols;
+            var res = 0;
+            foreach (var s in names.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()))
+                if (ptr.ContainsKey(s))
+                    res = res | ptr[s];
+
+            return (System.Net.SecurityProtocolType)res;
+        }
 
         #region IGenericModule Members
 
@@ -61,12 +100,16 @@ namespace Duplicati.Library.Modules.Builtin
         public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
         {
             get { 
+                var sslnames = SecurityProtocols.Select(x => x.Key).ToArray();
+                var defaultssl = string.Join(",", Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<Enum>().Where(x => System.Net.ServicePointManager.SecurityProtocol.HasFlag(x)));
+
                 return new List<Duplicati.Library.Interface.ICommandLineArgument>( new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_EXPECT100, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableExpect100Short, Strings.HttpOptions.DisableExpect100Long, "false"),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_NAGLING, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableNagleShort, Strings.HttpOptions.DisableNagleLong, "false"),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.DescriptionAcceptHashShort, Strings.HttpOptions.DescriptionAcceptHashLong2),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DescriptionAcceptAnyCertificateShort, Strings.HttpOptions.DescriptionAcceptAnyCertificateLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_OAUTH_URL, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.OauthurlShort, Strings.HttpOptions.OauthurlLong, OAuthHelper.DUPLICATI_OAUTH_SERVICE)
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_OAUTH_URL, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.OauthurlShort, Strings.HttpOptions.OauthurlLong, OAuthHelper.DUPLICATI_OAUTH_SERVICE),
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_SSL_VERSIONS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags, Strings.HttpOptions.SslversionsShort, Strings.HttpOptions.SslversionsLong, defaultssl, null, sslnames),
                 }); 
             }
         }
@@ -87,9 +130,15 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_useNagle = System.Net.ServicePointManager.UseNagleAlgorithm;
             m_useExpect = System.Net.ServicePointManager.Expect100Continue;
+            m_securityProtocol = System.Net.ServicePointManager.SecurityProtocol;
 
             System.Net.ServicePointManager.UseNagleAlgorithm = !disableNagle;
             System.Net.ServicePointManager.Expect100Continue = !disableExpect100;
+
+            string sslprotocol;
+            commandlineOptions.TryGetValue(OPTION_SSL_VERSIONS, out sslprotocol);
+            if (!string.IsNullOrWhiteSpace(sslprotocol))
+                System.Net.ServicePointManager.SecurityProtocol = ParseSSLProtocols(sslprotocol);
 
             string url;
             commandlineOptions.TryGetValue(OPTION_OAUTH_URL, out url);
@@ -108,6 +157,7 @@ namespace Duplicati.Library.Modules.Builtin
                 m_dispose = false;
                 System.Net.ServicePointManager.UseNagleAlgorithm = m_useNagle;
                 System.Net.ServicePointManager.Expect100Continue = m_useExpect;
+                System.Net.ServicePointManager.SecurityProtocol = m_securityProtocol;
                 if (m_certificateValidator != null)
                     m_certificateValidator.Dispose();
                 m_certificateValidator = null;

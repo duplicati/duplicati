@@ -97,11 +97,11 @@ namespace Duplicati.Server
         /// The folder where control files are placed
         /// </summary>
         private string m_controldir;
-		
-		/// <summary>
-		/// The full path to the locking file
-		/// </summary>
-		private string m_lockfilename;
+        
+        /// <summary>
+        /// The full path to the locking file
+        /// </summary>
+        private string m_lockfilename;
 
         /// <summary>
         /// The watcher that allows interprocess communication
@@ -137,30 +137,30 @@ namespace Duplicati.Server
 
             m_lockfilename = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
             m_file = null;
-			
-			System.IO.Stream temp_fs = null;
+            
+            System.IO.Stream temp_fs = null;
 
-			try
+            try
             {
-				if (Library.Utility.Utility.IsClientLinux)
-					temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
-				else
-					temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
-				
-				if (temp_fs != null)
-				{
-					System.IO.StreamWriter sw = new System.IO.StreamWriter(temp_fs);
-					sw.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
-					sw.Flush();
-					//Do not dispose sw as that would dispose the stream
-					m_file = temp_fs;
-				}
+                if (Library.Utility.Utility.IsClientLinux)
+                    temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
+                else
+                    temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                
+                if (temp_fs != null)
+                {
+                    System.IO.StreamWriter sw = new System.IO.StreamWriter(temp_fs);
+                    sw.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
+                    sw.Flush();
+                    //Do not dispose sw as that would dispose the stream
+                    m_file = temp_fs;
+                }
             }
             catch
             {
-				if (temp_fs != null)
-					try { temp_fs.Dispose(); }
-					catch {}
+                if (temp_fs != null)
+                    try { temp_fs.Dispose(); }
+                    catch {}
             }
 
             //If we have write access

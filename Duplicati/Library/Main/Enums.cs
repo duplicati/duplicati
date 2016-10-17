@@ -42,7 +42,8 @@ namespace Duplicati.Library.Main
         Compact,
         Test,
         TestFilters,
-        SystemInfo
+        SystemInfo,
+        ListRemote
     }
 
     /// <summary>

@@ -1,19 +1,25 @@
 #!/bin/bash
 
-DATE=`date +%Y%m%d`
-
 git pull
-bash duplicati-make-git-snapshot.sh
+
+DATE=`date +%Y%m%d`
+VERSION=`git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2`
+GITTAG=`git rev-parse --short HEAD`
+RELEASETYPE=`git describe --tags | cut -d '_' -f 2`
+BUILDTAG=`git describe --tags | cut -d '-' -f 2-4`
+
+
+bash duplicati-make-git-snapshot.sh "${GITTAG}" "${DATE}" "${VERSION}" "${RELEASETYPE}" "${BUILDTAG}-${GITTAG}"
 mv duplicati-$DATE.tar.bz2 ~/rpmbuild/SOURCES/ 
 cp *.sh ~/rpmbuild/SOURCES/
 cp *.patch ~/rpmbuild/SOURCES/
-if [ -e ./oem.js ]; then
-    cp ./oem.js ~/rpmbuild/SOURCES/
-fi
+cp duplicati.xpm ~/rpmbuild/SOURCES/
+cp build-package.sh ~/rpmbuild/SOURCES/duplicati-build-package.sh
 
-if [ -e ./oem.css ]; then
-    cp ./oem.css ~/rpmbuild/SOURCES/
-fi
+echo "%global _gittag ${GITTAG}" > ~/rpmbuild/SOURCES/duplicati-buildinfo.spec
+echo "%global _builddate ${DATE}" >> ~/rpmbuild/SOURCES/duplicati-buildinfo.spec
+echo "%global _buildversion ${VERSION}" >> ~/rpmbuild/SOURCES/duplicati-buildinfo.spec
+echo "%global _releasetype ${RELEASETYPE}" >> ~/rpmbuild/SOURCES/duplicati-buildinfo.spec
 
 rpmbuild -bs duplicati.spec
 rpmbuild -bb duplicati.spec

@@ -1,6 +1,17 @@
-backupApp.service('AppUtils', function(DialogService) {
+backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gettextCatalog) {
 
     var apputils = this;
+
+    this.exampleOptionString = '--dblock-size=100MB';
+
+    try {
+        moment.locale(
+            navigator.languages
+            ? navigator.languages[0]
+            : (navigator.language || navigator.userLanguage)
+        );
+    } catch (e) {
+    }    
 
     this.formatSizes = ['TB', 'GB', 'MB', 'KB'];
     this.formatSizeString = function(val) {
@@ -15,32 +26,115 @@ backupApp.service('AppUtils', function(DialogService) {
         return val + ' ' + bytes;
     };
 
-    this.fileSizeMultipliers = [
-        {name: 'byte', value: ''},
-        {name: 'KByte', value: 'KB'},
-        {name: 'MByte', value: 'MB'},
-        {name: 'GByte', value: 'GB'},
-        {name: 'TByte', value: 'TB'}
-    ];
+    this.watch = function(scope, m) {
+        scope.$on('apputillookupschanged', function() {
+            if (m) m();
 
-    this.timerangeMultipliers = [
-        {name: 'Minute', value: 'm'},
-        {name: 'Hour', value: 'h'},
-        {name: 'Day', value: 'D'},
-        {name: 'Week', value: 'W'},
-        {name: 'Month', value: 'M'},
-        {name: 'Year', value: 'Y'}
-    ];
+            $timeout(function() {
+                scope.$digest();
+            });
+        });
 
-    this.daysOfWeek = [
-        {name: 'Mon', value: 'mon'}, 
-        {name: 'Tue', value: 'tue'}, 
-        {name: 'Wed', value: 'wed'}, 
-        {name: 'Thu', value: 'thu'}, 
-        {name: 'Fri', value: 'fri'}, 
-        {name: 'Sat', value: 'sat'}, 
-        {name: 'Sun', value: 'sun'}
-    ];
+        if (m) $timeout(m);
+    };
+
+    function reloadTexts() {
+        apputils.fileSizeMultipliers = [
+            {name: gettextCatalog.getString('byte'), value: ''},
+            {name: gettextCatalog.getString('KByte'), value: 'KB'},
+            {name: gettextCatalog.getString('MByte'), value: 'MB'},
+            {name: gettextCatalog.getString('GByte'), value: 'GB'},
+            {name: gettextCatalog.getString('TByte'), value: 'TB'}
+        ];
+
+        apputils.timerangeMultipliers = [
+            {name: gettextCatalog.getString('Minutes'), value: 'm'},
+            {name: gettextCatalog.getString('Hours'), value: 'h'},
+            {name: gettextCatalog.getString('Days'), value: 'D'},
+            {name: gettextCatalog.getString('Weeks'), value: 'W'},
+            {name: gettextCatalog.getString('Months'), value: 'M'},
+            {name: gettextCatalog.getString('Years'), value: 'Y'}
+        ];
+
+        apputils.daysOfWeek = [
+            {name: gettextCatalog.getString('Mon'), value: 'mon'}, 
+            {name: gettextCatalog.getString('Tue'), value: 'tue'}, 
+            {name: gettextCatalog.getString('Wed'), value: 'wed'}, 
+            {name: gettextCatalog.getString('Thu'), value: 'thu'}, 
+            {name: gettextCatalog.getString('Fri'), value: 'fri'}, 
+            {name: gettextCatalog.getString('Sat'), value: 'sat'}, 
+            {name: gettextCatalog.getString('Sun'), value: 'sun'}
+        ];
+
+        apputils.speedMultipliers = [
+            {name: gettextCatalog.getString('byte/s'), value: ''},
+            {name: gettextCatalog.getString('KByte/s'), value: 'KB'},
+            {name: gettextCatalog.getString('MByte/s'), value: 'MB'},
+            {name: gettextCatalog.getString('GByte/s'), value: 'GB'},
+            {name: gettextCatalog.getString('TByte/s'), value: 'TB'}
+        ];
+
+
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
+
+        apputils.filterClasses = [{
+            name: gettextCatalog.getString('Exclude directories whose names contain'),
+            key: '-dir*',
+            prefix: '-*',
+            suffix: '*!',
+            rx: '\\-\\*([^\\!]+)\\*\\!'
+        }, {
+            name: gettextCatalog.getString('Exclude files whose names contain'),
+            key: '-file*',
+            prefix: '-[.*',
+            suffix: '.*[^!]]',
+            rx: '\\-\\[\\.\\*([^\\!]+)\\.\\*\\[\\^\\!\\]\\]'
+        }, {
+            name: gettextCatalog.getString('Exclude folder'),
+            key: '-folder',
+            prefix: '-',
+            suffix: '!',
+            rx: '\\-(.*)\\!'
+        }, {
+            name: gettextCatalog.getString('Exclude file'),
+            key: '-path',
+            prefix: '-',
+            exclude: ['*', '?'],
+            rx: '\\-([^\\[\\*\\?]+)'
+        }, {
+            name: gettextCatalog.getString('Exclude file extension'),
+            key: '-ext',
+            rx: '\\-\\*\.(.*)',
+            prefix: '-*.'
+        }, {
+            name: gettextCatalog.getString('Exclude regular expression'),
+            key: '-[]',
+            prefix: '-[',
+            suffix: ']'
+        }, {
+            name: gettextCatalog.getString('Include regular expression'),
+            key: '+[]',
+            prefix: '+[',
+            suffix: ']'
+        }, {
+            name: gettextCatalog.getString('Include expression'),
+            key: '+',
+            prefix: '+'
+        }, {
+            name: gettextCatalog.getString('Exclude expression'),
+            key: '-',
+            prefix: '-'
+        }];
+
+        apputils.filterTypeMap = {};
+        for (var i = apputils.filterClasses.length - 1; i >= 0; i--)
+            apputils.filterTypeMap[apputils.filterClasses[i].key] = apputils.filterClasses[i];        
+
+        $rootScope.$broadcast('apputillookupschanged');        
+    };
+
+    reloadTexts();
+    $rootScope.$on('gettextLanguageChanged', reloadTexts); 
 
     this.parseBoolString = function(txt, def) {
         txt = (txt || '').toLowerCase();
@@ -64,14 +158,7 @@ backupApp.service('AppUtils', function(DialogService) {
 
 
     this.toDisplayDateAndTime = function(dt) {
-        function pwz(i, c) {
-            i += '';
-            while(i.length < c)
-                i = '0' + i;
-            return i;
-        }
-
-        return pwz(dt.getFullYear(), 4) + '-' + pwz(dt.getMonth() + 1, 2) + '-' + pwz(dt.getDate(), 2) + ' ' + pwz(dt.getHours(), 2) + ':' + pwz(dt.getMinutes(), 2);
+        return moment(dt).format('lll');
     };
 
     this.parseDate = function(dt) {
@@ -132,7 +219,7 @@ backupApp.service('AppUtils', function(DialogService) {
     this.parse_extra_options = function(str, dict) {
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
-                DialogService.dialog('Error', 'Duplicate option ' + k);
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Duplicate option {{opt}}', { opt: k }));
                 return false;
             }
 
@@ -178,9 +265,9 @@ backupApp.service('AppUtils', function(DialogService) {
             if (msg == null)
                 return function(msg) {
                     if (msg && msg.data && msg.data.Message)
-                        DialogService.dialog('Error', txt + msg.data.Message);
+                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
                     else
-                        DialogService.dialog('Error', txt + msg.statusText);
+                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
                 };
         } else {
             msg = txt;
@@ -188,9 +275,9 @@ backupApp.service('AppUtils', function(DialogService) {
         }
 
         if (msg && msg.data && msg.data.Message)
-            DialogService.dialog('Error', txt + msg.data.Message);
+            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
         else
-            DialogService.dialog('Error', txt + msg.statusText);
+            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
     };
 
     this.generatePassphrase = function() {
@@ -370,59 +457,6 @@ backupApp.service('AppUtils', function(DialogService) {
         return x;       
     };
 
-    this.filterClasses = [{
-        name: 'Exclude directories whose names contain',
-        key: '-dir*',
-        prefix: '-*',
-        suffix: '*!',
-        rx: '\\-\\*([^\\!]+)\\*\\!'
-    }, {
-        name: 'Exclude files whose names contain',
-        key: '-file*',
-        prefix: '-[.*',
-        suffix: '.*[^!]]',
-        rx: '\\-\\[\\.\\*([^\\!]+)\\.\\*\\[\\^\\!\\]\\]'
-    }, {
-        name: 'Exclude folder',
-        key: '-folder',
-        prefix: '-',
-        suffix: '!',
-        rx: '\\-(.*)\\!'
-    }, {
-        name: 'Exclude file',
-        key: '-path',
-        prefix: '-',
-        exclude: ['*', '?'],
-        rx: '\\-([^\\[\\*\\?]+)'
-    }, {
-        name: 'Exclude file extension',
-        key: '-ext',
-        rx: '\\-\\*\.(.*)',
-        prefix: '-*.'
-    }, {
-        name: 'Exclude regular expression',
-        key: '-[]',
-        prefix: '-[',
-        suffix: ']'
-    }, {
-        name: 'Include regular expression',
-        key: '+[]',
-        prefix: '+[',
-        suffix: ']'
-    }, {
-        name: 'Include expression',
-        key: '+',
-        prefix: '+'
-    }, {
-        name: 'Exclude expression',
-        key: '-',
-        prefix: '-'
-    }];
-
-    this.filterTypeMap = {};
-    for (var i = this.filterClasses.length - 1; i >= 0; i--)
-        this.filterTypeMap[this.filterClasses[i].key] = this.filterClasses[i];
-
     this.splitFilterIntoTypeAndBody = function(src, dirsep) {
         if (src == null)
             return null;
@@ -523,7 +557,7 @@ backupApp.service('AppUtils', function(DialogService) {
 
         var items = angular.copy(sysinfo.Options);
         for(var n in items)
-            items[n].Category = 'Core options';
+            items[n].Category = gettextCatalog.getString('Core options');
 
         function copyToList(lst, key) {
             for(var n in lst)

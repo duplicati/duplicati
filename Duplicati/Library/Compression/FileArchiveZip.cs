@@ -302,20 +302,20 @@ namespace Duplicati.Library.Compression
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-			if (m_entryDict == null)
-			{
-				m_entryDict = new Dictionary<string, IArchiveEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
-	            foreach(IArchiveEntry en in Archive.Entries)
-	            	m_entryDict[en.Key] = en;
-			}
+            if (m_entryDict == null)
+            {
+                m_entryDict = new Dictionary<string, IArchiveEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+                foreach(IArchiveEntry en in Archive.Entries)
+                    m_entryDict[en.Key] = en;
+            }
 
-			IArchiveEntry e;
-			if (m_entryDict.TryGetValue(file, out e))
-				return e;
-			if (m_entryDict.TryGetValue(file.Replace('/', '\\'), out e))
-				return e;
+            IArchiveEntry e;
+            if (m_entryDict.TryGetValue(file, out e))
+                return e;
+            if (m_entryDict.TryGetValue(file.Replace('/', '\\'), out e))
+                return e;
 
-			return null;
+            return null;
         }
 
         /// <summary>

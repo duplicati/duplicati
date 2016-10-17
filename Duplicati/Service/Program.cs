@@ -23,7 +23,7 @@ namespace Duplicati.Service
     {
         public static void Main(string[] args)
         {
-            using(var runner = new Runner())
+            using(var runner = new Runner(args))
                 runner.Wait();
 
         }

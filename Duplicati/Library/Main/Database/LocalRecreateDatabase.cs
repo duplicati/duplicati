@@ -557,7 +557,7 @@ namespace Duplicati.Library.Main.Database
         {
             using(var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = string.Format(@"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?");
+                cmd.CommandText = string.Format(@"SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?");
                 cmd.AddParameter(volumeid);
                 
                 using(var rd = cmd.ExecuteReader())
@@ -566,15 +566,18 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo)
+        public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize)
         {
             using(var cmd = m_connection.CreateCommand())
             {
                 var selectCommand = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
             
                 var missingBlocklistEntries = 
-                    @"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"" LEFT OUTER JOIN ""BlocksetEntry"" ON ""BlocksetEntry"".""Index"" = ""BlocklistHash"".""Index"" AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID"" WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL";
-                
+                    string.Format(
+                        @"SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"" LEFT OUTER JOIN ""BlocksetEntry"" ON ""BlocksetEntry"".""Index"" = (""BlocklistHash"".""Index"" * {0}) AND ""BlocksetEntry"".""BlocksetID"" = ""BlocklistHash"".""BlocksetID"" WHERE ""BlocksetEntry"".""BlocksetID"" IS NULL",
+                        blocksize / hashsize
+                    );
+
                 var missingBlockInfo = 
                     @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""VolumeID"" < 0 ";
             

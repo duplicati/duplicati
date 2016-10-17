@@ -57,7 +57,7 @@ namespace Duplicati.Library.Backend.Box
                     {
                         string rawdata = null;
                         var hs = (ex as WebException).Response as HttpWebResponse;
-                        using(var rs = hs.GetResponseStream())
+                        using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                         using(var sr = new System.IO.StreamReader(rs))
                             rawdata = sr.ReadToEnd();
 
@@ -244,7 +244,7 @@ namespace Duplicati.Library.Backend.Box
         public void Get(string remotename, System.IO.Stream stream)
         {
             using (var resp = m_oauth.GetResponse(string.Format("{0}/files/{1}/content", BOX_API_URL, GetFileID(remotename))))
-            using(var rs = resp.GetResponseStream())
+            using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
                 Library.Utility.Utility.CopyStream(rs, stream);
         }
 

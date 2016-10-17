@@ -50,6 +50,9 @@ namespace Duplicati.Library.Main
 
         BugReport_Running,
 
+        Delete_Listing,
+        Delete_Deleting,
+
         Error
     }
 }

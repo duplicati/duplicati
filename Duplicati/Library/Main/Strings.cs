@@ -1,8 +1,8 @@
 using Duplicati.Library.Localization.Short;
 
-namespace Duplicati.Library.Main.Strings 
+namespace Duplicati.Library.Main.Strings
 {
-    internal static class Controller 
+    internal static class Controller
     {
         public static string HashMismatchError(string filename, string recordedhash, string actualhash) { return LC.L(@"Hash mismatch on file ""{0}"", recorded hash: {1}, actual hash {2}", filename, recordedhash, actualhash); }
         public static string DownloadedFileSizeError(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was downloaded and had size {1} but the size was expected to be {2}", filename, actualsize, expectedsize); }
@@ -11,19 +11,22 @@ namespace Duplicati.Library.Main.Strings
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
         public static string SourceIsMissingError(string foldername) { return LC.L(@"The source folder {0} does not exist, aborting backup", foldername); }
         public static string UnsupportedBooleanValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to ""true""", optionname, value); }
-        public static string UnsupportedEnumerationValue(string optionname, string value, string[] values)  { return LC.L(@"The option --{0} does not support the value ""{1}"", supported values are: {2}", optionname, value, string.Join(", ", values)); } 
+        public static string UnsupportedEnumerationValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"", supported values are: {2}", optionname, value, string.Join(", ", values)); }
+        public static string UnsupportedFlagsValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"", supported flag values are: {2}", optionname, value, string.Join(", ", values)); }
         public static string UnsupportedIntegerValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid integer", optionname, value);  }
         public static string UnsupportedOptionDisabledModuleWarning(string optionname, string modulename) { return LC.L(@"The option --{0} is not supported because the module {1} is not currently loaded", optionname, modulename); }
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
         public static string UnsupportedPathValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid path", optionname, value); }
         public static string UnsupportedSizeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid size", optionname, value); }
-        public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); } 
+        public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); }
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
-        public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); } 
+        public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
+        public static string FailedOperationMessage(OperationMode operationname, string errormessage) { return LC.L(@"The operation {0} has failed with error: {1}", operationname, errormessage); }
+        public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
     }
 
-    internal static class Options 
+    internal static class Options
     {
         public static string AutocleanupLong { get { return LC.L(@"If a backup is interrupted there will likely be partial files present on the backend. Using this flag, Duplicati will automatically remove such files when encountered."); } }
         public static string AutocleanupShort { get { return LC.L(@"A flag indicating that Duplicati should remove unused files"); } }
@@ -33,7 +36,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
         public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders, use this option to restore to another folder"); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
-        public static string AllowsleepShort { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only)"); } }
+        public static string AllowsleepShort { get { return LC.L(@"Toggles system sleep mode"); } }
+        public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows/OSX only)"); } }
         public static string ThrottledownloadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
         public static string ThrottledownloadShort { get { return LC.L(@"Max number of kilobytes to download pr. second"); } }
         public static string ThrottleuploadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
@@ -99,7 +103,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UsnpolicyShort { get { return LC.L(@"Controls the use of NTFS Update Sequence Numbers"); } }
         public static string DisableusndiffcheckLong { get { return LC.L(@"If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect."); } }
         public static string DisableusndiffcheckShort { get { return LC.L(@"Disables changelist by USN numbers"); } }
-        public static string DisabletimetoleranceLong { get { return LC.L(@"When deciding if a full backup should be made or an old backup should be deleted, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not interfer with expected operation. If the backup is set to produce a full backup each day, and a full backup is made at, say 12:00:01, and the backup is executed again at 12:00:00, a full day has not passed and thus an incremental backup is performed. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking"); } }
+        public static string DisabletimetoleranceLong { get { return LC.L(@"When matching timestamps, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not cause unexpected updated. If the option --{0} is set to keep a week of backups, and the backup is made the same time each week, it is possible that a the clock drifts slightly, such that full week has just passed, causing Duplicati to delete the older backup earlier than expected. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking", "--keep-time"); } }
         public static string DisabletimetoleranceShort { get { return LC.L(@"Deactivates tolerance when comparing times"); } }
         public static string ListverifyuploadsShort { get { return LC.L(@"Verify uploads by listing contents"); } }
         public static string SynchronousuploadLong { get { return LC.L(@"Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this flag to turn the behavior off, so that Duplicati will wait for each volume to complete."); } }
@@ -205,12 +209,14 @@ namespace Duplicati.Library.Main.Strings
         public static string RepaironlypathsShort { get { return LC.L(@"Repair database with paths"); } }
         public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
-        public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Cultute""."); } }
+        public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
         public static string DisablepipingShort{ get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
+        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of Hyper-V machines (Windows only)"); } }
+        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the IDs of machines to include in the backup. Specify multiple machine IDs with a semicolon separator. (You can use this Powershell command to get ID 'Get-VM | ft VMName, ID')"); } }
     }
 
-    internal static class Common 
+    internal static class Common
     {
         public static string InvalidCryptoSystem(string algorithm) { return LC.L(@"The cryptolibrary does not support re-usable transforms for the hash algorithm {0}", algorithm); }
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }

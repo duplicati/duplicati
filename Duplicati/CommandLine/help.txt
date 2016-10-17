@@ -11,7 +11,7 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, repair
+  Commands: backup, find, restore, delete, compact, test, compare, repair, affected
   Debugging: debug, logging, create-report, test-filters, system-info
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
@@ -33,13 +33,15 @@ Show the last changes to Duplicati
 
 # =============================================================================
 > duplicati.commandline.exe help system-info
+> duplicati.commandline.exe help systeminfo
 
 Show system information as seen by Duplicati
-==================================
+============================================
   Issue the following command to see a variety of system information relevant to Duplicati. 
   
   %MONO%"%APP_PATH%" system-info
 
+# =============================================================================
 > duplicati.commandline.exe help example
 > duplicati.commandline.exe help examples
 
@@ -196,7 +198,7 @@ Usage: repair <storage-URL> [<options>]
 > duplicati.commandline.exe help test
 > duplicati.commandline.exe help verify
 
-Usage: test <storage-URL> [<samples>] [<options>]
+Usage: test <storage-URL> <samples> [<options>]
   
   Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. <samples> specifies the number of samples to be tested. If "all” is specified, all files in the backup will be tested. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
   
@@ -204,6 +206,8 @@ Usage: test <storage-URL> [<samples>] [<options>]
     Checks samples from a specific time.
   --version=<int>
     Checks samples from specific versions. Delimiters are , -
+  --full-remote-verification
+    Checks the internal structure of each file instead of just verifying the file hash
   
 
 
@@ -221,7 +225,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaning what backup sets and files are affected by a remote file. You 
+  Returns a report explaning what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
   
   
 # =============================================================================
@@ -238,8 +242,6 @@ Duplicati provides information for debugging and logging purposes. By default, a
     The path to the log file e.g. "D:\duplicati\log.txt".
   --log-level = Profiling | Information | Warning | Error 
     Specifies the log level.
-  --backend-log-database = <path>
-    Duplicati can log all actions related to storing, deleting files on the backend. <path> specifies where this log is written e.g. "D:\duplicati\backend.xml".
 
     
 # =============================================================================
@@ -437,8 +439,8 @@ Duplicati offers more options than listed in the other topics. Those additional 
 
 Duplicati reports the following return/exit codes:
   0 - Success
-  1 - Successful backup, but no files were changed
-  2 - Successful backup, with warnings
+  1 - Successful operation, but no files were changed
+  2 - Successful operation, but with warnings
   50 - Backup uploaded some files, but did not finish
   100 - An error occurred
   200 - Invalid commandline arguments found

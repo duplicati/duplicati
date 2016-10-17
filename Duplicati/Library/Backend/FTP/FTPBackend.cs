@@ -138,7 +138,7 @@ namespace Duplicati.Library.Backend
             string time = m.Groups["timestamp"].Value;
             string dir = m.Groups["dir"].Value;
 
-			//Unused
+            //Unused
             //string permission = m.Groups["permission"].Value;
 
             if (dir != "" && dir != "-")
@@ -177,17 +177,17 @@ namespace Duplicati.Library.Backend
         
         public List<IFileEntry> List(string filename)
         {
-            System.Net.FtpWebRequest req = CreateRequest(filename);
+            var req = CreateRequest(filename);
             req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
             req.UseBinary = false;
 
             try
             {
-                List<IFileEntry> lst = new List<IFileEntry>();
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.WebResponse resp = areq.GetResponse())
-                using (System.IO.Stream rs = areq.GetResponseStream())
-                using (System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
+                var lst = new List<IFileEntry>();
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = areq.GetResponse())
+                using (var rs = areq.GetResponseStream())
+                using (var sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
                 {
                     string line;
                     while ((line = sr.ReadLine()) != null)
@@ -258,13 +258,13 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            System.Net.FtpWebRequest req = CreateRequest(remotename);
+            var req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
             req.UseBinary = true;
 
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.Net.WebResponse resp = areq.GetResponse())
-            using (System.IO.Stream rs = areq.GetResponseStream())
+            var areq = new Utility.AsyncHttpRequest(req);
+            using (var resp = areq.GetResponse())
+            using (var rs = areq.GetResponseStream())
                 Utility.Utility.CopyStream(rs, output, false, m_copybuffer);
         }
 

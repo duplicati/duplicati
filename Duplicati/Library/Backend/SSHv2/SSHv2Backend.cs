@@ -27,10 +27,12 @@ using Renci.SshNet.Common;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend
+    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IBackend, IDisposable
     {
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         public const string SSH_KEYFILE_INLINE = "ssh-key";
+        public const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
+        public const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "ssh-accept-any-fingerprints";
         public const string KEYFILE_URI = "sshkey://";
 
         Dictionary<string, string> m_options;
@@ -39,10 +41,12 @@ namespace Duplicati.Library.Backend
         private string m_path;
         private string m_username;
         private string m_password;
+        private string m_fingerprint;
+        private bool m_fingerprintallowall;
 
         private int m_port = 22;
-		
-		private SftpClient m_con;
+
+        private SftpClient m_con;
 
         public SSHv2()
         {
@@ -54,20 +58,29 @@ namespace Duplicati.Library.Backend
             m_options = options;
             var uri = new Utility.Uri(url);
             uri.RequireHost();
-            
+
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 m_password = options["auth-password"];
-            if (!string.IsNullOrEmpty(uri .Username))
+            if (options.ContainsKey(SSH_FINGERPRINT_OPTION))
+                m_fingerprint = options[SSH_FINGERPRINT_OPTION];
+            if (!string.IsNullOrEmpty(uri.Username))
                 m_username = uri.Username;
-            if (!string.IsNullOrEmpty(uri .Password))
+            if (!string.IsNullOrEmpty(uri.Password))
                 m_password = uri.Password;
+            if (uri.QueryParameters != null && uri.QueryParameters[SSH_FINGERPRINT_OPTION] != null)
+                m_fingerprint = uri.QueryParameters[SSH_FINGERPRINT_OPTION];
+
+            m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
             m_path = uri.Path;
 
             if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/"))
                 m_path += "/";
+
+            if (!m_path.StartsWith("/"))
+                m_path = "/" + m_path;
 
             m_server = uri.Host;
 
@@ -76,7 +89,7 @@ namespace Duplicati.Library.Backend
         }
 
         #region IBackend Members
-        
+
         public void Test()
         {
             List();
@@ -84,14 +97,12 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            using (SftpClient con = CreateConnection(false)) 
-            {
-                //Bugfix, some SSH servers do not like a trailing slash
-                string p = m_path;
-                if (p.EndsWith("/"))
-                    p.Substring(0, p.Length - 1);
-                con.CreateDirectory(p);
-            }
+            CreateConnection();
+            //Bugfix, some SSH servers do not like a trailing slash
+            string p = m_path;
+            if (p.EndsWith("/"))
+                p.Substring(0, p.Length - 1);
+            m_con.CreateDirectory(p);
         }
 
         public string DisplayName
@@ -120,13 +131,15 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                CreateConnection(true).DeleteFile(remotename);
+                CreateConnection();
+                ChangeDirectory(m_path);
+                m_con.DeleteFile(remotename);
             }
             catch (SftpPathNotFoundException ex)
             {
                 throw new FileMissingException(ex);
             }
-                
+
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -136,6 +149,8 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(SSH_FINGERPRINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionFingerprintShort, Strings.SSHv2Backend.DescriptionFingerprintLong),
+                    new CommandLineArgument(SSH_FINGERPRINT_ACCEPT_ANY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHv2Backend.DescriptionAnyFingerprintShort, Strings.SSHv2Backend.DescriptionAnyFingerprintLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
                     new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
                 });
@@ -154,11 +169,22 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-			if (m_con != null)
-			{
-				m_con.Dispose();
-				m_con = null;
-			}
+            if (m_con != null)
+            {
+                try
+                {
+                    m_con.Dispose();
+                }
+                catch (System.Net.Sockets.SocketException)
+                {
+                    //If the operating system sometimes close socket before disposal of connection following exception is thrown
+                    //System.Net.Sockets.SocketException (0x80004005): An existing connection was forcibly closed by the remote host 
+                }
+                finally
+                {
+                    m_con = null;
+                }
+            }
         }
 
         #endregion
@@ -167,12 +193,16 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            CreateConnection(true).UploadFile(stream, remotename);
+            CreateConnection();
+            ChangeDirectory(m_path);
+            m_con.UploadFile(stream, remotename);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            CreateConnection(true).DownloadFile(remotename, stream);
+            CreateConnection();
+            ChangeDirectory(m_path);
+            m_con.DownloadFile(remotename, stream);
         }
 
         #endregion
@@ -181,18 +211,26 @@ namespace Duplicati.Library.Backend
 
         public void Rename(string source, string target)
         {
-            CreateConnection(true).RenameFile(source, target);
+            CreateConnection();
+            ChangeDirectory(m_path);
+            m_con.RenameFile(source, target);
         }
 
         #endregion
 
         #region Implementation
 
-        private SftpClient CreateConnection(bool changeDir)
+        private void CreateConnection()
         {
-			if (changeDir && m_con != null)
-				return m_con;
-			
+            if (m_con != null && m_con.IsConnected)
+                return;
+
+            if (m_con != null && !m_con.IsConnected)
+            {
+                m_con.Connect();
+                return;
+            }
+
             SftpClient con;
 
             string keyfile;
@@ -205,31 +243,65 @@ namespace Duplicati.Library.Backend
             else
                 con = new SftpClient(m_server, m_port, m_username, m_password);
 
+            con.HostKeyReceived += delegate (object sender, HostKeyEventArgs e)
+            {
+                e.CanTrust = false;
+
+                if (m_fingerprintallowall)
+                {
+                    e.CanTrust = true;
+                    return;
+                }
+
+                string hostFingerprint = e.HostKeyName + " " + e.KeyLength.ToString() + " " + BitConverter.ToString(e.FingerPrint).Replace('-', ':');
+
+                if (string.IsNullOrEmpty(m_fingerprint))
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
+
+                if (hostFingerprint.ToLower() != m_fingerprint.ToLower())
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()), hostFingerprint, m_fingerprint);
+                else
+                    e.CanTrust = true;
+            };
+
             con.Connect();
+
+            m_con = con;
+        }
+
+        private void ChangeDirectory(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            string working_dir = m_con.WorkingDirectory;
+
+            if (!working_dir.EndsWith("/"))
+                working_dir += "/";
+
+            if (working_dir == path)
+                return;
 
             try
             {
-                if (!string.IsNullOrEmpty(m_path) && changeDir)
-                    con.ChangeDirectory(m_path);
+                m_con.ChangeDirectory(path);
             }
             catch (Exception ex)
             {
-                throw new Interface.FolderMissingException(Strings.SSHv2Backend.FolderNotFoundManagedError(m_path, ex.Message), ex);
+                throw new Interface.FolderMissingException(Strings.SSHv2Backend.FolderNotFoundManagedError(path, ex.Message), ex);
             }
-			
-			if (changeDir)
-				m_con = con;
-			
-            return con;
         }
 
         public List<IFileEntry> List()
         {
-            List<IFileEntry> files = new List<IFileEntry>();
+            var files = new List<IFileEntry>();
 
             string path = ".";
 
-            foreach (Renci.SshNet.Sftp.SftpFile ls in CreateConnection(true).ListDirectory(path))
+            CreateConnection();
+            ChangeDirectory(m_path);
+
+            foreach (Renci.SshNet.Sftp.SftpFile ls in m_con.ListDirectory(path))
                 if (ls.Name.ToString() != "." && ls.Name.ToString() != "..")
                     files.Add(new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory });
 
@@ -240,14 +312,14 @@ namespace Duplicati.Library.Backend
         {
             if (filename.StartsWith(KEYFILE_URI, StringComparison.InvariantCultureIgnoreCase))
             {
-                using(var ms = new System.IO.MemoryStream())
-                using(var sr = new System.IO.StreamWriter(ms))
+                using (var ms = new System.IO.MemoryStream())
+                using (var sr = new System.IO.StreamWriter(ms))
                 {
                     sr.Write(Duplicati.Library.Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
                     sr.Flush();
-                    
+
                     ms.Position = 0;
-                    
+
                     if (String.IsNullOrEmpty(password))
                         return new Renci.SshNet.PrivateKeyFile(ms);
                     else
@@ -262,18 +334,15 @@ namespace Duplicati.Library.Backend
                     return new Renci.SshNet.PrivateKeyFile(filename, password);
             }
         }
-        
+
         #endregion
-        
+
         internal SftpClient Client
         {
             get
             {
-                return CreateConnection(false);
+                return m_con;
             }
         }
     }
 }
-
-
- 

@@ -26,6 +26,7 @@ namespace Duplicati.License
     public static class VersionNumbers
     {
         public static readonly string TAG;
+        public static readonly string VERSION_NAME;
         
         static VersionNumbers()
         {
@@ -41,22 +42,24 @@ namespace Duplicati.License
             
             if (string.IsNullOrWhiteSpace(tag))
                 tag = "";
-            else
-                tag = " - " + tag;
             
-            TAG = tag.Trim(); 
+            TAG = tag.Trim();
+
+            var v = VersionNumber;
+            if (!string.IsNullOrWhiteSpace(TAG))
+                v = " - " + TAG;
+#if DEBUG
+            v = " - debug";
+#endif
+            VERSION_NAME = v;
+
         }
         
         public static string Version
         {
             get
             {
-#if DEBUG
-                string debug = " - DEBUG";
-#else
-                string debug = "";
-#endif
-                return VersionNumber + TAG + debug;
+                return VERSION_NAME;
             }
         }
 
@@ -64,8 +67,6 @@ namespace Duplicati.License
         {
             get
             {
-                //Override this to display a custom version, e.g.
-                //return "1.3.2";
                 return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
         }

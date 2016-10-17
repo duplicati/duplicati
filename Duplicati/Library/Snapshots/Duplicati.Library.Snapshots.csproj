@@ -3,15 +3,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
     <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -41,25 +39,47 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="AlphaFS">
-      <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaFS.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaVSS.Common">
-      <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaVSS.Common.dll</HintPath>
-    </Reference>
     <Reference Include="UnixSupport">
       <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="System.Management" />
+    <Reference Include="AlphaFS">
+      <HintPath>..\..\..\packages\AlphaFS.2.0.1\lib\net45\AlphaFS.dll</HintPath>
     </Reference>
+    <Reference Include="AlphaVSS.51.x86">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.51.x86.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.52.x64">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.52.x64.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.52.x86">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.52.x86.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.60.x64">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.60.x64.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.60.x86">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.60.x86.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.Common">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaShadow">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaShadow.exe</HintPath>
+    </Reference>
+    <Reference Include="SnapshotQuery">
+      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\SnapshotQuery.exe</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
+    <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />
     <Compile Include="Program.cs" />
@@ -94,6 +114,10 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -107,26 +131,7 @@
     <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.51.x86.dll">
-      <Link>alphavss\AlphaVSS.51.x86.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.52.x64.dll">
-      <Link>alphavss\AlphaVSS.52.x64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.52.x86.dll">
-      <Link>alphavss\AlphaVSS.52.x86.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.60.x64.dll">
-      <Link>alphavss\AlphaVSS.60.x64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.60.x86.dll">
-      <Link>alphavss\AlphaVSS.60.x86.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

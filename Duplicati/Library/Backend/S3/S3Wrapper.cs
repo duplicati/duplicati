@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System.Xml;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
@@ -37,15 +36,15 @@ namespace Duplicati.Library.Backend
 
         protected string m_locationConstraint;
         protected string m_storageClass;
-		protected AmazonS3Client m_client;
+        protected AmazonS3Client m_client;
 
         public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
-            AmazonS3Config cfg = new AmazonS3Config();
+            var cfg = new AmazonS3Config();
 
             cfg.UseHttp = !useSSL;
             cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
-            cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
+            //cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
             cfg.BufferSize = (int)Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE;
 
             foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-")))

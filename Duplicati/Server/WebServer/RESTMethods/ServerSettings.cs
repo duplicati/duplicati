@@ -27,10 +27,20 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void GET(string key, RequestInfo info)
         {
-            var adv_props = from n in Program.DataConnection.GetSettings(Database.Connection.APP_SETTINGS_ID)
-                select new KeyValuePair<string, string>(n.Name, n.Value);
+            // Join server settings and global settings
+            var adv_props = 
+                Program.DataConnection.GetSettings(Database.Connection.SERVER_SETTINGS_ID)
+                       .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                       .Union(
+                           Program.DataConnection.Settings
+                           .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name.StartsWith("--", StringComparison.Ordinal))
+                      );
 
-            info.OutputOK(adv_props.ToDictionary(x => x.Key, x => x.Value));
+            var dict = new Dictionary<string, string>();
+            foreach (var n in adv_props)
+                dict[n.Name] = n.Value;
+
+            info.OutputOK(dict);
         }
 
         public void PATCH(string key, RequestInfo info)
@@ -56,7 +66,27 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     return;
                 }
 
-                Program.DataConnection.ApplicationSettings.UpdateSettings(data, false);
+                // Split into server settings and global settings
+
+                var serversettings = data.Where(x => !string.IsNullOrWhiteSpace(x.Key)).ToDictionary(x => x.Key, x => x.Key.StartsWith("--", StringComparison.Ordinal) ? null : x.Value);
+                var globalsettings = data.Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Key.StartsWith("--", StringComparison.Ordinal));
+
+                Program.DataConnection.ApplicationSettings.UpdateSettings(serversettings, false);
+
+                // Update based on inputs
+                var existing = Program.DataConnection.Settings.ToDictionary(x => x.Name, x => x);
+                foreach (var g in globalsettings)
+                    if (g.Value == null)
+                        existing.Remove(g.Key);
+                    else
+                    {
+                        if (existing.ContainsKey(g.Key))
+                            existing[g.Key].Value = g.Value;
+                        else
+                            existing[g.Key] = new Setting() { Name = g.Key, Value = g.Value };
+                    }
+
+                Program.DataConnection.Settings = existing.Select(x => x.Value).ToArray();
 
                 info.OutputOK();
             }
@@ -76,7 +106,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             get
             {
                 return new KeyValuePair<string, Type>[] {
-                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ApplicationSettings))
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(Database.ServerSettings))
                 };
             }
         }    

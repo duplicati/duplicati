@@ -18,22 +18,22 @@ using System;
 
 namespace Duplicati.Library.Interface
 {
-	/// <summary>
-	/// Interface for implementing callback based modules
-	/// </summary>
-	public interface IGenericCallbackModule : IGenericModule
-	{
-		/// <summary>
-		/// Called when the operation starts
-		/// </summary>
-		/// <param name="operationname">The full name of the operation</param>
-		void OnStart(string operationname, ref string remoteurl, ref string[] localpath);
-		
-		/// <summary>
-		/// Called when the operation finishes
-		/// </summary>
-		/// <param name="operationname">The full name of the operation</param>
-		/// <param name="result">The result object, if this derives from an exception, the operation failed</param>
-		void OnFinish(object result);
-	}
+    /// <summary>
+    /// Interface for implementing callback based modules
+    /// </summary>
+    public interface IGenericCallbackModule : IGenericModule
+    {
+        /// <summary>
+        /// Called when the operation starts
+        /// </summary>
+        /// <param name="operationname">The full name of the operation</param>
+        void OnStart(string operationname, ref string remoteurl, ref string[] localpath);
+        
+        /// <summary>
+        /// Called when the operation finishes
+        /// </summary>
+        /// <param name="operationname">The full name of the operation</param>
+        /// <param name="result">The result object, if this derives from an exception, the operation failed</param>
+        void OnFinish(object result);
+    }
 }

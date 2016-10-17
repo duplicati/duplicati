@@ -341,7 +341,7 @@ namespace Duplicati.GUI.TrayIcon
 
             string query = EncodeQueryString(queryparams);
 
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(new Uri(m_apiUri + endpoint + '?' + query));
+            var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(new Uri(m_apiUri + endpoint + '?' + query));
             req.Method = method;
             req.Headers.Add("Accept-Charset", ENCODING.BodyName);
             if (m_xsrftoken != null)
@@ -356,14 +356,14 @@ namespace Duplicati.GUI.TrayIcon
                 req.CookieContainer.Add(new System.Net.Cookie(XSRF_COOKIE, m_xsrftoken, "/", req.RequestUri.Host));
 
             //Wrap it all in async stuff
-            Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
+            var areq = new Library.Utility.AsyncHttpRequest(req);
 
             //Assign the timeout, and add a little processing time as well
             if (endpoint.Equals("/serverstate", StringComparison.InvariantCultureIgnoreCase) && queryparams.ContainsKey("duration"))
                 areq.Timeout = (int)(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(queryparams["duration"]) + TimeSpan.FromSeconds(5)).TotalMilliseconds;
 
-            using(System.Net.HttpWebResponse r = (System.Net.HttpWebResponse)areq.GetResponse())
-            using (System.IO.Stream s = areq.GetResponseStream())
+            using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
+            using (var s = areq.GetResponseStream())
                 if (typeof(T) == typeof(string))
                 {
                     using (System.IO.MemoryStream ms = new System.IO.MemoryStream())

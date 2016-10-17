@@ -19,21 +19,39 @@
         return cookies;
     }
 
-	function setCookieAndRun(theme) {
-	    var d = new Date();
-    	d.setTime(d.getTime() + (90*24*60*60*1000));
+    function setCookieAndRun(theme) {
+        var d = new Date();
+        d.setTime(d.getTime() + (90*24*60*60*1000));
 
-		document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
-		window.location = theme;
-	}
+        document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
+
+        // Make an absolute path redirect, as relative redirects break if the port is non-standard
+        var path = window.location.pathname;
+        
+        if (path.lastIndexOf('.html') == path.length - '.html'.length)
+            path = path.substr(0, path.lastIndexOf('/'));
+        
+        if (path.lastIndexOf('/') + 1 != path.length)
+            path = path + '/';
+
+        path += theme +'/index.html';
+        window.location.replace(path);
+    }
 
     var theme = parseCookies()['default-theme'];
     if ((theme || '').trim().length == 0)
-    	theme = 'ngax';
+        theme = 'ngax';
     
-	setCookieAndRun(theme); // Refresh
+    setCookieAndRun(theme); // Refresh
 
 </script>
+
+    <script type="text/javascript" src="oem/root/index/oem.js" ></script>
+    <link rel="stylesheet" type="text/css" href="oem/root/index/oem.css" />
+
+</head>
+
+<body>
 
 </body>
 </html>

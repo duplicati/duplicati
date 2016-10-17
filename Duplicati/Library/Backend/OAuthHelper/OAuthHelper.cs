@@ -45,7 +45,14 @@ namespace Duplicati.Library
             return string.Format(addr.ToString(), modulename); 
         }
 
+        /// <summary>
+        /// Set to true to automatically add the Authorization header to requets
+        /// </summary>
         public bool AutoAuthHeader { get; set; }
+        /// <summary>
+        /// Set to true if the provider does not use refresh tokens, but only access tokens
+        /// </summary>
+        public bool AccessTokenOnly { get; set; }
 
         public OAuthHelper(string authid, string servicename, string useragent = null)
             : base(useragent)
@@ -78,6 +85,9 @@ namespace Duplicati.Library
         {
             get
             {
+                if (AccessTokenOnly)
+                    return m_authid;
+
                 if (m_token == null || m_tokenExpires < DateTime.UtcNow)
                 {
                     var retries = 0;
@@ -89,6 +99,8 @@ namespace Duplicati.Library
                             var res = GetTokenResponse<OAuth_Service_Response>();
 
                             m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
+                            if (!string.IsNullOrWhiteSpace(res.v2_authid))
+                                m_authid = res.v2_authid;
                             return m_token = res.access_token;
                         }
                         catch (Exception ex)
@@ -130,6 +142,19 @@ namespace Duplicati.Library
             }
         }
 
+        public void ThrowOverQuotaError()
+        {
+            throw new Exception(Strings.OAuthHelper.OverQuotaError);
+        }
+
+        public void ThrowAuthException(string msg, Exception ex)
+        {
+            if (ex == null)
+                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl));
+            else
+                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+        }
+
 
 
         private class OAuth_Service_Response
@@ -137,6 +162,9 @@ namespace Duplicati.Library
             public string access_token { get; set; }
             [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
             public int expires { get; set; }
+            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+            public string v2_authid { get; set; }
+
         }
 
     }

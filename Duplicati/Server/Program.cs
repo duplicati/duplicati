@@ -162,7 +162,7 @@ namespace Duplicati.Server
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
-            if (!Library.Utility.Utility.IsClientLinux)
+            if (Library.Utility.Utility.IsClientWindows)
             {
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
@@ -257,6 +257,7 @@ namespace Duplicati.Server
                 {
                     //Portable mode uses a data folder in the application home dir
                     Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(StartupPath, "data"));
+                    System.IO.Directory.SetCurrentDirectory(StartupPath);
                 }
                 else
                 {
@@ -605,30 +606,6 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// Returns a localized name for a task type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static string LocalizeTaskType(Duplicati.Server.Serialization.DuplicatiOperation type)
-        {
-            switch (type)
-            {
-                case Duplicati.Server.Serialization.DuplicatiOperation.Backup:
-                    return Strings.TaskType.FullBackup;
-                case Duplicati.Server.Serialization.DuplicatiOperation.List:
-                    return Strings.TaskType.IncrementalBackup;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Remove:
-                    return Strings.TaskType.ListActualFiles;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Verify:
-                    return Strings.TaskType.ListBackupEntries;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Restore:
-                    return Strings.TaskType.ListBackups;
-                default:
-                    return type.ToString();
-            }
-        }
-
-        /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
@@ -708,10 +685,20 @@ namespace Duplicati.Server
         {
             var rd = new System.IO.StreamReader(Console.OpenStandardInput());
             var wr = new System.IO.StreamWriter(Console.OpenStandardOutput());
-            while (rd.ReadLine() != null)
+            string line;
+            while ((line = rd.ReadLine()) != null)
             {
-                wr.WriteLine("pong");
-                wr.Flush();
+                if (string.Equals("shutdown", line, StringComparison.OrdinalIgnoreCase))
+                {
+                    // TODO: All calls to ApplicationExitEvent and TrayIcon->Quit
+                    // should check if we are running something
+                    ApplicationExitEvent.Set();
+                }
+                else
+                {
+                    wr.WriteLine("pong");
+                    wr.Flush();
+                }
             }
         }
 
@@ -735,6 +722,8 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_WEBROOT),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_PORT.ToString()),
+                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILE.ToString()),
+                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILEPASSWORD.ToString()),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
                     new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),

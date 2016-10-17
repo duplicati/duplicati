@@ -23,8 +23,9 @@ namespace Duplicati.Library.Main.Database
     internal class LocalListChangesDatabase : LocalDatabase
     {
         public LocalListChangesDatabase(string path)
-            : base(path, "ListChanges")
+            : base(path, "ListChanges", false)
         {
+            ShouldCloseConnection = true;
         }
                 
         public interface IStorageHelper : IDisposable
