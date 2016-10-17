@@ -1243,13 +1243,18 @@ namespace Duplicati.Library.Main.Operation
             m_database.AddUnmodifiedFile(oldId, lastModified, m_transaction);
         }
 
-
         private long AddMetadataToOutput(BackendManager backend, IMetahash meta)
         {
             long metadataid;
 
             if (meta.Blob.Length > m_maxmetadatasize)
             {
+                //TODO: To fix this, the "WriteFileset" method in BackupHandler needs to
+                // be updated such that it can select sets even when there are multiple
+                // blocklist hashes for the metadata.
+                // This could be done such that an extra query is made if the metadata
+                // spans multiple blocklist hashes, as it is not expected to be common
+
                 m_result.AddWarning(string.Format("Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata", meta.Blob.Length, m_maxmetadatasize), null);
                 meta = EMPTY_METADATA;
             }
