@@ -675,33 +675,7 @@ namespace Duplicati.Library.Main.Database
                 finally { m_tempsmalllist = null; }
 
             }
-            
-            foreach(var cmd in new IDisposable [] {
-                m_insertFileCommand,
-                m_insertFilesetEntryCommand,
-                m_insertMetadatasetCommand,
-                m_insertBlocksetCommand,
-                m_insertBlocklistHashCommand,
-                m_updateBlockVolumeCommand,
-                m_insertBlockset,
-                m_findBlocksetCommand,
-                m_findMetadatasetCommand,
-                m_findFilesetCommand,
-                m_findblocklisthashCommand,
-                m_findHashBlockCommand,
-                m_insertBlockCommand,
-                m_insertDuplicateBlockCommand,
-                m_insertSmallBlockset
-                })
-                    try
-                    {
-                        if (cmd != null)
-                            cmd.Dispose();
-                    }
-                    catch
-                    {
-                    }
-                    
+
             base.Dispose();
         }
     }
