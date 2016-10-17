@@ -34,16 +34,6 @@ namespace Duplicati.Library.Utility
     public class ThrottledStream : OverrideableStream
     {
         /// <summary>
-        /// The delegate type for the callback
-        /// </summary>
-        public delegate void ThrottledStreamCallback(ThrottledStream sender);
-
-        /// <summary>
-        /// An event that is raised while the stream is active
-        /// </summary>
-        public event ThrottledStreamCallback Callback;
-
-        /// <summary>
         /// The max number of bytes pr. second to write
         /// </summary>
         private long m_writespeed;
@@ -77,11 +67,6 @@ namespace Duplicati.Library.Utility
 		/// The current measured read speed
 		/// </summary>
 		private double m_current_write_speed;
-
-        /// <summary>
-        /// The number of bytes transfered without raising an event
-        /// </summary>
-        private long m_progresscounter = 0;
 
 		/// <summary>
         /// The number of ticks to have passed before a sample is taken
@@ -130,15 +115,7 @@ namespace Duplicati.Library.Utility
 				if (actual <= 0)
 					break;
 
-				m_progresscounter += actual;
 				m_current_read_counter += actual;
-
-				if (m_progresscounter > REPORT_DISTANCE_SIZE)
-				{
-					m_progresscounter %= REPORT_DISTANCE_SIZE;
-					if (Callback != null)
-						Callback(this);
-				}
 
 				remaining -= actual;
 			}
@@ -162,15 +139,7 @@ namespace Duplicati.Library.Utility
 				DelayIfRequired(ref m_writespeed, chunksize, ref m_last_write_sample, ref m_current_write_counter, ref m_current_write_speed);
 				m_basestream.Write(buffer, offset, chunksize);
 
-				m_progresscounter += chunksize;
 				m_current_write_counter += chunksize;
-
-				if (m_progresscounter > REPORT_DISTANCE_SIZE)
-				{
-					m_progresscounter %= REPORT_DISTANCE_SIZE;
-					if (Callback != null)
-						Callback(this);
-				}
 
 				count -= chunksize;
 			}
