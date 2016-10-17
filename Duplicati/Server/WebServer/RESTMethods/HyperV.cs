@@ -14,7 +14,9 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;using System.Collections.Generic;using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using System.Linq;
 using Duplicati.Library.Snapshots;
 
@@ -22,7 +24,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class HyperV : IRESTMethodGET, IRESTMethodDocumented
     {
-        public void GET(string key, RequestInfo info)        {
+        public void GET(string key, RequestInfo info)
+        {
             try
             {
                 info.OutputOK(new HyperVUtility().GetHyperVGuests().Select(x => new { id = x.ID, name = x.Name }).ToList());
@@ -30,6 +33,21 @@ namespace Duplicati.Server.WebServer.RESTMethods
             catch (Exception ex)
             {
                 info.ReportClientError("Failed to enumerate Hyper-V virtual machines: " + ex.Message);
-            }        }        public string Description { get { return "Return a list of Hyper-V virtual machines"; } }        public IEnumerable<KeyValuePair<string, Type>> Types        {            get            {                return new KeyValuePair<string, Type>[] {                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ICommandLineArgument[]))                };            }        }    }
+            }
+        }
+
+        public string Description { get { return "Return a list of Hyper-V virtual machines"; } }
+
+        public IEnumerable<KeyValuePair<string, Type>> Types
+        {
+            get
+            {
+                return new KeyValuePair<string, Type>[] {
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ICommandLineArgument[]))
+                };
+            }
+        }
+
+    }
 }
 
