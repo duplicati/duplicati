@@ -20,17 +20,17 @@ NAME=$1
 # Get the reported mount point for the current folder
 #
 VOLUME=`df -P "$NAME" | tail -1 | awk '{ print $1}'`
-if [ "$?" -ne 0 ]
+if [ "$?" -ne 0 ] || [ "$VOLUME" == "" ]
 then
-	EXIT_CODE=$?
+	[[ "$?" -ne 0 ]] && EXIT_CODE=$? || EXIT_CODE=-1
 	echo "Error: unable to determine device for $NAME"
 	exit $EXIT_CODE
 fi
 
 MOUNTPOINT=`df -P "$NAME" | tail -1 | awk '{ print $NF}'`
-if [ "$?" -ne 0 ]
+if [ "$?" -ne 0 ] || [ "MOUNTPOINT" == "" ]
 then
-	EXIT_CODE=$?
+	[[ "$?" -ne 0 ]] && EXIT_CODE=$? || EXIT_CODE=-1
 	echo "Error: unable to determine mount point for $NAME"
 	exit $EXIT_CODE
 fi
