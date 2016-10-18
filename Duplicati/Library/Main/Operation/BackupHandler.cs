@@ -249,12 +249,6 @@ namespace Duplicati.Library.Main.Operation
 
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
-            if (!Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                log.AddWarning("hyperv-backup-vm is efective only on Windows OS.", null);
-
-            if (Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm") && options.SnapShotStrategy == Options.OptimizationStrategy.Off)
-                throw new Exception("Snapshot strategy cannot be Off when backuping Hyper-V using hyperv-backup-vm"); //VSS is required for Hyper-V backups
-
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
@@ -264,12 +258,8 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                    throw; //VSS is required for Hyper-V backups
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                {
                     log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
-                }
             }
 
             return Library.Utility.Utility.IsClientLinux ?
@@ -722,11 +712,9 @@ namespace Duplicati.Library.Main.Operation
                 
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                 System.Threading.Thread parallelScanner = null;
-
     
                 try
                 {
-
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
