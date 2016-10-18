@@ -49,136 +49,134 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var maxmetadatasize = (options.Blocksize / options.BlockhashSize) * options.Blocksize;
 
                 using (var empty_metadata_stream = new MemoryStream(emptymetadata.Blob))
-                    while (await taskreader.ProgressAsync)
+                while (await taskreader.ProgressAsync)
+                {
+                    var send_close = false;
+                    var filesize = 0L;
+                    var filename = string.Empty;
+
+                    var e = await self.Input.ReadAsync();
+                    var cur = e.Result;
+
+                    try
                     {
-                        var send_close = false;
-                        var filesize = 0L;
-                        var filename = string.Empty;
+                        var stream = e.Stream;
 
-                        TaskCompletionSource<StreamProcessResult> cur = null;
-                        try
+                        using (var blocklisthashes = new Library.Utility.FileBackedStringList())
+                        using (var hashcollector = new Library.Utility.FileBackedStringList())
                         {
-                            send_close = false;
+                            var blocklistbuffer = new byte[blocksize];
+                            var blocklistoffset = 0L;
 
-                            var e = await self.Input.ReadAsync();
-                            cur = e.Result;
-                            var stream = e.Stream;
+                            long fslen = -1;
+                            try { fslen = stream.Length; }
+                            catch (Exception ex) { await log.WriteWarningAsync(string.Format("Failed to read file length for file {0}", e.Path), ex); }
 
-                            using (var blocklisthashes = new Library.Utility.FileBackedStringList())
-                            using (var hashcollector = new Library.Utility.FileBackedStringList())
+                            if (e.IsMetadata && fslen > maxmetadatasize)
                             {
-                                var blocklistbuffer = new byte[blocksize];
-                                var blocklistoffset = 0L;
+                                //TODO: To fix this, the "WriteFileset" method in BackupHandler needs to
+                                // be updated such that it can select sets even when there are multiple
+                                // blocklist hashes for the metadata.
+                                // This could be done such that an extra query is made if the metadata
+                                // spans multiple blocklist hashes, as it is not expected to be common
 
-                                long fslen = -1;
-                                try { fslen = stream.Length; }
-                                catch (Exception ex) { await log.WriteWarningAsync(string.Format("Failed to read file length for file {0}", e.Path), ex); }
+                                await log.WriteWarningAsync(string.Format("Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata for {2}", fslen, maxmetadatasize, e.Path), null);
+                                empty_metadata_stream.Position = 0;
+                                stream = empty_metadata_stream;
+                                fslen = stream.Length;
+                            }
 
-                                if (e.IsMetadata && fslen > maxmetadatasize)
-                                {
-                                    //TODO: To fix this, the "WriteFileset" method in BackupHandler needs to
-                                    // be updated such that it can select sets even when there are multiple
-                                    // blocklist hashes for the metadata.
-                                    // This could be done such that an extra query is made if the metadata
-                                    // spans multiple blocklist hashes, as it is not expected to be common
+                            await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
+                            send_close = true;
 
-                                    await log.WriteWarningAsync(string.Format("Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata for {2}", fslen, maxmetadatasize, e.Path), null);
-                                    empty_metadata_stream.Position = 0;
-                                    stream = empty_metadata_stream;
-                                    fslen = stream.Length;
-                                }
+                            filehasher.Initialize();
+                            var lastread = 0;
+                            var buf = new byte[blocksize];
+                            var lastupdate = DateTime.Now;
+                            var firstBlock = true;
 
-                                await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
-                                // Wire up these to be reported for the file-close operation
-                                // in the finally block
-                                filename = e.Path;
-                                filesize = fslen;
-                                send_close = true;
+                            // Core processing loop, read blocks of data and hash individually
+                            while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize)) != 0) || firstBlock)
+                            {
+                                firstBlock = false;
 
-                                filehasher.Initialize();
-                                var lastread = 0;
-                                var buf = new byte[blocksize];
-                                var lastupdate = DateTime.Now;
-                                var firstBlock = true;
+                                // Run file hashing concurrently to squeeze a little extra concurrency out of it
+                                var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));
 
-                                // Core processing loop, read blocks of data and hash individually
-                                while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize)) != 0) || firstBlock)
-                                {
-                                    firstBlock = false;
+                                var hashdata = blockhasher.ComputeHash(buf, 0, lastread);
+                                var hashkey = Convert.ToBase64String(hashdata);
 
-                                    // Run file hashing concurrently to squeeze a little extra concurrency out of it
-                                    var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));
-
-                                    var hashdata = blockhasher.ComputeHash(buf, 0, lastread);
-                                    var hashkey = Convert.ToBase64String(hashdata);
-
-                                    // If we have too many hashes, flush the blocklist
-                                    if (blocklistbuffer.Length - blocklistoffset < hashdata.Length)
-                                    {
-                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
-                                        blocklisthashes.Add(blkey);
-                                        await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
-                                        blocklistoffset = 0;
-                                        blocklistbuffer = new byte[blocksize];
-                                    }
-
-                                    // Store the current hash in the blocklist
-                                    Array.Copy(hashdata, 0, blocklistbuffer, blocklistoffset, hashdata.Length);
-                                    blocklistoffset += hashdata.Length;
-                                    hashcollector.Add(hashkey);
-                                    filesize += lastread;
-
-                                    // Don't spam updates
-                                    if ((DateTime.Now - lastupdate).TotalSeconds > 10)
-                                    {
-                                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
-                                        lastupdate = DateTime.Now;
-                                    }
-
-                                    // Make sure the filehasher is done with the buf instance before we pass it on
-                                    await pftask;
-                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, true);
-                                    buf = new byte[blocksize];
-                                }
-
-                                // If we have more than a single block of data, output the (trailing) blocklist
-                                if (hashcollector.Count > 1)
+                                // If we have too many hashes, flush the blocklist
+                                if (blocklistbuffer.Length - blocklistoffset < hashdata.Length)
                                 {
                                     var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                     blocklisthashes.Add(blkey);
                                     await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
+                                    blocklistoffset = 0;
+                                    blocklistbuffer = new byte[blocksize];
                                 }
 
-                                filehasher.TransformFinalBlock(new byte[0], 0, 0);
-                                var filehash = Convert.ToBase64String(filehasher.Hash);
-                                var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes);
-                                cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
-                                cur = null;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            try
-                            {
-                                if (cur != null)
-                                    cur.TrySetException(ex);
-                            }
-                            catch { }
-                        }
-                        finally
-                        {
-                            if (cur != null)
-                            {
-                                try { cur.TrySetCanceled(); }
-                                catch { }
-                                cur = null;
+                                // Store the current hash in the blocklist
+                                Array.Copy(hashdata, 0, blocklistbuffer, blocklistoffset, hashdata.Length);
+                                blocklistoffset += hashdata.Length;
+                                hashcollector.Add(hashkey);
+                                filesize += lastread;
+
+                                // Don't spam updates
+                                if ((DateTime.Now - lastupdate).TotalSeconds > 10)
+                                {
+                                    await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
+                                    lastupdate = DateTime.Now;
+                                }
+
+                                // Make sure the filehasher is done with the buf instance before we pass it on
+                                await pftask;
+                                await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, true);
+                                buf = new byte[blocksize];
                             }
 
-                            if (send_close)
-                                await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = filename, Length = filesize, Type = EventType.FileClosed });
-                            send_close = false;
+                            // If we have more than a single block of data, output the (trailing) blocklist
+                            if (hashcollector.Count > 1)
+                            {
+                                var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
+                                blocklisthashes.Add(blkey);
+                                await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
+                            }
+
+                            filehasher.TransformFinalBlock(new byte[0], 0, 0);
+                            var filehash = Convert.ToBase64String(filehasher.Hash);
+                            var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes);
+                            cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
+                            cur = null;
                         }
                     }
+                    catch (Exception ex)
+                    {                        
+                        try
+                        {
+                            if (cur != null)
+                                cur.TrySetException(ex);
+                        }
+                        catch { }
+
+                        // Rethrow
+                        if (ex.IsRetiredException())
+                            throw;
+                    }
+                    finally
+                    {
+                        if (cur != null)
+                        {
+                            try { cur.TrySetCanceled(); }
+                            catch { }
+                            cur = null;
+                        }
+
+                        if (send_close)
+                            await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileClosed });
+                        send_close = false;
+                    }
+                }
             });
         }
     }
