@@ -23,12 +23,27 @@ namespace Duplicati.Service
     {
         private System.Threading.Thread m_thread;
         private volatile bool m_terminate = false;
+        private volatile bool m_softstop = false;
         private System.Diagnostics.Process m_process;
+        private Action m_onStartedAction;
+        private Action m_onStoppedAction;
+        private Action<string, bool> m_reportMessage;
+
+        private object m_writelock = new object();
+        private readonly string[] m_cmdargs;
+
 
         private readonly int WAIT_POLL_TIME = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
 
-        public Runner()
+        public Runner(string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null)
         {
+            m_onStartedAction = onStartedAction;
+            m_onStoppedAction = onStoppedAction;
+            m_reportMessage = logMessage;
+            if (m_reportMessage == null)
+                m_reportMessage = (x,y) => Console.WriteLine(x);
+
+            m_cmdargs = cmdargs;
             m_thread = new System.Threading.Thread(Run);
             m_thread.IsBackground = true;
             m_thread.Name = "Server Runner";
@@ -40,50 +55,82 @@ namespace Duplicati.Service
             var self_exec = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             var exec = System.IO.Path.Combine(path, "Duplicati.Server.exe");
-            var cmdargs = Environment.CommandLine + " --ping-pong-keepalive=true";
+            var cmdargs = "--ping-pong-keepalive=true";
+            if (m_cmdargs != null && m_cmdargs.Length > 0)
+                cmdargs = cmdargs + " " + string.Join(" ", m_cmdargs);
 
-            if (cmdargs.StartsWith(self_exec))
-                cmdargs = cmdargs.Substring(self_exec.Length);
+            var firstRun = true;
+            var startAttempts = 0;
 
-
-            if (!System.IO.File.Exists(exec))
+            try
             {
-                Console.WriteLine("File not found {0}", exec);
-                return;
-            }
-
-            while (!m_terminate)
-            {
-                try
+                while (!m_terminate && !m_softstop)
                 {
-                    var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs);
-                    pr.UseShellExecute = false;
-                    pr.RedirectStandardInput = true;
-                    pr.RedirectStandardOutput = true;
-
-                    if (!m_terminate)
-                        m_process = System.Diagnostics.Process.Start(pr);
-
-                    while(!m_process.HasExited)
+                    if (!System.IO.File.Exists(exec))
                     {
-                        m_process.WaitForExit(WAIT_POLL_TIME);
-                        if (!m_process.HasExited)
+                        m_reportMessage(string.Format("File not found {0}", exec), true);
+                        return;
+                    }
+
+                    try
+                    {
+                        if (!firstRun)
+                            m_reportMessage(string.Format("Attempting to restart server process: {0}", exec), true);
+
+                        m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, cmdargs), false);
+
+                        var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs);
+                        pr.UseShellExecute = false;
+                        pr.RedirectStandardInput = true;
+                        pr.RedirectStandardOutput = true;
+                        pr.WorkingDirectory = path;
+
+                        if (!m_terminate)
+                            m_process = System.Diagnostics.Process.Start(pr);
+
+                        if (firstRun && m_onStartedAction != null)
                         {
-                            if (m_terminate)
-                                m_process.Kill();
-                            else
-                                PingProcess();
+                            PingProcess();
+                            m_onStartedAction();
+                            firstRun = false;
+                        }
+
+                        while (!m_process.HasExited)
+                        {
+                            m_process.WaitForExit(WAIT_POLL_TIME);
+                            if (!m_process.HasExited)
+                            {
+                                if (m_terminate)
+                                    m_process.Kill();
+                                else
+                                    PingProcess();
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
+                    catch (Exception ex)
+                    {
+                        m_reportMessage(string.Format("Process has failed with error message: {0}", ex), true);
 
-                    // Throttle restarts
-                    if (!m_terminate)
-                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
+                        if (firstRun)
+                        {
+                            startAttempts++;
+                            if (startAttempts > 5)
+                            {
+                                m_reportMessage("Too many startup attempts, giving up", true);
+                                m_terminate = true;
+                            }
+                        }
+
+                        // Throttle restarts
+                        if (!m_terminate)
+                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
+                    }
                 }
+            }
+            finally
+            {
+                if (m_onStoppedAction != null)
+                    m_onStoppedAction();
             }
         }
 
@@ -91,26 +138,23 @@ namespace Duplicati.Service
         {
             for(var n = 0; n < 5; n++)
             {
-                m_process.StandardInput.WriteLine("ping");
-                m_process.StandardInput.Flush();
-
-                string msg = null;
-                System.Threading.ThreadPool.QueueUserWorkItem((x) =>
+                lock(m_writelock)
                 {
-                    Console.WriteLine("Reading...");
-                    msg = m_process.StandardOutput.ReadLine();
-                    Console.WriteLine("Read: {0}", msg);
-                });
+                    m_process.StandardInput.WriteLine("ping");
+                    m_process.StandardInput.Flush();
+                }
 
-                var i = 10;
-        
-                while (string.IsNullOrWhiteSpace(msg) && i-- > 0)
-                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(6));
+                using (var t = m_process.StandardOutput.ReadLineAsync())
+                {
+                    t.Wait(TimeSpan.FromMinutes(1));
 
-                if (!string.IsNullOrWhiteSpace(msg))
-                    return;
+                    if (t.IsCompleted && !t.IsFaulted && !t.IsCanceled)
+                        return;
+                }
             }
 
+            // Not responding, stop it
+            m_process.Kill();
             throw new Exception("Process timed out!");
         }
 
@@ -119,13 +163,27 @@ namespace Duplicati.Service
             m_thread.Join();
         }
 
-        public void Stop()
+        public void Stop(bool force = true)
         {
-            m_terminate = true;
-            var p = m_process;
-            if (p != null)
-                p.Kill();
-            Wait();
+            if (force)
+            {
+                m_terminate = true;
+                var p = m_process;
+                if (p != null)
+                    p.Kill();
+            }
+            else
+            {
+                m_softstop = true;
+                lock (m_writelock)
+                {
+                    if (m_process != null)
+                    {
+                        m_process.StandardInput.WriteLine("shutdown");
+                        m_process.StandardInput.Flush();
+                    }
+                }
+            }
         }
 
         public void Dispose()

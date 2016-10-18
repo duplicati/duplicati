@@ -25,8 +25,9 @@ namespace Duplicati.Library.Main.Database
     internal class LocalListDatabase : LocalDatabase
     {
         public LocalListDatabase(string path)
-            : base(path, "List")
+            : base(path, "List", false)
         {
+            ShouldCloseConnection = true;
         }
                 
         public interface IFileversion
@@ -64,9 +65,9 @@ namespace Duplicati.Library.Main.Database
                 m_connection = owner.m_connection;
                 m_filesets = owner.FilesetTimes.ToArray();
                 m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-				var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
-				string query = tmp.Item1;
-				var args = tmp.Item2;
+                var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
+                string query = tmp.Item1;
+                var args = tmp.Item2;
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
@@ -122,15 +123,24 @@ namespace Duplicati.Library.Main.Database
                 public string Path { get; internal set; }
                 public IEnumerable<long> Sizes { get { return new long[0]; } }
             }
-            
+
             public IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter)
+            {
+                return GetLargestPrefix(filter, null);
+            }
+
+            private IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter, string prefixrule)
             {
                 using(var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
                 using(var cmd = m_connection.CreateCommand())                
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
                     cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));
-                    
+
+                    //If we have a prefix rule, apply it
+                    if (!string.IsNullOrWhiteSpace(prefixrule))
+                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE SUBSTR(""Path"", 1, 1) != ?", tmpnames.Tablename), prefixrule);
+
                     // Then we recursively find the largest prefix
                     cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", tmpnames.Tablename);
                     var v0 = cmd.ExecuteScalar();
@@ -161,6 +171,13 @@ namespace Duplicati.Library.Main.Database
                             if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
                                 maxpath = "";
                         }
+                    }
+
+                    // Special handling for Windows and multi-drive backups as they do not have a single common root
+                    if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
+                    {
+                        var roots = cmd.ExecuteReaderEnumerable(string.Format(@"SELECT DISTINCT SUBSTR(""Path"", 1, 1) FROM ""{0}""", tmpnames.Tablename)).Select(x => x.ConvertValueToString(0)).ToArray();
+                        return roots.Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
                     }
     
                     return 

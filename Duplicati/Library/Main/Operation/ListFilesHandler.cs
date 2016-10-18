@@ -66,13 +66,17 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
                               
-			m_result.AddMessage("No local database, accessing remote store");
-            
+            m_result.AddMessage("No local database, accessing remote store");
+
             //TODO: Add prefix and foldercontents
+            if (m_options.ListFolderContents)
+                throw new Exception("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+            else if (m_options.ListPrefixOnly)
+                throw new Exception("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(tmpdb, "List"))
+            using (var db = new Database.LocalDatabase(tmpdb, "List", true))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);

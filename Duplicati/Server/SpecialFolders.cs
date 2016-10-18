@@ -30,10 +30,28 @@ namespace Duplicati.Server
         public static string ExpandEnvironmentVariables(string path)
         {
             foreach(var n in Nodes)
-                path = path.Replace(n.id, n.resolvedpath);
+                if (path.StartsWith(n.id))
+                    path = path.Replace(n.id, n.resolvedpath);
             return Library.Utility.Utility.ExpandEnvironmentVariables(path);
         }
-        
+
+        public static string ExpandEnvironmentVariablesRegexp(string path)
+        {
+            // The double expand is to use both the special folder names,
+            // which are not in the environment, as well as allow expansion
+            // of values found in the environment
+
+            return
+                Library.Utility.Utility.ExpandEnvironmentVariablesRegexp(path, name =>
+                {
+                    var res = string.Empty;
+                    if (name != null && !PathMap.TryGetValue(name, out res))
+                        res = Environment.GetEnvironmentVariable(name);
+
+                    return res;
+                });
+        }
+
         public static string TranslateToPath(string str) 
         {
             string res;
@@ -67,18 +85,22 @@ namespace Duplicati.Server
         {
             try
             {
-                if (System.IO.Path.IsPathRooted(folder) && System.IO.Directory.Exists(folder))
+                if (!string.IsNullOrWhiteSpace(folder) && System.IO.Path.IsPathRooted(folder) && System.IO.Directory.Exists(folder))
                 {
-                    lst.Add(new Serializable.TreeNode() {
-                        id = id,
-                        text = display,
-                        leaf = false,
-                        iconCls = "x-tree-icon-special",
-                        resolvedpath = folder
-                    });
-                    
-                    PathMap[id] = folder;
-                    DisplayMap[id] = display;
+                    if (!PathMap.ContainsKey(id))
+                    {
+                        lst.Add(new Serializable.TreeNode()
+                        {
+                            id = id,
+                            text = display,
+                            leaf = false,
+                            iconCls = "x-tree-icon-special",
+                            resolvedpath = folder
+                        });
+
+                        PathMap[id] = folder;
+                        DisplayMap[id] = display;
+                    }
                 }
             }
             catch
@@ -90,7 +112,7 @@ namespace Duplicati.Server
         {
             var lst = new List<Serializable.TreeNode>();
             
-            if (!Library.Utility.Utility.IsClientLinux)
+            if (Library.Utility.Utility.IsClientWindows)
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
@@ -98,15 +120,28 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.MyVideos, "%MY_VIDEOS%", "My Videos");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.SpecialFolder.ApplicationData, "%APPDATA%", "Application Data");
-            } else {
+                TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
+
+                try
+                {
+                    // In case the UserProfile member points to junk
+                    TryAdd(lst, System.IO.Path.Combine(Environment.GetEnvironmentVariable("HOMEDRIVE"), Environment.GetEnvironmentVariable("HOMEPATH")), "%HOME%", "Home");
+                }
+                catch
+                {
+                }
+
+            }
+            else
+            {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
                 TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "My Pictures");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
+                TryAdd(lst, Environment.GetEnvironmentVariable("HOME"), "%HOME%", "Home");
+                TryAdd(lst, Environment.SpecialFolder.Personal, "%HOME%", "Home");
             }
-            
-            TryAdd(lst, Library.Utility.Utility.IsClientLinux ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%"), "%HOME%", "Home");
-            
+
             Nodes = lst.ToArray();
         }
 

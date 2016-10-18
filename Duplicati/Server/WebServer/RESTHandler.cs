@@ -64,10 +64,74 @@ namespace Duplicati.Server.WebServer
             DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (request.Method.ToUpper() == "POST" ? request.Form : request.QueryString)["id"].Value);
         }
 
+        private static Dictionary<string, System.Globalization.CultureInfo> _cultureCache = new Dictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
+
+        private static System.Globalization.CultureInfo ParseRequestCulture(RequestInfo info)
+        {
+            // Inject the override
+            return ParseRequestCulture(string.Format("{0},{1}", info.Request.Headers["X-UI-Language"], info.Request.Headers["Accept-Language"]));
+        }
+
+        public static System.Globalization.CultureInfo ParseDefaultRequestCulture(RequestInfo info)
+        {
+            if (info == null)
+                return null;
+            return ParseRequestCulture(info.Request.Headers["Accept-Language"]);
+        }
+
+        private static System.Globalization.CultureInfo ParseRequestCulture(string acceptheader)
+        {
+            // Lock-free read
+            System.Globalization.CultureInfo ci;
+            if (_cultureCache.TryGetValue(acceptheader, out ci))
+                return ci;
+
+            // Lock-free assignment, we might compute the value twice
+            return _cultureCache[acceptheader] =
+                // Parse headers like "Accept-Language: da, en-gb;q=0.8, en;q=0.7"
+                acceptheader
+                .Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x =>
+                {
+                    var opts = x.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+                    var lang = opts.FirstOrDefault();
+                    var weight =
+                    opts.Where(y => y.StartsWith("q=", StringComparison.InvariantCultureIgnoreCase))
+                        .Select(y =>
+                        {
+                            float f;
+                            float.TryParse(y.Substring(2), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out f);
+                            return f;
+                        }).FirstOrDefault();
+
+                    // Set the default weight=1
+                    if (weight <= 0.001 && weight >= 0)
+                        weight = 1;
+
+                    return new KeyValuePair<string, float>(lang, weight);
+                })
+                // Handle priority
+                .OrderByDescending(x => x.Value)
+                .Select(x => x.Key)
+                .Distinct()
+                // Filter invalid/unsupported items
+                .Where(x => !string.IsNullOrWhiteSpace(x) && Library.Localization.LocalizationService.ParseCulture(x) != null)
+                .Select(x => Library.Localization.LocalizationService.ParseCulture(x))
+                // And get the first that works
+                .FirstOrDefault();
+
+        }
+
         public static void DoProcess(RequestInfo info, string method, string module, string key)
         {
+            var ci = ParseRequestCulture(info);
+
+            using ( Library.Localization.LocalizationService.TemporaryContext(ci))
             try
             {
+                if (ci != null)
+                    info.Response.AddHeader("Content-Language", ci.Name);
+
                 IRESTMethod mod;
                 _modules.TryGetValue(module, out mod);
 

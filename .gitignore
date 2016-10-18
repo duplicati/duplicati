@@ -20,3 +20,5 @@ Installer/oem
 Updates/build
 packages
 changelog-news.txt
+binfiles.wxs
+.idea/

@@ -76,6 +76,7 @@ namespace Duplicati.Server.WebServer
             SUPPORTED_METHODS.Add("delete-local-data", DeleteLocalData);
             SUPPORTED_METHODS.Add("get-server-options", GetServerOptions);
             SUPPORTED_METHODS.Add("set-server-options", SetServerOptions);
+            SUPPORTED_METHODS.Add("get-hyperv-guests", GetHyperVGuests);
         }
 
         public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -233,7 +234,11 @@ namespace Duplicati.Server.WebServer
         {
             RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.Licenses));
         }
-
+        private void GetHyperVGuests(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+        {
+            RESTHandler.HandleControlCGI(request, response, session, bw, typeof(RESTMethods.HyperV));
+        }
+        
         private void RestoreFiles(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
         {
             var input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;

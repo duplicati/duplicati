@@ -11,14 +11,15 @@ namespace Duplicati.Library.Main.Volumes
         protected class ManifestData
         {
             public const string ENCODING = "utf8";
-            public const long VERSION = 1;
+            public const long VERSION = 2;
 
             public long Version;
             public string Created;
             public string Encoding;
             public long Blocksize;
             public string BlockHash;
-			public string FileHash;
+            public string FileHash;
+            public string AppVersion;
 
             public static string GetManifestInstance(long blocksize, string blockhash, string filehash)
             {
@@ -29,7 +30,8 @@ namespace Duplicati.Library.Main.Volumes
                     Blocksize = blocksize,
                     Created = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow),
                     BlockHash = blockhash,
-                    FileHash = filehash
+                    FileHash = filehash,
+                    AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()
                 });
             }
 
@@ -60,25 +62,25 @@ namespace Duplicati.Library.Main.Volumes
             public string EncryptionModule { get; private set; }
             public Library.Interface.IFileEntry File { get; private set; }
 
-	        internal static readonly IDictionary<RemoteVolumeType, string> REMOTE_TYPENAME_MAP;
-	        internal static readonly IDictionary<string, RemoteVolumeType> REVERSE_REMOTE_TYPENAME_MAP;
+            internal static readonly IDictionary<RemoteVolumeType, string> REMOTE_TYPENAME_MAP;
+            internal static readonly IDictionary<string, RemoteVolumeType> REVERSE_REMOTE_TYPENAME_MAP;
             private static readonly System.Text.RegularExpressions.Regex FILENAME_REGEXP;
 
-			static ParsedVolume()
-			{
-				var dict = new Dictionary<RemoteVolumeType, string>();
-				dict[RemoteVolumeType.Blocks] = "dblock";
-				dict[RemoteVolumeType.Files] = "dlist";
-				dict[RemoteVolumeType.Index] = "dindex";
-				
-				var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.InvariantCultureIgnoreCase);
-				foreach(var x in dict)
-					reversedict[x.Value] = x.Key;
-								
-				REMOTE_TYPENAME_MAP = dict;
-				REVERSE_REMOTE_TYPENAME_MAP = reversedict;
-				FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
-			}
+            static ParsedVolume()
+            {
+                var dict = new Dictionary<RemoteVolumeType, string>();
+                dict[RemoteVolumeType.Blocks] = "dblock";
+                dict[RemoteVolumeType.Files] = "dlist";
+                dict[RemoteVolumeType.Index] = "dindex";
+                
+                var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.InvariantCultureIgnoreCase);
+                foreach(var x in dict)
+                    reversedict[x.Value] = x.Key;
+                                
+                REMOTE_TYPENAME_MAP = dict;
+                REVERSE_REMOTE_TYPENAME_MAP = reversedict;
+                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+            }
 
             private ParsedVolume() { }
 
@@ -88,9 +90,9 @@ namespace Duplicati.Library.Main.Volumes
                 if (!m.Success || m.Length != filename.Length)
                     return null;
 
-				RemoteVolumeType t;
-				if (!REVERSE_REMOTE_TYPENAME_MAP.TryGetValue(m.Groups["filetype"].Value, out t))
-					return null;
+                RemoteVolumeType t;
+                if (!REVERSE_REMOTE_TYPENAME_MAP.TryGetValue(m.Groups["filetype"].Value, out t))
+                    return null;
 
                 return new ParsedVolume()
                 {
@@ -110,9 +112,9 @@ namespace Duplicati.Library.Main.Volumes
             return GenerateFilename(filetype, options.Prefix, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
-		public static string GenerateFilename(RemoteVolumeType filetype, string prefix, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
-		{
-			string volumename;
+        public static string GenerateFilename(RemoteVolumeType filetype, string prefix, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
+        {
+            string volumename;
 
             if (filetype == RemoteVolumeType.Files)
                 volumename = prefix + "-" + Library.Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
@@ -123,7 +125,7 @@ namespace Duplicati.Library.Main.Volumes
                 volumename += "." + encryptionmodule;
                 
             return volumename;
-		}
+        }
 
         public static IParsedVolume ParseFilename(Library.Interface.IFileEntry file)
         {

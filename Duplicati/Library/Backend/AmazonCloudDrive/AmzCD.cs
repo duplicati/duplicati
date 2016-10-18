@@ -160,7 +160,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             var curpath = new List<string>();
             foreach(var p in (altpath ?? m_path).Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
             {
-                var self = m_oauth.GetJSONData<ListResponse>(string.Format("{0}/nodes?filters=kind:{1}%20and%20parents:{2}%20and%20name:{3}", MetadataUrl, CONTENT_KIND_FOLDER, Utility.Uri.UrlEncode(parent.ID), Utility.Uri.UrlEncode(p)));
+                var requestUrl = string.Format("{0}/nodes?filters=kind:{1}%20and%20parents:{2}%20and%20name:{3}", MetadataUrl, CONTENT_KIND_FOLDER, Utility.Uri.UrlEncode(parent.ID), Utility.Uri.UrlPathEncode(EscapeFiltersValue(p)));
+                var self = m_oauth.GetJSONData<ListResponse>(requestUrl);
                 if (self == null || self.Count == 0 || self.Data == null || self.Data.Length == 0)
                 {
                     if (!createMissing)
@@ -234,6 +235,15 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             
             throw new FileMissingException();
         }
+        
+        private static System.Text.RegularExpressions.Regex FILTERS_VALUE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[+\-&|!(){}\[\]^'""~*?:\\ ]", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        public static string EscapeFiltersValue(string value)
+        {
+            return FILTERS_VALUE_ESCAPECHAR.Replace(value, (m) => {
+                return @"\" + m.Value;
+            });
+        }
 
         #region IStreamingBackend implementation
         public void Put(string remotename, System.IO.Stream stream)
@@ -285,7 +295,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         public void Get(string remotename, System.IO.Stream stream)
         {
             using (var resp = m_oauth.GetResponse(string.Format("{0}/nodes/{1}/content", ContentUrl, GetFileID(remotename))))
-                Utility.Utility.CopyStream(resp.GetResponseStream(), stream);
+            using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
+                Utility.Utility.CopyStream(rs, stream);
         }
         #endregion
 

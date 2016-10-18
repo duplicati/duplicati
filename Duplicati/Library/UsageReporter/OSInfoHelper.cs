@@ -19,23 +19,40 @@ using System.Linq;
 
 namespace Duplicati.Library.UsageReporter
 {
+    /// <summary>
+    /// Helper class for extracting operating system info
+    /// </summary>
     internal static class OSInfoHelper
     {
+        /// <summary>
+        /// Runs a commandline program and returns stdout as a string.
+        /// </summary>
+        /// <returns>The stdout value.</returns>
+        /// <param name="cmd">The command to run.</param>
+        /// <param name="args">The commandline arguments.</param>
         private static string RunProgramAndReadOutput(string cmd, string args)
         {
+            System.Diagnostics.Process pi = null;
             try
             {
                 var psi = new System.Diagnostics.ProcessStartInfo(cmd, args);
                 psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true; // Suppress error messages
                 psi.UseShellExecute = false;
 
-                var pi = System.Diagnostics.Process.Start(psi);
+                pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(5000);
                 if (pi.HasExited)
                     return pi.StandardOutput.ReadToEnd().Trim();
             }
             catch
             {
+            }
+            finally
+            {
+                if (pi != null && !pi.HasExited)
+                    try { pi.Kill(); }
+                    catch { }
             }
 
             return null;   

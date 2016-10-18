@@ -39,6 +39,24 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK();
         }
 
+        private void UploadFile(string uri, RequestInfo info)
+        {
+            var data = info.Request.QueryString["data"].Value;
+            var remotename = info.Request.QueryString["filename"].Value;
+
+            using(var ms = new System.IO.MemoryStream())   
+            using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+            {
+                using(var tf = new Duplicati.Library.Utility.TempFile())
+                {
+                    System.IO.File.WriteAllText(tf, data);
+                    b.Put(remotename, tf);
+                }
+            }
+
+            info.OutputOK();
+        }
+
         private void ListFolder(string uri, RequestInfo info)
         {
             using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
@@ -58,15 +76,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 var qp = uri.QueryParameters;
 
                 var opts = new Dictionary<string, string>();
-                foreach(var k in qp.Keys.Cast<string>())
+                foreach (var k in qp.Keys.Cast<string>())
                     opts[k] = qp[k];
 
-                foreach(var n in modules)
+                foreach (var n in modules)
                     n.Configure(opts);
-                    
-                using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
+
+                using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
                     b.Test();
-                
+
                 info.OutputOK();
             }
             catch (Duplicati.Library.Interface.FolderMissingException)
@@ -80,9 +98,22 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 else
                     info.ReportServerError("incorrect-cert:" + icex.Certificate);
             }
+            catch (Duplicati.Library.Utility.HostKeyException hex)
+            {
+                if (string.IsNullOrWhiteSpace(hex.ReportedHostKey))
+                    info.ReportServerError(hex.Message);
+                else
+                {
+                    info.ReportServerError(string.Format(
+                        @"incorrect-host-key:""{0}"", accepted-host-key:""{1}""",
+                        hex.ReportedHostKey,
+                        hex.AcceptedHostKey
+                    ));
+                }
+            }
             finally
             {
-                foreach(var n in modules)
+                foreach (var n in modules)
                     if (n is IDisposable)
                         ((IDisposable)n).Dispose();
             }
@@ -138,6 +169,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     return;
                 case "create":
                     CreateFolder(url, info);
+                    return;
+                case "put":
+                    UploadFile(url, info);
                     return;
                 case "test":
                     TestConnection(url, info);

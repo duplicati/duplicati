@@ -70,14 +70,18 @@ a single operation. The scantime
 is the time the file was last 
 scanned in UNIX EPOCH format
 */
+
 CREATE TABLE "FilesetEntry" (
 	"FilesetID" INTEGER NOT NULL,
 	"FileID" INTEGER NOT NULL,
-	"Lastmodified" INTEGER NOT NULL
-);
+	"Lastmodified" INTEGER NOT NULL,
+	CONSTRAINT "FilesetEntry_PK_FilesetIdFileId" PRIMARY KEY ("FilesetID", "FileID")
+) {#if sqlite_version >= 3.8.2} WITHOUT ROWID {#endif};
 
-/* Improved lookup for joining Fileset and File table */
-CREATE UNIQUE INDEX "FilesetentryIndex" on "FilesetEntry" ("FilesetID", "FileID");
+/* Improved reverse lookup for joining Fileset and File table */
+CREATE INDEX "FilesetentryFileIdIndex" on "FilesetEntry" ("FileID");
+
+
 
 /*
 The FileEntry contains an ID
@@ -237,4 +241,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (5);
+INSERT INTO "Version" ("Version") VALUES (6);

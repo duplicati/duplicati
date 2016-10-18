@@ -25,7 +25,7 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class Issue1410 : BasicSetupHelper
     {
-        [TestFixtureSetUp()]
+        [OneTimeSetUp]
         public override void PrepareSourceData()
         {
             base.PrepareSourceData();
@@ -35,16 +35,18 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Targeted")]
         public void RunCommands()
         {
-            TestOptions["verbose"] = "true";
+			var testopts = TestOptions;
+            testopts["verbose"] = "true";
 
             var data = new byte[1024 * 1024 * 10];
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions.Expand(new { version = 0 }), null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
                 Console.WriteLine("In first backup:");
@@ -53,10 +55,10 @@ namespace Duplicati.UnitTest
 
             new Random().NextBytes(data);
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data);
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions.Expand(new { version = 0 }), null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
                 Console.WriteLine("Newest before deleting:");
@@ -64,7 +66,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(3, r.Files.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions.Expand(new { version = 0, no_local_db = true }), null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
                 var r = c.List("*");
                 Console.WriteLine("Newest without db:");
@@ -74,13 +76,13 @@ namespace Duplicati.UnitTest
 
 
             File.Delete(DBFILE);
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Repair();
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 Assert.AreEqual(c.List().Filesets.Count(), 2);
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions.Expand(new { version = 1 }), null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
                 var r = c.List("*");
                 Console.WriteLine("Oldest after delete:");
@@ -88,7 +90,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(2, r.Files.Count());
             }
                     
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions.Expand(new { version = 0 }), null))
+            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
                 Console.WriteLine("Newest after delete:");

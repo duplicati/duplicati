@@ -1,4 +1,4 @@
-backupApp.controller('ExportController', function($scope, $routeParams, AppService, DialogService) {
+backupApp.controller('ExportController', function($scope, $routeParams, AppService, DialogService, gettextCatalog) {
     $scope.ExportType = 'file';
     $scope.Connecting = false;
     $scope.BackupID = $routeParams.backupid;
@@ -7,7 +7,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
 
     $scope.doExport = function() {
         if ($scope.UseEncryption && $scope.ExportType == 'file' && ($scope.Passphrase || '').trim().length == 0) {
-            DialogService.dialog('No passphrase entered', 'To export without a passphrase, uncheck the "Encrypt file" box');
+            DialogService.dialog(gettextCatalog.getString('No passphrase entered'), gettextCatalog.getString('To export without a passphrase, uncheck the "Encrypt file" box'));
             return;
         }
 
@@ -25,7 +25,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
                     if (resp.data != null && resp.data.Message != null)
                         message = resp.data.Message;
 
-                    DialogService.dialog('Error', 'Failed to connect: ' + message);
+                    DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
                 }
             );
         } else {

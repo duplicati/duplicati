@@ -9,18 +9,19 @@
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
-    <HeatDefinitions>HarvestPath=bin\$(Configuration)\Duplicati\</HeatDefinitions>
+    <HeatDefinitions>HarvestPath=Duplicati\</HeatDefinitions>
+    <SuppressValidation>true</SuppressValidation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <OutputPath>bin\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug;Win64=no;$(HeatDefinitions)</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>bin\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <WixVariables>
     </WixVariables>
     <DefineConstants>Win64=no;$(HeatDefinitions)</DefineConstants>
@@ -66,14 +67,12 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <BinFiles Include="..\Duplicati\GUI\Duplicati.GUI.TrayIcon\bin\$(Configuration)\**\*.*" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*" />
-    <WebFiles Include="..\Duplicati\Server\webroot\**\*.*" />
+    <BinFiles Include="..\Duplicati\**" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <Target Name="BeforeBuild">
-    <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles->'bin\$(Configuration)\Duplicati\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(WebFiles)" DestinationFiles="@(WebFiles->'bin\$(Configuration)\Duplicati\webroot\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <HeatDirectory Directory="bin\$(Configuration)\Duplicati\" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
+    <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles->'Duplicati\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <HeatDirectory Directory="Duplicati" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
 	</Target>
 	<Target Name="AfterBuild">
 	</Target>

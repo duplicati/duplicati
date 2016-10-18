@@ -24,11 +24,17 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
+        public static string DescriptionFingerprintLong { get { return LC.L(@"The server fingerprint used for validation of server identity. Format is eg. ""ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66""."); } }
+        public static string DescriptionFingerprintShort { get { return LC.L(@"Supplies server fingerprint used for validation of server identity"); } }
+        public static string DescriptionAnyFingerprintLong { get { return LC.L(@"To guard against man-in-the-middle attacks, the server fingerprint is verified on connection. Use this option to disable host-key fingerprint verification. You should only use this option for testing."); } }
+        public static string DescriptionAnyFingerprintShort { get { return LC.L(@"Disables fingerprint validation"); } }
         public static string DescriptionSshkeyfileLong { get { return LC.L(@"Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client."); } }
         public static string DescriptionSshkeyfileShort { get { return LC.L(@"Uses a SSH private key to authenticate"); } }
         public static string DescriptionSshkeyLong(string urlprefix) { return LC.L(@"An url-encoded SSH private key. The private key must be prefixed with {0}. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.", urlprefix); }
         public static string DescriptionSshkeyShort { get { return LC.L(@"Uses a SSH private key to authenticate"); } }
         public static string DisplayName { get { return LC.L(@"SFTP (SSH)"); } }
         public static string FolderNotFoundManagedError(string foldername, string message) { return LC.L(@"Unable to set folder to {0}, error message: {1}", foldername, message); }
+        public static string FingerprintNotMatchManagedError(string fingerprint) { return LC.L(@"Validation of server fingerprint failed. Server returned fingerprint ""{0}"". Cause of this message is either not correct configuration or Man-in-the-middle attack!", fingerprint); }
+        public static string FingerprintNotSpecifiedManagedError(string fingerprint, string hostkeyoption, string allkeysoptions) { return LC.L(@"Please add --{1}=""{0}"" to trust this host. Optionally you can use --{2} (NOT SECURE) for testing!", fingerprint, hostkeyoption, allkeysoptions); }   
     }
 }

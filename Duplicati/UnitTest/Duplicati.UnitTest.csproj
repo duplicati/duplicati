@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{ECB63D1C-1724-442D-9228-DEABF14F2EA3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
@@ -32,7 +30,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="nunit.framework">
-      <HintPath>..\..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+      <HintPath>..\..\packages\NUnit.3.4.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -45,11 +43,9 @@
     <Compile Include="BasicSetupHelper.cs" />
     <Compile Include="SizeOmittingBackend.cs" />
     <Compile Include="BorderTests.cs" />
+    <Compile Include="Issue1723.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
@@ -167,5 +163,8 @@
       <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
       <Name>Duplicati.Server.Serialization</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

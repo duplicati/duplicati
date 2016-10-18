@@ -1,23 +1,23 @@
 backupApp.directive('restoreFilePicker', function() {
-  	return {
-	    restrict: 'E',
-	    require: ['ngSources', 'ngFilters', 'ngBackupId', 'ngTimestamp', 'ngSelected'],
-	    scope: {
-	        ngSources: '=',
-	        ngFilters: '=',
+      return {
+        restrict: 'E',
+        require: ['ngSources', 'ngFilters', 'ngBackupId', 'ngTimestamp', 'ngSelected'],
+        scope: {
+            ngSources: '=',
+            ngFilters: '=',
             ngBackupId: '=',
             ngTimestamp: '=',
             treedata: '=',
             ngSelected: '=',
             ngSearchFilter: '=',
             ngSearchMode: '='
-	    },
-	    templateUrl: 'templates/restorefilepicker.html',
+        },
+        templateUrl: 'templates/restorefilepicker.html',
 
-	    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils) {
+        controller: function($scope, $timeout, SystemInfo, AppService, AppUtils) {
 
-		    var scope = $scope;
-	    	$scope.systeminfo = SystemInfo.watch($scope);
+            var scope = $scope;
+            $scope.systeminfo = SystemInfo.watch($scope);
             $scope.treedata = [];
 
             function compareablePath(path) {
@@ -200,7 +200,7 @@ backupApp.directive('restoreFilePicker', function() {
                         var all = true;
                         var pp = compareablePath(p.id);
                         var map = buildSelectedMap();
-                        map[compareablePath(cur.id)] = true;
+                        map[c] = true;
 
                         for (var i = p.children.length - 1; i >= 0; i--)
                             if (!map[compareablePath(p.children[i].id)]) {
@@ -341,6 +341,6 @@ backupApp.directive('restoreFilePicker', function() {
 
             $scope.$watchCollection('ngSelected', updateCheckState)
             
-	    }
-	};
+        }
+    };
 });

@@ -1,4 +1,4 @@
-backupApp.controller('AboutController', function($scope, $location, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils) {
+backupApp.controller('AboutController', function($scope, $location, BrandingService, ServerStatus, AppService, SystemInfo, AppUtils, gettextCatalog) {
     $scope.brandingService = BrandingService.watch($scope);
     $scope.Page = 'general';
     $scope.sysinfo = SystemInfo.watch($scope);
@@ -19,27 +19,27 @@ backupApp.controller('AboutController', function($scope, $location, BrandingServ
     };
 
     AppService.get('/acknowledgements').then(function(resp) {
-		$scope.Acknowledgements = resp.data.Acknowledgements;
+        $scope.Acknowledgements = resp.data.Acknowledgements;
     });
 
     $scope.$watch('Page', function() {
-    	if ($scope.Page == 'changelog' && $scope.ChangeLog == null) {
-    		AppService.get('/changelog?from-update=false').then(function(resp) {
-    			$scope.ChangeLog = 	resp.data.Changelog;
-    		});
-    	} else if ($scope.Page == 'licenses' && $scope.Licenses == null) {
-    		AppService.get('/licenses').then(function(resp) {
-    			var res = [];
-    			for(var n in resp.data) {
-    				var r = JSON.parse(resp.data[n].Jsondata);
+        if ($scope.Page == 'changelog' && $scope.ChangeLog == null) {
+            AppService.get('/changelog?from-update=false').then(function(resp) {
+                $scope.ChangeLog =     resp.data.Changelog;
+            });
+        } else if ($scope.Page == 'licenses' && $scope.Licenses == null) {
+            AppService.get('/licenses').then(function(resp) {
+                var res = [];
+                for(var n in resp.data) {
+                    var r = JSON.parse(resp.data[n].Jsondata);
                     if (r != null) {
                         r.licenselink = r.licenselink || licenses[r.license] || '#';
                         res.push(r);
-                    }    				
-    			}
-				$scope.Licenses = res;
-    		});
-    	}
+                    }                    
+                }
+                $scope.Licenses = res;
+            });
+        }
     });
 
     $scope.doShowUpdateChangelog = function() {
@@ -51,7 +51,7 @@ backupApp.controller('AboutController', function($scope, $location, BrandingServ
     };
 
     $scope.doStartUpdateActivate = function() {
-        AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError('Activate failed: '));
+        AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError(gettextCatalog.getString('Activate failed:') + ' '));
     };
 
     $scope.doCheckForUpdates = function() {

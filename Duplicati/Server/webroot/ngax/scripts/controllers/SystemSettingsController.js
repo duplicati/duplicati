@@ -1,14 +1,29 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, AppService, AppUtils, Localization, SystemInfo) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
-    };
+    }
 
     reloadOptionsList();
 
     $scope.$on('systeminfochanged', reloadOptionsList);
+
+    $scope.uiLanguage = $cookies.get('ui-locale');
+    $scope.lang_browser_default = gettextCatalog.getString('Browser default');
+    $scope.lang_default = gettextCatalog.getString('Default');
+
+    function setUILanguage() {
+        if (($scope.uiLanguage || '').trim().length == 0) {
+            $cookies.remove('ui-locale');
+            gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.replace("-", "_"));
+        } else {
+            $cookies.put('ui-locale', $scope.uiLanguage);
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage);
+        }
+        $rootScope.$broadcast('ui_language_changed');
+    }
 
     AppService.get('/serversettings').then(function(data) {
 
@@ -39,7 +54,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel
-        }
+        };
 
 
         if ($scope.requireRemotePassword) {
@@ -56,13 +71,15 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {
+                setUILanguage();
+
                 // Check for updates if we changed the channel
                 if ($scope.updateChannel != $scope.originalUpdateChannel)
                     AppService.post('/updates/check');
 
                 $location.path('/');
             },
-            AppUtils.connectionError(Localization.localize('Failed to save: '))
+            AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
     };
 
@@ -73,7 +90,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
                 $scope.SystemInfo.SuppressDonationMessages = true; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError('Operation failed: ')
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 
@@ -84,7 +101,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
                 $scope.SystemInfo.SuppressDonationMessages = false; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError('Operation failed: ')
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 });

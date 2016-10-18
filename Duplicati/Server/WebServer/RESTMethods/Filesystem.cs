@@ -107,12 +107,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 if (!Library.Utility.Utility.IsClientLinux && (path.Equals("/") || path.Equals("")))
                 {
                     res = DriveInfo.GetDrives()
-		                    .Where(di =>
-								(di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable)
-								&& di.IsReady // Only try to create TreeNode entries for drives who were ready 'now'
-							)
-		                    .Select(TryCreateTreeNodeForDrive) // This will try to create a TreeNode for selected drives
-							.Where(tn => tn != null); // This filters out such entries that could not be created
+                            .Where(di =>
+                                (di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable)
+                                && di.IsReady // Only try to create TreeNode entries for drives who were ready 'now'
+                            )
+                            .Select(TryCreateTreeNodeForDrive) // This will try to create a TreeNode for selected drives
+                            .Where(tn => tn != null); // This filters out such entries that could not be created
                 }
                 else
                 {
@@ -134,12 +134,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     });
                 }
 
-				// We have to resolve the query before giving it to OutputOK
-				// If we do not do this, and the query throws an exception when OutputOK resolves it,
-				// the exception would not be handled properly
-	            res = res.ToList();
+                // We have to resolve the query before giving it to OutputOK
+                // If we do not do this, and the query throws an exception when OutputOK resolves it,
+                // the exception would not be handled properly
+                res = res.ToList();
 
-				info.OutputOK(res);
+                info.OutputOK(res);
             }
             catch (Exception ex)
             {
@@ -147,42 +147,42 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
         }
 
-		/// <summary>
-		/// Try to create a new TreeNode instance for the given DriveInfo instance.
-		///
-		/// <remarks>
-		/// If an exception occurs during creation (most likely the device became unavailable), a null is returned instead.
-		/// </remarks>
-		/// </summary>
-		/// <param name="driveInfo">DriveInfo to try create a TreeNode for. Cannot be null.</param>
-		/// <returns>A new TreeNode instance on success; null if an exception occurred during creation.</returns>
-		private static Serializable.TreeNode TryCreateTreeNodeForDrive(DriveInfo driveInfo)
-	    {
-			if (driveInfo == null) throw new ArgumentNullException("driveInfo");
+        /// <summary>
+        /// Try to create a new TreeNode instance for the given DriveInfo instance.
+        ///
+        /// <remarks>
+        /// If an exception occurs during creation (most likely the device became unavailable), a null is returned instead.
+        /// </remarks>
+        /// </summary>
+        /// <param name="driveInfo">DriveInfo to try create a TreeNode for. Cannot be null.</param>
+        /// <returns>A new TreeNode instance on success; null if an exception occurred during creation.</returns>
+        private static Serializable.TreeNode TryCreateTreeNodeForDrive(DriveInfo driveInfo)
+        {
+            if (driveInfo == null) throw new ArgumentNullException("driveInfo");
 
-		    try
-		    {
-				// Try to create the TreeNode
-				// This may still fail as the drive might become unavailable in the meanwhile
-				return new Serializable.TreeNode
-				{
-					id = driveInfo.RootDirectory.FullName,
-					text =
-					(
-						string.IsNullOrWhiteSpace(driveInfo.VolumeLabel)
-							? driveInfo.RootDirectory.FullName.Replace('\\', ' ')
-							: driveInfo.VolumeLabel + " - " + driveInfo.RootDirectory.FullName.Replace('\\', ' ')
-						) + "(" + driveInfo.DriveType + ")",
-					iconCls = "x-tree-icon-drive"
-				};
-			}
-		    catch
-		    {
-				// Drive became unavailable in the meanwhile or another exception occurred
-				// Return a null as fall back
-				return null;
-		    }
-	    }
+            try
+            {
+                // Try to create the TreeNode
+                // This may still fail as the drive might become unavailable in the meanwhile
+                return new Serializable.TreeNode
+                {
+                    id = driveInfo.RootDirectory.FullName,
+                    text =
+                    (
+                        string.IsNullOrWhiteSpace(driveInfo.VolumeLabel)
+                            ? driveInfo.RootDirectory.FullName.Replace('\\', ' ')
+                            : driveInfo.VolumeLabel + " - " + driveInfo.RootDirectory.FullName.Replace('\\', ' ')
+                        ) + "(" + driveInfo.DriveType + ")",
+                    iconCls = "x-tree-icon-drive"
+                };
+            }
+            catch
+            {
+                // Drive became unavailable in the meanwhile or another exception occurred
+                // Return a null as fall back
+                return null;
+            }
+        }
 
         private static IEnumerable<Serializable.TreeNode> ListFolderAsNodes(string entrypath, bool skipFiles, bool showHidden)
         {

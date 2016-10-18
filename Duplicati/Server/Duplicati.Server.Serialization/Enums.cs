@@ -46,7 +46,10 @@ namespace Duplicati.Server.Serialization
         Repair,
         RepairUpdate,
         Verify,
-        CreateReport
+        Compact,
+        CreateReport,
+        ListRemote,
+        Delete
     }
 
     public enum SuggestedStatusIcon

@@ -183,100 +183,101 @@ namespace Duplicati.Library.SQLiteHelper
 
 
             int dbversion = 0;
-            IDbCommand cmd = connection.CreateCommand();
-            try
+            using (var cmd = connection.CreateCommand())
             {
-                //See if the version table is present,
-                cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER WHERE Name LIKE 'Version'";
-
-                int count = Convert.ToInt32(cmd.ExecuteScalar());
-
-                if (count == 0)
-                    dbversion = -1; //Empty
-                else if (count == 1)
-                {
-                    cmd.CommandText = "SELECT max(Version) FROM Version";
-                    dbversion = Convert.ToInt32(cmd.ExecuteScalar());
-                }
-                else
-                    throw new Exception(Strings.DatabaseUpgrader.TableLayoutError);
-
-            }
-            catch(Exception ex)
-            {
-                //Hopefully a more explanatory error message
-                throw new Exception(Strings.DatabaseUpgrader.DatabaseFormatError(ex.Message), ex);
-            }
-
-            Dictionary<string, IComparable> preparserVars = null;
-
-            if (dbversion > versions.Count)
-                throw new Exception(Strings.DatabaseUpgrader.InvalidVersionError(dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
-            else if (dbversion < versions.Count) // will need action, collect vars for preparser
-            {
-                preparserVars = new Dictionary<string, IComparable>(StringComparer.InvariantCultureIgnoreCase);
-                cmd.CommandText = "SELECT sqlite_version()";
-                System.Version sqliteversion;
-                if (Version.TryParse(cmd.ExecuteScalar().ToString(), out sqliteversion))
-                    preparserVars["sqlite_version"] = sqliteversion;
-                
-                preparserVars["db_version"] = dbversion;
-            }
-
-            //On a new database, we just load the most current schema, and upgrade from there
-            //This avoids potentitally lenghty upgrades
-            if (dbversion == -1)
-            {
-                cmd.CommandText = PreparseSQL(schema, preparserVars);
-                cmd.ExecuteNonQuery();
-                UpgradeDatabase(connection, sourcefile, schema, versions);
-                return;
-            }
-            else if (versions.Count > dbversion)
-            {
-                string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
-
                 try
                 {
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(backupfile)))
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupfile));
+                    //See if the version table is present,
+                    cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER WHERE Name LIKE 'Version'";
 
-                    //Keep a backup
-                    System.IO.File.Copy(sourcefile, backupfile, false);
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
 
-                    for (int i = dbversion; i < versions.Count; i++)
+                    if (count == 0)
+                        dbversion = -1; //Empty
+                    else if (count == 1)
                     {
-                        //TODO: Find a better way to split SQL statements, as there may be embedded semicolons
-                        //in the SQL, like "UPDATE x WHERE y = ';';"
-                        
-                        // Preparse before splitting to enable statement spanning conditional blocks
-                        string versionscript = PreparseSQL(versions[i], preparserVars);
-
-                        //We split them to get a better error message
-                        foreach (string c in versionscript.Split(';'))
-                            if (c.Trim().Length > 0)
-                            {
-                                cmd.CommandText = c;
-                                cmd.ExecuteNonQuery();
-                            }
-
-                        // after upgrade, db_version should have changed to i + 1. If logic changes, just requery.
-                        preparserVars["db_version"] = i + 1;
+                        cmd.CommandText = "SELECT max(Version) FROM Version";
+                        dbversion = Convert.ToInt32(cmd.ExecuteScalar());
                     }
+                    else
+                        throw new Exception(Strings.DatabaseUpgrader.TableLayoutError);
 
-                    //Update databaseversion, so we don't run the scripts again
-                    cmd.CommandText = "Update version SET Version = " + versions.Count.ToString();
-                    cmd.ExecuteNonQuery();
                 }
                 catch (Exception ex)
                 {
-                    connection.Close();
-                    //Restore the database
-                    System.IO.File.Copy(backupfile, sourcefile, true);
-                    throw new Exception(Strings.DatabaseUpgrader.UpgradeFailure(cmd.CommandText, ex.Message), ex);
+                    //Hopefully a more explanatory error message
+                    throw new Exception(Strings.DatabaseUpgrader.DatabaseFormatError(ex.Message), ex);
+                }
+
+                Dictionary<string, IComparable> preparserVars = null;
+
+                if (dbversion > versions.Count)
+                    throw new Exception(Strings.DatabaseUpgrader.InvalidVersionError(dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
+                else if (dbversion < versions.Count) // will need action, collect vars for preparser
+                {
+                    preparserVars = new Dictionary<string, IComparable>(StringComparer.InvariantCultureIgnoreCase);
+                    cmd.CommandText = "SELECT sqlite_version()";
+                    System.Version sqliteversion;
+                    if (Version.TryParse(cmd.ExecuteScalar().ToString(), out sqliteversion))
+                        preparserVars["sqlite_version"] = sqliteversion;
+
+                    preparserVars["db_version"] = dbversion;
+                }
+
+                //On a new database, we just load the most current schema, and upgrade from there
+                //This avoids potentitally lenghty upgrades
+                if (dbversion == -1)
+                {
+                    cmd.CommandText = PreparseSQL(schema, preparserVars);
+                    cmd.ExecuteNonQuery();
+                    UpgradeDatabase(connection, sourcefile, schema, versions);
+                    return;
+                }
+                else if (versions.Count > dbversion)
+                {
+                    string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+
+                    try
+                    {
+                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(backupfile)))
+                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupfile));
+
+                        //Keep a backup
+                        System.IO.File.Copy(sourcefile, backupfile, false);
+
+                        for (int i = dbversion; i < versions.Count; i++)
+                        {
+                            //TODO: Find a better way to split SQL statements, as there may be embedded semicolons
+                            //in the SQL, like "UPDATE x WHERE y = ';';"
+
+                            // Preparse before splitting to enable statement spanning conditional blocks
+                            string versionscript = PreparseSQL(versions[i], preparserVars);
+
+                            //We split them to get a better error message
+                            foreach (string c in versionscript.Split(';'))
+                                if (c.Trim().Length > 0)
+                                {
+                                    cmd.CommandText = c;
+                                    cmd.ExecuteNonQuery();
+                                }
+
+                            // after upgrade, db_version should have changed to i + 1. If logic changes, just requery.
+                            preparserVars["db_version"] = i + 1;
+                        }
+
+                        //Update databaseversion, so we don't run the scripts again
+                        cmd.CommandText = "Update version SET Version = " + versions.Count.ToString();
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        connection.Close();
+                        //Restore the database
+                        System.IO.File.Copy(backupfile, sourcefile, true);
+                        throw new Exception(Strings.DatabaseUpgrader.UpgradeFailure(cmd.CommandText, ex.Message), ex);
+                    }
                 }
             }
-
 
         }
     }

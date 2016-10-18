@@ -6,7 +6,7 @@ backupApp.controller('ImportController', function($scope, $routeParams, $locatio
     // Ugly, but we need to communicate across the iframe load
     $scope.CallbackMethod = 'callback-' + Math.random();
     window[$scope.CallbackMethod] = function(message) {
-    	$scope.Connecting = false;
+        $scope.Connecting = false;
         $scope.Completed = true;
         if (message == 'OK')
             $location.path('/');
@@ -15,8 +15,8 @@ backupApp.controller('ImportController', function($scope, $routeParams, $locatio
     };
 
     $scope.doSubmit = function() {
-    	// TODO: Ugly non-angular way
-    	document.getElementById('import-form').submit();
+        // TODO: Ugly non-angular way
+        document.getElementById('import-form').submit();
     };
 
 });

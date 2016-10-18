@@ -121,12 +121,7 @@ namespace Duplicati.Library.Utility
             m_asyncRequest = new AsyncWrapper(this, true);
             m_state = RequestStates.GetRequest;
 
-            var s = (Stream)m_asyncRequest.GetResponseOrStream();
-
-            try { s.WriteTimeout = m_activity_timeout; }
-            catch { }
-
-            return s;
+            return TrySetTimeout((Stream)m_asyncRequest.GetResponseOrStream(), m_activity_timeout);
         }
 
         /// <summary>
@@ -150,8 +145,12 @@ namespace Duplicati.Library.Utility
 
         public Stream GetResponseStream()
         {
-            var str = GetResponse().GetResponseStream();
-            try { str.ReadTimeout = m_activity_timeout; }
+            return TrySetTimeout(GetResponse().GetResponseStream(), m_activity_timeout);
+        }
+
+        public static Stream TrySetTimeout(Stream str, int timeoutmilliseconds = 30000)
+        {
+            try { str.ReadTimeout = timeoutmilliseconds; }
             catch { }
 
             return str;

@@ -34,6 +34,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run10k()
         {
             PrepareSourceData();
@@ -41,6 +42,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run100k()
         {
             PrepareSourceData();
@@ -48,6 +50,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run12345_1()
         {
             PrepareSourceData();
@@ -55,6 +58,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
         public void Run12345_2()
         {
             PrepareSourceData();
@@ -62,6 +66,18 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Border")]
+        public void RunNoMetadata()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["skip-metadata"] = "true";
+            });
+        }
+
+
+        [Test]
+        [Category("Border")]
         public void RunMD5()
         {
             PrepareSourceData();
@@ -72,6 +88,7 @@ namespace Duplicati.UnitTest
         }
             
         [Test]
+        [Category("Border")]
         public void RunSHA384()
         {
             PrepareSourceData();
@@ -81,7 +98,8 @@ namespace Duplicati.UnitTest
             });
         }
 
-        //[Test]
+        [Test]
+        [Category("Border")]
         public void RunMixedBlockFile_1()
         {
             PrepareSourceData();
@@ -91,7 +109,8 @@ namespace Duplicati.UnitTest
             });
         }
 
-        //[Test]
+        [Test]
+        [Category("Border")]
         public void RunMixedBlockFile_2()
         {
             PrepareSourceData();
@@ -101,6 +120,25 @@ namespace Duplicati.UnitTest
             });
         }
 
+        [Test]
+        [Category("Border")]
+        public void RunNoIndexFiles()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["index-file-policy"] = "None";
+            });
+        }
+
+        [Test]
+        [Category("Border")]
+        public void RunSlimIndexFiles()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => {
+                opts["index-file-policy"] = "Lookup";
+            });
+        }
 
         private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
@@ -175,21 +213,25 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("Newest before deleting:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("Newest before deleting:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("Newest without db:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("Newest without db:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
+            var newdb = Path.Combine(Path.GetDirectoryName(DBFILE), Path.ChangeExtension(Path.GetFileNameWithoutExtension(DBFILE) + "-recreated", Path.GetExtension(DBFILE)));
+            if (File.Exists(newdb))
+                File.Delete(newdb);
 
-            File.Delete(DBFILE);
+            testopts["dbpath"] = newdb;
+
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Repair();
 
@@ -199,24 +241,24 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("V2 after delete:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("V2 after delete:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 1) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("V1 after delete:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("V1 after delete:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 2) + 1, r.Files.Count());
             }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                //Console.WriteLine("Newest after delete:");
-                //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
+                //ProgressWriteLine("Newest after delete:");
+                //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
@@ -230,7 +272,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(filenames.Count * 3, r.FilesRestored);
             }
 
-            TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, true);
+            TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"));
 
             using(var tf = new Library.Utility.TempFolder())
             {
@@ -240,8 +282,7 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(filenames.Count, r.FilesRestored);
                 }
             }
-
-        }    
+        }
     }
 }
 

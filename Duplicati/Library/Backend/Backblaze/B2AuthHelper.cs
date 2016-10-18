@@ -27,7 +27,7 @@ namespace Duplicati.Library.Backend.Backblaze
         private readonly string m_credentials;
         private AuthResponse m_config;
         private DateTime m_configExpires;
-        private const string AUTH_URL = "https://api.backblaze.com/b2api/v1/b2_authorize_account";
+        private const string AUTH_URL = "https://api.backblazeb2.com/b2api/v1/b2_authorize_account";
 
         public B2AuthHelper(string userid, string password)
             : base()
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 {
                     string rawdata = null;
                     var hs = (ex as WebException).Response as HttpWebResponse;
-                    using(var rs = hs.GetResponseStream())
+                    using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                     using(var sr = new System.IO.StreamReader(rs))
                         rawdata = sr.ReadToEnd();
 

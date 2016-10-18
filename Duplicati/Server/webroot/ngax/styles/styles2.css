@@ -6,7 +6,7 @@
 }
 
 .tree-view ul {
-	margin-left: 16px;
+    margin-left: 16px;
 }
 
 .tree-view li .node {
@@ -22,115 +22,115 @@
 }
 
 .tree-view li div.selected {
-	border-color: lightblue;
-	background-color: lightblue;
+    border-color: lightblue;
+    background-color: lightblue;
 }
 
 
 .tree-view li a.nav {
-	cursor: pointer;
+    cursor: pointer;
     display: inline-block;
     width: 16px;
     height: 16px;
     vertical-align: middle;
     background-image: url(../img/treeicons.png);
     background-repeat: no-repeat;
-	background-position: -80px 0px;
+    background-position: -80px 0px;
 }
 
 .tree-view a.nav.expanded {
-	background-position: -80px -16px;
+    background-position: -80px -16px;
 }
 
 .tree-view a.nav.leaf {
-	background: none;
+    background: none;
 }
 
 .tree-view li a.type {
-	cursor: auto;
+    cursor: auto;
     display: inline-block;
     width: 16px;
     height: 16px;
     vertical-align: middle;
     background-image: url(../img/treeicons.png);
     background-repeat: no-repeat;
-	background-position: 0px -16px;
+    background-position: 0px -16px;
 }
 
 .tree-view a.type.x-tree-icon-drive {
-	background-position: -16px -16px;
+    background-position: -16px -16px;
 }
 
 .tree-view a.type.x-tree-icon-leaf {
-	background-position: -32px -16px;
+    background-position: -32px -16px;
 }
 
 .tree-view a.type.x-tree-icon-symlink {
-	background-position: -48px -16px;
+    background-position: -48px -16px;
 }
 
 .tree-view a.type.x-tree-icon-userdata {
-	background-position: -16px -48px;
+    background-position: -16px -48px;
 }
 
 .tree-view a.type.x-tree-icon-locked {
-	background-position: -64px -16px;
+    background-position: -64px -16px;
 }
 
 .tree-view a.type.x-tree-icon-broken {
-	background-position: -64px -16px;
+    background-position: -64px -16px;
 }
 
 .tree-view a.type.x-tree-icon-computer {
-	background-position: 0px -48px;
+    background-position: 0px -48px;
 }
 
 .tree-view a.type.x-tree-icon-mydocuments {
-	background-position: -32px -48px;
+    background-position: -32px -48px;
 }
 
 .tree-view a.type.x-tree-icon-mymusic {
-	background-position: -48px -48px;
+    background-position: -48px -48px;
 }
 
 .tree-view a.type.x-tree-icon-mypictures {
-	background-position: -64px -48px;
+    background-position: -64px -48px;
 }
 
 .tree-view a.type.x-tree-icon-desktop {
-	background-position: -80px -48px;
+    background-position: -80px -48px;
 }
 
 .tree-view a.type.x-tree-icon-home {
-	background-position: -96px -48px;
+    background-position: -96px -48px;
 }
 
 
 .tree-view li a.type.invisible {
-	background-position: 0px -32px;	
+    background-position: 0px -32px;    
 }
 
 .tree-view a.type.x-tree-icon-drive.invisible {
-	background-position: -16px -32px;
+    background-position: -16px -32px;
 }
 
 
 .tree-view a.type.x-tree-icon-leaf.invisible {
-	background-position: -32px -32px;
+    background-position: -32px -32px;
 }
 
 .tree-view a.type.x-tree-icon-symlink.invisible {
-	cursor: auto;
-	background-position: -48px -32px;
+    cursor: auto;
+    background-position: -48px -32px;
 }
 
 .tree-view a.type.x-tree-icon-locked.invisible {
-	background-position: -64px -32px;
+    background-position: -64px -32px;
 }
 
 
 .tree-view a.type.loading {
-	cursor: progress;
+    cursor: progress;
     background-image: url(../img/loader-16.gif);
     background-repeat: no-repeat;
     background-position: 0px 0px;
@@ -138,38 +138,38 @@
 
 .tree-view li a.check {
     height: 16px;
-	width: 16px;
-	display: inline-block;
-	cursor: pointer;
+    width: 16px;
+    display: inline-block;
+    cursor: pointer;
     background-image: url(../img/treeicons.png);
     background-repeat: no-repeat;
-	background-position: 0px 0px;
+    background-position: 0px 0px;
     vertical-align: middle;
 }
 
 .tree-view li a.check.partial {
-	background-position: -32px 0px;
+    background-position: -32px 0px;
 }
 
 .tree-view li a.check.include {
-	background-position: -16px 0px;
+    background-position: -16px 0px;
 }
 
 .tree-view li a.check.exclude {
-	background-position: -48px 0px;
+    background-position: -48px 0px;
 }
 
 .tree-view li a.check.root {
-	background: none;
-	display: none;
+    background: none;
+    display: none;
 }
 
 .tree-view li > ul {
-	display: none;
+    display: none;
 }
 
 .tree-view li > ul.expanded {
-	display: block;
+    display: block;
 }
 
 .step2 source-folder-picker, #folder_path_picker, #restore_file_picker {
@@ -182,27 +182,27 @@
 }
 
 .step1 li.strength.score-0 {
-	color: #ff0000;
+    color: #ff0000;
 }
 
 .step1 li.strength.score-1 {
-	color: #ff7700;
+    color: #ff7700;
 }
 
 .step1 li.strength.score-2 {
-	color: #aaaa00;
+    color: #aaaa00;
 }
 
 .step1 li.strength.score-3 {
-	color: #007700;
+    color: #007700;
 }
 
 .step1 li.strength.score-4 {
-	color: #427e27;
+    color: #427e27;
 }
 
 .step1 li.strength.score-x {
-	color: #ff0000;
+    color: #ff0000;
 }
 
 .pause a {
@@ -398,6 +398,14 @@ div.connection-lost, div.blocker, div.modal-dialog {
   margin: auto;
 }
 
+#connection-lost-dialog {
+  z-index: 5200;
+}
+
+#connection-lost-blocker {
+  z-index: 5100;
+}
+
 div.connection-lost {
   width: 250px;
   height: 200px;
@@ -550,6 +558,7 @@ ul.notification {
 
 .resizable {
   margin-bottom: 6px;
+  max-width: 100%;
 }
 
 .advanced-toggle {
@@ -622,3 +631,21 @@ ul.notification {
         margin-left: 0;
     }
 }
+
+.warning {
+  margin: 10px;
+  font-style: italic;
+  color: #f49b42;
+}
+
+div.captcha .details {
+    padding-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 180px;
+}
+
+.centered-text {
+  text-align: center;
+}
+
