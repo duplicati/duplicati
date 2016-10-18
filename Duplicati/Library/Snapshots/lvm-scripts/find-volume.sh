@@ -38,11 +38,34 @@ fi
 #
 # Get the LVM path for the mapped volume
 #
-LVMID=`lvs "$VOLUME" --options vg_name,lv_name --noheadings | tail -1 | awk '{ print $1 "/" $2}'`
-if [ "$?" -ne 0 ]
+
+function get_lvmid {
+	LVMID=`lvs "$1" --options vg_name,lv_name --noheadings 2>/dev/null | tail -1 | awk '{ print $1 "/" $2}'`
+	if [ "$?" -ne 0 ] 
+	then
+		EXIT_CODE=$?
+		echo "Error: Unable to determine volume group (VG) for mapped volume $VOLUME"
+		exit $EXIT_CODE
+	fi
+	export LVMID
+}
+
+get_lvmid $VOLUME
+
+#
+# Get the LVM path for the mapped volume (second try)
+#
+if [ "$LVMID" == "" ]
 then
-	EXIT_CODE=$?
-	echo "Error: Unable to determine volume group (VG) for mapped volume $VOLUME"
+	CMD="mount | awk '(\$3 == \"$MOUNTPOINT\") {print \$1}'" 
+	VOLUME=` eval $CMD`
+	get_lvmid $VOLUME
+fi
+
+if [ "$LVMID" == "" ]
+then
+	EXIT_CODE=-1
+	echo "Error: unable to determine volume group (VG) for $NAME"
 	exit $EXIT_CODE
 fi
 
