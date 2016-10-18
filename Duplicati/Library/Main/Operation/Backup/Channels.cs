@@ -41,6 +41,10 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         public static readonly ChannelMarkerWrapper<MetadataPreProcess.FileEntry> AcceptedChangedFile = new ChannelMarkerWrapper<MetadataPreProcess.FileEntry>("AcceptedChangedFile");
         /// <summary>
+        /// If a file has changes in the metadata, it is sent to the <see cref="FileBlockProcessor"/> where it is read
+        /// </summary>
+        public static readonly ChannelMarkerWrapper<StreamBlock> StreamBlock = new ChannelMarkerWrapper<StreamBlock>("StreamBlockSplitter");
+        /// <summary>
         /// After metadata has been processed and collected, the <see cref="MetadataPreProcess"/> sends the file data to the <see cref="FilePreFilterProcess"/>
         /// </summary>
         public static readonly ChannelMarkerWrapper<MetadataPreProcess.FileEntry> ProcessedFiles = new ChannelMarkerWrapper<MetadataPreProcess.FileEntry>("ProcessedFiles");

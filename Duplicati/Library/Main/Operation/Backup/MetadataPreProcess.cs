@@ -56,16 +56,15 @@ namespace Duplicati.Library.Main.Operation.Backup
             return AutomationExtensions.RunTask(new
             {
                 Input = Backup.Channels.SourcePaths.ForRead,
+                StreamBlockChannel = Channels.StreamBlock.ForWrite,
                 LogChannel = Common.Channels.LogChannel.ForWrite,
                 Output = Backup.Channels.ProcessedFiles.ForWrite,
-                BlockOutput = Backup.Channels.OutputBlocks.ForWrite
             },
                 
             async self =>
             {
                 var log = new LogWrapper(self.LogChannel);
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                var blocksize = options.Blocksize;
 
                 while (true)
                 {
@@ -92,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // If we only have metadata, stop here
-                    if (await ProcessMetadata(path, attributes, lastwrite, options, log, snapshot, emptymetadata, blocksize, database, self.BlockOutput))
+                    if (await ProcessMetadata(path, attributes, lastwrite, options, log, snapshot, emptymetadata, database, self.StreamBlockChannel))
                     {
                         try
                         {
@@ -124,7 +123,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Processes the metadata for the given path.
         /// </summary>
         /// <returns><c>True</c> if the path should be submitted to more analysis, <c>false</c> if there is nothing else to do</returns>
-        private static async Task<bool> ProcessMetadata(string path, FileAttributes attributes, DateTime lastwrite, Options options, LogWrapper log, Snapshots.ISnapshotService snapshot, IMetahash emptymetadata, long blocksize, BackupDatabase database, IWriteChannel<DataBlock> blockoutput)
+        private static async Task<bool> ProcessMetadata(string path, FileAttributes attributes, DateTime lastwrite, Options options, LogWrapper log, Snapshots.ISnapshotService snapshot, IMetahash emptymetadata, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
@@ -149,7 +148,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     var metahash = Utility.WrapMetadata(metadata, options);
-                    await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, blocksize, database, blockoutput);
+                    await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, log, database, streamblockchannel);
 
                     await log.WriteVerboseAsync("Stored symlink {0}", path);
                     // Don't process further
@@ -171,12 +170,31 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
 
                 await log.WriteVerboseAsync("Adding directory {0}", path);
-                await AddFolderToOutputAsync(path, lastwrite, metahash, blocksize, database, blockoutput);
+                await AddFolderToOutputAsync(path, lastwrite, metahash, log, database, streamblockchannel);
                 return false;
             }
 
             // Regular file, keep going
             return true;
+        }
+
+        /// <summary>
+        /// Adds metadata to output, and returns the metadataset ID
+        /// </summary>
+        /// <returns>The metadataset ID.</returns>
+        /// <param name="path">The path for which metadata is processed.</param>
+        /// <param name="meta">The metadata entry.</param>
+        /// <param name="maxmetadatasize">The maximum size of metadata to process.</param>
+        /// <param name="database">The database connection.</param>
+        /// <param name="log">The log instance.</param>
+        /// <param name="streamblockchannel">The channel to write streams to.</param>
+        internal static async Task<Tuple<bool, long>> AddMetadataToOutputAsync(string path, IMetahash meta, BackupDatabase database, LogWrapper log, IWriteChannel<StreamBlock> streamblockchannel)
+        {
+            StreamProcessResult res;
+            using (var ms = new MemoryStream(meta.Blob))
+                res = await StreamBlock.ProcessStream(streamblockchannel, path, ms, true, CompressionHint.Default); 
+
+            return await database.AddMetadatasetAsync(res.Streamhash, res.Streamlength, res.Blocksetid);
         }
 
         /// <summary>
@@ -188,13 +206,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private static async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta, long blocksize, BackupDatabase database, IWriteChannel<DataBlock> blockoutput)
+        private static async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta, LogWrapper log, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
-            if (meta.Size > blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", blocksize));
-
-            await DataBlock.AddBlockToOutputAsync(blockoutput, meta.Hash, meta.Blob, 0, meta.Size, CompressionHint.Default, false);
-            var metadataid = await database.AddMetadatasetAsync(meta.Hash, meta.Size);
+            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, log, streamblockchannel);
             await database.AddDirectoryEntryAsync(filename, metadataid.Item2, lastModified);
         }
 
@@ -207,13 +221,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="size">The size of the file</param>
         /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
-        private static async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta, long blocksize, BackupDatabase database, IWriteChannel<DataBlock> blockoutput)
+        private static async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta, LogWrapper log, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
-            if (meta.Size > blocksize)
-                throw new InvalidDataException(string.Format("Too large metadata, cannot handle more than {0} bytes", blocksize));
-
-            await DataBlock.AddBlockToOutputAsync(blockoutput, meta.Hash, meta.Blob, 0, (int)meta.Size, CompressionHint.Default, false);
-            var metadataid = await database.AddMetadatasetAsync(meta.Hash, meta.Size);
+            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, log, streamblockchannel);
             await database.AddSymlinkEntryAsync(filename, metadataid.Item2, lastModified);
         }
 

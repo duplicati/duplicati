@@ -120,6 +120,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             Backup.DataBlockProcessor.Run(database, options, taskreader),
                             Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
+                            Backup.StreamBlockSplitter.Run(options, database, taskreader),
                             Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader),
                             Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
                             Backup.MetadataPreProcess.Run(snapshot, options, database),
@@ -314,8 +315,8 @@ namespace Duplicati.Library.Main.Operation
                                 // Start the parallel scanner
                                 parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
 
-                                // Make sure the database is sance
-                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize);
+                                // Make sure the database is sane
+                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true);
 
                                 // Start the uploader process
                                 uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader);
@@ -356,7 +357,7 @@ namespace Duplicati.Library.Main.Operation
 
                         // Ensure the database is in a sane state after adding data
                         using(new Logging.Timer("VerifyConsistency"))
-                            await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize);
+                            await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false);
 
                         // Send the actual filelist
                         if (await m_result.TaskReader.ProgressAsync)

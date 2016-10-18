@@ -64,12 +64,23 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.GetFileHash(fileid));
         }
 
-        public Task<Tuple<bool, long>> AddMetadatasetAsync(string hash, long size)
+        public Task<Tuple<bool, long>> AddMetadatasetAsync(string hash, long size, long blocksetid)
         {
-            return RunOnMain(() => {
+            return RunOnMain(() =>
+            {
                 long metadataid;
-                var n = m_database.AddMetadataset(hash, size, out metadataid, m_transaction);
+                var n = m_database.AddMetadataset(hash, size, blocksetid, out metadataid, m_transaction);
                 return new Tuple<bool, long>(n, metadataid);
+            });
+        }
+
+        public Task<Tuple<bool, long>> GetMetadataIDAsync(string hash, long size)
+        {
+            return RunOnMain(() =>
+            {
+                long metadataid;
+                var r = m_database.GetMetadatasetID(hash, size, out metadataid, m_transaction);
+                return new Tuple<bool, long>(r, metadataid);
             });
         }
 
@@ -197,9 +208,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.UpdateChangeStatistics(result, m_transaction));
         }
 
-        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize)
+        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize, bool verifyfilelists)
         {
-            return RunOnMain(() => m_database.VerifyConsistency(blocksize, blockhashSize, m_transaction));
+            return RunOnMain(() => m_database.VerifyConsistency(blocksize, blockhashSize, verifyfilelists, m_transaction));
         }
 
         public Task RemoveRemoteVolumeAsync(string remoteFilename)

@@ -30,7 +30,8 @@ namespace Duplicati.Server
         public static string ExpandEnvironmentVariables(string path)
         {
             foreach(var n in Nodes)
-                path = path.Replace(n.id, n.resolvedpath);
+                if (path.StartsWith(n.id))
+                    path = path.Replace(n.id, n.resolvedpath);
             return Library.Utility.Utility.ExpandEnvironmentVariables(path);
         }
 
@@ -84,18 +85,22 @@ namespace Duplicati.Server
         {
             try
             {
-                if (System.IO.Path.IsPathRooted(folder) && System.IO.Directory.Exists(folder))
+                if (!string.IsNullOrWhiteSpace(folder) && System.IO.Path.IsPathRooted(folder) && System.IO.Directory.Exists(folder))
                 {
-                    lst.Add(new Serializable.TreeNode() {
-                        id = id,
-                        text = display,
-                        leaf = false,
-                        iconCls = "x-tree-icon-special",
-                        resolvedpath = folder
-                    });
-                    
-                    PathMap[id] = folder;
-                    DisplayMap[id] = display;
+                    if (!PathMap.ContainsKey(id))
+                    {
+                        lst.Add(new Serializable.TreeNode()
+                        {
+                            id = id,
+                            text = display,
+                            leaf = false,
+                            iconCls = "x-tree-icon-special",
+                            resolvedpath = folder
+                        });
+
+                        PathMap[id] = folder;
+                        DisplayMap[id] = display;
+                    }
                 }
             }
             catch
@@ -107,7 +112,7 @@ namespace Duplicati.Server
         {
             var lst = new List<Serializable.TreeNode>();
             
-            if (!Library.Utility.Utility.IsClientLinux)
+            if (Library.Utility.Utility.IsClientWindows)
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
@@ -116,6 +121,16 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.SpecialFolder.ApplicationData, "%APPDATA%", "Application Data");
                 TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
+
+                try
+                {
+                    // In case the UserProfile member points to junk
+                    TryAdd(lst, System.IO.Path.Combine(Environment.GetEnvironmentVariable("HOMEDRIVE"), Environment.GetEnvironmentVariable("HOMEPATH")), "%HOME%", "Home");
+                }
+                catch
+                {
+                }
+
             }
             else
             {
@@ -123,6 +138,7 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
                 TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "My Pictures");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
+                TryAdd(lst, Environment.GetEnvironmentVariable("HOME"), "%HOME%", "Home");
                 TryAdd(lst, Environment.SpecialFolder.Personal, "%HOME%", "Home");
             }
 

@@ -725,7 +725,7 @@ namespace Duplicati.Library.Main.Database
                 return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", -1, fhblocksize);
         }
 
-        public void VerifyConsistency(long blocksize, long hashsize, System.Data.IDbTransaction transaction)
+        public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
@@ -768,6 +768,20 @@ namespace Duplicati.Library.Main.Database
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
                     throw new Exception("Detected file entries with not associated blocks");
 
+
+                if (verifyfilelists)
+                {
+                    using(var cmd2 = m_connection.CreateCommand(transaction))
+                    foreach(var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
+                    {
+                        var expandedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
+                        //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                        var storedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?"), 0, filesetid);
+
+                        if (expandedlist != storedlist)
+                            throw new Exception(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetid, expandedlist, storedlist));
+                    }
+                }
             }
         }
 
@@ -885,31 +899,168 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        public const string LIST_FILESETS = @"
+SELECT
+    ""L"".""Path"", 
+    ""L"".""Lastmodified"", 
+    ""L"".""Filelength"", 
+    ""L"".""Filehash"", 
+    ""L"".""Metahash"", 
+    ""L"".""Metalength"",
+    ""L"".""BlocklistHash"", 
+    ""L"".""FirstBlockHash"",
+    ""L"".""FirstBlockSize"",
+    ""L"".""FirstMetaBlockHash"",
+    ""L"".""FirstMetaBlockSize"",
+    ""M"".""Hash"" AS ""MetaBlocklistHash""
+FROM
+    (
+    SELECT 
+        ""J"".""Path"", 
+        ""J"".""Lastmodified"", 
+        ""J"".""Filelength"", 
+        ""J"".""Filehash"", 
+        ""J"".""Metahash"", 
+        ""J"".""Metalength"",
+        ""K"".""Hash"" AS ""BlocklistHash"", 
+        ""J"".""FirstBlockHash"",
+        ""J"".""FirstBlockSize"",
+        ""J"".""FirstMetaBlockHash"",
+        ""J"".""FirstMetaBlockSize"",
+        ""J"".""MetablocksetID""
+    FROM 
+        (
+        SELECT 
+            ""A"".""Path"" AS ""Path"", 
+            ""D"".""Lastmodified"" AS ""Lastmodified"", 
+            ""B"".""Length"" AS ""Filelength"", 
+            ""B"".""FullHash"" AS ""Filehash"", 
+            ""E"".""FullHash"" AS ""Metahash"", 
+            ""E"".""Length"" AS ""Metalength"", 
+            ""A"".""BlocksetID"" AS ""BlocksetID"",
+            ""F"".""Hash"" AS ""FirstBlockHash"",
+            ""F"".""Size"" AS ""FirstBlockSize"",
+            ""H"".""Hash"" AS ""FirstMetaBlockHash"",
+            ""H"".""Size"" AS ""FirstMetaBlockSize"",
+            ""C"".""BlocksetID"" AS ""MetablocksetID""
+        FROM 
+            ""File"" A, 
+            ""Blockset"" B, 
+            ""Metadataset"" C, 
+            ""FilesetEntry"" D, 
+            ""Blockset"" E, 
+            ""Block"" F,
+            ""BlocksetEntry"" G,
+            ""Block"" H,
+            ""BlocksetEntry"" I
+        WHERE 
+            ""A"".""ID"" = ""D"".""FileID"" 
+            AND ""D"".""FilesetID"" = ? 
+            AND ""A"".""BlocksetID"" = ""B"".""ID"" 
+            AND ""A"".""MetadataID"" = ""C"".""ID"" 
+            AND ""E"".""ID"" = ""C"".""BlocksetID""
+            AND ""B"".""ID"" = ""G"".""BlocksetID""
+            AND ""G"".""BlockID"" = ""F"".""ID""
+            AND ""G"".""Index"" = 0
+            AND ""I"".""BlocksetID"" = ""E"".""ID""
+            AND ""I"".""BlockID"" = ""H"".""ID""
+            AND ""I"".""Index"" = 0
+        ) J
+    LEFT OUTER JOIN 
+        ""BlocklistHash"" K 
+    ON 
+        ""K"".""BlocksetID"" = ""J"".""BlocksetID"" 
+    ORDER BY ""J"".""Path"", ""K"".""Index""
+    ) L
+
+LEFT OUTER JOIN
+    ""BlocklistHash"" M
+ON
+    ""M"".""BlocksetID"" = ""L"".""MetablocksetID""
+";
+
+        public const string LIST_FOLDERS_AND_SYMLINKS = @"
+SELECT
+    ""G"".""BlocksetID"",
+    ""G"".""ID"",
+    ""G"".""Path"",
+    ""G"".""Length"",
+    ""G"".""FullHash"",
+    ""G"".""Lastmodified"",
+    ""G"".""FirstMetaBlockHash"",
+    ""H"".""Hash"" AS ""MetablocklistHash""
+FROM
+    (
+    SELECT
+        ""B"".""BlocksetID"",
+        ""B"".""ID"",
+        ""B"".""Path"",
+        ""D"".""Length"",
+        ""D"".""FullHash"",
+        ""A"".""Lastmodified"",
+        ""F"".""Hash"" AS ""FirstMetaBlockHash"",
+        ""C"".""BlocksetID"" AS ""MetaBlocksetID""
+    FROM
+        ""FilesetEntry"" A, 
+        ""File"" B, 
+        ""Metadataset"" C, 
+        ""Blockset"" D,
+        ""BlocksetEntry"" E,
+        ""Block"" F
+    WHERE 
+        ""A"".""FileID"" = ""B"".""ID"" 
+        AND ""B"".""MetadataID"" = ""C"".""ID"" 
+        AND ""C"".""BlocksetID"" = ""D"".""ID"" 
+        AND ""E"".""BlocksetID"" = ""C"".""BlocksetID""
+        AND ""E"".""BlockID"" = ""F"".""ID""
+        AND ""E"".""Index"" = 0
+        AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) 
+        AND ""A"".""FilesetID"" = ?
+    ) G
+LEFT OUTER JOIN
+   ""BlocklistHash"" H
+ON
+   ""H"".""BlocksetID"" = ""G"".""MetaBlocksetID""
+ORDER BY
+   ""G"".""Path"", ""H"".""Index""
+
+";
+
         public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId, System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Lastmodified"" FROM ""FilesetEntry"" A, ""File"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""FilesetID"" = ? ";
+            	cmd.Transaction = transaction;
+                cmd.CommandText = LIST_FOLDERS_AND_SYMLINKS;
                 cmd.AddParameter(FOLDER_BLOCKSET_ID);
                 cmd.AddParameter(SYMLINK_BLOCKSET_ID);
                 cmd.AddParameter(filesetId);
 
+                string lastpath = null;
                 using (var rd = cmd.ExecuteReader())
                 while(rd.Read())
                 {
-                        var blocksetID = rd.GetInt64(0);
-                        var path = rd.GetValue(2).ToString();
-                        var metalength = rd.GetInt64(3);
-                        var metahash = rd.GetValue(4).ToString();
+                    var blocksetID = rd.ConvertValueToInt64(0, -1);
+                    var path = rd.GetValue(2).ToString();
+                    var metalength = rd.ConvertValueToInt64(3, -1);
+                    var metahash = rd.GetValue(4).ToString();
+                    var metablockhash = rd.GetValue(6).ToString();
+                    var metablocklisthash = rd.GetValue(7).ToString();
+
+                    if (path == lastpath)
+                        m_result.AddWarning(string.Format("Duplicate path detected: {0}!", path), null);
+
+                    lastpath = path;
 
                     if (blocksetID == FOLDER_BLOCKSET_ID)
-                        filesetvolume.AddDirectory(path, metahash, metalength);
+                        filesetvolume.AddDirectory(path, metahash, metalength, metablockhash, string.IsNullOrWhiteSpace(metablocklisthash) ? null : new string[] { metablocklisthash });
                     else if (blocksetID == SYMLINK_BLOCKSET_ID)
-                        filesetvolume.AddSymlink(path, metahash, metalength);
+                        filesetvolume.AddSymlink(path, metahash, metalength, metablockhash, string.IsNullOrWhiteSpace(metablocklisthash) ? null : new string[] { metablocklisthash });
                 }
+                        
+                // TODO: Perhaps run the above query after recreate and compare count(*) with count(*) from filesetentry where id = x
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Lastmodified"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Lastmodified"" AS ""Lastmodified"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                cmd.CommandText = LIST_FILESETS;
                 cmd.Parameters.Clear();
                 cmd.AddParameter(filesetId);
 
@@ -927,8 +1078,19 @@ namespace Duplicati.Library.Main.Database
                         var metasize = rd.ConvertValueToInt64(5, -1);
                         var p = rd.GetValue(6);
                         var blrd = (p == null || p == DBNull.Value) ? null : new BlocklistHashEnumerable(rd);
+                        var blockhash = rd.GetValue(7).ToString();
+                        var blocksize = rd.ConvertValueToInt64(8, -1);
+                        var metablockhash = rd.GetValue(9).ToString();
+                        //var metablocksize = rd.ConvertValueToInt64(10, -1);
+                        var metablocklisthash = rd.GetValue(11).ToString();
 
-                        filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, blrd);
+                        if (blockhash == filehash)
+                            blockhash = null;
+
+                        if (metablockhash == metahash)
+                            metablockhash = null;
+
+                        filesetvolume.AddFile(path, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blrd, string.IsNullOrWhiteSpace(metablocklisthash) ? null : new string[] { metablocklisthash });
                         if (blrd == null)
                             more = rd.Read();
                         else

@@ -83,6 +83,7 @@ namespace Duplicati.Service
                         pr.UseShellExecute = false;
                         pr.RedirectStandardInput = true;
                         pr.RedirectStandardOutput = true;
+                        pr.WorkingDirectory = path;
 
                         if (!m_terminate)
                             m_process = System.Diagnostics.Process.Start(pr);

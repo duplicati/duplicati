@@ -475,7 +475,38 @@ namespace Duplicati.Library.Main.Database
             }
 
             return true;
+        }
 
+        /// <summary>
+        /// Gets the metadataset ID from the filehash
+        /// </summary>
+        /// <returns><c>true</c>, if metadataset should be recorded, false if it already exists.</returns>
+        /// <param name="filehash">The metadata hash.</param>
+        /// <param name="size">The size of the metadata.</param>
+        /// <param name="metadataid">The ID of the metadataset.</param>
+        /// <param name="transaction">An optional transaction.</param>
+        public bool GetMetadatasetID(string filehash, long size, out long metadataid, System.Data.IDbTransaction transaction = null)
+        {
+            if (size > 0)
+            {
+                if (m_metadataLookup != null)
+                {
+                    if (m_metadataLookup.TryGet(filehash, size, out metadataid))
+                        return false;
+                }
+                else
+                {
+                    m_findmetadatasetCommand.Transaction = transaction;
+                    metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(null, -1, filehash, size);
+                    if (metadataid != -1)
+                        return false;
+                }
+
+                return true;
+            }
+
+            metadataid = -2;
+            return false;
         }
 
         /// <summary>
@@ -484,43 +515,21 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hash">The metadata hash</param>
         /// <param name="metadataid">The id of the metadata set</param>
         /// <returns>True if the set was added to the database, false otherwise</returns>
-        public bool AddMetadataset(string hash, long size, out long metadataid, System.Data.IDbTransaction transaction = null)
+        public bool AddMetadataset(string filehash, long size, long blocksetid, out long metadataid, System.Data.IDbTransaction transaction = null)
         {
-            if (size > 0)
+            if (!GetMetadatasetID(filehash, size, out metadataid, transaction))
+                return false;            
+
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
+                m_insertmetadatasetCommand.Transaction = tr.Parent;
+                m_insertmetadatasetCommand.SetParameterValue(0, blocksetid);
+                metadataid = m_insertmetadatasetCommand.ExecuteScalarInt64();
+                tr.Commit();
                 if (m_metadataLookup != null)
-                {
-                    if(m_metadataLookup.TryGet(hash, size, out metadataid))
-                        return false;
-                }
-                else
-                {
-                    m_findmetadatasetCommand.Transaction = transaction;
-                    metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(null, -1, hash, size);
-                    if (metadataid != -1)
-                        return false;
-                }
-            
-
-                long blocksetid;
-                AddBlockset(hash, size, (int)size, new string[] { hash }, null, out blocksetid, transaction);
-
-                using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-                {
-                    m_insertmetadatasetCommand.Transaction = tr.Parent;
-                    m_insertmetadatasetCommand.SetParameterValue(0, blocksetid);
-                    metadataid = m_insertmetadatasetCommand.ExecuteScalarInt64();
-                    tr.Commit();
-                    if (m_metadataLookup != null)
-                        m_metadataLookup.Add(hash, size, metadataid);
-                }
-
+                    m_metadataLookup.Add(filehash, size, metadataid);
                 return true;
             }
-
-            metadataid = -2;
-            return false;
-
         }
 
         /// <summary>

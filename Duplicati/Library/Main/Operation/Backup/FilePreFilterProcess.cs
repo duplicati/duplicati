@@ -42,7 +42,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-
                 var EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
                 var blocksize = options.Blocksize;
                 var log = new LogWrapper(self.LogChannel);
@@ -67,7 +66,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
                     var tooLargeFile = options.SkipFilesLargerThan != long.MaxValue && options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > options.SkipFilesLargerThan;
-                    e.MetadataChanged = !options.SkipMetadata && (e.MetaHashAndSize.Size != e.OldMetaSize || e.MetaHashAndSize.Hash != e.OldMetaHash);
+                    e.MetadataChanged = !options.SkipMetadata && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
                     {

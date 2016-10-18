@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        VerifyConsistency(blocksize, hashsize, tr);
+                        VerifyConsistency(blocksize, hashsize, true, tr);
                     }
                     catch(Exception ex)
                     {

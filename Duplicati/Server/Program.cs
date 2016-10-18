@@ -162,7 +162,7 @@ namespace Duplicati.Server
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
-            if (!Library.Utility.Utility.IsClientLinux)
+            if (Library.Utility.Utility.IsClientWindows)
             {
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
@@ -257,6 +257,7 @@ namespace Duplicati.Server
                 {
                     //Portable mode uses a data folder in the application home dir
                     Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(StartupPath, "data"));
+                    System.IO.Directory.SetCurrentDirectory(StartupPath);
                 }
                 else
                 {
@@ -602,32 +603,6 @@ namespace Duplicati.Server
             }
 
             StatusEventNotifyer.SignalNewEvent();
-        }
-
-        /// <summary>
-        /// Returns a localized name for a task type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static string LocalizeTaskType(Duplicati.Server.Serialization.DuplicatiOperation type)
-        {
-            switch (type)
-            {
-                case Duplicati.Server.Serialization.DuplicatiOperation.Backup:
-                    return Strings.TaskType.FullBackup;
-                case Duplicati.Server.Serialization.DuplicatiOperation.List:
-                    return Strings.TaskType.IncrementalBackup;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Remove:
-                    return Strings.TaskType.ListActualFiles;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Verify:
-                    return Strings.TaskType.ListBackupEntries;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Compact:
-                    return Strings.TaskType.CompactRemoteFiles;
-                case Duplicati.Server.Serialization.DuplicatiOperation.Restore:
-                    return Strings.TaskType.ListBackups;
-                default:
-                    return type.ToString();
-            }
         }
 
         /// <summary>

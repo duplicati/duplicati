@@ -128,7 +128,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         };
 
         if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
-            DialogService.dialog(gettextCatalog.getString('Include a file?'), gettextCatalog.getString("The path does not end with a '{0}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", dirsep), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+            DialogService.dialog(gettextCatalog.getString('Include a file?'), gettextCatalog.getString("The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", {dirsep: dirsep}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                 if (ix == 1)
                     continuation();
             });
@@ -229,6 +229,21 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             delete opts['keep-versions'];
         if ($scope.KeepType == 'versions' || $scope.KeepType == '')
             delete opts['keep-time'];
+
+        if ($scope.KeepType == 'time' && (opts['keep-time'] || '').trim().length == 0)
+        {
+            DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid duration for the time to keep backups'));
+            $scope.CurrentStep = 3;
+            return;
+        }
+
+        if ($scope.KeepType == 'versions' && (parseInt(opts['keep-versions']) <= 0 || isNaN(parseInt(opts['keep-versions']))))
+        {
+            DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a positive number of backups to keep'));
+            $scope.CurrentStep = 3;
+            return;
+        }
+
 
         result.Backup.Settings = [];
         for(var k in opts) {
