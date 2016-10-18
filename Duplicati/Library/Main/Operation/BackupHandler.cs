@@ -129,7 +129,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         // Spawn additional block hashers
                         .Union(
-                            Enumerable.Range(0, options.ConcurrencyBlockHashers - 1).Select(x => Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader))
+                            Enumerable.Range(0, options.ConcurrencyBlockHashers - 1).Select(x => Backup.StreamBlockSplitter.Run(options, database, taskreader))
                         )
                         // Spawn additional compressors
                         .Union(
