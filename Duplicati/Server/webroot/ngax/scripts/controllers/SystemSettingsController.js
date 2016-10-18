@@ -19,7 +19,10 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             $cookies.remove('ui-locale');
             gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.replace("-", "_"));
         } else {
-            $cookies.put('ui-locale', $scope.uiLanguage);
+            var now = new Date();
+            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+            $cookies.put('ui-locale', $scope.uiLanguage, { expires: exp });
+
             gettextCatalog.setCurrentLanguage($scope.uiLanguage);
         }
         $rootScope.$broadcast('ui_language_changed');
