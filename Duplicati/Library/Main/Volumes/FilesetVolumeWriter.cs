@@ -25,17 +25,45 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WriteStartArray();
         }
 
-        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        private void WriteMetaProperties(string metahash, long metasize, string metablockhash, IEnumerable<string> metablocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, blocklisthashes);
+            m_writer.WritePropertyName("metahash");
+            m_writer.WriteValue(metahash);
+            m_writer.WritePropertyName("metasize");
+            m_writer.WriteValue(metasize);
+
+            if (metablocklisthashes != null)
+            {
+                //Slightly akward, but we avoid writing if there are no entries 
+                var en = metablocklisthashes.GetEnumerator();
+                if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                {
+                    m_writer.WritePropertyName("metablocklists");
+                    m_writer.WriteStartArray();
+                    m_writer.WriteValue(en.Current);
+                    while (en.MoveNext())
+                        m_writer.WriteValue(en.Current);
+                    m_writer.WriteEndArray();
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(metablockhash))
+            {
+                m_writer.WritePropertyName("metablockhash");
+                m_writer.WriteValue(metablockhash);
+            }
         }
 
-        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        public void AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
-            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, blocklisthashes);
+            AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
         }
 
-        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, IEnumerable<string> blocklisthashes)
+        public void AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        {
+            AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
+        }
+
+        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -50,12 +78,7 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WritePropertyName("time");
             m_writer.WriteValue(Library.Utility.Utility.SerializeDateTime(lastmodified));
             if (metahash != null)
-            {
-                m_writer.WritePropertyName("metahash");
-                m_writer.WriteValue(metahash);
-                m_writer.WritePropertyName("metasize");
-                m_writer.WriteValue(metasize);
-            }
+                WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
 
             if (blocklisthashes != null)
             {
@@ -66,21 +89,28 @@ namespace Duplicati.Library.Main.Volumes
                     m_writer.WritePropertyName("blocklists");
                     m_writer.WriteStartArray();
                     m_writer.WriteValue(en.Current);
-                    while(en.MoveNext())
+                    while (en.MoveNext())
                         m_writer.WriteValue(en.Current);
                     m_writer.WriteEndArray();
                 }
+            }
+            else if (!string.IsNullOrWhiteSpace(blockhash))
+            {
+                m_writer.WritePropertyName("blockhash");
+                m_writer.WriteValue(blockhash);
+                m_writer.WritePropertyName("blocksize");
+                m_writer.WriteValue(blocksize);
             }
 
             m_writer.WriteEndObject();
         }
 
-        public void AddDirectory(string name, string metahash, long metasize)
+        public void AddDirectory(string name, string metahash, long metasize, string metablockhash, IEnumerable<string> metablocklisthashes)
         {
-            AddMetaEntry(FilelistEntryType.Folder, name, metahash, metasize);
+            AddMetaEntry(FilelistEntryType.Folder, name, metahash, metasize, metablockhash, metablocklisthashes);
         }
 
-        public void AddMetaEntry(FilelistEntryType type, string name, string metahash, long metasize)
+        public void AddMetaEntry(FilelistEntryType type, string name, string metahash, long metasize, string metablockhash, IEnumerable<string> metablocklisthashes)
         {
             m_foldercount++;
             m_writer.WriteStartObject();
@@ -89,12 +119,8 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WritePropertyName("path");
             m_writer.WriteValue(name);
             if (metahash != null)
-            {
-                m_writer.WritePropertyName("metahash");
-                m_writer.WriteValue(metahash);
-                m_writer.WritePropertyName("metasize");
-                m_writer.WriteValue(metasize);
-            }
+                WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
+            
             m_writer.WriteEndObject();
         }
 
@@ -127,9 +153,9 @@ namespace Duplicati.Library.Main.Volumes
         public long FileCount { get { return m_filecount; } }
         public long FolderCount { get { return m_foldercount; } }
 
-        public void AddSymlink(string name, string metahash, long metasize)
+        public void AddSymlink(string name, string metahash, long metasize, string metablockhash, IEnumerable<string> metablocklisthashes)
         {
-            AddMetaEntry(FilelistEntryType.Symlink, name, metahash, metasize);
+            AddMetaEntry(FilelistEntryType.Symlink, name, metahash, metasize, metablockhash, metablocklisthashes);
         }
     }
 }
