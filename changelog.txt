@@ -1,3 +1,17 @@
+2016-10-19
+==========
+* Some additions to the translation system
+* Fixed setting current working dir, thanks @mnaiman
+* Fixed an issue where deleting a backup would not work
+* Updated the throttle computation algorithm
+* Suppressing the "No LSB modules found" error message on Ubuntu
+* Added support for metadata larger than 100kb
+* NOTE: The large metadata support changes the remote file format for all newly written files
+* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
+* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
+* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
+* Fixed an incorrect warning when using the commandline and GPG
+
 2016-10-14
 ==========
 * Work on the translation system, thanks @agrajaghh
