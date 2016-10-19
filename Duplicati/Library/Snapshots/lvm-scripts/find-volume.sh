@@ -20,7 +20,7 @@ NAME=$1
 # Get the reported mount point for the current folder
 #
 VOLUME=`df -P "$NAME" | tail -1 | awk '{ print $1}'`
-if [ "$?" -ne 0 ] || [ "$VOLUME" == "" ]
+if [ "$?" -ne 0 ] || [ -z "$VOLUME" ]
 then
 	[[ "$?" -ne 0 ]] && EXIT_CODE=$? || EXIT_CODE=-1
 	echo "Error: unable to determine device for $NAME"
@@ -28,7 +28,7 @@ then
 fi
 
 MOUNTPOINT=`df -P "$NAME" | tail -1 | awk '{ print $NF}'`
-if [ "$?" -ne 0 ] || [ "MOUNTPOINT" == "" ]
+if [ "$?" -ne 0 ] || [ -z "$MOUNTPOINT" ]
 then
 	[[ "$?" -ne 0 ]] && EXIT_CODE=$? || EXIT_CODE=-1
 	echo "Error: unable to determine mount point for $NAME"
@@ -55,14 +55,13 @@ get_lvmid $VOLUME
 #
 # Get the LVM path for the mapped volume (second try)
 #
-if [ "$LVMID" == "" ]
+if [ -z "$LVMID" ]
 then
-	CMD="mount | awk '(\$3 == \"$MOUNTPOINT\") {print \$1}'" 
-	VOLUME=` eval $CMD`
+	VOLUME=`mount | awk '($3 == "'$MOUNTPOINT'") {print $1}'`
 	get_lvmid $VOLUME
 fi
 
-if [ "$LVMID" == "" ]
+if [ -z "$LVMID" ]
 then
 	EXIT_CODE=-1
 	echo "Error: unable to determine volume group (VG) for $NAME"
