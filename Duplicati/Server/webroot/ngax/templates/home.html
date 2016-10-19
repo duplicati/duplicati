@@ -93,7 +93,7 @@
                         </div>
                         <div ng-hide="item.Backup.Metadata.TargetSizeString == null">
                             <dt translate>Backup:</dt>
-                            <dd>{{item.Backup.Metadata.TargetSizeString}}</dd>
+                            <dd translate translate-n="parseInt(item.Backup.Metadata.BackupListCount)" translate-plural="{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions">{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version</dd>
                         </div>
                     </div>
                 </dl>
