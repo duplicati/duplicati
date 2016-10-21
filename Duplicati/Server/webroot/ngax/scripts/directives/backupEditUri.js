@@ -3,7 +3,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
     restrict: 'E',
     scope: {
         uri: '=uri',
-        hide: '=hide'
+        setBuilduriFn: '&'
     },
     templateUrl: 'templates/edituri.html',
     controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
@@ -25,6 +25,8 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             else
                 EditUriBackendConfig.validaters[scope.Backend.Key](scope, validationCompleted);
         };
+
+        $scope.setBuilduriFn({ builduriFn: builduri });
 
         function performConnectionTest(uri) {
 
@@ -243,13 +245,6 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
 
         $scope.testConnection = function() {
             builduri(performConnectionTest);
-        };
-
-        $scope.save = function() {
-            builduri(function(res) {
-                scope.uri = res;
-                scope.hide();
-            });
         };
 
         $scope.contains_value = AppUtils.contains_value;

@@ -51,6 +51,8 @@
     <script type="text/javascript" src="scripts/libs/modal.min.js"></script>
     <script type="text/javascript" src="scripts/libs/dxTree.js"></script>
     <script type="text/javascript" src="scripts/libs/moment-with-locales.min.js"></script>
+    <script type="text/javascript" src="scripts/libs/clipboard.min.js"></script>
+    <script type="text/javascript" src="scripts/libs/ngclipboard.min.js"></script>
 
     <script type="text/javascript" src="scripts/libs/angular-gettext.min.js"></script>    
 
@@ -162,7 +164,6 @@
                     <li>
                         <a href="#/log" class="log">{{'Show log' | translate}}</a>
                     </li>
-
                 </ul>
             </div>
             
@@ -222,8 +223,13 @@
         <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
-                <div class="content" ng-show="state.CurrentItem.message">{{state.CurrentItem.message}}</div>
-                <div class="content" ng-show="state.CurrentItem.htmltemplate" ng-include="state.CurrentItem.htmltemplate"></div>
+                <div class="content" ng-show="state.CurrentItem.message">
+                    {{state.CurrentItem.message}}
+                    <form ng-show="state.CurrentItem.enableTextarea">
+                        <textarea placeholder="{{state.CurrentItem.placeholder}}" ng-model="state.CurrentItem.textarea"></textarea>
+                    </form>
+                </div>
+                <div class="content" ng-show="state.CurrentItem.htmltemplate" ng-include="state.CurrentItem.htmltemplate" onload="arguments = state.CurrentItem.htmlArguments"></div>
                 <div class="content buttons">
                     <ul>
                         <li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)" >{{btn}}</a></li>

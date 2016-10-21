@@ -180,8 +180,7 @@
     display: block;
 }
 
-.step2 source-folder-picker, #folder_path_picker, #restore_file_picker {
-  overflow: auto;
+.step3 source-folder-picker, #folder_path_picker, #restore_file_picker {
   display: block;
   border: 1px solid lightgray;
   padding: 2px;

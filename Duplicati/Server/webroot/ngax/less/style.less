@@ -422,12 +422,12 @@ body
                     {
                         width: 100%;
                         overflow: hidden;
-                        margin-left: 50px;
+                        margin-left: 48px;
                         
                         .step
                         {
                             float: left;
-                            padding-left: 130px;
+                            padding-left: 96px;
                             background: url('../img/steps/line-out.png') no-repeat top left;
                             color: #c7e5f6;
                             
@@ -591,7 +591,7 @@ body
                             }
                         }
                         
-                        .step4
+                        .step5
                         {
                             div.input.maxSize input.number,
                             div.input.keepBackups input.number
@@ -692,15 +692,14 @@ body
                             font-size: 18px;
                             text-align: center;
                             float: left;
-                            width: 175px;
+                            width: 139px;
                             padding-top: 10px;
                             cursor: pointer;
                         }
                         
                         li:first-child
                         {
-                            width: 140px;
-                            padding-right: 15px;
+                            width: 139px;
                         }
                         
                         li.active
@@ -1059,8 +1058,135 @@ div.connection-lost,
 div.modal-dialog
 {
     z-index: 5001;
+
+    form
+    {
+        margin-top: 15px;
+
+        textarea
+        {
+            height: 130px;
+            width: 420px;
+            padding: 10px 12px;
+            border: 1px #d8d8d8 solid;
+            border-radius: 2px;
+            color: #8f8f8f;
+            font-size: 16px;
+            font-weight: 300;
+
+        }
+
+        input
+        {
+            height: 35px;
+            line-height: 35px;
+            padding: 0 12px;
+        }
+    }
 }
 
+div.headerthreedotmenu {
+    margin: 25px 0 20px 0;
+    
+    h2 {
+        display: inline;
+    }
+
+    div.threedotmenu_container {
+        position: relative;
+        float: right;
+    }
+}
+
+.threedotmenubutton {
+    padding: 5px;
+}
+
+.threedotmenu {
+    display: none;
+    position: absolute;
+    background: none repeat scroll 0 0 white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #EEEEEE;
+    padding: 10px;
+    white-space: nowrap;
+
+    ul li a {
+        padding: 5px 5px 5px 5px;
+        display: block;
+    }
+}
+
+.threedotmenu.open
+{
+    display: block;
+    left: auto;
+    right: 0;
+    z-index: 1000;
+}
+
+// tooltipped css taken from: https://github.com/primer/primer-tooltips
+.tooltipped {
+    position: relative
+}
+
+.tooltipped:after {
+    position: absolute;
+    z-index: 1000000;
+    display: none;
+    padding: 5px 8px;
+    font: normal normal 11px/1.5 Helvetica,arial,nimbussansl,liberationsans,freesans,clean,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: break-word;
+    white-space: pre;
+    pointer-events: none;
+    content: attr(aria-label);
+    background: rgba(0,0,0,0.8);
+    border-radius: 3px;
+    -webkit-font-smoothing: subpixel-antialiased
+}
+
+.tooltipped:before {
+    position: absolute;
+    z-index: 1000001;
+    display: none;
+    width: 0;
+    height: 0;
+    color: rgba(0,0,0,0.8);
+    pointer-events: none;
+    content: "";
+    border: 5px solid transparent
+}
+
+.tooltipped:hover:before,.tooltipped:hover:after,.tooltipped:active:before,.tooltipped:active:after,.tooltipped:focus:before,.tooltipped:focus:after {
+    display: inline-block;
+    text-decoration: none
+}
+
+.tooltipped-s:after {
+    top: 100%;
+    right: 50%;
+    margin-top: 5px
+}
+
+.tooltipped-s:before {
+    top: auto;
+    right: 50%;
+    bottom: -5px;
+    margin-right: -5px;
+    border-bottom-color: rgba(0,0,0,0.8)
+}
+
+.tooltipped-s:after {
+    -webkit-transform: translateX(50%);
+    -ms-transform: translateX(50%);
+    transform: translateX(50%)
+}
 
 // Smaller screen sizes
 @media(max-width: 1100px)

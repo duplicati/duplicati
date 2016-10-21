@@ -5,7 +5,8 @@ var backupApp = angular.module(
         'dotjem.angular.tree',
         'ngCookies',
         'ngSanitize',
-        'gettext'
+        'gettext',
+        'ngclipboard'
     ]
 );
 
