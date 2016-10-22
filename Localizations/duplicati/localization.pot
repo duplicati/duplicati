@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-09 21:40+0200\n"
+"POT-Creation-Date: 2016-10-14 13:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1230,17 +1230,28 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid ""
+"To guard against man-in-the-middle attacks, the server fingerprint is "
+"verified on connection. Use this option to disable host-key fingerprint "
+"verification. You should only use this option for testing."
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:30
+msgid "Disables fingerprint validation"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:31
+msgid ""
 "Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
 "supplied is used to decrypt the keyfile.  If this option is supplied, the "
 "password is not used to authenticate. This option only works when using the "
 "managed SSH client."
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:30 Library/Backend/SSHv2/Strings.cs:32
+#: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:31
+#: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
 msgid ""
 "An url-encoded SSH private key. The private key must be prefixed with {0}. "
@@ -1249,16 +1260,16 @@ msgid ""
 "authenticate. This option only works when using the managed SSH client."
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:33
+#: Library/Backend/SSHv2/Strings.cs:35
 msgid "SFTP (SSH)"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:34
+#: Library/Backend/SSHv2/Strings.cs:36
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:35
+#: Library/Backend/SSHv2/Strings.cs:37
 #, csharp-format
 msgid ""
 "Validation of server fingerprint failed. Server returned fingerprint "
@@ -1266,7 +1277,7 @@ msgid ""
 "the-middle attack!"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:36
+#: Library/Backend/SSHv2/Strings.cs:38
 #, csharp-format
 msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
@@ -2280,15 +2291,16 @@ msgid "Disables changelist by USN numbers"
 msgstr ""
 
 #: Library/Main/Strings.cs:106
+#, csharp-format
 msgid ""
-"When deciding if a full backup should be made or an old backup should be "
-"deleted, Duplicati will adjust the times by a small fraction to ensure that "
-"minor time differences do not interfer with expected operation. If the "
-"backup is set to produce a full backup each day, and a full backup is made "
-"at, say 12:00:01, and the backup is executed again at 12:00:00, a full day "
-"has not passed and thus an incremental backup is performed. To avoid this, "
-"Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable "
-"the tolerance, and use strict time checking"
+"When matching timestamps, Duplicati will adjust the times by a small "
+"fraction to ensure that minor time differences do not cause unexpected "
+"updated. If the option --{0} is set to keep a week of backups, and the "
+"backup is made the same time each week, it is possible that a the clock "
+"drifts slightly, such that full week has just passed, causing Duplicati to "
+"delete the older backup earlier than expected. To avoid this, Duplicati "
+"inserts a 1% tolerance (max 1 hour). Use this option to disable the "
+"tolerance, and use strict time checking"
 msgstr ""
 
 #: Library/Main/Strings.cs:107

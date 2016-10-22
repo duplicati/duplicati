@@ -80,18 +80,20 @@ namespace Duplicati.Library.Modules.Builtin
             var pathshyperv = new List<string>();
             var ret = new Dictionary<string, string>();
 
-            if (paths.Contains(m_HyperVPathAllRegExp, StringComparer.OrdinalIgnoreCase))
+            if (paths != null)
             {
-                if (Utility.Utility.IsClientWindows)
+                if (paths.Contains(m_HyperVPathAllRegExp, StringComparer.OrdinalIgnoreCase))
                 {
-                    var hypervUtility = new HyperVUtility();
-                    hypervUtility.QueryHyperVGuestsInfo();
-                    pathshyperv = hypervUtility.Guests.Select(x => string.Format(@"%HYPERV%\{0}", x.ID)).ToList();
+                    if (Utility.Utility.IsClientWindows)
+                    {
+                        var hypervUtility = new HyperVUtility();
+                        hypervUtility.QueryHyperVGuestsInfo();
+                        pathshyperv = hypervUtility.Guests.Select(x => string.Format(@"%HYPERV%\{0}", x.ID)).ToList();
+                    }
                 }
+                else
+                    pathshyperv = paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
             }
-            else
-                pathshyperv = paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
-
             paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
             
             if (!string.IsNullOrEmpty(filter))

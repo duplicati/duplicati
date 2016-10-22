@@ -276,7 +276,14 @@ namespace Duplicati.CommandLine
                     string passphrase;
                     options.TryGetValue("passphrase", out passphrase);
                     if (string.IsNullOrEmpty(passphrase))
-                        options["no-encryption"] = "true";
+                    {
+                        string existing;
+                        options.TryGetValue("disable-module", out existing);
+                        if (string.IsNullOrWhiteSpace(existing))
+                            options["disable-module"] = "console-password-input";
+                        else
+                            options["disable-module"] = string.Join(",", new string[] { existing, "console-password-input" });
+                    }
                 }
 
             

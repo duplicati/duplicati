@@ -578,7 +578,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-remote-files"].Value))
+            var delete_remote_files = Library.Utility.Utility.ParseBool("delete-remote-files", false);
+
+            if (delete_remote_files)
             {
                 var captcha_token = info.Request.Param["captcha-token"].Value;
                 var captcha_answer = info.Request.Param["captcha-answer"].Value;
@@ -661,8 +663,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var extra = new Dictionary<string, string>();
             if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-local-db"].Value))
                 extra["delete-local-db"] = info.Request.Param["delete-local-db"].Value;
-            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-remote-files"].Value))
-                extra["delete-remote-files"] = info.Request.Param["delete-remote-files"].Value;
+            if (delete_remote_files)
+                extra["delete-remote-files"] = "true";
 
             var task = Runner.CreateTask(DuplicatiOperation.Delete, backup, extra);
             Program.WorkThread.AddTask(task);

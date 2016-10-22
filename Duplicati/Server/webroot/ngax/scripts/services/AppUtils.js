@@ -1,17 +1,20 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogService, gettextCatalog) {
 
     var apputils = this;
 
     this.exampleOptionString = '--dblock-size=100MB';
 
-    try {
-        moment.locale(
-            navigator.languages
-            ? navigator.languages[0]
-            : (navigator.language || navigator.userLanguage)
-        );
-    } catch (e) {
-    }    
+    function setMomentLocale() {
+        try {
+            var browser_lang = navigator.languages ?
+                navigator.languages[0] :
+                (navigator.language || navigator.userLanguage);
+            moment.locale($cookies.get('ui-locale') ? $cookies.get('ui-locale') : browser_lang);
+        } catch (e) {
+        }
+    }
+    setMomentLocale();
+    $rootScope.$on('ui_language_changed', setMomentLocale);
 
     this.formatSizes = ['TB', 'GB', 'MB', 'KB'];
     this.formatSizeString = function(val) {
