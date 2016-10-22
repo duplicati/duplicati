@@ -93,7 +93,6 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                     m_enumeratefilter = m_emitfilter;
-
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)

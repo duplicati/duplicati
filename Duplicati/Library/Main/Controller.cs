@@ -176,14 +176,7 @@ namespace Duplicati.Library.Main
             
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
-                var bModulesFiles = false;
-
-                foreach (var mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is Library.Interface.IGenericSourceModule)
-                        if(!bModulesFiles)
-                            bModulesFiles = ((Library.Interface.IGenericSourceModule)mx.Value).ContainFilesForBackup(m_options.RawOptions);
-                    
-                if (!bModulesFiles && (inputsources == null || inputsources.Length == 0))
+                if (inputsources == null || inputsources.Length == 0)
                     throw new Exception(Strings.Controller.NoSourceFoldersError);
 
                 var sources = new List<string>(inputsources);
@@ -724,17 +717,10 @@ namespace Duplicati.Library.Main
             Dictionary<string, string> disabledModuleOptions = new Dictionary<string, string>();
 
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> m in m_options.LoadedModules)
-                if (m.Key)
-                {
-                    if (m.Value.SupportedCommands != null)
+                if (m.Value.SupportedCommands != null)
+                    if (m.Key)
                         moduleOptions.AddRange(m.Value.SupportedCommands);
-
-                    if (m.Value is Library.Interface.IGenericSourceModule)
-                        moduleOptions.AddRange(((Library.Interface.IGenericSourceModule)m.Value).HiddenCommands);
-                }
-                else
-                {
-                    if (m.Value.SupportedCommands != null)
+                    else
                         foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
                         {
                             disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
@@ -743,7 +729,6 @@ namespace Duplicati.Library.Main
                                 foreach (string s in c.Aliases)
                                     disabledModuleOptions[s] = disabledModuleOptions[c.Name];
                         }
-                }
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key

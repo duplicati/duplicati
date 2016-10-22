@@ -28,6 +28,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var hypervUtility = new HyperVUtility();
 
+            if (!hypervUtility.IsHyperVInstalled)
+                info.OutputOK();
+
             try
             {
                 if (string.IsNullOrEmpty(key))
@@ -38,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 else
                 {
                     hypervUtility.QueryHyperVGuestsInfo(true);
-                    var foundVMs = hypervUtility.Guests.FindAll(x => (string.Equals(key, x.ID, StringComparison.OrdinalIgnoreCase)));
+                    var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(new Guid(key)));
 
                     if (foundVMs.Count == 1)
                         info.OutputOK(foundVMs[0].DataPaths.Select(x => new { text = x, id = x, cls = "folder", iconCls = "x-tree-icon-leaf", check = "false", leaf = "true" }).ToList());

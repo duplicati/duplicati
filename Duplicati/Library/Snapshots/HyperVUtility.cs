@@ -7,17 +7,58 @@ using System.Management;
 
 namespace Duplicati.Library.Snapshots
 {
-    public class HyperVGuest
+    public class HyperVGuest : IEquatable<HyperVGuest>
     {
         public string Name { get; }
-        public string ID { get; }
+        public Guid ID { get; }
         public List<string> DataPaths { get; }
 
-        public HyperVGuest(string Name, string ID, List<string> DataPaths)
+        public HyperVGuest(string Name, Guid ID, List<string> DataPaths)
         {
             this.Name = Name;
             this.ID = ID;
             this.DataPaths = DataPaths;
+        }
+
+        bool IEquatable<HyperVGuest>.Equals(HyperVGuest other)
+        {
+            return ID.Equals(other.ID);
+        }
+
+        public override int GetHashCode()
+        {
+            return ID.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            HyperVGuest guest = obj as HyperVGuest;
+            if (guest != null)
+            {
+                return Equals(guest);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public static bool operator ==(HyperVGuest guest1, HyperVGuest guest2)
+        {
+            if (object.ReferenceEquals(guest1, guest2)) return true;
+            if (object.ReferenceEquals(guest1, null)) return false;
+            if (object.ReferenceEquals(guest2, null)) return false;
+
+            return guest1.Equals(guest2);
+        }
+
+        public static bool operator !=(HyperVGuest guest1, HyperVGuest guest2)
+        {
+            if (object.ReferenceEquals(guest1, guest2)) return false;
+            if (object.ReferenceEquals(guest1, null)) return true;
+            if (object.ReferenceEquals(guest2, null)) return true;
+
+            return !guest1.Equals(guest2);
         }
     }
 
@@ -53,7 +94,6 @@ namespace Duplicati.Library.Snapshots
             {
                 IsHyperVInstalled = false;
                 IsVSSWriterSupported = false;
-                Logging.Log.WriteMessage("Hyper-V Guests are supported only on Windows.", Logging.LogMessageType.Information);
                 return;
             }
 
@@ -104,11 +144,11 @@ namespace Duplicati.Library.Snapshots
             if (IsVSSWriterSupported)
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
+                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
             else
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], (string)mObject[_vmIdField], bIncludePaths ? 
+                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? 
                             GetVMVhdPathsWMI((string)mObject[_vmIdField])
                                 .Union(GetVMConfigPathsWMI((string)mObject[_vmIdField]))
                                 .Distinct(Utility.Utility.ClientFilenameStringComparer)
