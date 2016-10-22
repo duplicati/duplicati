@@ -11,7 +11,7 @@ namespace Duplicati.Library.Main.Volumes
         protected class ManifestData
         {
             public const string ENCODING = "utf8";
-            public const long VERSION = 1;
+            public const long VERSION = 2;
 
             public long Version;
             public string Created;

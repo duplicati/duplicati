@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-08 17:36+0200\n"
+"POT-Creation-Date: 2016-10-14 13:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: agrajaghh <agrajaghh@gmail.com>, 2016\n"
+"Last-Translator: s fahrenholz <s.fahrenholz@stud.fh-dortmund.de>, 2016\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -63,7 +63,7 @@ msgstr ""
 
 #: CommandLine/Strings.cs:11
 msgid "Supported backends:"
-msgstr "Unterstützte backends:"
+msgstr "Unterstützte Backends:"
 
 #: CommandLine/Strings.cs:12
 msgid "Supported compression modules:"
@@ -166,7 +166,7 @@ msgstr ""
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"
-msgstr ""
+msgstr "Dateien ausschließen"
 
 #: CommandLine/Strings.cs:29
 msgid ""
@@ -187,7 +187,7 @@ msgstr ""
 
 #: CommandLine/Strings.cs:32
 msgid "Disable console output"
-msgstr ""
+msgstr "Deaktiviere Konsolenausgabe"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:9
 msgid ""
@@ -250,7 +250,7 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:15
 #, csharp-format
 msgid "The folder {0} was not found. Message: {1}"
-msgstr ""
+msgstr "Der Ordner {0} konnte nicht gefunden werden. Nachricht: {1}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:16
 #: Library/Backend/FTP/Strings.cs:20
@@ -337,7 +337,7 @@ msgstr ""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:26
 msgid "Amazon Cloud Drive"
-msgstr ""
+msgstr "Amazon Cloud Drive"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:27
 #: Library/Backend/Box/Strings.cs:23
@@ -441,7 +441,7 @@ msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:8
 msgid "B2 Cloud Storage"
-msgstr ""
+msgstr "B2 Cloud Storage"
 
 #: Library/Backend/Backblaze/Strings.cs:13
 msgid "No \"B2 Cloud Storage Application Key\" given"
@@ -475,7 +475,7 @@ msgstr ""
 
 #: Library/Backend/Box/Strings.cs:22
 msgid "Box.com"
-msgstr ""
+msgstr "Box.com"
 
 #: Library/Backend/Box/Strings.cs:26
 msgid "Force delete files"
@@ -536,7 +536,7 @@ msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:17
 msgid "Rackspace CloudFiles"
-msgstr ""
+msgstr "Rackspace CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:18
 msgid "MD5 Hash (ETag) verification failed"
@@ -544,11 +544,11 @@ msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:19
 msgid "Failed to delete file"
-msgstr ""
+msgstr "Löschen der Datei fehlgeschlagen"
 
 #: Library/Backend/CloudFiles/Strings.cs:20
 msgid "Failed to upload file"
-msgstr ""
+msgstr "Upload der Datei fehlgeschlagen"
 
 #: Library/Backend/CloudFiles/Strings.cs:21
 msgid "No CloudFiles API Access Key given"
@@ -570,7 +570,7 @@ msgstr ""
 
 #: Library/Backend/Dropbox/Strings.cs:23
 msgid "Dropbox"
-msgstr ""
+msgstr "Dropbox"
 
 #: Library/Backend/File/Strings.cs:4
 #, csharp-format
@@ -618,12 +618,12 @@ msgstr ""
 
 #: Library/Backend/File/Strings.cs:13
 msgid "Local folder or drive"
-msgstr ""
+msgstr "Lokaler Ordner oder Laufwerk"
 
 #: Library/Backend/File/Strings.cs:14
 #, csharp-format
 msgid "The folder {0} does not exist"
-msgstr ""
+msgstr "Der Order {0} existiert nicht"
 
 #: Library/Backend/File/Strings.cs:15
 #, csharp-format
@@ -691,7 +691,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
-msgstr ""
+msgstr "FTP"
 
 #: Library/Backend/FTP/Strings.cs:19 Library/Backend/TahoeLAFS/Strings.cs:8
 #: Library/Backend/WEBDAV/Strings.cs:14
@@ -769,7 +769,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
-msgstr ""
+msgstr "Google Drive"
 
 #: Library/Backend/HubiC/Strings.cs:21
 msgid ""
@@ -779,19 +779,19 @@ msgstr ""
 
 #: Library/Backend/HubiC/Strings.cs:22
 msgid "HubiC"
-msgstr ""
+msgstr "HubiC"
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
-msgstr ""
+msgstr "mega.nz"
 
 #: Library/Backend/Mega/Strings.cs:9
 msgid "No password given"
-msgstr ""
+msgstr "Kein Passwort angegeben"
 
 #: Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
-msgstr ""
+msgstr "Kein Benutzername angegeben"
 
 #: Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
@@ -834,16 +834,16 @@ msgstr ""
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
 msgid "Missing the folder: {0}"
-msgstr ""
+msgstr "Ordner nicht gefunden: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:11
 #, csharp-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Datei nicht gefunden: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:10
 msgid "Microsoft OneDrive"
-msgstr ""
+msgstr "Microsoft OneDrive"
 
 #: Library/Backend/OneDrive/Strings.cs:13
 #, csharp-format
@@ -860,7 +860,7 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:20
 msgid "OpenStack Simple Storage"
-msgstr ""
+msgstr "OpenStack Simple Storage"
 
 #: Library/Backend/OpenStack/Strings.cs:20
 #, csharp-format
@@ -940,7 +940,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "Amazon S3"
-msgstr ""
+msgstr "Amazon S3"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No Amazon S3 secret key given"
@@ -959,7 +959,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:16
 msgid "Use a European server"
-msgstr ""
+msgstr "Europäischen Server benutzen"
 
 #: Library/Backend/S3/Strings.cs:17
 msgid ""
@@ -1062,7 +1062,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
-msgstr ""
+msgstr "Microsoft SharePoint"
 
 #: Library/Backend/SharePoint/Strings.cs:7
 msgid ""
@@ -1149,7 +1149,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:33
 msgid "Microsoft OneDrive for Business"
-msgstr ""
+msgstr "Microsoft OneDrive for Business"
 
 #: Library/Backend/SharePoint/Strings.cs:34
 msgid ""
@@ -1168,11 +1168,11 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
-msgstr ""
+msgstr "SSH Schlüssel Generator"
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
-msgstr ""
+msgstr "Username des öffentlichen Schlüssels"
 
 #: Library/Backend/SSHv2/Strings.cs:7
 msgid "A username to append to the public key"
@@ -1180,7 +1180,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:8
 msgid "The key type"
-msgstr ""
+msgstr "Der Schlüssel-Typ"
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
@@ -1188,11 +1188,11 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
-msgstr ""
+msgstr "Die Schlüssel-Länge"
 
 #: Library/Backend/SSHv2/Strings.cs:11
 msgid "The length of the key in bits"
-msgstr ""
+msgstr "Die Schlüssel-Länge in bits"
 
 #: Library/Backend/SSHv2/Strings.cs:14
 msgid "Module for uploading SSH public keys"
@@ -1239,17 +1239,28 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid ""
+"To guard against man-in-the-middle attacks, the server fingerprint is "
+"verified on connection. Use this option to disable host-key fingerprint "
+"verification. You should only use this option for testing."
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:30
+msgid "Disables fingerprint validation"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:31
+msgid ""
 "Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
 "supplied is used to decrypt the keyfile.  If this option is supplied, the "
 "password is not used to authenticate. This option only works when using the "
 "managed SSH client."
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:30 Library/Backend/SSHv2/Strings.cs:32
+#: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:31
+#: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
 msgid ""
 "An url-encoded SSH private key. The private key must be prefixed with {0}. "
@@ -1258,16 +1269,16 @@ msgid ""
 "authenticate. This option only works when using the managed SSH client."
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:33
+#: Library/Backend/SSHv2/Strings.cs:35
 msgid "SFTP (SSH)"
-msgstr ""
+msgstr "SFTP (SSH)"
 
-#: Library/Backend/SSHv2/Strings.cs:34
+#: Library/Backend/SSHv2/Strings.cs:36
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:35
+#: Library/Backend/SSHv2/Strings.cs:37
 #, csharp-format
 msgid ""
 "Validation of server fingerprint failed. Server returned fingerprint "
@@ -1275,7 +1286,7 @@ msgid ""
 "in-the-middle attack!"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:36
+#: Library/Backend/SSHv2/Strings.cs:38
 #, csharp-format
 msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
@@ -1296,7 +1307,7 @@ msgstr ""
 
 #: Library/Backend/TahoeLAFS/Strings.cs:7
 msgid "Tahoe-LAFS"
-msgstr ""
+msgstr "Tahoe-LAFS"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
 msgid "Unsupported URL format, must start with \"/uri/URI:DIR2:\""
@@ -1325,7 +1336,7 @@ msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
-msgstr ""
+msgstr "WebDAV"
 
 #: Library/Backend/WEBDAV/Strings.cs:15
 #, csharp-format
@@ -1380,7 +1391,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:10
 msgid "Zip compression"
-msgstr ""
+msgstr "Zip Komprimierung"
 
 #: Library/Compression/Strings.cs:14
 msgid "Archive not opened for writing"
@@ -1396,11 +1407,11 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:17
 msgid "7z Archive with LZMA2 support."
-msgstr ""
+msgstr "7z Archiv mit LZMA2 Unterstützung."
 
 #: Library/Compression/Strings.cs:18
 msgid "7z Archive"
-msgstr ""
+msgstr "7z Archiv"
 
 #: Library/Compression/Strings.cs:19
 msgid ""
@@ -1479,7 +1490,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:15
 msgid "GNU Privacy Guard, external"
-msgstr ""
+msgstr "GNU Privacy Guard, extern"
 
 #: Library/Encryption/Strings.cs:16
 msgid ""
@@ -1597,7 +1608,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
-msgstr ""
+msgstr "Boolean"
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
@@ -1609,19 +1620,19 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Integer"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr ""
+msgstr "Pfad"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr ""
+msgstr "Größe"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "String"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
@@ -1955,7 +1966,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:46
 msgid "Disable encryption"
-msgstr ""
+msgstr "Verschlüsselung deaktivieren"
 
 #: Library/Main/Strings.cs:47
 msgid ""
@@ -2284,15 +2295,16 @@ msgid "Disables changelist by USN numbers"
 msgstr ""
 
 #: Library/Main/Strings.cs:106
+#, csharp-format
 msgid ""
-"When deciding if a full backup should be made or an old backup should be "
-"deleted, Duplicati will adjust the times by a small fraction to ensure that "
-"minor time differences do not interfer with expected operation. If the "
-"backup is set to produce a full backup each day, and a full backup is made "
-"at, say 12:00:01, and the backup is executed again at 12:00:00, a full day "
-"has not passed and thus an incremental backup is performed. To avoid this, "
-"Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable "
-"the tolerance, and use strict time checking"
+"When matching timestamps, Duplicati will adjust the times by a small "
+"fraction to ensure that minor time differences do not cause unexpected "
+"updated. If the option --{0} is set to keep a week of backups, and the "
+"backup is made the same time each week, it is possible that a the clock "
+"drifts slightly, such that full week has just passed, causing Duplicati to "
+"delete the older backup earlier than expected. To avoid this, Duplicati "
+"inserts a 1% tolerance (max 1 hour). Use this option to disable the "
+"tolerance, and use strict time checking"
 msgstr ""
 
 #: Library/Main/Strings.cs:107
@@ -2389,7 +2401,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:123
 msgid "Exclude files by attribute"
-msgstr ""
+msgstr "Dateien mit folgenden Attributen ausschließen"
 
 #: Library/Main/Strings.cs:124
 #, csharp-format
@@ -2866,42 +2878,33 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:215
-msgid "Perform backup of HyperV machines (Windows only)"
+msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr ""
 
 #: Library/Main/Strings.cs:216
 msgid ""
-"Use this option to specify the names of machines to include in the backup. "
-"Specify multiple machine names with a semicolon separator."
+"Use this option to specify the IDs of machines to include in the backup. "
+"Specify multiple machine IDs with a semicolon separator. (You can use this "
+"Powershell command to get ID 'Get-VM | ft VMName, ID')"
 msgstr ""
 
-#: Library/Main/Strings.cs:217
-msgid "Do not merge the HyperV VHD (Windows only)"
-msgstr ""
-
-#: Library/Main/Strings.cs:218
-msgid ""
-"Use this option to disable the merge of HyperV VHD's prior to performing the"
-" backup."
-msgstr ""
-
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:221
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:222
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:223
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:224
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
@@ -3207,7 +3210,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:89
 msgid "The email subject"
-msgstr ""
+msgstr "Der E-Mail Betreff"
 
 #: Library/Modules/Builtin/Strings.cs:90
 msgid "The username used to authenticate with the SMTP server if required."
@@ -3215,7 +3218,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 msgid "SMTP Username"
-msgstr ""
+msgstr "SMTP Benutzername"
 
 #: Library/Modules/Builtin/Strings.cs:92
 #, csharp-format
@@ -3266,7 +3269,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:110
 msgid "The XMPP username"
-msgstr ""
+msgstr "Der XMPP Benutzername"
 
 #: Library/Modules/Builtin/Strings.cs:111
 msgid ""
@@ -3276,7 +3279,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:112
 msgid "The XMPP password"
-msgstr ""
+msgstr "Das XMPP Passwort"
 
 #: Library/Modules/Builtin/Strings.cs:113
 msgid "The password for the account that will send the message"
@@ -3367,7 +3370,7 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN is not supported on Linux"
-msgstr ""
+msgstr "USN wird nicht unter Linux unterstützt"
 
 #: Library/Snapshots/Strings.cs:17
 msgid ""
@@ -3381,7 +3384,7 @@ msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:4
 msgid "backup"
-msgstr ""
+msgstr "Backup"
 
 #: Library/SQLiteHelper/Strings.cs:5
 #, csharp-format
@@ -3476,27 +3479,27 @@ msgstr ""
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr ""
+msgstr "{0} Bytes"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
 msgid "{0:N} GB"
-msgstr ""
+msgstr "{0:N} GB"
 
 #: Library/Utility/Strings.cs:30
 #, csharp-format
 msgid "{0:N} KB"
-msgstr ""
+msgstr "{0:N} KB"
 
 #: Library/Utility/Strings.cs:31
 #, csharp-format
 msgid "{0:N} MB"
-msgstr ""
+msgstr "{0:N} MB"
 
 #: Library/Utility/Strings.cs:32
 #, csharp-format
 msgid "{0:N} TB"
-msgstr ""
+msgstr "{0:N} TB"
 
 #: Library/Utility/Strings.cs:33
 #, csharp-format
@@ -3531,7 +3534,7 @@ msgstr ""
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Server/Strings.cs:15
 msgid "Outputs log information to the file given"
@@ -3639,49 +3642,25 @@ msgid ""
 msgstr ""
 
 #: Server/Strings.cs:39
-msgid "Full backup"
-msgstr ""
-
-#: Server/Strings.cs:40
-msgid "Incremental backup"
-msgstr ""
-
-#: Server/Strings.cs:41
-msgid "List actual files"
-msgstr ""
-
-#: Server/Strings.cs:42
-msgid "List backup entries"
-msgstr ""
-
-#: Server/Strings.cs:43
-msgid "List backups"
-msgstr ""
-
-#: Server/Strings.cs:44
-msgid "Compact remote files"
-msgstr ""
-
-#: Server/Strings.cs:47
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
 
-#: Server/Strings.cs:52
+#: Server/Strings.cs:44
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr ""
 
-#: Server/Strings.cs:53
+#: Server/Strings.cs:45
 #, csharp-format
 msgid ""
 "Unable to create SSL certificate using provided parameters. Exception "
 "detail: {0}"
 msgstr ""
 
-#: Server/Strings.cs:54
+#: Server/Strings.cs:46
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""

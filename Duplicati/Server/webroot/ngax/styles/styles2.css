@@ -85,6 +85,14 @@
     background-position: 0px -48px;
 }
 
+.tree-view a.type.x-tree-icon-hyperv {
+    background-position: -96px -16px;
+}
+
+.tree-view a.type.x-tree-icon-hypervmachine {
+    background-position: -96px 0px;
+}
+
 .tree-view a.type.x-tree-icon-mydocuments {
     background-position: -32px -48px;
 }

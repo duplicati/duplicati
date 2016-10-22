@@ -744,7 +744,7 @@ namespace Duplicati.Library.Main
             {
                 var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
                 if (f == null)
-                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", f.Name));
+                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }

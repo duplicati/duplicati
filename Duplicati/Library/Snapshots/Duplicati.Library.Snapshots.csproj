@@ -9,7 +9,7 @@
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
     <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>

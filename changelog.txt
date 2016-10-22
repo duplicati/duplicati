@@ -1,3 +1,30 @@
+2016-10-19
+==========
+* Some additions to the translation system
+* Fixed setting current working dir, thanks @mnaiman
+* Fixed an issue where deleting a backup would not work
+* Updated the throttle computation algorithm
+* Suppressing the "No LSB modules found" error message on Ubuntu
+* Added support for metadata larger than 100kb
+* NOTE: The large metadata support changes the remote file format for all newly written files
+* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
+* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
+* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
+* Fixed an incorrect warning when using the commandline and GPG
+
+2016-10-14
+==========
+* Work on the translation system, thanks @agrajaghh
+* Added tray-icon context menu icons, thanks @agrajaghh
+* Added support for "caffeinate" on OSX to prevent sleep during backups
+* Work on Hyper-V support, thanks @mnaiman
+* Fixed an issue with Windows service running from the wrong start folder
+* Changed dependencies in packages to require Mono 3.0
+* Added a new delete dialog to assist in deleting the local database and optionally the remote data
+* UI tweaks
+* Added validation when saving/importing backups
+* Fixed some issues with choosing the home folder on Windows
+
 2016-09-29
 ==========
 * Updated help file for commandline

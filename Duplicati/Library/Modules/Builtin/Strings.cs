@@ -31,7 +31,11 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh url."); } }
         public static string SslversionsShort { get { return LC.L(@"Sets allowed SSL versions"); } }
         public static string SslversionsLong { get { return LC.L(@"This option changes the default SSL versions allowed. This is an advanced option and should only be used if you want to enhance security or work around an issue with a particular SSL protocol."); } }
-            }
+    }
+    internal static class HyperVOptions {
+        public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Hyper-V virtual machines"); } }
+        public static string DisplayName { get { return LC.L(@"Configure Hyper-V module"); } }
+    }
     internal static class RunScript {
         public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
         public static string DisplayName { get { return LC.L(@"Run script"); } }
@@ -117,7 +121,7 @@ You can supply multiple options with a comma seperator, e.g. ""{0},{1}"". The sp
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
         public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
-        public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messagesß"); } }
+        public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messages"); } }
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occured while logging in to jabber server"); } }
         public static string SendMessageError(string message) { return LC.L(@"Failed to send jabber message: {0}", message); }
     }

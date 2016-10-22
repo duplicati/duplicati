@@ -142,7 +142,7 @@ namespace Duplicati.Library.Snapshots
                 m_backup.StartSnapshotSet();
 
                 //Figure out which volumes are in the set
-                m_volumes = new Dictionary<string, Guid>(StringComparer.InvariantCultureIgnoreCase);
+                m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
                 foreach (string s in m_sourcepaths)
                 {
                     string drive = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(s);
@@ -162,7 +162,7 @@ namespace Duplicati.Library.Snapshots
                 m_backup.DoSnapshotSet();
 
                 //Make a little lookup table for faster translation
-                m_volumeMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+                m_volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (KeyValuePair<string, Guid> kvp in m_volumes)
                     m_volumeMap.Add(kvp.Key, m_backup.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
 
@@ -198,7 +198,7 @@ namespace Duplicati.Library.Snapshots
             var requestedHyperVMs = new List<string>();
 
             if (options.ContainsKey("hyperv-backup-vm"))
-                requestedHyperVMs = options["hyperv-backup-vm"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
+                requestedHyperVMs = options["hyperv-backup-vm"].Split(Path.PathSeparator).Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
 
             if (requestedHyperVMs.Count == 0)
                 return resultPaths;
@@ -214,7 +214,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var requestedHyperVM in requestedHyperVMs)
             {
-                var foundVMs = hyperVGuests.FindAll(x => (string.Equals(requestedHyperVM, x.ID, StringComparison.CurrentCultureIgnoreCase)));
+                var foundVMs = hyperVGuests.FindAll(x => (string.Equals(requestedHyperVM, x.ID, StringComparison.OrdinalIgnoreCase)));
 
                 if (foundVMs.Count != 1)
                 {
@@ -223,7 +223,7 @@ namespace Duplicati.Library.Snapshots
                     Logging.Log.WriteMessage(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", requestedHyperVM), Logging.LogMessageType.Error);
                 }
                 else
-                    Logging.Log.WriteMessage(string.Format("Found virtual machine {0} with ID {1} on Hyper-V.", foundVMs[0].Name, requestedHyperVM), Logging.LogMessageType.Information);
+                    Logging.Log.WriteMessage(string.Format("Adding virtual machine {0} with ID {1} to backup.", foundVMs[0].Name, requestedHyperVM), Logging.LogMessageType.Information);
             }
 
             if (bNotFound)
@@ -239,7 +239,7 @@ namespace Duplicati.Library.Snapshots
                     throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
 
                 foreach (var component in writerMetaData.Components)
-                    if (requestedHyperVMs.Contains(component.ComponentName, StringComparer.CurrentCultureIgnoreCase))
+                    if (requestedHyperVMs.Contains(component.ComponentName, StringComparer.OrdinalIgnoreCase))
                         foreach (var file in component.Files)
                             if (file.FileSpecification.Contains("*"))
                             {
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Snapshots
                 Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version.", Logging.LogMessageType.Warning);
 
                 foreach (var hyperVGuest in hyperVGuests)
-                    if (requestedHyperVMs.Contains(hyperVGuest.ID, StringComparer.CurrentCultureIgnoreCase))
+                    if (requestedHyperVMs.Contains(hyperVGuest.ID, StringComparer.OrdinalIgnoreCase))
                         foreach (var path in hyperVGuest.DataPaths)
                         {
                             resultPaths.Add(path);
