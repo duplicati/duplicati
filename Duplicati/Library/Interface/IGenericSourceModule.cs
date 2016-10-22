@@ -42,13 +42,20 @@ namespace Duplicati.Library.Interface
         /// <param name="filter">Filters that are applied to backup paths (include, exclude)</param>
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
         /// <returns>A list of changed or added options values</returns>
-        Dictionary<string, string> ParseSource(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions);
+        Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions);
 
         /// <summary>
-        /// This method is the interception where the module can interact with the execution environment and modify the settings.
+        /// This method decides if input variables contains something to backup.
         /// </summary>
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
         /// <returns>If module is going to backup anything, it returns true, otherwise false</returns>
-        bool ContainFiles(Dictionary<string, string> commandlineOptions);
+        bool ContainFilesForBackup(Dictionary<string, string> commandlineOptions);
+
+        /// <summary>
+        /// This method decides if input variables contains something to backup.
+        /// </summary>
+        /// <param name="paths">A set of source paths</param>
+        /// <returns>If module is going to backup anything, it returns true, otherwise false</returns>
+        bool ContainFilesForBackup(string[] paths);
     }
 }

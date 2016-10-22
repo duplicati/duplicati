@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main
                 foreach (var mx in m_options.LoadedModules)
                     if (mx.Key && mx.Value is Library.Interface.IGenericSourceModule)
                         if(!bModulesFiles)
-                            bModulesFiles = ((Library.Interface.IGenericSourceModule)mx.Value).ContainFiles(m_options.RawOptions);
+                            bModulesFiles = ((Library.Interface.IGenericSourceModule)mx.Value).ContainFilesForBackup(m_options.RawOptions);
                     
                 if (!bModulesFiles && (inputsources == null || inputsources.Length == 0))
                     throw new Exception(Strings.Controller.NoSourceFoldersError);
@@ -613,7 +613,7 @@ namespace Duplicati.Library.Main
 
                     if (mx.Value is Library.Interface.IGenericSourceModule)
                     {
-                        var sourceoptions = ((Library.Interface.IGenericSourceModule)mx.Value).ParseSource(ref paths, ref pristinefilter, m_options.RawOptions);
+                        var sourceoptions = ((Library.Interface.IGenericSourceModule)mx.Value).ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
 
                         foreach (var sourceoption in sourceoptions)
                             m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
