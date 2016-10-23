@@ -31,24 +31,19 @@ namespace Duplicati.Library.Interface
     public interface IGenericSourceModule : IGenericModule
     {
         /// <summary>
-        /// Gets a list of hidden arguments to prevent reporting them as unsupported
-        /// </summary>
-        IList<ICommandLineArgument> HiddenCommands { get; }
-
-        /// <summary>
         /// This method parse and alter backup source paths, apply and alter filters and returns changed or added options values.
         /// </summary>
         /// <param name="paths">Backup source paths</param>
         /// <param name="filter">Filters that are applied to backup paths (include, exclude)</param>
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
         /// <returns>A list of changed or added options values</returns>
-        Dictionary<string, string> ParseSource(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions);
+        Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions);
 
         /// <summary>
-        /// This method is the interception where the module can interact with the execution environment and modify the settings.
+        /// This method decides if input variables contains something to backup.
         /// </summary>
-        /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
+        /// <param name="paths">A set of source paths</param>
         /// <returns>If module is going to backup anything, it returns true, otherwise false</returns>
-        bool ContainFiles(Dictionary<string, string> commandlineOptions);
+        bool ContainFilesForBackup(string[] paths);
     }
 }

@@ -26,9 +26,28 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void GET(string key, RequestInfo info)
         {
+            var hypervUtility = new HyperVUtility();
+
+            if (!hypervUtility.IsHyperVInstalled)
+                info.OutputOK();
+
             try
             {
-                info.OutputOK(new HyperVUtility().GetHyperVGuests().Select(x => new { id = x.ID, name = x.Name }).ToList());
+                if (string.IsNullOrEmpty(key))
+                {
+                    hypervUtility.QueryHyperVGuestsInfo();
+                    info.OutputOK(hypervUtility.Guests.Select(x => new { id = x.ID, name = x.Name }).ToList());
+                }
+                else
+                {
+                    hypervUtility.QueryHyperVGuestsInfo(true);
+                    var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(new Guid(key)));
+
+                    if (foundVMs.Count == 1)
+                        info.OutputOK(foundVMs[0].DataPaths.Select(x => new { text = x, id = x, cls = "folder", iconCls = "x-tree-icon-leaf", check = "false", leaf = "true" }).ToList());
+                    else
+                        info.ReportClientError(string.Format("Cannot find VM with ID {0}.", key));
+                }
             }
             catch (Exception ex)
             {
