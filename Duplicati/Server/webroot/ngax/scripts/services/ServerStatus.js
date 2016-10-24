@@ -211,7 +211,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
                     notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
                     notifyIfChanged(response.data, 'ProgramState', 'programState') |
-                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd')
+                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
                     notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
                     notifyIfChanged(response.data, 'UpdateReady', 'updateReady') |
                     notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|

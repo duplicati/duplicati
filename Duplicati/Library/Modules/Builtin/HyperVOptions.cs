@@ -27,7 +27,6 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class HyperVOptions : Interface.IGenericSourceModule
     {
-        private const string OPTION_SOURCE = "hyperv-backup-vm";
         private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
         private const string m_HyperVGuidRegExp = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
         private const string m_HyperVPathAllRegExp = @"%HYPERV%";
@@ -59,15 +58,6 @@ namespace Duplicati.Library.Modules.Builtin
             get { return null; }
         }
 
-        public IList<Interface.ICommandLineArgument> HiddenCommands
-        {
-            get {
-                return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_SOURCE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, "", "")
-                });
-            }
-        }
-
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
         }
@@ -75,65 +65,135 @@ namespace Duplicati.Library.Modules.Builtin
         #endregion
         
         #region Implementation of IGenericSourceModule
-        public Dictionary<string, string> ParseSource(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
+        public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
-            var pathshyperv = new List<string>();
-            var ret = new Dictionary<string, string>();
-
-            if (paths != null)
-            {
-                if (paths.Contains(m_HyperVPathAllRegExp, StringComparer.OrdinalIgnoreCase))
-                {
-                    if (Utility.Utility.IsClientWindows)
-                        pathshyperv = new HyperVUtility().GetHyperVGuests().Select(x => string.Format(@"%HYPERV%\{0}", x.ID)).ToList();
-                }
-                else
-                    pathshyperv = paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToList();
-
-                paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
-            }
+            var changedOptions = new Dictionary<string, string>();
+            var filtersInclude = new List<string>();
+            var filtersExclude = new List<string>();
 
             if (!string.IsNullOrEmpty(filter))
             {
                 var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
 
-                var filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
-                var filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Select(x => x.Substring(1)).ToList();
+                filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                    .Select(x => Regex.Match(x.Substring(1), m_HyperVGuidRegExp).Value).ToList();
+                filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                    .Select(x => Regex.Match(x.Substring(1), m_HyperVGuidRegExp).Value).ToList();
 
                 var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase)).ToArray();
                 filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
-
-                pathshyperv = pathshyperv.Union(filtersInclude).Except(filtersExclude).ToList();
             }
 
-            pathshyperv = pathshyperv.Select(x => Regex.Match(x, m_HyperVGuidRegExp).Value).ToList();
-
-            if (pathshyperv.Count != 0 && Utility.Utility.IsClientWindows && (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required"))
+            if (!Utility.Utility.IsClientWindows)
             {
-                Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue.", Logging.LogMessageType.Information);
-                ret["snapshot-policy"] = "required";
+                Logging.Log.WriteMessage("Hyper-V backup works only on Windows OS", Logging.LogMessageType.Warning);
+               
+                if(paths != null)
+                    paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
             }
 
-            if (pathshyperv.Count != 0)
+            if (paths == null || !ContainFilesForBackup(paths) || !Utility.Utility.IsClientWindows)
+                return changedOptions;
+            
+            if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
             {
-                if (Utility.Utility.IsClientWindows)
-                    ret[OPTION_SOURCE] = string.Join(System.IO.Path.PathSeparator.ToString(), pathshyperv);
-                else
-                    Logging.Log.WriteMessage("Hyper-V backup works only on Windows OS.", Logging.LogMessageType.Warning);
+                var excludedWriters = commandlineOptions["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
+
+                if (excludedWriters.Contains(HyperVUtility.HyperVWriterGuid))
+                {
+                    Logging.Log.WriteMessage(string.Format("Excluded writers for VSS cannot contain Hyper-V writer when backuping Hyper-V virtual machines. Removing \"{0}\" to continue", HyperVUtility.HyperVWriterGuid.ToString()), Logging.LogMessageType.Warning);
+
+                    changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
+                }
             }
 
-            return ret;
+            if (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required")
+            {
+                Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
+                changedOptions["snapshot-policy"] = "required";
+            }
+
+            var hypervUtility = new HyperVUtility();
+
+            if (!hypervUtility.IsVSSWriterSupported)
+                Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version", Logging.LogMessageType.Warning);
+
+            hypervUtility.QueryHyperVGuestsInfo(true);
+
+            Logging.Log.WriteMessage("Starting to gather Hyper-V information", Logging.LogMessageType.Information);
+            Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count), Logging.LogMessageType.Information);
+
+            List<HyperVGuest> guestsForBackup = new List<HyperVGuest>();
+
+            if (paths.Contains(m_HyperVPathAllRegExp, StringComparer.OrdinalIgnoreCase))
+                guestsForBackup = hypervUtility.Guests;
+            else
+                foreach (var guestID in paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                    .Select(x => Regex.Match(x.Substring(1), m_HyperVGuidRegExp).Value).ToArray())
+                {
+                    var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
+
+                    if (foundGuest.Count() != 1)
+                        throw new Exception(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID));
+
+                    guestsForBackup.Add(foundGuest.First());
+                }
+
+            if (filtersInclude.Count > 0)
+                foreach (var guestID in filtersInclude)
+                {
+                    var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
+
+                    if (foundGuest.Count() != 1)
+                        throw new Exception(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
+
+                    guestsForBackup.Add(foundGuest.First());
+                }
+
+            guestsForBackup = guestsForBackup.Distinct().ToList();
+
+            if (filtersExclude.Count > 0)
+                foreach (var guestID in filtersExclude)
+                {
+                    var foundGuest = guestsForBackup.Where(x => x.ID == new Guid(guestID));
+
+                    if (foundGuest.Count() != 1)
+                        throw new Exception(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
+
+                    guestsForBackup.Remove(foundGuest.First());
+                }
+
+            var pathsForBackup = new List<string>(paths);
+
+            foreach (var guestForBackup in guestsForBackup)
+                foreach (var pathForBackup in guestForBackup.DataPaths)
+                {
+                    bool bResult;
+                    Utility.IFilter matchFilter;
+                    var filterhandler = new Utility.FilterExpression(
+                        filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-")).Select(x => x.Substring(1)).ToList());
+
+                    if (!filterhandler.Matches(pathForBackup, out bResult, out matchFilter))
+                    {
+                        Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}", guestForBackup.Name, pathForBackup), Logging.LogMessageType.Information);
+                        pathsForBackup.Add(pathForBackup);
+                    }
+                    else
+                        Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", pathForBackup), Logging.LogMessageType.Information);
+                }
+
+            paths = pathsForBackup.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                .Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToArray();
+
+            return changedOptions;
         }
         
-        public bool ContainFiles(Dictionary<string, string> commandlineOptions)
+        public bool ContainFilesForBackup(string[] paths)
         {
-            if (commandlineOptions != null && !commandlineOptions.Keys.Contains(OPTION_SOURCE))
+            if (paths == null)
                 return false;
 
-            if (commandlineOptions[OPTION_SOURCE].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Count() > 0)
-                return true;
-            else
-                return false;
+            return paths.Where(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
         }
 
         #endregion

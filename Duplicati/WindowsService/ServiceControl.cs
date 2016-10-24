@@ -67,7 +67,7 @@ namespace Duplicati.WindowsService
                     var sv = new ServiceStatus()
                     {
                         dwCurrentState = ServiceState.SERVICE_START_PENDING,
-                        dwWaitHint = (int)TimeSpan.FromSeconds(30).TotalMilliseconds
+                        dwWaitHint = (uint)TimeSpan.FromSeconds(30).TotalMilliseconds
                     };
                     SetServiceStatus(this.ServiceHandle, ref sv);
 
@@ -120,7 +120,7 @@ namespace Duplicati.WindowsService
                     var sv = new ServiceStatus()
                     {
                         dwCurrentState = ServiceState.SERVICE_STOP_PENDING,
-                        dwWaitHint = (int)TimeSpan.FromSeconds(5).TotalMilliseconds
+                        dwWaitHint = (uint)TimeSpan.FromSeconds(5).TotalMilliseconds
                     };
                     SetServiceStatus(this.ServiceHandle, ref sv);
 
@@ -131,7 +131,7 @@ namespace Duplicati.WindowsService
 
         }
 
-        private enum ServiceState
+        private enum ServiceState : uint
         {
             SERVICE_STOPPED = 0x00000001,
             SERVICE_START_PENDING = 0x00000002,
@@ -145,13 +145,13 @@ namespace Duplicati.WindowsService
         [StructLayout(LayoutKind.Sequential)]
         private struct ServiceStatus
         {
-            public long dwServiceType;
+            public uint dwServiceType;
             public ServiceState dwCurrentState;
-            public long dwControlsAccepted;
-            public long dwWin32ExitCode;
-            public long dwServiceSpecificExitCode;
-            public long dwCheckPoint;
-            public long dwWaitHint;
+            public uint dwControlsAccepted;
+            public uint dwWin32ExitCode;
+            public uint dwServiceSpecificExitCode;
+            public uint dwCheckPoint;
+            public uint dwWaitHint;
         };
 
         [DllImport("advapi32.dll", SetLastError = true)]
