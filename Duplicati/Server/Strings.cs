@@ -15,7 +15,7 @@ Error message: {0}", message); }
         public static string LogfileCommandDescription { get { return LC.L(@"Outputs log information to the file given"); } }
         public static string LoglevelCommandDescription { get { return LC.L(@"Determines the amount of information written in the log file"); } }
         public static string PortablemodeCommandDescription { get { return LC.L(@"Activates portable mode where the database is placed below the program executable"); } }
-        public static string SeriousError(string message) { return LC.L(@"A serious error occured in Duplicati: {0}", message); }
+        public static string SeriousError(string message) { return LC.L(@"A serious error occurred in Duplicati: {0}", message); }
         public static string StartupFailure(System.Exception error) { return LC.L(@"Unable to start up, perhaps another process is already running?
 Error message: {0}", error); }
         public static string UnencrypteddatabaseCommandDescription { get { return LC.L(@"Disables database encryption"); } }

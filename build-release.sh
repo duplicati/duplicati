@@ -77,7 +77,7 @@ git stash save "${GIT_STASH_NAME}"
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
-	echo "${RELEASE_TIMESTAMP}" > "tmp_changelog.txt"
+	echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
 	echo "==========" >> "tmp_changelog.txt"
 	echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
 	echo >> "tmp_changelog.txt"
