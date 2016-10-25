@@ -8,13 +8,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-14 13:50+0200\n"
+"POT-Creation-Date: 2016-10-25 22:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: CommandLine/Program.cs:262
@@ -150,7 +150,7 @@ msgstr ""
 msgid ""
 "Exclude files that match this filter. The special character * means any "
 "number of character, and the special character ? means any single character, "
-"use *.txt to include all files with a txt extension. Regular expressions are "
+"use *.txt to exclude all files with a txt extension. Regular expressions are "
 "also supported and can be supplied by using hard braces, i.e. [.*\\.txt]."
 msgstr ""
 
@@ -479,7 +479,7 @@ msgstr ""
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
 msgid ""
-"Cloudfiles use different servers for authentification based on where the "
+"CloudFiles use different servers for authentification based on where the "
 "account was resides, use this option to set an alternate authentication URL. "
 "This option overrides --{0}."
 msgstr ""
@@ -584,7 +584,7 @@ msgid ""
 "starting the backup, each folder in the list is checked for existence and "
 "optionally the presence of the marker file supplied by --{0}. The first "
 "existing path that optionally contains the marker file is then used as the "
-"destination. Multiple destinations are separated with a {1},. On Windows, "
+"destination. Multiple destinations are separated with a \"{1}\". On Windows, "
 "the path may be a UNC path, and the drive letter may be substituted with an "
 "asterisk (*), eg.: \"*:\\backup\", which will examine all drive letters. If "
 "a username and password is supplied, the same credentials are used for all "
@@ -3022,91 +3022,101 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:36
-msgid "Executes a script before starting an operation, and again on completion"
+msgid ""
+"This module works internaly to parse source parameters to backup Hyper-V "
+"virtual machines"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:37
+msgid "Configure Hyper-V module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:40
+msgid "Executes a script before starting an operation, and again on completion"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:41
 msgid "Run script"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:38
+#: Library/Modules/Builtin/Strings.cs:42
 msgid ""
 "Executes a script after performing an operation. The script will receive the "
 "operation results written to stdout."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:39
+#: Library/Modules/Builtin/Strings.cs:43
 msgid "Run a script on exit"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:40
+#: Library/Modules/Builtin/Strings.cs:44
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:41
+#: Library/Modules/Builtin/Strings.cs:45
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:42
+#: Library/Modules/Builtin/Strings.cs:46
 msgid "Run a required script on startup"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:43
+#: Library/Modules/Builtin/Strings.cs:47
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:44
+#: Library/Modules/Builtin/Strings.cs:48
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:45
+#: Library/Modules/Builtin/Strings.cs:49
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:46
+#: Library/Modules/Builtin/Strings.cs:50
 msgid "Run a script on startup"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:47
+#: Library/Modules/Builtin/Strings.cs:51
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:48
+#: Library/Modules/Builtin/Strings.cs:52
 msgid ""
 "Sets the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:49
+#: Library/Modules/Builtin/Strings.cs:53
 msgid "Sets the script timeout"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:52
+#: Library/Modules/Builtin/Strings.cs:56
 msgid "This module can send email after an operation completes"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:53
+#: Library/Modules/Builtin/Strings.cs:57
 msgid "Send mail"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:54
+#: Library/Modules/Builtin/Strings.cs:58
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup, please use the "
 "option {0} to specify what smtp server to use."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:55
+#: Library/Modules/Builtin/Strings.cs:59
 msgid ""
 "This value can be a filename. If a the file exists, the file contents will "
 "be used as the message body.\n"
@@ -3123,19 +3133,19 @@ msgid ""
 "Any unknown/unset value is removed."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:68
 msgid "The message body"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:65
+#: Library/Modules/Builtin/Strings.cs:69
 msgid "The password used to authenticate with the SMTP server if required."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:66
+#: Library/Modules/Builtin/Strings.cs:70
 msgid "SMTP Password"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:67
+#: Library/Modules/Builtin/Strings.cs:71
 msgid ""
 "This setting is required if mail should be sent, all other settings have "
 "default values. You can supply multiple email adresses seperated with "
@@ -3147,21 +3157,21 @@ msgid ""
 "admin@example.com"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:71
+#: Library/Modules/Builtin/Strings.cs:75
 msgid "Email recipient(s)"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:72
+#: Library/Modules/Builtin/Strings.cs:76
 msgid ""
 "By default, mail will only be sent after a Backup operation. Use this option "
 "to send mail for all operations."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:73
+#: Library/Modules/Builtin/Strings.cs:77
 msgid "Send email for all operations"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:74
+#: Library/Modules/Builtin/Strings.cs:78
 msgid ""
 "Adress of the email sender. If no host is supplied, the hostname of the "
 "first recipient is used. Examples of allowed formats:\n"
@@ -3172,11 +3182,11 @@ msgid ""
 "Mail Sender <sender@example.com>"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:80
+#: Library/Modules/Builtin/Strings.cs:84
 msgid "Email sender"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:81
+#: Library/Modules/Builtin/Strings.cs:85
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\". You can supply multiple "
@@ -3185,11 +3195,11 @@ msgid ""
 "send an email."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:82 Library/Modules/Builtin/Strings.cs:114
+#: Library/Modules/Builtin/Strings.cs:86 Library/Modules/Builtin/Strings.cs:118
 msgid "The messages to send"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:83
+#: Library/Modules/Builtin/Strings.cs:87
 msgid ""
 "A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can "
 "be supplied in a prioritized list, seperated with semicolon. If a server "
@@ -3205,64 +3215,64 @@ msgid ""
 "used for non-ssl, and 587 for SSL connections."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:87
+#: Library/Modules/Builtin/Strings.cs:91
 msgid "SMTP Url"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:88
+#: Library/Modules/Builtin/Strings.cs:92
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in "
 "the description for --{0}."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:89
+#: Library/Modules/Builtin/Strings.cs:93
 msgid "The email subject"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:90
+#: Library/Modules/Builtin/Strings.cs:94
 msgid "The username used to authenticate with the SMTP server if required."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:91
+#: Library/Modules/Builtin/Strings.cs:95
 msgid "SMTP Username"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:92
+#: Library/Modules/Builtin/Strings.cs:96
 #, csharp-format
 msgid "Failed to send email: {0}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:93
+#: Library/Modules/Builtin/Strings.cs:97
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:94
+#: Library/Modules/Builtin/Strings.cs:98
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:95
+#: Library/Modules/Builtin/Strings.cs:99
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:102
 msgid "XMPP recipient email"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:99
+#: Library/Modules/Builtin/Strings.cs:103
 msgid ""
 "The users who should have the messages sent, specify multiple users "
 "seperated with commas"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:100
+#: Library/Modules/Builtin/Strings.cs:104
 msgid "The message template"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:101
+#: Library/Modules/Builtin/Strings.cs:105
 msgid ""
 "This value can be a filename. If a the file exists, the file contents will "
 "be used as the message.\n"
@@ -3279,25 +3289,25 @@ msgid ""
 "Any unknown/unset value is removed."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:114
 msgid "The XMPP username"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:111
+#: Library/Modules/Builtin/Strings.cs:115
 msgid ""
 "The username for the account that will send the message, including the "
 "hostname. I.e. \"account@jabber.org/Home\""
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:112
+#: Library/Modules/Builtin/Strings.cs:116
 msgid "The XMPP password"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:113
+#: Library/Modules/Builtin/Strings.cs:117
 msgid "The password for the account that will send the message"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:119
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\". \n"
@@ -3306,30 +3316,30 @@ msgid ""
 "all backup operations to send a message."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:121
 msgid "Send messages for all operations"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:122
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:119
+#: Library/Modules/Builtin/Strings.cs:123
 msgid "XMPP report module"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:120
+#: Library/Modules/Builtin/Strings.cs:124
 msgid ""
-"This module provides support for sending status reports via XMPP messagesß"
+"This module provides support for sending status reports via XMPP messages"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:125
 msgid "Timeout occured while logging in to jabber server"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:126
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
 msgstr ""
@@ -3567,7 +3577,7 @@ msgstr ""
 
 #: Server/Strings.cs:18
 #, csharp-format
-msgid "A serious error occured in Duplicati: {0}"
+msgid "A serious error occurred in Duplicati: {0}"
 msgstr ""
 
 #: Server/Strings.cs:19
