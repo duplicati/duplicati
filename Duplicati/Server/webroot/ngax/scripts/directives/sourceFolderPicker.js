@@ -227,9 +227,9 @@ backupApp.directive('sourceFolderPicker', function() {
 
                     }, function(data) {
                         var p = data.config.data.path;
-                        var ix = findInList(sources, compareablePath(p));
-                        if (ix != null && sources[ix].id == p)
-                            sources[ix].iconCls = 'x-tree-icon-broken';
+                        var ix = findInList(sourceNodeChildren, compareablePath(p));
+                        if (ix != null && sourceNodeChildren[ix].id == p)
+                            sourceNodeChildren[ix].iconCls = 'x-tree-icon-broken';
                     });
                 }                
             }
