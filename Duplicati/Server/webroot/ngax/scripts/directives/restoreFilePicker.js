@@ -51,6 +51,7 @@ backupApp.directive('restoreFilePicker', function() {
                                 id: data.data.Files[n].Path,
                                 size: data.data.Files[n].Sizes[0],
                                 iconCls: leaf ? 'x-tree-icon-leaf' : '',
+                                entrytype: AppUtils.getEntryTypeFromIconCls(leaf ? 'x-tree-icon-leaf' : ''),
                                 leaf: leaf
                             });
                         }
@@ -294,7 +295,8 @@ backupApp.directive('restoreFilePicker', function() {
                         expanded: items[n].expanded,
                         iconCls: items[n].iconCls,
                         leaf: items[n].leaf,
-                        id: items[n].Path
+                        id: items[n].Path,
+                        entrytype: AppUtils.getEntryTypeFromIconCls(items[n].iconCls)
                     };
                     
                     if (items[n].Children) {
