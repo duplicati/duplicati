@@ -55,7 +55,7 @@ msgstr ""
 msgid "Account name"
 msgstr ""
 
-#: templates/notificationarea.html:29
+#: templates/notificationarea.html:26
 #: templates/updatechangelog.html:11
 msgid "Activate"
 msgstr ""
@@ -101,6 +101,10 @@ msgstr ""
 
 #: templates/home.html:59
 msgid "Advanced:"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:403
+msgid "All Hyper-V Machines"
 msgstr ""
 
 #: templates/settings.html:106
@@ -347,6 +351,10 @@ msgstr ""
 msgid "Compression modules:"
 msgstr ""
 
+#: scripts/directives/sourceFolderPicker.js:361
+msgid "Computer"
+msgstr ""
+
 #: templates/import.html:6
 msgid "Configuration file:"
 msgstr ""
@@ -406,7 +414,7 @@ msgstr ""
 msgid "Continue without encryption"
 msgstr ""
 
-#: scripts/services/AppUtils.js:560
+#: scripts/services/AppUtils.js:563
 msgid "Core options"
 msgstr ""
 
@@ -480,7 +488,7 @@ msgstr ""
 msgid "Custom storage class ({{class}})"
 msgstr ""
 
-#: scripts/services/AppUtils.js:53
+#: scripts/services/AppUtils.js:56
 #: templates/addoredit.html:242
 msgid "Days"
 msgstr ""
@@ -543,8 +551,8 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: templates/notificationarea.html:13
-#: templates/notificationarea.html:27
+#: templates/notificationarea.html:10
+#: templates/notificationarea.html:24
 msgid "Dismiss"
 msgstr ""
 
@@ -584,15 +592,15 @@ msgstr ""
 msgid "Donation messages are visible, click to hide"
 msgstr ""
 
-#: templates/export.html:48
+#: templates/export.html:45
 msgid "Done"
 msgstr ""
 
-#: templates/notificationarea.html:17
+#: templates/notificationarea.html:14
 msgid "Download"
 msgstr ""
 
-#: templates/notificationarea.html:30
+#: templates/notificationarea.html:27
 msgid "Downloading ..."
 msgstr ""
 
@@ -600,18 +608,18 @@ msgstr ""
 msgid "Downloading files ..."
 msgstr ""
 
-#: templates/notificationarea.html:24
+#: templates/notificationarea.html:21
 msgid "Downloading update..."
 msgstr ""
 
-#: scripts/services/AppUtils.js:222
+#: scripts/services/AppUtils.js:225
 msgid "Duplicate option {{opt}}"
 msgstr ""
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
 
@@ -692,7 +700,7 @@ msgstr ""
 msgid "Enter folder path name"
 msgstr ""
 
-#: scripts/services/AppUtils.js:78
+#: scripts/services/AppUtils.js:81
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
 
@@ -714,11 +722,11 @@ msgstr ""
 #: scripts/controllers/RestoreController.js:85
 #: scripts/controllers/RestoreDirectController.js:50
 #: scripts/controllers/RestoreDirectController.js:75
-#: scripts/services/AppUtils.js:222
-#: scripts/services/AppUtils.js:268
-#: scripts/services/AppUtils.js:270
-#: scripts/services/AppUtils.js:278
-#: scripts/services/AppUtils.js:280
+#: scripts/services/AppUtils.js:225
+#: scripts/services/AppUtils.js:271
+#: scripts/services/AppUtils.js:273
+#: scripts/services/AppUtils.js:281
+#: scripts/services/AppUtils.js:283
 msgid "Error"
 msgstr ""
 
@@ -734,31 +742,31 @@ msgstr ""
 msgid "Exclude"
 msgstr ""
 
-#: scripts/services/AppUtils.js:81
+#: scripts/services/AppUtils.js:84
 msgid "Exclude directories whose names contain"
 msgstr ""
 
-#: scripts/services/AppUtils.js:124
+#: scripts/services/AppUtils.js:127
 msgid "Exclude expression"
 msgstr ""
 
-#: scripts/services/AppUtils.js:99
+#: scripts/services/AppUtils.js:102
 msgid "Exclude file"
 msgstr ""
 
-#: scripts/services/AppUtils.js:105
+#: scripts/services/AppUtils.js:108
 msgid "Exclude file extension"
 msgstr ""
 
-#: scripts/services/AppUtils.js:87
+#: scripts/services/AppUtils.js:90
 msgid "Exclude files whose names contain"
 msgstr ""
 
-#: scripts/services/AppUtils.js:93
+#: scripts/services/AppUtils.js:96
 msgid "Exclude folder"
 msgstr ""
 
-#: scripts/services/AppUtils.js:110
+#: scripts/services/AppUtils.js:113
 msgid "Exclude regular expression"
 msgstr ""
 
@@ -827,7 +835,7 @@ msgstr ""
 msgid "Failed to restore files: {{message}}"
 msgstr ""
 
-#: scripts/controllers/SystemSettingsController.js:82
+#: scripts/controllers/SystemSettingsController.js:85
 msgid "Failed to save:"
 msgstr ""
 
@@ -868,15 +876,15 @@ msgstr ""
 msgid "Force stop"
 msgstr ""
 
-#: scripts/services/AppUtils.js:64
+#: scripts/services/AppUtils.js:67
 msgid "Fri"
 msgstr ""
 
-#: scripts/services/AppUtils.js:46
+#: scripts/services/AppUtils.js:49
 msgid "GByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:73
+#: scripts/services/AppUtils.js:76
 msgid "GByte/s"
 msgstr ""
 
@@ -915,13 +923,25 @@ msgstr ""
 msgid "Hide hidden folders"
 msgstr ""
 
-#: scripts/services/AppUtils.js:52
+#: scripts/services/AppUtils.js:55
 #: templates/settings.html:33
 msgid "Hours"
 msgstr ""
 
 #: templates/restore.html:72
 msgid "How do you want to handle existing files?"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:418
+msgid "Hyper-V Machine:"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:397
+msgid "Hyper-V Machines"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:51
+msgid "ID:"
 msgstr ""
 
 #: templates/addoredit.html:179
@@ -933,8 +953,11 @@ msgid "If the backup and the remote storage is out of sync, Duplicati will requi
 msgstr ""
 
 #: templates/export.html:41
+msgid "If the backup file was not downloaded automatically, <a href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save as ...&quot;</a>"
+msgstr ""
+
 #: templates/notificationarea.html:7
-msgid "If the backup file was not downloaded automatically,"
+msgid "If the backup file was not downloaded automatically, <a href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose &quot;Save as ...&quot;</a>"
 msgstr ""
 
 #: scripts/services/EditUriBackendConfig.js:99
@@ -971,11 +994,11 @@ msgstr ""
 msgid "Include a file?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:120
+#: scripts/services/AppUtils.js:123
 msgid "Include expression"
 msgstr ""
 
-#: scripts/services/AppUtils.js:115
+#: scripts/services/AppUtils.js:118
 msgid "Include regular expression"
 msgstr ""
 
@@ -987,7 +1010,7 @@ msgstr ""
 msgid "Individual builds for developers only."
 msgstr ""
 
-#: templates/notificationarea.html:28
+#: templates/notificationarea.html:25
 #: templates/updatechangelog.html:10
 msgid "Install"
 msgstr ""
@@ -1007,11 +1030,11 @@ msgid ""
 "Are you sure your FTP server supports password-less logins?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:44
+#: scripts/services/AppUtils.js:47
 msgid "KByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:71
+#: scripts/services/AppUtils.js:74
 msgid "KByte/s"
 msgstr ""
 
@@ -1099,11 +1122,11 @@ msgstr ""
 msgid "Log data"
 msgstr ""
 
-#: scripts/services/AppUtils.js:45
+#: scripts/services/AppUtils.js:48
 msgid "MByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:72
+#: scripts/services/AppUtils.js:75
 msgid "MByte/s"
 msgstr ""
 
@@ -1124,7 +1147,7 @@ msgstr ""
 msgid "Menu"
 msgstr ""
 
-#: scripts/services/AppUtils.js:51
+#: scripts/services/AppUtils.js:54
 #: templates/settings.html:32
 msgid "Minutes"
 msgstr ""
@@ -1145,11 +1168,11 @@ msgstr ""
 msgid "Missing sources"
 msgstr ""
 
-#: scripts/services/AppUtils.js:60
+#: scripts/services/AppUtils.js:63
 msgid "Mon"
 msgstr ""
 
-#: scripts/services/AppUtils.js:55
+#: scripts/services/AppUtils.js:58
 #: templates/addoredit.html:244
 msgid "Months"
 msgstr ""
@@ -1174,7 +1197,7 @@ msgstr ""
 msgid "Never"
 msgstr ""
 
-#: templates/notificationarea.html:22
+#: templates/notificationarea.html:19
 msgid "New update found: {{message}}"
 msgstr ""
 
@@ -1271,8 +1294,8 @@ msgstr ""
 msgid "OpenStack Object Storage / Swift"
 msgstr ""
 
-#: scripts/controllers/SystemSettingsController.js:104
-#: scripts/controllers/SystemSettingsController.js:93
+#: scripts/controllers/SystemSettingsController.js:107
+#: scripts/controllers/SystemSettingsController.js:96
 msgid "Operation failed:"
 msgstr ""
 
@@ -1520,7 +1543,7 @@ msgstr ""
 msgid "Same as the base install version: {{channelname}}"
 msgstr ""
 
-#: scripts/services/AppUtils.js:65
+#: scripts/services/AppUtils.js:68
 msgid "Sat"
 msgstr ""
 
@@ -1600,8 +1623,8 @@ msgid "Settings"
 msgstr ""
 
 #: templates/addoredit.html:71
-#: templates/notificationarea.html:15
-#: templates/notificationarea.html:32
+#: templates/notificationarea.html:12
+#: templates/notificationarea.html:29
 msgid "Show"
 msgstr ""
 
@@ -1630,6 +1653,10 @@ msgstr ""
 
 #: templates/addoredit.html:22
 msgid "Source Data"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:367
+msgid "Source data"
 msgstr ""
 
 #: templates/addoredit.html:104
@@ -1683,7 +1710,7 @@ msgstr ""
 msgid "Strong"
 msgstr ""
 
-#: scripts/services/AppUtils.js:66
+#: scripts/services/AppUtils.js:69
 msgid "Sun"
 msgstr ""
 
@@ -1703,11 +1730,11 @@ msgstr ""
 msgid "System properties"
 msgstr ""
 
-#: scripts/services/AppUtils.js:47
+#: scripts/services/AppUtils.js:50
 msgid "TByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:74
+#: scripts/services/AppUtils.js:77
 msgid "TByte/s"
 msgstr ""
 
@@ -1757,7 +1784,7 @@ msgstr ""
 
 #: scripts/controllers/EditBackupController.js:131
 msgid ""
-"The path does not end with a '{0}' character, which means that you include a file, not a folder.\n"
+"The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
@@ -1801,7 +1828,7 @@ msgstr ""
 msgid "This week"
 msgstr ""
 
-#: scripts/services/AppUtils.js:63
+#: scripts/services/AppUtils.js:66
 msgid "Thu"
 msgstr ""
 
@@ -1825,7 +1852,7 @@ msgstr ""
 msgid "Try out the new features we are working on. Don't use with important data."
 msgstr ""
 
-#: scripts/services/AppUtils.js:61
+#: scripts/services/AppUtils.js:64
 msgid "Tue"
 msgstr ""
 
@@ -1890,6 +1917,10 @@ msgstr ""
 msgid "Useless"
 msgstr ""
 
+#: scripts/directives/sourceFolderPicker.js:354
+msgid "User data"
+msgstr ""
+
 #: scripts/services/EditUriBuiltins.js:45
 msgid "User has too many permissions"
 msgstr ""
@@ -1923,7 +1954,7 @@ msgstr ""
 
 #: scripts/services/CaptchaService.js:32
 #: scripts/services/ServerStatus.js:58
-#: templates/notificationarea.html:31
+#: templates/notificationarea.html:28
 msgid "Verifying ..."
 msgstr ""
 
@@ -1989,11 +2020,11 @@ msgstr ""
 msgid "Weak passphrase"
 msgstr ""
 
-#: scripts/services/AppUtils.js:62
+#: scripts/services/AppUtils.js:65
 msgid "Wed"
 msgstr ""
 
-#: scripts/services/AppUtils.js:54
+#: scripts/services/AppUtils.js:57
 #: templates/addoredit.html:243
 msgid "Weeks"
 msgstr ""
@@ -2002,7 +2033,7 @@ msgstr ""
 msgid "Where do you want to restore the files to?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:56
+#: scripts/services/AppUtils.js:59
 #: templates/addoredit.html:245
 msgid "Years"
 msgstr ""
@@ -2146,11 +2177,11 @@ msgstr ""
 msgid "bucket/folder/subfolder"
 msgstr ""
 
-#: scripts/services/AppUtils.js:43
+#: scripts/services/AppUtils.js:46
 msgid "byte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:70
+#: scripts/services/AppUtils.js:73
 msgid "byte/s"
 msgstr ""
 
@@ -2179,11 +2210,6 @@ msgstr ""
 
 #: templates/home.html:6
 msgid "resuming in"
-msgstr ""
-
-#: templates/export.html:43
-#: templates/notificationarea.html:9
-msgid "right click and choose &quot;Save as ...&quot;"
 msgstr ""
 
 #: templates/about.html:11
