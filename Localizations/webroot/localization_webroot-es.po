@@ -614,13 +614,13 @@ msgstr "Opciones de duplicado {{opt}}"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Cada copia tiene una base de datos local asociada que almacena información sobre la copia de seguridad remota en la máquina local.\n"
-"Al eliminar una copia de seguridad, también puede borrar la base de datos local sin afectar a la habilidad de restaurar los archivos remotos.\n"
-"Si está utilizando la base de datos local para copias de seguridad desde la línea de comandos, debe mantener la base de datos."
+"Cada copia tiene una base de datos local asociada a ella, esta almacena información sobre la copia de seguridad remota en el equipo local.\r\n"
+"            Al eliminar una copia de seguridad, puede borrar la base de datos local sin afectar a la capacidad de restaurar los archivos remotos.\r\n"
+"            Si está utilizando la base de datos local para copias de seguridad desde la línea de comandos, debe mantener la base de datos."
 
 #: templates/localdatabase.html:8
 msgid ""
