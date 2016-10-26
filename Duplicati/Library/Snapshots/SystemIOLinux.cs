@@ -177,8 +177,14 @@ namespace Duplicati.Library.Snapshots
 
             var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
-            dict["unix:owner-name"] = fse.OwnerName;
-            dict["unix:group-name"] = fse.GroupName;
+            if (fse.OwnerName != null)
+            {
+                dict["unix:owner-name"] = fse.OwnerName;
+            }
+            if (fse.GroupName != null)
+            {
+                dict["unix:group-name"] = fse.GroupName;
+            }
 
             return dict;
         }
