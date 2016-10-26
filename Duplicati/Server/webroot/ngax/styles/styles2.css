@@ -413,23 +413,18 @@ div.connection-lost, div.blocker, div.modal-dialog {
   z-index: 5100;
 }
 
-div.connection-lost {
-  width: 250px;
-  height: 200px;
-}
-
-div.modal-dialog {
-  width: 350px;
-  height: 250px;
-}
-
 div.blocker {
   background-color: #000000;
   opacity: 0.65;
 }
 
 .connection-lost div.info, .modal-dialog div.info {
-  display: inline-block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 250px;
+  max-width: 550px;
 }
 
 .connection-lost div.title, .modal-dialog div.title {
@@ -444,7 +439,6 @@ div.blocker {
   padding-right: 20px;
   font-weight: bold;
   color: lightgray;
-  width: 100%;
   text-align: center;
 }
 
@@ -452,8 +446,6 @@ div.blocker {
   background-color: white;
   border: 1px solid white;
   padding: 20px;
-  width: 100%;
-  min-width: 250px;
 }
 
 .connection-lost div.content.buttons, .modal-dialog div.content.buttons { 
