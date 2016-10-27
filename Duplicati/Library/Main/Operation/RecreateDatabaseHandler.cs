@@ -410,42 +410,46 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         var progress = 0;
-                        foreach(var sf in new AsyncDownloader(lst, backend))
-                            using(var tmpfile = sf.TempFile)
-                            using(var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
-                            using(var tr = restoredb.BeginTransaction())
+                        using (var tr = restoredb.BeginTransaction())
+                        {
+                            foreach (var sf in new AsyncDownloader(lst, backend))
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                using (var tmpfile = sf.TempFile)
+                                using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
                                 {
-                                    backend.WaitForComplete(restoredb, null);
-                                    return;
-                                }    
-                            
-                                progress++;
-                                m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    {
+                                        backend.WaitForComplete(restoredb, null);
+                                        return;
+                                    }
 
-                                var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
+                                    progress++;
+                                    m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
 
-                                restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
-                            
-                                // Update the block table so we know about the block/volume map
-                                foreach(var h in rd.Blocks)
-                                    restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr);
-                            
-                                // Grab all known blocklists from the volume
-                                foreach(var blocklisthash in restoredb.GetBlockLists(volumeid))
-                                    restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
-    
-                                // Update tables so we know if we are done
-                                restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
-                        
-                                using(new Logging.Timer("CommitRestoredBlocklist"))
-                                    tr.Commit();
-    
-                                //At this point we can patch files with data from the block volume
-                                if (blockprocessor != null)
-                                    blockprocessor(sf.Name, rd);
+                                    var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
+
+                                    restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
+
+                                    // Update the block table so we know about the block/volume map
+                                    foreach (var h in rd.Blocks)
+                                        restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr);
+
+                                    // Grab all known blocklists from the volume
+                                    foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
+                                        restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
+
+                                    //At this point we can patch files with data from the block volume
+                                    if (blockprocessor != null)
+                                        blockprocessor(sf.Name, rd);
+                                }
                             }
+
+                            // Update lists after we are done
+                            restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
+
+                            using (new Logging.Timer("CommitRestoredBlocklist"))
+                                tr.Commit();
+                        }
                     }
                 }
                 
