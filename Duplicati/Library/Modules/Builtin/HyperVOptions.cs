@@ -63,9 +63,29 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         #endregion
-        
+
         #region Implementation of IGenericSourceModule
         public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
+        {
+            // Early exit in case we are non-windows to prevent attempting to load Windows-only components
+            if (!Utility.Utility.IsClientWindows)
+            {
+                Logging.Log.WriteMessage("Hyper-V backup works only on Windows OS", Logging.LogMessageType.Warning);
+
+                if (paths != null)
+                    paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
+
+                return new Dictionary<string, string>();
+            }
+
+            // Windows, do the real stuff!
+            return RealParseSourcePaths(ref paths, ref filter, commandlineOptions);
+        }
+
+        // Make sure the JIT does not attempt to inline this call and thus load
+        // referenced types from System.Management here
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             var changedOptions = new Dictionary<string, string>();
             var filtersInclude = new List<string>();
@@ -84,15 +104,7 @@ namespace Duplicati.Library.Modules.Builtin
                 filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
             }
 
-            if (!Utility.Utility.IsClientWindows)
-            {
-                Logging.Log.WriteMessage("Hyper-V backup works only on Windows OS", Logging.LogMessageType.Warning);
-               
-                if(paths != null)
-                    paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
-            }
-
-            if (paths == null || !ContainFilesForBackup(paths) || !Utility.Utility.IsClientWindows)
+            if (paths == null || !ContainFilesForBackup(paths))
                 return changedOptions;
             
             if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
