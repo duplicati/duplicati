@@ -1,0 +1,13 @@
+<svg id="tray_menu_icons" data-name="tray menu icons" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #65b1dd;
+      }
+    </style>
+  </defs>
+  <title>tray context menu icons</title>
+  <g id="show_Kopie" data-name="show Kopie">
+    <polygon class="cls-1" points="8 4.001 2 10.301 3.5 11.876 8 7.072 12.5 11.876 14 10.301 8 4.001"/>
+  </g>
+</svg>
