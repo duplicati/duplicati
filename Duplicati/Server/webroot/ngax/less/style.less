@@ -5,6 +5,25 @@
 @import 'form.less';
 @import 'font-awesome/font-awesome.less';
 
+// https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+.flexbox()
+{
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.flex(@grow: 0; @shrink: 1; @basis: auto)
+{
+    -webkit-box-flex: @grow @shrink @basis;
+    -moz-box-flex: @grow @shrink @basis;
+    -webkit-flex: @grow @shrink @basis;
+    -ms-flex: @grow @shrink @basis;
+    flex: @grow @shrink @basis;
+}
+
 *
 {
     font-family: 'Clear Sans', sans-serif;
@@ -1049,15 +1068,72 @@ span.info
     float: none !important;
 }
 
+div.blocker,
+div.connection-lost,
+div.modal-dialog
+{
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    margin: auto;
+}
+
 div.blocker
 {
     z-index: 5000;
+    background-color: #000000;
+    opacity: 0.65;
+}
+
+#connection-lost-blocker {
+    z-index: 5100;
+}
+
+#connection-lost-dialog {
+    z-index: 5200;
 }
 
 div.connection-lost,
 div.modal-dialog
 {
     z-index: 5001;
+    .flexbox;
+    align-items: center;
+    justify-content: center;
+
+    div.info
+    {
+        min-width: 310px;
+        max-width: 650px;
+        margin: 5px;
+    }
+
+    div.title
+    {
+        border: 1px solid #65b1dd;
+        background-color: #65b1dd;
+        border-radius: 5px 5px 0 0;
+        padding: 10px 20px;
+        font-weight: bold;
+        color: lightgray;
+        text-align: center;
+    }
+
+    div.content
+    {
+        background-color: white;
+        border: 1px solid white;
+        padding: 20px;
+    }
+
+    .buttons
+    {
+        border-radius: 0 0 5px 5px;
+        padding-top: 10px;
+        overflow: auto;
+    }
 
     form
     {
@@ -1073,7 +1149,6 @@ div.modal-dialog
             color: #8f8f8f;
             font-size: 16px;
             font-weight: 300;
-
         }
 
         input
@@ -1082,6 +1157,31 @@ div.modal-dialog
             line-height: 35px;
             padding: 0 12px;
         }
+    }
+}
+
+.modal-dialog
+{
+    form.copy-clipboard
+    {
+        .flexbox;
+
+        input
+        {
+            .flex(@grow: 1);
+            width: 550px;
+        }
+
+        a
+        {
+            .flex(@shrink: 0);
+            padding: 7px 15px 8px 15px;
+        }
+    }
+
+    .content.buttons ul
+    {
+        float: right;
     }
 }
 
