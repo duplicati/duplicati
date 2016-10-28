@@ -238,8 +238,26 @@ namespace UnixSupport
                 UID = fse.OwnerUserId;
                 GID = fse.OwnerGroupId;
                 Permissions = (long)fse.FileAccessPermissions;
-                OwnerName = fse.OwnerUser.UserName;
-                GroupName = fse.OwnerGroup.GroupName;
+
+				try
+				{
+					OwnerName = fse.OwnerUser.UserName;
+				}
+				catch (ArgumentException)
+				{
+					// Could not retrieve user name, possibly the user is not defined on the local system
+					OwnerName = null;
+				}
+
+				try
+				{
+					GroupName = fse.OwnerGroup.GroupName;
+				}
+				catch (ArgumentException)
+				{
+					// Could not retrieve group name, possibly the group is not defined on the local system
+					GroupName = null;
+				}
             }
         }
         

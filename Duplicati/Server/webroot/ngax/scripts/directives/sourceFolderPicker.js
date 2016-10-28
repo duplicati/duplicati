@@ -33,6 +33,11 @@ backupApp.directive('sourceFolderPicker', function() {
             return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
         }
 
+        function setEntryType(n)
+        {
+            n.entrytype = AppUtils.getEntryTypeFromIconCls(n.iconCls);
+        }
+
         function setIconCls(n) {
             var cp = compareablePath(n.id);
 
@@ -56,6 +61,8 @@ backupApp.directive('sourceFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-broken';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
+
+            setEntryType(n);
         }
 
         function indexOfPathInArray(array, item) {
@@ -227,9 +234,11 @@ backupApp.directive('sourceFolderPicker', function() {
 
                     }, function(data) {
                         var p = data.config.data.path;
-                        var ix = findInList(sources, compareablePath(p));
-                        if (ix != null && sources[ix].id == p)
-                            sources[ix].iconCls = 'x-tree-icon-broken';
+                        var ix = findInList(sourceNodeChildren, compareablePath(p));
+                        if (ix != null && sourceNodeChildren[ix].id == p) {
+                            sourceNodeChildren[ix].iconCls = 'x-tree-icon-broken';
+                            setEntryType(sourceNodeChildren[ix]);
+                        }
                     });
                 }                
             }
@@ -327,6 +336,10 @@ backupApp.directive('sourceFolderPicker', function() {
                 AppService.post('/filesystem?onlyfolders=false&showhidden=true', {path: node.id}).then(function(data) {
                     node.children = data.data;
                     node.loading = false;
+
+                    if (node.children != null)
+                        for(var i in node.children)
+                            setEntryType(node.children[i]);
                     
                     updateIncludeFlags(node, node.include);
 

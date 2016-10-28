@@ -1,3 +1,16 @@
+2016-10-27 - 2.0.1.29_canary_2016-10-27
+==========
+* Better support for LVM snapshots, thanks @a1ezzz
+* Fixed additional Debian dependencies, thanks @a1ezzz
+* Additional translation files, Spanish and French
+* Improved HyperV support from CLI and UI, thanks @mnaiman and @agrajaghh
+* Fixed a bug with log-spam from Windows Service, thanks @mnaiman
+* Fixed issue with backup metadata and user that do not exist locally, thanks @gerco
+* Improved screen reading support
+* Fixed OSX icon on dark statusbar
+* Fixed crashes on Linux related to icon format
+* Updated GTK support and switched to SVG icons
+
 2016-10-19
 ==========
 * Some additions to the translation system

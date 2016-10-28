@@ -10,32 +10,32 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-10-26 13:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: ForGorNorPor <ForGorNorPor44@mailinator.com>, 2016\n"
-"Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
+"Last-Translator: Glaude Ratinier <zitoire@yahoo.fr>, 2016\n"
+"Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: de\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: CommandLine/Program.cs:262
 msgid "Toggle automatic updates"
-msgstr "Automatische Updates anschalten"
+msgstr "Activer les mises à jour automatiques"
 
 #: CommandLine/Program.cs:262
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
 msgstr ""
-"Verwende diese Optionen wenn Du möchtest, dass sich die "
-"Kommandozeilenversion automatisch aktualisiert."
+"Activez cette option si vous souhaitez actualiser automatiquement la version"
+" en ligne de commande"
 
 #: CommandLine/Strings.cs:4
 #, csharp-format
 msgid "The command {0} needs at least one of the following options set: {1}"
 msgstr ""
-"Für den Befehl {0} muss mindestens eine der folgenden Optionen angegeben "
-"werden: {1}"
+"La commande {0} nécessite l'activation d'au moins une des options suivante :"
+" {1}"
 
 #: CommandLine/Strings.cs:5
 #, csharp-format
@@ -43,61 +43,62 @@ msgid ""
 "Found {0} commands but expected {1}, commands: \n"
 "{2}"
 msgstr ""
-"{0} Befehle gefunden, aber {1} erwartet, Befehle:\n"
+"Trouvé {0} commandes, mais en attendais {1}, commandes :\n"
 "{2}"
 
 #: CommandLine/Strings.cs:7
 #, csharp-format
 msgid "Command not supported: {0}"
-msgstr "Befehl nicht unterstützt: {0}"
+msgstr "Commande non supportée : {0}"
 
 #: CommandLine/Strings.cs:8
 msgid "No filesets matched the criteria"
-msgstr "Keine Dateigruppen entsprechen den Kriterien"
+msgstr "Aucun ensemble de fichiers ne correspond aux critères"
 
 #: CommandLine/Strings.cs:9
 msgid "The following filesets would be deleted:"
-msgstr "Die folgenden Dateigruppen werden gelöscht:"
+msgstr "Le groupe de fichiers suivant serait supprimé :"
 
 #: CommandLine/Strings.cs:10
 msgid "These filesets were deleted:"
-msgstr "Diese Dateigruppen wurden gelöscht:"
+msgstr "Ce groupe de fichiers a été supprimé :"
 
 #: CommandLine/Strings.cs:11
 msgid "Supported backends:"
-msgstr "Unterstützte Backends:"
+msgstr "Back-ends supportés :"
 
 #: CommandLine/Strings.cs:12
 msgid "Supported compression modules:"
-msgstr "Unterstützte Kompressions-Module:"
+msgstr "Modules de compression supportés :"
 
 #: CommandLine/Strings.cs:13
 msgid "Supported encryption modules:"
-msgstr "Unterstützte Verschlüsselungs-Module:"
+msgstr "Modules de cryptage supportés :"
 
 #: CommandLine/Strings.cs:14
 msgid "Supported options:"
-msgstr "Unterstützte Optionen:"
+msgstr "Options supportées :"
 
 #: CommandLine/Strings.cs:15
 msgid "Module is loaded atomatically, use --disable-module to prevent this"
 msgstr ""
-"Modul wird automatisch geladen, benutze --disable-module um dies zu "
-"verhindern"
+"Le module est chargé automatiquement, utilisez --disable-module pour éviter "
+"cela"
 
 #: CommandLine/Strings.cs:16
 msgid "Module is not loaded atomatically, use --enable-module to load it"
 msgstr ""
-"Modul wird nicht automatisch geladen, benutze --enable-module um es zu laden"
+"Le module n'est pas chargé automatiquement, utilisez --enable-module pour le"
+" charger"
 
 #: CommandLine/Strings.cs:17
 msgid "Supported generic modules:"
-msgstr "Unterstützte allgemeine Module:"
+msgstr "Modules génériques pris en charge :"
 
 #: CommandLine/Strings.cs:18
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr "Parameterdatei  \"{0}\" konnte nicht gelesen werden, Grund: {1}"
+msgstr "Impossible de lire le fichier de paramètre \"{0}\", cause : {1}"
 
 #: CommandLine/Strings.cs:19
 #, csharp-format
@@ -107,11 +108,11 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " with either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
-"Filter können nicht in der Kommandozeile angegeben werden, wenn bereits "
-"Filter in der Parameterdatei enthalten sind. Verwende die Spezialoptionen "
-"--{0}, --{1} oder --{2} um Filter innerhalb der Parameterdatei anzugeben. "
-"Jeder Filter muss als Präfix entweder ein + oder ein - enthalten und mehrere"
-" Filter müssen mit {3} verknüpft werden."
+"Les filtres ne peuvent pas être précisés dans la ligne de commande si les "
+"filtres sont aussi présents dans le fichier de paramètre. Utilisez les "
+"options spéciales --{0}, --{1} ou --{2} pour préciser les filtres dans le "
+"fichier de paramètre. Chaque filtre doit être préfixé avec soit a + ou a - "
+"et les filtres multiples doivent être attachés avec {3}"
 
 #: CommandLine/Strings.cs:20
 #, csharp-format
@@ -119,8 +120,8 @@ msgid ""
 "The option --{0} was supplied, but it is reserved for internal use and may "
 "not be set on the commandline"
 msgstr ""
-"Die Option --{0} ist reserviert für internen Gebrauch und darf nicht als "
-"Kommandozeilenparameter angegeben werden"
+"L'option --{0} a été fournie, mais elle est réservé à un usage interne et ne"
+" peut être mise en place dans la ligne de commande"
 
 #: CommandLine/Strings.cs:21
 #, csharp-format
@@ -136,31 +137,32 @@ msgid ""
 "parameter file. Each filter must be prefixed with with either a + or a -, "
 "and multiple filters must be joined with {5} "
 msgstr ""
-"Diese Option kann genutzt werden um einige oder alle Optionen des "
-"Kommandozeilen Clients zu speichern. Bei der Datei muss es sich um eine "
-"einfache Textdatei handeln, bestenfalls UTF-8 kodiert. Jede Zeile in der "
-"Datei sollte folgendes Format haben: --option=Wert. Die speziellen Optionen "
-"--{0} und --{1} können verwendet werden um die lokale URL, bzw. die remote "
-"URL zu überschreiben. Die Optionen in der Datei haben Vorrang vor den "
-"Optionen der Kommandozeile. Es ist nicht möglich Filter in der Datei und auf"
-" der Kommandozeile anzugeben. Stattdessen gibt es die Spezialoptionen --{2},"
-" --{3} oder --{4} um die Filter innerhalb der Parameterdatei anzugeben. "
-"Jeder Filter muss als Präfix entweder ein + oder ein - enthalten und mehrere"
-" Filter müssen mit {5} verknüpft werden."
+"Cette option peut être utilisée pour stocker une partie ou l'ensemble des "
+"options données aux clients en ligne de commande. Le fichier doit être en "
+"texte brut, l'encodage en UTF-8 est préférable. Chaque ligne dans le fichier"
+" doit être dans le format --option=value. Les options spéciales --{0} et -- "
+"{1} peuvent être respectivement utilisées pour outrepasser le chemin local "
+"et l'uri d'emplacement distant. Les options dans ce fichier priment sur les "
+"options fournies en ligne de commande. Vous ne pouvez pas préciser de filtre"
+" dans le fichier et la ligne de commande en même temps. À la place vous "
+"pouvez utiliser les options spéciales --{2}, --{3} où --{4} pour préciser "
+"des filtres à l'intérieur du fichier de paramètre. Chaque filtre doit être "
+"préfixé avec soit a + ou a - et les filtres multiples doivent être attachés "
+"avec {5}"
 
 #: CommandLine/Strings.cs:22
 msgid "Path to a file with parameters"
-msgstr "Pfad zu einer Datei mit Parametern"
+msgstr "Chemin vers un fichier avec paramètres"
 
 #: CommandLine/Strings.cs:23
 #, csharp-format
 msgid "An error occured: {0}"
-msgstr "Ein Fehler ist aufgetreten: {0}"
+msgstr "Une erreur est survenue : {0}"
 
 #: CommandLine/Strings.cs:24
 #, csharp-format
 msgid "The inner error message is: {0}"
-msgstr "Die innere Fehlermeldung ist: {0}"
+msgstr "Le message interne est : {0}"
 
 #: CommandLine/Strings.cs:25
 msgid ""
@@ -170,15 +172,16 @@ msgid ""
 "are also supported and can be supplied by using hard braces, i.e. "
 "[.*\\.txt]."
 msgstr ""
-"Füge Dateien hinzu, die diesem Filter entsprechen. Das Zeichen * steht für "
-"eine beliebige Anzahl Zeichen und das Zeichen ? steht für einen einzelnes "
-"Zeichen. Verwende *.txt um alle Dateien hinzuzufügen, die auf txt enden. Es "
-"können auch reguläre Ausdrücke verwendet werden,  gib diese dazu in eckigen "
-"Klammern an, z.B: [.*\\.txt]."
+"Inclure des fichiers qui correspondent à ce filtre. Le caractère spécial * "
+"signifie : n'importe quel nombre de caractères, et le caractère spécial ? "
+"signifie n'importe quel caractère unique. Utilisez un *.txt pour inclure "
+"tous les fichiers avec une extension .txt. Les expressions régulières sont "
+"également prises en charge et peuvent être utilisées grâce aux crochets, "
+"c.-à-d. [.*\\.txt]."
 
 #: CommandLine/Strings.cs:26
 msgid "Include files"
-msgstr "Dateien hinzufügen"
+msgstr "Inclure fichiers"
 
 #: CommandLine/Strings.cs:27
 msgid ""
@@ -188,15 +191,10 @@ msgid ""
 "are also supported and can be supplied by using hard braces, i.e. "
 "[.*\\.txt]."
 msgstr ""
-"Schließe Dateien aus, die diesem Filter entsprechen. Das Zeichen * steht für"
-" eine beliebige Anzahl Zeichen und das Zeichen ? steht für einen einzelnes "
-"Zeichen. Verwende *.txt um alle Dateien auszuschließen, die auf txt enden. "
-"Es können auch reguläre Ausdrücke verwendet werden, gib diese dazu in "
-"eckigen Klammern an, z.B: [.*\\.txt]."
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"
-msgstr "Dateien ausschließen"
+msgstr "Exclure fichiers"
 
 #: CommandLine/Strings.cs:29
 msgid ""
@@ -204,28 +202,27 @@ msgid ""
 "of files to add to the filesets. When used with list or restore, it will "
 "list or restore the control files instead of the normal files."
 msgstr ""
-"Wenn diese Option mit einer Backupoperation verwendet wird, wird sie als "
-"eine Liste von Dateien interpretiert, die den Dateigruppen hinzugefügt "
-"werden. Bei Verwendung einer Liste oder Wiederherstellung werden die "
-"Steuerdateien anstatt der normalen Dateien aufgelistet oder "
-"wiederhergestellt."
+"Si cette option est utilisée avec une opération de sauvegarde, elle est "
+"interprétée comme une liste de fichiers à ajouter au groupe de fichiers. Si "
+"elle est utilisée avec une liste ou une restauration, elle listera ou "
+"restaurera les fichiers de contrôle à la place des fichiers normaux."
 
 #: CommandLine/Strings.cs:30
 msgid "Use control files"
-msgstr "Verwende Steuerdateien"
+msgstr "Utiliser des fichiers de contrôle"
 
 #: CommandLine/Strings.cs:31
 msgid ""
 "If this option is set, progress reports and other messages that would "
 "normally go to the console will be redirected to the log."
 msgstr ""
-"Wenn diese Option gewählt wurde, dann werden Fortschrittsreports und andere "
-"Nachrichten in die Logdatei umgeleitet, statt wie normalerweise auf die "
-"Konsole."
+"Si cette option est sélectionnée, les rapports de progrès et les autres "
+"messages qui iraient normalement dans la console seront redirigés vers "
+"l'historique."
 
 #: CommandLine/Strings.cs:32
 msgid "Disable console output"
-msgstr "Deaktiviere Konsolenausgabe"
+msgstr "Désactiver les sorties console"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:9
 msgid ""
@@ -233,10 +230,9 @@ msgid ""
 "alternative FTP client. Allowed formats are \"aftp://hostname/folder\" or "
 "\"aftp://username:password@hostname/folder\""
 msgstr ""
-"Das Backend kann Daten von einem FTP-basierten Backend lesen und schreiben "
-"mit Hilfe eines alternativen FTP Clients. Erlaubte Formate sind "
-"\"aftp://hostname/folder\" oder "
-"\"aftp://username:password@hostname/folder\"."
+"Ce back-end peut lire et écrire des données dans un back-end basé sur un FTP"
+" en utilisant un client FTP alternatif. Les formats autorisés sont "
+"\"aftp://hostname/folder\" ou  \"aftp://username:password@hostname/folder\""
 
 #: Library/Backend/AlternativeFTP/Strings.cs:10
 #: Library/Backend/AzureBlob/Strings.cs:13
@@ -249,8 +245,8 @@ msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
 msgstr ""
-"Das Passwort wird verwendet um sich mit dem Server zu verbinden. Es kann "
-"auch über die Umgebungsvariable \"AUTH_PASSWORD\" gesetzt werden."
+"Le mot de passe utilisé pour se connecter au serveur. Il peut également être"
+" fourni comme une variable d'environnement \"AUTH_PASSWORD\"."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:11
 #: Library/Backend/AzureBlob/Strings.cs:14
@@ -261,7 +257,7 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:9 Library/Backend/SSHv2/Strings.cs:24
 #: Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
-msgstr "Liefert das Passwort um sich mit dem Server zu verbinden."
+msgstr "Fourni le mot de passe utilisé pour se connecter au serveur"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:12
 #: Library/Backend/AzureBlob/Strings.cs:15
@@ -275,8 +271,8 @@ msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
 msgstr ""
-"Der Benutzername wird verwendet um sich mit dem Server zu verbinden. Es kann"
-" auch über die Umgebungsvariable \"AUTH_USERNAME\" gesetzt werden."
+"Le nom d'utilisateur utilisé pour se connecter au serveur. Il peut également"
+" être fourni comme une variable d'environnement \"AUTH_USERNAME\"."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:13
 #: Library/Backend/AzureBlob/Strings.cs:16
@@ -287,16 +283,16 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:11
 #: Library/Backend/SSHv2/Strings.cs:26 Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
-msgstr "Liefert den Benutzernamen, für die Serververbindung"
+msgstr "Fourni le nom d'utilisateur utilisé pour se connecter au serveur"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:14
 msgid "Alternative FTP"
-msgstr "Alternative FTP"
+msgstr "FTP alternatif"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:15
 #, csharp-format
 msgid "The folder {0} was not found. Message: {1}"
-msgstr "Der Ordner {0} konnte nicht gefunden werden. Nachricht: {1}"
+msgstr "Le dossier {0} n'a pas été trouvé. Message : {1}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:16
 #: Library/Backend/FTP/Strings.cs:20
@@ -305,8 +301,8 @@ msgid ""
 "The file {0} was uploaded but not found afterwards, the file listing "
 "returned {1}"
 msgstr ""
-"Die Datei {0} wurde hochgeladen, aber anschließend nicht gefunden. Ausgabe "
-"der Dateiliste: {1}"
+"Le fichier {0} a été téléversé, mais non trouvé par la suite, le listing de "
+"fichier a renvoyé {1}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:17
 #: Library/Backend/FTP/Strings.cs:21
@@ -315,13 +311,13 @@ msgid ""
 "The file {0} was uploaded but the returned size was {1} and it was expected "
 "to be {2}"
 msgstr ""
-"Die Datei {0} wurde hochgeladen, aber die zurückgegebene Dateigröße ist {1} "
-"und erwartet wurde {2}"
+"Le fichier {0} a été téléversé, mais la taille renvoyé était {1} alors "
+"qu'elle était supposée être {2}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:18
 #: Library/Backend/FTP/Strings.cs:22
 msgid "Disable upload verification"
-msgstr "Deaktiviere Upload-Überprüfung"
+msgstr "Désactiver la vérification de téléversement"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:19
 msgid ""
@@ -329,53 +325,50 @@ msgid ""
 "attempted to be verified. Use this option to disable this verification to "
 "make the upload faster but less reliable."
 msgstr ""
-"Jeder Upload wird überpüft um sich vor Netzwerk- oder Serverfehlern zu "
-"schützen. Nutze diese Option um die Überprüfung abzuschalten und den Upload "
-"dadurch schneller, aber weniger verlässlich zu machen."
+"Pour protéger contre les échecs de réseau ou serveur, chaque téléversement "
+"tentera d'être vérifié. Utiliser cette option pour désactiver cette "
+"vérification pour rendre le téléversement plus rapide, mais moins fiable."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:20
 msgid ""
 "If this flag is set, the FTP data connection type will be changed to the "
 "selected option."
 msgstr ""
-"Wenn diese Option aktiv ist, wird die FTP Datenverbindung auf die gewählte "
-"Option geändert."
+"Si ce drapeau est sélectionné, les données de type FTP seront changées pour "
+"l'option sélectionné."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:21
 msgid "Configure the FTP data connection type"
-msgstr "Stelle den FTP Datenverbindungstyp ein"
+msgstr "Configurer les types de connexion de donnée FTP"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:22
 msgid ""
 "If this flag is set, the FTP encryption mode will be changed to the selected"
 " option."
 msgstr ""
-"Wenn diese Option aktiv ist, dann wird der FTP Verschlüsselungsmodus auf die"
-" gewählte Option gesetzt."
+"Si ce drapeau est sélectionné, le mode de cryptage FTP sera changé pour "
+"l'option sélectionnée."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:23
 msgid "Configure the FTP encryption mode"
-msgstr "Stelle den FTP Verschlüsselungsmodus ein"
+msgstr "Configurer le mode de cryptage FTP"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:24
 msgid "This flag controls the SSL policy to use when encryption is enabled."
 msgstr ""
-"Dieses Flag steuert die SSL-Richtlinie, welche verwendet wird, wenn die "
-"Verschlüsselung aktiviert ist."
+"Ce drapeau contrôle la police SSL utilisée quand le cryptage est activé."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
-msgstr ""
-"Konfiguriere die SSL-Richtlinie, welche verwendet wird, wenn die "
-"Verschlüsselung aktiviert ist."
+msgstr "Configure la police SSL à utiliser quand le cryptage est activé"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
 "This backend can read and write data to Amazon Cloud Drive. Supported format"
 " is \"amzcd://folder/subfolder\"."
 msgstr ""
-"Dieses Backend unterstützt das lesen und schreiben von Daten zu Amazon Cloud"
-" Drive. Unterstütztes Format ist \"amzcd://folder/subfolder\"."
+"Ce back-end peut lire et écrire des données vers Amazon Cloud Drive. Le "
+"format pris en charge est : \"amzcd://folder/subfolder\"."
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:24
 #: Library/Backend/Box/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:24
@@ -385,7 +378,7 @@ msgstr ""
 #: Library/Backend/OAuthHelper/Strings.cs:9
 #: Library/Backend/OneDrive/Strings.cs:11
 msgid "The authorization code"
-msgstr "Der Autorisierungscode"
+msgstr "Le code d'autorisation"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:25
 #: Library/Backend/Box/Strings.cs:25 Library/Backend/Dropbox/Strings.cs:25
@@ -396,7 +389,7 @@ msgstr "Der Autorisierungscode"
 #: Library/Backend/OneDrive/Strings.cs:12
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
-msgstr "Das Autorisierungstoken von {0}"
+msgstr "Le code d'autorisation récupéré depuis {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:26
 msgid "Amazon Cloud Drive"
@@ -410,40 +403,41 @@ msgstr "Amazon Cloud Drive"
 #: Library/Backend/OAuthHelper/Strings.cs:6
 #, csharp-format
 msgid "You need an AuthID, you can get it from: {0}"
-msgstr "Du benötigst eine AuthID von: {0}"
+msgstr "Vous devez avoir un AuthID, vous pouvez l'obtenir depuis : {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:28
 msgid "The labels to set"
-msgstr "Das Label einstellen"
+msgstr "Les labels à activer"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:29
 msgid "Use this option to set labels on the files and folders created"
 msgstr ""
-"Mit dieser Option können Labels für die erstellten Dateien und Ordner "
-"festgelegt werden"
+"Utilisez cette option pour attribuer les labels sur les fichiers et dossiers"
+" créés"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:30
 #: Library/Backend/GoogleServices/Strings.cs:47
 #, csharp-format
 msgid "There is more than one item named \"{0}\" in the folder \"{1}\""
-msgstr "Es gibt mehr als einen Eintrag mit dem Namen \"{0}\" im Ordner \"{1}\""
+msgstr "Il y'a plus qu'un élément nommé \"{0} dans le dossier \"{1}\""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:31
 msgid "The consistency delay"
-msgstr "Die Konsistenzverzögerung"
+msgstr "Le délai de consistance"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:32
 msgid "Amazon Cloud drive needs a small delay for results to stay consistent."
 msgstr ""
-"Amazon Cloud Drive benötigt eine kurze Wartezeit um konsistent zu bleiben."
+"Amazon Cloud drive a besoin d'un petit délai pour que les résultats restent "
+"consistants"
 
 #: Library/Backend/AzureBlob/Strings.cs:4
 msgid "All files will be written to the container specified"
-msgstr "Alle Dateien werden in den angegebenen Container geschrieben"
+msgstr "Tous les fichiers seront écrits dans le conteneur précisé"
 
 #: Library/Backend/AzureBlob/Strings.cs:5
 msgid "The name of the storage container "
-msgstr "Der Name des Speichercontainers"
+msgstr "Le nom du conteneur de stockage"
 
 #: Library/Backend/AzureBlob/Strings.cs:6
 msgid "Azure blob"
@@ -451,45 +445,44 @@ msgstr "Azure blob"
 
 #: Library/Backend/AzureBlob/Strings.cs:7
 msgid "No Azure storage account name given"
-msgstr "Kein Azure Speicher Accountname angegeben"
+msgstr "Aucun nom de compte de stockage Azure fourni"
 
 #: Library/Backend/AzureBlob/Strings.cs:8
 msgid ""
 "The Azure storage account name which can be obtained by clicking the "
 "\"Manage Access Keys\" button on the storage account dashboard"
 msgstr ""
-"Der Azure-Speicherkontoname, welcher durch Klicken auf die Schaltfläche "
-"\"Zugriffstasten verwalten\" auf dem Dashboard des Speicherkontos erhalten "
-"werden kann"
+"Le nom de compte de stockage Azure qui peut être obtenu en cliquant sur le "
+"bouton \"Gérer les clés d'accès\" sur le tableau de bord du compte de "
+"stockage"
 
 #: Library/Backend/AzureBlob/Strings.cs:9
 msgid "The storage account name"
-msgstr "Der Speicherkontoname"
+msgstr "Le nom du compte de stockage"
 
 #: Library/Backend/AzureBlob/Strings.cs:10
 msgid ""
 "The Azure access key which can be obtained by clicking the \"Manage Access "
 "Keys\" button on the storage account dashboard"
 msgstr ""
-"Der Azure-Zugangsschlüssel, welcher durch Klicken auf die Schaltfläche "
-"\"Zugriffsschlüssel verwalten\" auf dem Dashboard des Speicherkontos "
-"erhalten werden kann"
+"La clé d'accès Azure qui peut être obtenu en cliquant sur le bouton \"Gérer "
+"les clés d'accès\" sur le tableau de bord du compte de stockage"
 
 #: Library/Backend/AzureBlob/Strings.cs:11
 msgid "The access key"
-msgstr "Der Zugangsschlüssel"
+msgstr "La clé d'accès"
 
 #: Library/Backend/AzureBlob/Strings.cs:12
 msgid "No Azure access key given"
-msgstr "Kein Azure Schlüssel vorhanden"
+msgstr "Aucun clé d'accès Azure fournie"
 
 #: Library/Backend/AzureBlob/Strings.cs:17
 msgid ""
 "This backend can read and write data to Azure blob storage.  Allowed formats"
 " are: \"azure://bucketname\""
 msgstr ""
-"Dieses Backend kann Daten von Azure Blob Storage lesen und schreiben. "
-"Erlaubte Formate sind \"azure://bucketname\""
+"Ce back-end peut lire et écrire des données dans un stockage Azure blob. Le "
+"format autorisé est : \"azure://bucketname\""
 
 #: Library/Backend/Backblaze/Strings.cs:4
 msgid ""
@@ -497,13 +490,13 @@ msgid ""
 "your Backblaze account, this can also be supplied through the \"auth-"
 "password\" property"
 msgstr ""
-"Der \"B2 Cloud Storage Application Key\" kann nach der Anmeldung in Ihrem "
-"Konto Backblaze erhalten werden, dies kann auch über die Eigenschaft \"auth-"
-"password\" erfolgen"
+"La \"B2 Cloud Storage Application Key\" peut être obtenue après s'être "
+"connecté dans votre compte Backblase, elle peut également être fournie via "
+"la propriété \"auth-password\""
 
 #: Library/Backend/Backblaze/Strings.cs:5
 msgid "The \"B2 Cloud Storage Application Key\""
-msgstr "Der \"B2 Cloud Storage Application Key\""
+msgstr "La \"B2 Cloud Storage Application Key\""
 
 #: Library/Backend/Backblaze/Strings.cs:6
 msgid ""
@@ -511,13 +504,13 @@ msgid ""
 "Backblaze account, this can also be supplied through the \"auth-username\" "
 "property"
 msgstr ""
-"Die \"B2 Cloud Storage Account ID\" kann nach der Anmeldung in Ihrem Konto "
-"Backblaze erhalten werden, dies kann auch über die Eigenschaft \"auth-"
-"username\" erfolgen"
+"Le \"B2 Cloud Storage Account ID\" peut être obtenue après s'être connecté "
+"dans votre compte Backblase, elle peut également être fournie via la "
+"propriété \"auth-username\""
 
 #: Library/Backend/Backblaze/Strings.cs:7
 msgid "The \"B2 Cloud Storage Account ID\""
-msgstr "Die \"B2 Cloud Storage Account ID\""
+msgstr "Le \"B2 Cloud Storage Account ID\""
 
 #: Library/Backend/Backblaze/Strings.cs:8
 msgid "B2 Cloud Storage"
@@ -525,40 +518,40 @@ msgstr "B2 Cloud Storage"
 
 #: Library/Backend/Backblaze/Strings.cs:13
 msgid "No \"B2 Cloud Storage Application Key\" given"
-msgstr "Kein \"B2 Cloud Storage Application Key\" angegeben"
+msgstr "Pas de \"B2 Cloud Storage Application Key\" fournie"
 
 #: Library/Backend/Backblaze/Strings.cs:14
 msgid "No \"B2 Cloud Storage Account ID\" given"
-msgstr "Kein \"B2 Cloud Storage Account ID\" angegeben"
+msgstr "Pas de \"B2 Cloud Storage Account ID\" fourni"
 
 #: Library/Backend/Backblaze/Strings.cs:15
 msgid ""
 "This backend can read and write data to the Backblaze B2 Cloud Storage. "
 "Allowed formats are: \"b2://bucketname/prefix\""
 msgstr ""
-"Dieses Backend kann Daten von Backblaze B2 Cloud Storage lesen und "
-"schreiben. Erlaubte Formate sind \"b2://bucketname/prefix\""
+"Ce back-end peut lire et écrire des données dans un stockage en ligne "
+"Backblaze B2. Le format autorisé est : \"b2://bucketname/prefix\""
 
 #: Library/Backend/Backblaze/Strings.cs:16
 msgid ""
 "By default, a private bucket is created. Use this option to set the bucket "
 "type. Refer to the B2 documentation for allowed types "
 msgstr ""
-"Standardmäßig wird ein privater Bucket erstellt. Verwende diese Option um "
-"den Buckettyp festzulegen. Die erlaubten Typen sind in der B2 Dokumentation "
-"beschrieben."
+"Par défaut un bucket privé est créé. Utilisez cette option pour définir le "
+"type de bucket. Référez-vous à la documentation B2 pour connaitre les types "
+"autorisés."
 
 #: Library/Backend/Backblaze/Strings.cs:17
 msgid "The bucket type used when creating a bucket"
-msgstr "Der Buckettyp, der verwendet wurde als der Bucket erstellt wurde."
+msgstr "Le type de bucket utilisé pendant la création d'un bucket"
 
 #: Library/Backend/Box/Strings.cs:21
 msgid ""
 "This backend can read and write data to Box.com. Supported format is "
 "\"box://folder/subfolder\"."
 msgstr ""
-"Das Backend kann Daten von Box.com lesen und schreiben. Das unterstützte "
-"Format ist \"box://folder/subfolder\"."
+"Ce back-end peut lire et écrire des données vers Box.com. Le format supporté"
+" est : \"box://folder/subfolder\"."
 
 #: Library/Backend/Box/Strings.cs:22
 msgid "Box.com"
@@ -566,7 +559,7 @@ msgstr "Box.com"
 
 #: Library/Backend/Box/Strings.cs:26
 msgid "Force delete files"
-msgstr "Erzwinge Löschen von Dateien"
+msgstr "Forcer suppression de fichiers"
 
 #: Library/Backend/Box/Strings.cs:27
 msgid ""
@@ -574,9 +567,9 @@ msgid ""
 "deleted after a grace period. Use this command to force immediate removal of"
 " delete files."
 msgstr ""
-"Nach dem Löschen einer Datei wird diese in den Papierkorb verschoben, wo sie"
-" nach einer Frist gelöscht wird. Mithilfe diesem Befehls werden die Dateien "
-"sofort gelöscht."
+"Après la suppression d'un fichier, il peut se retrouver dans le dossier "
+"poubelle ou il sera supprimé après un certain temps. Utilisez cette commande"
+" pour forcer la suppression immédiate et définitive des fichiers."
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -588,15 +581,16 @@ msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:5
 msgid "Provide another authentication URL"
-msgstr "Gib eine andere Authentifizierungs-URL an"
+msgstr "Fournissez une autre URL d'identification"
 
 #: Library/Backend/CloudFiles/Strings.cs:10
 msgid "Supplies the API Access Key used to authenticate with CloudFiles."
-msgstr "Liefert den API Access Key, für die Authentifizierung mit CloudFiles."
+msgstr ""
+"Fournissez la clé d'accès API utilisée pour s'identifier avec Cloudfiles."
 
 #: Library/Backend/CloudFiles/Strings.cs:11
 msgid "Supplies the access key used to connect to the server"
-msgstr "Liefert den Zugriffsschlüssel, für die Verbindung zum Server"
+msgstr "Fournissez la clé d'accès utilisée pour se connecter au serveur"
 
 #: Library/Backend/CloudFiles/Strings.cs:12
 #, csharp-format
@@ -605,32 +599,30 @@ msgid ""
 "this option if the account is a UK based account. Note that this is "
 "equivalent to setting --{0}={1}."
 msgstr ""
-"Duplicati geht davon aus, dass die Anmeldedaten zu einem US Account gehören."
-" Wähle diese Option wenn es sich um einen Account aus UK handelt. Dies "
-"entspricht der Einstellung --{0}={1}."
+"Duplicati assumera que les identifiants fournis le sont pour un compte aux "
+"États-Unis, utilisez cette option sur le compte est basé au Royaume-Uni. "
+"Veuillez notez que c'est équivalent au paramètre --{0}={1}."
 
 #: Library/Backend/CloudFiles/Strings.cs:13
 msgid "Use a UK account"
-msgstr "Benutze einen Account aus UK"
+msgstr "Utiliser un compte au Royaume-Uni"
 
 #: Library/Backend/CloudFiles/Strings.cs:14
 msgid "Supplies the username used to authenticate with CloudFiles."
 msgstr ""
-"Gibt den Benutzernamen an, für die Benutzung der Authentifizierung mit "
-"CloudFiles."
+"Fournissez le nom d'utilisateur utilisé pour s'identifier avec Cloudfiles."
 
 #: Library/Backend/CloudFiles/Strings.cs:15
 msgid "Supplies the username used to authenticate with CloudFiles"
 msgstr ""
-"Gibt den Benutzernamen an, für die Benutzung der Authentifizierung mit "
-"CloudFiles."
+"Fournissez le nom d'utilisateur utilisé pour s'identifier avec Cloudfiles."
 
 #: Library/Backend/CloudFiles/Strings.cs:16
 msgid ""
 "Supports connections to the CloudFiles backend. Allowed formats is "
 "\"cloudfiles://container/folder\"."
 msgstr ""
-"Unterstützt Verbindungen zu CloudFiles Backend. Erlaubte Formate sind "
+"Permet les connexions au back-end Cloudfiles. Le format autorisé est : "
 "\"cloudfiles://container/folder\"."
 
 #: Library/Backend/CloudFiles/Strings.cs:17
@@ -639,35 +631,35 @@ msgstr "Rackspace CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:18
 msgid "MD5 Hash (ETag) verification failed"
-msgstr "MD5 Hash (ETag) Abgleich fehlgeschlagen"
+msgstr "Échec de la vérification du hashage MD5 (ETag)"
 
 #: Library/Backend/CloudFiles/Strings.cs:19
 msgid "Failed to delete file"
-msgstr "Löschen der Datei fehlgeschlagen"
+msgstr "Échec de la suppression de fichier"
 
 #: Library/Backend/CloudFiles/Strings.cs:20
 msgid "Failed to upload file"
-msgstr "Upload der Datei fehlgeschlagen"
+msgstr "Échec du téléversement de fichier"
 
 #: Library/Backend/CloudFiles/Strings.cs:21
 msgid "No CloudFiles API Access Key given"
-msgstr "Kein \"CloudFiles API Access Key\" angegeben"
+msgstr "aucune clé d'accès API Cloudfiles fournie"
 
 #: Library/Backend/CloudFiles/Strings.cs:22
 msgid "No CloudFiles userID given"
-msgstr "Keine \"CloudFiles userID\" angegeben"
+msgstr "Aucun userID Cloudfiles fourni"
 
 #: Library/Backend/CloudFiles/Strings.cs:23
 msgid "Unexpected CloudFiles response, perhaps the API has changed?"
-msgstr "Unerwartete Antwort von CloudFiles, hat sich die API geändert?"
+msgstr "Réponse inattendue de Cloufiles, peut-être que l'API à changé ?"
 
 #: Library/Backend/Dropbox/Strings.cs:22
 msgid ""
 "This backend can read and write data to Dropbox. Supported format is "
 "\"dropbox://folder/subfolder\"."
 msgstr ""
-"Dieses Backend kann Daten von Dropbox lesen und schreiben. Das unterstützte "
-"Formate ist \"dropbox://folder/subfolder\"."
+"Ce back-end peut lire et écrire des données vers Dropbox. Le format supporté"
+" est : \"dropbox://folder/subfolder\"."
 
 #: Library/Backend/Dropbox/Strings.cs:23
 msgid "Dropbox"
@@ -684,17 +676,18 @@ msgid ""
 "unwanted external drive. The contents of the file are never examined, only "
 "file existence."
 msgstr ""
-"Diese Option funktioniert nur wenn die --{0} Option auch aktiv ist. Wenn "
-"alternative Pfade angegeben wurden, dient diese Option zum Benennen der "
-"Markierungsdatei. Damit lassen sich Situationen behandeln bei denen ein "
-"externes Laufwerk den Laufwerksbuchstaben oder Mountpunkt ändert. Durch "
-"Prüfen der Existenz der Datei ist es möglich ein ungewolltes Schreiben von "
-"Daten auf das externe Laufwerk zu verhindern. Der Inhalt der Datei wird "
-"nicht betrachtet, nur das Vorhandensein."
+"Cette option fonctionne uniquement quand l'option --{0} est aussi précisé. "
+"Si des chemins alternatifs sont précisés, cette option indique le nom du "
+"fichier de marquage qui doit être présent dans le dossier. Cela peut être "
+"utilisé pour gérer des situations comme un changement de la lettre d'un "
+"disque externe ou d'un point de montage. En s'assurant qu'un certain fichier"
+" existe, il est possible d'éviter d'écrire des données non désirées sur un "
+"disque externe. Le contenu du fichier n'est jamais examiné, uniquement sa "
+"présence l'est."
 
 #: Library/Backend/File/Strings.cs:5
 msgid "Look for a file in the destination folder"
-msgstr "Suche nach einer Datei im Zielverzeichnis"
+msgstr "Rechercher un fichier dans le dossier de destination"
 
 #: Library/Backend/File/Strings.cs:6
 #, csharp-format
@@ -710,21 +703,10 @@ msgid ""
 " a username and password is supplied, the same credentials are used for all "
 "destinations."
 msgstr ""
-"Diese Option erlaubt es mehrere Zielpfade anzugeben. Der Hauptzielpfad wird "
-"vor allen Pfaden aus der Liste dieser Option angeben. Vor Beginn des Backups"
-" wird jeder Ordner aus der Liste auf seine Existenz geprüft und optional auf"
-" das Vorhandensein der Markierungsdatei, die angegeben wurde mit --{0}. Der "
-"erste Pfad der existiert und möglicherweise eine Markierungsdatei enthält "
-"wird dann als Zielpfad verwendet. Mehrere Zielpfade werden mit \"{1}\" von "
-"einander getrennt. Unter Windows kann der Pfad ein UNC Pfad sein und der "
-"Laufwerksbuchstabe darf als Sternchen (*) angegeben werden z.B.: "
-"\"*:\\backup\", was bedeutet, dass alle Laufwerksbuchstaben geprüft werden. "
-"Wenn ein Nutzername und ein Passwort angegeben wurden, werden sie für alle "
-"Zielpfade verwendet."
 
 #: Library/Backend/File/Strings.cs:7
 msgid "A list of secondary target paths"
-msgstr "Eine Liste der sekundären Zielpfade"
+msgstr "Une liste des chemins cibles secondaires"
 
 #: Library/Backend/File/Strings.cs:8
 msgid ""
@@ -734,20 +716,20 @@ msgid ""
 "\"file://\\\\server\\folder\") or local paths (eg: (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 msgstr ""
-"Das Backend kann Daten von einem Datei-basierten Backend lesen und "
-"schreiben. Erlaubte Formate sind \"file://hostname/folder\" oder "
-"\"file://username:password@hostname/folder\". Per UNC-Pfade (z. B.: "
-"\"file://\\\\server\\folder\") oder lokale Pfade (z. B.: (win) "
+"Ce back-end peut lire et écrire des données dans un back-end basé sur  des "
+"fichiers. Les formats autorisés sont :  \"file://hostname/folder\" ou "
+"\"file://username:password@hostname/folder\". Vous pouvez fournir un chemin "
+"UNC (ex : \"file://\\\\server\\folder\") ou des chemins locaux (ex : (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 
 #: Library/Backend/File/Strings.cs:13
 msgid "Local folder or drive"
-msgstr "Lokaler Ordner oder Laufwerk"
+msgstr "Dossier ou disque local"
 
 #: Library/Backend/File/Strings.cs:14
 #, csharp-format
 msgid "The folder {0} does not exist"
-msgstr "Der Order {0} existiert nicht"
+msgstr "Le dossier {0} n'existe pas"
 
 #: Library/Backend/File/Strings.cs:15
 #, csharp-format
@@ -755,8 +737,8 @@ msgid ""
 "The marker file \"{0}\" was not found in any of the examined destinations: "
 "{1}"
 msgstr ""
-"Die Markierungsdatei \"{0}\" wurde an keiner der untersuchten Orte gefunden:"
-" {1}"
+"Le fichier de marquage {0} n'a  été trouvé dans aucune des destinations : "
+"{1}"
 
 #: Library/Backend/File/Strings.cs:16
 msgid ""
@@ -766,20 +748,28 @@ msgid ""
 "to fail.  This option has no effect unless the --disable-streaming-transfers"
 " options is activated."
 msgstr ""
+"Durant le stockage du fichier, l'opération normale est de copier le fichier "
+"et de supprimer l'original. Cette séquence permet de s'assurer que "
+"l'opération pourra être recommencée si quelque chose se passe mal. Activer "
+"cette option pour empêcher la nouvelle tentative de fonctionner. Cette "
+"option n'a aucun effet sauf si l'option --disable-streaming-transfers est "
+"activée."
 
 #: Library/Backend/File/Strings.cs:17
 msgid "Move the file instead of copying it"
-msgstr "Verschiebe die Datei, statt sie zu kopieren"
+msgstr "Déplacer le fichier au lieu de le copier"
 
 #: Library/Backend/File/Strings.cs:18
 msgid "Force authentication against remote share"
-msgstr ""
+msgstr "Forcer l'identification contre le partage à distance"
 
 #: Library/Backend/File/Strings.cs:19
 msgid ""
 "If this option is set, any existing authentication against the remote share "
 "is dropped before attempting to authenticate"
 msgstr ""
+"Si cette option est définie, toute identification existante de partage à "
+"distance est abandonnée avant de tenter de s'identifier"
 
 #: Library/Backend/FTP/Strings.cs:7
 msgid ""
@@ -787,9 +777,6 @@ msgid ""
 "formats are \"ftp://hostname/folder\" or "
 "\"ftp://username:password@hostname/folder\""
 msgstr ""
-"Das Backend kann Daten von einem FTP-basierten Backend lesen und schreiben "
-"mit Hilfe eines alternativen FTP Clients. Erlaubte Formate sind "
-"\"ftp://hostname/folder\" oder \"ftp://username:password@hostname/folder\"."
 
 #: Library/Backend/FTP/Strings.cs:8
 msgid ""
@@ -799,7 +786,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:9 Library/Backend/FTP/Strings.cs:11
 msgid "Toggles the FTP connections method"
-msgstr "Schaltet die FTP Verbindungsart um"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:10
 msgid ""
@@ -807,31 +794,26 @@ msgid ""
 " better with some firewalls. If the \"ftp-regular\" flag is also set, this "
 "flag is ignored"
 msgstr ""
-"Ist diese Option gewählt, wird die FTP-Verbindung im Passive Mode etabliert,"
-" dieser Modus funktioniert unter einigen Firewalls besser. Ist die \"ftp-"
-"regular\"-Option gewählt, wird diese Option ignoriert."
 
 #: Library/Backend/FTP/Strings.cs:16
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
 msgstr ""
-"Verwenden diese Option, um mit Secure Socket Layer (SSL) über ftp (ftps) zu "
-"kommunizieren."
 
 #: Library/Backend/FTP/Strings.cs:17
 msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr "Weist Duplicati an, eine SSL-Verbindung (FTPs) zu verwenden"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
-msgstr "FTP"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:19 Library/Backend/TahoeLAFS/Strings.cs:8
 #: Library/Backend/WEBDAV/Strings.cs:14
 #, csharp-format
 msgid "The folder {0} was not found, message: {1}"
-msgstr "Der Ordner {0} wurde nicht gefunden, Nachricht: {1}"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:23
 msgid ""
@@ -848,12 +830,12 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:23
 msgid "Google Cloud Storage"
-msgstr "Google Cloud Speicher"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:25
 #, csharp-format
 msgid "You must supply a project ID with --{0} for creating a bucket"
-msgstr "Die Projekt-ID mit --{0} angeben werden, um einen Bucket zu erstellen"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:29
 #, csharp-format
@@ -903,7 +885,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
-msgstr "Google Drive"
+msgstr ""
 
 #: Library/Backend/HubiC/Strings.cs:21
 msgid ""
@@ -913,23 +895,23 @@ msgstr ""
 
 #: Library/Backend/HubiC/Strings.cs:22
 msgid "HubiC"
-msgstr "HubiC"
+msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
-msgstr "mega.nz"
+msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:9
 msgid "No password given"
-msgstr "Kein Passwort angegeben"
+msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
-msgstr "Kein Benutzername angegeben"
+msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
-msgstr "Kein Pfad angegeben, kann keine Dateien in den Stammordner hochladen"
+msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:12
 msgid ""
@@ -948,7 +930,7 @@ msgstr ""
 #: Library/Backend/OneDrive/Strings.cs:7
 #, csharp-format
 msgid "Unexpected error code: {0} - {1}"
-msgstr "Unerwarteter Fehlercode: {0} - {1}"
+msgstr ""
 
 #: Library/Backend/OAuthHelper/Strings.cs:11
 msgid "The OAuth service is currently over quota, try again in a few hours"
@@ -968,16 +950,16 @@ msgstr ""
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
 msgid "Missing the folder: {0}"
-msgstr "Ordner nicht gefunden: {0}"
+msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:11
 #, csharp-format
 msgid "File not found: {0}"
-msgstr "Datei nicht gefunden: {0}"
+msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:10
 msgid "Microsoft OneDrive"
-msgstr "Microsoft OneDrive"
+msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:13
 #, csharp-format
@@ -994,12 +976,12 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:20
 msgid "OpenStack Simple Storage"
-msgstr "OpenStack Simple Storage"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:20
 #, csharp-format
 msgid "Missing required option: {0}"
-msgstr "Fehlende erforderliche Option: {0}"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:20
 #, csharp-format
@@ -1060,7 +1042,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:5
 msgid "The AWS \"Secret Access Key\""
-msgstr "Der AWS \"Secret Access Key\""
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:6
 msgid ""
@@ -1070,19 +1052,19 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:7
 msgid "The AWS \"Access Key ID\""
-msgstr "Der AWS \"Access Key ID\""
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "Amazon S3"
-msgstr "Amazon S3"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No Amazon S3 secret key given"
-msgstr "Kein Amazon S3 Sicherheitsschlüssel angegeben"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:14
 msgid "No Amazon S3 userID given"
-msgstr "Keine \"Amazon S3 userID\" angegeben"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
@@ -1093,7 +1075,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:16
 msgid "Use a European server"
-msgstr "Europäischen Server benutzen"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:17
 msgid ""
@@ -1142,7 +1124,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:25 Library/Backend/S3/Strings.cs:38
 #, csharp-format
 msgid "Please use --{0}={1} instead"
-msgstr "Bitte verwende --{0} anstelle {1}"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:26
 #, csharp-format
@@ -1196,7 +1178,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
-msgstr "Microsoft SharePoint"
+msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:7
 msgid ""
@@ -1266,7 +1248,7 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:26
 #, csharp-format
 msgid "Element with path '{0}' not found on host '{1}'."
-msgstr "Element mit Pfad '{0}' wurde nicht auf Host '{1}' gefunden"
+msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:27
 #, csharp-format
@@ -1283,7 +1265,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:33
 msgid "Microsoft OneDrive for Business"
-msgstr "Microsoft OneDrive for Business"
+msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:34
 msgid ""
@@ -1302,11 +1284,11 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
-msgstr "SSH Schlüssel Generator"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
-msgstr "Username des öffentlichen Schlüssels"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:7
 msgid "A username to append to the public key"
@@ -1314,7 +1296,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:8
 msgid "The key type"
-msgstr "Der Schlüssel-Typ"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
@@ -1322,11 +1304,11 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
-msgstr "Die Schlüssel-Länge"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:11
 msgid "The length of the key in bits"
-msgstr "Die Schlüssel-Länge in bits"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:14
 msgid "Module for uploading SSH public keys"
@@ -1380,7 +1362,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:30
 msgid "Disables fingerprint validation"
-msgstr "Deaktiviert die Fingerabdruckvalidierung"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid ""
@@ -1405,7 +1387,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:35
 msgid "SFTP (SSH)"
-msgstr "SFTP (SSH)"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:36
 #, csharp-format
@@ -1441,7 +1423,7 @@ msgstr ""
 
 #: Library/Backend/TahoeLAFS/Strings.cs:7
 msgid "Tahoe-LAFS"
-msgstr "Tahoe-LAFS"
+msgstr ""
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
 msgid "Unsupported URL format, must start with \"/uri/URI:DIR2:\""
@@ -1470,7 +1452,7 @@ msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
-msgstr "WebDAV"
+msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:15
 #, csharp-format
@@ -1503,7 +1485,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:6
 msgid "Sets the Zip compression level"
-msgstr "Legt den Komprimierungsgrad für die Zip-Datei fest"
+msgstr ""
 
 #: Library/Compression/Strings.cs:7
 #, csharp-format
@@ -1515,7 +1497,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:8
 msgid "Sets the Zip compression method"
-msgstr "Legt den Komprimierungsmethode für die Zip-Datei fest"
+msgstr ""
 
 #: Library/Compression/Strings.cs:9
 msgid ""
@@ -1525,7 +1507,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:10
 msgid "Zip compression"
-msgstr "Zip Komprimierung"
+msgstr ""
 
 #: Library/Compression/Strings.cs:14
 msgid "Archive not opened for writing"
@@ -1541,11 +1523,11 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:17
 msgid "7z Archive with LZMA2 support."
-msgstr "7z Archiv mit LZMA2 Unterstützung."
+msgstr ""
 
 #: Library/Compression/Strings.cs:18
 msgid "7z Archive"
-msgstr "7z Archiv"
+msgstr ""
 
 #: Library/Compression/Strings.cs:19
 msgid ""
@@ -1590,7 +1572,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:5
 msgid "AES-256 encryption, built in"
-msgstr "AES-256 Verschlüsselung, integriert"
+msgstr ""
 
 #: Library/Encryption/Strings.cs:6
 msgid "Blank or empty passphrase not allowed"
@@ -1624,7 +1606,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:15
 msgid "GNU Privacy Guard, external"
-msgstr "GNU Privacy Guard, extern"
+msgstr ""
 
 #: Library/Encryption/Strings.cs:16
 msgid ""
@@ -1726,27 +1708,27 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:4
 msgid "aliases"
-msgstr "Alternativnamen"
+msgstr ""
 
 #: Library/Interface/Strings.cs:5
 msgid "default value"
-msgstr "Standardwert"
+msgstr ""
 
 #: Library/Interface/Strings.cs:6
 msgid "[DEPRECATED]"
-msgstr "[VERALTET]"
+msgstr ""
 
 #: Library/Interface/Strings.cs:7
 msgid "values"
-msgstr "Werte"
+msgstr ""
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
-msgstr "Boolean"
+msgstr ""
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
-msgstr "Aufzählung"
+msgstr ""
 
 #: Library/Interface/Strings.cs:12
 msgid "Flags"
@@ -1754,19 +1736,19 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr "Integer"
+msgstr ""
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr "Pfad"
+msgstr ""
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr "Größe"
+msgstr ""
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr "String"
+msgstr ""
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
@@ -1774,7 +1756,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
-msgstr "Unbekannt"
+msgstr "Inconnu"
 
 #: Library/Interface/Strings.cs:21
 #, csharp-format
@@ -1789,11 +1771,11 @@ msgstr ""
 #: Library/Interface/Strings.cs:23
 #, csharp-format
 msgid "Connection Failed: {0}"
-msgstr "Verbindung fehlgeschlagen: {0}"
+msgstr ""
 
 #: Library/Interface/Strings.cs:24
 msgid "Connection succeeded!"
-msgstr "Verbindung erfolgreich!"
+msgstr ""
 
 #: Library/Interface/Strings.cs:25
 msgid ""
@@ -1803,7 +1785,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:26
 msgid "You must enter a password"
-msgstr "Gib ein Passwort an"
+msgstr ""
 
 #: Library/Interface/Strings.cs:27
 msgid ""
@@ -1817,7 +1799,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:30
 msgid "You must enter a username"
-msgstr "Gib einen Benutzernamen an"
+msgstr ""
 
 #: Library/Interface/Strings.cs:31
 msgid ""
@@ -1839,20 +1821,20 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr "Order erstellt!"
+msgstr ""
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
-msgstr "Der angeforderte Ordner existiert nicht"
+msgstr ""
 
 #: Library/Interface/Strings.cs:40
 #, csharp-format
 msgid "The server name \"{0}\" is not valid"
-msgstr "Der Server Name \"{0}\" ist nicht gültig"
+msgstr ""
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
-msgstr "Abgebrochen"
+msgstr ""
 
 #: Library/Main/BackendManager.cs:588
 #, csharp-format
@@ -1920,7 +1902,7 @@ msgstr ""
 #: Library/Main/Strings.cs:9
 #, csharp-format
 msgid "The option {0} is deprecated: {1}"
-msgstr "Die Option {0} ist veraltet: {1}"
+msgstr ""
 
 #: Library/Main/Strings.cs:10
 #, csharp-format
@@ -2008,7 +1990,7 @@ msgstr ""
 #: Library/Main/Strings.cs:25
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
-msgstr "Ungültiger Pfad: \"{0}\" ({1})"
+msgstr ""
 
 #: Library/Main/Strings.cs:26
 #, csharp-format
@@ -2097,13 +2079,10 @@ msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
 msgstr ""
-"Falls die Daten auf einer lokalen Festplatte gespeichert und lieber "
-"unverschlüsselt gespeichert werden sollen, kann die Verschlüsselung mit "
-"diesem Schalter deaktiviert werden."
 
 #: Library/Main/Strings.cs:46
 msgid "Disable encryption"
-msgstr "Verschlüsselung deaktivieren"
+msgstr ""
 
 #: Library/Main/Strings.cs:47
 msgid ""
@@ -2113,7 +2092,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:48
 msgid "Number of times to retry a failed transmission"
-msgstr "Anzahl von Versuchen bei fehlgeschlagenen Übertragungen"
+msgstr ""
 
 #: Library/Main/Strings.cs:49
 msgid ""
@@ -2156,7 +2135,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:56
 msgid "Show all versions"
-msgstr "Zeige alle Versionen"
+msgstr ""
 
 #: Library/Main/Strings.cs:57
 msgid ""
@@ -2166,7 +2145,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:58
 msgid "Show largest prefix"
-msgstr "Zeigen größte Präfix"
+msgstr ""
 
 #: Library/Main/Strings.cs:59
 msgid ""
@@ -2176,7 +2155,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:60
 msgid "Show folder contents"
-msgstr "Zeige Ordnerinhalt"
+msgstr ""
 
 #: Library/Main/Strings.cs:61
 msgid ""
@@ -2187,7 +2166,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:62
 msgid "Time to wait between retries"
-msgstr "Wartezeit zwischen Wiederholungen"
+msgstr ""
 
 #: Library/Main/Strings.cs:63
 msgid "Use this option to attach extra files to the newly uploaded filelists."
@@ -2195,7 +2174,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:64
 msgid "Set control files"
-msgstr "Steuerdateien einstellen"
+msgstr ""
 
 #: Library/Main/Strings.cs:65
 msgid ""
@@ -2205,7 +2184,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:66
 msgid "Set this flag to skip hash checks"
-msgstr "Setzen dieses Flag, um die Hash-Prüfung zu überspringen"
+msgstr ""
 
 #: Library/Main/Strings.cs:67
 msgid ""
@@ -2238,7 +2217,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:72
 msgid "Thread priority"
-msgstr "Thread Priorität"
+msgstr ""
 
 #: Library/Main/Strings.cs:73
 msgid ""
@@ -2299,22 +2278,18 @@ msgstr ""
 #: Library/Main/Strings.cs:83
 msgid "Supply one or more module names, separated by commas to unload them"
 msgstr ""
-"Gebe einen oder mehrere Modulnamen an um diese zu entladen, getrennt durch "
-"Kommas"
 
 #: Library/Main/Strings.cs:84
 msgid "Disabled one or more modules"
-msgstr "Eines oder mehrere Module deaktiviert"
+msgstr ""
 
 #: Library/Main/Strings.cs:85
 msgid "Supply one or more module names, separated by commas to load them"
 msgstr ""
-"Gebe einen oder mehrere Modulnamen an um diese zu laden, getrennt durch "
-"Kommas"
 
 #: Library/Main/Strings.cs:86
 msgid "Enables one or more modules"
-msgstr "Eines oder mehrere Module aktiviert"
+msgstr ""
 
 #: Library/Main/Strings.cs:87
 msgid ""
@@ -2365,7 +2340,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:94
 msgid "Enables debugging output"
-msgstr "Aktiviert Debugausgabe"
+msgstr ""
 
 #: Library/Main/Strings.cs:95
 msgid "Log internal information"
@@ -2389,7 +2364,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:99
 msgid "Disables automatic folder creation"
-msgstr "Automatische Ordnererstellung deaktivieren"
+msgstr ""
 
 #: Library/Main/Strings.cs:100
 msgid ""
@@ -2542,7 +2517,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:123
 msgid "Exclude files by attribute"
-msgstr "Dateien mit folgenden Attributen ausschließen"
+msgstr ""
 
 #: Library/Main/Strings.cs:124
 #, csharp-format
@@ -2572,7 +2547,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:128
 msgid "Name of the backup"
-msgstr "Name des Backups"
+msgstr ""
 
 #: Library/Main/Strings.cs:129
 #, csharp-format
@@ -2642,7 +2617,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:140
 msgid "List of deleted files"
-msgstr "Liste von gelöschten Dateien"
+msgstr ""
 
 #: Library/Main/Strings.cs:142
 msgid "Memory used by the file hash"
@@ -2792,7 +2767,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:170
 msgid "Disables the local database"
-msgstr "Deaktiviere die lokale Datenbank"
+msgstr ""
 
 #: Library/Main/Strings.cs:171
 msgid ""
@@ -2803,7 +2778,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:172
 msgid "Keep a number of versions"
-msgstr "Behalte eine Anzahl von Versionen"
+msgstr ""
 
 #: Library/Main/Strings.cs:173
 msgid ""
@@ -2813,7 +2788,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:174
 msgid "Keep all versions within a timespan"
-msgstr "Behalte alle Versionen innerhalb einer Zeitspanne"
+msgstr ""
 
 #: Library/Main/Strings.cs:175
 msgid "Use this option to set the timespan in which backups are kept."
@@ -2948,7 +2923,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:201
 msgid "Activate caches"
-msgstr "Cache aktivieren"
+msgstr ""
 
 #: Library/Main/Strings.cs:202
 msgid "Activate in-memory caches, which are now off by default"
@@ -3048,7 +3023,7 @@ msgstr ""
 #: Library/Main/Strings.cs:224
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
-msgstr "Fehler beim Erstellen des Snapshot: {0}"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:7
 msgid "Confirm encryption passphrase"
@@ -3070,7 +3045,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:11
 msgid "Enter encryption passphrase"
-msgstr "Verschlüsselungspasswort angeben"
+msgstr "Entrez la phrase secrète de cryptage"
 
 #: Library/Modules/Builtin/Strings.cs:12
 msgid "The passphrases do not match"
@@ -3288,7 +3263,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:70
 msgid "SMTP Password"
-msgstr "SMTP Passwort"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:71
 msgid ""
@@ -3324,7 +3299,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:84
 msgid "Email sender"
-msgstr "E-Mail-Absender"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:85
 #, csharp-format
@@ -3350,7 +3325,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 msgid "SMTP Url"
-msgstr "SMTP URL"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:92
 #, csharp-format
@@ -3361,7 +3336,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:93
 msgid "The email subject"
-msgstr "Der E-Mail Betreff"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:94
 msgid "The username used to authenticate with the SMTP server if required."
@@ -3369,7 +3344,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:95
 msgid "SMTP Username"
-msgstr "SMTP Benutzername"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:96
 #, csharp-format
@@ -3420,7 +3395,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:114
 msgid "The XMPP username"
-msgstr "Der XMPP Benutzername"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:115
 msgid ""
@@ -3430,7 +3405,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:116
 msgid "The XMPP password"
-msgstr "Das XMPP Passwort"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:117
 msgid "The password for the account that will send the message"
@@ -3521,7 +3496,7 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN is not supported on Linux"
-msgstr "USN wird nicht unter Linux unterstützt"
+msgstr ""
 
 #: Library/Snapshots/Strings.cs:17
 msgid ""
@@ -3535,7 +3510,7 @@ msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:4
 msgid "backup"
-msgstr "Backup"
+msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:5
 #, csharp-format
@@ -3554,7 +3529,7 @@ msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:11
 msgid "Unknown table layout detected"
-msgstr "Unbekanntes Tabellenlayout erkannt"
+msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:12
 #, csharp-format
@@ -3563,14 +3538,11 @@ msgid ""
 "Error: {1}\n"
 "Database is NOT upgraded."
 msgstr ""
-"SQL konnte nicht ausgeführt werden: {0}\n"
-"Fehler: {1}\n"
-"Datenbank wurde NICHT aktualisiert."
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
 msgid "Invalid size value: {0}"
-msgstr "Ungültige Größenangabe: {0}"
+msgstr ""
 
 #: Library/Utility/Strings.cs:10
 msgid "The SSL certificate validator was called in an incorrect order"
@@ -3603,70 +3575,70 @@ msgstr ""
 #: Library/Utility/Strings.cs:16
 #, csharp-format
 msgid "Temporary folder does not exist: {0}"
-msgstr "Temporärer Ordner existiert nicht: {0}"
+msgstr ""
 
 #: Library/Utility/Strings.cs:19
 #, csharp-format
 msgid "Failed to parse the segment: {0}, invalid integer"
-msgstr "Fehler beim Parsen des Segments: {0}, ungültige Ganzzahl"
+msgstr ""
 
 #: Library/Utility/Strings.cs:20
 #, csharp-format
 msgid "Invalid specifier: {0}"
-msgstr "Ungültige Angabe: {0}"
+msgstr ""
 
 #: Library/Utility/Strings.cs:21
 #, csharp-format
 msgid "Unparsed data: {0}"
-msgstr "Ungeparste Daten: {0}"
+msgstr ""
 
 #: Library/Utility/Strings.cs:24
 #, csharp-format
 msgid "The Uri is invalid: {0}"
-msgstr "Die Uri ist ungültig: {0}"
+msgstr ""
 
 #: Library/Utility/Strings.cs:25
 #, csharp-format
 msgid "The Uri is missing a hostname: {0}"
-msgstr "Dem Uri fehlt ein Hostname: {0}"
+msgstr ""
 
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr "{0} Bytes"
+msgstr ""
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
 msgid "{0:N} GB"
-msgstr "{0:N} GB"
+msgstr ""
 
 #: Library/Utility/Strings.cs:30
 #, csharp-format
 msgid "{0:N} KB"
-msgstr "{0:N} KB"
+msgstr ""
 
 #: Library/Utility/Strings.cs:31
 #, csharp-format
 msgid "{0:N} MB"
-msgstr "{0:N} MB"
+msgstr ""
 
 #: Library/Utility/Strings.cs:32
 #, csharp-format
 msgid "{0:N} TB"
-msgstr "{0:N} TB"
+msgstr ""
 
 #: Library/Utility/Strings.cs:33
 #, csharp-format
 msgid "The string \"{0}\" could not be parsed into a date"
-msgstr "Die Zeichenkette \"{0}\" kann nicht in ein Datum geparst werden"
+msgstr ""
 
 #: Library/Utility/Strings.cs:36
 msgid "Cannot read and write on the same stream"
-msgstr "Lesen und Schreiben auf dem gleichen Stream nicht möglich"
+msgstr ""
 
 #: Server/Strings.cs:7
 msgid "Another instance is running, and was notified"
-msgstr "Eine andere Instanz läuft und wurde benachrichtigt"
+msgstr ""
 
 #: Server/Strings.cs:8
 #, csharp-format
@@ -3674,29 +3646,25 @@ msgid ""
 "Failed to create, open or upgrade the database.\n"
 "Error message: {0}"
 msgstr ""
-"Fehler beim Erstellen, Öffnen oder Aktualisieren der Datenbank.\n"
-"Fehlernachricht: {0}"
 
 #: Server/Strings.cs:10
 msgid "Displays this help"
-msgstr "Zeigt diese Hilfe an"
+msgstr ""
 
 #: Server/Strings.cs:11
 msgid ""
 "Supported commandline arguments:\n"
 "\n"
 msgstr ""
-"Unterstützte Befehlszeilenargumente:\n"
-"\n"
 
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr "--{0}: {1}"
+msgstr ""
 
 #: Server/Strings.cs:15
 msgid "Outputs log information to the file given"
-msgstr "Ausgabe von Protokollinformationen in die angegebene Datei"
+msgstr ""
 
 #: Server/Strings.cs:16
 msgid "Determines the amount of information written in the log file"
@@ -3719,19 +3687,15 @@ msgid ""
 "Unable to start up, perhaps another process is already running?\n"
 "Error message: {0}"
 msgstr ""
-"Nicht möglich zu starten, vielleicht läuft bereits ein anderer Prozess ab?\n"
-"Fehlermeldung: {0}"
 
 #: Server/Strings.cs:21
 msgid "Disables database encryption"
-msgstr "Datenbankverschlüsselung deaktivieren"
+msgstr ""
 
 #: Server/Strings.cs:22
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr ""
-"Nicht unterstützte Version von SQLite erkannt ({0}), muss {1} oder höher "
-"sein"
 
 #: Server/Strings.cs:23
 msgid ""
@@ -3752,7 +3716,7 @@ msgstr ""
 
 #: Server/Strings.cs:26
 msgid "The password for decryption of certificate PKCS #12 file."
-msgstr "Passwort für die Entschlüsselung der Zertifikat-PKCS #12 Datei."
+msgstr ""
 
 #: Server/Strings.cs:27
 msgid ""
@@ -3770,7 +3734,7 @@ msgstr ""
 
 #: Server/Strings.cs:29
 msgid "Enables the ping-pong responder"
-msgstr "Aktiviert den Ping-Pong-Responder"
+msgstr ""
 
 #: Server/Strings.cs:30
 msgid ""
@@ -3781,7 +3745,7 @@ msgstr ""
 
 #: Server/Strings.cs:33
 msgid "Sets the folder where settings are stored"
-msgstr "Definert den Ordner, in dem die Einstellungen gespeichert werden"
+msgstr ""
 
 #: Server/Strings.cs:34
 #, csharp-format
@@ -3793,7 +3757,7 @@ msgstr ""
 
 #: Server/Strings.cs:35
 msgid "Sets the database encryption key"
-msgstr "Setzt den Datenbankverschlüsselungsschlüssel"
+msgstr ""
 
 #: Server/Strings.cs:36
 #, csharp-format
@@ -3809,13 +3773,11 @@ msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
-"Konnte kein gültiges Datum finden, das Anfangsdatum {0}, das "
-"Wiederholungsintervall {1} und die erlaubten Tage {2}"
 
 #: Server/Strings.cs:44
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
-msgstr "Server gestartet und hört auf {0}, Port {1}"
+msgstr ""
 
 #: Server/Strings.cs:45
 #, csharp-format
@@ -3823,10 +3785,8 @@ msgid ""
 "Unable to create SSL certificate using provided parameters. Exception "
 "detail: {0}"
 msgstr ""
-"SSL-Zertifikat konnte nicht mit den angegebenen Parametern erstellt werden. "
-"Fehlerinformation: {0}"
 
 #: Server/Strings.cs:46
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
-msgstr "Öffnen von Socket nicht möglich, versuchte Ports: {0}"
+msgstr ""
