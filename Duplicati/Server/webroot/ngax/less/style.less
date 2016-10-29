@@ -1371,25 +1371,13 @@ div.modal-dialog {
     }
 }
 
-.modal-dialog {
-    .content.buttons ul {
-        float: right;
-    }
-
-    form.copy-clipboard {
-        .flexbox;
-
-        input {
-            .flex(@grow: 1);
-            width: 550px;
+div.modal-dialog {
+    .content.buttons {
+        ul {
+            float: right;
         }
 
-        a {
-            .flex(@shrink: 0);
-            padding: 7px 15px 8px 15px;
-        }
-
-        // tooltipped css taken from: https://github.com/primer/primer-tooltips
+        // tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/
         .tooltipped {
             position: relative
         }
@@ -1432,24 +1420,21 @@ div.modal-dialog {
             text-decoration: none
         }
 
-        .tooltipped-s:after {
-            top: 100%;
-            right: 50%;
-            margin-top: 5px
+        .tooltipped-w:after {
+            right: 100%;
+            bottom: 50%;
+            margin-right: 5px;
+            -webkit-transform: translateY(50%);
+            -ms-transform: translateY(50%);
+            transform: translateY(50%)
         }
 
-        .tooltipped-s:before {
-            top: auto;
-            right: 50%;
-            bottom: -5px;
-            margin-right: -5px;
-            border-bottom-color: rgba(0, 0, 0, 0.8)
-        }
-
-        .tooltipped-s:after {
-            -webkit-transform: translateX(50%);
-            -ms-transform: translateX(50%);
-            transform: translateX(50%)
+        .tooltipped-w:before {
+            top: 50%;
+            bottom: 50%;
+            left: -5px;
+            margin-top: -5px;
+            border-left-color: rgba(0, 0, 0, 0.8)
         }
     }
 }

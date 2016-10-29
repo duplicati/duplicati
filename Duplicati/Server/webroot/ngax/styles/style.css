@@ -3294,36 +3294,13 @@ div.modal-dialog form input {
   line-height: 35px;
   padding: 0 12px;
 }
-.modal-dialog .content.buttons ul {
+div.modal-dialog .content.buttons ul {
   float: right;
 }
-.modal-dialog form.copy-clipboard {
-  display: -webkit-box;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: -webkit-flex;
-  display: flex;
-}
-.modal-dialog form.copy-clipboard input {
-  -webkit-box-flex: 1 1 auto;
-  -moz-box-flex: 1 1 auto;
-  -webkit-flex: 1 1 auto;
-  -ms-flex: 1 1 auto;
-  flex: 1 1 auto;
-  width: 550px;
-}
-.modal-dialog form.copy-clipboard a {
-  -webkit-box-flex: 0 0 auto;
-  -moz-box-flex: 0 0 auto;
-  -webkit-flex: 0 0 auto;
-  -ms-flex: 0 0 auto;
-  flex: 0 0 auto;
-  padding: 7px 15px 8px 15px;
-}
-.modal-dialog form.copy-clipboard .tooltipped {
+div.modal-dialog .content.buttons .tooltipped {
   position: relative;
 }
-.modal-dialog form.copy-clipboard .tooltipped:after {
+div.modal-dialog .content.buttons .tooltipped:after {
   position: absolute;
   z-index: 1000000;
   display: none;
@@ -3343,7 +3320,7 @@ div.modal-dialog form input {
   border-radius: 3px;
   -webkit-font-smoothing: subpixel-antialiased;
 }
-.modal-dialog form.copy-clipboard .tooltipped:before {
+div.modal-dialog .content.buttons .tooltipped:before {
   position: absolute;
   z-index: 1000001;
   display: none;
@@ -3354,31 +3331,29 @@ div.modal-dialog form input {
   content: "";
   border: 5px solid transparent;
 }
-.modal-dialog form.copy-clipboard .tooltipped:hover:before,
-.modal-dialog form.copy-clipboard .tooltipped:hover:after,
-.modal-dialog form.copy-clipboard .tooltipped:active:before,
-.modal-dialog form.copy-clipboard .tooltipped:active:after,
-.modal-dialog form.copy-clipboard .tooltipped:focus:before,
-.modal-dialog form.copy-clipboard .tooltipped:focus:after {
+div.modal-dialog .content.buttons .tooltipped:hover:before,
+div.modal-dialog .content.buttons .tooltipped:hover:after,
+div.modal-dialog .content.buttons .tooltipped:active:before,
+div.modal-dialog .content.buttons .tooltipped:active:after,
+div.modal-dialog .content.buttons .tooltipped:focus:before,
+div.modal-dialog .content.buttons .tooltipped:focus:after {
   display: inline-block;
   text-decoration: none;
 }
-.modal-dialog form.copy-clipboard .tooltipped-s:after {
-  top: 100%;
-  right: 50%;
-  margin-top: 5px;
+div.modal-dialog .content.buttons .tooltipped-w:after {
+  right: 100%;
+  bottom: 50%;
+  margin-right: 5px;
+  -webkit-transform: translateY(50%);
+  -ms-transform: translateY(50%);
+  transform: translateY(50%);
 }
-.modal-dialog form.copy-clipboard .tooltipped-s:before {
-  top: auto;
-  right: 50%;
-  bottom: -5px;
-  margin-right: -5px;
-  border-bottom-color: rgba(0, 0, 0, 0.8);
-}
-.modal-dialog form.copy-clipboard .tooltipped-s:after {
-  -webkit-transform: translateX(50%);
-  -ms-transform: translateX(50%);
-  transform: translateX(50%);
+div.modal-dialog .content.buttons .tooltipped-w:before {
+  top: 50%;
+  bottom: 50%;
+  left: -5px;
+  margin-top: -5px;
+  border-left-color: rgba(0, 0, 0, 0.8);
 }
 div.headerthreedotmenu {
   margin: 25px 0 20px 0;

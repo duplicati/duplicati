@@ -21,7 +21,7 @@ backupApp.service('DialogService', function(gettextCatalog) {
 
 
     this.enqueueDialog = function(config) {
-        if (config == null || (config.message == null && config.htmltemplate == null))
+        if (config == null || (config.message == null && config.htmltemplate == null && config.enableTextarea == null))
             return;
 
         config.title = config.title || gettextCatalog.getString('Information');
@@ -69,10 +69,9 @@ backupApp.service('DialogService', function(gettextCatalog) {
         });
     };
 
-    this.htmlDialog = function(title, htmltemplate, htmlArguments, buttons, callback, onshow) {
+    this.htmlDialog = function(title, htmltemplate, buttons, callback, onshow) {
         return this.enqueueDialog({
             'htmltemplate': htmltemplate,
-            'htmlArguments': htmlArguments,
             'title': title,
             'callback': callback,
             'buttons': buttons,
@@ -80,14 +79,16 @@ backupApp.service('DialogService', function(gettextCatalog) {
         });
     };
 
-    this.textareaDialog = function(title, message, placeholder, buttons, callback, onshow) {
+    this.textareaDialog = function(title, message, placeholder, textarea, buttons, buttonTemplate, callback, onshow) {
         return this.enqueueDialog({
             'enableTextarea': true,
             'title': title,
             'message': message,
             'placeholder': placeholder,
+            'textarea': textarea,
             'callback': callback,
             'buttons': buttons,
+            'buttonTemplate': buttonTemplate,
             'onshow': onshow
         });
     };

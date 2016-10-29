@@ -8,7 +8,7 @@ backupApp.controller('DialogController', function($scope, DialogService, gettext
             e.currentTarget.removeAttribute('aria-label');
         });
 
-        elem.setAttribute('class', 'button tooltipped tooltipped-s');
+        elem.setAttribute('class', 'button tooltipped tooltipped-w');
         elem.setAttribute('aria-label', msg);
     }
 
