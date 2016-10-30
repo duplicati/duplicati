@@ -24,9 +24,13 @@
 
 <div class="input textarea">
     <div class="headerthreedotmenu">
-        <h2 translate>Advanced options</h2>
+        <a href ng-click="showAdvanced = !showAdvanced" class="expandable">
+            <h2 translate>Advanced options</h2>
+            <img ng-show="showAdvanced" src="img/arrow_collapse_green.png">
+            <img ng-hide="showAdvanced" src="img/arrow_expand_green.png">
+        </a>
 
-        <div class="threedotmenu_container">
+        <div class="threedotmenu_container" ng-show="showAdvanced">
             <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_destination_adv" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
 
             <div class="threedotmenu" id="threedotmenu_add_destination_adv">
@@ -42,10 +46,12 @@
         </div>
     </div>
 
-    <div ng-show="ShowAdvancedTextArea">
-        <label for="targetOptions" translate>Options</label>
-        <textarea id="targetOptions" name="targetOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--use-ssl=true')}}" ng-model="AdvancedOptions"></textarea>
-    </div>
+    <div ng-show="showAdvanced">
+        <div ng-show="ShowAdvancedTextArea">
+            <label for="targetOptions" translate>Options</label>
+            <textarea id="targetOptions" name="targetOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--use-ssl=true')}}" ng-model="AdvancedOptions"></textarea>
+        </div>
 
-    <advanced-options-editor ng-hide="ShowAdvancedTextArea" ng-option-list="AdvanceOptionList" ng-model="AdvancedOptions"></advanced-options-editor>
+        <advanced-options-editor ng-hide="ShowAdvancedTextArea" ng-option-list="AdvanceOptionList" ng-model="AdvancedOptions"></advanced-options-editor>
+    </div>
 </div>

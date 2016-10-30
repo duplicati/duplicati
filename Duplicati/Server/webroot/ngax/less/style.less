@@ -1086,6 +1086,57 @@ body {
                     }
                 }
 
+                div.headerthreedotmenu {
+                    margin: 20px 0 20px 0;
+
+                    h2 {
+                        display: inline;
+                    }
+
+                    div.threedotmenu_container {
+                        float: right;
+                        position: relative;
+
+                        .threedotmenubutton {
+                            padding: 5px;
+                        }
+
+                        .threedotmenu {
+                            display: none;
+                            position: absolute;
+                            background: none repeat scroll 0 0 white;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                            border: 1px solid #EEEEEE;
+                            padding: 10px;
+                            white-space: nowrap;
+
+                            ul li a {
+                                padding: 5px 5px 5px 5px;
+                                display: block;
+                            }
+                        }
+
+                        .threedotmenu.open {
+                            display: block;
+                            left: auto;
+                            right: 0;
+                            z-index: 1000;
+                        }
+                    }
+                }
+
+                .expandable {
+                    margin: 20px 0 20px 0;
+
+                    h2 {
+                        display: inline;
+                    }
+
+                    img {
+                        padding: 0 6px;
+                    }
+                }
+
                 div.settings {
                     .input.mixed.multiple,
                     .input.checkbox {
@@ -1437,45 +1488,6 @@ div.modal-dialog {
             border-left-color: rgba(0, 0, 0, 0.8)
         }
     }
-}
-
-div.headerthreedotmenu {
-    margin: 25px 0 20px 0;
-
-    h2 {
-        display: inline;
-    }
-
-    div.threedotmenu_container {
-        position: relative;
-        float: right;
-    }
-}
-
-.threedotmenubutton {
-    padding: 5px;
-}
-
-.threedotmenu {
-    display: none;
-    position: absolute;
-    background: none repeat scroll 0 0 white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    border: 1px solid #EEEEEE;
-    padding: 10px;
-    white-space: nowrap;
-
-    ul li a {
-        padding: 5px 5px 5px 5px;
-        display: block;
-    }
-}
-
-.threedotmenu.open {
-    display: block;
-    left: auto;
-    right: 0;
-    z-index: 1000;
 }
 
 /* Progress bar styles from Bootstrap */

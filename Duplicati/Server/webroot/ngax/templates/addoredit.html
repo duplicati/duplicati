@@ -151,52 +151,82 @@
                     </div>
                 </div>
                 <div class="box filters">
-                    <h2 translate>Filters</h2>
-                    <div class="input link">
-                        <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced"><i class="fa {{EditFilterAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
+                    <div class="headerthreedotmenu">
+                        <a href ng-click="showFilter = !showFilter" class="expandable">
+                            <h2 translate>Filters</h2>
+                            <img ng-show="showFilter" src="img/arrow_collapse_green.png">
+                            <img ng-hide="showFilter" src="img/arrow_expand_green.png">
+                        </a>
+
+                        <div class="threedotmenu_container" ng-show="showFilter">
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_filters" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+
+                            <div class="threedotmenu" id="threedotmenu_add_source_filters">
+                                <ul>
+                                    <li>
+                                        <a href ng-show="EditFilterAdvanced" ng-click="EditFilterAdvanced = false" translate>Edit as list</a>
+                                    </li>
+                                    <li>
+                                        <a href ng-hide="EditFilterAdvanced" ng-click="EditFilterAdvanced = true" translate>Edit as text</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="input textarea" ng-show="EditFilterAdvanced">
-                        <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
-                        <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
-                    </div>
-                    <div class="input textarea" ng-hide="EditFilterAdvanced">
-                        <ul id="simplefilterlist">
-                            <li ng-repeat="f in Backup.Filters track by $index">
-                                <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
-                                </select>
-    
-                                <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
-    
-                                <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
-                            </li>
-    
-                        </ul>
-                        <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
+
+                    <div ng-show="showFilter">
+                        <div class="input textarea" ng-show="EditFilterAdvanced">
+                            <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
+                            <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
+                        </div>
+                        <div class="input textarea" ng-hide="EditFilterAdvanced">
+                            <ul id="simplefilterlist">
+                                <li ng-repeat="f in Backup.Filters track by $index">
+                                    <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
+                                    </select>
+
+                                    <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
+
+                                    <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
+                                </li>
+
+                            </ul>
+                            <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
+                        </div>
                     </div>
                 </div>
                 <div class="box exclude">
-                    <h2 translate>Exclude</h2>
-                    <div class="input checkbox multiple">
-                        <div ng-repeat="attr in fileAttributes">
-                          <input
-                            id="fileattr_{{attr.value}}"
-                            type="checkbox"
-                            name="fileattr_{{attr.value}}"
-                            value="{{attr.value}}"
-                            ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
-                            ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
-                          />
-                          <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
-                        </div>                
+                    <div class="expandable">
+                        <a href ng-click="showExclude = !showExclude">
+                            <h2 translate>Exclude</h2>
+                            <img ng-show="showExclude" src="img/arrow_collapse_green.png">
+                            <img ng-hide="showExclude" src="img/arrow_expand_green.png">
+                        </a>
                     </div>
-    
-                    <div class="input text select multiple">
-                        <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
-                        <label for="exclude-large-files" translate>Files larger than:</label>
-                        
-                        <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-                        <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
-                        </select>
+
+                    <div ng-show="showExclude">
+                        <div class="input checkbox multiple">
+                            <div ng-repeat="attr in fileAttributes">
+                              <input
+                                id="fileattr_{{attr.value}}"
+                                type="checkbox"
+                                name="fileattr_{{attr.value}}"
+                                value="{{attr.value}}"
+                                ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
+                                ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
+                              />
+                              <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
+                            </div>
+                        </div>
+
+                        <div class="input text select multiple">
+                            <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
+                            <label for="exclude-large-files" translate>Files larger than:</label>
+
+                            <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
+                            <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="buttons">
@@ -286,16 +316,38 @@
                         </select>
                     </div>
                 </div>
-                <div class="input textarea" ng-show="ShowAdvancedTextArea">
-                    <h2 translate>Advanced options</h2>
-                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> <span translate>Edit as text</span></a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
+
+                <div class="headerthreedotmenu">
+                    <a href ng-click="showAdvanced = !showAdvanced" class="expandable">
+                        <h2 translate>Advanced options</h2>
+                        <img ng-show="showAdvanced" src="img/arrow_collapse_green.png">
+                        <img ng-hide="showAdvanced" src="img/arrow_expand_green.png">
+                    </a>
+
+                    <div class="threedotmenu_container" ng-show="showAdvanced">
+                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_options_adv" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+
+                        <div class="threedotmenu" id="threedotmenu_add_options_adv">
+                            <ul>
+                                <li>
+                                    <a href ng-show="ShowAdvancedTextArea" ng-click="ShowAdvancedTextArea = false" translate>Edit as list</a>
+                                </li>
+                                <li>
+                                    <a href ng-hide="ShowAdvancedTextArea" ng-click="ShowAdvancedTextArea = true" translate>Edit as text</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="input" ng-hide="ShowAdvancedTextArea">
-                    <h2 translate>Advanced options</h2>
-                    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> {{'Edit as text' | translate}}</a>
-                    <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
+
+                <div ng-show="showAdvanced">
+                    <div class="input textarea" ng-show="ShowAdvancedTextArea">
+                        <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
+                    </div>
+
+                    <div class="input" ng-hide="ShowAdvancedTextArea">
+                        <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
+                    </div>
                 </div>
 
                 <div class="buttons">

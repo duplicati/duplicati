@@ -39,8 +39,8 @@
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
                 <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}
-                    <img ng-show="$parent.ContextMenuID == item.Backup.ID" src="img/arrow_collapse.png">
-                    <img ng-show="$parent.ContextMenuID != item.Backup.ID" src="img/arrow_expand.png">
+                    <img ng-show="$parent.ContextMenuID == item.Backup.ID" src="img/arrow_collapse_blue.png">
+                    <img ng-show="$parent.ContextMenuID != item.Backup.ID" src="img/arrow_expand_blue.png">
                 </a>
 
                 <dl class="contextmenu" ng-show="$parent.ContextMenuID == item.Backup.ID">
