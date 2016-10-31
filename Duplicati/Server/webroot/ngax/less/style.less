@@ -724,15 +724,14 @@ body {
                     }
                 }
 
-                div.add {
+                div.add,
+                div.restore {
                     .steps {
                         width: 100%;
                         overflow: hidden;
-                        margin-left: 48px;
 
                         .step {
                             float: left;
-                            padding-left: 96px;
                             background: url('../img/steps/line-out.png') no-repeat top left;
                             color: #c7e5f6;
 
@@ -767,6 +766,26 @@ body {
                         .step:first-child {
                             padding-left: 0;
                             background: transparent;
+                        }
+                    }
+
+                    .steps-legend {
+                        overflow: hidden;
+                        padding-bottom: 50px;
+                        list-style: none;
+                        margin: 0;
+
+                        li {
+                            color: #c7e5f6;
+                            font-size: 18px;
+                            text-align: center;
+                            float: left;
+                            padding-top: 10px;
+                            cursor: pointer;
+                        }
+
+                        li.active {
+                            color: @lColor;
                         }
                     }
 
@@ -970,32 +989,6 @@ body {
                         }
                     }
 
-                    .steps-legend {
-                        overflow: hidden;
-                        padding-bottom: 50px;
-                        list-style: none;
-                        padding-left: 0;
-                        margin: 0;
-
-                        li {
-                            color: #c7e5f6;
-                            font-size: 18px;
-                            text-align: center;
-                            float: left;
-                            width: 139px;
-                            padding-top: 10px;
-                            cursor: pointer;
-                        }
-
-                        li:first-child {
-                            width: 139px;
-                        }
-
-                        li.active {
-                            color: @lColor;
-                        }
-                    }
-
                     form {
                         padding-bottom: 50px;
                         overflow: hidden;
@@ -1082,6 +1075,54 @@ body {
                             float: none;
                             width: 635px;
                             padding-top: 30px;
+                        }
+                    }
+                }
+
+                div.add {
+                    @legends-steps: 5;
+                    @legends-width: 700px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+                }
+
+                div.restore {
+                    @legends-steps: 2;
+                    @legends-width: 450px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
                         }
                     }
                 }
@@ -1850,6 +1891,7 @@ div.modal-dialog {
             .body {
                 .content {
                     div.add,
+                    div.restore,
                     div.settings {
                         .steps {
                             display: none;
@@ -1937,7 +1979,8 @@ div.modal-dialog {
                 padding-bottom: 0;
 
                 .content {
-                    div.add {
+                    div.add,
+                    div.restore {
                         form {
                             .input.overlayButton {
                                 padding-top: 8px;
@@ -2153,7 +2196,8 @@ div.modal-dialog {
                 .content {
                     padding: 50px 15px;
 
-                    div.add {
+                    div.add,
+                    div.restore {
                         form {
                             .input.password {
                                 .tools {
