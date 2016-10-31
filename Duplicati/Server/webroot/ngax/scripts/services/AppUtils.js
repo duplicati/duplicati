@@ -51,7 +51,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
         if (cls == 'x-tree-icon-mydocuments')
             res = gettextCatalog.getString('My Documents');
-        else if (cls == gettextCatalog.getString('x-tree-icon-mymusic'))
+        else if (cls == 'x-tree-icon-mymusic')
             res = gettextCatalog.getString('My Music');
         else if (cls == 'x-tree-icon-mypictures')
             res = gettextCatalog.getString('My Pictures');
@@ -73,7 +73,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             res = gettextCatalog.getString('File');
 
         return res;
-    }     
+    };
 
     function reloadTexts() {
         apputils.fileSizeMultipliers = [
