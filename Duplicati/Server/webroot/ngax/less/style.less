@@ -104,15 +104,6 @@ wait-area {
     display: block;
 }
 
-.contextmenu {
-    p {
-        display: inline;
-        margin-right: 10px;
-        color: @lColor;
-        cursor: pointer;
-    }
-}
-
 .prewrapped-text {
     white-space: pre-wrap;
 }
@@ -500,102 +491,83 @@ body {
                 padding-left: 40px;
                 float: left;
 
-                ul {
-                    li {
+                > ul {
+                    > li {
                         position: relative;
 
-                        a {
+                        > a {
                             font-size: 22px;
                             font-weight: 300;
                             padding: 5px 10px 5px 55px;
                             display: block;
                         }
 
-                        a:hover,
-                        a.active {
+                        > a:hover,
+                        > a.active {
                             color: white;
                         }
 
-                        a.add {
+                        > a.add {
                             background: url('../img/mainmenu/add.png') no-repeat 8px 7px;
                         }
 
-                        a.restore {
+                        > a.restore {
                             background: url('../img/mainmenu/restore.png') no-repeat 8px 7px;
                         }
 
-                        a.pause {
+                        > a.pause {
                             background: url('../img/mainmenu/pause.png') no-repeat 8px 7px;
+
+                            span {
+                                padding-right: 25px;
+                                background: url('../img/mainmenu/arrow_right.png') right center no-repeat;
+                            }
                         }
 
-                        a.resume {
+                        > a.resume {
                             background: url('../img/mainmenu/resume.png') no-repeat 8px 7px;
                         }
 
-                        a.settings {
+                        > a.settings {
                             background: url('../img/mainmenu/settings.png') no-repeat 8px 7px;
                         }
 
-                        a.log {
+                        > a.log {
                             background: url('../img/mainmenu/log.png') no-repeat 8px 7px;
                         }
 
-                        a.add:hover,
-                        a.add.active {
+                        > a.add:hover,
+                        > a.add.active {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
                         }
 
-                        a.restore:hover,
-                        a.restore.active {
+                        > a.restore:hover,
+                        > a.restore.active {
                             background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
                         }
 
-                        a.pause:hover,
-                        a.pause.active {
+                        > a.pause:hover,
+                        > a.pause.active {
                             background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
+
+                            span {
+                                background: url('../img/mainmenu/over/arrow_right.png') right center no-repeat;
+                            }
                         }
 
-                        a.resume:hover,
-                        a.resume.active {
+                        > a.resume:hover,
+                        > a.resume.active {
                             background: @lColor url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
                         }
 
-                        a.settings:hover,
-                        a.settings.active {
+                        > a.settings:hover,
+                        > a.settings.active {
                             background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
                         }
 
-                        a.log:hover,
-                        a.log.active {
+                        > a.log:hover,
+                        > a.log.active {
                             background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
-                        }
-
-                        ul {
-                            position: absolute;
-                            left: 200px;
-                            top: 25px;
-                            background: white;
-                            border: 1px @headerBg solid;
-                            box-shadow: 0px 7px 15px rgba(0, 0, 0, 0.2);
-                            z-index: 200;
-
-                            li {
-                                a {
-                                    color: @tColor;
-                                    font-size: 15px;
-                                    font-weight: 400;
-                                    padding: 0;
-                                    display: block;
-                                    width: 205px;
-                                    padding: 4px 10px;
-                                }
-
-                                a:hover,
-                                a.active {
-                                    background: @lColor;
-                                    color: white;
-                                }
-                            }
                         }
                     }
 
@@ -607,19 +579,50 @@ body {
                 }
             }
 
+            div.contextmenu_container {
+                position: relative;
+            }
+
+            .contextmenu {
+                display: none;
+                position: absolute;
+                left: 260px;
+                top: 19px;
+                background: white;
+                border: 1px @headerBg solid;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                z-index: 200;
+                padding: 5px;
+
+                li {
+                    a {
+                        color: @lColor;
+                        font-size: 15px;
+                        font-weight: 400;
+                        padding: 0;
+                        display: block;
+                        min-width: 200px;
+                        padding: 4px 10px;
+                        white-space: nowrap;
+                    }
+
+                    a:hover,
+                    a.active {
+                        background: @lColor;
+                        color: white;
+                    }
+                }
+            }
+
+            .contextmenu.open {
+                display: block;
+            }
+
             .content {
                 float: left;
                 padding-left: 50px;
                 padding-bottom: 50px;
                 max-width: 700px;
-
-                .pause a {
-                    margin-top: 20px;
-                    margin-bottom: 20px;
-                    display: block;
-                    font-weight: 300;
-                    font-size: 24px;
-                }
 
                 ul.tabs > li {
                     display: inline-block;
@@ -696,7 +699,14 @@ body {
                             }
                         }
 
-                        dl.contextmenu {
+                        dl.taskmenu {
+                            p {
+                                display: inline;
+                                margin-right: 10px;
+                                color: @lColor;
+                                cursor: pointer;
+                            }
+
                             dt {
                                 float: left;
                                 margin-right: 10px;
@@ -1134,35 +1144,17 @@ body {
                         display: inline;
                     }
 
-                    div.threedotmenu_container {
+                    .contextmenu_container {
                         float: right;
-                        position: relative;
+                    }
 
-                        .threedotmenubutton {
-                            padding: 5px;
-                        }
-
-                        .threedotmenu {
-                            display: none;
-                            position: absolute;
-                            background: none repeat scroll 0 0 white;
-                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-                            border: 1px solid #EEEEEE;
-                            padding: 10px;
-                            white-space: nowrap;
-
-                            ul li a {
-                                padding: 5px 5px 5px 5px;
-                                display: block;
-                            }
-                        }
-
-                        .threedotmenu.open {
-                            display: block;
-                            left: auto;
-                            right: 0;
-                            z-index: 1000;
-                        }
+                    .contextmenu {
+                        left: auto;
+                        right: 0;
+                        top: auto;
+                    }
+                    .threedotmenubutton {
+                        padding: 5px;
                     }
                 }
 
@@ -1836,6 +1828,11 @@ div.modal-dialog {
                     right: 0;
                     top: 0;
                     z-index: 1000;
+                }
+
+                .contextmenu {
+                    left: 0;
+                    top: auto;
                 }
 
                 .content {

@@ -9,7 +9,11 @@ backupApp.controller('AppController', function($scope, BrandingService, ServerSt
         ServerStatus.reconnect();
     };
 
-    $scope.sendResume = function() {
+    $scope.resume = function() {
         ServerStatus.resume().then(function() {}, AppUtils.connectionError);
+    };
+
+    $scope.pause = function(duration) {
+        ServerStatus.pause(duration).then(function() {}, AppUtils.connectionError);
     };
 });
