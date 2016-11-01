@@ -36,6 +36,11 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Hyper-V virtual machines"); } }
         public static string DisplayName { get { return LC.L(@"Configure Hyper-V module"); } }
     }
+    internal static class MSSQLOptions
+    {
+        public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Microsoft SQL Server databases"); } }
+        public static string DisplayName { get { return LC.L(@"Configure Microsoft SQL Server module"); } }
+    }
     internal static class RunScript {
         public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
         public static string DisplayName { get { return LC.L(@"Run script"); } }
