@@ -46,6 +46,10 @@ msgstr ""
 msgid "Access Key"
 msgstr ""
 
+#: scripts/services/AppUtils.js:69
+msgid "Access denied"
+msgstr ""
+
 #: templates/settings.html:5
 msgid "Access to user interface"
 msgstr ""
@@ -103,7 +107,7 @@ msgstr ""
 msgid "Advanced:"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:403
+#: scripts/directives/sourceFolderPicker.js:416
 msgid "All Hyper-V Machines"
 msgstr ""
 
@@ -217,6 +221,10 @@ msgstr ""
 
 #: templates/restore.html:104
 msgid "Bitcoin: {{bitcoinaddr}}"
+msgstr ""
+
+#: scripts/services/AppUtils.js:67
+msgid "Broken access"
 msgstr ""
 
 #: templates/backends/file.html:8
@@ -351,7 +359,7 @@ msgstr ""
 msgid "Compression modules:"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:361
+#: scripts/directives/sourceFolderPicker.js:374
 msgid "Computer"
 msgstr ""
 
@@ -414,7 +422,7 @@ msgstr ""
 msgid "Continue without encryption"
 msgstr ""
 
-#: scripts/services/AppUtils.js:563
+#: scripts/services/AppUtils.js:597
 msgid "Core options"
 msgstr ""
 
@@ -488,7 +496,7 @@ msgstr ""
 msgid "Custom storage class ({{class}})"
 msgstr ""
 
-#: scripts/services/AppUtils.js:56
+#: scripts/services/AppUtils.js:90
 #: templates/addoredit.html:242
 msgid "Days"
 msgstr ""
@@ -541,6 +549,10 @@ msgstr ""
 
 #: scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files ..."
+msgstr ""
+
+#: scripts/services/AppUtils.js:59
+msgid "Desktop"
 msgstr ""
 
 #: templates/restore.html:102
@@ -612,7 +624,7 @@ msgstr ""
 msgid "Downloading update..."
 msgstr ""
 
-#: scripts/services/AppUtils.js:225
+#: scripts/services/AppUtils.js:259
 msgid "Duplicate option {{opt}}"
 msgstr ""
 
@@ -700,7 +712,7 @@ msgstr ""
 msgid "Enter folder path name"
 msgstr ""
 
-#: scripts/services/AppUtils.js:81
+#: scripts/services/AppUtils.js:115
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
 
@@ -722,11 +734,11 @@ msgstr ""
 #: scripts/controllers/RestoreController.js:85
 #: scripts/controllers/RestoreDirectController.js:50
 #: scripts/controllers/RestoreDirectController.js:75
-#: scripts/services/AppUtils.js:225
-#: scripts/services/AppUtils.js:271
-#: scripts/services/AppUtils.js:273
-#: scripts/services/AppUtils.js:281
-#: scripts/services/AppUtils.js:283
+#: scripts/services/AppUtils.js:259
+#: scripts/services/AppUtils.js:305
+#: scripts/services/AppUtils.js:307
+#: scripts/services/AppUtils.js:315
+#: scripts/services/AppUtils.js:317
 msgid "Error"
 msgstr ""
 
@@ -742,31 +754,31 @@ msgstr ""
 msgid "Exclude"
 msgstr ""
 
-#: scripts/services/AppUtils.js:84
+#: scripts/services/AppUtils.js:118
 msgid "Exclude directories whose names contain"
 msgstr ""
 
-#: scripts/services/AppUtils.js:127
+#: scripts/services/AppUtils.js:161
 msgid "Exclude expression"
 msgstr ""
 
-#: scripts/services/AppUtils.js:102
+#: scripts/services/AppUtils.js:136
 msgid "Exclude file"
 msgstr ""
 
-#: scripts/services/AppUtils.js:108
+#: scripts/services/AppUtils.js:142
 msgid "Exclude file extension"
 msgstr ""
 
-#: scripts/services/AppUtils.js:90
+#: scripts/services/AppUtils.js:124
 msgid "Exclude files whose names contain"
 msgstr ""
 
-#: scripts/services/AppUtils.js:96
+#: scripts/services/AppUtils.js:130
 msgid "Exclude folder"
 msgstr ""
 
-#: scripts/services/AppUtils.js:113
+#: scripts/services/AppUtils.js:147
 msgid "Exclude regular expression"
 msgstr ""
 
@@ -844,6 +856,10 @@ msgstr ""
 msgid "Fetching path information ..."
 msgstr ""
 
+#: scripts/services/AppUtils.js:73
+msgid "File"
+msgstr ""
+
 #: templates/addoredit.html:157
 msgid "Files larger than:"
 msgstr ""
@@ -855,6 +871,10 @@ msgstr ""
 #: scripts/services/ServerStatus.js:44
 #: scripts/services/ServerStatus.js:55
 msgid "Finished!"
+msgstr ""
+
+#: scripts/services/AppUtils.js:50
+msgid "Folder"
 msgstr ""
 
 #: templates/backends/b2.html:7
@@ -876,15 +896,15 @@ msgstr ""
 msgid "Force stop"
 msgstr ""
 
-#: scripts/services/AppUtils.js:67
+#: scripts/services/AppUtils.js:101
 msgid "Fri"
 msgstr ""
 
-#: scripts/services/AppUtils.js:49
+#: scripts/services/AppUtils.js:83
 msgid "GByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:76
+#: scripts/services/AppUtils.js:110
 msgid "GByte/s"
 msgstr ""
 
@@ -923,7 +943,11 @@ msgstr ""
 msgid "Hide hidden folders"
 msgstr ""
 
-#: scripts/services/AppUtils.js:55
+#: scripts/services/AppUtils.js:61
+msgid "Home"
+msgstr ""
+
+#: scripts/services/AppUtils.js:89
 #: templates/settings.html:33
 msgid "Hours"
 msgstr ""
@@ -932,15 +956,20 @@ msgstr ""
 msgid "How do you want to handle existing files?"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:418
+#: scripts/services/AppUtils.js:63
+msgid "Hyper-V Machine"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:431
 msgid "Hyper-V Machine:"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:397
+#: scripts/directives/sourceFolderPicker.js:410
+#: scripts/services/AppUtils.js:65
 msgid "Hyper-V Machines"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:51
+#: scripts/directives/sourceFolderPicker.js:56
 msgid "ID:"
 msgstr ""
 
@@ -994,11 +1023,11 @@ msgstr ""
 msgid "Include a file?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:123
+#: scripts/services/AppUtils.js:157
 msgid "Include expression"
 msgstr ""
 
-#: scripts/services/AppUtils.js:118
+#: scripts/services/AppUtils.js:152
 msgid "Include regular expression"
 msgstr ""
 
@@ -1030,11 +1059,11 @@ msgid ""
 "Are you sure your FTP server supports password-less logins?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:47
+#: scripts/services/AppUtils.js:81
 msgid "KByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:74
+#: scripts/services/AppUtils.js:108
 msgid "KByte/s"
 msgstr ""
 
@@ -1122,11 +1151,11 @@ msgstr ""
 msgid "Log data"
 msgstr ""
 
-#: scripts/services/AppUtils.js:48
+#: scripts/services/AppUtils.js:82
 msgid "MByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:75
+#: scripts/services/AppUtils.js:109
 msgid "MByte/s"
 msgstr ""
 
@@ -1147,7 +1176,7 @@ msgstr ""
 msgid "Menu"
 msgstr ""
 
-#: scripts/services/AppUtils.js:54
+#: scripts/services/AppUtils.js:88
 #: templates/settings.html:32
 msgid "Minutes"
 msgstr ""
@@ -1168,11 +1197,11 @@ msgstr ""
 msgid "Missing sources"
 msgstr ""
 
-#: scripts/services/AppUtils.js:63
+#: scripts/services/AppUtils.js:97
 msgid "Mon"
 msgstr ""
 
-#: scripts/services/AppUtils.js:58
+#: scripts/services/AppUtils.js:92
 #: templates/addoredit.html:244
 msgid "Months"
 msgstr ""
@@ -1185,8 +1214,20 @@ msgstr ""
 msgid "Move failed:"
 msgstr ""
 
+#: scripts/services/AppUtils.js:53
+msgid "My Documents"
+msgstr ""
+
+#: scripts/services/AppUtils.js:55
+msgid "My Music"
+msgstr ""
+
 #: templates/addoredit.html:42
 msgid "My Photos"
+msgstr ""
+
+#: scripts/services/AppUtils.js:57
+msgid "My Pictures"
 msgstr ""
 
 #: templates/addoredit.html:41
@@ -1543,7 +1584,7 @@ msgstr ""
 msgid "Same as the base install version: {{channelname}}"
 msgstr ""
 
-#: scripts/services/AppUtils.js:68
+#: scripts/services/AppUtils.js:102
 msgid "Sat"
 msgstr ""
 
@@ -1655,7 +1696,7 @@ msgstr ""
 msgid "Source Data"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:367
+#: scripts/directives/sourceFolderPicker.js:380
 msgid "Source data"
 msgstr ""
 
@@ -1710,8 +1751,12 @@ msgstr ""
 msgid "Strong"
 msgstr ""
 
-#: scripts/services/AppUtils.js:69
+#: scripts/services/AppUtils.js:103
 msgid "Sun"
+msgstr ""
+
+#: scripts/services/AppUtils.js:71
+msgid "Symbolic link"
 msgstr ""
 
 #: templates/settings.html:97
@@ -1730,11 +1775,11 @@ msgstr ""
 msgid "System properties"
 msgstr ""
 
-#: scripts/services/AppUtils.js:50
+#: scripts/services/AppUtils.js:84
 msgid "TByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:77
+#: scripts/services/AppUtils.js:111
 msgid "TByte/s"
 msgstr ""
 
@@ -1828,7 +1873,7 @@ msgstr ""
 msgid "This week"
 msgstr ""
 
-#: scripts/services/AppUtils.js:66
+#: scripts/services/AppUtils.js:100
 msgid "Thu"
 msgstr ""
 
@@ -1852,7 +1897,7 @@ msgstr ""
 msgid "Try out the new features we are working on. Don't use with important data."
 msgstr ""
 
-#: scripts/services/AppUtils.js:64
+#: scripts/services/AppUtils.js:98
 msgid "Tue"
 msgstr ""
 
@@ -1917,7 +1962,7 @@ msgstr ""
 msgid "Useless"
 msgstr ""
 
-#: scripts/directives/sourceFolderPicker.js:354
+#: scripts/directives/sourceFolderPicker.js:367
 msgid "User data"
 msgstr ""
 
@@ -2020,11 +2065,11 @@ msgstr ""
 msgid "Weak passphrase"
 msgstr ""
 
-#: scripts/services/AppUtils.js:65
+#: scripts/services/AppUtils.js:99
 msgid "Wed"
 msgstr ""
 
-#: scripts/services/AppUtils.js:57
+#: scripts/services/AppUtils.js:91
 #: templates/addoredit.html:243
 msgid "Weeks"
 msgstr ""
@@ -2033,7 +2078,7 @@ msgstr ""
 msgid "Where do you want to restore the files to?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:59
+#: scripts/services/AppUtils.js:93
 #: templates/addoredit.html:245
 msgid "Years"
 msgstr ""
@@ -2177,11 +2222,11 @@ msgstr ""
 msgid "bucket/folder/subfolder"
 msgstr ""
 
-#: scripts/services/AppUtils.js:46
+#: scripts/services/AppUtils.js:80
 msgid "byte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:73
+#: scripts/services/AppUtils.js:107
 msgid "byte/s"
 msgstr ""
 
