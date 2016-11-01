@@ -29,7 +29,9 @@ if "TRAVIS_BUILD_NUMBER" in os.environ:
 else:
     # local
     print "Using LOCAL webdriver"
-    driver = webdriver.Firefox()
+    profile = webdriver.FirefoxProfile()
+    profile.set_preference("intl.accept_languages", "en")
+    driver = webdriver.Firefox(profile)
     driver.maximize_window()
 
 
@@ -96,26 +98,30 @@ write_random_file(100 * 1024, SOURCE_FOLDER + os.sep + "subfolder" + os.sep + "1
 sha1_source = sha1_folder(SOURCE_FOLDER)
 
 # Add new backup
-driver.find_element_by_link_text("Add new backup").click()
+driver.find_element_by_link_text("Add backup").click()
 
 # Add new backup - General page
 time.sleep(1)
 driver.find_element_by_id("name").send_keys(BACKUP_NAME)
-driver.find_element_by_id("target").send_keys("file://" + DESTINATION_FOLDER)
 driver.find_element_by_id("passphrase").send_keys(PASSWORD)
 driver.find_element_by_id("repeat-passphrase").send_keys(PASSWORD)
 driver.find_element_by_id("nextStep1").click()
 
+# Add new backup - Destination page
+driver.find_element_by_link_text("Manually type path").click()
+driver.find_element_by_id("file_path").send_keys(DESTINATION_FOLDER)
+driver.find_element_by_id("nextStep2").click()
+
 # Add new backup - Source Data page
 driver.find_element_by_id("sourcePath").send_keys(os.path.abspath(SOURCE_FOLDER) + os.sep)
 driver.find_element_by_id("sourceFolderPathAdd").click()
-driver.find_element_by_id("nextStep2").click()
+driver.find_element_by_id("nextStep3").click()
 
 # Add new backup - Schedule page
 useScheduleRun = driver.find_element_by_id("useScheduleRun")
 if useScheduleRun.is_selected():
     useScheduleRun.click()
-driver.find_element_by_id("nextStep3").click()
+driver.find_element_by_id("nextStep4").click()
 
 # Add new backup - Options page
 driver.find_element_by_id("save").click()
@@ -147,9 +153,13 @@ os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
 
 # direct restore
 driver.find_element_by_link_text("Restore backup").click()
-driver.find_element_by_id("target").send_keys("file://" + DESTINATION_FOLDER_DIRECT_RESTORE)
+time.sleep(1)
+driver.find_element_by_link_text("Manually type path").click()
+driver.find_element_by_id("file_path").send_keys(DESTINATION_FOLDER_DIRECT_RESTORE)
+driver.find_element_by_id("nextStep1").click()
+
 driver.find_element_by_id("password").send_keys(PASSWORD)
-driver.find_element_by_link_text("Connect").click()
+driver.find_element_by_id("connect").click()
 driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 time.sleep(1)
 driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
