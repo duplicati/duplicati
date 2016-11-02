@@ -130,10 +130,24 @@
         <div class="step step3" ng-class="{active: CurrentStep == 2}">
             <form class="styled">
                 <div class="box browser">
-                    <h2 translate>Folders</h2>
+                    <div class="headerthreedotmenu">
+                        <h2 translate>Folders</h2>
+
+                        <div class="contextmenu_container">
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_filters" class="threedotmenubutton"/></a>
+
+                            <div class="contextmenu" id="threedotmenu_add_source_filters">
+                                <ul>
+                                    <li>
+                                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced" translate>Show advanced editor</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="input checklinks">
                         <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
-                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced"><i class="fa {{EditSourceAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced" ng-show-hidden="showhiddenfolders">
                         <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters"></source-folder-picker>
