@@ -97,8 +97,8 @@
                         <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
                         <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced"><i class="fa {{EditSourceAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
                     </div>
-                    <div class="resizable filepicker" ng-hide="EditSourceAdvanced" ng-show-hidden="showhiddenfolders">
-                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters"></source-folder-picker>
+                    <div class="resizable filepicker" ng-hide="EditSourceAdvanced">
+                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders"></source-folder-picker>
                     </div>
                     <div class="input textarea" ng-show="EditSourceAdvanced">
                         <label for="SourcePathList" translate>Source folders</label>
