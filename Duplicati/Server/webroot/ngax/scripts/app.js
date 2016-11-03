@@ -5,7 +5,8 @@ var backupApp = angular.module(
         'dotjem.angular.tree',
         'ngCookies',
         'ngSanitize',
-        'gettext'
+        'gettext',
+        'ngclipboard'
     ]
 );
 
@@ -57,9 +58,6 @@ backupApp.config(['$routeProvider',
             }).
             when('/localdb/:backupid', {
                 templateUrl: 'templates/localdatabase.html'
-            }).
-            when('/pause', {
-                templateUrl: 'templates/pause.html'
             }).
             otherwise({
                 templateUrl: 'templates/home.html'
