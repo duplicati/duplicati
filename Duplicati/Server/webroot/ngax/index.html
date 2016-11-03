@@ -26,7 +26,6 @@
     <meta name="theme-color" content="#ffffff">
 
     <link rel="stylesheet" type="text/css" href="styles/smoothness/jquery-ui.min.css">
-    <link rel="stylesheet" type="text/css" href="styles/styles2.css">
     <link rel="stylesheet" type="text/css" href="styles/style.css">
     <link rel="stylesheet" type="text/css" href="../oem/ngax/styles/oem.css" />
     <link rel="stylesheet" type="text/css" href="../customized/customized.css" />
@@ -51,11 +50,14 @@
     <script type="text/javascript" src="scripts/libs/modal.min.js"></script>
     <script type="text/javascript" src="scripts/libs/dxTree.js"></script>
     <script type="text/javascript" src="scripts/libs/moment-with-locales.min.js"></script>
+    <script type="text/javascript" src="scripts/libs/clipboard.min.js"></script>
+    <script type="text/javascript" src="scripts/libs/ngclipboard.min.js"></script>
 
     <script type="text/javascript" src="scripts/libs/angular-gettext.min.js"></script>    
 
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/menu.js"></script>
+    <script type="text/javascript" src="scripts/helper.js"></script>
     
     <script type="text/javascript" src="scripts/angular-gettext-cli_compiled_js_output.js"></script>
 
@@ -78,7 +80,6 @@
     <script type="text/javascript" src="scripts/controllers/SystemSettingsController.js"></script>
     <script type="text/javascript" src="scripts/controllers/HomeController.js"></script>
     <script type="text/javascript" src="scripts/controllers/EditBackupController.js"></script>
-    <script type="text/javascript" src="scripts/controllers/PauseController.js"></script>
     <script type="text/javascript" src="scripts/controllers/RestoreController.js"></script>
     <script type="text/javascript" src="scripts/controllers/RestoreDirectController.js"></script>
     <script type="text/javascript" src="scripts/controllers/LogController.js"></script>
@@ -129,10 +130,10 @@
                 <span translate>Donate</span>
                 <ul>
                     <li>
-                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" /></a>
+                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" title="{{'Donate with Bitcoins' | translate}}" /></a>
                     </li>
                     <li>
-                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" /></a>
+                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" title="{{'Donate with PayPal' | translate}}" /></a>
                     </li>
                 </ul>
             </div>
@@ -144,13 +145,37 @@
             <div class="mainmenu menu" id="mainmenu">
                 <ul>
                     <li>
-                        <a href="#/add" class="add" translate>Add new backup</a>
+                        <a href="#/add" class="add" translate>Add backup</a>
                     </li>
                     <li>
                         <a href="#/restoredirect" class="restore" translate>Restore backup</a>
                     </li>
-                    <li>
-                        <a href="#/pause" id="pause" class="pause" translate>Pause</a>
+                    <li ng-show="state.programState == 'Running'">
+                        <a href class="pause" id="contextmenulink_pause" translate><span>Pause</span></a>
+
+                        <ul class="contextmenu" id="contextmenu_pause">
+                            <li>
+                                <a href ng-click="pause('5m')" class="pause-5" translate translate-params-number="5">{{number}} Minutes</a>
+                            </li>
+                            <li>
+                                <a href ng-click="pause('10m')" class="pause-10" translate translate-params-number="10">{{number}} Minutes</a>
+                            </li>
+                            <li>
+                                <a href ng-click="pause('15m')" class="pause-15" translate translate-params-number="15">{{number}} Minutes</a>
+                            </li>
+                            <li>
+                                <a href ng-click="pause('30m')" class="pause-30" translate translate-params-number="30">{{number}} Minutes</a>
+                            </li>
+                            <li>
+                                <a href ng-click="pause('1h')" class="pause-60" translate translate-params-number="1">{{number}} Hour</a>
+                            </li>
+                            <li>
+                                <a href ng-click="pause()" class="pause-x" translate>Until resumed</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li ng-hide="state.programState == 'Running'">
+                        <a href ng-click="resume()" id="resume" class="resume" translate>Resume</a>
                     </li>
                     <li>
                         <a href="#/settings" class="settings">{{'Settings' | translate}}</a>
@@ -158,7 +183,6 @@
                     <li>
                         <a href="#/log" class="log">{{'Show log' | translate}}</a>
                     </li>
-
                 </ul>
             </div>
             
@@ -179,19 +203,19 @@
                 {{'Visit us on' | translate}}
                 <ul>
                     <li>
-                        <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank"><img src="img/social/ggroups.png" alt="Google Groups" width="28" /></a>
+                        <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank"><img src="img/social/ggroups.png" alt="Google Groups" title="Google Groups" width="28" /></a>
                     </li>
                     <li>
-                        <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" /></a>
+                        <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" title="Github" /></a>
                     </li>
                     <li>
-                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" /></a>
+                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" title="Facebook" /></a>
                     </li>
                     <li>
-                        <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" /></a>
+                        <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
                     </li>
                     <li>
-                        <a href="http://www.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="duplicati.com" /></a>
+                        <a href="http://www.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
                     </li>
                 </ul>
             </div>
@@ -200,10 +224,10 @@
                 <span translate>Donate</span>
                 <ul>
                     <li>
-                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" /></a>
+                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" title="{{'Donate with Bitcoins' | translate}}" /></a>
                     </li>
                     <li>
-                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" /></a>
+                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" title="{{'Donate with PayPal' | translate}}" /></a>
                     </li>
                 </ul>
             </div>    
@@ -218,11 +242,17 @@
         <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
-                <div class="content" ng-show="state.CurrentItem.message">{{state.CurrentItem.message}}</div>
+                <div class="content" ng-show="state.CurrentItem.message || state.CurrentItem.enableTextarea">
+                    {{state.CurrentItem.message}}
+                    <form ng-show="state.CurrentItem.enableTextarea">
+                        <textarea placeholder="{{state.CurrentItem.placeholder}}" ng-model="state.CurrentItem.textarea" id="copytarget"></textarea>
+                    </form>
+                </div>
                 <div class="content" ng-show="state.CurrentItem.htmltemplate" ng-include="state.CurrentItem.htmltemplate"></div>
                 <div class="content buttons">
                     <ul>
-                        <li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)" >{{btn}}</a></li>
+                        <li ng-show="state.CurrentItem.buttonTemplate" ng-include="state.CurrentItem.buttonTemplate" style="display: inline-block"></li>
+                        <li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)">{{btn}}</a></li>
                     </ul>
                 </div>
             </div>            
@@ -231,7 +261,7 @@
 
     <div id="connection-lost-blocker" ng-show="state.connectionState != 'connected'" class="blocker ng-cloak" ng-click=""></div>
 
-    <div id="connection-lost-dialog"  ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
+    <div id="connection-lost-dialog" ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
         <div class="info">
             <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState !='connecting'" translate translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining">
