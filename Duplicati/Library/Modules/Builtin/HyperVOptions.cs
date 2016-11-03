@@ -27,8 +27,7 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class HyperVOptions : Interface.IGenericSourceModule
     {
-        private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
-        private const string m_HyperVGuidRegExp = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
+        private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})";
         private const string m_HyperVPathAllRegExp = @"%HYPERV%";
 
         #region IGenericModule Members
@@ -75,6 +74,13 @@ namespace Duplicati.Library.Modules.Builtin
                 if (paths != null)
                     paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
 
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                    var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
+                    filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
+                }
+
                 return new Dictionary<string, string>();
             }
 
@@ -96,15 +102,17 @@ namespace Duplicati.Library.Modules.Builtin
                 var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
 
                 filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                    .Select(x => Regex.Match(x.Substring(1), m_HyperVGuidRegExp).Value).ToList();
+                    .Select(x => Regex.Match(x.Substring(1), m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToList();
                 filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                    .Select(x => Regex.Match(x.Substring(1), m_HyperVGuidRegExp).Value).ToList();
+                    .Select(x => Regex.Match(x.Substring(1), m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToList();
 
-                var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase)).ToArray();
+                var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
                 filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
             }
 
-            if (paths == null || !ContainFilesForBackup(paths))
+            var hypervUtility = new HyperVUtility();
+
+            if (paths == null || !ContainFilesForBackup(paths) || !hypervUtility.IsHyperVInstalled)
                 return changedOptions;
             
             if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
@@ -114,7 +122,6 @@ namespace Duplicati.Library.Modules.Builtin
                 if (excludedWriters.Contains(HyperVUtility.HyperVWriterGuid))
                 {
                     Logging.Log.WriteMessage(string.Format("Excluded writers for VSS cannot contain Hyper-V writer when backuping Hyper-V virtual machines. Removing \"{0}\" to continue", HyperVUtility.HyperVWriterGuid.ToString()), Logging.LogMessageType.Warning);
-
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
                 }
             }
@@ -124,16 +131,16 @@ namespace Duplicati.Library.Modules.Builtin
                 Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
             }
-
-            var hypervUtility = new HyperVUtility();
-
+            
             if (!hypervUtility.IsVSSWriterSupported)
                 Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version", Logging.LogMessageType.Warning);
 
-            hypervUtility.QueryHyperVGuestsInfo(true);
-
             Logging.Log.WriteMessage("Starting to gather Hyper-V information", Logging.LogMessageType.Information);
+            hypervUtility.QueryHyperVGuestsInfo(true);          
             Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count), Logging.LogMessageType.Information);
+
+            foreach (var guest in hypervUtility.Guests)
+                Logging.Log.WriteMessage(string.Format("Found VM name {0}, ID {1}, files {2}", guest.Name, guest.ID, string.Join(";", guest.DataPaths)), Logging.LogMessageType.Profiling);
 
             List<HyperVGuest> guestsForBackup = new List<HyperVGuest>();
 
@@ -141,7 +148,7 @@ namespace Duplicati.Library.Modules.Builtin
                 guestsForBackup = hypervUtility.Guests;
             else
                 foreach (var guestID in paths.Where(x => Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                    .Select(x => Regex.Match(x.Substring(1), m_HyperVGuidRegExp).Value).ToArray())
+                    .Select(x => Regex.Match(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToArray())
                 {
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
@@ -160,6 +167,7 @@ namespace Duplicati.Library.Modules.Builtin
                         throw new Exception(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Add(foundGuest.First());
+                    Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", guestID), Logging.LogMessageType.Information);
                 }
 
             guestsForBackup = guestsForBackup.Distinct().ToList();
@@ -173,17 +181,18 @@ namespace Duplicati.Library.Modules.Builtin
                         throw new Exception(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Remove(foundGuest.First());
+                    Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", guestID), Logging.LogMessageType.Information);
                 }
 
             var pathsForBackup = new List<string>(paths);
-
+            var filterhandler = new Utility.FilterExpression(
+                filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-")).Select(x => x.Substring(1)).ToList());
+            
             foreach (var guestForBackup in guestsForBackup)
                 foreach (var pathForBackup in guestForBackup.DataPaths)
                 {
                     bool bResult;
                     Utility.IFilter matchFilter;
-                    var filterhandler = new Utility.FilterExpression(
-                        filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-")).Select(x => x.Substring(1)).ToList());
 
                     if (!filterhandler.Matches(pathForBackup, out bResult, out matchFilter))
                     {

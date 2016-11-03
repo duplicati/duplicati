@@ -26,6 +26,16 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void GET(string key, RequestInfo info)
         {
+            // Early exit in case we are non-windows to prevent attempting to load Windows-only components
+            if (Library.Utility.Utility.IsClientWindows)
+                RealGET(key, info);
+        }
+
+        // Make sure the JIT does not attempt to inline this call and thus load
+        // referenced types from System.Management here
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private void RealGET(string key, RequestInfo info)
+        {
             var hypervUtility = new HyperVUtility();
 
             if (!hypervUtility.IsHyperVInstalled)
