@@ -170,10 +170,22 @@ namespace Duplicati.Library.Snapshots
             var f = NoSnapshot.NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
-            var n = UnixSupport.File.GetExtendedAttributes(f);
-            if (n != null)
-                foreach(var x in n)
-                    dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
+            try
+            {
+                var n = UnixSupport.File.GetExtendedAttributes(f);
+                if (n != null)
+                    foreach (var x in n)
+                        dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
+            }
+            catch (System.IO.IOException)
+            {
+                // If we got any exception, just don't store the extended attributes. On Mac OS X,
+                // symlinks to nonexistent files throw ENOENT because we can't pass XATTR_NOFOLLOW
+                // to listxattr. If we let this Exception bubble up, no metadata gets stored at all.
+                //
+                // ENOENT can also happen if the file doesn't exist but if it doesn't then we would
+                // never have tried to get the Metadata in the first place so we can ignore that case.
+            }
 
             var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
