@@ -1,3 +1,9 @@
+2016-11-03 - 2.0.1.31_canary_2016-11-03
+==========
+* Fixed autoupdater choosing old update if the base version was replaced
+* Improved the UI for adding a backup, thanks @agrajaghh
+* Added MSSQL to potential backup targets, thanks @mnaiman
+
 2016-11-03 - 2.0.1.30_experimental_2016-11-03
 ==========
 * Experimental release; includes all canary changes
