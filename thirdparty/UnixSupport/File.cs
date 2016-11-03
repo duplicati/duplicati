@@ -185,10 +185,18 @@ namespace UnixSupport
         /// </summary>
         /// <returns>The extended attributes.</returns>
         /// <param name="path">The full path to look up</param>
-        public static Dictionary<string, byte[]> GetExtendedAttributes(string path)
+		/// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public static Dictionary<string, byte[]> GetExtendedAttributes(string path, bool isSymlink, bool followSymlink)
         {
+			// If we get a symlink that we should not follow, we need llistxattr support
+			if (isSymlink && !followSymlink && !SUPPORTS_LLISTXATTR)
+				return null;
+
+			var use_llistxattr = SUPPORTS_LLISTXATTR && !followSymlink;
+
             string[] values;
-            var size = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
+			var size = use_llistxattr ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
             if (size < 0)
             {
                 // In case the underlying filesystem does not support extended attributes,
@@ -196,7 +204,7 @@ namespace UnixSupport
                 if (Syscall.GetLastError() == Errno.EOPNOTSUPP)
                     return null;
 
-                throw new FileAccesException(path, "llistxattr");
+                throw new FileAccesException(path, use_llistxattr ? "llistxattr" : "listxattr");
             }
             
             var dict = new Dictionary<string, byte[]>();

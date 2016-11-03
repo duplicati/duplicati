@@ -463,10 +463,12 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="file">The file or folder to examine</param>
-        public Dictionary<string, string> GetMetadata(string file)
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return _sysIO.GetMetadata(local);
+            return _sysIO.GetMetadata(local, isSymlink, followSymlink);
         }
         
         /// <summary>
