@@ -117,9 +117,22 @@ then
 fi
 
 #
+# Find filesystem used on $DEVICE.
+# XFS filesystems need to be mounted with option -o nouuid.
+# Other filesystems do not support that option.
+#
+
+FILESYSTEM=`findmnt -S $DEVICE`
+if [ "$FILESYSTEM" == "xfs" ]; then
+    MOUNT_OPTIONS="ro,nouuid"
+else
+    MOUNT_OPTIONS="ro"
+fi
+
+#
 # Mount the snapshot on the mount point
 #
-mount -o ro "$LV_SNAPSHOT" "$TMPDIR"
+mount -o "$MOUNT_OPTIONS" "$LV_SNAPSHOT" "$TMPDIR"
 if [ "$?" -ne 0 ]
 then
 	EXIT_CODE=$?
