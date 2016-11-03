@@ -60,14 +60,14 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
     this.show_error_dialog = function(msg) {
         DialogService.dialog('Error', msg);
         return false;
-    }
+    };
 
     this.show_warning_dialog = function(msg, continuation) {
         DialogService.dialog(gettextCatalog.getString('Confirmation required'), msg, [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
             if (ix == 1)
                 continuation();
         });
-    }
+    };
 
     this.defaultvalidater = function(scope, continuation) {
         continuation();
@@ -89,7 +89,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 
     this.require_path = function(scope) {
         if ((scope.Path || '').trim().length == 0)
-            return self.show_error_dialog(gettextCatalog.getString('You must fill in the path'));
+            return self.show_error_dialog(gettextCatalog.getString('You must specify a path'));
 
         return true;
     };

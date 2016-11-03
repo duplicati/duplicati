@@ -6,7 +6,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     $scope.RepeatPasshrase = null;
     $scope.PasswordStrength = 'unknown';
     $scope.CurrentStep = 0;
-    $scope.EditUriState = false;
     $scope.showhiddenfolders = false;
     $scope.EditSourceAdvanced = false;
     $scope.EditFilterAdvanced = false;
@@ -25,7 +24,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     function computePassPhraseStrength() {
 
         var strengthMap = {
-            '': gettextCatalog.getString("Empty"),
             'x': gettextCatalog.getString("Passwords do not match"),
             0: gettextCatalog.getString("Useless"),
             1: gettextCatalog.getString("Very weak"),
@@ -43,7 +41,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         else
             scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
 
-        scope.PassphraseScoreString = strengthMap[scope.PassphraseScore] || gettextCatalog.getString('Unknown');
+        scope.PassphraseScoreString = strengthMap[scope.PassphraseScore];
     }
 
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
@@ -56,20 +54,32 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     };
 
     $scope.togglePassphraseVisibility = function() {
-        this.ShowPassphrase = !this.ShowPassphrase;;
+        this.ShowPassphrase = !this.ShowPassphrase;
     };
 
     $scope.nextPage = function() {
-        $scope.CurrentStep = Math.min(3, $scope.CurrentStep + 1);
+        $scope.CurrentStep = Math.min(4, $scope.CurrentStep + 1);
     };
 
     $scope.prevPage = function() {
         $scope.CurrentStep = Math.max(0, $scope.CurrentStep - 1);
-
     };
 
-    $scope.HideEditUri = function() {
-        scope.EditUriState = false;
+    $scope.setBuilduriFn = function(builduriFn) {
+        $scope.builduri = builduriFn;
+    };
+
+    $scope.importUrl = function () {
+        DialogService.textareaDialog('Import URL', 'Enter a Backup destination URL:', null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
+            if (btn == 1)
+                scope.Backup.TargetURL = input;
+        });
+    };
+
+    $scope.copyUrlToClipboard = function () {
+        $scope.builduri(function(res) {
+            DialogService.textareaDialog('Copy URL', null, null, res, [gettextCatalog.getString('OK')], 'templates/copy_clipboard_buttons.html');
+        });
     };
 
     var oldSchedule = null;
@@ -125,7 +135,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
                     }
                 });
             });
-        };
+        }
 
         if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
             DialogService.dialog(gettextCatalog.getString('Include a file?'), gettextCatalog.getString("The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", {dirsep: dirsep}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
@@ -135,10 +145,6 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         } else {
             continuation();
         }
-
-
-
-
     };
 
     $scope.toggleArraySelection = function (lst, value) {
@@ -190,7 +196,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         if (exclattr.length == 0)
             delete opts['--exclude-files-attributes'];
         else
-            opts['--exclude-files-attributes'] = exclattr.join(',')
+            opts['--exclude-files-attributes'] = exclattr.join(',');
 
         if (($scope.Backup.Name || '').trim().length == 0) {
             DialogService.dialog(gettextCatalog.getString('Missing name'), gettextCatalog.getString('You must enter a name for the backup'));
@@ -213,15 +219,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             }
         }
 
-        if (($scope.Backup.TargetURL || '').trim().length == 0) {
-            DialogService.dialog(gettextCatalog.getString('Missing destination'), gettextCatalog.getString('You must enter a destination where the backups are stored'));
-            $scope.CurrentStep = 0;
-            return;
-        }
-
         if ($scope.Backup.Sources == null || $scope.Backup.Sources.length == 0) {
             DialogService.dialog(gettextCatalog.getString('Missing sources'), gettextCatalog.getString('You must choose at least one source folder'));
-            $scope.CurrentStep = 1;
+            $scope.CurrentStep = 2;
             return;
         }
 
@@ -233,14 +233,14 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         if ($scope.KeepType == 'time' && (opts['keep-time'] || '').trim().length == 0)
         {
             DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid duration for the time to keep backups'));
-            $scope.CurrentStep = 3;
+            $scope.CurrentStep = 4;
             return;
         }
 
         if ($scope.KeepType == 'versions' && (parseInt(opts['keep-versions']) <= 0 || isNaN(parseInt(opts['keep-versions']))))
         {
             DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a positive number of backups to keep'));
-            $scope.CurrentStep = 3;
+            $scope.CurrentStep = 4;
             return;
         }
 
@@ -343,6 +343,15 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         };
 
+        function checkForValidBackupDestination(continuation) {
+            $scope.builduri(function(res) {
+                result.Backup.TargetURL = res;
+                $scope.Backup.TargetURL = res;
+                continuation();
+            });
+            $scope.CurrentStep = 1;
+        }
+
         function checkForDisabledEncryption(continuation) {
             if (encryptionEnabled || $scope.Backup.TargetURL.indexOf('file://') == 0 || $scope.SystemInfo.EncryptionModules.length == 0)
                 continuation();
@@ -387,8 +396,10 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             checkForGeneratedPassphrase(function() {
                 checkForDisabledEncryption(function() {
                     warnWeakPassphrase(function() {
-                        checkForExistingDb(function() {
-                            EditBackupService.postValidate($scope, postDb);
+                        checkForValidBackupDestination(function() {
+                            checkForExistingDb(function () {
+                                EditBackupService.postValidate($scope, postDb);
+                            });
                         });
                     });
                 });
@@ -401,9 +412,11 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
                 AppService.put('/backup/' + $routeParams.backupid, result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
                     $location.path('/');
                 }, AppUtils.connectionError);
-            };
+            }
 
-            checkForChangedPassphrase(putDb);
+            checkForChangedPassphrase(function() {
+                checkForValidBackupDestination(putDb);
+            });
         }
     };
 
@@ -480,7 +493,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             $scope.KeepType = 'versions';
         }
 
-        var delopts = ['--skip-files-larger-than', '--no-encryption']
+        var delopts = ['--skip-files-larger-than', '--no-encryption'];
         for(var n in delopts)
             delete extopts[delopts[n]];
 

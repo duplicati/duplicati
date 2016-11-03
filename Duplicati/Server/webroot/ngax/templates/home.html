@@ -2,9 +2,8 @@
     <div class="state" ng-controller="StateController">
 
         <div ng-hide="state.programState == 'Running'">
-            <strong style="margin-right: 0px;" translate>Backups are currently paused,</strong>
-            <div style="display: inline" ng-show="state.pauseTimeRemain > 0">{{'resuming in' | translate}} {{state.pauseTimeRemain | timeremaining}}</div>
-            <a href ng-click="sendResume()" translate>click to resume now</a>
+            <strong style="margin-right: 0px;" translate>Duplicati is paused</strong>
+            - <a href ng-click="sendResume()" translate>resume now</a>
         </div>
 
         <div ng-hide="activeBackup == null">
@@ -32,16 +31,19 @@
 
         <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | moment: 'calendar'}}</span></div>
 
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null" translate>No scheduled tasks, you can manually start a task</div>
+        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null" translate>No scheduled tasks</div>
 
     </div>
 
     <div class="tasks" ng-controller="HomeController">
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
-                <a href ng-click="$parent.ContextMenuID == item.Backup.ID ? $parent.ContextMenuID = null : $parent.ContextMenuID = item.Backup.ID">{{item.Backup.Name}}</a>
+                <a href ng-click="$parent.TaskMenuID == item.Backup.ID ? $parent.TaskMenuID = null : $parent.TaskMenuID = item.Backup.ID">{{item.Backup.Name}}
+                    <img ng-show="$parent.TaskMenuID == item.Backup.ID" src="img/arrow_collapse_blue.png">
+                    <img ng-show="$parent.TaskMenuID != item.Backup.ID" src="img/arrow_expand_blue.png">
+                </a>
 
-                <dl class="contextmenu" ng-show="$parent.ContextMenuID == item.Backup.ID">
+                <dl class="taskmenu" ng-show="$parent.TaskMenuID == item.Backup.ID">
                     <dt translate>Operations:</dt>
                     <dd>
                         <p ng-click="doRun(item.Backup.ID)" translate>Run now</p>
@@ -72,9 +74,12 @@
 
                 <dl>
                     <dt translate>Last successful run:</dt>
-                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"  title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}" translate translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'" translate-params-duration="formatDuration(item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})</dd>
-                    <dd ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">
-                    {{'Never' | translate}} - <a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
+                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"
+                        title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}"
+                        translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'"
+                        translate-params-duration="formatDuration(item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})</dd>
+                    <dd>
+                        <span ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{'Never' | translate}} - </span><a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
                     </dd>
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
@@ -88,7 +93,7 @@
                         </div>
                         <div ng-hide="item.Backup.Metadata.TargetSizeString == null">
                             <dt translate>Backup:</dt>
-                            <dd>{{item.Backup.Metadata.TargetSizeString}}</dd>
+                            <dd translate translate-n="parseInt(item.Backup.Metadata.BackupListCount)" translate-plural="{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions">{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version</dd>
                         </div>
                     </div>
                 </dl>

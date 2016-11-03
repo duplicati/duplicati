@@ -14,14 +14,18 @@
         <div class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3">
             <span>4</span>
         </div>
+        <div class="step step5" ng-class="{active: CurrentStep == 4}" ng-click="CurrentStep = 4">
+            <span>5</span>
+        </div>
     </div>
     <!-- .steps -->
     
     <ol class="steps-legend">
         <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
-        <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Source Data</li>
-        <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Schedule</li>
-        <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Options</li>
+        <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
+        <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Source Data</li>
+        <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Schedule</li>
+        <li ng-class="{active: CurrentStep == 4}" class="step5" ng-click="CurrentStep = 4" translate>Options</li>
     </ol>
     <!-- .steps-legend -->
 
@@ -29,73 +33,121 @@
         <div class="step step1" ng-class="{active: CurrentStep == 0}">
             <div class="form">
                 <form class="styled">
-                    <backup-edit-uri uri="Backup.TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
+                    <div class="headerthreedotmenu">
+                        <h2 translate>General backup settings</h2>
 
-                    <div ng-hide="EditUriState">
-                        <div class="input text linklabel">
-                            <label for="importlink">&nbsp;</label>
-                            <a href="#import" translate>Import configuration from a file ...</a>
-                        </div>
-                        
-                        <div class="input text">
-                            <label for="name" translate>Name</label>
-                            <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
-                        </div>
-                        <div class="input textarea linklabel">
-                            <label for="target"><a href class="target" ng-click="EditUriState = true" translate>Backup to &gt;</a></label>
-                            <textarea name="target" id="target" ng-model="Backup.TargetURL" placeholder="{{'Enter a url, or click the \'Backup to &gt;\' link' | translate }}"></textarea>
-                        </div>
-                        <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
-                            <label for="encryption" translate>Encryption</label>
-                            <select name="encryption" id="encryption" ng-model="Options['encryption-module']" ng-options="module.Key as module.DisplayName for module in SystemInfo.EncryptionModules">
-                                <option value="" translate>No encryption</option>
-                            </select>
-                        </div>
+                        <div class="contextmenu_container">
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_general" class="threedotmenubutton"/></a>
 
-                        <div class="input encryptionhint" ng-show="(Options['encryption-module'] || '').length == 0">
-                            <h3 class="warning" translate>We recommend that you encrypt all backups stored outside your system</h3>
-                        </div>
-
-                        <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
-                            <label for="passphrase" translate>Passphrase</label>
-                            <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
-                        </div>
-                        <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
-                            <label for="repeat-passphrase" translate>Repeat Passphrase</label>
-                            <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
-                            
-                            <div class="tools">
+                            <div class="contextmenu" id="threedotmenu_add_general">
                                 <ul>
                                     <li>
-                                        <a href ng-click="togglePassphraseVisibility()" ng-show="ShowPassphrase" translate>Hide</a>
-                                        <a href ng-click="togglePassphraseVisibility()" ng-hide="ShowPassphrase" translate>Show</a>
+                                        <a href="#import" translate>Import a backup configuration from file</a>
                                     </li>
-                                    <li>|</li>
-                                    <li>
-                                        <a href ng-click="generatePassphrase()" translate>Generate</a>
-                                    </li>
-                                    <li>|</li>
-                                    <li class="strength score-{{PassphraseScore}}">{{PassphraseScore != 'x' ?   'Strength: ' : ''}} {{PassphraseScoreString}}</li>
                                 </ul>
                             </div>
                         </div>
-                        
-                        <div class="buttons">
-                            <input class="submit next" type="button" id="nextStep1" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    </div>
+
+                    <div class="input text">
+                        <label for="name" translate>Name</label>
+                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
+                    </div>
+                    <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
+                        <label for="encryption" translate>Encryption</label>
+                        <select name="encryption" id="encryption" ng-model="Options['encryption-module']" ng-options="module.Key as module.DisplayName for module in SystemInfo.EncryptionModules">
+                            <option value="" translate>No encryption</option>
+                        </select>
+                    </div>
+
+                    <div class="input encryptionhint" ng-show="(Options['encryption-module'] || '').length == 0">
+                        <h3 class="warning" translate>We recommend that you encrypt all backups stored outside your system</h3>
+                    </div>
+
+                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                        <label for="passphrase" translate>Passphrase</label>
+                        <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
+                    </div>
+                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                        <label for="repeat-passphrase" translate>Repeat Passphrase</label>
+                        <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
+
+                        <div class="tools">
+                            <ul>
+                                <li>
+                                    <a href ng-click="togglePassphraseVisibility()" ng-show="ShowPassphrase" translate>Hide</a>
+                                    <a href ng-click="togglePassphraseVisibility()" ng-hide="ShowPassphrase" translate>Show</a>
+                                </li>
+                                <li>|</li>
+                                <li>
+                                    <a href ng-click="generatePassphrase()" translate>Generate</a>
+                                </li>
+                                <li ng-show="PassphraseScoreString">|</li>
+                                <li class="strength score-{{PassphraseScore}}" ng-show="PassphraseScoreString">{{PassphraseScore != 'x' ? 'Strength: ' : ''}} {{PassphraseScoreString}}</li>
+                            </ul>
                         </div>
+                    </div>
+
+                    <div class="buttons">
+                        <input class="submit next" type="button" id="nextStep1" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
                     </div>
                 </form>
             </div>
         </div>
         <!-- .step1 -->
-        
+
         <div class="step step2" ng-class="{active: CurrentStep == 1}">
             <form class="styled">
+                <div class="headerthreedotmenu">
+                    <h2 translate>Backup destination</h2>
+
+                    <div class="contextmenu_container">
+                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_destination" class="threedotmenubutton"/></a>
+
+                        <div class="contextmenu" id="threedotmenu_add_destination">
+                            <ul>
+                                <li>
+                                    <a href ng-click="importUrl()" translate>Import Destination URL</a>
+                                </li>
+                                <li>
+                                    <a href ng-click="copyUrlToClipboard()" translate>Copy Destination URL to Clipboard</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <backup-edit-uri uri="Backup.TargetURL" set-builduri-fn="setBuilduriFn(builduriFn)"></backup-edit-uri>
+
+                <div class="buttons">
+                    <input class="submit next" type="button" id="nextStep2" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    <input class="submit prev" type="button" id="prevStep2" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
+                </div>
+            </form>
+        </div>
+        <!-- .step2 -->
+        
+        <div class="step step3" ng-class="{active: CurrentStep == 2}">
+            <form class="styled">
                 <div class="box browser">
-                    <h2 translate>Folders</h2>
+                    <div class="headerthreedotmenu">
+                        <h2 translate>Folders</h2>
+
+                        <div class="contextmenu_container">
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_filters" class="threedotmenubutton"/></a>
+
+                            <div class="contextmenu" id="threedotmenu_add_source_filters">
+                                <ul>
+                                    <li>
+                                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced" translate>Show advanced editor</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="input checklinks">
                         <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
-                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced"><i class="fa {{EditSourceAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced">
                         <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders"></source-folder-picker>
@@ -113,64 +165,95 @@
                     </div>
                 </div>
                 <div class="box filters">
-                    <h2 translate>Filters</h2>
-                    <div class="input link">
-                        <a href ng-click="EditFilterAdvanced = !EditFilterAdvanced"><i class="fa {{EditFilterAdvanced ? 'fa-check' : ''}}"></i> {{'Show advanced editor' | translate}}</a>
+                    <div class="headerthreedotmenu">
+                        <a href ng-click="showFilter = !showFilter" class="expandable">
+                            <h2 translate>Filters</h2>
+                            <img ng-show="showFilter" src="img/arrow_collapse_green.png">
+                            <img ng-hide="showFilter" src="img/arrow_expand_green.png">
+                        </a>
+
+                        <div class="contextmenu_container" ng-show="showFilter">
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_filters" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+
+                            <div class="contextmenu" id="threedotmenu_add_source_filters">
+                                <ul>
+                                    <li>
+                                        <a href ng-show="EditFilterAdvanced" ng-click="EditFilterAdvanced = false" translate>Edit as list</a>
+                                    </li>
+                                    <li>
+                                        <a href ng-hide="EditFilterAdvanced" ng-click="EditFilterAdvanced = true" translate>Edit as text</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="input textarea" ng-show="EditFilterAdvanced">
-                        <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
-                        <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
-                    </div>
-                    <div class="input textarea" ng-hide="EditFilterAdvanced">
-                        <ul id="simplefilterlist">
-                            <li ng-repeat="f in Backup.Filters track by $index">
-                                <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
-                                </select>
-    
-                                <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
-    
-                                <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
-                            </li>
-    
-                        </ul>
-                        <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
+
+                    <div ng-show="showFilter">
+                        <div class="input textarea" ng-show="EditFilterAdvanced">
+                            <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
+                            <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
+                        </div>
+                        <div class="input textarea" ng-hide="EditFilterAdvanced">
+                            <ul id="simplefilterlist">
+                                <li ng-repeat="f in Backup.Filters track by $index">
+                                    <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
+                                    </select>
+
+                                    <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
+
+                                    <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
+                                </li>
+
+                            </ul>
+                            <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
+                        </div>
                     </div>
                 </div>
                 <div class="box exclude">
-                    <h2 translate>Exclude</h2>
-                    <div class="input checkbox multiple">
-                        <div ng-repeat="attr in fileAttributes">
-                          <input
-                            id="fileattr_{{attr.value}}"
-                            type="checkbox"
-                            name="fileattr_{{attr.value}}"
-                            value="{{attr.value}}"
-                            ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
-                            ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
-                          />
-                          <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
-                        </div>                
+                    <div class="expandable">
+                        <a href ng-click="showExclude = !showExclude">
+                            <h2 translate>Exclude</h2>
+                            <img ng-show="showExclude" src="img/arrow_collapse_green.png">
+                            <img ng-hide="showExclude" src="img/arrow_expand_green.png">
+                        </a>
                     </div>
-    
-                    <div class="input text select multiple">
-                        <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
-                        <label for="exclude-large-files" translate>Files larger than:</label>
-                        
-                        <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-                        <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
-                        </select>
+
+                    <div ng-show="showExclude">
+                        <div class="input checkbox multiple">
+                            <div ng-repeat="attr in fileAttributes">
+                              <input
+                                id="fileattr_{{attr.value}}"
+                                type="checkbox"
+                                name="fileattr_{{attr.value}}"
+                                value="{{attr.value}}"
+                                ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
+                                ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
+                              />
+                              <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
+                            </div>
+                        </div>
+
+                        <div class="input text select multiple">
+                            <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
+                            <label for="exclude-large-files" translate>Files larger than:</label>
+
+                            <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
+                            <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="buttons">
-                    <input class="submit next" type="button" id="nextStep2" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
-                    <input class="submit prev" type="button" id="prevStep2" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
+                    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
                 </div>
             </form>
         </div>
-        <!-- .step2 -->
+        <!-- .step3 -->
         
-        <div class="step step3" ng-class="{active: CurrentStep == 2}">
+        <div class="step step4" ng-class="{active: CurrentStep == 3}">
             <form class="styled">
+                <h2 translate>Schedule</h2>
                 <div class="input checkbox multiple">
                     <input type="checkbox" id="useScheduleRun" ng-checked="Schedule != null" ng-click="toggleSchedule()" />
                     <label for="useScheduleRun" translate>Automatically run backups.</label>
@@ -211,14 +294,14 @@
                 </div>
 
                 <div class="buttons">
-                    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
-                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
+                    <input class="submit next" type="button" id="nextStep4" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    <input class="submit prev" type="button" id="prevStep4" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
                 </div>
             </form>
         </div>
-        <!-- .step3 -->
+        <!-- .step4 -->
         
-        <div class="step step4" ng-class="{active: CurrentStep == 3}">
+        <div class="step step5" ng-class="{active: CurrentStep == 4}">
             <form class="styled">
                 <h2 translate>General options</h2>
                 <div class="input multiple text select maxSize">
@@ -247,25 +330,47 @@
                         </select>
                     </div>
                 </div>
-                <div class="input textarea" ng-show="ShowAdvancedTextArea">
-                    <h2 translate>Advanced options</h2>
-                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> <span translate>Edit as text</span></a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
+
+                <div class="headerthreedotmenu">
+                    <a href ng-click="showAdvanced = !showAdvanced" class="expandable">
+                        <h2 translate>Advanced options</h2>
+                        <img ng-show="showAdvanced" src="img/arrow_collapse_green.png">
+                        <img ng-hide="showAdvanced" src="img/arrow_expand_green.png">
+                    </a>
+
+                    <div class="contextmenu_container" ng-show="showAdvanced">
+                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_options_adv" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+
+                        <div class="contextmenu" id="threedotmenu_add_options_adv">
+                            <ul>
+                                <li>
+                                    <a href ng-show="ShowAdvancedTextArea" ng-click="ShowAdvancedTextArea = false" translate>Edit as list</a>
+                                </li>
+                                <li>
+                                    <a href ng-hide="ShowAdvancedTextArea" ng-click="ShowAdvancedTextArea = true" translate>Edit as text</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="input" ng-hide="ShowAdvancedTextArea">
-                    <h2 translate>Advanced options</h2>
-                    <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> {{'Edit as text' | translate}}</a>
-                    <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
+
+                <div ng-show="showAdvanced">
+                    <div class="input textarea" ng-show="ShowAdvancedTextArea">
+                        <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
+                    </div>
+
+                    <div class="input" ng-hide="ShowAdvancedTextArea">
+                        <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
+                    </div>
                 </div>
 
                 <div class="buttons">
                     <input class="submit save" type="submit" id="save" ng-click="save()" value="{{'Save' | translate}}" />
-                    <input class="submit prev" type="button" id="prevStep4" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
+                    <input class="submit prev" type="button" id="prevStep5" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
                 </div>
             </form>
         </div>
-        <!-- .step4 -->
+        <!-- .step5 -->
     </div>
     <!-- .steps-boxes -->
 </div>

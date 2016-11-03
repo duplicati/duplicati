@@ -1,54 +1,62 @@
 // duplicati 2.0 less | Alex Franzelin 2015
-
 @import 'fonts.less';
 @import 'variables.less';
 @import 'form.less';
 @import 'font-awesome/font-awesome.less';
 
-*
-{
+// https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+.flexbox() {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.flex(@grow: 0; @shrink: 1; @basis: auto) {
+    -webkit-box-flex: @grow @shrink @basis;
+    -moz-box-flex: @grow @shrink @basis;
+    -webkit-flex: @grow @shrink @basis;
+    -ms-flex: @grow @shrink @basis;
+    flex: @grow @shrink @basis;
+}
+
+* {
     font-family: 'Clear Sans', sans-serif;
 }
 
 html,
-body
-{
+body {
     margin: 0;
     padding: 0;
     height: 100%;
 }
 
 h1,
-h2
-{
+h2 {
     font-weight: 300;
     color: @hColor;
 }
 
-h1
-{
+h1 {
     margin: 10px 0;
 }
 
-h3
-{
+h3 {
     font-weight: 400;
 }
 
-a
-{
+a {
     text-decoration: none;
 }
 
-ul
-{
+ul {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-hr
-{
+hr {
     border: none;
     border-bottom: 1px #ddd solid;
 }
@@ -57,8 +65,7 @@ textarea {
     max-width: 94%;
 }
 
-.button
-{
+.button {
     display: block;
     background: @lColor;
     color: white !important;
@@ -74,230 +81,554 @@ textarea {
     border-radius: 0;
 }
 
-.button:hover
-{
+.button:hover {
     background: darken(@lColor, 10%);
 }
 
+.step3 source-folder-picker, #folder_path_picker, #restore_file_picker {
+    display: block;
+    border: 1px solid lightgray;
+    padding: 2px;
+    height: 100%;
+    overflow: auto;
+}
 
-body
-{
+.ui-match {
+    font-weight: bold;
+    color: darkgreen;
+}
+
+wait-area {
+    min-width: 350px;
+    text-align: center;
+    display: block;
+}
+
+.prewrapped-text {
+    white-space: pre-wrap;
+}
+
+.exceptiontext {
+    background-color: lightgray;
+    color: black;
+}
+
+ul.tabs {
+    margin-bottom: 10px;
+
+    > li {
+        display: inline;
+        margin-right: 10px;
+        border: 1px solid @lColor;
+        padding: 5px;
+
+        &.active {
+            background-color: @lColor;
+            color: white;
+
+            > a {
+                background-color: @lColor;
+                color: white;
+            }
+
+            &.disabled {
+                border: 1px solid lightgray;
+                background-color: lightgray;
+                color: grey;
+                cursor: default;
+
+                > a {
+                    background-color: lightgray;
+                    color: grey;
+                    cursor: default;
+                }
+            }
+        }
+    }
+}
+
+.licenses {
+    > ul {
+        list-style: initial;
+        margin: 10px;
+        margin-left: 20px;
+    }
+
+    li {
+        margin-bottom: 10px;
+    }
+
+    a.itemlink {
+        font-weight: bold;
+    }
+}
+
+.logpage {
+    ul.entries {
+        list-style: initial;
+        margin: 10px;
+        margin-left: 20px;
+    }
+
+    .entries {
+        div.entryline {
+            cursor: pointer;
+        }
+    }
+
+    .entries.livedata {
+        li {
+            height: 1.2em;
+            overflow: hidden;
+        }
+
+        li.expanded {
+            height: auto;
+            overflow: auto;
+        }
+    }
+
+    .button {
+        text-align: center;
+        margin-right: 10px;
+        border: 1px solid @lColor;
+        padding: 5px;
+        background-color: @lColor;
+        color: white;
+        cursor: pointer;
+    }
+}
+
+.exportpage {
+    .checkbox {
+        input {
+            width: auto;
+            margin-top: 10px;
+        }
+    }
+    .commandline {
+        div {
+            background-color: lightgray;
+            color: black;
+        }
+    }
+}
+
+.themelink {
+    margin-left: 20px;
+}
+
+ul.notification {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    margin: auto;
+    width: 300px;
+}
+
+.notification {
+    .title {
+        border: 1px solid @lColor;
+        background-color: @lColor;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+        padding: 2px;
+        padding-left: 5px;
+        padding-right: 5px;
+        font-weight: bold;
+        color: lightgray;
+        width: 100%;
+        text-align: center;
+        clear: both;
+    }
+
+    .content {
+        background-color: white;
+        border: 1px solid @lColor;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        padding: 2px;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-bottom: 30px;
+        width: 100%;
+    }
+
+    .message {
+        width: 100%;
+        color: black;
+    }
+    .buttons {
+        padding-top: 6px;
+    }
+
+    .button {
+        padding: 2px 10px;
+    }
+
+    .error {
+        .title {
+            border-color: red;
+            background-color: red;
+        }
+
+        .content {
+            border-color: red;
+        }
+
+        .button {
+            border-color: red;
+            background-color: red;
+        }
+    }
+
+    .warning {
+        .title {
+            background-color: orange;
+            border-color: orange;
+        }
+
+        .button {
+            background-color: orange;
+            border-color: orange;
+        }
+
+        .content {
+            border-color: orange;
+        }
+    }
+}
+
+.filepicker {
+    height: 200px;
+}
+
+.resizable {
+    margin-bottom: 6px;
+    max-width: 100%;
+}
+
+.advanced-toggle {
+    float: right;
+    margin-right: 25px;
+    line-height: 37px;
+}
+
+.advancedoptions {
+    li {
+        clear: both;
+        margin-bottom: 10px;
+        padding: 10px 0;
+        border-top: 1px lightgray solid;
+    }
+}
+
+.advancedentry {
+    .multiple {
+        display: inline;
+    }
+
+    .shortname {
+        font-weight: bold;
+    }
+
+    input[type="text"] {
+        width: 300px;
+    }
+
+    select {
+        width: 300px;
+    }
+
+    input[type="checkbox"] {
+        margin-top: 13px;
+        width: auto;
+    }
+
+    .longdescription {
+        margin-left: 190px;
+        clear: both;
+        font-style: italic;
+    }
+}
+
+.settings {
+    div.sublabel {
+        clear: both;
+        padding: 0 31px;
+        font-style: italic;
+    }
+}
+
+.logo {
+    div.build-suffix {
+        display: inline;
+        font-size: 16px;
+    }
+
+    div.powered-by {
+        font-size: 16px;
+        margin: 0px;
+        line-height: 16px;
+        padding: 0px;
+        margin-top: -25px;
+        margin-left: 10px;
+    }
+}
+
+.fixed-width-font {
+    font-family: monospace;
+}
+
+.warning {
+    margin: 10px;
+    font-style: italic;
+    color: #f49b42;
+}
+
+div.captcha {
+    .details {
+        padding-top: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 180px;
+    }
+}
+
+.centered-text {
+    text-align: center;
+}
+
+body {
     color: @tColor;
-    
-    .container
-    {
+
+    .container {
         min-height: 100%;
         position: relative;
-        
-        .header
-        {
+
+        .header {
             height: 70px;
             line-height: 70px;
             background: @headerBg;
             overflow: hidden;
-            
-            a
-            {
+
+            a {
                 color: @lColor;
             }
-            
+
             a:hover,
-            a.active
-            {
+            a.active {
                 color: darken(@tColor, 25%);
             }
-            
-            .logo
-            {
+
+            .logo {
                 font-size: 30px;
                 font-weight: 700;
                 float: left;
                 padding-left: 50px;
             }
-            
-            .about-header
-            {
+
+            .about-header {
                 float: right;
                 padding-right: 20px;
                 overflow: hidden;
-                
-                ul
-                {
+
+                ul {
                     overflow: hidden;
                     list-style: none;
-                    
-                    li
-                    {
+
+                    li {
                         float: right;
                         padding-right: 20px;
                     }
                 }
             }
-            
-            .donate
-            {
-                img
-                {
+
+            .donate {
+                float: right;
+
+                ul {
+                    overflow: hidden;
+                    float: right;
+                    padding-left: 20px;
+                    padding-right: 10px;
+
+                    li {
+                        float: right;
+                        margin-right: 10px;
+                        padding-top: 5px;
+                    }
+                }
+
+                img {
                     opacity: 0.6;
                 }
-                
-                img:hover
-                {
+
+                img:hover {
                     opacity: 1;
                 }
             }
         }
-        
-        .body
-        {
+
+        .body {
             width: 100%;
             overflow: hidden;
             min-height: 500px;
             padding-top: 50px;
             padding-bottom: 70px;
-            
-            a
-            {
+
+            a {
                 color: @lColor;
             }
-            
-            .mainmenu
-            {
+
+            .mainmenu {
                 width: 260px;
                 padding-left: 40px;
                 float: left;
-                
-                ul
-                {
-                    li
-                    {
+
+                > ul {
+                    > li {
                         position: relative;
-                        
-                        a
-                        {
+
+                        > a {
                             font-size: 22px;
                             font-weight: 300;
                             padding: 5px 10px 5px 55px;
                             display: block;
                         }
-                        
-                        a:hover,
-                        a.active
-                        {
+
+                        > a:hover,
+                        > a.active {
                             color: white;
                         }
-                        
-                        a.add
-                        {
+
+                        > a.add {
                             background: url('../img/mainmenu/add.png') no-repeat 8px 7px;
                         }
-                        
-                        a.restore
-                        {
+
+                        > a.restore {
                             background: url('../img/mainmenu/restore.png') no-repeat 8px 7px;
                         }
-                        
-                        a.pause
-                        {
+
+                        > a.pause {
                             background: url('../img/mainmenu/pause.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.settings
-                        {
-                            background: url('../img/mainmenu/settings.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.log
-                        {
-                            background: url('../img/mainmenu/log.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.add:hover,
-                        a.add.active
-                        {
-                            background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.restore:hover,
-                        a.restore.active
-                        {
-                            background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.pause:hover,
-                        a.pause.active
-                        {
-                            background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.settings:hover,
-                        a.settings.active
-                        {
-                            background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
-                        }
-                        
-                        a.log:hover,
-                        a.log.active
-                        {
-                            background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
-                        }
-                        
-                        ul
-                        {
-                            position: absolute;
-                            left: 200px;
-                            top: 25px;
-                            background: white;
-                            border: 1px @headerBg solid;
-                            box-shadow: 0px 7px 15px rgba(0,0,0,0.2);
-                            z-index: 200;
-                            
-                            li
-                            {
-                                a
-                                {
-                                    color: @tColor;
-                                    font-size: 15px;
-                                    font-weight: 400;
-                                    padding: 0;
-                                    display: block;
-                                    width: 205px;
-                                    padding: 4px 10px;
-                                }
-                                
-                                a:hover,
-                                a.active
-                                {
-                                    background: @lColor;
-                                    color: white;
-                                }
+
+                            span {
+                                padding-right: 25px;
+                                background: url('../img/mainmenu/arrow_right.png') right center no-repeat;
                             }
                         }
+
+                        > a.resume {
+                            background: url('../img/mainmenu/resume.png') no-repeat 8px 7px;
+                        }
+
+                        > a.settings {
+                            background: url('../img/mainmenu/settings.png') no-repeat 8px 7px;
+                        }
+
+                        > a.log {
+                            background: url('../img/mainmenu/log.png') no-repeat 8px 7px;
+                        }
+
+                        > a.add:hover,
+                        > a.add.active {
+                            background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
+                        }
+
+                        > a.restore:hover,
+                        > a.restore.active {
+                            background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
+                        }
+
+                        > a.pause:hover,
+                        > a.pause.active {
+                            background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
+
+                            span {
+                                background: url('../img/mainmenu/over/arrow_right.png') right center no-repeat;
+                            }
+                        }
+
+                        > a.resume:hover,
+                        > a.resume.active {
+                            background: @lColor url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
+                        }
+
+                        > a.settings:hover,
+                        > a.settings.active {
+                            background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
+                        }
+
+                        > a.log:hover,
+                        > a.log.active {
+                            background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
+                        }
                     }
-                    
-                    li.hr-top
-                    {
+
+                    li.hr-top {
                         padding-top: 25px;
                         margin-top: 25px;
                         border-top: 1px @headerBg solid;
                     }
                 }
             }
-            
-            .content
-            {
+
+            div.contextmenu_container {
+                position: relative;
+            }
+
+            .contextmenu {
+                display: none;
+                position: absolute;
+                left: 260px;
+                top: 19px;
+                background: white;
+                border: 1px @headerBg solid;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                z-index: 200;
+                padding: 5px;
+
+                li {
+                    a {
+                        color: @lColor;
+                        font-size: 15px;
+                        font-weight: 400;
+                        padding: 0;
+                        display: block;
+                        min-width: 200px;
+                        padding: 4px 10px;
+                        white-space: nowrap;
+                    }
+
+                    a:hover,
+                    a.active {
+                        background: @lColor;
+                        color: white;
+                    }
+                }
+            }
+
+            .contextmenu.open {
+                display: block;
+            }
+
+            .content {
                 float: left;
                 padding-left: 50px;
                 padding-bottom: 50px;
                 max-width: 700px;
-                
-                ul.tabs > li
-                {
+
+                ul.tabs > li {
                     display: inline-block;
                 }
-                
-                .state
-                {
+
+                .state {
                     color: @hColor;
                     width: 575px;
                     padding: 13px 15px;
@@ -305,83 +636,78 @@ body
                     font-weight: 300;
                     font-size: 18px;
                     overflow: hidden;
-                    
-                    strong
-                    {
+
+                    strong {
                         display: inline-block;
                         margin-right: 10px;
                     }
-                    
-                    .button
-                    {
+
+                    .button {
                         position: static;
                         margin-top: 70px;
                     }
                 }
-                
-                .tasks
-                {
+
+                .tasks {
                     padding-top: 20px;
-                    
-                    .tasklist
-                    {
-                        .task
-                        {
+
+                    .tasklist {
+                        .task {
                             border-top: 1px solid #eee;
                             padding-top: 20px;
                             margin-bottom: 25px;
                         }
-                        
-                        .task:last-child
-                        {
+
+                        .task:last-child {
                             border-bottom: 1px solid #eee;
                             padding-bottom: 20px;
                         }
-                        
-                        a
-                        {
+
+                        a {
                             font-size: 30px;
                             padding-left: 55px;
                             background: url('../img/backup.png') no-repeat 5px 6px;
                             font-weight: 300;
                             display: inline-block;
+
+                            &.action-link {
+                                font-size: 14px;
+                                background: none;
+                                padding-left: 0px;
+                            }
                         }
-                        
-                        a::after
-                        {
-                            content: " >";
-                        }
-                        
-                        dl
-                        {
+
+                        dl {
                             padding-left: 55px;
                             overflow: hidden;
                             font-size: 14px;
-                            
+
                             dt,
-                            dd
-                            {
+                            dd {
                                 display: block;
                                 float: left;
                             }
-                            
-                            dt
-                            {
+
+                            dt {
                                 clear: both;
                                 font-weight: 500;
                                 margin-bottom: 5px;
                             }
-                            
-                            dd
-                            {
+
+                            dd {
                                 margin-left: 10px;
                             }
                         }
-                        
-                        dl.contextmenu
-                        {
-                            dt
-                            {
+
+                        dl.taskmenu {
+                            p {
+                                display: inline;
+                                margin-right: 10px;
+                                color: @lColor;
+                                cursor: pointer;
+                            }
+
+                            dt {
                                 float: left;
                                 margin-right: 10px;
                                 margin-bottom: 0;
@@ -390,16 +716,14 @@ body
                                 cursor: pointer;
                                 clear: none;
                             }
-                            
+
                             dt.active,
-                            dt:hover
-                            {
+                            dt:hover {
                                 //background: @lColor;
                                 //color: white;
                             }
-                            
-                            dd
-                            {
+
+                            dd {
                                 clear: both;
                                 float: none;
                                 padding-bottom: 8px;
@@ -409,24 +733,19 @@ body
                         }
                     }
                 }
-                
-                div.add
-                {
-                    .steps
-                    {
+
+                div.add,
+                div.restore {
+                    .steps {
                         width: 100%;
                         overflow: hidden;
-                        margin-left: 50px;
-                        
-                        .step
-                        {
+
+                        .step {
                             float: left;
-                            padding-left: 130px;
                             background: url('../img/steps/line-out.png') no-repeat top left;
                             color: #c7e5f6;
-                            
-                            span
-                            {
+
+                            span {
                                 display: block;
                                 border: 4px #c7e5f6 solid;
                                 background: white;
@@ -439,57 +758,66 @@ body
                                 cursor: pointer;
                             }
                         }
-                        
-                        .step.active
-                        {
+
+                        .step.active {
                             color: @lColor;
-                            
-                            span
-                            {
+
+                            span {
                                 border: 4px @lColor solid;
                                 background: @lColor;
                                 color: white;
                             }
-                            
-                            h2
-                            {
+
+                            h2 {
                                 color: @lColor;
                             }
                         }
-                        
-                        .step:first-child
-                        {
+
+                        .step:first-child {
                             padding-left: 0;
                             background: transparent;
                         }
                     }
-                    
-                    .steps-boxes
-                    {
+
+                    .steps-legend {
+                        overflow: hidden;
+                        padding-bottom: 50px;
+                        list-style: none;
+                        margin: 0;
+
+                        li {
+                            color: #c7e5f6;
+                            font-size: 18px;
+                            text-align: center;
+                            float: left;
+                            padding-top: 10px;
+                            cursor: pointer;
+                        }
+
+                        li.active {
+                            color: @lColor;
+                        }
+                    }
+
+                    .steps-boxes {
                         padding-left: 40px;
-                        
-                        .step
-                        {
+
+                        .step {
                             display: none;
                         }
-                        
-                        .step.active
-                        {
+
+                        .step.active {
                             display: block;
                         }
-                        
-                        .box.browser
-                        {
-                            .checklinks
-                            {
-                                a
-                                {
+
+                        .box.browser {
+                            .checklinks {
+                                a {
                                     float: left;
                                     margin-left: 20px;
                                     color: @tColor;
-                                    
-                                    i
-                                    {
+
+                                    i {
                                         border: 2px solid;
                                         border-color: @tColor;
                                         border-radius: 2px;
@@ -499,53 +827,43 @@ body
                                         width: 18px;
                                     }
                                 }
-                                
-                                a.inactive
-                                {
+
+                                a.inactive {
                                     color: lighten(@tColor, 20%);
                                     cursor: default;
-                                    
-                                    i
-                                    {
+
+                                    i {
                                         border-color: lighten(@tColor, 20%);
                                     }
                                 }
-                                
-                                a:first-child
-                                {
+
+                                a:first-child {
                                     margin-left: 0;
                                 }
                             }
-                            
-                            .input.overlayButton
-                            {
+
+                            .input.overlayButton {
                                 padding-top: 10px;
                                 max-width: 100%;
-                                
-                                input#sourcePath
-                                {
+
+                                input#sourcePath {
                                     width: 100%;
                                     box-sizing: border-box;
                                     height: 37px;
                                 }
-                                
-                                a.button
-                                {
+
+                                a.button {
                                     top: 10px;
                                 }
                             }
                         }
-                        
-                        .box.filters
-                        {
-                            .input.link
-                            {
-                                a
-                                {
+
+                        .box.filters {
+                            .input.link {
+                                a {
                                     color: @tColor;
-                                    
-                                    i
-                                    {
+
+                                    i {
                                         border: 2px solid;
                                         border-color: @tColor;
                                         border-radius: 2px;
@@ -556,102 +874,112 @@ body
                                     }
                                 }
                             }
-                            
-                            ul#simplefilterlist
-                            {
+
+                            ul#simplefilterlist {
                                 overflow: hidden;
                                 padding-bottom: 15px;
-                                
-                                li
-                                {
+
+                                li {
                                     overflow: hidden;
                                     clear: both;
                                     padding-bottom: 5px;
-                                    
-                                    select
-                                    {
+
+                                    select {
                                         width: 200px;
                                         margin-right: 5px;
                                         height: 36px;
                                         line-height: 36px;
                                     }
-                                    
-                                    input
-                                    {
+
+                                    input {
                                         width: 280px;
                                         padding: 5px;
                                     }
                                 }
                             }
                         }
-                        
-                        .step4
-                        {
+
+                        .step1 {
+                            li.strength.score-0 {
+                                color: #ff0000;
+                            }
+
+                            li.strength.score-1 {
+                                color: #ff7700;
+                            }
+
+                            li.strength.score-2 {
+                                color: #aaaa00;
+                            }
+
+                            li.strength.score-3 {
+                                color: #007700;
+                            }
+
+                            li.strength.score-4 {
+                                color: #427e27;
+                            }
+
+                            li.strength.score-x {
+                                color: #ff0000;
+                            }
+
+                        }
+
+                        .step5 {
                             div.input.maxSize input.number,
-                            div.input.keepBackups input.number
-                            {
+                            div.input.keepBackups input.number {
                                 width: 60px;
                             }
-                            
-                            .advancedoptions
-                            {
+
+                            .advancedoptions {
                                 padding-top: 15px;
                                 clear: both;
-                                
-                                li
-                                {
+
+                                li {
                                     border-top: none;
                                 }
-                                
-                                li > a
-                                {
+
+                                li > a {
                                     .button;
                                 }
-                                
-                                li.advancedentry
-                                {
+
+                                li.advancedentry {
                                     border-bottom: 1px solid lightgray;
                                 }
-                                
-                                li:last-child
-                                {
+
+                                li:last-child {
                                     padding-top: 0;
-                                    
-                                    select
-                                    {
+
+                                    select {
                                         max-width: 400px;
                                     }
                                 }
-                                
-                                label
-                                {
+
+                                label {
                                     line-height: normal;
                                 }
-                                
+
                                 input,
-                                select
-                                {
+                                select {
                                     width: auto;
                                     max-width: 100%;
                                     box-sizing: border-box;
                                 }
-                                
-                                .longdescription
-                                {
+
+                                .longdescription {
                                     margin-top: 10px;
                                 }
                             }
-                            
-                            .advanced-toggle
-                            {
+
+                            .advanced-toggle {
                                 color: @tColor;
                                 line-height: normal;
                                 margin-top: 16px;
                                 clear: both;
                                 float: left;
-                                
-                                i.fa
-                                {
+
+                                i.fa {
                                     border: 2px solid;
                                     border-color: @tColor;
                                     border-radius: 2px;
@@ -661,9 +989,8 @@ body
                                     width: 18px;
                                 }
                             }
-                            
-                            textarea
-                            {
+
+                            textarea {
                                 box-sizing: border-box;
                                 clear: both;
                                 margin-top: 15px;
@@ -671,198 +998,218 @@ body
                             }
                         }
                     }
-                    
-                    .steps-legend
-                    {
-                        overflow: hidden;
-                        padding-bottom: 50px;
-                        list-style: none;
-                        padding-left: 0;
-                        margin: 0;
-                        
-                        li
-                        {
-                            color: #c7e5f6;
-                            font-size: 18px;
-                            text-align: center;
-                            float: left;
-                            width: 175px;
-                            padding-top: 10px;
-                            cursor: pointer;
-                        }
-                        
-                        li:first-child
-                        {
-                            width: 140px;
-                            padding-right: 15px;
-                        }
-                        
-                        li.active
-                        {
-                            color: @lColor;
-                        }
-                    }
-                    
-                    form
-                    {
+
+                    form {
                         padding-bottom: 50px;
                         overflow: hidden;
-                        
-                        .input.password
-                        {
-                            .tools
-                            {
+
+                        .input.password {
+                            .tools {
                                 clear: both;
                                 padding-left: 190px;
                                 padding-top: 10px;
-                                
-                                ul
-                                {
+
+                                ul {
                                     overflow: hidden;
-                                    
-                                    li
-                                    {
+
+                                    li {
                                         float: left;
                                         padding-right: 7px;
                                     }
-                                    
-                                    li.strength.useless
-                                    {
+
+                                    li.strength.useless {
                                         color: red;
                                     }
-                                    
-                                    li.strength.average
-                                    {
+
+                                    li.strength.average {
                                         color: yellow;
                                     }
-                                    
-                                    li.strength.good
-                                    {
+
+                                    li.strength.good {
                                         color: @lColor;
                                     }
                                 }
                             }
                         }
-                        
-                        .input.multiple
-                        {
+
+                        .input.multiple {
                             input,
-                            select
-                            {
+                            select {
                                 width: auto;
                                 margin-right: 5px;
                             }
-                            
-                            select
-                            {
+
+                            select {
                                 padding: 5px 12px;
                             }
                         }
-                        
-                        .input.overlayButton
-                        {
+
+                        .input.overlayButton {
                             overflow: hidden;
                             position: relative;
                             max-width: 446px;
-                            
-                            input
-                            {
+
+                            input {
                                 width: 347px;
                             }
-                            
-                            a.button
-                            {
+
+                            a.button {
                                 position: absolute;
                                 top: 0;
                                 right: 0;
                                 padding: 7px 12px 8px;
                             }
                         }
-                        
-                        .input.checkbox.multiple
-                        {
-                            strong
-                            {
+
+                        .input.checkbox.multiple {
+                            strong {
                                 display: block;
                                 padding-bottom: 5px;
                             }
-                            
-                            label
-                            {
+
+                            label {
                                 display: inline-block;
                                 float: none;
                                 width: auto;
                                 padding-right: 10px;
                             }
-                            
-                            input
-                            {
+
+                            input {
                                 width: auto;
                                 display: inline-block;
                                 float: none;
                             }
                         }
-                        
-                        .buttons
-                        {
+
+                        .buttons {
                             float: none;
                             width: 635px;
                             padding-top: 30px;
                         }
                     }
                 }
-                
-                div.settings
-                {
+
+                div.add {
+                    @legends-steps: 5;
+                    @legends-width: 700px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+                }
+
+                div.restore {
+                    @legends-steps: 2;
+                    @legends-width: 450px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+                }
+
+                div.headerthreedotmenu {
+                    margin: 20px 0 20px 0;
+
+                    h2 {
+                        display: inline;
+                    }
+
+                    .contextmenu_container {
+                        float: right;
+                    }
+
+                    .contextmenu {
+                        left: auto;
+                        right: 0;
+                        top: auto;
+                    }
+                    .threedotmenubutton {
+                        padding: 5px;
+                    }
+                }
+
+                .expandable {
+                    margin: 20px 0 20px 0;
+
+                    h2 {
+                        display: inline;
+                    }
+
+                    img {
+                        padding: 0 6px;
+                    }
+                }
+
+                div.settings {
                     .input.mixed.multiple,
-                    .input.checkbox
-                    {
-                        input.checkbox
-                        {
+                    .input.checkbox {
+                        input.checkbox {
                             width: auto;
                         }
-                        
-                        select
-                        {
+
+                        select {
                             width: auto;
                             margin-right: 5px;
                         }
-                        
-                        label
-                        {
+
+                        label {
                             line-height: normal;
                             padding: 0 15px;
                             width: auto;
                         }
                     }
                 }
-                
-                .logpage
-                {
-                    ul.tabs
-                    {
+
+                .logpage {
+                    ul.tabs {
                         padding: 15px 0;
                     }
-                    
-                    ul.entries
-                    {
-                        li
-                        {
+
+                    ul.entries {
+                        li {
                             padding-top: 15px;
                         }
                     }
                 }
-                
-                .prewrapped-text
-                {
+
+                .prewrapped-text {
                     white-space: pre-wrap;
                     overflow-x: auto;
                 }
             }
         }
-        
-        .footer
-        {
+
+        .footer {
             background: @headerBg;
             min-height: 70px;
             line-height: 70px;
@@ -870,120 +1217,100 @@ body
             position: absolute;
             bottom: 0;
             width: 100%;
-            
-            a
-            {
+
+            a {
                 color: @lColor;
             }
-            
-            .about-footer
-            {
+
+            .about-footer {
                 float: left;
                 overflow: hidden;
                 padding-right: 20px;
-                
-                span
-                {
+
+                span {
                     display: block;
                     float: left;
                     padding-left: 20px;
                 }
-                
-                ul
-                {
+
+                ul {
                     float: left;
                 }
-                
-                li
-                {
+
+                li {
                     float: left;
                     padding-left: 20px;
                 }
             }
-            
-            .donate
-            {
+
+            .donate {
                 float: right;
                 padding-right: 40px;
                 overflow: hidden;
-                
-                ul
-                {
+
+                ul {
                     overflow: hidden;
                     float: right;
-                    
-                    li
-                    {
+
+                    li {
                         float: left;
                         margin-left: 20px;
-                        
-                        a
-                        {
-                            img
-                            {
+
+                        a {
+                            img {
                                 margin-top: 24px;
                                 display: inline-block;
                                 opacity: 0.6;
                             }
-                            
-                            img:hover
-                            {
+
+                            img:hover {
                                 opacity: 1;
                             }
                         }
                     }
                 }
             }
-            
-            .donate > a
-            {
+
+            .donate > a {
                 float: left;
             }
-            
-            .social
-            {
+
+            .social {
                 float: right;
-                
-                ul
-                {
+
+                ul {
                     overflow: hidden;
                     float: right;
                     padding-left: 20px;
                     padding-right: 10px;
-                    
-                    li
-                    {
+
+                    li {
                         float: right;
                         margin-right: 10px;
                         padding-top: 5px;
-                        
-                        img
-                        {
+
+                        img {
                             opacity: 0.6;
                         }
-                        
-                        img:hover
-                        {
+
+                        img:hover {
                             opacity: 1;
                         }
                     }
                 }
             }
-            
-            .themelink
-            {
+
+            .themelink {
                 float: right;
                 padding-right: 20px;
             }
         }
     }
-    
-    #modal-menu
-    {
+
+    #modal-menu {
         max-width: 400px;
-        
-        a
-        {
+
+        a {
             color: @lColor;
             font-size: 20px;
             line-height: 40px;
@@ -992,29 +1319,24 @@ body
 }
 
 // Modal windows
-.remodal
-{
+.remodal {
     padding: 30px;
-    box-shadow: 0px 2px 7px rgba(0,0,0,0.3);
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
     background: white;
     display: none;
-    
-    form
-    {
-        .buttons
-        {
+
+    form {
+        .buttons {
             float: none;
         }
     }
 }
 
-.remodal-wrapper .remodal
-{
+.remodal-wrapper .remodal {
     display: block;
 }
 
-span.info
-{
+span.info {
     font-size: 10px;
     font-weight: 500;
     display: inline-block;
@@ -1029,49 +1351,440 @@ span.info
     text-align: center;
 }
 
-.hidden
-{
+.hidden {
     display: none;
 }
 
-.clear
-{
+.clear {
     clear: both;
 }
 
-.nofloat
-{
+.nofloat {
     float: none !important;
 }
 
-div.blocker
-{
+div.blocker,
+div.connection-lost,
+div.modal-dialog {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    margin: auto;
+}
+
+div.blocker {
     z-index: 5000;
+    background-color: #000000;
+    opacity: 0.65;
+}
+
+#connection-lost-blocker {
+    z-index: 5100;
+}
+
+#connection-lost-dialog {
+    z-index: 5200;
 }
 
 div.connection-lost,
-div.modal-dialog
-{
+div.modal-dialog {
     z-index: 5001;
+    .flexbox;
+
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    -ms-flex-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+
+    -webkit-box-align: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+
+    div.info {
+        min-width: 310px;
+        max-width: 650px;
+        margin: 5px;
+    }
+
+    div.title {
+        border: 1px solid #65b1dd;
+        background-color: #65b1dd;
+        border-radius: 5px 5px 0 0;
+        padding: 10px 20px;
+        font-weight: bold;
+        color: lightgray;
+        text-align: center;
+    }
+
+    div.content {
+        background-color: white;
+        border: 1px solid white;
+        padding: 20px;
+    }
+
+    .buttons {
+        border-radius: 0 0 5px 5px;
+        padding-top: 10px;
+        overflow: auto;
+    }
+
+    form {
+        margin-top: 15px;
+
+        textarea {
+            height: 130px;
+            width: 420px;
+            padding: 10px 12px;
+            border: 1px #d8d8d8 solid;
+            border-radius: 2px;
+            color: #8f8f8f;
+            font-size: 16px;
+            font-weight: 300;
+        }
+
+        input {
+            height: 35px;
+            line-height: 35px;
+            padding: 0 12px;
+        }
+    }
 }
 
+div.modal-dialog {
+    .content.buttons {
+        ul {
+            float: right;
+        }
+
+        // tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/
+        .tooltipped {
+            position: relative
+        }
+
+        .tooltipped:after {
+            position: absolute;
+            z-index: 1000000;
+            display: none;
+            padding: 5px 8px;
+            font: normal normal 11px/1.5 Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            color: #fff;
+            text-align: center;
+            text-decoration: none;
+            text-shadow: none;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: break-word;
+            white-space: pre;
+            pointer-events: none;
+            content: attr(aria-label);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 3px;
+            -webkit-font-smoothing: subpixel-antialiased
+        }
+
+        .tooltipped:before {
+            position: absolute;
+            z-index: 1000001;
+            display: none;
+            width: 0;
+            height: 0;
+            color: rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            content: "";
+            border: 5px solid transparent
+        }
+
+        .tooltipped:hover:before, .tooltipped:hover:after, .tooltipped:active:before, .tooltipped:active:after, .tooltipped:focus:before, .tooltipped:focus:after {
+            display: inline-block;
+            text-decoration: none
+        }
+
+        .tooltipped-w:after {
+            right: 100%;
+            bottom: 50%;
+            margin-right: 5px;
+            -webkit-transform: translateY(50%);
+            -ms-transform: translateY(50%);
+            transform: translateY(50%)
+        }
+
+        .tooltipped-w:before {
+            top: 50%;
+            bottom: 50%;
+            left: -5px;
+            margin-top: -5px;
+            border-left-color: rgba(0, 0, 0, 0.8)
+        }
+    }
+}
+
+/* Progress bar styles from Bootstrap */
+.progress-bar-striped {
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    -webkit-background-size: 40px 40px;
+    background-size: 40px 40px;
+}
+
+.progress-striped {
+    .progress-bar {
+        background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+        background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+        background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+        -webkit-background-size: 40px 40px;
+        background-size: 40px 40px;
+    }
+}
+
+.progress {
+    position: relative;
+    min-height: 25px;
+
+    > span {
+        position: absolute;
+        vertical-align: middle;
+        display: block;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        z-index: 100;
+        padding-top: 2px;
+    }
+
+    &.active {
+        .progress-bar {
+            -webkit-animation: progress-bar-stripes 2s linear infinite;
+            -o-animation: progress-bar-stripes 2s linear infinite;
+            animation: progress-bar-stripes 2s linear infinite;
+        }
+    }
+
+    .progress-bar {
+        float: left;
+        width: 0;
+        height: 100%;
+        font-size: 12px;
+        line-height: 20px;
+        color: #fff;
+        text-align: center;
+        background-color: #337ab7;
+        -webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15);
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15);
+        -webkit-transition: width .6s ease;
+        -o-transition: width .6s ease;
+        transition: width .6s ease;
+        height: 100%;
+        position: absolute;
+
+        &.active {
+            -webkit-animation: progress-bar-stripes 2s linear infinite;
+            -o-animation: progress-bar-stripes 2s linear infinite;
+            animation: progress-bar-stripes 2s linear infinite;
+        }
+    }
+}
+
+.tree-view {
+    list-style-type: none;
+    margin-left: 10px;
+    padding-bottom: 5px;
+
+    ul {
+        margin-left: 16px;
+    }
+
+    span {
+        &.nodeLabel {
+            cursor: pointer;
+
+            &.selected {
+                border: 1px solid #aaa;
+                background-color: #ddd;
+                padding: 1px 3px;
+            }
+        }
+    }
+
+    li {
+        .node {
+            padding-bottom: 5px;
+        }
+
+        div.selected {
+            border-color: lightblue;
+            background-color: lightblue;
+        }
+
+        > ul {
+            display: none;
+        }
+
+        > ul.expanded {
+            display: block;
+        }
+
+        a {
+            &.nav {
+                cursor: pointer;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                vertical-align: middle;
+                background-image: url(../img/treeicons.png);
+                background-repeat: no-repeat;
+                background-position: -80px 0px;
+
+                &.leaf {
+                    background: none;
+                }
+
+                &.expanded {
+                    background-position: -80px -16px;
+                }
+            }
+
+            &.type {
+                cursor: auto;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                vertical-align: middle;
+                background-image: url(../img/treeicons.png);
+                background-repeat: no-repeat;
+                background-position: 0px -16px;
+
+                &.invisible {
+                    background-position: 0px -32px;
+                }
+
+                &.loading {
+                    cursor: progress;
+                    background-image: url(../img/loader-16.gif);
+                    background-repeat: no-repeat;
+                    background-position: 0px 0px;
+                }
+
+                &.x-tree-icon-drive {
+                    background-position: -16px -16px;
+                }
+
+                &.x-tree-icon-leaf {
+                    background-position: -32px -16px;
+                }
+
+                &.x-tree-icon-symlink {
+                    background-position: -48px -16px;
+                }
+
+                &.x-tree-icon-userdata {
+                    background-position: -16px -48px;
+                }
+
+                &.x-tree-icon-locked {
+                    background-position: -64px -16px;
+                }
+
+                &.x-tree-icon-broken {
+                    background-position: -64px -16px;
+                }
+
+                &.x-tree-icon-computer {
+                    background-position: 0px -48px;
+                }
+
+                &.x-tree-icon-hyperv {
+                    background-position: -96px -16px;
+                }
+
+                &.x-tree-icon-hypervmachine {
+                    background-position: -96px 0px;
+                }
+
+                &.x-tree-icon-mydocuments {
+                    background-position: -32px -48px;
+                }
+
+                &.x-tree-icon-mymusic {
+                    background-position: -48px -48px;
+                }
+
+                &.x-tree-icon-mypictures {
+                    background-position: -64px -48px;
+                }
+
+                &.x-tree-icon-desktop {
+                    background-position: -80px -48px;
+                }
+
+                &.x-tree-icon-home {
+                    background-position: -96px -48px;
+                }
+
+                &.x-tree-icon-drive.invisible {
+                    background-position: -16px -32px;
+                }
+
+                &.x-tree-icon-leaf.invisible {
+                    background-position: -32px -32px;
+                }
+
+                &.x-tree-icon-symlink.invisible {
+                    cursor: auto;
+                    background-position: -48px -32px;
+                }
+
+                &.x-tree-icon-locked.invisible {
+                    background-position: -64px -32px;
+                }
+            }
+
+            &.check {
+                height: 16px;
+                width: 16px;
+                display: inline-block;
+                cursor: pointer;
+                background-image: url(../img/treeicons.png);
+                background-repeat: no-repeat;
+                background-position: 0px 0px;
+                vertical-align: middle;
+            }
+
+            &.partial {
+                background-position: -32px 0px;
+            }
+
+            &.include {
+                background-position: -16px 0px;
+            }
+
+            &.exclude {
+                background-position: -48px 0px;
+            }
+
+            &.root {
+                background: none;
+                display: none;
+            }
+        }
+    }
+}
 
 // Smaller screen sizes
-@media(max-width: 1100px)
-{
-    body
-    {
-        .container
-        {
-            .header
-            {
-                .donate
-                {
+@media (max-width: 1100px) {
+    body {
+        .container {
+            .header {
+                .donate {
                     display: none;
                 }
-                
-                .menubutton
-                {
+
+                .menubutton {
                     display: block;
                     font-size: 18px;
                     padding-right: 50px;
@@ -1088,21 +1801,18 @@ div.modal-dialog
                     text-transform: uppercase;
                     text-align: right;
                 }
-                
-                .menubutton.active
-                {
+
+                .menubutton.active {
                     background-image: url('../img/menu_active.png');
                     color: @lColor;
                 }
             }
-            
-            .body
-            {
+
+            .body {
                 position: relative;
                 padding-top: 0;
-                
-                .mainmenu
-                {
+
+                .mainmenu {
                     display: none;
                     position: absolute;
                     background: none repeat scroll 0 0 white;
@@ -1111,69 +1821,59 @@ div.modal-dialog
                     padding: 20px;
                     top: 60px;
                 }
-                
-                .mainmenu.mobile-open
-                {
+
+                .mainmenu.mobile-open {
                     display: block;
                     left: auto;
                     right: 0;
                     top: 0;
                     z-index: 1000;
                 }
-                
-                .content
-                {
+
+                .contextmenu {
+                    left: 0;
+                    top: auto;
+                }
+
+                .content {
                     float: none;
                     padding: 50px 20px;
                     margin: 0 auto;
-                    
-                    .state
-                    {
+
+                    .state {
                         width: auto;
                     }
                 }
             }
-            
-            .footer
-            {
-                .donate
-                {
+
+            .footer {
+                .donate {
                     display: block;
                 }
             }
-            
-            .mobileOpen
-            {
+
+            .mobileOpen {
                 display: block !important;
             }
         }
     }
 }
 
-@media(max-width: 768px)
-{
-    body
-    {
-        .container
-        {
-            .body
-            {
-                .content
-                {
-                    .tasks
-                    {
-                        .tasklist
-                        {
-                            a
-                            {
+@media (max-width: 768px) {
+    body {
+        .container {
+            .body {
+                .content {
+                    .tasks {
+                        .tasklist {
+                            a {
                                 font-size: 20px;
                                 background-size: 24px;
                                 background-position: 0 4px;
                                 padding-left: 35px;
                             }
-                            
-                            dl
-                            {
+
+                            dl {
                                 padding-left: 35px;
                             }
                         }
@@ -1182,96 +1882,77 @@ div.modal-dialog
             }
         }
     }
-    
-    body
-    {
-        .container
-        {
-            .body
-            {
-                .content
-                {
+
+    body {
+        .container {
+            .body {
+                .content {
                     div.add,
-                    div.settings
-                    {
-                        .steps
-                        {
+                    div.restore,
+                    div.settings {
+                        .steps {
                             display: none;
                         }
-                        
-                        .steps-legend
-                        {
+
+                        .steps-legend {
                             list-style: decimal;
                             padding-left: 20px;
                             border-bottom: 1px solid #eee;
                             margin-bottom: 30px;
                             padding-bottom: 20px;
-                            
-                            li
-                            {
+
+                            li {
                                 float: none;
                                 font-weight: 500;
                                 width: auto !important;
                                 padding-right: 0 !important;
                             }
                         }
-                        
-                        .steps-boxes
-                        {
+
+                        .steps-boxes {
                             padding-left: 0;
                         }
-                        
-                        form.styled
-                        {
-                            .input
-                            {
+
+                        form.styled {
+                            .input {
                                 input,
                                 select,
-                                textarea
-                                {
+                                textarea {
                                     max-width: 100%;
                                     box-sizing: border-box;
                                 }
                             }
-                            
-                            .input.select select
-                            {
+
+                            .input.select select {
                                 width: 420px;
                             }
-                            
-                            .buttons
-                            {
+
+                            .buttons {
                                 max-width: 100%;
                                 width: auto;
                             }
-                            
-                            .tools
-                            {
+
+                            .tools {
                                 padding-left: 0 !important;
                             }
-                            
-                            .input.checkbox.multiple
-                            {
+
+                            .input.checkbox.multiple {
                                 padding-bottom: 5px;
-                                
+
                                 input,
-                                label
-                                {
+                                label {
                                     display: block !important;
                                     float: left !important;
                                     line-height: normal;
                                 }
-                                
-                                input
-                                {
+
+                                input {
                                     clear: both;
                                 }
                             }
-                            
-                            .input.text.multiple
-                            {
-                                input
-                                {
+
+                            .input.text.multiple {
+                                input {
                                     max-width: 48% !important;
                                 }
                             }
@@ -1283,125 +1964,97 @@ div.modal-dialog
     }
 }
 
-@media(max-width: 640px)
-{
-    body
-    {
-        h2
-        {
+@media (max-width: 640px) {
+    body {
+        h2 {
             font-size: 20px;
             text-align: center;
         }
-        
-        .container
-        {
-            .body
-            {
+
+        .container {
+            .body {
                 padding-bottom: 0;
-                
-                .content
-                {
-                    div.add
-                    {
-                        form
-                        {
-                            .input.overlayButton
-                            {
+
+                .content {
+                    div.add,
+                    div.restore {
+                        form {
+                            .input.overlayButton {
                                 padding-top: 8px;
                                 padding-bottom: 30px;
                                 //border-bottom: 1px #ddd solid;
                                 margin-bottom: 10px;
-                                
-                                a.button
-                                {
+
+                                a.button {
                                     padding: 7px 10px;
                                     right: 1px;
                                     top: 9px;
                                 }
                             }
-                            
-                            .input.checkbox.multiple
-                            {
-                                div
-                                {
+
+                            .input.checkbox.multiple {
+                                div {
                                     display: block;
                                 }
                             }
-                            
-                            .input.select.multiple
-                            {
-                                input#exclude-larger-than-number
-                                {
+
+                            .input.select.multiple {
+                                input#exclude-larger-than-number {
                                     width: 75px;
                                 }
-                                
-                                select#exclude-larger-than-multiplier
-                                {
+
+                                select#exclude-larger-than-multiplier {
                                     width: 140px;
                                 }
                             }
-                            
-                            .filters
-                            {
+
+                            .filters {
                                 //border-bottom: 1px #ddd solid;
-                                
-                                .input.link
-                                {
+
+                                .input.link {
                                     //padding-bottom: 0;
                                 }
-                                
-                                .input.textarea
-                                {
+
+                                .input.textarea {
                                     padding-bottom: 10px;
                                 }
-                                
-                                h3
-                                {
+
+                                h3 {
                                     margin: 5px 0;
                                 }
                             }
-                            
-                            .input.text.select.multiple.repeat
-                            {
-                                label
-                                {
+
+                            .input.text.select.multiple.repeat {
+                                label {
                                     float: none;
                                 }
-                                
-                                input#repeatRunNumber
-                                {
+
+                                input#repeatRunNumber {
                                     width: 70px;
                                 }
-                                
-                                select#repeatRunMultiplier
-                                {
+
+                                select#repeatRunMultiplier {
                                     width: 100px;
                                 }
                             }
-                            
-                            .input.multiple.text.select.maxSize
-                            {
-                                input
-                                {
+
+                            .input.multiple.text.select.maxSize {
+                                input {
                                     width: 70px;
                                 }
-                                
-                                select
-                                {
+
+                                select {
                                     width: 100px;
                                 }
                             }
-                            
-                            .input.multiple.text.select.keepBackups
-                            {
-                                select
-                                {
+
+                            .input.multiple.text.select.keepBackups {
+                                select {
                                     width: 85px;
                                     padding: 4px 6px;
                                 }
-                                
-                                input
-                                {
+
+                                input {
                                     width: 60px;
                                 }
                             }
@@ -1409,34 +2062,29 @@ div.modal-dialog
                     }
                 }
             }
-            
-            .footer
-            {
+
+            .footer {
                 position: static;
                 padding: 15px;
                 line-height: normal;
                 text-align: left;
                 box-sizing: border-box;
-                
-                *
-                {
+
+                * {
                     float: none !important;
                     text-align: center;
                     box-sizing: border-box;
                 }
-                
-                .about-footer
-                {
+
+                .about-footer {
                     padding-right: 0;
-                    
-                    span
-                    {
+
+                    span {
                         padding-left: 0;
                         padding-bottom: 5px;
                     }
-                    
-                    li
-                    {
+
+                    li {
                         padding-left: 0;
                         float: none;
                         display: inline-block;
@@ -1444,74 +2092,61 @@ div.modal-dialog
                         width: 32px;
                         background-size: 28px !important;
                         border-bottom: none;
-                        
-                        a
-                        {
+
+                        a {
                             /*color: transparent;
                             height: 32px;
                             width: 32px;*/
                         }
                     }
-                    
-                    li.support
-                    {
+
+                    li.support {
                         background: url('../img/support.png') no-repeat center center;
                     }
-                    
-                    li.about
-                    {
+
+                    li.about {
                         background: url('../img/about.png') no-repeat center center;
                     }
-                    
-                    li:first-child
-                    {
+
+                    li:first-child {
                         padding-bottom: 0;
                     }
-                    
-                    li:last-child
-                    {
+
+                    li:last-child {
                         padding-bottom: 20px;
                     }
                 }
-                
+
                 li,
                 .donate,
                 .social,
-                .about-footer
-                {
+                .about-footer {
                     padding: 8px 0;
                     border-bottom: 1px #ddd solid;
                 }
-                
-                .donate
-                {
-                    ul
-                    {
-                        li
-                        {
+
+                .donate {
+                    ul {
+                        li {
                             display: inline-block;
                             border: none;
                             margin: 0 5px;
-                            
-                            a img
-                            {
+
+                            a img {
                                 margin-top: 0;
                             }
                         }
                     }
                 }
-                
-                .social
-                {
-                    li
-                    {
+
+                .social {
+                    li {
                         display: inline-block;
                         border: none;
                     }
                 }
-                
-                .themelink
-                {
+
+                .themelink {
                     padding: 5px 0;
                 }
             }
@@ -1519,85 +2154,69 @@ div.modal-dialog
     }
 }
 
-@media(max-width: 480px)
-{
-    body
-    {
+@media (max-width: 580px) {
+    .advancedentry .longdescription {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
         font-size: 15px;
-        
-        .container
-        {
-            .header
-            {
-                .logo
-                {
+
+        .container {
+            .header {
+                .logo {
                     padding-left: 20px;
                 }
-                
-                .menubutton
-                {
+
+                .menubutton {
                     margin-right: 5px;
-                    
+
                 }
             }
-            
-            .body
-            {
-                .mainmenu
-                {
+
+            .body {
+                .mainmenu {
                     width: 280px;
                     box-sizing: border-box;
-                    
-                    ul
-                    {
-                        li
-                        {
-                            a
-                            {
+
+                    ul {
+                        li {
+                            a {
                                 font-size: 22px;
                             }
                         }
                     }
                 }
-                
-                .content
-                {
+
+                .content {
                     padding: 50px 15px;
-                    
-                    div.add
-                    {
-                        form
-                        {
-                            .input.password
-                            {
-                                .tools
-                                {
-                                    ul li
-                                    {
+
+                    div.add,
+                    div.restore {
+                        form {
+                            .input.password {
+                                .tools {
+                                    ul li {
                                         font-size: 14px;
                                     }
                                 }
                             }
-                            
-                            .buttons
-                            {
-                                a
-                                {
+
+                            .buttons {
+                                a {
                                     float: none;
                                     text-align: center;
                                     margin-bottom: 5px;
                                 }
                             }
                         }
-                        
-                        .steps-boxes
-                        {
-                            .box.browser
-                            {
-                                .checklinks
-                                {
-                                    a
-                                    {
+
+                        .steps-boxes {
+                            .box.browser {
+                                .checklinks {
+                                    a {
                                         float: none;
                                         margin-bottom: 8px;
                                         display: block;
