@@ -34,7 +34,7 @@
             <input class="submit" type="button" ng-click="doExport()" value="{{'Export configuration' | translate}} &gt;" />
         </div>
 
-        <div ng-show="NoLocalDB">
+        <div ng-hide="NoLocalDB">
             <h2 translate>Delete remote files</h2>
 
             <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage ...</div>
