@@ -140,7 +140,7 @@ namespace Duplicati.Library.Snapshots
             var wmiQuery = _wmiv2Namespace
                 ? "SELECT * FROM Msvm_VirtualSystemSettingData WHERE VirtualSystemType = 'Microsoft:Hyper-V:System:Realized'"
                 : "SELECT * FROM Msvm_VirtualSystemSettingData WHERE SettingType = 3";
-            
+
             if (IsVSSWriterSupported)
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
@@ -148,7 +148,7 @@ namespace Duplicati.Library.Snapshots
             else
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? 
+                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ?
                             GetVMVhdPathsWMI((string)mObject[_vmIdField])
                                 .Union(GetVMConfigPathsWMI((string)mObject[_vmIdField]))
                                 .Distinct(Utility.Utility.ClientFilenameStringComparer)
@@ -161,17 +161,15 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A collection of VMs and paths</returns>
         private Dictionary<string, List<string>> GetAllVMsPathsVSS()
         {
-            IVssBackupComponents m_backup = null;
             var ret = new Dictionary<string, List<string>>();
 
-            try
-            {
-                //Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
-                string alphadir = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "alphavss");
-                string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
-                IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
+            //Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
+            string alphadir = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "alphavss");
+            string alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
+            IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
 
-                m_backup = vss.CreateVssBackupComponents();
+            using (var m_backup = vss.CreateVssBackupComponents())
+            {
                 m_backup.InitializeForBackup(null);
                 m_backup.SetContext(VssSnapshotContext.Backup);
                 m_backup.SetBackupState(false, true, VssBackupType.Full, false);
@@ -208,15 +206,6 @@ namespace Duplicati.Library.Snapshots
                 {
                     m_backup.FreeWriterMetadata();
                 }
-            }
-            finally
-            {
-                try
-                {
-                    if (m_backup != null)
-                        m_backup.Dispose();
-                }
-                catch { }
             }
 
             return ret;

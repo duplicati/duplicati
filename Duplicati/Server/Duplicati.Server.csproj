@@ -76,6 +76,7 @@
     <Compile Include="Database\Schedule.cs" />
     <Compile Include="SpecialFolders.cs" />
     <Compile Include="WebServer\AuthenticationHandler.cs" />
+    <Compile Include="WebServer\RESTMethods\MSSQL.cs" />
     <Compile Include="WebServer\RESTMethods\HyperV.cs" />
     <Compile Include="WebServer\Server.cs" />
     <Compile Include="WebServer\BodyWriter.cs" />

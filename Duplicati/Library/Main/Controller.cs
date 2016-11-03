@@ -606,10 +606,15 @@ namespace Duplicati.Library.Main
 
                     if (mx.Value is Library.Interface.IGenericSourceModule)
                     {
-                        var sourceoptions = ((Library.Interface.IGenericSourceModule)mx.Value).ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+                        var sourcemodule = (Library.Interface.IGenericSourceModule)mx.Value;
 
-                        foreach (var sourceoption in sourceoptions)
-                            m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                        if (sourcemodule.ContainFilesForBackup(paths))
+                        {
+                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+
+                            foreach (var sourceoption in sourceoptions)
+                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                        }
                     }
 
                     if (mx.Value is Library.Interface.IGenericCallbackModule)

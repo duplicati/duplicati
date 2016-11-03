@@ -1,9 +1,9 @@
-backupApp.directive('backupEditUri', function() {
+backupApp.directive('backupEditUri', function(gettextCatalog) {
   return {
     restrict: 'E',
     scope: {
         uri: '=uri',
-        hide: '=hide'
+        setBuilduriFn: '&'
     },
     templateUrl: 'templates/edituri.html',
     controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
@@ -18,13 +18,15 @@ backupApp.directive('backupEditUri', function() {
                     callback(EditUriBackendConfig.defaultbuilder(scope));
                 else
                     callback(EditUriBackendConfig.builders[scope.Backend.Key](scope));
-            };
+            }
 
             if (EditUriBackendConfig.validaters[scope.Backend.Key] == null)
                 EditUriBackendConfig.defaultvalidater(scope, validationCompleted);
             else
                 EditUriBackendConfig.validaters[scope.Backend.Key](scope, validationCompleted);
-        }
+        };
+
+        $scope.setBuilduriFn({ builduriFn: builduri });
 
         function performConnectionTest(uri) {
 
@@ -39,17 +41,17 @@ backupApp.directive('backupEditUri', function() {
                 if (dlg != null)
                     dlg.dismiss();
 
-                dlg = DialogService.dialog('Testing ...', 'Testing connection ...', [], null, function() {
+                dlg = DialogService.dialog(gettextCatalog.getString('Testing ...'), gettextCatalog.getString('Testing connection ...'), [], null, function() {
                     AppService.post('/remoteoperation/test', uri).then(function() {
                         scope.Testing = false;
                         dlg.dismiss();
 
                         if (EditUriBackendConfig.testers[scope.Backend.Key] != null)
                             EditUriBackendConfig.testers[scope.Backend.Key](scope, function() {
-                                DialogService.dialog('Success', 'Connection worked!');
+                                DialogService.dialog(gettextCatalog.getString('Success'), gettextCatalog.getString('Connection worked!'));
                             });
                         else
-                            DialogService.dialog('Success', 'Connection worked!');
+                            DialogService.dialog(gettextCatalog.getString('Success'), gettextCatalog.getString('Connection worked!'));
 
                     }, handleError);
                 });             
@@ -79,10 +81,10 @@ backupApp.directive('backupEditUri', function() {
                 }
 
                 scope.AdvancedOptions.push('--accept-specified-ssl-hash=' + hash);
-            }
+            };
 
             var askApproveCert = function(hash) {
-                DialogService.dialog('Trust server certificate?', 'The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ' + hash + '?', ['No', 'Yes'], function(ix) {
+                DialogService.dialog(gettextCatalog.getString('Trust server certificate?'), gettextCatalog.getString('The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: {{hash}}?', { hash: hash }), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                     if (ix == 1) {
                         appendApprovedCert(hash);
                         builduri(function(res) {
@@ -108,7 +110,7 @@ backupApp.directive('backupEditUri', function() {
                 }
 
                 return false;
-            }
+            };
 
             var handleError = function(data) {
 
@@ -126,7 +128,7 @@ backupApp.directive('backupEditUri', function() {
                     if ((folder || "") == "")
                         folder = '';
 
-                    DialogService.dialog('Create folder?', 'The folder ' + folder + ' does not exist\nCreate it now?', ['No', 'Yes'], function(ix) {
+                    DialogService.dialog(gettextCatalog.getString('Create folder?'), gettextCatalog.getString('The folder {{folder}} does not exist\nCreate it now?', { folder: folder }), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                         if (ix == 1)
                             createFolder();
                     });
@@ -138,7 +140,7 @@ backupApp.directive('backupEditUri', function() {
                         if (data.data != null && data.data.Message != null)
                             message = data.data.Message;
                         
-                        DialogService.dialog('Error', 'Failed to connect: ' + message);
+                        DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: ') + message);
                         return;                         
                     }
 
@@ -148,13 +150,13 @@ backupApp.directive('backupEditUri', function() {
 
                         AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'List'}).then(function(data) {
                             if (data.data.Result.count == 0) {
-                                if (confirm('You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?'))
+                                if (confirm(gettextCatalog.getString('You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?')))
                                 {
                                     scope.Testing = true;
                                     AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'Install'}).then(function(data) {
                                         scope.Testing = false;
                                         if (data.data.Result.count == 0) {
-                                            DialogService.dialog('Import failed', 'Import completed, but no certificates were found after the import');
+                                            DialogService.dialog(gettextCatalog.getString('Import failed'), gettextCatalog.getString('Import completed, but no certificates were found after the import'));
                                         } else {
                                             testConnection();
                                         }
@@ -165,7 +167,7 @@ backupApp.directive('backupEditUri', function() {
                                         if (data.data != null && data.data.Message != null)
                                             message = data.data.Message;
                                         
-                                        DialogService.dialog('Error', 'Failed to import: ' + message);
+                                        DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to import: ') + message);
 
                                     });
                                 }
@@ -200,16 +202,16 @@ backupApp.directive('backupEditUri', function() {
                         if (data.data != null && data.data.Message != null)
                             message = data.data.Message;
                         
-                        DialogService.dialog('Error', 'Failed to connect: ' + message);
+                        DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: ') + message);
                     } 
                     else 
                     {
                         var message = ((prev || '').trim().length == 0) ? 
-                            ('No certificate was specified previously, please verify with the server administrator that the key is correct: ' + key + ' \n\nDo you want to approve the reported host key?')
+                            (gettextCatalog.getString('No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n\nDo you want to approve the reported host key?', { key: key }))
                             : 
-                            ('The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "' + prev + '" with the REPORTED host key: ' + key + '?');
+                            (gettextCatalog.getString('The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "{{prev}}" with the REPORTED host key: {{key}}?', { prev: pref, key: key }));
 
-                        DialogService.dialog('Trust host certificate?', message, ['No', 'Yes'], function(ix) {
+                        DialogService.dialog(gettextCatalog.getString('Trust host certificate?'), message, [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                             if (ix == 1) {
                                 hasTriedHostkey = true;
                                 for(var n in scope.AdvancedOptions) {
@@ -234,22 +236,15 @@ backupApp.directive('backupEditUri', function() {
                     if (data.data != null && data.data.Message != null)
                         message = data.data.Message;
                     
-                    DialogService.dialog('Error', 'Failed to connect: ' + message);
+                    DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: ') + message);
                 }
-            }
+            };
 
             testConnection();
-        };
+        }
 
         $scope.testConnection = function() {
             builduri(performConnectionTest);
-        };
-
-        $scope.save = function() {
-            builduri(function(res) {
-                scope.uri = res;
-                scope.hide();
-            });
         };
 
         $scope.contains_value = AppUtils.contains_value;
