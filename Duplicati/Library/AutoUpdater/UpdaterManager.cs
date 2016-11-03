@@ -1036,7 +1036,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var targetfolder = System.IO.Path.Combine(INSTALLDIR, current);
                         var currentmanifest = ReadInstalledManifest(targetfolder);
-                        if (currentmanifest != null && VerifyUnpackedFolder(targetfolder, currentmanifest))
+                        if (currentmanifest != null && TryParseVersion(currentmanifest.Version) > TryParseVersion(best.Value.Version) && VerifyUnpackedFolder(targetfolder, currentmanifest))
                             best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
                     }
                 }
