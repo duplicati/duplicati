@@ -134,12 +134,15 @@
                         <h2 translate>Folders</h2>
 
                         <div class="contextmenu_container">
-                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_filters" class="threedotmenubutton"/></a>
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_folders" class="threedotmenubutton"/></a>
 
-                            <div class="contextmenu" id="threedotmenu_add_source_filters">
+                            <div class="contextmenu" id="threedotmenu_add_source_folders">
                                 <ul>
-                                    <li>
-                                        <a href ng-click="EditSourceAdvanced = !EditSourceAdvanced" translate>Show advanced editor</a>
+                                    <li ng-hide="EditSourceAdvanced">
+                                        <a href ng-click="EditSourceAdvanced = true" translate>Show advanced editor</a>
+                                    </li>
+                                    <li ng-show="EditSourceAdvanced">
+                                        <a href ng-click="EditSourceAdvanced = false" translate>Show treeview</a>
                                     </li>
                                 </ul>
                             </div>
