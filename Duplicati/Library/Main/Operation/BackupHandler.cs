@@ -835,7 +835,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_options.StoreMetadata)
                 {
-                    metadata = snapshot.GetMetadata(path);
+                    metadata = snapshot.GetMetadata(path, attributes.HasFlag(System.IO.FileAttributes.ReparsePoint), m_symlinkPolicy == Options.SymlinkStrategy.Follow);
                     if (metadata == null)
                         metadata = new Dictionary<string, string>();
 

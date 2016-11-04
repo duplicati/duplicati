@@ -165,12 +165,12 @@ namespace Duplicati.Library.Snapshots
             Directory.Delete(NoSnapshot.NormalizePath(path), recursive);
         }
 
-        public Dictionary<string, string> GetMetadata(string file)
+        public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
             var f = NoSnapshot.NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
-            var n = UnixSupport.File.GetExtendedAttributes(f);
+            var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
                 foreach(var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
