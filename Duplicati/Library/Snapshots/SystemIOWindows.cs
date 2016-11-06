@@ -500,7 +500,7 @@ namespace Duplicati.Library.Snapshots
             Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
         }
 
-        public Dictionary<string, string> GetMetadata(string path)
+        public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
         {
             var isDirTarget = path.EndsWith(DIRSEP);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;

@@ -117,13 +117,26 @@ then
 fi
 
 #
+# Find filesystem used on $DEVICE.
+# XFS filesystems need to be mounted with option -o nouuid.
+# Other filesystems do not support that option.
+#
+
+FILESYSTEM=`df -PT /dev/"$DEVICE" | tail -1 | awk '{print $2}'`
+if [ "$FILESYSTEM" == "xfs" ]; then
+    MOUNT_OPTIONS="ro,nouuid"
+else
+    MOUNT_OPTIONS="ro"
+fi
+
+#
 # Mount the snapshot on the mount point
 #
-mount -o ro "$LV_SNAPSHOT" "$TMPDIR"
+mount -o "$MOUNT_OPTIONS" "$LV_SNAPSHOT" "$TMPDIR"
 if [ "$?" -ne 0 ]
 then
 	EXIT_CODE=$?
-	echo "Error: mount -o ro \"$LV_SNAPSHOT\" \"$TMPDIR\" failed!"
+	echo "Error: mount -o \"$MOUNTOPTIONS\" \"$LV_SNAPSHOT\" \"$TMPDIR\" failed!"
 
 	#We have created the volume, so remove it before exit
 	lvremove --force "$LV_GROUP/$NAME"
