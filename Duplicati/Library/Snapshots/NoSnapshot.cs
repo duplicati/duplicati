@@ -176,7 +176,9 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="file">The file or folder to examine</param>
-        public abstract Dictionary<string, string> GetMetadata(string file);
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public abstract Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink);
 
         /// <summary>
         /// Gets a value indicating if the path points to a block device
@@ -189,7 +191,7 @@ namespace Duplicati.Library.Snapshots
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="path">The file or folder to examine</param>
         public abstract string HardlinkTargetID(string path);
         #endregion
     }

@@ -4,8 +4,8 @@ using Mono.Unix.Native;
 
 namespace UnixSupport
 {
-	public static class File
-	{
+    public static class File
+    {
     
         private static readonly bool SUPPORTS_LLISTXATTR;
         
@@ -27,81 +27,81 @@ namespace UnixSupport
             SUPPORTS_LLISTXATTR = works;
         }
         
-		/// <summary>
-		/// Opens the file and honors advisory locking.
-		/// </summary>
-		/// <returns>A open stream that references the file</returns>
-		/// <param name="path">The full path to the file</param>
-		public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode) 
-		{
-			return OpenExclusive(path, mode, (int)Mono.Unix.Native.FilePermissions.DEFFILEMODE);
-		}
+        /// <summary>
+        /// Opens the file and honors advisory locking.
+        /// </summary>
+        /// <returns>A open stream that references the file</returns>
+        /// <param name="path">The full path to the file</param>
+        public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode) 
+        {
+            return OpenExclusive(path, mode, (int)Mono.Unix.Native.FilePermissions.DEFFILEMODE);
+        }
 
-		/// <summary>
-		/// Opens the file and honors advisory locking.
-		/// </summary>
-		/// <returns>A open stream that references the file</returns>
-		/// <param name="path">The full path to the file</param>
-		/// <param name="filemode">The file create mode</param>
-		public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode, int filemode) 
-		{
-			Flock lck;
-			lck.l_len = 0;
-			lck.l_pid = Syscall.getpid();
-			lck.l_start = 0;
-			lck.l_type = LockType.F_WRLCK;
-			lck.l_whence = SeekFlags.SEEK_SET;
-						
-			OpenFlags flags = OpenFlags.O_CREAT;
-			if (mode == System.IO.FileAccess.Read) 
-			{
-				lck.l_type = LockType.F_RDLCK;
-				flags |= OpenFlags.O_RDONLY;
-			} else if (mode == System.IO.FileAccess.Write) {
-				flags |= OpenFlags.O_WRONLY;
-			} else {
-				flags |= OpenFlags.O_RDWR;
-			}
-			
-			int fd = Syscall.open(path, flags, (Mono.Unix.Native.FilePermissions)filemode);
-			if (fd > 0) 
-			{
-				//This does not work on OSX, it gives ENOTTY
-				//int res = Syscall.fcntl(fd, Mono.Unix.Native.FcntlCommand.F_SETLK, ref lck);
-				
-				//This is the same (at least for our purpose, and works on OSX)
-				int res = Syscall.lockf(fd, LockfCommand.F_TLOCK, 0);
+        /// <summary>
+        /// Opens the file and honors advisory locking.
+        /// </summary>
+        /// <returns>A open stream that references the file</returns>
+        /// <param name="path">The full path to the file</param>
+        /// <param name="filemode">The file create mode</param>
+        public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode, int filemode) 
+        {
+            Flock lck;
+            lck.l_len = 0;
+            lck.l_pid = Syscall.getpid();
+            lck.l_start = 0;
+            lck.l_type = LockType.F_WRLCK;
+            lck.l_whence = SeekFlags.SEEK_SET;
+                        
+            OpenFlags flags = OpenFlags.O_CREAT;
+            if (mode == System.IO.FileAccess.Read) 
+            {
+                lck.l_type = LockType.F_RDLCK;
+                flags |= OpenFlags.O_RDONLY;
+            } else if (mode == System.IO.FileAccess.Write) {
+                flags |= OpenFlags.O_WRONLY;
+            } else {
+                flags |= OpenFlags.O_RDWR;
+            }
+            
+            int fd = Syscall.open(path, flags, (Mono.Unix.Native.FilePermissions)filemode);
+            if (fd > 0) 
+            {
+                //This does not work on OSX, it gives ENOTTY
+                //int res = Syscall.fcntl(fd, Mono.Unix.Native.FcntlCommand.F_SETLK, ref lck);
+                
+                //This is the same (at least for our purpose, and works on OSX)
+                int res = Syscall.lockf(fd, LockfCommand.F_TLOCK, 0);
 
-				//If we have the lock, return the stream
-				if (res == 0)
-					return new Mono.Unix.UnixStream(fd);
-				else 
-				{
-					Mono.Unix.Native.Syscall.close(fd);
-					throw new LockedFileException(path, mode);
-				}
-			}
-			
-			throw new BadFileException(path);
-		}
+                //If we have the lock, return the stream
+                if (res == 0)
+                    return new Mono.Unix.UnixStream(fd);
+                else 
+                {
+                    Mono.Unix.Native.Syscall.close(fd);
+                    throw new LockedFileException(path, mode);
+                }
+            }
+            
+            throw new BadFileException(path);
+        }
 
-		[Serializable]
-		private class BadFileException : System.IO.IOException
-		{
-			public BadFileException(string filename)
-				: base(string.Format("Unable to open the file \"{0}\", error: {1} ({2})", filename, Syscall.GetLastError(), (int)Syscall.GetLastError()))
-			{
-			}
-		}
+        [Serializable]
+        private class BadFileException : System.IO.IOException
+        {
+            public BadFileException(string filename)
+                : base(string.Format("Unable to open the file \"{0}\", error: {1} ({2})", filename, Syscall.GetLastError(), (int)Syscall.GetLastError()))
+            {
+            }
+        }
 
-		[Serializable]
-		private class LockedFileException : System.IO.IOException
-		{
-			public LockedFileException(string filename, System.IO.FileAccess mode)
-				: base(string.Format("Unable to open the file \"{0}\" in mode {1}, error: {2} ({3})", filename, mode, Syscall.GetLastError(), (int)Syscall.GetLastError()))
-			{
-			}
-		}
+        [Serializable]
+        private class LockedFileException : System.IO.IOException
+        {
+            public LockedFileException(string filename, System.IO.FileAccess mode)
+                : base(string.Format("Unable to open the file \"{0}\" in mode {1}, error: {2} ({3})", filename, mode, Syscall.GetLastError(), (int)Syscall.GetLastError()))
+            {
+            }
+        }
 
         [Serializable]
         private class FileAccesException : System.IO.IOException
@@ -185,10 +185,18 @@ namespace UnixSupport
         /// </summary>
         /// <returns>The extended attributes.</returns>
         /// <param name="path">The full path to look up</param>
-        public static Dictionary<string, byte[]> GetExtendedAttributes(string path)
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public static Dictionary<string, byte[]> GetExtendedAttributes(string path, bool isSymlink, bool followSymlink)
         {
+            // If we get a symlink that we should not follow, we need llistxattr support
+            if (isSymlink && !followSymlink && !SUPPORTS_LLISTXATTR)
+                return null;
+
+            var use_llistxattr = SUPPORTS_LLISTXATTR && !followSymlink;
+
             string[] values;
-            var size = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
+            var size = use_llistxattr ? Mono.Unix.Native.Syscall.llistxattr(path, out values) : Mono.Unix.Native.Syscall.listxattr(path, out values);
             if (size < 0)
             {
                 // In case the underlying filesystem does not support extended attributes,
@@ -196,7 +204,7 @@ namespace UnixSupport
                 if (Syscall.GetLastError() == Errno.EOPNOTSUPP)
                     return null;
 
-                throw new FileAccesException(path, "llistxattr");
+                throw new FileAccesException(path, use_llistxattr ? "llistxattr" : "listxattr");
             }
             
             var dict = new Dictionary<string, byte[]>();
@@ -239,25 +247,25 @@ namespace UnixSupport
                 GID = fse.OwnerGroupId;
                 Permissions = (long)fse.FileAccessPermissions;
 
-				try
-				{
-					OwnerName = fse.OwnerUser.UserName;
-				}
-				catch (ArgumentException)
-				{
-					// Could not retrieve user name, possibly the user is not defined on the local system
-					OwnerName = null;
-				}
+                try
+                {
+                    OwnerName = fse.OwnerUser.UserName;
+                }
+                catch (ArgumentException)
+                {
+                    // Could not retrieve user name, possibly the user is not defined on the local system
+                    OwnerName = null;
+                }
 
-				try
-				{
-					GroupName = fse.OwnerGroup.GroupName;
-				}
-				catch (ArgumentException)
-				{
-					// Could not retrieve group name, possibly the group is not defined on the local system
-					GroupName = null;
-				}
+                try
+                {
+                    GroupName = fse.OwnerGroup.GroupName;
+                }
+                catch (ArgumentException)
+                {
+                    // Could not retrieve group name, possibly the group is not defined on the local system
+                    GroupName = null;
+                }
             }
         }
         
@@ -330,6 +338,6 @@ namespace UnixSupport
             var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
             return fse.Device + ":" + fse.Inode;
         }
-	}
+    }
 }
 
