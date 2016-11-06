@@ -57,6 +57,12 @@ backupApp.directive('sourceFolderPicker', function() {
             }
             else if (n.id.substr(0, 8) == "%HYPERV%")
                 n.iconCls = 'x-tree-icon-hyperv';
+            else if (n.id.substr(0, 8) == "%MSSQL%\\" && n.id.length >= 9) {
+                n.iconCls = 'x-tree-icon-mssqldb';
+                n.tooltip = gettextCatalog.getString("ID:") + " " + n.id.substring(8, n.id.length);
+            }
+            else if (n.id.substr(0, 7) == "%MSSQL%")
+                n.iconCls = 'x-tree-icon-mssql';
             else if (defunctmap[cp])
                 n.iconCls = 'x-tree-icon-broken';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
@@ -222,7 +228,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
                 sourceNodeChildren.push(n);
 
-                if (defunctmap[k] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine") {
+                if (defunctmap[k] == null && n.iconCls != "x-tree-icon-hyperv" && n.iconCls != "x-tree-icon-hypervmachine" && n.iconCls != "x-tree-icon-mssql" && n.iconCls != "x-tree-icon-mssqldb") {
                     defunctmap[k] = true;
 
                     var p = scope.ngSources[i];
@@ -327,7 +333,8 @@ backupApp.directive('sourceFolderPicker', function() {
             node.expanded = !node.expanded;
 
             if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
-                || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine')
+                || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine'
+                || node.iconCls == 'x-tree-icon-mssql' || node.iconCls == 'x-tree-icon-mssqldb')
                 return;
 
             if (!node.children && !node.loading) {
@@ -431,6 +438,39 @@ backupApp.directive('sourceFolderPicker', function() {
                     displayMap[cp] = gettextCatalog.getString('Hyper-V Machine:') + " " + node.text;
                     setIconCls(node);
                     hypervnode.children.push(node);
+                }
+                syncTreeWithLists();
+            }
+        }, AppUtils.connectionError);
+
+        AppService.get('/mssql', { path: '/' }).then(function (data) {
+            if (data.data.length > 0) {
+                var mssqlnode = {
+                    text: gettextCatalog.getString('Microsoft SQL Databases'),
+                    id: "%MSSQL%",
+                    children: []
+                };
+                setIconCls(mssqlnode);
+                var cp = compareablePath(mssqlnode.id);
+                displayMap[cp] = gettextCatalog.getString('All Microsoft SQL Databases');
+
+                // add MS SQL DB at the beginning
+                if (scope.treedata.children.length < 1)
+                    scope.treedata.children.push(mssqlnode);
+                else
+                    scope.treedata.children = [mssqlnode].concat(scope.treedata.children);
+
+                for (var i = 0; i < data.data.length; i++) {
+                    var node = {
+                        leaf: true,
+                        id: "%MSSQL%\\" + data.data[i].id,
+                        text: data.data[i].name
+                    };
+
+                    cp = compareablePath(node.id);
+                    displayMap[cp] = gettextCatalog.getString('Microsoft SQL Database:') + " " + node.text;
+                    setIconCls(node);
+                    mssqlnode.children.push(node);
                 }
                 syncTreeWithLists();
             }
