@@ -1,7 +1,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class CloudFiles {
-        public static string DescriptionAuthenticationURLLong_v2(string optionname) { return LC.L(@"CloudFiles use different servers for authentification based on where the account resides, use this option to set an alternate authentication URL. This option overrides --{0}.", optionname); }
+        public static string DescriptionAuthenticationURLLong_v2(string optionname) { return LC.L(@"CloudFiles use different servers for authentication based on where the account resides, use this option to set an alternate authentication URL. This option overrides --{0}.", optionname); }
         public static string DescriptionAuthenticationURLShort { get { return LC.L(@"Provide another authentication URL"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
