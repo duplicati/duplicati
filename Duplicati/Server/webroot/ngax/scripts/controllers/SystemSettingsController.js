@@ -23,7 +23,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
             $cookies.put('ui-locale', $scope.uiLanguage, { expires: exp });
 
-            gettextCatalog.setCurrentLanguage($scope.uiLanguage);
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage.replace("-", "_"));
         }
         $rootScope.$broadcast('ui_language_changed');
     }

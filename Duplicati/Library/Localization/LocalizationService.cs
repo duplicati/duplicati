@@ -42,7 +42,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// Regular expression to match a locale
         /// </summary>
-        public static readonly Regex CI_MATCHER = new Regex(@"[A-z]{2}(-[A-z]{4})?(-[A-z]{2})?");
+        public static readonly Regex CI_MATCHER = new Regex(@"[A-z]{2}([-_][A-z]{4})?([-_][A-z]{2})?");
 
         /// <summary>
         /// Returns a temporary disposable localization context
@@ -77,6 +77,7 @@ namespace Duplicati.Library.Localization
         public static CultureInfo ParseCulture(string culture, bool returninvariant = false)
         {
             var ci = returninvariant ? CultureInfo.InvariantCulture : null;
+            culture = culture.Replace("_", "-");
 
             if (CI_MATCHER.Match(culture).Success)
                 try { ci = new CultureInfo(culture); }
