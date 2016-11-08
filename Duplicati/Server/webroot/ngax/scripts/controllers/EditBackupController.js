@@ -344,12 +344,16 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         };
 
         function checkForValidBackupDestination(continuation) {
+            var success = false;
             $scope.builduri(function(res) {
                 result.Backup.TargetURL = res;
                 $scope.Backup.TargetURL = res;
+                success = true;
                 continuation();
             });
-            $scope.CurrentStep = 1;
+
+            if (!success)
+                $scope.CurrentStep = 1;
         }
 
         function checkForDisabledEncryption(continuation) {
