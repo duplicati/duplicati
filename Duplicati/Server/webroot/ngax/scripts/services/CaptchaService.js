@@ -19,7 +19,7 @@ backupApp.service('CaptchaService', function(DialogService, AppService, AppUtils
     			cb.token = null;
     		}
 
-	    	DialogService.htmlDialog(title, 'templates/captcha.html', [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn) {
+	    	DialogService.htmlDialog(title, 'templates/captcha.html', [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], function(btn) {
 	    		if (btn != 1) {
 	    			self.active = null;
 	    			return;
