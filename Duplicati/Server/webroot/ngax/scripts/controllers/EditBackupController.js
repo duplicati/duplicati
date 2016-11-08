@@ -394,9 +394,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
             // Chain calls
             checkForGeneratedPassphrase(function() {
-                checkForDisabledEncryption(function() {
-                    warnWeakPassphrase(function() {
-                        checkForValidBackupDestination(function() {
+                checkForValidBackupDestination(function() {
+                    checkForDisabledEncryption(function() {
+                        warnWeakPassphrase(function() {
                             checkForExistingDb(function () {
                                 EditBackupService.postValidate($scope, postDb);
                             });
