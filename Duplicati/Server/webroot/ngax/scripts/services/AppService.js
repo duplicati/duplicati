@@ -116,4 +116,10 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
 
         return rurl;
     };
+
+    this.log_out = function() {
+        var rurl = '/logout.cgi';
+
+        return installResponseHook($http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', {}, null, rurl)));
+    };
 });
