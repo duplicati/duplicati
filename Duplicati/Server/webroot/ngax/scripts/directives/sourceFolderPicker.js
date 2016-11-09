@@ -412,7 +412,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }, AppUtils.connectionError);
 
         AppService.get('/hyperv', {path: '/'}).then(function(data) {
-            if (data.data.length > 0) {
+            if (data.data != null && data.data.length > 0) {
                 var hypervnode = {
                     text: gettextCatalog.getString('Hyper-V Machines'),
                     id: "%HYPERV%",
@@ -444,7 +444,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }, AppUtils.connectionError);
 
         AppService.get('/mssql', { path: '/' }).then(function (data) {
-            if (data.data.length > 0) {
+            if (data.data != null && data.data.length > 0) {
                 var mssqlnode = {
                     text: gettextCatalog.getString('Microsoft SQL Databases'),
                     id: "%MSSQL%",
