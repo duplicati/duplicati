@@ -39,7 +39,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var hypervUtility = new HyperVUtility();
 
             if (!hypervUtility.IsHyperVInstalled)
+            {
                 info.OutputOK();
+                return;
+            }
 
             try
             {

@@ -39,7 +39,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var mssqlUtility = new MSSQLUtility();
 
             if (!mssqlUtility.IsMSSQLInstalled)
+            {
                 info.OutputOK();
+                return;
+            }
 
             try
             {
