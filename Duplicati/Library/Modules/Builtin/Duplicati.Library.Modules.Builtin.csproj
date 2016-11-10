@@ -45,14 +45,6 @@
     <Reference Include="DnsLib">
       <HintPath>..\..\..\..\thirdparty\DnsLite\DnsLib.dll</HintPath>
     </Reference>
-    <Reference Include="MailKit, Version=1.2.0.0, Culture=neutral, PublicKeyToken=4e064fe7c44a8f1b, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\MailKit.1.2.24\lib\net45\MailKit.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="MimeKit, Version=1.2.0.0, Culture=neutral, PublicKeyToken=bede1c8a46c66814, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\MimeKit.1.2.25\lib\net45\MimeKit.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Net" />
     <Reference Include="Mono.Security" />
@@ -61,6 +53,15 @@
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="MimeKit">
+      <HintPath>..\..\..\..\packages\MimeKit.1.10.0\lib\net45\MimeKit.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Security" />
+    <Reference Include="MailKit">
+      <HintPath>..\..\..\..\packages\MailKit.1.10.0\lib\net45\MailKit.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
