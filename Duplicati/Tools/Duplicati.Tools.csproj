@@ -81,5 +81,10 @@
   <ItemGroup>
     <Reference Include="System" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Tools\Commandline\pause-resume.py">
+      <Link>utility-scripts\pause-resume.py</Link>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
