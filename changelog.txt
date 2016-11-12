@@ -1,3 +1,16 @@
+2016-11-12 - 2.0.1.32_canary_2016-11-12
+==========
+* Fixed an issue with deleting a backup
+* Fixed an issue with creating a backup without encryption
+* Fixed storing symlink metadata to not follow symlinks unless specified
+* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
+* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
+* Updated languages, added Chinese
+* Added a GUI for MSSQL databases, thanks @mnaiman
+* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
+* Fixed escaping exported commandline for Windows
+* Fixes to the UI, thanks @agrajaghh
+
 2016-11-03 - 2.0.1.31_canary_2016-11-03
 ==========
 * Fixed autoupdater choosing old update if the base version was replaced
