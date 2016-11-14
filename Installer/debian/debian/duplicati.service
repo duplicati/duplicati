@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 EnvironmentFile=-/etc/default/duplicati
-ExecStart=/usr/bin/duplicati-server ${DAEMON_OPTS}
+ExecStart=/usr/bin/duplicati-server $DAEMON_OPTS
 
 [Install]
 WantedBy=multi-user.target
