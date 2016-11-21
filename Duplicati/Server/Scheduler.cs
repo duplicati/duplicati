@@ -274,7 +274,7 @@ namespace Duplicati.Server
                             //Caluclate next time, by finding the first entry later than now
                             try
                             {
-                                start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.Now.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
+                                start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
                             }
                             catch(Exception ex)
                             {
