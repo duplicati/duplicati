@@ -148,6 +148,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     };
 
     $scope.toggleArraySelection = function (lst, value) {
+        if (lst === null)
+          lst = [];
+
         var ix = lst.indexOf(value);
 
         if (ix > -1)
