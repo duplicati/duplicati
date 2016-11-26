@@ -458,6 +458,16 @@ namespace Duplicati.Server
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
                 Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task == null ? null : task.BackupID, "Error in worker", exception); };
 
+                var lastscheduleid = LastDataUpdateID;
+                Program.StatusEventNotifyer.NewEvent += (sender, e) => 
+                { 
+                    if (lastscheduleid != LastDataUpdateID) 
+                    {
+                        lastscheduleid = LastDataUpdateID;
+                        Program.Scheduler.Reschedule(); 
+                    }
+                };
+
                 Action<long, Exception> registerTaskResult = (id, ex) => {
                     lock(Program.MainLock) {
                         
