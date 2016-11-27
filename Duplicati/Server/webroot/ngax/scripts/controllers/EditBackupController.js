@@ -506,6 +506,8 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         $scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
 
+        $scope.showAdvanced = $scope.ExtendedOptions.length > 0;
+
         var now = new Date();
         if ($scope.Schedule != null) {
             var time = AppUtils.parseDate($scope.Schedule.Time);
