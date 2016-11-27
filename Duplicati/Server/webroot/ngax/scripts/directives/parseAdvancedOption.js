@@ -179,7 +179,7 @@ backupApp.directive('parseAdvancedOptionSizeNumber', function(AppUtils) {
                 if (name == null)
                     return null;
 
-                return name + '=' + txt + multiplier;
+                return name + '=' + (txt || '0') + (multiplier || '');
             });
 
             ctrl[0].$formatters.push(function(src) {
@@ -231,7 +231,7 @@ backupApp.directive('parseAdvancedOptionSizeMultiplier', function(AppUtils) {
                 if (name == null)
                     return null;
 
-                return name + '=' + (number || '') + txt;
+                return name + '=' + (number || '0') + (txt || '');
             });
 
             ctrl[0].$formatters.push(function(src) {
