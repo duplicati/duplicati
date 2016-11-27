@@ -1,3 +1,15 @@
+2016-11-27 - 2.0.1.33_canary_2016-11-27
+==========
+* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
+* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
+* Updated LVM snapshot size parameters, thanks @kakoskin1
+* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
+* Improved notification area layout, thanks @tudacs
+* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
+* Added support for choosing time values in seconds range from the UI
+* Fixed issues with the scheduler not re-scheduling entries until after a restart
+* Fixed a case where sizes chosen from the advanced options editor would be invalid
+
 2016-11-12 - 2.0.1.32_canary_2016-11-12
 ==========
 * Fixed an issue with deleting a backup
