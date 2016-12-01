@@ -93,13 +93,14 @@
         <h2 translate>Usage statistics</h2>
         <div class="input mixed multiple">
             <label for="usagereporterlevel" translate>Anonymous usage reports</label>
+
             <select id="usagereporterlevel" ng-model="usageReporterLevel">
                 <option value="" translate translate-params-levelname="SystemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
-                <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
-                <option value="warning" translate>Warnings, errors and crashes</option>
-                <option value="error" translate>Errors and crashes</option>
-                <option value="crash" translate>Crashes only</option>
-                <option value="none" translate>None / disabled</option>
+                <option value="information" ng-if="levelname != 'Disabled'" translate>Usage statistics, warnings, errors, and crashes</option>
+                <option value="warning" ng-if="levelname != 'Disabled'" translate>Warnings, errors and crashes</option>
+                <option value="error" ng-if="levelname != 'Disabled'" translate>Errors and crashes</option>
+                <option value="crash" ng-if="levelname != 'Disabled'" translate>Crashes only</option>
+                <option value="none" ng-if="levelname != 'Disabled'" translate>None / disabled</option>
             </select>
             <div class="sublabel"><p translate translate-params-link="'https://usage-reporter.duplicati.com/'">Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <a href="{{link}}" target="_blank">public usage statistics</a></p>
             
