@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.Database
             {
             }
 
-            return -1;
+            return defaultvalue;
         }
 
         public static System.Data.IDbCommand CreateCommand(this System.Data.IDbConnection self, System.Data.IDbTransaction transaction)
