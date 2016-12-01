@@ -537,6 +537,8 @@ namespace Duplicati.Server
                 if (PurgeTempFilesTimer != null)
                     PurgeTempFilesTimer.Dispose();
 
+                Library.UsageReporter.Reporter.ShutDown();
+
                 if (PingPongThread != null)
                     try { PingPongThread.Abort(); }
                     catch { }

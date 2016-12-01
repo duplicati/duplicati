@@ -247,6 +247,10 @@ namespace Duplicati.CommandLine
                 //Error = 100
                 return 100;
             }
+            finally
+            {
+                Library.UsageReporter.Reporter.ShutDown();
+            }
         }
             
         public static IList<Library.Interface.ICommandLineArgument> SupportedCommands
