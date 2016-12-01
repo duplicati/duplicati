@@ -23,7 +23,7 @@ TMPDIR=$3$NAME
 #  the snapshot is active.
 # Adjust these numbers to your system needs.
 MIN_FREE_BLOCKS=20
-MAX_FREE_BLOCKS=100
+MAX_FREE_BLOCKS=1000
 
 #
 # Get the number of free blocks on the volume
