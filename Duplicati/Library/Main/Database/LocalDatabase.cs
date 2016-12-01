@@ -1363,6 +1363,9 @@ ORDER BY
             if (m_connection != null && m_result != null)
             {
                 m_result.FlushLog();
+                if (m_result.EndTime.Ticks == 0)
+                    m_result.EndTime = DateTime.UtcNow;
+
                 LogMessage("Result", 
                     Library.Utility.Utility.PrintSerializeObject(
                         m_result, 

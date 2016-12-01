@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main
         
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
-        public TimeSpan Duration { get { return EndTime - BeginTime; } }
+        public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
         
         public abstract OperationMode MainOperation { get; }
         
@@ -719,6 +719,7 @@ namespace Duplicati.Library.Main
         
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
         {
+            EndTime = DateTime.UtcNow;
             DeletedSets = deletedSets;
             Dryrun = dryrun;
         }

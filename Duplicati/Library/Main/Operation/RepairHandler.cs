@@ -29,6 +29,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 RunRepairLocal(filter);
                 RunRepairCommon();
+                m_result.EndTime = DateTime.UtcNow;
                 return;
             }
 
@@ -68,6 +69,8 @@ namespace Duplicati.Library.Main.Operation
                 RunRepairCommon();
                 RunRepairRemote();
             }
+
+            m_result.EndTime = DateTime.UtcNow;
 
         }
         
