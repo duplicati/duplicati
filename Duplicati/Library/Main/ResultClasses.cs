@@ -589,10 +589,16 @@ namespace Duplicati.Library.Main
         {
             return Library.Utility.Utility.PrintSerializeObject(
                 this, 
-                filter: x =>
-                    !typeof(IBackendProgressUpdater).IsAssignableFrom(x.PropertyType) &&
-                    !typeof(IMessageSink).IsAssignableFrom(x.PropertyType) &&
-                    !typeof(ILogWriter).IsAssignableFrom(x.PropertyType),
+                filter: (prop, item) =>
+                    !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) &&
+                    !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) &&
+                    !typeof(ILogWriter).IsAssignableFrom(prop.PropertyType) &&
+                    prop.Name != "VerboseOutput" &&
+                    prop.Name != "VerboseErrors" &&
+                    !(prop.Name == "MainOperation" && item is BackendWriter) &&
+                    !(prop.Name == "EndTime" && item is BackendWriter) &&
+                    !(prop.Name == "Duration" && item is BackendWriter) &&
+                    !(prop.Name == "BeginTime" && item is BackendWriter),
                 recurseobjects: true
             ).ToString();
         }
