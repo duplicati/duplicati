@@ -613,21 +613,21 @@ namespace Duplicati.CommandLine
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 result = i.Test(tests);
             
-            var totalFiles = result.Changes.Count();
+            var totalFiles = result.Verifications.Count();
             if (totalFiles == 0)
             {
                 Console.WriteLine("No files examined, is the remote destination is empty?");
             }
             else
             {
-                var filtered = from n in result.Changes where n.Value.Count() != 0 select n;
+                var filtered = from n in result.Verifications where n.Value.Count() != 0 select n;
                 if (filtered.Count() == 0)
                     Console.WriteLine("Examined {0} files and found no errors", totalFiles);
                 else
                 {
                     if (Library.Utility.Utility.ParseBoolOption(options, "verbose"))
                     {
-                        foreach(var n in result.Changes)
+                        foreach(var n in result.Verifications)
                         {
                             var changecount = n.Value.Count();
                             if (changecount == 0)

@@ -876,13 +876,13 @@ namespace Duplicati.Library.Main
         public TestResults(BasicResults p) : base(p) { }
         
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
-        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get { return m_changes; } }
-        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_changes = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
         
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
             var res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes);
-            m_changes.Add(res);
+            m_verifications.Add(res);
             return res;
         }
     }
