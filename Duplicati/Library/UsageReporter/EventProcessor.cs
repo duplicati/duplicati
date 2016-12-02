@@ -77,8 +77,22 @@ namespace Duplicati.Library.UsageReporter
                 },
                 async (self) =>
                 {
+                    // Wait 20 seconds before we start transmitting
+                    for(var i = 0; i < 20; i++)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        if (self.Input.IsRetired)
+                            return;
+                    }
+
                     foreach (var f in GetAbandonedFiles(null))
-                        self.Output.WriteNoWait(f);
+                    {
+                        // Check if we should exit
+                        if (self.Input.IsRetired)
+                            return;
+                    
+                        await self.Output.WriteAsync(f);
+                    }
 
                     var rs = new ReportSet();
                     var tf = GetTempFilename(instanceid);
@@ -118,7 +132,12 @@ namespace Duplicati.Library.UsageReporter
                             rs = new ReportSet();
 
                             foreach (var f in GetAbandonedFiles(tf))
+                            {
+                                if (self.Input.IsRetired)
+                                    return;
+                            
                                 self.Output.WriteNoWait(f);
+                            }
 
                             tf = nextFilename;
                         }
