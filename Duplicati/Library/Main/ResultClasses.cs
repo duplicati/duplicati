@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main
         bool VerboseOutput { set; }
         bool VerboseErrors { set; }
         
-        DateTime EndTime { set; }
+        DateTime EndTime { get; set; }
         DateTime BeginTime { set; }
         
         void SetDatabase(LocalDatabase db);
