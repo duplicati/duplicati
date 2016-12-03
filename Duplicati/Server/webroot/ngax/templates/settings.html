@@ -90,9 +90,10 @@
         </div>
         -->
 
-        <h2 translate>Usage statistics</h2>
-        <div class="input mixed multiple">
+        <h2 ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" translate>Usage statistics</h2>
+        <div ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" class="input mixed multiple">
             <label for="usagereporterlevel" translate>Anonymous usage reports</label>
+
             <select id="usagereporterlevel" ng-model="usageReporterLevel">
                 <option value="" translate translate-params-levelname="SystemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
                 <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
