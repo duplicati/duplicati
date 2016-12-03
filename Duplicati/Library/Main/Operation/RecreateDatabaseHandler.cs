@@ -180,6 +180,7 @@ namespace Duplicati.Library.Main.Operation
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             {
                                 backend.WaitForComplete(restoredb, null);
+                                m_result.EndTime = DateTime.UtcNow;
                                 return;
                             }    
                         
@@ -275,10 +276,16 @@ namespace Duplicati.Library.Main.Operation
                         {
                             m_result.AddWarning(string.Format("Failed to process file: {0}", entry.Name), ex);
                             if (ex is System.Threading.ThreadAbortException)
+                            {
+                                m_result.EndTime = DateTime.UtcNow;
                                 throw;
+                            }
 
                             if (isFirstFilelist && ex is System.Security.Cryptography.CryptographicException)
+                            {
+                                m_result.EndTime = DateTime.UtcNow;
                                 throw;
+                            }
                         }
 
                     //Make sure we write the config
@@ -314,6 +321,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 {
                                     backend.WaitForComplete(restoredb, null);
+                                    m_result.EndTime = DateTime.UtcNow;
                                     return;
                                 }
 
@@ -365,7 +373,10 @@ namespace Duplicati.Library.Main.Operation
                                 //Not fatal
                                 m_result.AddWarning(string.Format("Failed to process index file: {0}", sf.Name), ex);
                                 if (ex is System.Threading.ThreadAbortException)
+                                {
+                                    m_result.EndTime = DateTime.UtcNow;
                                     throw;
+                                }
                             }
 
                         using(new Logging.Timer("CommitRecreatedDb"))
@@ -418,6 +429,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 {
                                     backend.WaitForComplete(restoredb, null);
+                                    m_result.EndTime = DateTime.UtcNow;
                                     return;
                                 }    
                             
@@ -462,12 +474,15 @@ namespace Duplicati.Library.Main.Operation
                     //All done, we must verify that we have all blocklist fully intact
                     // if this fails, the db will not be deleted, so it can be used,
                     // except to continue a backup
+                    m_result.EndTime = DateTime.UtcNow;
                     restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
 
                     m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
 
                     restoredb.RepairInProgress = false;
                 }
+
+                m_result.EndTime = DateTime.UtcNow;
             }
         }
 

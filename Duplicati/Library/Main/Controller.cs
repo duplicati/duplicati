@@ -459,7 +459,8 @@ namespace Duplicati.Library.Main
 
                     method(result);
 
-                    result.EndTime = DateTime.UtcNow;
+                    if (result.EndTime.Ticks == 0)
+                        result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
 
                     OnOperationComplete(result);
@@ -471,6 +472,7 @@ namespace Duplicati.Library.Main
             }
             catch (Exception ex)
             {
+                result.EndTime = DateTime.UtcNow;
                 OnOperationComplete(ex);
 
                 try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }

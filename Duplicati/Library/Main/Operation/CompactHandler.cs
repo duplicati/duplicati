@@ -257,11 +257,13 @@ namespace Duplicati.Library.Main.Operation
                             
                     backend.WaitForComplete(db, transaction);
                 }
-                
+
+                m_result.EndTime = DateTime.UtcNow;
                 return (m_result.DeletedFileCount + m_result.UploadedFileCount) > 0;
             }
             else
             {
+                m_result.EndTime = DateTime.UtcNow;
                 return false;
             }
         }

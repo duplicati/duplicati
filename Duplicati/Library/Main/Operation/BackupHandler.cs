@@ -633,7 +633,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
-                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                    new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }
@@ -1335,7 +1335,8 @@ namespace Duplicati.Library.Main.Operation
                 finally { m_indexvolume = null; }
             }
 
-            m_result.EndTime = DateTime.UtcNow;
+            if (m_result.EndTime.Ticks == 0)
+                m_result.EndTime = DateTime.UtcNow;
         }
     }
 }
