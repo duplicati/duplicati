@@ -44,7 +44,7 @@ namespace Duplicati.Library.UsageReporter
         public static void Report(string key, string data = null, ReportType type = ReportType.Information)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.TryWrite(new ReportItem(type, null, key, data)); }
+                try { _eventChannel.WriteNoWait(new ReportItem(type, null, key, data)); }
                 catch { }
         }
 
@@ -57,20 +57,19 @@ namespace Duplicati.Library.UsageReporter
         public static void Report(string key, long count, ReportType type = ReportType.Information)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.TryWrite(new ReportItem(type, count, key, count.ToString())); }
+                try { _eventChannel.WriteNoWait(new ReportItem(type, count, key, count.ToString())); }
                 catch { }
         }
 
         /// <summary>
         /// Reports an exception event, error by default
         /// </summary>
-        /// <param name="key">The event name</param>
-        /// <param name="count">The event count</param>
+        /// <param name="ex">The exception</param>
         /// <param name="type">The event type</param>
         public static void Report(Exception ex, ReportType type = ReportType.Warning)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.TryWrite(new ReportItem(type, null, "EXCEPTION", ex.ToString())); }
+                try { _eventChannel.WriteNoWait(new ReportItem(type, null, "EXCEPTION", ex.ToString())); }
                 catch { }
         }
 
@@ -84,11 +83,11 @@ namespace Duplicati.Library.UsageReporter
                 if (IsDisabled)
                     return;
 
-                var rsu = new ReportSetUploader();
-                var ep = new EventProcessor(rsu.Channel);
-                _eventChannel = ep.Channel;
+                var rsu = ReportSetUploader.Run();
+                var ep = EventProcessor.Run(rsu.Item2);
+                _eventChannel = ep.Item2;
 
-                ShutdownTask = Task.WhenAll(ep.Terminated, rsu.Terminated);
+                ShutdownTask = Task.WhenAll(ep.Item1, rsu.Item1);
 
                 // TODO: Disable on debug builds
                 AppDomain.CurrentDomain.UnhandledException += HandleUncaughtException;
@@ -120,7 +119,11 @@ namespace Duplicati.Library.UsageReporter
                 _eventChannel.Retire();
 
             if (ShutdownTask != null)
-                ShutdownTask.Wait();
+            {
+                ShutdownTask.Wait(TimeSpan.FromSeconds(30));
+                if (!ShutdownTask.IsCompleted)
+                    Logging.Log.WriteMessage("Failed to shut down usage reporter after 30 seconds, leaving hanging ...", Logging.LogMessageType.Warning);
+            }
 
             AppDomain.CurrentDomain.UnhandledException -= HandleUncaughtException;
 
