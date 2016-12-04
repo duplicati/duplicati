@@ -633,7 +633,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
-                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                    new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }
@@ -685,7 +685,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
 
                 m_blocksize = m_options.Blocksize;
-                m_maxmetadatasize = (m_blocksize / m_options.BlockhashSize) * m_blocksize;
+                m_maxmetadatasize = (m_blocksize / (long)m_options.BlockhashSize) * m_blocksize;
 
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
                 m_blocklistbuffer = new byte[m_options.Blocksize];
@@ -1335,7 +1335,8 @@ namespace Duplicati.Library.Main.Operation
                 finally { m_indexvolume = null; }
             }
 
-            m_result.EndTime = DateTime.UtcNow;
+            if (m_result.EndTime.Ticks == 0)
+                m_result.EndTime = DateTime.UtcNow;
         }
     }
 }

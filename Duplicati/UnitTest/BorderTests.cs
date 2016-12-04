@@ -43,6 +43,16 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        public void Run10mb()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => { 
+                opts["blocksize"] = "10mb";
+            });
+        }
+
+        [Test]
+        [Category("Border")]
         public void Run100k()
         {
             PrepareSourceData();

@@ -29,6 +29,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
             if (Library.Utility.Utility.IsClientWindows)
                 RealGET(key, info);
+            else
+                info.OutputOK(new string[0]);
         }
 
         // Make sure the JIT does not attempt to inline this call and thus load
@@ -39,7 +41,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var mssqlUtility = new MSSQLUtility();
 
             if (!mssqlUtility.IsMSSQLInstalled)
-                info.OutputOK();
+            {
+                info.OutputOK(new string[0]);
+                return;
+            }
 
             try
             {
@@ -59,7 +64,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             catch (Exception ex)
             {
-                info.ReportClientError("Failed to enumerate Microsoft SQL Server databases: " + ex.Message);
+                info.ReportServerError("Failed to enumerate Microsoft SQL Server databases: " + ex.Message);
             }
         }
 

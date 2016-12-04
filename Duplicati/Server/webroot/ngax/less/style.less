@@ -224,7 +224,7 @@ ul.notification {
     left: 0px;
     right: 0px;
     margin: auto;
-    width: 300px;
+    width: 480px;
 }
 
 .notification {
@@ -255,7 +255,6 @@ ul.notification {
         padding: 2px;
         padding-left: 5px;
         padding-right: 5px;
-        padding-bottom: 30px;
         width: 100%;
     }
 
@@ -263,12 +262,15 @@ ul.notification {
         width: 100%;
         color: black;
     }
-    .buttons {
-        padding-top: 6px;
-    }
 
     .button {
         padding: 2px 10px;
+        margin-top: 6px;
+    }
+
+    .clear {
+        clear: right;
+        height: 1px;
     }
 
     .error {
@@ -491,6 +493,11 @@ body {
                 padding-left: 40px;
                 float: left;
 
+                .contextmenu {
+                    left: 260px;
+                    top: 0px;
+                }
+
                 > ul {
                     > li {
                         position: relative;
@@ -536,6 +543,10 @@ body {
                             background: url('../img/mainmenu/log.png') no-repeat 8px 7px;
                         }
 
+                        > a.logout {
+                            background: url('../img/mainmenu/logout.png') no-repeat 8px 7px;
+                        }
+
                         > a.add:hover,
                         > a.add.active {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
@@ -569,6 +580,11 @@ body {
                         > a.log.active {
                             background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
                         }
+
+                        > a.logout:hover,
+                        > a.logout.active {
+                            background: @lColor url('../img/mainmenu/over/logout.png') no-repeat 8px 7px;
+                        }
                     }
 
                     li.hr-top {
@@ -586,8 +602,6 @@ body {
             .contextmenu {
                 display: none;
                 position: absolute;
-                left: 260px;
-                top: 19px;
                 background: white;
                 border: 1px @headerBg solid;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -2165,6 +2179,12 @@ div.modal-dialog {
 @media (max-width: 580px) {
     .advancedentry .longdescription {
         margin-left: 0;
+    }
+}
+
+@media (max-width: 492px) {
+    ul.notification {
+      width: auto;
     }
 }
 

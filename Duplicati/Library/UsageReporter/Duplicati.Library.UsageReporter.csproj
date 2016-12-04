@@ -46,7 +46,6 @@
     <Compile Include="ReportSet.cs" />
     <Compile Include="OSInfoHelper.cs" />
     <Compile Include="EventProcessor.cs" />
-    <Compile Include="ShutdownHelper.cs" />
     <Compile Include="ReportSetUploader.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -93,6 +93,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             {name: gettextCatalog.getString('Years'), value: 'Y'}
         ];
 
+        apputils.shorttimerangeMultipliers = [
+            {name: gettextCatalog.getString('Seconds'), value: 's'},
+            {name: gettextCatalog.getString('Minutes'), value: 'm'},
+            {name: gettextCatalog.getString('Hours'), value: 'h'}
+        ];
+
         apputils.daysOfWeek = [
             {name: gettextCatalog.getString('Mon'), value: 'mon'}, 
             {name: gettextCatalog.getString('Tue'), value: 'tue'}, 

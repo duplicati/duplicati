@@ -565,7 +565,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     info.ReportClientError(string.Format("Unable to parse backup or schedule object: {0}", ex.Message));
                 else
                     info.ReportClientError(string.Format("Unable to save backup or schedule: {0}", ex.Message));
-
             }
         }
 
@@ -578,7 +577,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            var delete_remote_files = Library.Utility.Utility.ParseBool("delete-remote-files", false);
+            var delete_remote_files = Library.Utility.Utility.ParseBool(info.Request.Param["delete-remote-files"].Value, false);
 
             if (delete_remote_files)
             {

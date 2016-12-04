@@ -49,7 +49,7 @@ namespace Duplicati.CommandLine
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
                 var options = tmpparsed.Item1;
                 var filter = tmpparsed.Item2;
-                
+
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
                 verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
@@ -80,7 +80,7 @@ namespace Duplicati.CommandLine
                         Console.WriteLine(Strings.Program.InternalOptionUsedError(internaloption));
                         return 200;
                     }
-                
+
                 // Probe for "help" to avoid extra processing
                 bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.InvariantCultureIgnoreCase));
                 if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
@@ -114,7 +114,7 @@ namespace Duplicati.CommandLine
                 }
                 else
                     command = "help";
-                
+
                 // Update probe for help
                 isHelp = string.Equals(command, "help", StringComparison.InvariantCultureIgnoreCase);
 
@@ -124,18 +124,18 @@ namespace Duplicati.CommandLine
                     if (!options.ContainsKey("passphrase"))
                         if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
                             options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
-    
+
                     if (!options.ContainsKey("auth-password"))
                         if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
                             options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
-    
+
                     if (!options.ContainsKey("auth-username"))
                         if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
                             options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
                 }
-                
+
                 var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
-                knownCommands["help"] = Commands.Help;                
+                knownCommands["help"] = Commands.Help;
                 knownCommands["example"] = Commands.Examples;
                 knownCommands["examples"] = Commands.Examples;
 
@@ -163,21 +163,22 @@ namespace Duplicati.CommandLine
                 if (!isHelp && verbose)
                 {
                     Console.WriteLine("Input command: {0}", command);
-                    
+
                     Console.WriteLine("Input arguments: ");
-                    foreach(var a in cargs)
+                    foreach (var a in cargs)
                         Console.WriteLine("\t{0}", a);
-                    Console.WriteLine();                        
-                        
+                    Console.WriteLine();
+
                     Console.WriteLine("Input options: ");
-                    foreach(var n in options)
+                    foreach (var n in options)
                         Console.WriteLine("{0}: {1}", n.Key, n.Value);
-                    Console.WriteLine();                        
+                    Console.WriteLine();
                 }
 
-                Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) => {
+                Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
+                {
                     if (verbose)
-                        Console.WriteLine(string.Format("Failed to delete temp file: {0}", path)); 
+                        Console.WriteLine(string.Format("Failed to delete temp file: {0}", path));
                 });
 
                 var autoupdate = Library.Utility.Utility.ParseBoolOption(options, "auto-update");
@@ -197,8 +198,9 @@ namespace Duplicati.CommandLine
                         {
                             Console.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
                             long lastpg = 0;
-                            Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f => {
-                                var npg = (long)(f*100);
+                            Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f =>
+                            {
+                                var npg = (long)(f * 100);
                                 if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
                                 {
                                     lastpg = npg;
@@ -246,6 +248,10 @@ namespace Duplicati.CommandLine
 
                 //Error = 100
                 return 100;
+            }
+            finally
+            {
+                Library.UsageReporter.Reporter.ShutDown();
             }
         }
             

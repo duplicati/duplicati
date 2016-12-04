@@ -148,6 +148,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
     };
 
     $scope.toggleArraySelection = function (lst, value) {
+        if (lst === null)
+          lst = [];
+
         var ix = lst.indexOf(value);
 
         if (ix > -1)
@@ -344,12 +347,16 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         };
 
         function checkForValidBackupDestination(continuation) {
+            var success = false;
             $scope.builduri(function(res) {
                 result.Backup.TargetURL = res;
                 $scope.Backup.TargetURL = res;
+                success = true;
                 continuation();
             });
-            $scope.CurrentStep = 1;
+
+            if (!success)
+                $scope.CurrentStep = 1;
         }
 
         function checkForDisabledEncryption(continuation) {
@@ -394,9 +401,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
             // Chain calls
             checkForGeneratedPassphrase(function() {
-                checkForDisabledEncryption(function() {
-                    warnWeakPassphrase(function() {
-                        checkForValidBackupDestination(function() {
+                checkForValidBackupDestination(function() {
+                    checkForDisabledEncryption(function() {
+                        warnWeakPassphrase(function() {
                             checkForExistingDb(function () {
                                 EditBackupService.postValidate($scope, postDb);
                             });
@@ -498,6 +505,8 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             delete extopts[delopts[n]];
 
         $scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
+
+        $scope.showAdvanced = $scope.ExtendedOptions.length > 0;
 
         var now = new Date();
         if ($scope.Schedule != null) {

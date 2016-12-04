@@ -349,7 +349,7 @@ process_installer() {
 cat >> "./tmp/latest-installers.json" <<EOF
 	"$2": {
 		"name": "$1",
-		"url": "http://updates.duplicati.com/${BUILDTYPE}/$1",
+		"url": "https://updates.duplicati.com/${BUILDTYPE}/$1",
 		"md5": "${MD5}",
 		"sha1": "${SHA1}",
 		"sha256": "${SHA256}"
@@ -426,3 +426,7 @@ else
 fi
 
 rm -rf "./tmp"
+
+if [ -f "~/.config/duplicati-mirror-sync.sh" ]; then
+	bash "~/.config/duplicati-mirror-sync.sh"
+fi

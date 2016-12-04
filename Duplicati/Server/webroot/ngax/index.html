@@ -183,6 +183,9 @@
                     <li>
                         <a href="#/log" class="log">{{'Show log' | translate}}</a>
                     </li>
+                    <li ng-show="isLoggedIn">
+                        <a href ng-click="log_out()" class="logout">{{'Log out' | translate}}</a>
+                    </li>
                 </ul>
             </div>
             

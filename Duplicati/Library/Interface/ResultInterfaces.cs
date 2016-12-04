@@ -277,7 +277,7 @@ namespace Duplicati.Library.Interface
 
     public interface ITestResults : IBasicResults
     {
-        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get; }
+        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get; }
     }
     
     public interface ITestFilterResults : IBasicResults

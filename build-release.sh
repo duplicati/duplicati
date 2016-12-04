@@ -20,8 +20,8 @@ RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 
-UPDATE_ZIP_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;http://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
-UPDATE_MANIFEST_URLS="http://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;http://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
+UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
 GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
 AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
@@ -236,8 +236,8 @@ cat > "latest.json" <<EOF
 	"zipsig": "${RELEASE_FILE_NAME}.zip.sig",
 	"zipsigasc": "${RELEASE_FILE_NAME}.zip.sig.asc",
 	"manifest": "${RELEASE_FILE_NAME}.manifest",
-	"urlbase": "http://updates.duplicati.com/${RELEASE_TYPE}/",
-	"link": "http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip",
+	"urlbase": "https://updates.duplicati.com/${RELEASE_TYPE}/",
+	"link": "https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip",
 	"zipmd5": "${ZIP_MD5}",
 	"zipsha1": "${ZIP_SHA1}",
 	"zipsha256": "${ZIP_SHA256}"
@@ -264,8 +264,8 @@ git checkout "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
 git checkout "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
 git add "Updates/build_version.txt"
 git add "${RELEASE_CHANGELOG_FILE}"
-git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: " -m "Binaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
-git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"                       -m "You can download this build from: " -m "Binaries: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: http://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"                       -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
 git push --tags
 
 PRE_RELEASE_LABEL="--pre-release"

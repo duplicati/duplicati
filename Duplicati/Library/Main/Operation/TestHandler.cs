@@ -73,6 +73,7 @@ namespace Duplicati.Library.Main.Operation
                         if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
                         {
                             backend.WaitForComplete(db, null);
+                            m_results.EndTime = DateTime.UtcNow;
                             return;
                         }    
 
@@ -91,7 +92,10 @@ namespace Duplicati.Library.Main.Operation
                         m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                         m_results.AddError(string.Format("Failed to process file {0}", vol.Name), ex);
                         if (ex is System.Threading.ThreadAbortException)
+                        {
+                            m_results.EndTime = DateTime.UtcNow;
                             throw;
+                        }
                     }
                 }
             }
@@ -100,9 +104,12 @@ namespace Duplicati.Library.Main.Operation
                 foreach(var f in files)
                 {
                     try
-                    {   
+                    {
                         if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                        {
+                            m_results.EndTime = DateTime.UtcNow;
                             return;
+                        }
 
                         progress++;
                         m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
@@ -137,10 +144,15 @@ namespace Duplicati.Library.Main.Operation
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                         m_results.AddError(string.Format("Failed to process file {0}", f.Name), ex);
                         if (ex is System.Threading.ThreadAbortException)
+                        {
+                            m_results.EndTime = DateTime.UtcNow;
                             throw;
+                        }
                     }
                 }
             }
+
+            m_results.EndTime = DateTime.UtcNow;
         }
 
         /// <summary>

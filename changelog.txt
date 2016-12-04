@@ -1,3 +1,28 @@
+2016-11-27 - 2.0.1.33_canary_2016-11-27
+==========
+* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
+* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
+* Updated LVM snapshot size parameters, thanks @kakoskin1
+* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
+* Improved notification area layout, thanks @tudacs
+* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
+* Added support for choosing time values in seconds range from the UI
+* Fixed issues with the scheduler not re-scheduling entries until after a restart
+* Fixed a case where sizes chosen from the advanced options editor would be invalid
+
+2016-11-12 - 2.0.1.32_canary_2016-11-12
+==========
+* Fixed an issue with deleting a backup
+* Fixed an issue with creating a backup without encryption
+* Fixed storing symlink metadata to not follow symlinks unless specified
+* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
+* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
+* Updated languages, added Chinese
+* Added a GUI for MSSQL databases, thanks @mnaiman
+* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
+* Fixed escaping exported commandline for Windows
+* Fixes to the UI, thanks @agrajaghh
+
 2016-11-03 - 2.0.1.31_canary_2016-11-03
 ==========
 * Fixed autoupdater choosing old update if the base version was replaced

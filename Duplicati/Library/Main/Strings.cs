@@ -160,8 +160,8 @@ namespace Duplicati.Library.Main.Strings
         public static string FilehashalgorithmLong { get { return LC.L(@"This is a very advanced option! This option can be used to select a file hash algorithm with smaller or larger hash size, for performance or storage space reasons."); } }
         public static string FilehashalgorithmShort { get { return LC.L(@"The hash algorithm used on files"); } }
         public static string NoautocompactLong { get { return LC.L(@"If a large number of small files are detected during a backup, or wasted space is found after deleting backups, the remote data will be compacted. Use this option to disable such automatic compacting and only compact when running the compact command."); } }
-        public static string NoautocompactShort { get { return LC.L(@"Disable automatic compating"); } }
-        public static string SmallfilesizeLong { get { return LC.L(@"When examining the size of a volume in consideration for compating, a small tolerance value is used, by default 20 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten."); } }
+        public static string NoautocompactShort { get { return LC.L(@"Disable automatic compacting"); } }
+        public static string SmallfilesizeLong { get { return LC.L(@"When examining the size of a volume in consideration for compacting, a small tolerance value is used, by default 20 percent of the volume size. This ensures that large volumes which may have a few bytes wasted space are not downloaded and rewritten."); } }
         public static string SmallfilesizeShort { get { return LC.L(@"Volume size threshold"); } }
         public static string SmallfilemaxcountLong { get { return LC.L(@"To avoid filling the remote storage with small files, this value can force grouping small files. The small volumes will always be combined when they can fill an entire volume."); } }
         public static string SmallfilemaxcountShort { get { return LC.L(@"Maximum number of small volumes"); } }

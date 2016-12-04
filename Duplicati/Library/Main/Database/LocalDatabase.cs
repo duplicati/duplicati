@@ -1363,14 +1363,23 @@ ORDER BY
             if (m_connection != null && m_result != null)
             {
                 m_result.FlushLog();
+                if (m_result.EndTime.Ticks == 0)
+                    m_result.EndTime = DateTime.UtcNow;
+
                 LogMessage("Result", 
                     Library.Utility.Utility.PrintSerializeObject(
                         m_result, 
                         (StringBuilder)null, 
-                        x => 
-                            !typeof(IBackendProgressUpdater).IsAssignableFrom(x.PropertyType) && 
-                            !typeof(IMessageSink).IsAssignableFrom(x.PropertyType) && 
-                            !typeof(ILogWriter).IsAssignableFrom(x.PropertyType), 
+                        (prop, item) => 
+                            !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) && 
+                            !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) && 
+                            !typeof(ILogWriter).IsAssignableFrom(prop.PropertyType) &&
+                            prop.Name != "VerboseOutput" && 
+                            prop.Name != "VerboseErrors" &&
+                           !(prop.Name == "MainOperation" && item is BackendWriter) &&
+                           !(prop.Name == "EndTime" && item is BackendWriter) &&
+                           !(prop.Name == "Duration" && item is BackendWriter) &&
+                           !(prop.Name == "BeginTime" && item is BackendWriter), 
                         recurseobjects: true, 
                         collectionlimit: 5
                     ).ToString(),

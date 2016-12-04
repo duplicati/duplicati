@@ -300,8 +300,20 @@ namespace Duplicati.Server
                         )
                 );
 
-            Func<string, string> appendBackslash = x => x.EndsWith("\\") ? x + "\\" : x;
-            exe = "\"" + appendBackslash(exe) + "\"";
+            Func<string, string> commandLineEscapeValue = x =>
+            {
+                if (string.IsNullOrWhiteSpace(x))
+                    return x;
+
+                if (x.EndsWith("\\", StringComparison.Ordinal))
+                    x += "\\";
+
+                x = x.Replace("\"", Library.Utility.Utility.IsClientWindows ? "\"\"" : "\\\"");
+
+                return "\"" + x + "\"";
+            };
+
+            exe = commandLineEscapeValue(exe);
 
             if (Library.Utility.Utility.IsMono)
                 exe = "mono " + exe;
@@ -309,19 +321,21 @@ namespace Duplicati.Server
 
             cmd.Append(exe);
             cmd.Append(" backup");
-            cmd.AppendFormat(" \"{0}\"", appendBackslash(backup.TargetURL));
-            cmd.Append(" \"" + string.Join("\" \"", sources.Select(x => appendBackslash(x))) + "\"");
+            cmd.Append(" ");
+            cmd.Append(commandLineEscapeValue(backup.TargetURL));
+            cmd.Append(" ");
+            cmd.Append(string.Join(" ", sources.Select(x => commandLineEscapeValue(x))));
 
             foreach(var opt in options)
-                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + appendBackslash(opt.Value) + "\"");
+                cmd.AppendFormat(" --{0}={1}", opt.Key, commandLineEscapeValue(opt.Value));
             
             if (cf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
+                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", commandLineEscapeValue(f.Expression));
 
             if (bf != null)
                 foreach(var f in bf)
-                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
+                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", commandLineEscapeValue(f.Expression));
 
             return cmd.ToString();
         }

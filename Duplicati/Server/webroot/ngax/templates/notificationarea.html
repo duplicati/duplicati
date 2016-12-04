@@ -12,6 +12,7 @@
                 <a href ng-show="item.Action == 'backup:show-log'" ng-click="doShowLog(item.BackupID)" class="button showlog" translate>Show</a>
 
                 <a href ng-show="item.Action.indexOf('bug-report:created:') == 0 &amp;&amp; item.DownloadLink == null" ng-click="doDownloadBugreport(item)" class="button downloadbugreport" translate>Download</a>
+                <div class="clear"></div>
             </div>
 
 
@@ -27,6 +28,7 @@
                     <a href ng-show="state.updaterState == 'Downloading'" class="button" ng-disabled="true" ng-click="" translate>Downloading ...</a>
                     <a href ng-show="state.updaterState == 'Checking'" class="button" ng-disabled="true" ng-click="" translate>Verifying ...</a>
                     <a href ng-click="doShowUpdate()" class="button showupdate" translate>Show</a>
+                    <div class="clear"></div>
                 </div>
             </div>
 

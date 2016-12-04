@@ -217,10 +217,9 @@ namespace Duplicati.Server
         /// </summary>
         private void Runner()
         {
-            var scheduled = new Dictionary<long, DateTime>();
+            var scheduled = new Dictionary<long, KeyValuePair<long, DateTime>>();
             while (!m_terminate)
             {
-            
                 //TODO: As this is executed repeatedly we should cache it
                 // to avoid frequent db lookups
                 
@@ -230,12 +229,20 @@ namespace Duplicati.Server
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {
-                        DateTime start;
+                        KeyValuePair<long, DateTime> startkey;
+
                         DateTime last = new DateTime(0, DateTimeKind.Utc);
-                        if (!scheduled.TryGetValue(sc.ID, out start))
+                        DateTime start;
+                        var scticks = sc.Time.Ticks;
+
+                        if (!scheduled.TryGetValue(sc.ID, out startkey) || startkey.Key != scticks)
                         {
-                            start = new DateTime(sc.Time.Ticks, DateTimeKind.Utc);
+                            start = new DateTime(scticks, DateTimeKind.Utc);
                             last = sc.LastRun;
+                        }
+                        else
+                        {
+                            start = startkey.Value;
                         }
                         
                         try
@@ -274,7 +281,7 @@ namespace Duplicati.Server
                             //Caluclate next time, by finding the first entry later than now
                             try
                             {
-                                start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.Now.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
+                                start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
                             }
                             catch(Exception ex)
                             {
@@ -297,7 +304,7 @@ namespace Duplicati.Server
                             }
                         }
 
-                        scheduled[sc.ID] = start;
+                        scheduled[sc.ID] = new KeyValuePair<long,DateTime>(scticks, start);
                     }
                 }
 
@@ -306,8 +313,8 @@ namespace Duplicati.Server
                 lock(m_lock)
                     m_schedule = (from n in scheduled
                         where existing.ContainsKey(n.Key)
-                        orderby n.Value
-                        select new KeyValuePair<DateTime, ISchedule>(n.Value, existing[n.Key])).ToArray();
+                        orderby n.Value.Value
+                        select new KeyValuePair<DateTime, ISchedule>(n.Value.Value, existing[n.Key])).ToArray();
 
                 // Remove unused entries                        
                 foreach(var c in (from n in scheduled where !existing.ContainsKey(n.Key) select n.Key).ToArray())
@@ -323,7 +330,7 @@ namespace Duplicati.Server
                 if (scheduled.Count > 0)
                 {
                     //When is the next run scheduled?
-                    TimeSpan nextrun = scheduled.Min((x) => x.Value) - DateTime.UtcNow;
+                    TimeSpan nextrun = scheduled.Values.Min((x) => x.Value) - DateTime.UtcNow;
                     if (nextrun.TotalMilliseconds < 0)
                         continue;
 
