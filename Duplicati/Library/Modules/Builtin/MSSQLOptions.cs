@@ -126,7 +126,7 @@ namespace Duplicati.Library.Modules.Builtin
                 }
             }
 
-            if (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required")
+            if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
                 Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Microsoft SQL Server databases. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
