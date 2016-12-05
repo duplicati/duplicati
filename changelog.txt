@@ -1,3 +1,11 @@
+2016-12-05 - 2.0.1.34_canary_2016-12-05
+==========
+* Fixed an issue with spurious errors in the UI mentioning Hyper-V
+* Fixed an issue where requesting deletion of remote files did not work
+* Improved the status results reported in the log files
+* Fixed some issues with the usage reporter
+* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
+
 2016-11-27 - 2.0.1.33_canary_2016-11-27
 ==========
 * Updated Linux certificate warnings to mention cert-sync instead of Mozroots
