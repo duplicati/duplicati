@@ -427,6 +427,8 @@ fi
 
 rm -rf "./tmp"
 
-if [ -f "~/.config/duplicati-mirror-sync.sh" ]; then
-	bash "~/.config/duplicati-mirror-sync.sh"
+if [ -f ~/.config/duplicati-mirror-sync.sh ]; then
+    bash ~/.config/duplicati-mirror-sync.sh
+else
+    echo "Skipping CDN update"
 fi
