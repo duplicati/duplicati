@@ -33,6 +33,7 @@ NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
 
+# The "OTHER_UPLOADS" setting is no longer used
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
 	OTHER_UPLOADS=""
 elif [ "${RELEASE_TYPE}" == "canary" ]; then
@@ -251,11 +252,11 @@ echo ";" >> "latest.js"
 aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
 aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
 
-echo "Propagating to other build types"
-for OTHER in ${OTHER_UPLOADS}; do
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
-	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json" "s3://updates.duplicati.com/${OTHER}/latest.json"
-done
+# echo "Propagating to other build types"
+# for OTHER in ${OTHER_UPLOADS}; do
+# 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
+# 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json" "s3://updates.duplicati.com/${OTHER}/latest.json"
+# done
 
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 
