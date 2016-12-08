@@ -1052,7 +1052,11 @@ namespace Duplicati.Library.Main.Operation
                         m_result.AddVerboseMessage("Skipped checking file, because the size exceeds limit {0}", path);
                 }
 
-                if (!changed)
+                // If the file was not previously found, we cannot add it
+                // If the file was too large, we treat it as missing,
+                // otherwise the backups appear to contain the file
+                // but has an old version
+                if (!changed && oldId >= 0 && !tooLargeFile)
                     AddUnmodifiedFile(oldId, lastwrite);
 
                 m_result.SizeOfExaminedFiles += filestatsize;
