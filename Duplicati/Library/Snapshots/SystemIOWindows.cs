@@ -40,7 +40,10 @@ namespace Duplicati.Library.Snapshots
         public static string PrefixWithUNC(string path)
         {
             if (!path.StartsWith(UNCPREFIX))
-                return UNCPREFIX + path;
+                if (!path.StartsWith(@"\\"))
+                    return UNCPREFIX + path;
+                else
+                    return @"\\?\UNC" + path.Remove(0,1);
             else
                 return path;
         }
