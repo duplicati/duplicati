@@ -27,11 +27,13 @@ namespace Duplicati.Library.Snapshots
     public struct SystemIOWindows : ISystemIO
     {
         private const string UNCPREFIX = @"\\?\";
+        private const string UNCPREFIX_SERVER = @"\\?\UNC\";
+        private const string PATHPREFIX_SERVER = @"\\";
         private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
         public static bool IsPathTooLong(string path)
         {
-            if (path.StartsWith(UNCPREFIX) || path.Length > 260)
+            if (path.StartsWith(UNCPREFIX) || path.StartsWith(UNCPREFIX_SERVER) || path.Length > 260)
                 return true;
 
             return false;
@@ -39,13 +41,16 @@ namespace Duplicati.Library.Snapshots
 
         public static string PrefixWithUNC(string path)
         {
-            if (!path.StartsWith(UNCPREFIX))
-                if (!path.StartsWith(@"\\"))
-                    return UNCPREFIX + path;
-                else
-                    return @"\\?\UNC" + path.Remove(0,1);
-            else
+            if (path.StartsWith(UNCPREFIX_SERVER))
                 return path;
+
+            if (path.StartsWith(UNCPREFIX))
+                return path;
+
+            if (path.StartsWith(PATHPREFIX_SERVER))
+                return UNCPREFIX_SERVER + path.Remove(0, PATHPREFIX_SERVER.Length);
+            
+            return UNCPREFIX + path;
         }
 
         public static string StripUNCPrefix(string path)
@@ -220,6 +225,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.GetAttributes(path); }
+                //try { return Alphaleonis.Win32.Filesystem.File.GetAttributes(path, Alphaleonis.Win32.Filesystem.PathFormat.FullPath) ; }
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
