@@ -225,7 +225,6 @@ namespace Duplicati.Library.Snapshots
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.GetAttributes(path); }
-                //try { return Alphaleonis.Win32.Filesystem.File.GetAttributes(path, Alphaleonis.Win32.Filesystem.PathFormat.FullPath) ; }
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
