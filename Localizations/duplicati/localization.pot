@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-11-08 16:54+0100\n"
+"POT-Creation-Date: 2016-12-20 21:08+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: CommandLine/Program.cs:262
+#: CommandLine/Program.cs:268
 msgid "Toggle automatic updates"
 msgstr ""
 
-#: CommandLine/Program.cs:262
+#: CommandLine/Program.cs:268
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -1119,7 +1119,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:24
-msgid "Set blocksize for chunked uploads to SharePoint."
+msgid "Set block size for chunked uploads to SharePoint."
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:26
@@ -2941,8 +2941,10 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:17
 #, csharp-format
 msgid ""
-"No certificates found, you can install some with this command:{0}    "
-"mozroots --import --sync{0}Read more: {1}"
+"No certificates found, you can install some with one of these commands:"
+"{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based "
+"systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
+"derivatives{0}Read more: {1}"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:20
@@ -3183,7 +3185,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:83
 msgid ""
-"Adress of the email sender. If no host is supplied, the hostname of the "
+"Address of the email sender. If no host is supplied, the hostname of the "
 "first recipient is used. Examples of allowed formats:\n"
 "\n"
 "sender\n"
@@ -3346,7 +3348,7 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:130
-msgid "Timeout occured while logging in to jabber server"
+msgid "Timeout occurred while logging in to jabber server"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:131
@@ -3461,8 +3463,9 @@ msgstr ""
 #, csharp-format
 msgid ""
 "{0}You may want to import a set of trusted certificates into the Mono "
-"certificate store.{0}Use the command:{0}    mozroots --import --sync{0}Read "
-"more: {1}"
+"certificate store.{0}Use the command:{0}    cert-sync /etc/ssl/certs/ca-"
+"certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/"
+"certs/ca-bundle.crt #for RedHat derivatives{0}Read more: {1}"
 msgstr ""
 
 #: Library/Utility/Strings.cs:12

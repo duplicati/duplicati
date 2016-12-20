@@ -21,7 +21,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionWebTimeoutShort { get { return LC.L(@"Set timeout for SharePoint web operations."); } }
 
         public static string DescriptionChunkSizeLong { get { return LC.L(@"Use this option to specify the size of each chunk when uploading to SharePoint Server. Recommended value is 4MB."); } }
-        public static string DescriptionChunkSizeShort { get { return LC.L(@"Set blocksize for chunked uploads to SharePoint."); } }
+        public static string DescriptionChunkSizeShort { get { return LC.L(@"Set block size for chunked uploads to SharePoint."); } }
 
         public static string MissingElementError(string serverrelpath, string hosturl) { return LC.L(@"Element with path '{0}' not found on host '{1}'.", serverrelpath, hosturl); }
         public static string NoSharePointWebFoundError(string url) { return LC.L(@"No SharePoint web could be logged in to at path '{0}'. Maybe wrong credentials. Or try using '//' in path to separate web from folder path.", url); }
