@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-26 13:13+0200\n"
+"POT-Creation-Date: 2016-12-20 21:08+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Glaude Ratinier <zitoire@yahoo.fr>, 2016\n"
+"Last-Translator: Arnaud COURCOUX <courcoa@hotmail.fr>, 2016\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: CommandLine/Program.cs:262
+#: CommandLine/Program.cs:268
 msgid "Toggle automatic updates"
 msgstr "Activer les mises à jour automatiques"
 
-#: CommandLine/Program.cs:262
+#: CommandLine/Program.cs:268
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -191,6 +191,11 @@ msgid ""
 "are also supported and can be supplied by using hard braces, i.e. "
 "[.*\\.txt]."
 msgstr ""
+"Exlcure les fichiers qui correspondent à ce filtre. Le caractère spécial * "
+"remplace un chaîne de caractères, et le caractère spécial ? remplace un "
+"caractère unique, utiliser *.txt pour exclure tous les fichiers avec une "
+"extension .txt. Les expressions régulières sont également prises en charge "
+"et peuvent être utilisées grâce aux crochets, c.-à-d. [.*\\.txt]."
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"
@@ -574,9 +579,9 @@ msgstr ""
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
 msgid ""
-"CloudFiles use different servers for authentification based on where the "
-"account was resides, use this option to set an alternate authentication URL."
-" This option overrides --{0}."
+"CloudFiles use different servers for authentication based on where the "
+"account resides, use this option to set an alternate authentication URL. "
+"This option overrides --{0}."
 msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:5
@@ -807,7 +812,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
-msgstr ""
+msgstr "FTP"
 
 #: Library/Backend/FTP/Strings.cs:19 Library/Backend/TahoeLAFS/Strings.cs:8
 #: Library/Backend/WEBDAV/Strings.cs:14
@@ -818,7 +823,7 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:23
 msgid ""
 "To protect against network failures, every upload will be attempted "
-"verified. Use this option to disable this verfication to make the upload "
+"verified. Use this option to disable this verification to make the upload "
 "faster but less reliable."
 msgstr ""
 
@@ -830,7 +835,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:23
 msgid "Google Cloud Storage"
-msgstr ""
+msgstr "Google Cloud Storage"
 
 #: Library/Backend/GoogleServices/Strings.cs:25
 #, csharp-format
@@ -885,7 +890,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
-msgstr ""
+msgstr "Google Drive"
 
 #: Library/Backend/HubiC/Strings.cs:21
 msgid ""
@@ -903,11 +908,11 @@ msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:9
 msgid "No password given"
-msgstr ""
+msgstr "Mot de passe non renseigné"
 
 #: Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
-msgstr ""
+msgstr "Utilisateur non renseigné"
 
 #: Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
@@ -930,11 +935,12 @@ msgstr ""
 #: Library/Backend/OneDrive/Strings.cs:7
 #, csharp-format
 msgid "Unexpected error code: {0} - {1}"
-msgstr ""
+msgstr "Code d'erreur inattendu: {0} - {1}"
 
 #: Library/Backend/OAuthHelper/Strings.cs:11
 msgid "The OAuth service is currently over quota, try again in a few hours"
 msgstr ""
+"Le service OAuth est actuellement saturé, essayer dans quelques heures"
 
 #: Library/Backend/OneDrive/Strings.cs:5
 #, csharp-format
@@ -945,21 +951,21 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:6
 msgid "Autocreated folder"
-msgstr ""
+msgstr "Dossier créé automatiquement"
 
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
 msgid "Missing the folder: {0}"
-msgstr ""
+msgstr "Dossier manquant: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:11
 #, csharp-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Fichier non trouvé: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:10
 msgid "Microsoft OneDrive"
-msgstr ""
+msgstr "Microsoft OneDrive"
 
 #: Library/Backend/OneDrive/Strings.cs:13
 #, csharp-format
@@ -1056,7 +1062,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "Amazon S3"
-msgstr ""
+msgstr "Amazon S3"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No Amazon S3 secret key given"
@@ -1075,7 +1081,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:16
 msgid "Use a European server"
-msgstr ""
+msgstr "Utiliser un serveur européen"
 
 #: Library/Backend/S3/Strings.cs:17
 msgid ""
@@ -1096,8 +1102,8 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:20
 msgid ""
 "This flag toggles the use of the special RRS header. Files stored using RRS "
-"are more likely to disapear than those stored normally, but also costs less "
-"to store. See the full description here: http://aws.amazon.com/about-aws"
+"are more likely to disappear than those stored normally, but also costs less"
+" to store. See the full description here: http://aws.amazon.com/about-aws"
 "/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
 msgstr ""
 
@@ -1178,7 +1184,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
-msgstr ""
+msgstr "Microsoft SharePoint"
 
 #: Library/Backend/SharePoint/Strings.cs:7
 msgid ""
@@ -1242,7 +1248,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:24
-msgid "Set blocksize for chunked uploads to SharePoint."
+msgid "Set block size for chunked uploads to SharePoint."
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:26
@@ -1265,7 +1271,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:33
 msgid "Microsoft OneDrive for Business"
-msgstr ""
+msgstr "Microsoft OneDrive Entreprise"
 
 #: Library/Backend/SharePoint/Strings.cs:34
 msgid ""
@@ -1387,7 +1393,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:35
 msgid "SFTP (SSH)"
-msgstr ""
+msgstr "SFTP (SSH)"
 
 #: Library/Backend/SSHv2/Strings.cs:36
 #, csharp-format
@@ -1452,7 +1458,7 @@ msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
-msgstr ""
+msgstr "WebDAV"
 
 #: Library/Backend/WEBDAV/Strings.cs:15
 #, csharp-format
@@ -1497,7 +1503,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:8
 msgid "Sets the Zip compression method"
-msgstr ""
+msgstr "Configurer la méthode de compression Zip"
 
 #: Library/Compression/Strings.cs:9
 msgid ""
@@ -1507,7 +1513,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:10
 msgid "Zip compression"
-msgstr ""
+msgstr "Compression Zip"
 
 #: Library/Compression/Strings.cs:14
 msgid "Archive not opened for writing"
@@ -1527,7 +1533,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:18
 msgid "7z Archive"
-msgstr ""
+msgstr "Archive 7z"
 
 #: Library/Compression/Strings.cs:19
 msgid ""
@@ -1537,11 +1543,11 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:20
 msgid "Number of threads used in compression"
-msgstr ""
+msgstr "Nombre de passes utilisées en compression"
 
 #: Library/Compression/Strings.cs:22
 msgid "Sets the 7z compression level"
-msgstr ""
+msgstr "Configurer le niveau de compression 7z"
 
 #: Library/Compression/Strings.cs:23
 msgid ""
@@ -1712,7 +1718,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:5
 msgid "default value"
-msgstr ""
+msgstr "valeur par défaut"
 
 #: Library/Interface/Strings.cs:6
 msgid "[DEPRECATED]"
@@ -1720,7 +1726,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:7
 msgid "values"
-msgstr ""
+msgstr "valeurs"
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
@@ -1736,23 +1742,23 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Entier"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr ""
+msgstr "Chemin"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr ""
+msgstr "Taille"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "Texte"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
-msgstr ""
+msgstr "Intervalle de temps"
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
@@ -1771,11 +1777,11 @@ msgstr ""
 #: Library/Interface/Strings.cs:23
 #, csharp-format
 msgid "Connection Failed: {0}"
-msgstr ""
+msgstr "Connexion échouée: {0}"
 
 #: Library/Interface/Strings.cs:24
 msgid "Connection succeeded!"
-msgstr ""
+msgstr "Connexion réussie !"
 
 #: Library/Interface/Strings.cs:25
 msgid ""
@@ -1785,7 +1791,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:26
 msgid "You must enter a password"
-msgstr ""
+msgstr "Vous devez saisir un mot de passe"
 
 #: Library/Interface/Strings.cs:27
 msgid ""
@@ -1795,11 +1801,11 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
-msgstr ""
+msgstr "Vous devez saisir le nom du serveur"
 
 #: Library/Interface/Strings.cs:30
 msgid "You must enter a username"
-msgstr ""
+msgstr "Vous devez saisir un nom d'utilisateur"
 
 #: Library/Interface/Strings.cs:31
 msgid ""
@@ -1821,20 +1827,20 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr ""
+msgstr "Dossier créé !"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
-msgstr ""
+msgstr "Le dossier requis n'existe pas"
 
 #: Library/Interface/Strings.cs:40
 #, csharp-format
 msgid "The server name \"{0}\" is not valid"
-msgstr ""
+msgstr "Le nom de serveur \"{0}\" n'est pas valide"
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
-msgstr ""
+msgstr "Annulé"
 
 #: Library/Main/BackendManager.cs:588
 #, csharp-format
@@ -1885,7 +1891,7 @@ msgstr ""
 #: Library/Main/Database/ExtensionMethods.cs:200
 #, csharp-format
 msgid "{0} records"
-msgstr ""
+msgstr "{0} enregistrements"
 
 #: Library/Main/Strings.cs:7
 #, csharp-format
@@ -2728,13 +2734,13 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:163
-msgid "Disable automatic compating"
+msgid "Disable automatic compacting"
 msgstr ""
 
 #: Library/Main/Strings.cs:164
 msgid ""
-"When examining the size of a volume in consideration for compating, a small "
-"tolerance value is used, by default 20 percent of the volume size. This "
+"When examining the size of a volume in consideration for compacting, a small"
+" tolerance value is used, by default 20 percent of the volume size. This "
 "ensures that large volumes which may have a few bytes wasted space are not "
 "downloaded and rewritten."
 msgstr ""
@@ -3064,8 +3070,10 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:17
 #, csharp-format
 msgid ""
-"No certificates found, you can install some with this command:{0}    "
-"mozroots --import --sync{0}Read more: {1}"
+"No certificates found, you can install some with one of these commands:{0}"
+"    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based "
+"systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
+"derivatives{0}Read more: {1}"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:20
@@ -3154,93 +3162,103 @@ msgstr ""
 msgid "Configure Hyper-V module"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:40
+#: Library/Modules/Builtin/Strings.cs:41
+msgid ""
+"This module works internaly to parse source parameters to backup Microsoft "
+"SQL Server databases"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:42
+msgid "Configure Microsoft SQL Server module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:45
 msgid ""
 "Executes a script before starting an operation, and again on completion"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:41
+#: Library/Modules/Builtin/Strings.cs:46
 msgid "Run script"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:42
+#: Library/Modules/Builtin/Strings.cs:47
 msgid ""
 "Executes a script after performing an operation. The script will receive the"
 " operation results written to stdout."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:43
+#: Library/Modules/Builtin/Strings.cs:48
 msgid "Run a script on exit"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:44
+#: Library/Modules/Builtin/Strings.cs:49
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:45
+#: Library/Modules/Builtin/Strings.cs:50
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:46
+#: Library/Modules/Builtin/Strings.cs:51
 msgid "Run a required script on startup"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:47
+#: Library/Modules/Builtin/Strings.cs:52
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:48
+#: Library/Modules/Builtin/Strings.cs:53
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:49
+#: Library/Modules/Builtin/Strings.cs:54
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:50
+#: Library/Modules/Builtin/Strings.cs:55
 msgid "Run a script on startup"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:51
+#: Library/Modules/Builtin/Strings.cs:56
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:52
+#: Library/Modules/Builtin/Strings.cs:57
 msgid ""
 "Sets the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:53
+#: Library/Modules/Builtin/Strings.cs:58
 msgid "Sets the script timeout"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:56
+#: Library/Modules/Builtin/Strings.cs:61
 msgid "This module can send email after an operation completes"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:57
+#: Library/Modules/Builtin/Strings.cs:62
 msgid "Send mail"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:58
+#: Library/Modules/Builtin/Strings.cs:63
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup, please use the"
 " option {0} to specify what smtp server to use."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:59
+#: Library/Modules/Builtin/Strings.cs:64
 msgid ""
 "This value can be a filename. If a the file exists, the file contents will be used as the message body.\n"
 "\n"
@@ -3253,19 +3271,19 @@ msgid ""
 "All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:68
+#: Library/Modules/Builtin/Strings.cs:73
 msgid "The message body"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:69
+#: Library/Modules/Builtin/Strings.cs:74
 msgid "The password used to authenticate with the SMTP server if required."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:70
+#: Library/Modules/Builtin/Strings.cs:75
 msgid "SMTP Password"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:71
+#: Library/Modules/Builtin/Strings.cs:76
 msgid ""
 "This setting is required if mail should be sent, all other settings have default values. You can supply multiple email adresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients: \n"
@@ -3273,23 +3291,23 @@ msgid ""
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:75
+#: Library/Modules/Builtin/Strings.cs:80
 msgid "Email recipient(s)"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:76
+#: Library/Modules/Builtin/Strings.cs:81
 msgid ""
 "By default, mail will only be sent after a Backup operation. Use this option"
 " to send mail for all operations."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:77
+#: Library/Modules/Builtin/Strings.cs:82
 msgid "Send email for all operations"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:78
+#: Library/Modules/Builtin/Strings.cs:83
 msgid ""
-"Adress of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
+"Address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
 "\n"
 "sender\n"
 "sender@example.com\n"
@@ -3297,11 +3315,11 @@ msgid ""
 "Mail Sender <sender@example.com>"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:89
 msgid "Email sender"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:90
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\". You can supply multiple "
@@ -3310,12 +3328,12 @@ msgid ""
 "send an email."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:86
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:91
+#: Library/Modules/Builtin/Strings.cs:123
 msgid "The messages to send"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:87
+#: Library/Modules/Builtin/Strings.cs:92
 msgid ""
 "A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, seperated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
@@ -3323,64 +3341,64 @@ msgid ""
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 587 for SSL connections."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:91
+#: Library/Modules/Builtin/Strings.cs:96
 msgid "SMTP Url"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:92
+#: Library/Modules/Builtin/Strings.cs:97
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
 " the description for --{0}."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:93
+#: Library/Modules/Builtin/Strings.cs:98
 msgid "The email subject"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:94
+#: Library/Modules/Builtin/Strings.cs:99
 msgid "The username used to authenticate with the SMTP server if required."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:95
+#: Library/Modules/Builtin/Strings.cs:100
 msgid "SMTP Username"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:96
+#: Library/Modules/Builtin/Strings.cs:101
 #, csharp-format
 msgid "Failed to send email: {0}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:97
+#: Library/Modules/Builtin/Strings.cs:102
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:103
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:99
+#: Library/Modules/Builtin/Strings.cs:104
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:102
+#: Library/Modules/Builtin/Strings.cs:107
 msgid "XMPP recipient email"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:103
+#: Library/Modules/Builtin/Strings.cs:108
 msgid ""
 "The users who should have the messages sent, specify multiple users "
 "seperated with commas"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:104
+#: Library/Modules/Builtin/Strings.cs:109
 msgid "The message template"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:105
+#: Library/Modules/Builtin/Strings.cs:110
 msgid ""
 "This value can be a filename. If a the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -3393,55 +3411,55 @@ msgid ""
 "All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:114
+#: Library/Modules/Builtin/Strings.cs:119
 msgid "The XMPP username"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:120
 msgid ""
 "The username for the account that will send the message, including the "
 "hostname. I.e. \"account@jabber.org/Home\""
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:121
 msgid "The XMPP password"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:122
 msgid "The password for the account that will send the message"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:119
+#: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\". \n"
 "You can supply multiple options with a comma seperator, e.g. \"{0},{1}\". The special value \"{3}\" is a shorthand for \"{0},{1},{2}\" and will cause all backup operations to send a message."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Send messages for all operations"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:127
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:128
 msgid "XMPP report module"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:129
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:125
-msgid "Timeout occured while logging in to jabber server"
+#: Library/Modules/Builtin/Strings.cs:130
+msgid "Timeout occurred while logging in to jabber server"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:131
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
 msgstr ""
@@ -3552,8 +3570,9 @@ msgstr ""
 #, csharp-format
 msgid ""
 "{0}You may want to import a set of trusted certificates into the Mono "
-"certificate store.{0}Use the command:{0}    mozroots --import --sync{0}Read "
-"more: {1}"
+"certificate store.{0}Use the command:{0}    cert-sync /etc/ssl/certs/ca-"
+"certificates.crt #for Debian based systems{0}    cert-sync "
+"/etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}Read more: {1}"
 msgstr ""
 
 #: Library/Utility/Strings.cs:12
@@ -3568,7 +3587,7 @@ msgstr ""
 #: Library/Utility/Strings.cs:13
 #, csharp-format
 msgid ""
-"Failed while validating certificate hash, error message: {0}, Ssl error "
+"Failed while validating certificate hash, error message: {0}, SSL error "
 "name: {1}"
 msgstr ""
 
@@ -3605,27 +3624,27 @@ msgstr ""
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr ""
+msgstr "{0} bytes"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
 msgid "{0:N} GB"
-msgstr ""
+msgstr "{0:N} GB"
 
 #: Library/Utility/Strings.cs:30
 #, csharp-format
 msgid "{0:N} KB"
-msgstr ""
+msgstr "{0:N} KB"
 
 #: Library/Utility/Strings.cs:31
 #, csharp-format
 msgid "{0:N} MB"
-msgstr ""
+msgstr "{0:N} MB"
 
 #: Library/Utility/Strings.cs:32
 #, csharp-format
 msgid "{0:N} TB"
-msgstr ""
+msgstr "{0:N} TB"
 
 #: Library/Utility/Strings.cs:33
 #, csharp-format
@@ -3660,7 +3679,7 @@ msgstr ""
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Server/Strings.cs:15
 msgid "Outputs log information to the file given"
