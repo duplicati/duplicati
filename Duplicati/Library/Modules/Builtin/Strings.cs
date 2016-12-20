@@ -80,7 +80,7 @@ Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.
         public static string OptionRecipientShort { get { return LC.L(@"Email recipient(s)"); } }
         public static string OptionSendallLong { get { return LC.L(@"By default, mail will only be sent after a Backup operation. Use this option to send mail for all operations."); } }
         public static string OptionSendallShort { get { return LC.L(@"Send email for all operations"); } }
-        public static string OptionSenderLong { get { return LC.L(@"Adress of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:
+        public static string OptionSenderLong { get { return LC.L(@"Address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:
 
 sender
 sender@example.com
