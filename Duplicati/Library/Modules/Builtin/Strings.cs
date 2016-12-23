@@ -73,7 +73,7 @@ All commandline options are also reported within %value%, e.g. %volsize%. Any un
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
         public static string OptionPasswordLong { get { return LC.L(@"The password used to authenticate with the SMTP server if required."); } }
         public static string OptionPasswordShort { get { return LC.L(@"SMTP Password"); } }
-        public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email adresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.
+        public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.
 Example with 3 recipients: 
 
 Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"); } }
