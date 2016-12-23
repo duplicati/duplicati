@@ -327,17 +327,12 @@ namespace Duplicati.Library.Main.Database
                 foreach(var h in hashes)
                 {
                     var exsize = remainsize < blocksize ? remainsize : blocksize;
-                    var found = false;
-                
-                    if (!found)
-                    {
-                        m_insertblocksetentryCommand.SetParameterValue(1, ix);
-                        m_insertblocksetentryCommand.SetParameterValue(2, h);
-                        m_insertblocksetentryCommand.SetParameterValue(3, exsize);
-                        var c = m_insertblocksetentryCommand.ExecuteNonQuery();
-                        if (c != 1)
-                            throw new Exception(string.Format("Unexpected result count: {0}, expected {1}", c, 1));
-                    }
+                    m_insertblocksetentryCommand.SetParameterValue(1, ix);
+                    m_insertblocksetentryCommand.SetParameterValue(2, h);
+                    m_insertblocksetentryCommand.SetParameterValue(3, exsize);
+                    var c = m_insertblocksetentryCommand.ExecuteNonQuery();
+                    if (c != 1)
+                        throw new Exception(string.Format("Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size));
                     
                     ix++;
                     remainsize -= blocksize;
