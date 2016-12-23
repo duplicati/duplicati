@@ -1380,7 +1380,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:24
 msgid "Set block size for chunked uploads to SharePoint."
-msgstr ""
+msgstr "Setzt die Blockgröße für Chunked-Uploads auf SharePoint."
 
 #: Library/Backend/SharePoint/Strings.cs:26
 #, csharp-format
@@ -1393,12 +1393,17 @@ msgid ""
 "No SharePoint web could be logged in to at path '{0}'. Maybe wrong "
 "credentials. Or try using '//' in path to separate web from folder path."
 msgstr ""
+"Kein SharePoint Web konnte sich unter dem Pfad '{0}' anmelden.  Vielleicht "
+"falsche Anmeldeinformationen. Oder versuche es mit \"//\" im Pfad zu "
+"separaten Web-Ordner."
 
 #: Library/Backend/SharePoint/Strings.cs:28
 msgid ""
 "Everything seemed alright, but then web title could not be read to test "
 "connection. Something's wrong."
 msgstr ""
+"Alles scheint in Ordnung, aber dann Web-Titel konnte nicht gelesen werden, "
+"um Verbindung zu testen. Etwas ist falsch."
 
 #: Library/Backend/SharePoint/Strings.cs:33
 msgid "Microsoft OneDrive for Business"
@@ -1511,6 +1516,10 @@ msgid ""
 "verified on connection. Use this option to disable host-key fingerprint "
 "verification. You should only use this option for testing."
 msgstr ""
+"Zum Schutz vor Man-in-the-Middle-Angriffen wird der Server-Fingerabdruck bei"
+" der Verbindung überprüft. Diese Option deaktiviert die Überprüfung des "
+"Host-Key-Fingerabdrucks. Diese Option sollte nur zum Testen verwenden "
+"werden."
 
 #: Library/Backend/SSHv2/Strings.cs:30
 msgid "Disables fingerprint validation"
@@ -1523,6 +1532,11 @@ msgid ""
 "password is not used to authenticate. This option only works when using the "
 "managed SSH client."
 msgstr ""
+"Zeigt eine gültige OpenSSH-Schlüsseldatei an. Wenn die Datei verschlüsselt "
+"ist, wird das Kennwort zur Entschlüsselung der Schlüsseldatei verwendet. "
+"Wenn diese Option angegeben wird, wird das Kennwort nicht zur "
+"Authentifizierung verwendet. Diese Option funktioniert nur bei Verwendung "
+"eines geführten SSH-Client."
 
 #: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
@@ -1536,6 +1550,11 @@ msgid ""
 "keyfile.  If this option is supplied, the password is not used to "
 "authenticate. This option only works when using the managed SSH client."
 msgstr ""
+"Ein URL-kodierter privater SSH-Schlüssel. Der private Schlüssel muss mit {0}"
+" vorangestellt werden. Wenn die Datei verschlüsselt ist, wird das Kennwort "
+"zur Entschlüsselung der Schlüsseldatei verwendet. Wenn diese Option "
+"angegeben wird, wird das Kennwort nicht zur Authentifizierung verwendet. "
+"Diese Option funktioniert nur bei Verwendung eines geführten SSH-Client."
 
 #: Library/Backend/SSHv2/Strings.cs:35
 msgid "SFTP (SSH)"
@@ -1553,6 +1572,9 @@ msgid ""
 "\"{0}\". Cause of this message is either not correct configuration or Man-"
 "in-the-middle attack!"
 msgstr ""
+"Validierung des Serverfingerabdrucks fehlgeschlagen. Der Server hat den "
+"Fingerabdruck \"{0}\" zurückgegeben. Ursache dieser Meldung ist entweder "
+"eine inkorrekte Konfiguration oder Man-in-the-Middle-Angriff!"
 
 #: Library/Backend/SSHv2/Strings.cs:38
 #, csharp-format
