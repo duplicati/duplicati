@@ -273,41 +273,19 @@ namespace Duplicati.Library.Main.Database
         private class BlockQuery : IBlockQuery
         {
             private System.Data.IDbCommand m_command;
-            private HashLookupHelper<long> m_lookup;
-            
+
             public BlockQuery(System.Data.IDbConnection con, Options options, System.Data.IDbTransaction transaction)
             {
                 m_command = con.CreateCommand();
                 m_command.Transaction = transaction;
-                
-                if (options.BlockHashLookupMemory > 0)
-                {
-                    m_lookup = new HashLookupHelper<long>((ulong)options.BlockHashLookupMemory);
-                    using(var reader = m_command.ExecuteReader(@"SELECT ""Hash"", ""Size"" FROM ""Block"" "))
-                    while (reader.Read())
-                    {
-                        var hash = reader.GetString(0);
-                        var size = reader.GetInt64(1);
-                        m_lookup.Add(hash, size, size);
-                    }
-                }
-                
+
                 m_command.Parameters.Clear();
                 m_command.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ";
                 m_command.AddParameters(2);
             }
             
             public bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction)
-            {
-                if (m_lookup != null)
-                {
-                    long nsize;
-                    if(m_lookup.TryGet(hash, size, out nsize) && nsize == size)
-                        return true;
-                    else
-                        return false;
-                }
-                
+            {                
                 m_command.Transaction = transaction;
                 m_command.SetParameterValue(0, hash);    
                 m_command.SetParameterValue(1, size);
@@ -317,7 +295,6 @@ namespace Duplicati.Library.Main.Database
             
             public void Dispose()
             {
-                m_lookup = null;
                 if (m_command != null)
                     try { m_command.Dispose(); }
                     finally { m_command = null; }
