@@ -652,6 +652,23 @@ namespace Duplicati.Library.Main.Database
                     return null;
         }
 
+        public RemoteVolumeEntry GetRemoteVolumeFromID(long id)
+        {
+            using (var cmd = m_connection.CreateCommand())
+            using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"" WHERE ""ID"" = ?", id))
+                if (rd.Read())
+                    return new RemoteVolumeEntry(
+                        rd.GetValue(0).ToString(),
+                        (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
+                        rd.ConvertValueToInt64(2, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
+                    );
+                else
+                    return default(RemoteVolumeEntry);
+        }
+
         public IEnumerable<string> GetMissingIndexFiles()
         {
             using(var cmd = m_connection.CreateCommand())
