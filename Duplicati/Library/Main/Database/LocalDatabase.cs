@@ -365,9 +365,9 @@ namespace Duplicati.Library.Main.Database
             RemoveRemoteVolumes(new string[] { name }, transaction);
         }
 
-        public void RemoveRemoteVolumes(ICollection<string> names, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolumes(IEnumerable<string> names, System.Data.IDbTransaction transaction = null)
         {
-            if (names.Count == 0) return;
+            if (names == null || !names.Any()) return;
 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var deletecmd = m_connection.CreateCommand())

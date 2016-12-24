@@ -110,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress)
                     throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
-                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
+                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;

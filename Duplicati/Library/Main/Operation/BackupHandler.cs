@@ -300,86 +300,87 @@ namespace Duplicati.Library.Main.Operation
 
         private void UploadSyntheticFilelist(BackendManager backend) 
         {
-            var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();                        
-            if (incompleteFilesets.Length != 0)
+            var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToList();
+
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
+            m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
+            using(var trn = m_database.BeginTransaction())
             {
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
-                using(var trn = m_database.BeginTransaction())
+                var incompleteSet = incompleteFilesets.Last();
+                var badIds = from n in incompleteFilesets select n.Key;
+
+                var prevs = (from n in m_database.FilesetTimes 
+                    where 
+                    n.Key < incompleteSet.Key
+                    &&
+                    !badIds.Contains(n.Key)
+                    orderby n.Key                                                
+                    select n.Key).ToArray();
+
+                var prevId = prevs.Length == 0 ? -1 : prevs.Last();
+
+                FilesetVolumeWriter fsw = null;
+                try
                 {
-                    var incompleteSet = incompleteFilesets.Last();
-                    var badIds = from n in incompleteFilesets select n.Key;
+                    var s = 1;
+                    var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
+                    var oldFilesetID = incompleteSet.Key;
 
-                    var prevs = (from n in m_database.FilesetTimes 
-                        where 
-                        n.Key < incompleteSet.Key
-                        &&
-                        !badIds.Contains(n.Key)
-                        orderby n.Key                                                
-                        select n.Key).ToArray();
-
-                    var prevId = prevs.Length == 0 ? -1 : prevs.Last();
-
-                    FilesetVolumeWriter fsw = null;
-                    try
+                    // Probe for an unused filename
+                    while (s < 60)
                     {
-                        var s = 1;
-                        var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                        var oldFilesetID = incompleteSet.Key;
+                        var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
+                        if (id < 0)
+                            break;
 
-                        // Probe for an unused filename
-                        while (s < 60)
-                        {
-                            var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
-                            if (id < 0)
-                                break;
-
-                            fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                        }
-
-                        fsw = new FilesetVolumeWriter(m_options, fileTime);
-                        fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-
-                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                            foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
-
-                        var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
-                        m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
-                        m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
-
-                        m_database.WriteFileset(fsw, trn, newFilesetID);
-
-                        if (m_options.Dryrun)
-                        {
-                            m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
-                        }
-                        else
-                        {
-                            m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
-
-                            using(new Logging.Timer("CommitUpdateFilelistVolume"))
-                                trn.Commit();
-
-                            backend.Put(fsw);
-                            fsw = null;
-                        }
+                        fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
                     }
-                    finally
-                    {
-                        if (fsw != null)
-                            try { fsw.Dispose(); }
-                        catch { fsw = null; }
-                    }                          
-                }
-            }
 
+                    fsw = new FilesetVolumeWriter(m_options, fileTime);
+                    fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+
+                    if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                        foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                            fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                    var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
+                    m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
+                    m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
+
+                    m_database.WriteFileset(fsw, trn, newFilesetID);
+
+                    if (m_options.Dryrun)
+                    {
+                        m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
+                    }
+                    else
+                    {
+                        m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
+
+                        using(new Logging.Timer("CommitUpdateFilelistVolume"))
+                            trn.Commit();
+
+                        backend.Put(fsw);
+                        fsw = null;
+                    }
+                }
+                finally
+                {
+                    if (fsw != null)
+                        try { fsw.Dispose(); }
+                    catch { fsw = null; }
+                }                          
+            }
+        }
+
+        private void RecreateMissingIndexFiles(BackendManager backend)
+        {
             if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
             {
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
-                foreach(var blockfile in m_database.GetMissingIndexFiles())
+                foreach (var blockfile in m_database.GetMissingIndexFiles())
                 {
                     m_result.AddMessage(string.Format("Re-creating missing index file for {0}", blockfile));
                     var w = new IndexVolumeWriter(m_options);
@@ -389,13 +390,13 @@ namespace Duplicati.Library.Main.Operation
                     w.StartVolume(blockvolume.Name);
                     var volumeid = m_database.GetRemoteVolumeID(blockvolume.Name);
 
-                    foreach(var b in m_database.GetBlocks(volumeid))
+                    foreach (var b in m_database.GetBlocks(volumeid))
                         w.AddBlock(b.Hash, b.Size);
 
                     w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                        foreach(var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                        foreach (var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
                             w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
 
                     w.Close();
@@ -413,7 +414,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void PreBackupVerify(BackendManager backend)
+        private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
             using(new Logging.Timer("PreBackupVerify"))
@@ -426,7 +427,7 @@ namespace Duplicati.Library.Main.Operation
 						UpdateStorageStatsFromDatabase();
 					}
 					else
-						FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
                 {
@@ -729,10 +730,48 @@ namespace Duplicati.Library.Main.Operation
                                 parallelScanner.Start(snapshot);
                             }
 
-                            PreBackupVerify(backend);
+                            string lasttempfilelist = null;
+                            long lasttempfileid = -1;
+                            if (!m_options.DisableSyntheticFilelist)
+                            {
+                                var candidates = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();
+                                if (candidates.Length > 0)
+                                {
+                                    lasttempfileid = candidates.Last().Key;
+                                    lasttempfilelist = m_database.GetRemoteVolumeFromID(lasttempfileid).Name;
+                                }
+                            }
 
                             // Verify before uploading a synthetic list
-                            UploadSyntheticFilelist(backend);
+                            PreBackupVerify(backend, lasttempfilelist);
+
+                            // If we have an incomplete entry, upload it now
+                            if (!m_options.DisableSyntheticFilelist && !string.IsNullOrWhiteSpace(lasttempfilelist) && lasttempfileid >= 0)
+                            {
+                                // Check that we still need to process this after the cleanup has performed its duties
+                                var syntbase = m_database.GetRemoteVolumeFromID(lasttempfileid);
+                                if (syntbase.Name != null && (syntbase.State == RemoteVolumeState.Uploading || syntbase.State == RemoteVolumeState.Temporary))
+                                {
+                                    UploadSyntheticFilelist(backend);
+
+                                    // Remove the protected file
+                                    if (syntbase.State == RemoteVolumeState.Uploading)
+                                    {
+                                        m_result.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", syntbase.State, syntbase.Name));
+                                        backend.Delete(syntbase.Name, syntbase.Size);
+                                    }
+                                    else if (syntbase.State == RemoteVolumeState.Temporary)
+                                    {
+                                        m_result.AddMessage(string.Format("removing file listed as {0}: {1}", syntbase.State, syntbase.Name));
+                                        m_database.RemoveRemoteVolume(syntbase.Name);
+                                    }
+                                }
+                                else if (syntbase.Name == null || syntbase.State != RemoteVolumeState.Uploaded)
+                                    m_result.AddWarning(string.Format("Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lasttempfileid, lasttempfilelist), null);
+                            }
+
+                            // Rebuild any index files that are missing
+                            RecreateMissingIndexFiles(backend);
 
                             m_database.BuildLookupTable(m_options);
                             m_transaction = m_database.BeginTransaction();

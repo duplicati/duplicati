@@ -248,7 +248,8 @@ namespace Duplicati.Library.Main
                     "hardlink-policy",
                     "exclude-files-attributes",
                     "compression-extension-file",
-                    "full-remote-verification"
+                    "full-remote-verification",
+                    "disable-synthetic-filelist"
                 };
             }
         }
@@ -477,6 +478,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
+                    new CommandLineArgument("disable-synthetic-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablesyntheticfilelistShort, Strings.Options.DisablesyntehticfilelistLong, "false"),
+
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
@@ -1409,7 +1412,14 @@ namespace Duplicati.Library.Main
             get { return !Library.Utility.Utility.ParseBoolOption(m_options, "skip-restore-verification"); }
         }
 
-        
+        /// <summary>
+        /// Gets a flag indicating if synthetic filelist generation is disabled
+        /// </summary>
+        public bool DisableSyntheticFilelist
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-synthetic-filelist"); }
+        }
+
         /// <summary>
         /// Gets the file hash size
         /// </summary>
