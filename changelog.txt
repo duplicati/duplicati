@@ -1,3 +1,9 @@
+2016-12-27 - 2.0.1.37_canary_2016-12-27
+==========
+* Fixed a problem with login no longer working
+* Updated the login page to use blue colors
+* Added a check for administrator privileges to avoid HyperV error messages
+
 2016-12-24 - 2.0.1.36_canary_2016-12-24
 ==========
 * Fixed a case where excluded gave a warning
