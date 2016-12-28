@@ -207,17 +207,15 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 using (var ftpClient = CreateClient())
                 {
-                    var url = new Uri(_url);
-
                     // Get the remote path
-                    remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+                    remotePath = "";
 
                     if (!string.IsNullOrEmpty(filename))
                     {
                         if (!stripFile)
                         {
                             // Append the filename
-                            remotePath += "/" + filename;
+                            remotePath += filename;
                         }
                         else if (filename.Contains("/"))
                         {
@@ -321,15 +319,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                     }
 
-                    var url = new Uri(_url);
-
                     // Get the remote path
-                    remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+                    remotePath = "";
 
                     if (!string.IsNullOrEmpty(remotename))
                     {
                         // Append the filename
-                        remotePath += "/" + remotename;
+                        remotePath += remotename;
                     }
 
                     using (var outputStream = ftpClient.OpenWrite(remotePath))
@@ -388,15 +384,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         {
             using (var ftpClient = CreateClient())
             {
-                var url = new Uri(_url);
-
                 // Get the remote path
-                var remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+                var remotePath = "";
 
                 if (!string.IsNullOrEmpty(remotename))
                 {
                     // Append the filename
-                    remotePath += "/" + remotename;
+                    remotePath += remotename;
                 }
 
                 using (var inputStream = ftpClient.OpenRead(remotePath))
@@ -425,15 +419,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         {
             using (var ftpClient = CreateClient())
             {
-                var url = new Uri(_url);
-
                 // Get the remote path
-                var remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+                var remotePath = "";
 
                 if (!string.IsNullOrEmpty(remotename))
                 {
                     // Append the filename
-                    remotePath += "/" + remotename;
+                    remotePath += remotename;
                 }
 
                 ftpClient.DeleteFile(remotePath);
@@ -465,7 +457,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 // Get the remote path
                 var remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
 
-                // Try to create the directory
+                // Try to create the directory 
                 client.CreateDirectory(remotePath, true);
             }
         }
@@ -493,6 +485,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             };
 
             ftpClient.ValidateCertificate += HandleValidateCertificate;
+
+            // Get the remote path
+            var remotePath = uri.AbsolutePath.EndsWith("/") ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
+            ftpClient.SetWorkingDirectory(remotePath);
 
             return ftpClient;
         }
