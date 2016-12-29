@@ -106,6 +106,8 @@
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
     <Compile Include="Operation\SystemInfoHandler.cs" />
+    <Compile Include="Operation\PurgeFilesHandler.cs" />
+    <Compile Include="Database\LocalPurgeDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

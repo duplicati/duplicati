@@ -27,8 +27,8 @@ namespace Duplicati.Library.Main.Database
     {
         private System.Data.IDbCommand m_moveBlockToNewVolumeCommand;
 
-        public LocalDeleteDatabase(string path, bool isCompact)
-            : base(path, isCompact ? "Compact" : "Delete", true)
+        public LocalDeleteDatabase(string path, string operation)
+            : base(path, operation, true)
         {
             InitializeCommands();
         }

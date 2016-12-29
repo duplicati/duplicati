@@ -907,5 +907,14 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Lines { get; set; }
     }
 
+    internal class PurgeFilesResults : BasicResults, IPurgeFilesResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.PurgeFiles; } }
+        public long RemovedFileCount { get; set; }
+        public long RemovedFileSize { get; set; }
+        public long RewrittenFileLists { get; set; }
+        public ICompactResults CompactResults { get; set; }
+     }
+
 }
 

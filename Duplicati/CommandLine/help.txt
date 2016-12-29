@@ -11,7 +11,7 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, repair, affected
+  Commands: backup, find, restore, delete, compact, test, compare, repair, affected, purge
   Debugging: debug, logging, create-report, test-filters, system-info
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
@@ -191,6 +191,25 @@ Usage: repair <storage-URL> [<options>]
   
   Tries to repair the backup. If no local db is found or the db is empty, the db is re-created with data from the storage. If the db is in place but the remote storage is corrupt, the remote storage gets repaired with local data (if available).
 
+
+
+# =============================================================================
+> duplicati.commandline.exe help purge
+
+Usage: purge <storage-URL> <filenames> [<options>]
+  
+  Purges (removes) files from remote backup data. This command can either take a list of filenames or use the filters to choose which files to purge. The purge process creates new filesets on the remote destination with the purged files removed, and will start the compacting process after a purge. By default, the matching files are purged in all versions, but this can be limited by choosing one or more versions. To test what will happen, use the --dry-run flag.
+
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
+  --version=<int>
+    Selects specific versions to purge from, multiple versions can be specified with commas
+  --time=<time>
+    Selects a specific version to purge from
+  --no-auto-compact
+    Performs a compact process after purging files
+  --include=<filter>
+    Selects files to purge, using filter syntax
 
 
 

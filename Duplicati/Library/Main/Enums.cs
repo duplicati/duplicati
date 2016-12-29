@@ -43,7 +43,8 @@ namespace Duplicati.Library.Main
         Test,
         TestFilters,
         SystemInfo,
-        ListRemote
+        ListRemote,
+        PurgeFiles,
     }
 
     /// <summary>

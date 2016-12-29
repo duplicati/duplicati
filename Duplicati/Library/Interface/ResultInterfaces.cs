@@ -291,5 +291,13 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Lines { get; }
     }
 
+    public interface IPurgeFilesResults : IBasicResults
+    {
+        long RemovedFileCount { get; set; }
+        long RemovedFileSize { get; set; }
+        long RewrittenFileLists { get; set; }
+        ICompactResults CompactResults { get; }
+    }
+
 }
 
