@@ -75,6 +75,6 @@ script:
   - if [[ "$JOB" == "job3" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Purge --workers=1; fi
   - echo "travis_fold:end:unit_tests_purge"
 # start server and run gui tests
-  - if [[ "$JOB" == "job3" ]]; mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &; fi
+  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
   - if [[ "$JOB" == "job3" ]]; then python guiTests/guiTest.py; fi
   
