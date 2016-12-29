@@ -76,6 +76,9 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             get { return "aftp"; }
         }
 
+        private FtpClient Client
+        { get; set; }
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -469,28 +472,34 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         private FtpClient CreateClient()
         {
-            var url = _url;
-
-            var uri = new Uri(url);
-
-            var ftpClient = new FtpClient
+            if (this.Client == null) // Create connection if it doesn't exist yet
             {
-                Host = uri.Host,
-                Port = uri.Port == -1 ? 21 : uri.Port,
-                Credentials = _userInfo,
-                EncryptionMode = _encryptionMode,
-                DataConnectionType = _dataConnectionType,
-                SslProtocols = _sslProtocols,
-                EnableThreadSafeDataConnections = true, // Required to work properly but can result in up to 3 connections being used even when you expect just one..
-            };
 
-            ftpClient.ValidateCertificate += HandleValidateCertificate;
+                var url = _url;
 
-            // Get the remote path
-            var remotePath = uri.AbsolutePath.EndsWith("/") ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
-            ftpClient.SetWorkingDirectory(remotePath);
+                var uri = new Uri(url);
 
-            return ftpClient;
+                var ftpClient = new FtpClient
+                {
+                    Host = uri.Host,
+                    Port = uri.Port == -1 ? 21 : uri.Port,
+                    Credentials = _userInfo,
+                    EncryptionMode = _encryptionMode,
+                    DataConnectionType = _dataConnectionType,
+                    SslProtocols = _sslProtocols,
+                    EnableThreadSafeDataConnections = true, // Required to work properly but can result in up to 3 connections being used even when you expect just one..
+                };
+
+                ftpClient.ValidateCertificate += HandleValidateCertificate;
+
+                // Get the remote path
+                var remotePath = uri.AbsolutePath.EndsWith("/") ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
+                ftpClient.SetWorkingDirectory(remotePath);
+
+                this.Client = ftpClient;
+            } // else reuse existing connection
+
+            return this.Client;
         }
 
         private void HandleValidateCertificate(FtpClient control, FtpSslValidationEventArgs e)
