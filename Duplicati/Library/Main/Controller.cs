@@ -424,6 +424,14 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.IPurgeFilesResults PurgeFiles(Library.Utility.IFilter filter)
+        {
+            return RunAction(new PurgeFilesResults(), result =>
+            {
+                new Operation.PurgeFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
         {

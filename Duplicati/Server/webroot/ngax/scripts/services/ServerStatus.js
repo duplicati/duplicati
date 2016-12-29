@@ -59,6 +59,10 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'BugReport_Running': gettextCatalog.getString('Creating bug report ...'),
             'Delete_Listing': gettextCatalog.getString('Listing remote files ...'),
             'Delete_Deleting': gettextCatalog.getString('Deleting remote files ...'),
+            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files ...'),
+            'PurgeFiles_Process,': gettextCatalog.getString('Purging files ...'),
+            'PurgeFiles_Compact,': gettextCatalog.getString('Compacting remote data ...'),
+            'PurgeFiles_Complete,': gettextCatalog.getString('Finished!'),
             'Error': gettextCatalog.getString('Error!')
         };
     };

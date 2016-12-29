@@ -147,6 +147,7 @@ namespace Duplicati.CommandLine
                 knownCommands["restore"] = Commands.Restore;
 
                 knownCommands["repair"] = Commands.Repair;
+                knownCommands["purge"] = Commands.PurgeFiles;
 
                 knownCommands["compact"] = Commands.Compact;
                 knownCommands["create-report"] = Commands.CreateBugReport;

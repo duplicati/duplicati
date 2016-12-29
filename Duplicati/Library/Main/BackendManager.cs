@@ -1165,7 +1165,7 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
+        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
         {
             if (m_lastException != null)
                 throw m_lastException;
@@ -1201,14 +1201,14 @@ namespace Duplicati.Library.Main
 
             m_db.FlushDbMessages(true);
             
-            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+            if (m_queue.Enqueue(req) && (m_options.SynchronousUpload || synchronous))
             {
                 req.WaitForComplete();
                 if (req.Exception != null)
                     throw req.Exception;
             }
             
-            if (req2 != null && m_queue.Enqueue(req2) && m_options.SynchronousUpload)
+            if (req2 != null && m_queue.Enqueue(req2) && (m_options.SynchronousUpload || synchronous))
             {
                 req2.WaitForComplete();
                 if (req2.Exception != null)

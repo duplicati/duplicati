@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
-            using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, false))
+            using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
             {
                 var tr = db.BeginTransaction();
                 try

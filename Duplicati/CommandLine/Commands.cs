@@ -846,6 +846,38 @@ namespace Duplicati.CommandLine
 
             return 0;
         }
+
+        public static int PurgeFiles(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count < 1)
+                return PrintWrongNumberOfArguments(args, 1);
+
+            var backend = args[0];
+            var paths = args.Skip(1).ToArray();
+
+            if (paths.Length > 0)
+            {
+                if (filter == null || filter.Empty)
+                    filter = new Library.Utility.FilterExpression(paths);
+                else
+                {
+                    Console.WriteLine("You cannot combine filters and paths on the commandline");
+                    return 200;
+                }
+            }
+            else if (filter == null || filter.Empty)
+            {
+                Console.WriteLine("You must provide either filename filters, or a list of paths to remove");
+                return 200;
+            }
+
+
+            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
+                i.PurgeFiles(filter);
+            
+            return 0;
+        }
+
     }
 }
 
