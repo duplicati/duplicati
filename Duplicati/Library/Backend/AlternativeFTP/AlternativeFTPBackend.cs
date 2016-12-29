@@ -208,30 +208,31 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
             try
             {
-                using (var ftpClient = CreateClient())
+                var ftpClient = CreateClient();
+
+                // Get the remote path
+                var url = new Uri(this._url);
+                remotePath = "/" + (url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath);
+
+                if (!string.IsNullOrEmpty(filename))
                 {
-                    // Get the remote path
-                    remotePath = "";
-
-                    if (!string.IsNullOrEmpty(filename))
+                    if (!stripFile)
                     {
-                        if (!stripFile)
-                        {
-                            // Append the filename
-                            remotePath += filename;
-                        }
-                        else if (filename.Contains("/"))
-                        {
-                            remotePath += filename.Substring(0, filename.LastIndexOf("/", StringComparison.InvariantCulture));
-                        }
-                        // else: stripping the filename in this case ignoring it
+                        // Append the filename
+                        remotePath += filename;
                     }
-
-                    foreach (FtpListItem item in ftpClient.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks))
+                    else if (filename.Contains("/"))
                     {
-                        switch (item.Type)
-                        {
-                            case FtpFileSystemObjectType.Directory:
+                        remotePath += filename.Substring(0, filename.LastIndexOf("/", StringComparison.InvariantCulture));
+                    }
+                    // else: stripping the filename in this case ignoring it
+                }
+
+                foreach (FtpListItem item in ftpClient.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks))
+                {
+                    switch (item.Type)
+                    {
+                        case FtpFileSystemObjectType.Directory:
                             {
                                 if (item.Name == "." || item.Name == "..")
                                 {
@@ -245,13 +246,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                                 break;
                             }
-                            case FtpFileSystemObjectType.File:
+                        case FtpFileSystemObjectType.File:
                             {
                                 list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
 
                                 break;
                             }
-                            case FtpFileSystemObjectType.Link:
+                        case FtpFileSystemObjectType.Link:
                             {
                                 if (item.Name == "." || item.Name == "..")
                                 {
@@ -263,30 +264,30 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                                     switch (item.LinkObject.Type)
                                     {
                                         case FtpFileSystemObjectType.Directory:
-                                        {
-                                            if (item.Name == "." || item.Name == "..")
                                             {
-                                                continue;
+                                                if (item.Name == "." || item.Name == "..")
+                                                {
+                                                    continue;
+                                                }
+
+                                                list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
+                                                {
+                                                    IsFolder = true,
+                                                });
+
+                                                break;
                                             }
-
-                                            list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
-                                            {
-                                                IsFolder = true,
-                                            });
-
-                                            break;
-                                        }
                                         case FtpFileSystemObjectType.File:
-                                        {
-                                            list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
+                                            {
+                                                list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
 
-                                            break;
-                                        }
+                                                break;
+                                            }
                                     }
                                 }
                                 break;
                             }
-                        }
+
                     }
                 }
             }//         Message    "Directory not found."    string
@@ -310,39 +311,39 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
             try
             {
-                using (var ftpClient = CreateClient())
+                var ftpClient = CreateClient();
+
+                try
+                {
+                    streamLen = input.Length;
+                }
+                // ReSharper disable once EmptyGeneralCatchClause
+                catch
+                {
+
+                }
+
+                // Get the remote path
+                remotePath = "";
+
+                if (!string.IsNullOrEmpty(remotename))
+                {
+                    // Append the filename
+                    remotePath += remotename;
+                }
+
+                using (var outputStream = ftpClient.OpenWrite(remotePath))
                 {
                     try
                     {
-                        streamLen = input.Length;
+                        CoreUtility.CopyStream(input, outputStream, true, _copybuffer);
                     }
-                    // ReSharper disable once EmptyGeneralCatchClause
-                    catch
+                    finally
                     {
-
-                    }
-
-                    // Get the remote path
-                    remotePath = "";
-
-                    if (!string.IsNullOrEmpty(remotename))
-                    {
-                        // Append the filename
-                        remotePath += remotename;
-                    }
-
-                    using (var outputStream = ftpClient.OpenWrite(remotePath))
-                    {
-                        try
-                        {
-                            CoreUtility.CopyStream(input, outputStream, true, _copybuffer);
-                        }
-                        finally
-                        {
-                            outputStream.Close();
-                        }
+                        outputStream.Close();
                     }
                 }
+
 
                 if (_listVerify)
                 {
@@ -385,29 +386,29 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            using (var ftpClient = CreateClient())
+            var ftpClient = CreateClient();
+
+            // Get the remote path
+            var remotePath = "";
+
+            if (!string.IsNullOrEmpty(remotename))
             {
-                // Get the remote path
-                var remotePath = "";
+                // Append the filename
+                remotePath += remotename;
+            }
 
-                if (!string.IsNullOrEmpty(remotename))
+            using (var inputStream = ftpClient.OpenRead(remotePath))
+            {
+                try
                 {
-                    // Append the filename
-                    remotePath += remotename;
+                    CoreUtility.CopyStream(inputStream, output, false, _copybuffer);
                 }
-
-                using (var inputStream = ftpClient.OpenRead(remotePath))
+                finally
                 {
-                    try
-                    {
-                        CoreUtility.CopyStream(inputStream, output, false, _copybuffer);
-                    }
-                    finally
-                    {
-                        inputStream.Close();
-                    }
+                    inputStream.Close();
                 }
             }
+
         }
 
         public void Get(string remotename, string localname)
@@ -420,19 +421,19 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public void Delete(string remotename)
         {
-            using (var ftpClient = CreateClient())
+            var ftpClient = CreateClient();
+
+            // Get the remote path
+            var remotePath = "";
+
+            if (!string.IsNullOrEmpty(remotename))
             {
-                // Get the remote path
-                var remotePath = "";
-
-                if (!string.IsNullOrEmpty(remotename))
-                {
-                    // Append the filename
-                    remotePath += remotename;
-                }
-
-                ftpClient.DeleteFile(remotePath);
+                // Append the filename
+                remotePath += remotename;
             }
+
+            ftpClient.DeleteFile(remotePath);
+
         }
 
         /// <summary>
@@ -453,20 +454,24 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public void CreateFolder()
         {
-            using (var client = CreateClient())
-            {
-                var url = new Uri(_url);
+            var client = CreateClient();
 
-                // Get the remote path
-                var remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+            var url = new Uri(_url);
 
-                // Try to create the directory 
-                client.CreateDirectory(remotePath, true);
-            }
+            // Get the remote path
+            var remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+
+            // Try to create the directory 
+            client.CreateDirectory(remotePath, true);
+
         }
 
         public void Dispose()
         {
+            if(Client != null)
+                Client.Dispose();
+
+            Client = null;
             _userInfo = null;
         }
 
