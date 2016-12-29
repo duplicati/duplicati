@@ -75,13 +75,13 @@ namespace Duplicati.UnitTest
             {
                 var inf = c.List();
                 var filesets = inf.Filesets.Count();
-                Assert.AreEqual(filesets, 3, "Incorrect number of filesets");
+                Assert.AreEqual(3, filesets, "Incorrect number of initial filesets");
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var filecount = c.List("*").Files.Count();
-                Assert.AreEqual(filecount, filenames.Count + 1, "Incorrect number of files");
+                Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of initial files");
             }
 
             var allversion_candidate = round1.First();
@@ -90,8 +90,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.PurgeFiles(new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar + allversion_candidate));
-                Assert.AreEqual(res.RewrittenFileLists, 3, "Incorrect number of rewritten filesets");
-                Assert.AreEqual(res.RemovedFileCount, 3, "Incorrect number of removed files");
+                Assert.AreEqual(3, res.RewrittenFileLists, "Incorrect number of rewritten filesets after all-versions purge");
+                Assert.AreEqual(3, res.RemovedFileCount, "Incorrect number of removed files after all-versions purge");
             }
 
             for (var i = 0; i < 3; i++)
@@ -99,23 +99,23 @@ namespace Duplicati.UnitTest
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = i }), null))
                 {
                     var res = c.PurgeFiles(new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar + single_version_candidate));
-                    Assert.AreEqual(res.RewrittenFileLists, 1, "Incorrect number of rewritten filesets");
-                    Assert.AreEqual(res.RemovedFileCount, 1, "Incorrect number of removed files");
+                    Assert.AreEqual(1, res.RewrittenFileLists, "Incorrect number of rewritten filesets after single-versions purge");
+                    Assert.AreEqual(1, res.RemovedFileCount, "Incorrect number of removed files after single-versions purge");
                 }
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.PurgeFiles(new Library.Utility.FilterExpression(round2.Skip(round1.Length).Take(2).Select(x => "*" + Path.DirectorySeparatorChar + x)));
-                Assert.AreEqual(res.RewrittenFileLists, 2, "Incorrect number of rewritten filesets");
-                Assert.AreEqual(res.RemovedFileCount, 4, "Incorrect number of removed files");
+                Assert.AreEqual(2, res.RewrittenFileLists, "Incorrect number of rewritten filesets after 2-versions purge");
+                Assert.AreEqual(4, res.RemovedFileCount, "Incorrect number of removed files after 2-versions purge");
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.PurgeFiles(new Library.Utility.FilterExpression(round3.Skip(round2.Length).Take(2).Select(x => "*" + Path.DirectorySeparatorChar + x)));
-                Assert.AreEqual(res.RewrittenFileLists, 1, "Incorrect number of rewritten filesets");
-                Assert.AreEqual(res.RemovedFileCount, 2, "Incorrect number of removed files");
+                Assert.AreEqual(1, res.RewrittenFileLists, "Incorrect number of rewritten filesets after 1-versions purge");
+                Assert.AreEqual(2, res.RemovedFileCount, "Incorrect number of removed files after 1-versions purge");
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -125,8 +125,8 @@ namespace Duplicati.UnitTest
                 listinfo = c.List();
                 var filesets = listinfo.Filesets.Count();
 
-                Assert.AreEqual(filesets, 3, "Incorrect number of filesets");
-                Assert.AreEqual(filecount, filenames.Count - 6 + 1, "Incorrect number of files");
+                Assert.AreEqual(3, filesets, "Incorrect number of filesets after purge");
+                Assert.AreEqual(filenames.Count - 6 + 1, filecount, "Incorrect number of files after purge");
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -139,8 +139,8 @@ namespace Duplicati.UnitTest
                 listinfo = c.List();
                 var filesets = listinfo.Filesets.Count();
 
-                Assert.AreEqual(filesets, 4, "Incorrect number of filesets");
-                Assert.AreEqual(filecount, filenames.Count + 1, "Incorrect number of files");
+                Assert.AreEqual(4, filesets, "Incorrect number of filesets after final backup");
+                Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of files after final backup");
             }
 
         }
