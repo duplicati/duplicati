@@ -135,11 +135,19 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var listinfo = c.List("*");
-                var filecount = listinfo.Files.Count();
+                var files = listinfo.Files.ToArray();
+                var filecount = files.Length;
                 listinfo = c.List();
-                var filesets = listinfo.Filesets.Count();
+                var filesets = listinfo.Filesets.ToArray();
 
-                Assert.AreEqual(4, filesets, "Incorrect number of filesets after final backup");
+                Console.WriteLine("Listing final version information");
+
+                Console.WriteLine("Versions:");
+                Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", filesets.Select(x => string.Format("{0}: {1}, {2} {3}", x.Version, x.Time, x.FileCount, x.FileSizes))));
+                Console.WriteLine("Files:");
+                Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", files.Select(x => string.Format("{0}: {1}", x.Path, string.Join(" - ", x.Sizes.Select(y => y.ToString()))))));
+
+                Assert.AreEqual(4, filesets.Length, "Incorrect number of filesets after final backup");
                 Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of files after final backup");
             }
 
