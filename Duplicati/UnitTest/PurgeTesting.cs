@@ -71,6 +71,8 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(res.AddedFiles, filenames.Count - round2.Length);
             }
 
+            var last_ts = DateTime.Now;
+
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { list_sets_only = true }), null))
             {
                 var inf = c.List();
@@ -117,6 +119,11 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(1, res.RewrittenFileLists, "Incorrect number of rewritten filesets after 1-versions purge");
                 Assert.AreEqual(2, res.RemovedFileCount, "Incorrect number of removed files after 1-versions purge");
             }
+
+            // Since we make the operations back-to-back, the purge timestamp can drift beyond the current time
+            var wait_target = last_ts.AddSeconds(6) - DateTime.Now;
+            if (wait_target.TotalMilliseconds > 0)
+                System.Threading.Thread.Sleep(wait_target);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
