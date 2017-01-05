@@ -258,12 +258,45 @@ namespace Duplicati.Library.Main.Database
                 var selectFiltered =
                     @"SELECT DISTINCT ""BlocksetID"", ""Index"", ""BlockID"" FROM (" +
                     selectAllBlocksetEntries +
-                    @") A WHERE (""A"".""BlocksetID"" || ':' || ""A"".""Index"") NOT IN (SELECT (""BlocksetID"" || ':' || ""Index"") FROM ""BlocksetEntry"" )";
+                    @") A WHERE (""A"".""BlocksetID"" || ':' || ""A"".""Index"") NOT IN (SELECT (""ExistingBlocksetEntries"".""BlocksetID"" || ':' || ""ExistingBlocksetEntries"".""Index"") FROM ""BlocksetEntry"" ""ExistingBlocksetEntries"" )";
                 
                 var insertBlocksetEntriesCommand =
-                    @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") " + selectFiltered;    
-                
-                cmd.ExecuteNonQuery(insertBlocksetEntriesCommand);                
+                    @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") " + selectFiltered;
+
+                try
+                {
+                    cmd.ExecuteNonQuery(insertBlocksetEntriesCommand);
+                }
+                catch (Exception ex)
+                {
+                    m_result.AddError("Blockset insert failed, this is likely issue #2140, attempting to locate the culprit", ex);
+
+                    var faultcount = 0;
+                    using (var cmd2 = m_connection.CreateCommand(transaction))
+                    {
+                        cmd2.CommandText = @"SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" = ? AND ""Index"" = ? ";
+                        cmd2.AddParameters(2);
+
+                        foreach (var rd in cmd.ExecuteReaderEnumerable(selectFiltered))
+                        {
+                            var blocksetid = rd.ConvertValueToInt64(0);
+                            var index = rd.ConvertValueToInt64(1);
+                            var blockid = rd.ConvertValueToInt64(2);
+
+                            var foundid = cmd2.ExecuteScalarInt64(null, -1, blocksetid, index);
+                            if (foundid != -1)
+                            {
+                                faultcount++;
+                                m_result.AddError(string.Format("Found culprit, attempting to re-insert {0}-{1}, new blockid: {2}, existing block id: {3}", blocksetid, index, blockid, foundid), ex);
+                            }
+                        }
+                    }
+
+                    if (faultcount != 0)
+                        throw new Exception(string.Format("Detected {0} faults likely the same as issue #2140, please look in the log and report the errors"));
+
+                    throw;
+                }
             }
         }
         
