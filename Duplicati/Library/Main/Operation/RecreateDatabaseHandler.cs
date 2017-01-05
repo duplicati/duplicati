@@ -475,6 +475,14 @@ namespace Duplicati.Library.Main.Operation
                     // if this fails, the db will not be deleted, so it can be used,
                     // except to continue a backup
                     m_result.EndTime = DateTime.UtcNow;
+
+                    using (var lbfdb = new LocalListBrokenFilesDatabase(restoredb))
+                    {
+                        var broken = lbfdb.GetBrokenFilesets(new DateTime(0), null, null).Count();
+                        if (broken != 0)
+                            throw new Exception(string.Format("Recreated database has missing blocks and {0} broken filelists. Consider using \"{1}\" and \"{2}\" to purge broken data from the remote store and the database.", broken, "list-broken-files", "purge-broken-files"));
+                    }
+
                     restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
 
                     m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");
