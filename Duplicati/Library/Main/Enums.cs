@@ -44,6 +44,8 @@ namespace Duplicati.Library.Main
         TestFilters,
         SystemInfo,
         ListRemote,
+        ListBrokenFiles,
+        PurgeBrokenFiles,
         PurgeFiles,
     }
 

@@ -878,6 +878,54 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
+        public static int ListBrokenFiles(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(args, 1);
+
+            var con = new ConsoleOutput(options);
+            var previd = -1L;
+            var outputcount = 0L;
+            var verbose = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose");
+
+            using (var i = new Library.Main.Controller(args[0], options, con))
+                i.ListBrokenFiles(filter, (id, time, count, path, size) => 
+                {
+                    if (previd != id)
+                    {
+                        previd = id;
+                        outputcount = 0;
+                        con.MessageEvent(string.Format("{0}\t: {1}\t({2} match(es))", id, time.ToLocalTime(), count));
+                    }
+
+                    con.MessageEvent(string.Format("\t{0} ({1})", path, Library.Utility.Utility.FormatSizeString(size)));
+                    outputcount++;
+                    if (outputcount >= 5 && !verbose && count != outputcount)
+                    {
+                        con.MessageEvent(string.Format("\t ... and {0} more, (use --{1} to list all)", count - outputcount, "verbose"));
+                        return false;
+                    }
+
+                    return true;
+
+                });
+
+            return 0;
+        }
+
+        public static int PurgeBrokenFiles(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(args, 1);
+
+            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
+            {
+                var res = i.PurgeBrokenFiles(filter);
+            }
+
+            return 0;
+        }
+
     }
 }
 

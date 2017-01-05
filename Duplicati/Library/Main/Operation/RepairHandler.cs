@@ -398,16 +398,21 @@ namespace Duplicati.Library.Main.Operation
                                     var missingBlocks = mbl.GetMissingBlocks().Count();
                                     if (missingBlocks > 0)
                                     {                                    
-                                        //TODO: How do we handle this situation?
                                         m_result.AddMessage(string.Format("Repair cannot acquire {0} required blocks for volume {1}, which are required by the following filesets: ", missingBlocks, n.Name));
                                         foreach(var f in mbl.GetFilesetsUsingMissingBlocks())
                                             m_result.AddMessage(f.Name);
-                                        
+
+                                        var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage.", "list-broken-files", "purge-broken-files");
+
                                         if (!m_options.Dryrun)
                                         {
                                             m_result.AddMessage("This may be fixed by deleting the filesets and running repair again");
-                                            
-                                            throw new Exception(string.Format("Repair not possible, missing {0} blocks!!!", missingBlocks));
+
+                                            throw new Exception(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks));
+                                        }
+                                        else
+                                        {
+                                            m_result.AddMessage(recoverymsg);
                                         }
                                     }
                                     else

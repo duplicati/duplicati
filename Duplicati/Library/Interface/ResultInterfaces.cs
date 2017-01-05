@@ -293,11 +293,21 @@ namespace Duplicati.Library.Interface
 
     public interface IPurgeFilesResults : IBasicResults
     {
-        long RemovedFileCount { get; set; }
-        long RemovedFileSize { get; set; }
-        long RewrittenFileLists { get; set; }
+        long RemovedFileCount { get; }
+        long RemovedFileSize { get; }
+        long RewrittenFileLists { get; }
         ICompactResults CompactResults { get; }
     }
 
+    public interface IListBrokenFilesResults : IBasicResults
+    {
+        IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; }
+    }
+
+    public interface IPurgeBrokenFilesResults : IBasicResults
+    {
+        IPurgeFilesResults PurgeResults { get; }
+        IDeleteResults DeleteResults { get; }
+    }
 }
 
