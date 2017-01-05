@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
                 
-                var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value));
+                var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
                 var toDelete = m_options.GetFilesetsToDelete(db.FilesetTimes.Select(x => x.Value).ToArray());
                 
                 if (toDelete != null && toDelete.Length > 0)

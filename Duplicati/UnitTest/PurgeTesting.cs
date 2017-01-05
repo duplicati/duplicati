@@ -38,16 +38,13 @@ namespace Duplicati.UnitTest
         public void PurgeTest()
         {
             PrepareSourceData();
-            RunCommands(1024 * 10);
-        }
 
-        private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
-        {
+            var blocksize = 1024 * 10;
+            var basedatasize = 0;
+
             var testopts = TestOptions;
             testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
-            if (modifyOptions != null)
-                modifyOptions(testopts);
 
             var filenames = BorderTests.WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize).Select(x => "a" + x.Key).ToList();
 
@@ -157,7 +154,91 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(4, filesets.Length, "Incorrect number of filesets after final backup");
                 Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of files after final backup");
             }
-
         }
+
+        [Test]
+        [Category("Purge")]
+        public void PurgeBrokenFilesTest()
+        {
+            PrepareSourceData();
+
+            var blocksize = 1024 * 10;
+            var basedatasize = 0;
+
+            var testopts = TestOptions;
+            testopts["verbose"] = "true";
+            testopts["blocksize"] = blocksize.ToString() + "b";
+
+            var filenames = BorderTests.WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize).Select(x => "a" + x.Key).ToList();
+
+            var round1 = filenames.Take(filenames.Count / 3).ToArray();
+            var round2 = filenames.Take((filenames.Count / 3) * 2).ToArray();
+            var round3 = filenames;
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round1.Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                Assert.AreEqual(res.AddedFiles, round1.Length);
+            }
+
+            var dblock_file = Directory
+                .GetFiles(TARGETFOLDER, "*.dblock.zip.aes")
+                .Select(x => new FileInfo(x))
+                .OrderBy(x => x.LastWriteTimeUtc)
+                .Select(x => x.FullName)
+                .First();
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                Assert.AreEqual(round2.Length - round1.Length, res.AddedFiles);
+            }
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var res = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(filenames.Count - round2.Length, res.AddedFiles);
+            }
+
+            var last_ts = DateTime.Now;
+
+            File.Delete(dblock_file);
+
+            long[] affectedfiles;
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var brk = c.ListBrokenFiles(null);
+                var sets = brk.BrokenFiles.Count();
+                var files = brk.BrokenFiles.Sum(x => x.Item3.Count());
+                Assert.AreEqual(3, sets);
+                Assert.True(files > 0);
+
+                affectedfiles = brk.BrokenFiles.OrderBy(x => x.Item1).Select(x => x.Item3.LongCount()).ToArray();
+            }
+
+            for (var i = 0; i < 3; i++)
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = i }), null))
+                {
+                    var brk = c.ListBrokenFiles(null);
+                    var sets = brk.BrokenFiles.Count();
+                    var files = brk.BrokenFiles.Sum(x => x.Item3.Count());
+                    Assert.AreEqual(1, sets);
+                    Assert.AreEqual(affectedfiles[i], files);
+                }
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var brk = c.PurgeBrokenFiles(null);
+
+                var modFilesets = 0L;
+                if (brk.DeleteResults != null)
+                    modFilesets += brk.DeleteResults.DeletedSets.Count();
+                if (brk.PurgeResults != null)
+                    modFilesets += brk.PurgeResults.RewrittenFileLists;
+
+                Assert.AreEqual(3, modFilesets);
+            }
+        }
+
     }
 }

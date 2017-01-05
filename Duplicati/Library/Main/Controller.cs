@@ -432,6 +432,22 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.IListBrokenFilesResults ListBrokenFiles(Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        {
+            return RunAction(new ListBrokenFilesResults(), result =>
+            {
+                new Operation.ListBrokenFilesHandler(m_backend, m_options, result).Run(filter, callbackhandler);
+            });
+        }
+
+        public Library.Interface.IPurgeBrokenFilesResults PurgeBrokenFiles(Library.Utility.IFilter filter)
+        {
+            return RunAction(new PurgeBrokenFilesResults(), result =>
+            {
+                new Operation.PurgeBrokenFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
         {

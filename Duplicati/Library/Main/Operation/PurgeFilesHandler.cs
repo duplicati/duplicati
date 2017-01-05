@@ -34,30 +34,36 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run(Library.Utility.IFilter filter)
         {
-            DoRun(filter, null);
-        }
-
-        public void Run(Action<System.Data.IDbCommand, long, string> filtercommand)
-        {
-            DoRun(null, filtercommand);
-        }
-
-        private void DoRun(Library.Utility.IFilter filter, Action<System.Data.IDbCommand, long, string> filtercommand)
-        {
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Begin);
-            m_result.AddMessage("Starting purge operation");
-
-            if (filtercommand == null && (filter == null || filter.Empty))
+            if (filter == null || filter.Empty)
                 throw new Exception("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.");
 
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+            
+            using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
+                DoRun(db, filter, null, 0, 1);
+        }
+
+        public void Run(Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Action<System.Data.IDbCommand, long, string> filtercommand)
+        {
+            DoRun(db, null, filtercommand, pgoffset, pgspan);
+        }
+
+        private void DoRun(Database.LocalPurgeDatabase db, Library.Utility.IFilter filter, Action<System.Data.IDbCommand, long, string> filtercommand, float pgoffset, float pgspan)
+        {
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Begin);
+            m_result.AddMessage("Starting purge operation");
 
             var doCompactStep = !m_options.NoAutoCompact && filtercommand == null;
 
-            using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
+                if (db.PartiallyRecreated)
+                    throw new Exception("The purge command does not work on partially recreated databases");
+
+                if (db.RepairInProgress && filtercommand == null)
+                    throw new Exception(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"));
+
                 var versions = db.GetFilesetIDs(m_options.Time, m_options.Version).ToArray();
                 if (versions.Length <= 0)
                     throw new Exception("No filesets matched the supplied time or versions");
@@ -69,25 +75,23 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
-                db.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, false);
+                if (filtercommand == null)
+                {
+                    db.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, false);
 
-                if (m_options.NoBackendverification)
-                    FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter);
-                else
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, null);
-
-
-                m_result.RemovedFileSize = 0;
-                m_result.RemovedFileCount = 0;
-                m_result.RewrittenFileLists = 0;
+                    if (m_options.NoBackendverification)
+                        FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter);
+                    else
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, null);
+                }
 
                 var filesets = db.FilesetTimes.ToArray();
 
-                var versionprogress = (doCompactStep ? 0.75f : 1.0f) / versions.Length;
-                var currentprogress = 0.0f;
+                var versionprogress = ((doCompactStep ? 0.75f : 1.0f) / versions.Length) * pgspan;
+                var currentprogress = pgoffset;
 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Process);
-                m_result.OperationProgressUpdater.UpdateProgress(0.0f);
+                m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
 
                 // Reverse makes sure we re-write the old versions first
                 foreach (var versionid in versions.Reverse())
@@ -154,6 +158,7 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.RewrittenFileLists++;
 
                                     currentprogress += (versionprogress / 2);
+                                    m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
 
                                     if (m_options.Dryrun || m_options.Verbose || Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
                                     {
@@ -210,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                     {
-                        m_result.OperationProgressUpdater.UpdateProgress(0.75f);
+                        m_result.OperationProgressUpdater.UpdateProgress(pgoffset + (0.75f * pgspan));
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Compact);
                         m_result.CompactResults = new CompactResults(m_result);
                         using (var cdb = new Database.LocalDeleteDatabase(db))
@@ -233,7 +238,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
-                    m_result.OperationProgressUpdater.UpdateProgress(1.0f);
+                    m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
                 }
 

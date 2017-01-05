@@ -909,12 +909,28 @@ namespace Duplicati.Library.Main
 
     internal class PurgeFilesResults : BasicResults, IPurgeFilesResults
     {
+        public PurgeFilesResults() : base() { }
+        public PurgeFilesResults(BasicResults p) : base(p) { }
+
         public override OperationMode MainOperation { get { return OperationMode.PurgeFiles; } }
         public long RemovedFileCount { get; set; }
         public long RemovedFileSize { get; set; }
         public long RewrittenFileLists { get; set; }
-        public ICompactResults CompactResults { get; set; }
-     }
 
+        public ICompactResults CompactResults { get; set; }
+    }
+
+    internal class ListBrokenFilesResults : BasicResults, IListBrokenFilesResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.ListBrokenFiles; } }
+        public IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; set; }
+    }
+
+    internal class PurgeBrokenFilesResults : BasicResults, IPurgeBrokenFilesResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.PurgeBrokenFiles; } }
+        public IPurgeFilesResults PurgeResults { get; set; }
+        public IDeleteResults DeleteResults { get; set; }
+    }
 }
 

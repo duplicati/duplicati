@@ -11,7 +11,8 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, repair, affected, purge
+  Commands: backup, find, restore, delete, compact, test, compare, purge
+  Reparing: repair, affected, list-broken-files, purge-broken-files
   Debugging: debug, logging, create-report, test-filters, system-info
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
@@ -212,6 +213,23 @@ Usage: purge <storage-URL> <filenames> [<options>]
     Selects files to purge, using filter syntax
 
 
+# =============================================================================
+> duplicati.commandline.exe help broken
+> duplicati.commandline.exe help broken-files
+> duplicati.commandline.exe help list-broken-files
+> duplicati.commandline.exe help purge-broken-files
+
+Usage: list-broken-files <storage-URL> [<options>]
+  
+  Checks the database for missing data that cause files not not be restoreable. Files can become unrestoreable if remote data files are defect or missing. Use the list-broken-files command to see what the purge-broken-files command will remove.
+
+Usage: purge-broken-files <storage-URL> [<options>]
+
+  Removes all files from the database and remote storage that are no longer restoreable. Use this operation with caution, and only if you cannot recover the missing remote files, but want to continue a backup. Even with missing remote files, it may be possible to restore parts of the files that will be removed with this command.
+
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
+    
 
 # =============================================================================
 > duplicati.commandline.exe help test

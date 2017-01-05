@@ -27,6 +27,11 @@ namespace Duplicati.Library.Main.Database
             ShouldCloseConnection = true;
         }
 
+        public LocalPurgeDatabase(LocalDatabase db)
+            : base(db)
+        {
+        }
+
         public ITemporaryFileset CreateTemporaryFileset(long parentid, System.Data.IDbTransaction transaction)
         {
             return new TemporaryFileset(parentid, this, m_connection, transaction);
@@ -50,12 +55,6 @@ namespace Duplicati.Library.Main.Database
                     return rd.ConvertValueToInt64(0, 0);
                 else
                     return 0;
-        }
-
-        internal long DeleteOrphanFiles(System.Data.IDbTransaction transaction)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-                return cmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")");
         }
 
         public interface ITemporaryFileset : IDisposable
