@@ -42,6 +42,7 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options.SymlinkStrategy m_symlinkPolicy;
         private int m_blocksize;
         private long m_maxmetadatasize;
+        private long m_lastfilesetid;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -770,6 +771,12 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.AddWarning(string.Format("Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lasttempfileid, lasttempfilelist), null);
                             }
 
+                            var prevfileset = m_database.FilesetTimes.FirstOrDefault();
+                            if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
+                                throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
+                            
+                            m_lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
+
                             // Rebuild any index files that are missing
                             RecreateMissingIndexFiles(backend);
 
@@ -1000,16 +1007,28 @@ namespace Duplicati.Library.Main.Operation
                 
                 // Last scan time
                 DateTime oldModified;
-                long lastFileSize = -1;
+                long lastFileSize;
                 string oldMetahash;
                 long oldMetasize;
-                var oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                long oldId;
 
                 long filestatsize = -1;
                 try { filestatsize = snapshot.GetFileSize(path); }
                 catch { }
 
                 IMetahash metahashandsize = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options) : EMPTY_METADATA;
+
+                if (m_options.CheckFiletimeOnly || m_options.DisableFiletimeCheck)
+                {
+                    lastFileSize = filestatsize;
+                    oldMetahash = metahashandsize.FileHash;
+                    oldMetasize = metahashandsize.Blob.Length;
+                    oldId = m_database.GetFileLastModified(path, m_lastfilesetid, out oldModified);
+                }
+                else
+                {
+                    oldId = m_database.GetFileEntry(path, m_lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                }
 
                 var timestampChanged = lastwrite != oldModified || lastwrite.Ticks == 0 || oldModified.Ticks == 0;
                 var filesizeChanged = filestatsize < 0 || lastFileSize < 0 || filestatsize != lastFileSize;

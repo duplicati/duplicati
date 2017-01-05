@@ -150,6 +150,16 @@ namespace Duplicati.UnitTest
             });
         }
 
+        [Test]
+        [Category("Border")]
+        public void RunQuickTimestamps()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["check-filetime-only"] = "true";
+            });
+        }
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
         {
             if (basedatasize <= 0)

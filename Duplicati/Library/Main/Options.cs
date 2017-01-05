@@ -233,6 +233,7 @@ namespace Duplicati.Library.Main
                     "dblock-size",
                     "disable-autocreate-folder",
                     "disable-filetime-check",
+                    "check-filetime-only",
                     "disable-time-tolerance",
                     "allow-missing-source",
                     "skip-files-larger-than",
@@ -409,6 +410,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
+                    new CommandLineArgument("check-filetime-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CheckfiletimeonlyShort, Strings.Options.CheckfiletimeonlyLong, "false"),
                     //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
                     new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
@@ -658,6 +660,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if file time checks are skipped
         /// </summary>
         public bool DisableFiletimeCheck { get { return GetBool("disable-filetime-check"); } }
+
+        /// <summary>
+        /// A value indicating if file time checks are skipped
+        /// </summary>
+        public bool CheckFiletimeOnly { get { return GetBool("check-filetime-only"); } }
 
         /// <summary>
         /// A value indicating if USN numbers are used to get list of changed files

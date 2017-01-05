@@ -77,7 +77,8 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertmetadatasetCommand;
 
-        private readonly System.Data.IDbCommand m_selectfileSimpleCommand;
+        private readonly System.Data.IDbCommand m_findfileCommand;
+        private readonly System.Data.IDbCommand m_selectfilelastmodifiedCommand;
         private readonly System.Data.IDbCommand m_selectfileHashCommand;
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
 
@@ -110,7 +111,8 @@ namespace Duplicati.Library.Main.Database
             m_insertblocklistHashesCommand = m_connection.CreateCommand();
             m_selectblocklistHashesCommand = m_connection.CreateCommand();
             m_insertfileOperationCommand = m_connection.CreateCommand();
-            m_selectfileSimpleCommand = m_connection.CreateCommand();
+            m_findfileCommand = m_connection.CreateCommand();
+            m_selectfilelastmodifiedCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
                 
@@ -150,17 +152,20 @@ namespace Duplicati.Library.Main.Database
             m_insertmetadatasetCommand.CommandText = @"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();";
             m_insertmetadatasetCommand.AddParameter();
 
+            m_selectfilelastmodifiedCommand.CommandText = @"SELECT ""File"".""ID"", ""FilesetEntry"".""LastModified"" FROM ""File"", ""FilesetEntry"" WHERE ""Path"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? LIMIT 1";
+            m_selectfilelastmodifiedCommand.AddParameters(2);
+
             //Need a temporary table with path/lastmodified lookups
-            m_selectfileSimpleCommand.CommandText =
+            m_findfileCommand.CommandText =
                 @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
                 @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
                 @"  WHERE ""File"".""Path"" = ? " +
                 @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
                 @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
                 @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
+                @"    AND ""Fileset"".""ID"" = ? " +
                 @"  LIMIT 1 ";
-            m_selectfileSimpleCommand.AddParameters(1);
+            m_findfileCommand.AddParameters(2);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
@@ -466,7 +471,22 @@ namespace Duplicati.Library.Main.Database
             AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID, transaction);
         }
 
-        public long GetFileEntry(string path, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize)
+        public long GetFileLastModified(string path, long filesetid, out DateTime oldModified)
+        {
+            m_selectfilelastmodifiedCommand.SetParameterValue(0, path);
+            m_selectfilelastmodifiedCommand.SetParameterValue(1, filesetid);
+            using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader())
+                if (rd.Read())
+                {
+                    oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
+                    return rd.ConvertValueToInt64(0);    
+                }
+
+            oldModified = new DateTime(0, DateTimeKind.Utc);
+            return -1;
+        }
+
+        public long GetFileEntry(string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize)
         {
             if (m_pathLookup != null)
             {            
@@ -490,15 +510,17 @@ namespace Duplicati.Library.Main.Database
             }
             else
             {
-                m_selectfileSimpleCommand.SetParameterValue(0, path);
-                using(var rd = m_selectfileSimpleCommand.ExecuteReader())
+                m_findfileCommand.SetParameterValue(0, path);
+                m_findfileCommand.SetParameterValue(1, filesetid);
+
+                using(var rd = m_findfileCommand.ExecuteReader())
                     if (rd.Read())
                     {
-                        oldModified = new DateTime(rd.GetInt64(1), DateTimeKind.Utc);
+                        oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
                         lastFileSize = rd.GetInt64(2);
                         oldMetahash = rd.GetString(3);
                         oldMetasize = rd.GetInt64(4);
-                        return rd.GetInt64(0);
+                        return rd.ConvertValueToInt64(0);
                     }
                     else
                     {
