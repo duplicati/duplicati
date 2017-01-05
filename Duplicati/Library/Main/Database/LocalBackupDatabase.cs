@@ -337,7 +337,19 @@ namespace Duplicati.Library.Main.Database
                     m_insertblocksetentryCommand.SetParameterValue(3, exsize);
                     var c = m_insertblocksetentryCommand.ExecuteNonQuery();
                     if (c != 1)
-                        throw new Exception(string.Format("Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size));
+                    {
+                        m_result.AddError(string.Format("Checking errors, related to #1400. Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size), null);
+                        using (var cmd = m_connection.CreateCommand(tr.Parent))
+                        {
+                            var bid = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ?", -1, h);
+                            if (bid == -1)
+                                throw new Exception(string.Format("Could not find any blocks with the given hash: {0}", h));
+                            foreach(var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Size"" FROM ""Block"" WHERE ""Hash"" = ?", h))
+                                m_result.AddError(string.Format("Found block with ID {0} and hash {1} and size {2}", bid, h, rd.ConvertValueToInt64(0, -1)), null);
+                        }
+
+                        throw new Exception(string.Format("Unexpected result count: {0}, expected {1}, check log for more messages", c, 1));
+                    }
                     
                     ix++;
                     remainsize -= blocksize;
