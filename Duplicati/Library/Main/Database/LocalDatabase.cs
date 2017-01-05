@@ -515,7 +515,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.Parameters.Clear();
                     using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                     while (rd.Read())
-                            res.Add(rd.GetInt64(0));
+                        res.Add(rd.ConvertValueToInt64(0));
                     
                     if (res.Count == 0)
                         throw new Exception("No backup at the specified date");

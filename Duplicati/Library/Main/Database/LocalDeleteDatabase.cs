@@ -322,7 +322,7 @@ namespace Duplicati.Library.Main.Database
         }
         
         /// <summary>
-        /// Calculates the sequence in which files should be deleted based on their releations.
+        /// Calculates the sequence in which files should be deleted based on their relations.
         /// </summary>
         /// <returns>The deletable volumes.</returns>
         /// <param name="deleteableVolumes">Block volumes slated for deletion.</param>
