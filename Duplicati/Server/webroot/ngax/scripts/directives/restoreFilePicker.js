@@ -17,6 +17,8 @@ backupApp.directive('restoreFilePicker', function() {
         controller: function($scope, $timeout, SystemInfo, AppService, AppUtils) {
 
             var scope = $scope;
+            var dirsep = '/';            
+
             $scope.systeminfo = SystemInfo.watch($scope);
             $scope.treedata = [];
 
@@ -35,7 +37,6 @@ backupApp.directive('restoreFilePicker', function() {
 
                     AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent(node.id)).then(function(data) {
                         var children = []
-                        var dirsep = scope.systeminfo.DirectorySeparator || '/';
 
                          for(var n in data.data.Files)
                          {
@@ -95,7 +96,6 @@ backupApp.directive('restoreFilePicker', function() {
             };
 
             function findParent(node) {
-                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
                 var e = [];
                 e.push.apply(e, $scope.treedata.children);
                 var p = compareablePath(node.id);
@@ -152,7 +152,6 @@ backupApp.directive('restoreFilePicker', function() {
             };
 
             function buildPartialMap() {
-                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
                 var map = {};
                 for (var i = $scope.ngSelected.length - 1; i >= 0; i--) {
                     var is_dir = $scope.ngSelected[i].substr($scope.ngSelected[i].length - 1, 1) == dirsep;
@@ -180,7 +179,6 @@ backupApp.directive('restoreFilePicker', function() {
             };
 
             $scope.toggleCheck = function(node) {
-                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
 
                 if (node.include != '+') {
                     var p = findParent(node) || node;
@@ -281,7 +279,6 @@ backupApp.directive('restoreFilePicker', function() {
 
             var buildnodes = function(items, parentpath) {
                 var res = [];
-                var dirsep = scope.systeminfo.DirectorySeparator || '/';            
 
                 parentpath = parentpath || '';
 
@@ -312,7 +309,12 @@ backupApp.directive('restoreFilePicker', function() {
 
             var updateRoots = function()
             {
-                var roots = buildnodes($scope.ngSources) ;
+                if ($scope.ngSources == null || $scope.ngSources.length == 0)
+                    dirsep = scope.systeminfo.DirectorySeparator || '/';
+                else
+                    dirsep = $scope.ngSources[0].Path[0] == '/' ? '/' : '\\';
+
+                var roots = buildnodes($scope.ngSources);
 
                 $scope.treedata = $scope.treedata || {};
 

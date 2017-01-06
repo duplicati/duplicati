@@ -721,5 +721,19 @@ namespace Duplicati.Library.Main.Database
                     throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
             }            
         }
+
+        public string GetFirstPath()
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
+                var v0 = cmd.ExecuteScalar();
+                if (v0 == null || v0 == DBNull.Value)
+                    return null;
+
+                return v0.ToString();
+            }
+        }
+
     }
 }

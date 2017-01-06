@@ -776,7 +776,10 @@ namespace Duplicati.Library.Main.Operation
                 if (!string.IsNullOrEmpty(options.Restorepath))
                 {
                     // Find the largest common prefix
-                    string largest_prefix = database.GetLargestPrefix();
+                    var largest_prefix = options.DontCompressRestorePaths ? "" : database.GetLargestPrefix();
+                    if (options.DontCompressRestorePaths)
+                        largest_prefix = "";
+
                     result.AddVerboseMessage("Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
     
                     // Set the target paths, special care with C:\ and /

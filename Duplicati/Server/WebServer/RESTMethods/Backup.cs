@@ -41,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void SearchFiles(IBackup backup, string filterstring, RequestInfo info)
         {
-            var filter = filterstring.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            var filter = filterstring;
             var timestring = info.Request.QueryString["time"].Value;
             var allversion = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["all-versions"].Value, false);
 
@@ -57,7 +57,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (!allversion)
                 time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-            var r = Runner.Run(Runner.CreateListTask(backup, filter, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
+            var r = Runner.Run(Runner.CreateListTask(backup, new string[] { filter }, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
 
             var result = new Dictionary<string, object>();
 
@@ -382,7 +382,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "isdbusedelsewhere":
                             IsDBUsedElseWhere(bk, info);
                             return;
-                    case "isactive":
+                        case "isactive":
                             IsActive(bk, info);
                             return;
                         default:

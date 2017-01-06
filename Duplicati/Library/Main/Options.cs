@@ -369,7 +369,8 @@ namespace Duplicati.Library.Main
                     "allow-passphrase-change",
                     "no-local-db",
                     "no-local-blocks",
-                    "full-block-verification"
+                    "full-block-verification",
+                    "dont-compress-restore-paths"
                 };
             }
         }
@@ -499,7 +500,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false"),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
-                    
+                    new CommandLineArgument("dont-compress-restore-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontcompressrestorepathsShort, Strings.Options.DontcompressrestorepathsLong, "false"),
+
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
@@ -1704,6 +1706,15 @@ namespace Duplicati.Library.Main
         public bool NoLocalDb
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-db"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the local database should not be used
+        /// </summary>
+        /// <value><c>true</c> if no local db is used; otherwise, <c>false</c>.</value>
+        public bool DontCompressRestorePaths
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "dont-compress-restore-paths"); }
         }
 
         /// <summary>

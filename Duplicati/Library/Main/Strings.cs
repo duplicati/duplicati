@@ -218,6 +218,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disables synethic filelist"); } }
         public static string CheckfiletimeonlyLong { get { return LC.L(@"This flag instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
         public static string CheckfiletimeonlyShort { get { return LC.L(@"Checks only file lastmodified"); } }
+        public static string DontcompressrestorepathsShort { get { return LC.L(@"Disables path compresion on restore"); } }
+        public static string DontcompressrestorepathsLong { get { return LC.L(@"When restore a subset of a backup into a new folder, the shortest possible path is used to avoid generating deep paths with empty folders. Use this flag to skip this compression, such that the entire original folder structure is preserved, including upper level empty folders."); } }
     }
 
     internal static class Common
