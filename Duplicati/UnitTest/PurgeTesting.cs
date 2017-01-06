@@ -57,17 +57,22 @@ namespace Duplicati.UnitTest
                 var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round1.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(res.AddedFiles, round1.Length);
             }
+
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(3));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(res.AddedFiles, round2.Length - round1.Length);
             }
+
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(3));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(res.AddedFiles, filenames.Count - round2.Length);
             }
 
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(3));
             var last_ts = DateTime.Now;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { list_sets_only = true }), null))
