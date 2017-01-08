@@ -1,3 +1,13 @@
+2017-01-08 - 2.0.1.39_canary_2017-01-08
+==========
+* Fixed some typos, thanks @sfahrenholz
+* Added webp to compressed file extension list, thanks @dessant
+* Changed aftp backend to use CWD, thanks @seaeagle1
+* Added "purge" command to purge files from the database
+* Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
+* Added additional trace log messages to debug some consistency issues
+* Fixed support for operations across different operating systems
+
 2016-12-27 - 2.0.1.38_canary_2016-12-27
 ==========
 * Fixed a problem with login no longer working
