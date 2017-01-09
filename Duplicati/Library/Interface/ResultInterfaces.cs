@@ -309,5 +309,11 @@ namespace Duplicati.Library.Interface
         IPurgeFilesResults PurgeResults { get; }
         IDeleteResults DeleteResults { get; }
     }
+
+    public interface ISendMailResults : IBasicResults
+    {
+        IEnumerable<string> Lines { get; }
+    }
+
 }
 

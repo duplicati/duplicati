@@ -448,6 +448,34 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.ISendMailResults SendMail()
+        {
+            m_options.RawOptions["send-mail-level"] = "all";
+            m_options.RawOptions["send-mail-any-operation"] = "true";
+            string targetmail;
+            m_options.RawOptions.TryGetValue("send-mail-to", out targetmail);
+            if (string.IsNullOrWhiteSpace(targetmail))
+                throw new Exception(string.Format("No email specified, please use --{0}", "send-mail-to"));
+
+            if (m_options.Loglevel == Logging.LogMessageType.Error)
+                m_options.RawOptions["log-level"] = Logging.LogMessageType.Warning.ToString();
+
+            m_options.RawOptions["disable-module"] = string.Join(
+                ",",
+                DynamicLoader.GenericLoader.Modules
+                         .Where(m =>
+                              !(m is Library.Interface.IConnectionModule) && m.GetType().FullName != "Duplicati.Library.Modules.Builtin.SendMail"
+                         )
+                .Select(x => x.Key)
+            );
+                         
+            return RunAction(new SendMailResults(), result =>
+            {
+                result.Lines = new string[0];
+                System.Threading.Thread.Sleep(5);
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl
         {

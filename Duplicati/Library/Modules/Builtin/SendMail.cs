@@ -301,7 +301,7 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 string body = m_body;
                 string subject = m_subject;
-                if (body != DEFAULT_BODY && System.IO.File.Exists(body))
+                if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
                     body = System.IO.File.ReadAllText(body);
 
                 body = ReplaceTemplate(body, result, false);
@@ -313,13 +313,13 @@ namespace Duplicati.Library.Modules.Builtin
                     if(MailboxAddress.TryParse(s.Replace("\"", ""), out mailbox))
                         message.To.Add(mailbox);
 
-                MailboxAddress mailboxToFirst = (MailboxAddress) message.To[0];
-                string toMailDomain = mailboxToFirst.Address.Substring(mailboxToFirst.Address.LastIndexOf("@") + 1);
+                var mailboxToFirst = (MailboxAddress) message.To.First();
+                string toMailDomain = mailboxToFirst.Address.Substring(mailboxToFirst.Address.LastIndexOf("@", StringComparison.Ordinal) + 1);
                                 
                 string from = m_from.Trim().Replace("\"", "");
                 if (from.IndexOf('@') < 0)
                 {
-                    if (from.EndsWith(">"))
+                    if (from.EndsWith(">", StringComparison.Ordinal))
                         from = from.Insert(from.Length - 1, "@" + toMailDomain);
                     else
                         from = string.Format("No Reply - Backup report <{0}@{1}>", from, toMailDomain);
@@ -360,23 +360,25 @@ namespace Duplicati.Library.Modules.Builtin
                         dnslist.Add("208.67.222.222");
                         dnslist.Add("208.67.220.220");
                     }
-                    
-                    var oldStyleList = new ArrayList();
-                    foreach(var s in dnslist)
-                        oldStyleList.Add(s);
-                        
-                    dnslite.setDnsServers(oldStyleList);
-                    
-                    servers = dnslite.getMXRecords(toMailDomain).OfType<MXRecord>().OrderBy(record => record.preference).Select(x => "smtp://" + x.exchange).Distinct().ToList();
+
+                    var records = new List<MXRecord>();
+                    foreach (var s in dnslist)
+                    {
+                        var res = dnslite.getMXRecords(toMailDomain, s);
+                        if (res != null)
+                            records.AddRange(res.OfType<MXRecord>());
+                    }
+
+                    servers = records.OrderBy(record => record.preference).Select(x => "smtp://" + x.exchange).Distinct().ToList();
                     if (servers.Count == 0)
                         throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
                 }
                 else 
                 {
                     servers = (from n in m_server.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
-                              let srv = (n == null || n.IndexOf("://", StringComparison.InvariantCultureIgnoreCase) > 0) ? n : "smtp://" + n
-                              where !string.IsNullOrEmpty(srv)
-                              select srv).Distinct().ToList();
+                               let srv = (n == null || n.IndexOf("://", StringComparison.InvariantCultureIgnoreCase) > 0) ? n : "smtp://" + n
+                               where !string.IsNullOrEmpty(srv)
+                               select srv).Distinct().ToList();
                 }
                 
                 Exception lastEx = null;
@@ -398,7 +400,12 @@ namespace Duplicati.Library.Modules.Builtin
                                 {
                                     client.Timeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
-                                    client.Connect(new System.Uri(server));
+                                    // Backward compatibility fix for setup prior to using MailKit
+                                    var uri = new System.Uri(server);
+                                    if (uri.Scheme.ToLowerInvariant() == "tls")
+                                        uri = new System.Uri("smtp://" + uri.Host + ":" + (uri.Port <= 0 ? 587 : uri.Port) + "/?starttls=always");
+
+                                    client.Connect(uri);
 
                                     if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
                                         client.Authenticate(m_username, m_password);
@@ -410,7 +417,8 @@ namespace Duplicati.Library.Modules.Builtin
                             finally
                             {
                                 var log = Encoding.UTF8.GetString(ms.GetBuffer());
-                                Logging.Log.WriteMessage(Strings.SendMail.SendMailLog(log), LogMessageType.Profiling);
+                                if (!string.IsNullOrWhiteSpace(log))
+                                    Logging.Log.WriteMessage(Strings.SendMail.SendMailLog(log), LogMessageType.Profiling);
                             }
                         }
                         

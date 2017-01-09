@@ -932,5 +932,11 @@ namespace Duplicati.Library.Main
         public IPurgeFilesResults PurgeResults { get; set; }
         public IDeleteResults DeleteResults { get; set; }
     }
+
+    internal class SendMailResults : BasicResults, ISendMailResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.SendMail; } }
+        public IEnumerable<string> Lines { get; set; }
+    }
 }
 

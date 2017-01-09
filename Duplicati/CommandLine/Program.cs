@@ -163,6 +163,8 @@ namespace Duplicati.CommandLine
                 knownCommands["system-info"] = Commands.SystemInfo;
                 knownCommands["systeminfo"] = Commands.SystemInfo;
 
+                knownCommands["send-mail"] = Commands.SendMail;
+
                 if (!isHelp && verbose)
                 {
                     Console.WriteLine("Input command: {0}", command);
