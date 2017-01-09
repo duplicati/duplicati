@@ -76,7 +76,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     curparent = CreateFolder(p, curparent).id;
                 }
                 else if (res.Length > 1)
-                    throw new Exception(Strings.GoogleDrive.MultipleEntries(p, curdisplay));
+                    throw new UserInformationException(Strings.GoogleDrive.MultipleEntries(p, curdisplay));
                 else
                     curparent = res[0].id;
 
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 var files = GetFileEntries(oldname, true);
                 if (files.Length > 1)
-                    throw new Exception(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)));
+                    throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)));
 
                 var newfile = JsonConvert.DeserializeObject<GoogleDriveFolderItem>(JsonConvert.SerializeObject(files[0]));
                 newfile.title = newname;

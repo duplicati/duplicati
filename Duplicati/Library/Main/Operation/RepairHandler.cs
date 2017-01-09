@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -20,7 +21,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
         }
         
         public void Run(Library.Utility.IFilter filter = null)
@@ -93,7 +94,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunRepairRemote()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
@@ -105,10 +106,10 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(db, m_options);
 
                 if (db.PartiallyRecreated)
-                    throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
                 if (db.RepairInProgress)
-                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
@@ -116,9 +117,9 @@ namespace Duplicati.Library.Main.Operation
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
                 
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
@@ -128,13 +129,13 @@ namespace Duplicati.Library.Main.Operation
                     if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
                     {
                         if (tp.BackupPrefixes.Length == 1)
-                            throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
                         else
-                            throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
                     }
                     else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
                     {
-                        throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
+                        throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
                     }
                 }
 
@@ -408,7 +409,7 @@ namespace Duplicati.Library.Main.Operation
                                         {
                                             m_result.AddMessage("This may be fixed by deleting the filesets and running repair again");
 
-                                            throw new Exception(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks));
+                                            throw new UserInformationException(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks));
                                         }
                                         else
                                         {
@@ -456,7 +457,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunRepairCommon()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 

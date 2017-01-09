@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -35,10 +36,10 @@ namespace Duplicati.Library.Main.Operation
         public void Run(Library.Utility.IFilter filter)
         {
             if (filter == null || filter.Empty)
-                throw new Exception("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.");
+                throw new UserInformationException("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.");
 
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
             
             using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
                 DoRun(db, filter, null, 0, 1);
@@ -59,18 +60,18 @@ namespace Duplicati.Library.Main.Operation
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 if (db.PartiallyRecreated)
-                    throw new Exception("The purge command does not work on partially recreated databases");
+                    throw new UserInformationException("The purge command does not work on partially recreated databases");
 
                 if (db.RepairInProgress && filtercommand == null)
-                    throw new Exception(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"));
+                    throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"));
 
                 var versions = db.GetFilesetIDs(m_options.Time, m_options.Version).ToArray();
                 if (versions.Length <= 0)
-                    throw new Exception("No filesets matched the supplied time or versions");
+                    throw new UserInformationException("No filesets matched the supplied time or versions");
 
                 var orphans = db.CountOrphanFiles(null);
                 if (orphans != 0)
-                    throw new Exception(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans));
+                    throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans));
 
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);

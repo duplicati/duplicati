@@ -74,7 +74,7 @@ namespace Duplicati.Library.Snapshots
         internal USNHelper(string path, string volumeRoot)
         {
             if (Utility.Utility.IsClientLinux)
-                throw new Exception(Strings.USNHelper.LinuxNotSupportedError);
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError);
 
             if (!System.IO.Path.IsPathRooted(path))
                 throw new Exception(string.Format("Path {0} is not rooted", path));

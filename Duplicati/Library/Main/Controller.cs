@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
                 if (inputsources == null || inputsources.Length == 0)
-                    throw new Exception(Strings.Controller.NoSourceFoldersError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
 
                 var sources = new List<string>(inputsources);
 
@@ -190,7 +190,7 @@ namespace Duplicati.Library.Main
                     }
                     catch (Exception ex)
                     {
-                        throw new ArgumentException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
                     }
 
                     var fi = new System.IO.FileInfo(sources[i]);

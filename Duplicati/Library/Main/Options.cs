@@ -931,7 +931,7 @@ namespace Duplicati.Library.Main
                 {
                     int x = int.Parse(m_options["number-of-retries"]);
                     if (x < 0)
-                        throw new Exception("Invalid count for number-of-retries");
+                        throw new UserInformationException("Invalid count for number-of-retries");
 
                     return x;
                 }

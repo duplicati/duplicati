@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -38,7 +39,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
             {

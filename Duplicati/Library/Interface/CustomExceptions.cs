@@ -25,7 +25,10 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
-    /// A special exception that gives the user information on how to proceed
+    /// A special exception that gives the user information on how to proceed.
+    /// Use this execption if the message is directed at the end user, and supplies
+    /// some guidance or explanation for the error. Exceptions of this type will
+    /// suppress the stack trace by default, on commandline output
     /// </summary>
     [Serializable]
     public class UserInformationException : Exception

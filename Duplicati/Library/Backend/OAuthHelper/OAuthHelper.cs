@@ -61,7 +61,7 @@ namespace Duplicati.Library
             OAuthLoginUrl = OAUTH_LOGIN_URL(servicename);
 
             if (string.IsNullOrEmpty(authid))
-                throw new Exception(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl));
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl));
         }
 
         public T GetTokenResponse<T>()
@@ -119,9 +119,9 @@ namespace Duplicati.Library
                                     if (resp.StatusCode == HttpStatusCode.ServiceUnavailable)
                                     {
                                         if (msg == resp.StatusDescription)
-                                            throw new Exception(Strings.OAuthHelper.OverQuotaError);
+                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError);
                                         else
-                                            throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
                                     }
 
                                     //Fail faster on client errors
@@ -130,7 +130,7 @@ namespace Duplicati.Library
                             }
 
                             if (retries >= (clienterror ? 1 : 5))
-                                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
 
                             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
                             retries++;
@@ -144,15 +144,15 @@ namespace Duplicati.Library
 
         public void ThrowOverQuotaError()
         {
-            throw new Exception(Strings.OAuthHelper.OverQuotaError);
+            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError);
         }
 
         public void ThrowAuthException(string msg, Exception ex)
         {
             if (ex == null)
-                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl));
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl));
             else
-                throw new Exception(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
         }
 
 

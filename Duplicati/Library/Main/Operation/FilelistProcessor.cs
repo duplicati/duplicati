@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
             var lookup = new Dictionary<string, string>();
@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles.Keys));
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
             if (missingCount > 0)
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Main.Operation
                     s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
                 
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }            
         }
 

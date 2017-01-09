@@ -153,7 +153,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Exception(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Add(foundGuest.First());
                 }
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Exception(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Add(foundGuest.First());
                     Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", guestID), Logging.LogMessageType.Information);
@@ -178,7 +178,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = guestsForBackup.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Exception(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Remove(foundGuest.First());
                     Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", guestID), Logging.LogMessageType.Information);

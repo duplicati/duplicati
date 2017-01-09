@@ -112,7 +112,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 if (m_path == null)
-                    throw new Exception(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()));
+                    throw new UserInformationException(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()));
             }
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);

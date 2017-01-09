@@ -92,12 +92,12 @@ namespace Duplicati.CommandLine.BackendTool
                 using(var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
                 {
                     if (backend == null)
-                        throw new Exception("Backend not supported");
+                        throw new UserInformationException("Backend not supported");
                         
                     if (command == "list")
                     {
                         if (args.Count != 2)
-                            throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
                         Console.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}", "Name", "Dir/File", "LastChange", "Size"));
                     
                         foreach(var e in backend.List())
@@ -108,7 +108,7 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "create")
                     {
                         if (args.Count != 2)
-                            throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
 
                         backend.CreateFolder();
                         
@@ -117,7 +117,7 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "delete")
                     {
                         if (args.Count < 3)
-                            throw new Exception("DELETE requires a filename argument");
+                            throw new UserInformationException("DELETE requires a filename argument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
                         backend.Delete(args[2]);
@@ -127,11 +127,11 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "get")
                     {
                         if (args.Count < 3)
-                            throw new Exception("GET requires a filename argument");
+                            throw new UserInformationException("GET requires a filename argument");
                         if (args.Count > 3)
-                            throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
                         if (System.IO.File.Exists(args[2]))
-                            throw new Exception("File already exists, not overwriting!");
+                            throw new UserInformationException("File already exists, not overwriting!");
                         backend.Get(args[2], args[2]);
                         
                         return 0;
@@ -139,9 +139,9 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "put")
                     {
                         if (args.Count < 3)
-                            throw new Exception("PUT requires a filename argument");
+                            throw new UserInformationException("PUT requires a filename argument");
                         if (args.Count > 3)
-                            throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
                            
                         backend.Put(args[2], args[2]);
                         
@@ -155,7 +155,7 @@ namespace Duplicati.CommandLine.BackendTool
             catch (Exception ex)
             {
                 Console.WriteLine("Command failed: " + ex.Message);
-                if (debugoutput)
+                if (debugoutput || !(ex is UserInformationException))
                     Console.WriteLine(ex.ToString());
                 return 100;
             }

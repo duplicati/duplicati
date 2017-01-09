@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -79,7 +80,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var dbtimes = db.FilesetTimes.ToList();
                     if (dbtimes.Count < 2)
-                        throw new Exception(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count));
+                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count));
                     
                     long baseVersionId;
                     long compareVersionId;
@@ -104,7 +105,7 @@ namespace Duplicati.Library.Main.Operation
                                 
                     var numberedList = parsedlist.Zip(Enumerable.Range(0, parsedlist.Length), (a, b) => new Tuple<long, DateTime, Volumes.IParsedVolume>(b, a.Time, a)).ToList();
                     if (numberedList.Count < 2)
-                        throw new Exception(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count));
+                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count));
 
                     Volumes.IParsedVolume baseFile;
                     Volumes.IParsedVolume compareFile;

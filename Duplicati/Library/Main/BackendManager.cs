@@ -426,14 +426,14 @@ namespace Duplicati.Library.Main
                 try { shortname = new Library.Utility.Uri(shortname).Scheme; }
                 catch { }
 
-                throw new Exception(string.Format("Backend not supported: {0}", shortname));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Backend not supported: {0}", shortname));
             }
 
             if (!m_options.NoEncryption)
             {
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
                 if (m_encryption == null)
-                    throw new Exception(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule));
+                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule));
             }
 
             if (m_taskControl != null)

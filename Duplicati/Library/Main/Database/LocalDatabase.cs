@@ -518,7 +518,7 @@ namespace Duplicati.Library.Main.Database
                         res.Add(rd.ConvertValueToInt64(0));
                     
                     if (res.Count == 0)
-                        throw new Exception("No backup at the specified date");
+                        throw new Duplicati.Library.Interface.UserInformationException("No backup at the specified date");
                     else
                         m_result.AddWarning(string.Format("Restore time or version did not match any existing backups, selecting newest backup"), null);
                 }

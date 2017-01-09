@@ -288,7 +288,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Exception("Repair failed, there are still duplicate metadatahashes!");
+                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!");
 
                     m_result.AddMessage("Duplicate metadatahashes repaired succesfully");
                     tr.Commit();
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Exception("Repair failed, there are still duplicate file entries!");
+                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate file entries!");
 
                     m_result.AddMessage("Duplicate file entries repaired succesfully");
                     tr.Commit();
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.Database
 
                     itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                     if (itemswithnoblocklisthash != 0)
-                        throw new Exception(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
 
                     m_result.AddMessage("Missing blocklisthashes repaired succesfully");
                     tr.Commit();
@@ -474,7 +474,7 @@ namespace Duplicati.Library.Main.Database
                     var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
 
                     if (real_count != unique_count)
-                        throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
 
                     try
                     {
@@ -482,7 +482,7 @@ namespace Duplicati.Library.Main.Database
                     }
                     catch(Exception ex)
                     {
-                        throw new Exception("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
+                        throw new Duplicati.Library.Interface.UserInformationException("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
                     }
 
                     m_result.AddMessage("Duplicate blocklisthashes repaired succesfully");
