@@ -115,8 +115,9 @@ namespace Duplicati.CommandLine
         }
         public void DryrunEvent(string message)
         {
-            lock(m_lock)
-                Console.WriteLine(string.Format("[Dryrun]: {0}", message));
+            if (!QuietConsole)
+                lock(m_lock)
+                    Console.WriteLine(string.Format("[Dryrun]: {0}", message));
         }
         #endregion
     }
