@@ -274,7 +274,7 @@ msgstr "Classe de stockage du bucket"
 msgid "Building list of files to restore ..."
 msgstr "Construction d'une liste de fichiers à restaurer"
 
-#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:358
 msgid "Building partial temporary database ..."
 msgstr "Construction d'une base de données temporaire partielle"
 
@@ -302,7 +302,7 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:647
 #: scripts/services/EditUriBuiltins.js:664 templates/delete.html:54
 #: templates/export.html:26 templates/import.html:18
-#: templates/settings.html:125 templates/waitarea.html:19
+#: templates/settings.html:126 templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -346,7 +346,7 @@ msgstr "Cliquez sur le lien AuthID pour créer un AuthID"
 msgid "Compact now"
 msgstr "Compacter maintenant"
 
-#: scripts/services/ServerStatus.js:41
+#: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
 msgstr "Compactage des données distantes ..."
 
@@ -473,7 +473,7 @@ msgstr "Création d'un nouvel utilisateur avec un accès limité ..."
 msgid "Creating target folders ..."
 msgstr "Création des répertoires de destination ..."
 
-#: scripts/controllers/RestoreController.js:329
+#: scripts/controllers/RestoreController.js:353
 msgid "Creating temporary backup ..."
 msgstr "Création d'une sauvegarde temporaire ..."
 
@@ -683,12 +683,12 @@ msgid "Edit ..."
 msgstr "Éditer ..."
 
 #: templates/addoredit.html:184 templates/addoredit.html:350
-#: templates/edituri.html:39 templates/settings.html:114
+#: templates/edituri.html:39 templates/settings.html:115
 msgid "Edit as list"
 msgstr "Éditer en tant que liste"
 
 #: templates/addoredit.html:187 templates/addoredit.html:353
-#: templates/edituri.html:42 templates/settings.html:120
+#: templates/edituri.html:42 templates/settings.html:121
 msgid "Edit as text"
 msgstr "Éditer en tant que texte"
 
@@ -752,14 +752,14 @@ msgid "Enter the destination path"
 msgstr "Entrez le chemin de destination"
 
 #: scripts/controllers/ExportController.js:28
-#: scripts/controllers/RestoreController.js:111
-#: scripts/controllers/RestoreController.js:141
-#: scripts/controllers/RestoreController.js:286
-#: scripts/controllers/RestoreController.js:304
-#: scripts/controllers/RestoreController.js:351
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:392
-#: scripts/controllers/RestoreController.js:85
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:328
+#: scripts/controllers/RestoreController.js:375
+#: scripts/controllers/RestoreController.js:407
+#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/RestoreController.js:88
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 #: scripts/directives/backupEditUri.js:143
@@ -771,7 +771,7 @@ msgstr "Entrez le chemin de destination"
 msgid "Error"
 msgstr "Erreur"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:66
 msgid "Error!"
 msgstr "Erreur !"
 
@@ -843,7 +843,7 @@ msgstr "Exportation ..."
 msgid "FTP (Alternative)"
 msgstr "FTP (Alternatif)"
 
-#: scripts/controllers/RestoreController.js:351
+#: scripts/controllers/RestoreController.js:375
 msgid "Failed to build temporary database: {{message}}"
 msgstr ""
 "Échec de la construction de la base de données temporaire : {{message}}"
@@ -856,10 +856,10 @@ msgstr "Échec de la connexion :"
 
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/LogController.js:74
-#: scripts/controllers/RestoreController.js:286
-#: scripts/controllers/RestoreController.js:304
-#: scripts/controllers/RestoreController.js:392
-#: scripts/controllers/RestoreController.js:85
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:328
+#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/RestoreController.js:88
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 msgid "Failed to connect: {{message}}"
@@ -869,8 +869,8 @@ msgstr "Échec de la connexion : {{message}}"
 msgid "Failed to delete:"
 msgstr "Échec de la suppression :"
 
-#: scripts/controllers/RestoreController.js:111
-#: scripts/controllers/RestoreController.js:141
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
 msgstr "Échec de la récupération des information du chemin : {{message}}"
 
@@ -882,7 +882,7 @@ msgstr "Échec de l'import :"
 msgid "Failed to read backup defaults:"
 msgstr "Échec de la lecture des paramètres par défaut de la sauvegarde :"
 
-#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:407
 msgid "Failed to restore files: {{message}}"
 msgstr "Échec de la restauration des fichiers : {{message}}"
 
@@ -890,8 +890,8 @@ msgstr "Échec de la restauration des fichiers : {{message}}"
 msgid "Failed to save:"
 msgstr "Échec d'enregistrement :"
 
-#: scripts/controllers/RestoreController.js:117
-#: scripts/controllers/RestoreController.js:156
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information ..."
 msgstr "Récupération des informations du chemin ..."
 
@@ -908,6 +908,7 @@ msgid "Filters"
 msgstr "Filtres"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:65
 msgid "Finished!"
 msgstr "Terminé !"
 
@@ -965,6 +966,10 @@ msgstr "Générer"
 #: templates/backends/s3.html:63
 msgid "Generate IAM access policy"
 msgstr "Générer IAM access policy"
+
+#: scripts/controllers/RestoreController.js:66
+msgid "Getting file versions ..."
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:17
 msgid "Hidden files"
@@ -1153,7 +1158,7 @@ msgstr "Conserver les sauvegardes"
 msgid "Language in user interface"
 msgstr "Langue dans l'interface utilisateur"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:37
 msgid "Last month"
 msgstr "Mois dernier"
 
@@ -1161,7 +1166,7 @@ msgstr "Mois dernier"
 msgid "Last successful run:"
 msgstr "Dernière exécution réussie :"
 
-#: scripts/controllers/RestoreController.js:55
+#: scripts/controllers/RestoreController.js:56
 msgid "Latest"
 msgstr "Dernière"
 
@@ -1173,7 +1178,7 @@ msgstr "Librairies"
 msgid "Listing backup dates ..."
 msgstr "Listing des dates de sauvegardes ..."
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
 msgid "Listing remote files ..."
 msgstr "Listing des fichiers distants ..."
 
@@ -1387,11 +1392,11 @@ msgstr "Aucun éditeur trouvé pour le &quot;{{backend}}&quot; type de stockage"
 msgid "No encryption"
 msgstr "Pas de cryptage"
 
-#: scripts/controllers/RestoreController.js:186
+#: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
 msgstr "Aucun élément sélectionné"
 
-#: scripts/controllers/RestoreController.js:186
+#: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
 msgstr ""
 "Aucun élément à restaurer, merci de sélectionner un ou plusieurs éléments"
@@ -1419,7 +1424,7 @@ msgstr "Aucun / Désactivé"
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:119 templates/restore.html:108
-#: templates/settings.html:126
+#: templates/settings.html:127
 msgid "OK"
 msgstr "Ok"
 
@@ -1449,8 +1454,8 @@ msgid "Optional authentication username"
 msgstr "Nom d'utilisateur d'identification optionel"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/restoredirect.html:16 templates/settings.html:113
-#: templates/settings.html:119
+#: templates/restoredirect.html:16 templates/settings.html:114
+#: templates/settings.html:120
 msgid "Options"
 msgstr "Options"
 
@@ -1544,6 +1549,10 @@ msgstr "Le ProjectID est optionel si le bucket existe"
 msgid "Proprietary"
 msgstr "Propriétaire"
 
+#: scripts/services/ServerStatus.js:63
+msgid "Purging files ..."
+msgstr ""
+
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
 msgstr "Reconstruction de la base de données locale"
@@ -1628,8 +1637,8 @@ msgstr "Options de restauration"
 msgid "Restore read/write permissions"
 msgstr "Autorisations de lecture/écriture de restauration"
 
-#: scripts/controllers/RestoreController.js:344
-#: scripts/controllers/RestoreController.js:365
+#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:389
 msgid "Restoring files ..."
 msgstr "Restauration des fichiers ..."
 
@@ -1808,8 +1817,8 @@ msgstr "Protocoles standards"
 msgid "Starting ..."
 msgstr "Démarrage ..."
 
-#: scripts/controllers/RestoreController.js:340
-#: scripts/controllers/RestoreController.js:363
+#: scripts/controllers/RestoreController.js:364
+#: scripts/controllers/RestoreController.js:387
 msgid "Starting the restore process ..."
 msgstr "Démarrage du processus de restauration ..."
 
@@ -2013,11 +2022,19 @@ msgstr ""
 "utilisateur limité avec uniquement les autorisations pour les chemins "
 "sélectionnés ?"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:305
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:36
 msgid "This month"
 msgstr "Ce mois"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:35
 msgid "This week"
 msgstr "Cette semaine"
 
@@ -2041,7 +2058,7 @@ msgstr ""
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "Pour exporter sans phrase secrète, décochez la case \"Crypter fichier\""
 
-#: scripts/controllers/RestoreController.js:32
+#: scripts/controllers/RestoreController.js:33
 msgid "Today"
 msgstr "Aujourd'hui"
 
@@ -2278,7 +2295,7 @@ msgstr "Oui, je suis courageux !"
 msgid "Yes, please break my backup!"
 msgstr "Oui, s'il vous plait cassez ma sauvegarde"
 
-#: scripts/controllers/RestoreController.js:33
+#: scripts/controllers/RestoreController.js:34
 msgid "Yesterday"
 msgstr "Hier"
 
@@ -2325,6 +2342,10 @@ msgid ""
 msgstr ""
 "Vous avez choisi de ne pas crypter votre sauvegarde. Le cryptage est "
 "recommandé pour toutes les données stockées sur un serveur distant."
+
+#: scripts/controllers/RestoreController.js:299
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:296
 msgid ""

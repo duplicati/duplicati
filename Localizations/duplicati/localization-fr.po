@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-12-20 21:08+0100\n"
+"POT-Creation-Date: 2017-01-09 18:36+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Arnaud COURCOUX <courcoa@hotmail.fr>, 2016\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: CommandLine/Program.cs:268
+#: CommandLine/Program.cs:271
 msgid "Toggle automatic updates"
 msgstr "Activer les mises à jour automatiques"
 
-#: CommandLine/Program.cs:268
+#: CommandLine/Program.cs:271
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -1497,7 +1497,7 @@ msgstr ""
 #, csharp-format
 msgid ""
 "This option can be used to set an alternative compressor method, such as "
-"LZMA. Note that using another value than Deflate will cause the {0} option "
+"LZMA. Note that using another value then Deflate will cause the {0} option "
 "to be ignored."
 msgstr ""
 
@@ -1508,7 +1508,7 @@ msgstr "Configurer la méthode de compression Zip"
 #: Library/Compression/Strings.cs:9
 msgid ""
 "This module provides the industry standard Zip compression. Files created "
-"with this module can be read by any standard compliant zip application."
+"with this module can be read by any standard-compliant zip application."
 msgstr ""
 
 #: Library/Compression/Strings.cs:10
@@ -2584,14 +2584,14 @@ msgstr ""
 
 #: Library/Main/Strings.cs:133
 msgid ""
-"The blocksize determines how files are fragmented. Choosing a large value "
+"The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
 "cause a large overhead on storage of file lists. Note that the value cannot "
 "be changed after remote files are created."
 msgstr ""
 
 #: Library/Main/Strings.cs:134
-msgid "Blocksize used in hashing"
+msgid "Block size used in hashing"
 msgstr ""
 
 #: Library/Main/Strings.cs:135
@@ -3010,23 +3010,58 @@ msgid ""
 "Powershell command to get ID 'Get-VM | ft VMName, ID')"
 msgstr ""
 
+#: Library/Main/Strings.cs:217
+msgid ""
+"If Duplicati detects that the previous backup did not complete, it will "
+"generate a filelist that is a merge of the last completed backup and the "
+"contents that were uploaded in the incomplete backup session."
+msgstr ""
+
+#: Library/Main/Strings.cs:218
+msgid "Disables synethic filelist"
+msgstr ""
+
+#: Library/Main/Strings.cs:219
+msgid ""
+"This flag instructs Duplicati to not look at metadata or filesize when "
+"deciding to scan a file for changes. Use this option if you have a large "
+"number of files and notice that the scanning takes a long time with "
+"unmodified files."
+msgstr ""
+
+#: Library/Main/Strings.cs:220
+msgid "Checks only file lastmodified"
+msgstr ""
+
 #: Library/Main/Strings.cs:221
+msgid "Disables path compresion on restore"
+msgstr ""
+
+#: Library/Main/Strings.cs:222
+msgid ""
+"When restore a subset of a backup into a new folder, the shortest possible "
+"path is used to avoid generating deep paths with empty folders. Use this "
+"flag to skip this compression, such that the entire original folder "
+"structure is preserved, including upper level empty folders."
+msgstr ""
+
+#: Library/Main/Strings.cs:227
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:228
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:229
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:230
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
@@ -3285,7 +3320,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:76
 msgid ""
-"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email adresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.\n"
+"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients: \n"
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
