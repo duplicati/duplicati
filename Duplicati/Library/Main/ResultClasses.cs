@@ -19,6 +19,7 @@ using System;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Main
 {
@@ -180,7 +181,7 @@ namespace Duplicati.Library.Main
         Abort
     }
     
-    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl
+    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl, Logging.ILog
     {
         protected class DbMessage
         {
@@ -351,7 +352,7 @@ namespace Duplicati.Library.Main
                 if (type == BackendEventType.Started)
                     this.BackendProgressUpdater.StartAction(action, path, size);
 
-                Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information);
+                Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information, null);
 
                 if (MessageSink != null)
                     MessageSink.BackendEvent(action, type, path, size);
@@ -365,12 +366,12 @@ namespace Duplicati.Library.Main
                 m_parent.AddDryrunMessage(message);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
+                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
                 if (MessageSink != null)
                     MessageSink.DryrunEvent(message);
             }
         }
-               
+
         public void AddVerboseMessage(string message, params object[] args)
         {
             if (m_parent != null)
@@ -378,13 +379,13 @@ namespace Duplicati.Library.Main
             else
             {
                 if (Logging.Log.LogLevel == Duplicati.Library.Logging.LogMessageType.Profiling || VerboseOutput)
-                    Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Information);
+                    Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Information, null);
                     
                 if (MessageSink != null)
                     MessageSink.VerboseEvent(message, args);
             }
         }
-        
+
         public void AddMessage(string message)
         { 
             if (m_parent != null)
@@ -393,7 +394,8 @@ namespace Duplicati.Library.Main
             {
                 lock(m_lock)
                 {
-                    Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
+                    Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
+                    
                     m_messages.Add(message);
             
                     if (MessageSink != null)
@@ -404,7 +406,7 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-        
+
         public void AddWarning(string message, Exception ex)
         {
             if (m_parent != null)
@@ -442,7 +444,7 @@ namespace Duplicati.Library.Main
                     LogDbMessage("Retry", message, ex);
             }
         }
-        
+
         public void AddError(string message, Exception ex)
         {
             if (m_parent != null)
@@ -601,6 +603,25 @@ namespace Duplicati.Library.Main
                     !(prop.Name == "BeginTime" && item is BackendWriter),
                 recurseobjects: true
             ).ToString();
+        }
+
+        public void WriteMessage(string message, LogMessageType type, Exception exception)
+        {
+            switch (type)
+            {
+                case LogMessageType.Error:
+                    AddError(message, exception);
+                    break;
+                case LogMessageType.Warning:
+                    AddWarning(message, exception);
+                    break;
+                default:
+                    if (Log.LogLevel == LogMessageType.Profiling)
+                        AddMessage(message);
+                    else
+                        AddVerboseMessage(message, new object[0]);
+                    break;
+            }
         }
     }
     

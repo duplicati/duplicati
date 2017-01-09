@@ -360,25 +360,7 @@ namespace Duplicati.Server
                 
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
-                        options[k.Key] = k.Value;
-                
-                // Log file is using the internal log-handler 
-                // so we can display output in the GUI as well as log 
-                // into the given file
-                if (options.ContainsKey("log-file"))
-                {
-                    var file = options["log-file"];
-
-                    string o;
-                    Library.Logging.LogMessageType level;
-                    options.TryGetValue("log-level", out o);
-                    Enum.TryParse<Library.Logging.LogMessageType>(o, true, out level);
-
-                    options.Remove("log-file");
-                    options.Remove("log-level");
-
-                    Program.LogHandler.SetOperationFile(file, level);
-                }
+                        options[k.Key] = k.Value;                
 
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
@@ -554,7 +536,6 @@ namespace Duplicati.Server
             finally
             {
                 ((RunnerData)data).Controller = null;
-                Program.LogHandler.RemoveOperationFile();
             }
         }
         

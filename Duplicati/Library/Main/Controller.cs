@@ -43,9 +43,14 @@ namespace Duplicati.Library.Main
         private IMessageSink m_messageSink;
 
         /// <summary>
-        /// A flag indicating if logging has been set, used to dispose the logging
+        /// The stream log, if any
         /// </summary>
-        private bool m_hasSetLogging = false;
+        private Logging.StreamLog m_logfile = null;
+
+        /// <summary>
+        /// The logging filescope
+        /// </summary>
+        private IDisposable m_logfilescope = null;
 
         /// <summary>
         /// The current executing task
@@ -477,7 +482,7 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
@@ -485,59 +490,61 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
         private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
-            try
+            using (Logging.Log.StartScope(result))
             {
-                m_currentTask = result;
-                m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                try
                 {
+                    m_currentTask = result;
+                    m_currentTaskThread = System.Threading.Thread.CurrentThread;
                     SetupCommonOptions(result, ref paths, ref filter);
 
-                    method(result);
+                    using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                        method(result);
 
                     if (result.EndTime.Ticks == 0)
                         result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
 
-                    OnOperationComplete(result);
-
                     Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
+
+                    OnOperationComplete(result);
 
                     return result;
                 }
-            }
-            catch (Exception ex)
-            {
-                result.EndTime = DateTime.UtcNow;
-                OnOperationComplete(ex);
+                catch (Exception ex)
+                {
+                    result.EndTime = DateTime.UtcNow;
 
-                try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                catch { }
+                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                    catch { }
 
-                Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+                    Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
 
-                throw;
-            }
-            finally
-            {
-                m_currentTask = null;
-                m_currentTaskThread = null;
+                    OnOperationComplete(ex);
+
+                    throw;
+                }
+                finally
+                {
+                    m_currentTask = null;
+                    m_currentTaskThread = null;
+                }
             }
         }
 
@@ -610,13 +617,18 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
+            if (m_logfilescope != null)
             {
-                Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
-                Logging.Log.CurrentLog = null;
-                sl.Dispose();
-                m_hasSetLogging = false;
+                m_logfilescope.Dispose();
+                m_logfilescope = null;
             }
+
+            if (m_logfile != null)
+            {
+                m_logfile.Dispose();
+                m_logfile = null;
+            }
+
         }
 
         private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
@@ -686,11 +698,11 @@ namespace Duplicati.Library.Main
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
-                m_hasSetLogging = true;
                 var path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_options.Logfile));
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
-                Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
+
+                m_logfilescope = Logging.Log.StartScope(Logging.Log.CurrentLog = m_logfile = new Library.Logging.StreamLog(m_options.Logfile));
             }
 
             result.VerboseErrors = m_options.DebugOutput;
