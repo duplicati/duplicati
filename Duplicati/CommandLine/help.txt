@@ -139,6 +139,8 @@ Usage: delete <storage-URL> [<options>]
     Marks data outdated that is older than <int> versions.
   --version=<int>
     Deletes all files that belong to the specified version(s).
+  --allow-full-removal
+    Disables the protection against removing the final fileset
   
   
   
