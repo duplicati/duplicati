@@ -266,7 +266,7 @@ msgstr "Bucket 存储类型"
 msgid "Building list of files to restore ..."
 msgstr "正在构建文件还原列表…"
 
-#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:358
 msgid "Building partial temporary database ..."
 msgstr "正在构建局部临时数据库…"
 
@@ -294,7 +294,7 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:647
 #: scripts/services/EditUriBuiltins.js:664 templates/delete.html:54
 #: templates/export.html:26 templates/import.html:18
-#: templates/settings.html:125 templates/waitarea.html:19
+#: templates/settings.html:126 templates/waitarea.html:19
 msgid "Cancel"
 msgstr "取消"
 
@@ -338,7 +338,7 @@ msgstr "点击\"授权 ID\"链接来创建一个授权 ID"
 msgid "Compact now"
 msgstr "立刻压缩"
 
-#: scripts/services/ServerStatus.js:41
+#: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
 msgstr "正在压缩远程数据…"
 
@@ -465,7 +465,7 @@ msgstr "正在创建受限用户…"
 msgid "Creating target folders ..."
 msgstr "正在创建目标文件夹…"
 
-#: scripts/controllers/RestoreController.js:329
+#: scripts/controllers/RestoreController.js:353
 msgid "Creating temporary backup ..."
 msgstr "正在创建临时备份…"
 
@@ -669,12 +669,12 @@ msgid "Edit ..."
 msgstr "编辑…"
 
 #: templates/addoredit.html:184 templates/addoredit.html:350
-#: templates/edituri.html:39 templates/settings.html:114
+#: templates/edituri.html:39 templates/settings.html:115
 msgid "Edit as list"
 msgstr "以列表形式编辑"
 
 #: templates/addoredit.html:187 templates/addoredit.html:353
-#: templates/edituri.html:42 templates/settings.html:120
+#: templates/edituri.html:42 templates/settings.html:121
 msgid "Edit as text"
 msgstr "以文本形式编辑"
 
@@ -737,14 +737,14 @@ msgid "Enter the destination path"
 msgstr "输入目标路径"
 
 #: scripts/controllers/ExportController.js:28
-#: scripts/controllers/RestoreController.js:111
-#: scripts/controllers/RestoreController.js:141
-#: scripts/controllers/RestoreController.js:286
-#: scripts/controllers/RestoreController.js:304
-#: scripts/controllers/RestoreController.js:351
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:392
-#: scripts/controllers/RestoreController.js:85
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:328
+#: scripts/controllers/RestoreController.js:375
+#: scripts/controllers/RestoreController.js:407
+#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/RestoreController.js:88
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 #: scripts/directives/backupEditUri.js:143
@@ -756,7 +756,7 @@ msgstr "输入目标路径"
 msgid "Error"
 msgstr "错误"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:66
 msgid "Error!"
 msgstr "错误！"
 
@@ -828,7 +828,7 @@ msgstr "正在导出…"
 msgid "FTP (Alternative)"
 msgstr "FTP (备选)"
 
-#: scripts/controllers/RestoreController.js:351
+#: scripts/controllers/RestoreController.js:375
 msgid "Failed to build temporary database: {{message}}"
 msgstr "构建临时数据库失败： {{message}}"
 
@@ -840,10 +840,10 @@ msgstr "连接失败："
 
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/LogController.js:74
-#: scripts/controllers/RestoreController.js:286
-#: scripts/controllers/RestoreController.js:304
-#: scripts/controllers/RestoreController.js:392
-#: scripts/controllers/RestoreController.js:85
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:328
+#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/RestoreController.js:88
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 msgid "Failed to connect: {{message}}"
@@ -853,8 +853,8 @@ msgstr "连接失败：{{message}}"
 msgid "Failed to delete:"
 msgstr "删除失败："
 
-#: scripts/controllers/RestoreController.js:111
-#: scripts/controllers/RestoreController.js:141
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
 msgstr "获取路径信息失败： {{message}}"
 
@@ -866,7 +866,7 @@ msgstr "导入失败："
 msgid "Failed to read backup defaults:"
 msgstr "读取备份默认设置失败："
 
-#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:407
 msgid "Failed to restore files: {{message}}"
 msgstr "恢复文件失败： {{message}}"
 
@@ -874,8 +874,8 @@ msgstr "恢复文件失败： {{message}}"
 msgid "Failed to save:"
 msgstr "保存失败："
 
-#: scripts/controllers/RestoreController.js:117
-#: scripts/controllers/RestoreController.js:156
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information ..."
 msgstr "获取路径信息…"
 
@@ -892,6 +892,7 @@ msgid "Filters"
 msgstr "过滤条件"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:65
 msgid "Finished!"
 msgstr "已完成！"
 
@@ -949,6 +950,10 @@ msgstr "生成"
 #: templates/backends/s3.html:63
 msgid "Generate IAM access policy"
 msgstr "生成 IAM 访问策略"
+
+#: scripts/controllers/RestoreController.js:66
+msgid "Getting file versions ..."
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:17
 msgid "Hidden files"
@@ -1129,7 +1134,7 @@ msgstr "保留备份"
 msgid "Language in user interface"
 msgstr "显示语言"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:37
 msgid "Last month"
 msgstr "上月"
 
@@ -1137,7 +1142,7 @@ msgstr "上月"
 msgid "Last successful run:"
 msgstr "最后成功执行于："
 
-#: scripts/controllers/RestoreController.js:55
+#: scripts/controllers/RestoreController.js:56
 msgid "Latest"
 msgstr "最新"
 
@@ -1149,7 +1154,7 @@ msgstr "程序库"
 msgid "Listing backup dates ..."
 msgstr "正在列举备份日期…"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
 msgid "Listing remote files ..."
 msgstr "正在列举远程文件…"
 
@@ -1363,11 +1368,11 @@ msgstr "未找到 &quot;{{backend}}&quot; 存储类型的编辑器"
 msgid "No encryption"
 msgstr "无加密"
 
-#: scripts/controllers/RestoreController.js:186
+#: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
 msgstr "未选中项目"
 
-#: scripts/controllers/RestoreController.js:186
+#: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
 msgstr "未恢复项目，请选择一个或多个项目"
 
@@ -1394,7 +1399,7 @@ msgstr "无 / 已禁用"
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:119 templates/restore.html:108
-#: templates/settings.html:126
+#: templates/settings.html:127
 msgid "OK"
 msgstr "是"
 
@@ -1424,8 +1429,8 @@ msgid "Optional authentication username"
 msgstr "额外的认证用户名"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/restoredirect.html:16 templates/settings.html:113
-#: templates/settings.html:119
+#: templates/restoredirect.html:16 templates/settings.html:114
+#: templates/settings.html:120
 msgid "Options"
 msgstr "选项"
 
@@ -1519,6 +1524,10 @@ msgstr "若 Bucket 存在，项目 ID 是可选的"
 msgid "Proprietary"
 msgstr "专用"
 
+#: scripts/services/ServerStatus.js:63
+msgid "Purging files ..."
+msgstr ""
+
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
 msgstr "正在重新构建本地数据库…"
@@ -1603,8 +1612,8 @@ msgstr "恢复选项"
 msgid "Restore read/write permissions"
 msgstr "恢复读写权限"
 
-#: scripts/controllers/RestoreController.js:344
-#: scripts/controllers/RestoreController.js:365
+#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:389
 msgid "Restoring files ..."
 msgstr "正在恢复文件…"
 
@@ -1776,8 +1785,8 @@ msgstr "标准协议"
 msgid "Starting ..."
 msgstr "正在开始…"
 
-#: scripts/controllers/RestoreController.js:340
-#: scripts/controllers/RestoreController.js:363
+#: scripts/controllers/RestoreController.js:364
+#: scripts/controllers/RestoreController.js:387
 msgid "Starting the restore process ..."
 msgstr "正在开始恢复操作…"
 
@@ -1964,11 +1973,19 @@ msgid ""
 " with only permissions to the selected path?"
 msgstr "用户权限太多，你想要创建一个只能访问所选路径的受限用户吗？"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:305
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:36
 msgid "This month"
 msgstr "本月"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:35
 msgid "This week"
 msgstr "本周"
 
@@ -1990,7 +2007,7 @@ msgstr "为确认你想要删除 \"{{name}}\" 的所有远程文件，请输入�
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "为导出时不使用密码，请去除勾选\"加密文件\""
 
-#: scripts/controllers/RestoreController.js:32
+#: scripts/controllers/RestoreController.js:33
 msgid "Today"
 msgstr "今天"
 
@@ -2218,7 +2235,7 @@ msgstr "是，我无所谓"
 msgid "Yes, please break my backup!"
 msgstr "是，请清除我的备份"
 
-#: scripts/controllers/RestoreController.js:33
+#: scripts/controllers/RestoreController.js:34
 msgid "Yesterday"
 msgstr "昨天"
 
@@ -2259,6 +2276,10 @@ msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
 msgstr "你已选择不加密备份，推荐加密所有存储在远程服务器上的数据"
+
+#: scripts/controllers/RestoreController.js:299
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:296
 msgid ""

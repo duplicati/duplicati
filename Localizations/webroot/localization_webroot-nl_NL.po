@@ -135,7 +135,7 @@ msgstr "Sta remote toegang toe (herstart vereist)"
 
 #: templates/addoredit.html:282
 msgid "Allowed days"
-msgstr "Toegestaan aantal dagen"
+msgstr "Alleen op deze dagen"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
@@ -209,7 +209,7 @@ msgstr "B2 Cloud Storage Applicatiesleutel"
 
 #: templates/restore.html:31 templates/restore.html:93
 msgid "Back"
-msgstr "Terug"
+msgstr "Vorige"
 
 #: templates/about.html:66
 msgid "Backend modules:"
@@ -271,7 +271,7 @@ msgstr "Bucket opslagklasse"
 msgid "Building list of files to restore ..."
 msgstr "Lijst samenstellen met te herstellen bestanden ..."
 
-#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:358
 msgid "Building partial temporary database ..."
 msgstr "Gedeeltelijke tijdelijke database samenstellen ..."
 
@@ -299,7 +299,7 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:647
 #: scripts/services/EditUriBuiltins.js:664 templates/delete.html:54
 #: templates/export.html:26 templates/import.html:18
-#: templates/settings.html:125 templates/waitarea.html:19
+#: templates/settings.html:126 templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Annuleren"
 
@@ -343,7 +343,7 @@ msgstr "Klik op de AuthID link om een AuthID aan te maken"
 msgid "Compact now"
 msgstr "Nu opruimen"
 
-#: scripts/services/ServerStatus.js:41
+#: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
 msgstr "Opruimen van remote gegevens ..."
 
@@ -416,7 +416,7 @@ msgstr "Container-regio"
 
 #: templates/restore.html:30
 msgid "Continue"
-msgstr "Ga verder"
+msgstr "Volgende"
 
 #: scripts/controllers/EditBackupController.js:366
 msgid "Continue without encryption"
@@ -470,7 +470,7 @@ msgstr "Nieuwe gebruiker met beperkte toegang aanmaken ..."
 msgid "Creating target folders ..."
 msgstr "Doelmappen aanmaken ..."
 
-#: scripts/controllers/RestoreController.js:329
+#: scripts/controllers/RestoreController.js:353
 msgid "Creating temporary backup ..."
 msgstr "Tijdelijke back-up aanmaken ..."
 
@@ -678,12 +678,12 @@ msgid "Edit ..."
 msgstr "Bewerken ..."
 
 #: templates/addoredit.html:184 templates/addoredit.html:350
-#: templates/edituri.html:39 templates/settings.html:114
+#: templates/edituri.html:39 templates/settings.html:115
 msgid "Edit as list"
 msgstr "Bewerk als lijst"
 
 #: templates/addoredit.html:187 templates/addoredit.html:353
-#: templates/edituri.html:42 templates/settings.html:120
+#: templates/edituri.html:42 templates/settings.html:121
 msgid "Edit as text"
 msgstr "Bewerk als tekst"
 
@@ -747,14 +747,14 @@ msgid "Enter the destination path"
 msgstr "Geef het doelpad in"
 
 #: scripts/controllers/ExportController.js:28
-#: scripts/controllers/RestoreController.js:111
-#: scripts/controllers/RestoreController.js:141
-#: scripts/controllers/RestoreController.js:286
-#: scripts/controllers/RestoreController.js:304
-#: scripts/controllers/RestoreController.js:351
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:392
-#: scripts/controllers/RestoreController.js:85
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:328
+#: scripts/controllers/RestoreController.js:375
+#: scripts/controllers/RestoreController.js:407
+#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/RestoreController.js:88
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 #: scripts/directives/backupEditUri.js:143
@@ -766,7 +766,7 @@ msgstr "Geef het doelpad in"
 msgid "Error"
 msgstr "Fout"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:66
 msgid "Error!"
 msgstr "Fout!"
 
@@ -816,7 +816,7 @@ msgstr "Experimenteel"
 
 #: templates/export.html:27
 msgid "Export"
-msgstr "Export"
+msgstr "Exporteer"
 
 #: templates/home.html:56
 msgid "Export ..."
@@ -838,7 +838,7 @@ msgstr "Exporteren ..."
 msgid "FTP (Alternative)"
 msgstr "FTP (Alternatief)"
 
-#: scripts/controllers/RestoreController.js:351
+#: scripts/controllers/RestoreController.js:375
 msgid "Failed to build temporary database: {{message}}"
 msgstr "Opbouwen tijdelijke database mislukt: {{message}}"
 
@@ -850,10 +850,10 @@ msgstr "Verbinden mislukt:"
 
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/LogController.js:74
-#: scripts/controllers/RestoreController.js:286
-#: scripts/controllers/RestoreController.js:304
-#: scripts/controllers/RestoreController.js:392
-#: scripts/controllers/RestoreController.js:85
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:328
+#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/RestoreController.js:88
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 msgid "Failed to connect: {{message}}"
@@ -863,8 +863,8 @@ msgstr "Verbinden mislukt: {{message}}"
 msgid "Failed to delete:"
 msgstr "Verwijderen mislukt:"
 
-#: scripts/controllers/RestoreController.js:111
-#: scripts/controllers/RestoreController.js:141
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
 msgstr "Ophalen pad-informatie mislukt: {{message}}"
 
@@ -876,7 +876,7 @@ msgstr "Importeren mislukt:"
 msgid "Failed to read backup defaults:"
 msgstr "Standaard instellingen voor back-up inlezen mislukt:"
 
-#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:407
 msgid "Failed to restore files: {{message}}"
 msgstr "Herstellen bestanden mislukt: {{message}}"
 
@@ -884,8 +884,8 @@ msgstr "Herstellen bestanden mislukt: {{message}}"
 msgid "Failed to save:"
 msgstr "Opslaan mislukt:"
 
-#: scripts/controllers/RestoreController.js:117
-#: scripts/controllers/RestoreController.js:156
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information ..."
 msgstr "Ophalen pad-informatie ..."
 
@@ -902,6 +902,7 @@ msgid "Filters"
 msgstr "Filters"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:65
 msgid "Finished!"
 msgstr "Klaar!"
 
@@ -960,6 +961,10 @@ msgstr "Genereer"
 msgid "Generate IAM access policy"
 msgstr "Genereer IAM toegangsbeleid"
 
+#: scripts/controllers/RestoreController.js:66
+msgid "Getting file versions ..."
+msgstr "Bestandsversies ophalen ..."
+
 #: scripts/controllers/EditBackupController.js:17
 msgid "Hidden files"
 msgstr "Verborgen bestanden"
@@ -1006,7 +1011,8 @@ msgstr "ID:"
 #: templates/addoredit.html:265
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr ""
-"Als een datum werd overgeslagen, zal de taak zo snel mogelijk starten."
+"Als een geplande taak werd overgeslagen, zal de taak zo snel mogelijk na het"
+" geplande tijdstip starten."
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1147,7 +1153,7 @@ msgstr "Bewaar back-ups"
 msgid "Language in user interface"
 msgstr "Taal in gebruikersinterface"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:37
 msgid "Last month"
 msgstr "Vorige maand"
 
@@ -1155,7 +1161,7 @@ msgstr "Vorige maand"
 msgid "Last successful run:"
 msgstr "Laatste succesvolle uitvoering"
 
-#: scripts/controllers/RestoreController.js:55
+#: scripts/controllers/RestoreController.js:56
 msgid "Latest"
 msgstr "Laatste"
 
@@ -1167,7 +1173,7 @@ msgstr "Bibliotheken"
 msgid "Listing backup dates ..."
 msgstr "Back-updata weergeven ..."
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
 msgid "Listing remote files ..."
 msgstr "Remote bestanden weergeven ..."
 
@@ -1216,7 +1222,7 @@ msgstr "Log-gegevens"
 
 #: index.html:187
 msgid "Log out"
-msgstr ""
+msgstr "Uitloggen"
 
 #: scripts/services/AppUtils.js:82
 msgid "MByte"
@@ -1232,7 +1238,7 @@ msgstr "Onderhoud"
 
 #: templates/home.html:63
 msgid "Manage database ..."
-msgstr "Beheer database"
+msgstr "Database-onderhoud ..."
 
 #: templates/backends/file.html:19 templates/restore.html:63
 msgid "Manually type path"
@@ -1383,11 +1389,11 @@ msgstr ""
 msgid "No encryption"
 msgstr "Geen versleuteling"
 
-#: scripts/controllers/RestoreController.js:186
+#: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
 msgstr "Geen items geselecteerd"
 
-#: scripts/controllers/RestoreController.js:186
+#: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
 msgstr "Geen items om te herstellen, selecteer één of meer items"
 
@@ -1414,7 +1420,7 @@ msgstr "Geen / uitgeschakeld"
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:119 templates/restore.html:108
-#: templates/settings.html:126
+#: templates/settings.html:127
 msgid "OK"
 msgstr "OK"
 
@@ -1444,8 +1450,8 @@ msgid "Optional authentication username"
 msgstr "Optionele authenticatie gebruikersnaam"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/restoredirect.html:16 templates/settings.html:113
-#: templates/settings.html:119
+#: templates/restoredirect.html:16 templates/settings.html:114
+#: templates/settings.html:120
 msgid "Options"
 msgstr "Opties"
 
@@ -1539,6 +1545,10 @@ msgstr "ProjectID is optioneel als de bucket bestaat"
 msgid "Proprietary"
 msgstr "Fabrikantgebonden"
 
+#: scripts/services/ServerStatus.js:63
+msgid "Purging files ..."
+msgstr "Bestanden wissen ..."
+
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
 msgstr "Opnieuw opbouwen van lokale database ..."
@@ -1609,7 +1619,7 @@ msgstr "Herstel bestanden"
 
 #: templates/home.html:50
 msgid "Restore files ..."
-msgstr "Bestanden Herstellen ..."
+msgstr "Bestanden herstellen ..."
 
 #: templates/restore.html:9
 msgid "Restore from"
@@ -1623,10 +1633,10 @@ msgstr "Herstelopties"
 msgid "Restore read/write permissions"
 msgstr "Herstel lees/schrijfpermissies"
 
-#: scripts/controllers/RestoreController.js:344
-#: scripts/controllers/RestoreController.js:365
+#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:389
 msgid "Restoring files ..."
-msgstr "Bestanden herstellen ..."
+msgstr "Bestanden worden hersteld ..."
 
 #: index.html:178
 msgid "Resume"
@@ -1646,11 +1656,11 @@ msgstr "Uitvoeren ..."
 
 #: templates/home.html:21
 msgid "Running task"
-msgstr "Lopende taak"
+msgstr "Taak in uitvoering"
 
 #: templates/home.html:10
 msgid "Running task:"
-msgstr "Lopende taak:"
+msgstr "Taak in uitvoering:"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
@@ -1798,8 +1808,8 @@ msgstr "Standaard protocollen"
 msgid "Starting ..."
 msgstr "Starten ..."
 
-#: scripts/controllers/RestoreController.js:340
-#: scripts/controllers/RestoreController.js:363
+#: scripts/controllers/RestoreController.js:364
+#: scripts/controllers/RestoreController.js:387
 msgid "Starting the restore process ..."
 msgstr "Starten van het herstelproces ..."
 
@@ -1878,7 +1888,7 @@ msgstr "Tenant naam"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr "Testverbinding"
+msgstr "Test verbinding"
 
 #: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
 msgid "Testing ..."
@@ -1999,11 +2009,23 @@ msgstr ""
 "De gebruiker heeft teveel permmissies. Wilt u een nieuwe beperkte gebruiker "
 "aanmaken, met enkel permissies tot het aangegeven pad?"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:305
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr ""
+"De back-up werd aangemaakt op een ander besturingssysteem. Bestanden "
+"terugzetten zonder een doelmap op te geven kan tot gevolg hebben dat "
+"bestanden worden teruggezet naar onverwachte plaatsen. Bent u er zeker van "
+"dat u wilt doorgaan zonder een doelmap te kiezen?"
+
+#: scripts/controllers/RestoreController.js:36
 msgid "This month"
 msgstr "Deze maand"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:35
 msgid "This week"
 msgstr "Deze wek"
 
@@ -2029,7 +2051,7 @@ msgstr ""
 "Om te exporteren zonder een wachtwoordzin, deselecteer het \"Versleutel "
 "bestand\" vakje"
 
-#: scripts/controllers/RestoreController.js:32
+#: scripts/controllers/RestoreController.js:33
 msgid "Today"
 msgstr "Vandaag"
 
@@ -2109,7 +2131,7 @@ msgstr "Gebruik bestaande database?"
 
 #: scripts/controllers/EditBackupController.js:281
 msgid "Use weak passphrase"
-msgstr "Gebruik van zwakke wachtwoordzin"
+msgstr "Gebruik zwakke wachtwoordzin"
 
 #: scripts/controllers/EditBackupController.js:28
 msgid "Useless"
@@ -2267,7 +2289,7 @@ msgstr "Ja, ik ben dapper!"
 msgid "Yes, please break my backup!"
 msgstr "Ja, help mijn back-up om zeep!"
 
-#: scripts/controllers/RestoreController.js:33
+#: scripts/controllers/RestoreController.js:34
 msgid "Yesterday"
 msgstr "Gisteren"
 
@@ -2314,6 +2336,12 @@ msgid ""
 msgstr ""
 "U hebt ervoor gekozen de back-up niet te versleutelen. Encryptie is "
 "aanbevolen voor alle gegevens die worden opgeslagen op een remote server."
+
+#: scripts/controllers/RestoreController.js:299
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr ""
+"U koos voor terugzetten naar een nieuwe locatie, maar hebt geen locatie "
+"opgegeven"
 
 #: scripts/controllers/EditBackupController.js:296
 msgid ""
@@ -2400,7 +2428,7 @@ msgstr ""
 
 #: templates/addoredit.html:321
 msgid "a specific number"
-msgstr "een specifiek getal"
+msgstr "een bepaald aantal"
 
 #: templates/backends/gcs.html:3 templates/backends/openstack.html:3
 msgid "bucket/folder/subfolder"
@@ -2448,7 +2476,7 @@ msgstr ""
 
 #: scripts/controllers/StateController.js:45
 msgid "{{files}} files ({{size}}) to go"
-msgstr "Nog {{files}} files ({{size}}) te gaan"
+msgstr "Nog {{files}} bestanden ({{size}}) te gaan"
 
 #: templates/home.html:96
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"

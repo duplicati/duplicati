@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-12-20 21:08+0100\n"
+"POT-Creation-Date: 2017-01-09 18:36+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Kees Zaaijer <kees@famzaaijer.nl>, 2016\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: nl_NL\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: CommandLine/Program.cs:268
+#: CommandLine/Program.cs:271
 msgid "Toggle automatic updates"
 msgstr "Automatische updates inschakelen"
 
-#: CommandLine/Program.cs:268
+#: CommandLine/Program.cs:271
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -1372,7 +1372,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:24
 msgid "Set block size for chunked uploads to SharePoint."
-msgstr ""
+msgstr "Stel blokgrootte in voor uploads in brokken naar SharePoint"
 
 #: Library/Backend/SharePoint/Strings.cs:26
 #, csharp-format
@@ -1687,10 +1687,10 @@ msgstr "Stelt het Zip compressie niveau in"
 #, csharp-format
 msgid ""
 "This option can be used to set an alternative compressor method, such as "
-"LZMA. Note that using another value than Deflate will cause the {0} option "
+"LZMA. Note that using another value then Deflate will cause the {0} option "
 "to be ignored."
 msgstr ""
-"Deze optie kan gebruikt worden om een alternatieve compressie methode in te "
+"Deze optie kan worden gebruikt om een andere compressiemethode in te "
 "stellen, zoals LZMA. Merk op dat het gebruik van een andere waarde dan "
 "Deflate ervoor zorgt dat de {0} optie wordt genegeerd."
 
@@ -1701,11 +1701,11 @@ msgstr "Stelt de Zip compressie methode in"
 #: Library/Compression/Strings.cs:9
 msgid ""
 "This module provides the industry standard Zip compression. Files created "
-"with this module can be read by any standard compliant zip application."
+"with this module can be read by any standard-compliant zip application."
 msgstr ""
-"Deze module biedt de industrie standaard Zip-compressie. Bestanden die zijn "
-"aangemaakt met deze module kunnen gelezen worden met iedere standaard "
-"compiant zip applicatie."
+"Deze module biedt de industrie standaard Zip compressie. Bestanden die met "
+"deze module zijn aangemaakt kunnen gelezen worden met iedere standaard zip "
+"toepassing."
 
 #: Library/Compression/Strings.cs:10
 msgid "Zip compression"
@@ -3052,20 +3052,20 @@ msgstr "Geheugen dat gebruikt wordt door de blok hash"
 
 #: Library/Main/Strings.cs:133
 msgid ""
-"The blocksize determines how files are fragmented. Choosing a large value "
+"The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
 "cause a large overhead on storage of file lists. Note that the value cannot "
 "be changed after remote files are created."
 msgstr ""
 "De blokgrootte bepaalt hoe bestanden worden gefragmenteerd. Een grote waarde"
-" zal zorgen voor meer overhead bij bestandswijzigingen, een kleine waarde "
-"zal zorgen voor meer overhead bij het opslaan van bestandenlijsten. Merk op "
-"dat de waarde niet veranderd kan worden nadat remote bestanden zijn "
-"aangemaakt."
+" zal meer overhead tot gevolg hebben bij bestandsveranderingen, een kleine "
+"waarde zal meer overhead tot gevolg hebben bij het opslaan van "
+"bestandslijsten. Merk op dat de waarde niet kan worden veranderd nadat "
+"remote bestanden zijn aangemaakt."
 
 #: Library/Main/Strings.cs:134
-msgid "Blocksize used in hashing"
-msgstr "Blokgrootte die gebruikt wordt voor hashing"
+msgid "Block size used in hashing"
+msgstr "Blokgrootte gebruikt in hashing"
 
 #: Library/Main/Strings.cs:135
 msgid ""
@@ -3611,7 +3611,54 @@ msgstr ""
 "scheidingsteken. (U kunt dit PowerShell commando geven om de ID's op te "
 "vragen: 'Get-VM | ft VMName, ID')"
 
+#: Library/Main/Strings.cs:217
+msgid ""
+"If Duplicati detects that the previous backup did not complete, it will "
+"generate a filelist that is a merge of the last completed backup and the "
+"contents that were uploaded in the incomplete backup session."
+msgstr ""
+"Als Duplicati merkt dat de vorige back-up niet voltooid werd, zal het een "
+"bestandslijst samenstellen die een samenvoeging is van de laatste afgeronde "
+"back-up en de inhoud die werd geüpload tijdens de incomplete back-up sessie."
+
+#: Library/Main/Strings.cs:218
+msgid "Disables synethic filelist"
+msgstr "Schakelt synthetische bestandslijst uit"
+
+#: Library/Main/Strings.cs:219
+msgid ""
+"This flag instructs Duplicati to not look at metadata or filesize when "
+"deciding to scan a file for changes. Use this option if you have a large "
+"number of files and notice that the scanning takes a long time with "
+"unmodified files."
+msgstr ""
+"Deze vlag laat Duplicati niet kijken naar metadata of bestandsgrootte bij de"
+" beslissing een bestand te scannen op wijzigingen. Gebruik deze optie als u "
+"een groot aantal bestanden hebt en opmerkt dat het scannen een lange tijd "
+"duurt met ongewijzigde bestanden."
+
+#: Library/Main/Strings.cs:220
+msgid "Checks only file lastmodified"
+msgstr "Controleert alleen laatstbewerkte bestand"
+
 #: Library/Main/Strings.cs:221
+msgid "Disables path compresion on restore"
+msgstr "Schakelt pad compressie uit bij terugzetten"
+
+#: Library/Main/Strings.cs:222
+msgid ""
+"When restore a subset of a backup into a new folder, the shortest possible "
+"path is used to avoid generating deep paths with empty folders. Use this "
+"flag to skip this compression, such that the entire original folder "
+"structure is preserved, including upper level empty folders."
+msgstr ""
+"Als een deel van een back-up wordt teruggezet naar een nieuwe map, wordt het"
+" kortst mogelijke pad gebruikt om lange paden met veel lege mappen te "
+"voorkomen. Gebruik deze vlag om deze verkleining over te slaan, zodat de "
+"originele mapstructuur in zijn geheel behouden blijft, inclusief hoger "
+"gelegen lege mappen."
+
+#: Library/Main/Strings.cs:227
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -3620,17 +3667,17 @@ msgstr ""
 "De cryptobibliotheek ondersteunt geen herbruikbare transformaties voor het "
 "hash algoritme {0}"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:228
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "De cryptobibliotheek ondersteunt het hash algoritme {0} niet"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:229
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "De wachtwoordzin kan niet veranderd worden voor een al bestaande back-up"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:230
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Het maken van een momentopname is mislukt: {0}"
@@ -3685,6 +3732,10 @@ msgid ""
 "systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
 "derivatives{0}Read more: {1}"
 msgstr ""
+"Geen certificaten gevonden, u kunt deze installeren met één van de volgende "
+"opdrachten:{0} cert-sync /etc/ssl/certs/ca-certificates.crt #voor Debian "
+"gebaseerde systemen{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #voor "
+"RedHat afgeleiden{0}Lees meer: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:20
 msgid ""
@@ -3949,13 +4000,13 @@ msgstr "SMTP wachtwoord"
 
 #: Library/Modules/Builtin/Strings.cs:76
 msgid ""
-"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email adresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.\n"
+"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients: \n"
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 msgstr ""
-"Deze instelling is vereist als een email verzonden moet worden, alle andere instellingen hebben standaard waarden. Meerdere email-adressen kunnen door komma's gescheiden opgegeven worden, en het normale adresformaat kan gebruikt worden zoals beschreven in RFC2822 sectie 3.4\n"
-"Voorbeeld met 3 ontvangers:\n"
+"Deze instelling is vereist als mail verzonden moet worden, alle andere instellingen hebben standaard waarden. U kunt meerdere emailadressen opgeven gescheiden door komma's, en u kunt het normale adresformaat gebruiken, zoals aangegeven in RFC2822 sectie 3.4.\n"
+"Voorbeeld met 3 geadresseerden:\n"
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
@@ -3984,6 +4035,12 @@ msgid ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 msgstr ""
+"Adres van de email-verzender. Als geen host is opgegeven, zal de hostnaam van de eerste ontvanger gebruikt worden. Voorbeelden van toegestane indelingen:\n"
+"\n"
+"sender\n"
+"sender@example.com\n"
+"Mail Sender <sender>\n"
+"Mail Sender <sender@example.com>"
 
 #: Library/Modules/Builtin/Strings.cs:89
 msgid "Email sender"
@@ -4161,7 +4218,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:130
 msgid "Timeout occurred while logging in to jabber server"
-msgstr ""
+msgstr "Time-out opgetreden tijdens inloggen bij jabber server"
 
 #: Library/Modules/Builtin/Strings.cs:131
 #, csharp-format
@@ -4299,6 +4356,10 @@ msgid ""
 "certificates.crt #for Debian based systems{0}    cert-sync "
 "/etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}Read more: {1}"
 msgstr ""
+"{0}U zou een set vertrouwde certificaten kunnen importeren in het Mono "
+"certificaatarchief.{0}Gebruik de opdracht:{0}    cert-sync /etc/ssl/certs"
+"/ca-certificates.crt #voor Debian gebaseerde systemen{0}    cert-sync "
+"/etc/pki/tls/certs/ca-bundle.crt #voor RedHat afgeleiden{0}Lees meer: {1}"
 
 #: Library/Utility/Strings.cs:12
 #, csharp-format
