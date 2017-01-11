@@ -74,12 +74,13 @@ namespace Duplicati.UnitTest
         /// <param name="target">The target destination for the backups</param>
         public static void RunTest(string[] folders, Dictionary<string, string> options, string target)
         {
-            using (var log = new LogHelper(string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now))))
+            string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
+            string logfilename = System.IO.Path.Combine(tempdir, string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now)));
+
+            using (var log = new LogHelper(logfilename))
             using (Log.StartScope(log))
             {
                 Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
-
-                string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
 
                 //Filter empty entries, commonly occuring with copy/paste and newlines
                 folders = (from x in folders
@@ -362,6 +363,8 @@ namespace Duplicati.UnitTest
                     {
                         if (s == options["dbpath"])
                             continue;
+                        if (s == logfilename)
+                            continue;                        
                         if (s.StartsWith(Utility.AppendDirSeparator(tf)))
                             continue;
 
