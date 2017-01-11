@@ -506,47 +506,47 @@ namespace Duplicati.Library.Main
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
             where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
-            try
+            using (Logging.Log.StartScope(result))
             {
-                m_currentTask = result;
-                m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                SetupCommonOptions(result, ref paths, ref filter);
-
-                using (Logging.Log.StartScope(result))
-                using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                try
                 {
-                    method(result);
+                    m_currentTask = result;
+                    m_currentTaskThread = System.Threading.Thread.CurrentThread;
+                    SetupCommonOptions(result, ref paths, ref filter);
+
+                    result.WriteLogMessageDirect(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+
+                    using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                        method(result);
 
                     if (result.EndTime.Ticks == 0)
                         result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
 
                     OnOperationComplete(result);
+
+                    result.WriteLogMessageDirect(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+
+                    return result;
                 }
+                catch (Exception ex)
+                {
+                    result.EndTime = DateTime.UtcNow;
 
-                Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
+                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                    catch { }
 
-                return result;
-            }
-            catch (Exception ex)
-            {
-                result.EndTime = DateTime.UtcNow;
-
-                try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                catch { }
-
-                Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
-
-                // Restart the logging scope, in case a module wants to report messages
-                using (Logging.Log.StartScope(result))
                     OnOperationComplete(ex);
 
-                throw;
-            }
-            finally
-            {
-                m_currentTask = null;
+                    result.WriteLogMessageDirect(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+
+                    throw;
+                }
+                finally
+                {
+                    m_currentTask = null;
                 m_currentTaskThread = null;
+                }
             }
         }
 
@@ -755,8 +755,6 @@ namespace Duplicati.Library.Main
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
             ValidateOptions(result);
-
-            Library.Logging.Log.WriteMessage(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
         }
 
         /// <summary>

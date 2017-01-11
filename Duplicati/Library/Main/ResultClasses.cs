@@ -31,6 +31,7 @@ namespace Duplicati.Library.Main
         void AddWarning(string message, Exception ex);
         void AddError(string message, Exception ex);
         void AddDryrunMessage(string message);
+        void WriteLogMessageDirect(string message, LogMessageType type, Exception ex);
     }
     
     internal interface IBackendWriter : ILogWriter
@@ -724,6 +725,34 @@ namespace Duplicati.Library.Main
                     break;
             }
         }
+
+        /// <summary>
+        /// Writes a message to the log, bypassing injection as normal messages
+        /// </summary>
+        /// <param name="message">The message to write to the log.</param>
+        /// <param name="type">Type.</param>
+        /// <param name="exception">Exception.</param>
+        public void WriteLogMessageDirect(string message, LogMessageType type, Exception exception)
+        {
+            if (m_parent != null)
+                m_parent.WriteLogMessageDirect(message, type, exception);
+            else
+            {
+                lock (Logging.Log.Lock)
+                {
+                    try
+                    {
+                        m_is_reporting = true;
+                        WriteMessage(message, type, exception);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
+            }
+        }
+
     }
     
     internal class BackupResults : BasicResults, IBackupResults
