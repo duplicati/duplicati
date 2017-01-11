@@ -150,7 +150,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Exception(string.Format("DB name specified in source with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in source with ID {0} cannot be found", dbID));
 
                     dbsForBackup.Add(foundDB.First());
                 }
@@ -161,7 +161,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Exception(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID));
 
                     dbsForBackup.Add(foundDB.First());
                     Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", dbID), Logging.LogMessageType.Information);
@@ -175,7 +175,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = dbsForBackup.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Exception(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID));
 
                     dbsForBackup.Remove(foundDB.First());
                     Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", dbID), Logging.LogMessageType.Information);

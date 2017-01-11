@@ -136,7 +136,7 @@ namespace Duplicati.Library.Snapshots
                     var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(MSSQLWriterGuid));
 
                     if (writerMetaData == null)
-                        throw new Exception("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.");
+                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.");
 
                     foreach (var component in writerMetaData.Components)
                     {

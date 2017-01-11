@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -36,10 +37,10 @@ namespace Duplicati.Library.Main.Operation
         public void Run(Library.Utility.IFilter filter)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             if (filter != null && !filter.Empty)
-                throw new Exception("Filters are not supported for this operation");
+                throw new UserInformationException("Filters are not supported for this operation");
 
             List<Database.RemoteVolumeEntry> missing = null;
             
@@ -47,7 +48,7 @@ namespace Duplicati.Library.Main.Operation
             using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)
-                    throw new Exception("The command does not work on partially recreated databases");
+                    throw new UserInformationException("The command does not work on partially recreated databases");
 
                 var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, tr, m_options, out missing);
                 if (sets == null)
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Main.Operation
                     else if (missing.Count == 0)
                         m_result.AddMessage("Found no broken filesets and no missing remote files");
                     else
-                        throw new Exception(string.Format("Found no broken filesets, but {0} missing remote files", sets.Length));
+                        throw new UserInformationException(string.Format("Found no broken filesets, but {0} missing remote files", sets.Length));
                 }
 
                 m_result.AddMessage(string.Format("Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3)));

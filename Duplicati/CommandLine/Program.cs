@@ -229,13 +229,15 @@ namespace Duplicati.CommandLine
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 
-                if (!(ex is Library.Interface.CancelException))
+                if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
                 {
-                    if (!string.IsNullOrEmpty(ex.Message))
-                    {
-                        Console.Error.WriteLine();
-                        Console.Error.WriteLine(verboseErrors ? ex.ToString() : ex.Message);
-                    }
+                    Console.Error.WriteLine();
+                    Console.WriteLine(ex.Message);
+                }
+                else if (!(ex is Library.Interface.CancelException))
+                {
+                    Console.Error.WriteLine();
+                    Console.Error.WriteLine(ex.ToString());
                 }
                 else
                 {
@@ -320,7 +322,7 @@ namespace Duplicati.CommandLine
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Exception(Strings.Program.FiltersCannotBeUsedWithFileError2);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2);
 
                 if (!newfilter.Empty)
                     filter = newfilter;

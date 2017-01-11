@@ -358,11 +358,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                                 return;
                             }
 
-                            throw new Exception(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen));
+                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen));
                         }
                     }
 
-                    throw new Exception(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)));
+                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)));
                 }
             }
             catch (FtpCommandException ex)

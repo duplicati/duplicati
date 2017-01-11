@@ -348,7 +348,8 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "dry-run"
+                    "dry-run",
+                    "allow-full-removal"
                 };
             }
         }
@@ -483,7 +484,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
                     new CommandLineArgument("disable-synthetic-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablesyntheticfilelistShort, Strings.Options.DisablesyntehticfilelistLong, "false"),
 
-
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
@@ -508,6 +508,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
                     new CommandLineArgument("full-block-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullblockverificationShort, Strings.Options.FullblockverificationLong, "false"),
+                    new CommandLineArgument("allow-full-removal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremovalShort, Strings.Options.AllowfullremovalLong, "false"),
 
                     new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
 
@@ -805,7 +806,10 @@ namespace Duplicati.Library.Main
         {
             if (backups.Length == 0)
                 return backups;
-                
+
+            if (backups.Distinct().Count() != backups.Length)
+                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", backups.Select(x => x.ToString()))));
+
             List<DateTime> res = new List<DateTime>();
                 
             var versions = this.Version;
@@ -825,9 +829,9 @@ namespace Duplicati.Library.Main
             var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
             
             var removeCount = filtered.Count();
-            if (removeCount >= backups.Length)
-                filtered = filtered.Skip(removeCount - backups.Length + (AllowFullRemoval ? 0 : 1));
-            
+            if (removeCount > backups.Length)
+                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, backups.Length, string.Join(", ", filtered.Select(x => x.ToString())),string.Join(", ", backups.Select(x => x.ToString()))));
+
             return filtered.ToArray();
         }
 
@@ -926,7 +930,7 @@ namespace Duplicati.Library.Main
                 {
                     int x = int.Parse(m_options["number-of-retries"]);
                     if (x < 0)
-                        throw new Exception("Invalid count for number-of-retries");
+                        throw new UserInformationException("Invalid count for number-of-retries");
 
                     return x;
                 }

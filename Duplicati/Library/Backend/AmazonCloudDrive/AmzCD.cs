@@ -206,7 +206,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                     m_waitUntil = DateTime.Now + m_delayTimeSpan;
                 }
                 else if (self != null && self.Count > 1)
-                    throw new Exception(Strings.AmzCD.MultipleEntries(p, "/" + string.Join("/", curpath)));
+                    throw new UserInformationException(Strings.AmzCD.MultipleEntries(p, "/" + string.Join("/", curpath)));
                 else
                     parent = self.Data.First();
             }

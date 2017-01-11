@@ -42,7 +42,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (m_runnerException != null)
                     throw m_runnerException;
                 else
-                    throw new Exception("Hosted server startup timed out");
+                    throw new Duplicati.Library.Interface.UserInformationException("Hosted server startup timed out");
             }
 
             if (m_runnerException != null)

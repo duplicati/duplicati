@@ -204,7 +204,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                throw new Exception(string.Format("Unsupported key type: {0}", keytype));
+                throw new UserInformationException(string.Format("Unsupported key type: {0}", keytype));
             }
         }
         public string Key { get { return "ssh-keygen"; } }

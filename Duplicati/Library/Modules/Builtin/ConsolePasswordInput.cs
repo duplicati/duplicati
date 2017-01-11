@@ -107,11 +107,11 @@ namespace Duplicati.Library.Modules.Builtin
                 Console.WriteLine();
 
                 if (passphrase.ToString() != password2.ToString())
-                    throw new Exception(Strings.ConsolePasswordInput.PassphraseMismatchError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError);
             }
 
             if (passphrase.ToString().Length == 0)
-                throw new Exception(Strings.ConsolePasswordInput.EmptyPassphraseError);
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError);
 
             return passphrase.ToString();
         }

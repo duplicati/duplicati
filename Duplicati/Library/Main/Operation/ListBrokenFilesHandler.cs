@@ -18,6 +18,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -37,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run(Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
             using (var tr = db.BeginTransaction())
@@ -52,7 +53,7 @@ namespace Duplicati.Library.Main.Operation
             if (brokensets.Length == 0)
             {
                 if (db.RepairInProgress)
-                    throw new Exception("Cannot continue because the database is marked as being under repair, but does not have broken files.");
+                    throw new UserInformationException("Cannot continue because the database is marked as being under repair, but does not have broken files.");
 
                 result.AddMessage("No broken filesets found in database, checking for missing remote files");
 
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var remotestate = FilelistProcessor.RemoteListAnalysis(backend, options, db, result.BackendWriter, null);
                     if (!remotestate.ParsedVolumes.Any())
-                        throw new Exception("No remote volumes were found, refusing purge");
+                        throw new UserInformationException("No remote volumes were found, refusing purge");
 
                     missing = remotestate.MissingVolumes.ToList();
                     if (missing.Count == 0)
@@ -87,10 +88,10 @@ namespace Duplicati.Library.Main.Operation
         private void DoRun(Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler)
         {
             if (filter != null && !filter.Empty)
-                throw new Exception("Filters are not supported for this operation");
+                throw new UserInformationException("Filters are not supported for this operation");
 
             if (db.PartiallyRecreated)
-                throw new Exception("The command does not work on partially recreated databases");
+                throw new UserInformationException("The command does not work on partially recreated databases");
 
             List<Database.RemoteVolumeEntry> missing;
             var brokensets = GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, transaction, m_options, out missing);
