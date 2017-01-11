@@ -506,45 +506,47 @@ namespace Duplicati.Library.Main
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
             where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
-            using (Logging.Log.StartScope(result))
+            try
             {
-                try
-                {
-                    m_currentTask = result;
-                    m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                    SetupCommonOptions(result, ref paths, ref filter);
+                m_currentTask = result;
+                m_currentTaskThread = System.Threading.Thread.CurrentThread;
+                SetupCommonOptions(result, ref paths, ref filter);
 
-                    using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
-                        method(result);
+                using (Logging.Log.StartScope(result))
+                using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                {
+                    method(result);
 
                     if (result.EndTime.Ticks == 0)
                         result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
 
-                    Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
-
                     OnOperationComplete(result);
-
-                    return result;
                 }
-                catch (Exception ex)
-                {
-                    result.EndTime = DateTime.UtcNow;
 
-                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                    catch { }
+                Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
 
-                    Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.EndTime = DateTime.UtcNow;
 
+                try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                catch { }
+
+                Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+
+                // Restart the logging scope, in case a module wants to report messages
+                using (Logging.Log.StartScope(result))
                     OnOperationComplete(ex);
 
-                    throw;
-                }
-                finally
-                {
-                    m_currentTask = null;
-                    m_currentTaskThread = null;
-                }
+                throw;
+            }
+            finally
+            {
+                m_currentTask = null;
+                m_currentTaskThread = null;
             }
         }
 
