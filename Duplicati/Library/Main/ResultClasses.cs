@@ -340,7 +340,9 @@ namespace Duplicati.Library.Main
                 m_db.LogMessage("Message", message, ex, null);
             }
         }
-        
+
+        private static bool m_is_reporting = false;
+
         public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (m_parent != null)
@@ -349,13 +351,27 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                if (type == BackendEventType.Started)
-                    this.BackendProgressUpdater.StartAction(action, path, size);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
 
-                Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information, null);
+                    try
+                    {
+                        m_is_reporting = true;
+                        if (type == BackendEventType.Started)
+                            this.BackendProgressUpdater.StartAction(action, path, size);
 
-                if (MessageSink != null)
-                    MessageSink.BackendEvent(action, type, path, size);
+                        Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information, null);
+
+                        if (MessageSink != null)
+                            MessageSink.BackendEvent(action, type, path, size);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
                 
         }
@@ -366,9 +382,23 @@ namespace Duplicati.Library.Main
                 m_parent.AddDryrunMessage(message);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
-                if (MessageSink != null)
-                    MessageSink.DryrunEvent(message);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
+                        if (MessageSink != null)
+                            MessageSink.DryrunEvent(message);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
 
@@ -378,11 +408,24 @@ namespace Duplicati.Library.Main
                 m_parent.AddVerboseMessage(message, args);
             else
             {
-                if (Logging.Log.LogLevel == Duplicati.Library.Logging.LogMessageType.Profiling || VerboseOutput)
-                    Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Information, null);
-                    
-                if (MessageSink != null)
-                    MessageSink.VerboseEvent(message, args);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Profiling, null);
+
+                        if (MessageSink != null)
+                            MessageSink.VerboseEvent(message, args);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
 
@@ -392,17 +435,29 @@ namespace Duplicati.Library.Main
                 m_parent.AddMessage(message);
             else
             {
-                lock(m_lock)
+                lock(Logging.Log.Lock)
                 {
-                    Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
-                    
-                    m_messages.Add(message);
-            
-                    if (MessageSink != null)
-                        MessageSink.MessageEvent(message);
-                            
-                    if (m_db != null && !m_db.IsDisposed)
-                        LogDbMessage("Message", message, null);
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
+
+                        m_messages.Add(message);
+
+                        if (MessageSink != null)
+                            MessageSink.MessageEvent(message);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Message", message, null);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
                 }
             }
         }
@@ -413,16 +468,31 @@ namespace Duplicati.Library.Main
                 m_parent.AddWarning(message, ex);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-                
-                var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                m_warnings.Add(s);
-                
-                if (MessageSink != null)
-                    MessageSink.WarningEvent(message, ex);
-                
-                if (m_db != null && !m_db.IsDisposed)
-                    LogDbMessage("Warning", message, ex);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+
+                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
+                        m_warnings.Add(s);
+
+                        if (MessageSink != null)
+                            MessageSink.WarningEvent(message, ex);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Warning", message, ex);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
 
@@ -432,16 +502,31 @@ namespace Duplicati.Library.Main
                 m_parent.AddRetryAttempt(message, ex);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-                
-                var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                m_retryAttempts.Add(s);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
 
-                if (MessageSink != null)
-                    MessageSink.RetryEvent(message, ex);
-                
-                if (m_db != null && !m_db.IsDisposed)
-                    LogDbMessage("Retry", message, ex);
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+
+                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
+                        m_retryAttempts.Add(s);
+
+                        if (MessageSink != null)
+                            MessageSink.RetryEvent(message, ex);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Retry", message, ex);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
 
@@ -451,16 +536,31 @@ namespace Duplicati.Library.Main
                 m_parent.AddError(message, ex);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
-                
-                var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                m_errors.Add(s);
-            
-                if (MessageSink != null)
-                    MessageSink.ErrorEvent(message, ex);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
 
-                if (m_db != null && !m_db.IsDisposed)
-                    LogDbMessage("Error", message, ex);
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
+
+                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
+                        m_errors.Add(s);
+
+                        if (MessageSink != null)
+                            MessageSink.ErrorEvent(message, ex);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Error", message, ex);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
         
@@ -615,11 +715,12 @@ namespace Duplicati.Library.Main
                 case LogMessageType.Warning:
                     AddWarning(message, exception);
                     break;
-                default:
-                    if (Log.LogLevel == LogMessageType.Profiling)
-                        AddMessage(message);
-                    else
+                case LogMessageType.Profiling:
+                    if (Log.LogLevel == LogMessageType.Profiling && VerboseOutput)
                         AddVerboseMessage(message, new object[0]);
+                    break;
+                default:
+                    AddMessage(message);
                     break;
             }
         }
