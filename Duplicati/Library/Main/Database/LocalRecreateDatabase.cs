@@ -293,7 +293,7 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     if (faultcount != 0)
-                        throw new Exception(string.Format("Detected {0} faults likely the same as issue #2140, please look in the log and report the errors"));
+                        throw new Exception(string.Format("Detected {0} faults likely the same as issue #2140, please look in the log and report the errors", faultcount));
 
                     throw;
                 }
