@@ -72,9 +72,14 @@ namespace Duplicati.Library.Logging
         private static object m_lock = new object();
 
         /// <summary>
-        /// Active message used to block recursion
+        /// Flag used to block recursion
         /// </summary>
-        private static string m_active_message;
+        private static bool m_is_active = false;
+
+        /// <summary>
+        /// Gets the lock instance used to protect the logging calls
+        /// </summary>
+        public static object Lock { get { return m_lock; } }
 
         /// <summary>
         /// Writes a message to the current log destination
@@ -96,12 +101,12 @@ namespace Duplicati.Library.Logging
         {
             lock (m_lock)
             {
-                if (m_active_message == message)
+                if (m_is_active)
                     return;
 
-                m_active_message = message;
                 try
                 {
+                    m_is_active = true;
                     var cs = CurrentScope;
                     while (cs != null)
                     {
@@ -112,7 +117,7 @@ namespace Duplicati.Library.Logging
                 }
                 finally
                 {
-                    m_active_message = null;
+                    m_is_active = false;
                 }
             }
         }
