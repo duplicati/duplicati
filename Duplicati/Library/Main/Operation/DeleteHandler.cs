@@ -81,8 +81,15 @@ namespace Duplicati.Library.Main.Operation
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
                 
                 var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
-                var toDelete = m_options.GetFilesetsToDelete(db.FilesetTimes.Select(x => x.Value).ToArray());
-                
+                var sets = db.FilesetTimes.Select(x => x.Value).ToArray();
+                var toDelete = m_options.GetFilesetsToDelete(sets);
+
+                if (!m_options.AllowFullRemoval && sets.Length == toDelete.Length)
+                {
+                    m_result.AddMessage(string.Format("Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal"));
+                    toDelete = toDelete.Skip(1).ToArray();
+                }
+
                 if (toDelete != null && toDelete.Length > 0)
                     m_result.AddMessage(string.Format("Deleting {0} remote fileset(s) ...", toDelete.Length));
 

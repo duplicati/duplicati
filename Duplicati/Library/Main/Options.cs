@@ -806,7 +806,10 @@ namespace Duplicati.Library.Main
         {
             if (backups.Length == 0)
                 return backups;
-                
+
+            if (backups.Distinct().Count() != backups.Length)
+                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", backups.Select(x => x.ToString()))));
+
             List<DateTime> res = new List<DateTime>();
                 
             var versions = this.Version;
@@ -826,13 +829,9 @@ namespace Duplicati.Library.Main
             var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
             
             var removeCount = filtered.Count();
-            if (removeCount >= backups.Length)
-                filtered = filtered.Skip(removeCount - backups.Length + (AllowFullRemoval ? 0 : 1));
+            if (removeCount > backups.Length)
+                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, backups.Length, string.Join(", ", filtered.Select(x => x.ToString())),string.Join(", ", backups.Select(x => x.ToString()))));
 
-            if (backups.Length == 1 && filtered.Count() == 0 && !AllowFullRemoval)
-                throw new UserInformationException(string.Format("Not removing the final backup set, use the option --{0} to remove the last backup", "allow-full-removal"));
-                
-            
             return filtered.ToArray();
         }
 
