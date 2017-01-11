@@ -163,9 +163,9 @@ namespace Duplicati.Library.Main.Database
                 @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
                 @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
                 @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                @"    AND ""Fileset"".""ID"" = ? " +
+                @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
                 @"  LIMIT 1 ";
-            m_findfileCommand.AddParameters(2);
+            m_findfileCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
@@ -523,7 +523,6 @@ namespace Duplicati.Library.Main.Database
             else
             {
                 m_findfileCommand.SetParameterValue(0, path);
-                m_findfileCommand.SetParameterValue(1, filesetid);
 
                 using(var rd = m_findfileCommand.ExecuteReader())
                     if (rd.Read())
