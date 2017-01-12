@@ -187,9 +187,6 @@ namespace Duplicati.Server
         private volatile bool m_anytimeouts = false;
         private RingBuffer<LogEntry> m_buffer;
 
-        private ILog m_operationfile;
-        private LogMessageType m_operationloglevel;
-
         private ILog m_serverfile;
         private LogMessageType m_serverloglevel;
 
@@ -220,31 +217,6 @@ namespace Duplicati.Server
             m_serverfile = new StreamLog(path);
             m_serverloglevel = level;
 
-            UpdateLogLevel();
-        }
-
-        public void SetOperationFile(string path, LogMessageType level)
-        {
-            var dir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path));
-            if (!System.IO.Directory.Exists(dir))
-                System.IO.Directory.CreateDirectory(dir);
-
-            lock(m_lock)
-            {
-                m_operationfile = new StreamLog(path);
-                m_operationloglevel = level;
-            }
-        }
-
-        public void RemoveOperationFile()
-        {
-            lock(m_lock)
-            {
-                if (m_operationfile != null && m_operationfile is IDisposable)
-                    ((IDisposable)m_operationfile).Dispose();
-                m_operationfile = null;
-                m_operationloglevel = LogMessageType.Error;
-            }
             UpdateLogLevel();
         }
 
@@ -289,7 +261,7 @@ namespace Duplicati.Server
         private void UpdateLogLevel()
         {
             Duplicati.Library.Logging.Log.LogLevel = 
-                (LogMessageType)(GetActiveTimeouts().Union(new int[] {(int)m_serverloglevel, (int)m_operationloglevel}).Min());
+                (LogMessageType)(GetActiveTimeouts().Union(new int[] { (int)m_serverloglevel }).Min());
         }
 
 
@@ -297,16 +269,6 @@ namespace Duplicati.Server
 
         public void WriteMessage(string message, LogMessageType type, Exception exception)
         {
-            var lg = m_operationfile;
-            if (lg != null && type >= m_operationloglevel)
-                try
-                {
-                    lg.WriteMessage(message, type, exception);
-                }
-                catch
-                {
-                }
-
             if (m_serverfile != null && type >= m_serverloglevel)
                 try
                 {
