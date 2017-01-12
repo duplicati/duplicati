@@ -77,6 +77,18 @@ namespace Duplicati.UnitTest
             string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
             string logfilename = System.IO.Path.Combine(tempdir, string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now)));
 
+            try
+            {
+                if (System.IO.Directory.Exists(tempdir))
+                    System.IO.Directory.Delete(tempdir, true);
+
+                System.IO.Directory.CreateDirectory(tempdir);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to clean tempdir: {0}", ex);
+            }
+
             using (var log = new LogHelper(logfilename))
             using (Log.StartScope(log))
             {
@@ -97,17 +109,6 @@ namespace Duplicati.UnitTest
                         if (!System.IO.Directory.Exists(n))
                             throw new Exception(string.Format("Missing source folder: {0}", n));
 
-                try
-                {
-                    if (System.IO.Directory.Exists(tempdir))
-                        System.IO.Directory.Delete(tempdir, true);
-
-                    System.IO.Directory.CreateDirectory(tempdir);
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteMessage("Failed to clean tempdir", LogMessageType.Error, ex);
-                }
 
                 Duplicati.Library.Utility.TempFolder.SystemTempPath = tempdir;
 
