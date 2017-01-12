@@ -90,9 +90,10 @@
         </div>
         -->
 
-        <h2 translate>Usage statistics</h2>
-        <div class="input mixed multiple">
+        <h2 ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" translate>Usage statistics</h2>
+        <div ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" class="input mixed multiple">
             <label for="usagereporterlevel" translate>Anonymous usage reports</label>
+
             <select id="usagereporterlevel" ng-model="usageReporterLevel">
                 <option value="" translate translate-params-levelname="SystemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
                 <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
@@ -108,6 +109,7 @@
 
                     
         <h2 translate>Default options</h2>
+        <h3 class="warning">NOTE: These options are not applied to the backups in the current version of Duplicati! This will be fixed in a later version.</h3>
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
             <label for="backupOptions" translate>Options</label>
             <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle" translate>Edit as list</a>

@@ -86,9 +86,9 @@ namespace Duplicati.Library.Backend.Backblaze
                 accountKey = uri.Password;
 
             if (string.IsNullOrEmpty(accountId))
-                throw new Exception(Strings.B2.NoB2UserIDError);
+                throw new UserInformationException(Strings.B2.NoB2UserIDError);
             if (string.IsNullOrEmpty(accountKey))
-                throw new Exception(Strings.B2.NoB2KeyError);
+                throw new UserInformationException(Strings.B2.NoB2KeyError);
 
             m_helper = new B2AuthHelper(accountId, accountKey);
         }

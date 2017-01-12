@@ -17,6 +17,7 @@
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -105,6 +106,11 @@
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
     <Compile Include="Operation\SystemInfoHandler.cs" />
+    <Compile Include="Operation\PurgeFilesHandler.cs" />
+    <Compile Include="Database\LocalPurgeDatabase.cs" />
+    <Compile Include="Database\LocalListBrokenFilesDatabase.cs" />
+    <Compile Include="Operation\ListBrokenFilesHandler.cs" />
+    <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

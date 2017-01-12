@@ -43,9 +43,14 @@ namespace Duplicati.Library.Main
         private IMessageSink m_messageSink;
 
         /// <summary>
-        /// A flag indicating if logging has been set, used to dispose the logging
+        /// The stream log, if any
         /// </summary>
-        private bool m_hasSetLogging = false;
+        private Logging.StreamLog m_logfile = null;
+
+        /// <summary>
+        /// The logging filescope
+        /// </summary>
+        private IDisposable m_logfilescope = null;
 
         /// <summary>
         /// The current executing task
@@ -173,11 +178,11 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
-
+            
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
                 if (inputsources == null || inputsources.Length == 0)
-                    throw new Exception(Strings.Controller.NoSourceFoldersError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
 
                 var sources = new List<string>(inputsources);
 
@@ -190,7 +195,7 @@ namespace Duplicati.Library.Main
                     }
                     catch (Exception ex)
                     {
-                        throw new ArgumentException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
                     }
 
                     var fi = new System.IO.FileInfo(sources[i]);
@@ -345,8 +350,6 @@ namespace Duplicati.Library.Main
             });
         }
 
-
-
         public Duplicati.Library.Interface.ICompactResults Compact()
         {
             return RunAction(new CompactResults(), (result) => {
@@ -426,8 +429,60 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.IPurgeFilesResults PurgeFiles(Library.Utility.IFilter filter)
+        {
+            return RunAction(new PurgeFilesResults(), result =>
+            {
+                new Operation.PurgeFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+
+        public Library.Interface.IListBrokenFilesResults ListBrokenFiles(Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        {
+            return RunAction(new ListBrokenFilesResults(), result =>
+            {
+                new Operation.ListBrokenFilesHandler(m_backend, m_options, result).Run(filter, callbackhandler);
+            });
+        }
+
+        public Library.Interface.IPurgeBrokenFilesResults PurgeBrokenFiles(Library.Utility.IFilter filter)
+        {
+            return RunAction(new PurgeBrokenFilesResults(), result =>
+            {
+                new Operation.PurgeBrokenFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+
+        public Library.Interface.ISendMailResults SendMail()
+        {
+            m_options.RawOptions["send-mail-level"] = "all";
+            m_options.RawOptions["send-mail-any-operation"] = "true";
+            string targetmail;
+            m_options.RawOptions.TryGetValue("send-mail-to", out targetmail);
+            if (string.IsNullOrWhiteSpace(targetmail))
+                throw new Exception(string.Format("No email specified, please use --{0}", "send-mail-to"));
+
+            if (m_options.Loglevel == Logging.LogMessageType.Error)
+                m_options.RawOptions["log-level"] = Logging.LogMessageType.Warning.ToString();
+
+            m_options.RawOptions["disable-module"] = string.Join(
+                ",",
+                DynamicLoader.GenericLoader.Modules
+                         .Where(m =>
+                              !(m is Library.Interface.IConnectionModule) && m.GetType().FullName != "Duplicati.Library.Modules.Builtin.SendMail"
+                         )
+                .Select(x => x.Key)
+            );
+                         
+            return RunAction(new SendMailResults(), result =>
+            {
+                result.Lines = new string[0];
+                System.Threading.Thread.Sleep(5);
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
@@ -435,57 +490,63 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
         private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
-            try
+            using (Logging.Log.StartScope(result))
             {
-                m_currentTask = result;
-                m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                try
                 {
+                    m_currentTask = result;
+                    m_currentTaskThread = System.Threading.Thread.CurrentThread;
                     SetupCommonOptions(result, ref paths, ref filter);
 
-                    method(result);
+                    result.WriteLogMessageDirect(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
 
-                    result.EndTime = DateTime.UtcNow;
+                    using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                        method(result);
+
+                    if (result.EndTime.Ticks == 0)
+                        result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
 
                     OnOperationComplete(result);
 
-                    Library.Logging.Log.WriteMessage(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
+                    result.WriteLogMessageDirect(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
 
                     return result;
                 }
-            }
-            catch (Exception ex)
-            {
-                OnOperationComplete(ex);
+                catch (Exception ex)
+                {
+                    result.EndTime = DateTime.UtcNow;
 
-                try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                catch { }
+                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                    catch { }
 
-                Library.Logging.Log.WriteMessage(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+                    OnOperationComplete(ex);
 
-                throw;
-            }
-            finally
-            {
-                m_currentTask = null;
+                    result.WriteLogMessageDirect(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+
+                    throw;
+                }
+                finally
+                {
+                    m_currentTask = null;
                 m_currentTaskThread = null;
+                }
             }
         }
 
@@ -558,13 +619,18 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
+            if (m_logfilescope != null)
             {
-                Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
-                Logging.Log.CurrentLog = null;
-                sl.Dispose();
-                m_hasSetLogging = false;
+                m_logfilescope.Dispose();
+                m_logfilescope = null;
             }
+
+            if (m_logfile != null)
+            {
+                m_logfile.Dispose();
+                m_logfile = null;
+            }
+
         }
 
         private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
@@ -598,7 +664,7 @@ namespace Duplicati.Library.Main
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
 
-            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+            foreach (var mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
                     if (mx.Value is Library.Interface.IConnectionModule)
@@ -606,13 +672,26 @@ namespace Duplicati.Library.Main
                     else
                         mx.Value.Configure(m_options.RawOptions);
 
+                    if (mx.Value is Library.Interface.IGenericSourceModule)
+                    {
+                        var sourcemodule = (Library.Interface.IGenericSourceModule)mx.Value;
+
+                        if (sourcemodule.ContainFilesForBackup(paths))
+                        {
+                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+
+                            foreach (var sourceoption in sourceoptions)
+                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                        }
+                    }
+
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
             // If the filters were changed, read them back in
             if (pristinefilter != conopts["filter"])
-                filter = FilterExpression.Deserialize(conopts["filter"].Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+                filter = FilterExpression.Deserialize(pristinefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
 
             OperationRunning(true);
 
@@ -621,11 +700,11 @@ namespace Duplicati.Library.Main
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
-                m_hasSetLogging = true;
                 var path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_options.Logfile));
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
-                Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
+
+                m_logfilescope = Logging.Log.StartScope(Logging.Log.CurrentLog = m_logfile = new Library.Logging.StreamLog(m_options.Logfile));
             }
 
             result.VerboseErrors = m_options.DebugOutput;
@@ -676,8 +755,6 @@ namespace Duplicati.Library.Main
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
             ValidateOptions(result);
-
-            Library.Logging.Log.WriteMessage(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
         }
 
         /// <summary>
@@ -715,7 +792,6 @@ namespace Duplicati.Library.Main
                     if (m.Key)
                         moduleOptions.AddRange(m.Value.SupportedCommands);
                     else
-                    {
                         foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
                         {
                             disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
@@ -724,7 +800,6 @@ namespace Duplicati.Library.Main
                                 foreach (string s in c.Aliases)
                                     disabledModuleOptions[s] = disabledModuleOptions[c.Name];
                         }
-                    }
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key

@@ -1,3 +1,103 @@
+2017-01-08 - 2.0.1.39_canary_2017-01-08
+==========
+* Fixed some typos, thanks @sfahrenholz
+* Added webp to compressed file extension list, thanks @dessant
+* Changed aftp backend to use CWD, thanks @seaeagle1
+* Added "purge" command to purge files from the database
+* Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
+* Added additional trace log messages to debug some consistency issues
+* Fixed support for operations across different operating systems
+
+2016-12-27 - 2.0.1.38_canary_2016-12-27
+==========
+* Fixed a problem with login no longer working
+* Updated the login page to use blue colors
+
+2016-12-27 - 2.0.1.37_canary_2016-12-27
+==========
+* Added a check for administrator privileges to avoid HyperV error messages
+
+2016-12-24 - 2.0.1.36_canary_2016-12-24
+==========
+* Fixed a case where excluded gave a warning
+* Removed the "No LSB Modules" messages on Linux
+* Fixed a problem with lon UNC paths on Windows, thanks @quincunx
+* Removed the Greeno theme as it was not maintained
+* Removed some unused options for setting in-memory buffers
+* Added debug output if we hit issue #1400
+
+2016-12-05 - 2.0.1.34_canary_2016-12-05
+==========
+* Fixed an issue with spurious errors in the UI mentioning Hyper-V
+* Fixed an issue where requesting deletion of remote files did not work
+* Improved the status results reported in the log files
+* Fixed some issues with the usage reporter
+* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
+
+2016-11-27 - 2.0.1.33_canary_2016-11-27
+==========
+* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
+* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
+* Updated LVM snapshot size parameters, thanks @kakoskin1
+* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
+* Improved notification area layout, thanks @tudacs
+* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
+* Added support for choosing time values in seconds range from the UI
+* Fixed issues with the scheduler not re-scheduling entries until after a restart
+* Fixed a case where sizes chosen from the advanced options editor would be invalid
+
+2016-11-12 - 2.0.1.32_canary_2016-11-12
+==========
+* Fixed an issue with deleting a backup
+* Fixed an issue with creating a backup without encryption
+* Fixed storing symlink metadata to not follow symlinks unless specified
+* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
+* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
+* Updated languages, added Chinese
+* Added a GUI for MSSQL databases, thanks @mnaiman
+* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
+* Fixed escaping exported commandline for Windows
+* Fixes to the UI, thanks @agrajaghh
+
+2016-11-03 - 2.0.1.31_canary_2016-11-03
+==========
+* Fixed autoupdater choosing old update if the base version was replaced
+* Improved the UI for adding a backup, thanks @agrajaghh
+* Added MSSQL to potential backup targets, thanks @mnaiman
+
+2016-11-03 - 2.0.1.30_experimental_2016-11-03
+==========
+* Experimental release; includes all canary changes
+* Updated translations
+* Rebuilt UnixSupport to fix OSX metadata issues
+
+2016-10-27 - 2.0.1.29_canary_2016-10-27
+==========
+* Better support for LVM snapshots, thanks @a1ezzz
+* Fixed additional Debian dependencies, thanks @a1ezzz
+* Additional translation files, Spanish and French
+* Improved HyperV support from CLI and UI, thanks @mnaiman and @agrajaghh
+* Fixed a bug with log-spam from Windows Service, thanks @mnaiman
+* Fixed issue with backup metadata and user that do not exist locally, thanks @gerco
+* Improved screen reading support
+* Fixed OSX icon on dark statusbar
+* Fixed crashes on Linux related to icon format
+* Updated GTK support and switched to SVG icons
+
+2016-10-19
+==========
+* Some additions to the translation system
+* Fixed setting current working dir, thanks @mnaiman
+* Fixed an issue where deleting a backup would not work
+* Updated the throttle computation algorithm
+* Suppressing the "No LSB modules found" error message on Ubuntu
+* Added support for metadata larger than 100kb
+* NOTE: The large metadata support changes the remote file format for all newly written files
+* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
+* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
+* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
+* Fixed an incorrect warning when using the commandline and GPG
+
 2016-10-14
 ==========
 * Work on the translation system, thanks @agrajaghh

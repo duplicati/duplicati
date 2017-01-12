@@ -13,6 +13,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     var filesetsRepaired = {};
     var filesetStamps = {};
     var inProgress = {};
+    var dirsep = $scope.SystemInfo.DirectorySeparator || '/';
 
     $scope.filesetStamps = filesetStamps;
     $scope.treedata = {};
@@ -62,6 +63,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.fetchBackupTimes = function() {
         $scope.connecting = true;
+        $scope.ConnectionProgress = gettextCatalog.getString('Getting file versions ...');
 
         var qp = '';
         if ($scope.IsBackupTemporary)
@@ -70,6 +72,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         AppService.get('/backup/' + $scope.BackupID + '/filesets' + qp).then(
             function(resp) {
                 $scope.connecting = false;
+                $scope.ConnectionProgress = '';
                 $scope.Filesets = resp.data;
                 $scope.parseBackupTimesData();
                 $scope.fetchPathInformation();
@@ -164,6 +167,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
                         filesetsBuilt[version] = resp.data.Files;
                         $scope.Paths = filesetsBuilt[version];
+
+                        dirsep = resp.data.Files[0].Path[0] == '/' ? '/' : '\\';
+
                     }, handleError);
             }
         } else {
@@ -217,7 +223,6 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             function(resp) {
                 $scope.Searching = false;
                 var searchNodes = [];
-                var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
 
                 function compareablePath(path) {
                     return $scope.SystemInfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
@@ -289,10 +294,29 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.onStartRestore = function() {
+        if ($scope.RestoreLocation == 'custom' && ($scope.RestorePath || '').trim().length == 0)
+        {
+            DialogService.alert(gettextCatalog.getString('You have chosen to restore to a new location, but not entered one'));
+            return;
+        }
+
+        if ($scope.RestoreLocation != 'custom' && dirsep != $scope.SystemInfo.DirectorySeparator)
+        {
+            DialogService.confirm(gettextCatalog.getString('This backup was created on another operating system. Restoring files without specifying a destination folder can cause files to be restored in unexpected places. Are you sure you want to continue without choosing a destination folder?'), function(ix) {
+                if (ix == 1)
+                    $scope.onStartRestoreProcess();
+            });
+        }
+        else
+        {
+            $scope.onStartRestoreProcess();
+        }
+    }
+
+    $scope.onStartRestoreProcess = function() {
+
         var version = $scope.RestoreVersion + '';
         var stamp = filesetStamps[version];
-        var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
-        var pathSep = $scope.SystemInfo.PathSeparator || ':';       
 
         function handleError(resp) {
             var message = resp.statusText;

@@ -11,17 +11,24 @@ backupApp.directive('advancedOptionsEditor', function() {
             $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
             $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
             $scope.speedMultipliers = AppUtils.speedMultipliers;
+            $scope.shorttimerangeMultipliers = AppUtils.shorttimerangeMultipliers;
 
             AppUtils.watch($scope, function() {
                 $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
                 $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
                 $scope.speedMultipliers = AppUtils.speedMultipliers;
+                $scope.shorttimerangeMultipliers = AppUtils.shorttimerangeMultipliers;
             });
 
             // Overrides to display a custom layout for a specific option
             var overrides = {
                 'throttle-upload': 'speed',
-                'throttle-download': 'speed'
+                'throttle-download': 'speed',
+
+                'retry-delay': 'shorttimespan',
+                'amzcd-consistency-delay': 'shorttimespan',
+                'web-timeout': 'shorttimespan',
+                'run-script-timeout': 'shorttimespan'
             };
 
             var optionmap = null;

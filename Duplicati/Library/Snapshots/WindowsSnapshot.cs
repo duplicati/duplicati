@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Alphaleonis.Win32.Vss;
-using System.Management;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -68,11 +67,6 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private static readonly SystemIOWindows _ioWin = new SystemIOWindows();
         /// <summary>
-        /// The Hyper-V VSS Writer Guid
-        /// </summary>
-        private static readonly Guid HyperVWriterGuid = new Guid("66841cd4-6ded-4f4b-8f17-fd23f8ddc3de");
-
-        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
@@ -103,22 +97,15 @@ namespace Duplicati.Library.Snapshots
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
 
                 m_sourcepaths = sourcepaths.Select(x => Directory.Exists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
-
-                List<string> hypervPaths;
-
+                
                 try
                 {
                     m_backup.GatherWriterMetadata();
-
-                    hypervPaths = PrepareHyperVBackup(options, m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid)));
                 }
                 finally
                 {
                     m_backup.FreeWriterMetadata();
                 }
-
-                if (hypervPaths != null)
-                    m_sourcepaths.AddRange(hypervPaths);
 
                 //Sanity check for duplicate files/folders
                 var pathDuplicates = m_sourcepaths.GroupBy(x => x, Utility.Utility.ClientFilenameStringComparer)
@@ -142,7 +129,7 @@ namespace Duplicati.Library.Snapshots
                 m_backup.StartSnapshotSet();
 
                 //Figure out which volumes are in the set
-                m_volumes = new Dictionary<string, Guid>(StringComparer.InvariantCultureIgnoreCase);
+                m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
                 foreach (string s in m_sourcepaths)
                 {
                     string drive = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(s);
@@ -162,7 +149,7 @@ namespace Duplicati.Library.Snapshots
                 m_backup.DoSnapshotSet();
 
                 //Make a little lookup table for faster translation
-                m_volumeMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+                m_volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (KeyValuePair<string, Guid> kvp in m_volumes)
                     m_volumeMap.Add(kvp.Key, m_backup.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
 
@@ -190,88 +177,6 @@ namespace Duplicati.Library.Snapshots
 
                 throw;
             }
-        }
-
-        private List<string> PrepareHyperVBackup(Dictionary<string, string> options, IVssExamineWriterMetadata writerMetaData)
-        {
-            var resultPaths = new List<string>();
-            var requestedHyperVMs = new List<string>();
-
-            if (options.ContainsKey("hyperv-backup-vm"))
-                requestedHyperVMs = options["hyperv-backup-vm"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).ToList();
-
-            if (requestedHyperVMs.Count == 0)
-                return resultPaths;
-
-            Logging.Log.WriteMessage("Starting to gather Hyper-V information.", Logging.LogMessageType.Information);
-
-            var hyperVGuests = new HyperVUtility().GetHyperVGuests();
-
-            Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V.", hyperVGuests.Count), Logging.LogMessageType.Information);
-
-            bool bNotFound = false;
-            var notFoundVM = new List<string>();
-
-            foreach (var requestedHyperVM in requestedHyperVMs)
-            {
-                var foundVMs = hyperVGuests.FindAll(x => (string.Equals(requestedHyperVM, x.ID, StringComparison.CurrentCultureIgnoreCase)));
-
-                if (foundVMs.Count != 1)
-                {
-                    bNotFound = true;
-                    notFoundVM.Add(requestedHyperVM);
-                    Logging.Log.WriteMessage(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", requestedHyperVM), Logging.LogMessageType.Error);
-                }
-                else
-                    Logging.Log.WriteMessage(string.Format("Found virtual machine {0} with ID {1} on Hyper-V.", foundVMs[0].Name, requestedHyperVM), Logging.LogMessageType.Information);
-            }
-
-            if (bNotFound)
-                throw new Exception(string.Format("Cannot find virtual machine with ID {0} on Hyper-V.", string.Join(", ", notFoundVM.ToArray())));
-
-            var productType = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
-                .Get().OfType<ManagementObject>()
-                .Select(o => (uint)o.GetPropertyValue("ProductType")).First();
-
-            if (productType != 1) // Hyper-V writer is present only on Server version of Windows
-            {
-                if (writerMetaData == null)
-                    throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
-
-                foreach (var component in writerMetaData.Components)
-                    if (requestedHyperVMs.Contains(component.ComponentName, StringComparer.CurrentCultureIgnoreCase))
-                        foreach (var file in component.Files)
-                            if (file.FileSpecification.Contains("*"))
-                            {
-                                if (Directory.Exists(Utility.Utility.AppendDirSeparator(file.Path)))
-                                {
-                                    resultPaths.Add(Utility.Utility.AppendDirSeparator(file.Path));
-                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", component.ComponentName, Utility.Utility.AppendDirSeparator(file.Path)), Logging.LogMessageType.Profiling);
-                                }
-                            }
-                            else
-                            {
-                                if (File.Exists(Path.Combine(file.Path, file.FileSpecification)))
-                                {
-                                    resultPaths.Add(Path.Combine(file.Path, file.FileSpecification));
-                                    Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", component.ComponentName, Path.Combine(file.Path, file.FileSpecification)), Logging.LogMessageType.Profiling);
-                                }
-                            }
-            }
-            else
-            {
-                Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version.", Logging.LogMessageType.Warning);
-
-                foreach (var hyperVGuest in hyperVGuests)
-                    if (requestedHyperVMs.Contains(hyperVGuest.ID, StringComparer.CurrentCultureIgnoreCase))
-                        foreach (var path in hyperVGuest.DataPaths)
-                        {
-                            resultPaths.Add(path);
-                            Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}.", hyperVGuest.ID, path), Logging.LogMessageType.Profiling);
-                        }
-            }
-
-            return resultPaths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
         }
 
 #if DEBUG
@@ -489,9 +394,11 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="file">The file or folder to examine</param>
-        public Dictionary<string, string> GetMetadata(string file)
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
-            return _ioWin.GetMetadata(GetSnapshotPath(file));
+            return _ioWin.GetMetadata(GetSnapshotPath(file), isSymlink, followSymlink);
         }
 
         /// <summary>

@@ -42,6 +42,7 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options.SymlinkStrategy m_symlinkPolicy;
         private int m_blocksize;
         private long m_maxmetadatasize;
+        private long m_lastfilesetid;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -55,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
             m_symlinkPolicy = m_options.SymlinkPolicy;
                 
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
         }
         
         
@@ -93,7 +94,6 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                     m_enumeratefilter = m_emitfilter;
-
             }
         
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -249,12 +249,6 @@ namespace Duplicati.Library.Main.Operation
 
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
-            if (!Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                log.AddWarning("hyperv-backup-vm is efective only on Windows OS.", null);
-
-            if (Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm") && options.SnapShotStrategy == Options.OptimizationStrategy.Off)
-                throw new Exception("Snapshot strategy cannot be Off when backuping Hyper-V using hyperv-backup-vm"); //VSS is required for Hyper-V backups
-
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
@@ -264,12 +258,8 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                    throw; //VSS is required for Hyper-V backups
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                {
                     log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
-                }
             }
 
             return Library.Utility.Utility.IsClientLinux ?
@@ -311,86 +301,87 @@ namespace Duplicati.Library.Main.Operation
 
         private void UploadSyntheticFilelist(BackendManager backend) 
         {
-            var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();                        
-            if (incompleteFilesets.Length != 0)
+            var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToList();
+
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
+            m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
+            using(var trn = m_database.BeginTransaction())
             {
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
-                using(var trn = m_database.BeginTransaction())
+                var incompleteSet = incompleteFilesets.Last();
+                var badIds = from n in incompleteFilesets select n.Key;
+
+                var prevs = (from n in m_database.FilesetTimes 
+                    where 
+                    n.Key < incompleteSet.Key
+                    &&
+                    !badIds.Contains(n.Key)
+                    orderby n.Key                                                
+                    select n.Key).ToArray();
+
+                var prevId = prevs.Length == 0 ? -1 : prevs.Last();
+
+                FilesetVolumeWriter fsw = null;
+                try
                 {
-                    var incompleteSet = incompleteFilesets.Last();
-                    var badIds = from n in incompleteFilesets select n.Key;
+                    var s = 1;
+                    var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
+                    var oldFilesetID = incompleteSet.Key;
 
-                    var prevs = (from n in m_database.FilesetTimes 
-                        where 
-                        n.Key < incompleteSet.Key
-                        &&
-                        !badIds.Contains(n.Key)
-                        orderby n.Key                                                
-                        select n.Key).ToArray();
-
-                    var prevId = prevs.Length == 0 ? -1 : prevs.Last();
-
-                    FilesetVolumeWriter fsw = null;
-                    try
+                    // Probe for an unused filename
+                    while (s < 60)
                     {
-                        var s = 1;
-                        var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                        var oldFilesetID = incompleteSet.Key;
+                        var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
+                        if (id < 0)
+                            break;
 
-                        // Probe for an unused filename
-                        while (s < 60)
-                        {
-                            var id = m_database.GetRemoteVolumeID(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, fileTime));
-                            if (id < 0)
-                                break;
-
-                            fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                        }
-
-                        fsw = new FilesetVolumeWriter(m_options, fileTime);
-                        fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-
-                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                            foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
-
-                        var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
-                        m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
-                        m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
-
-                        m_database.WriteFileset(fsw, trn, newFilesetID);
-
-                        if (m_options.Dryrun)
-                        {
-                            m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
-                        }
-                        else
-                        {
-                            m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
-
-                            using(new Logging.Timer("CommitUpdateFilelistVolume"))
-                                trn.Commit();
-
-                            backend.Put(fsw);
-                            fsw = null;
-                        }
+                        fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
                     }
-                    finally
-                    {
-                        if (fsw != null)
-                            try { fsw.Dispose(); }
-                        catch { fsw = null; }
-                    }                          
-                }
-            }
 
+                    fsw = new FilesetVolumeWriter(m_options, fileTime);
+                    fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
+
+                    if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                        foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                            fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                    var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
+                    m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
+                    m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
+
+                    m_database.WriteFileset(fsw, trn, newFilesetID);
+
+                    if (m_options.Dryrun)
+                    {
+                        m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
+                    }
+                    else
+                    {
+                        m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
+
+                        using(new Logging.Timer("CommitUpdateFilelistVolume"))
+                            trn.Commit();
+
+                        backend.Put(fsw);
+                        fsw = null;
+                    }
+                }
+                finally
+                {
+                    if (fsw != null)
+                        try { fsw.Dispose(); }
+                    catch { fsw = null; }
+                }                          
+            }
+        }
+
+        private void RecreateMissingIndexFiles(BackendManager backend)
+        {
             if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
             {
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
-                foreach(var blockfile in m_database.GetMissingIndexFiles())
+                foreach (var blockfile in m_database.GetMissingIndexFiles())
                 {
                     m_result.AddMessage(string.Format("Re-creating missing index file for {0}", blockfile));
                     var w = new IndexVolumeWriter(m_options);
@@ -400,13 +391,13 @@ namespace Duplicati.Library.Main.Operation
                     w.StartVolume(blockvolume.Name);
                     var volumeid = m_database.GetRemoteVolumeID(blockvolume.Name);
 
-                    foreach(var b in m_database.GetBlocks(volumeid))
+                    foreach (var b in m_database.GetBlocks(volumeid))
                         w.AddBlock(b.Hash, b.Size);
 
                     w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                        foreach(var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                        foreach (var b in m_database.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
                             w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
 
                     w.Close();
@@ -424,7 +415,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void PreBackupVerify(BackendManager backend)
+        private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
             using(new Logging.Timer("PreBackupVerify"))
@@ -437,7 +428,7 @@ namespace Duplicati.Library.Main.Operation
 						UpdateStorageStatsFromDatabase();
 					}
 					else
-						FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
                 {
@@ -644,7 +635,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
-                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                    new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }
@@ -689,14 +680,18 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                var probe_path = m_database.GetFirstPath();
+                if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
+                    throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without loosing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"));
+
                 if (m_database.PartiallyRecreated)
-                    throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
                 
                 if (m_database.RepairInProgress)
-                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
 
                 m_blocksize = m_options.Blocksize;
-                m_maxmetadatasize = (m_blocksize / m_options.BlockhashSize) * m_blocksize;
+                m_maxmetadatasize = (m_blocksize / (long)m_options.BlockhashSize) * m_blocksize;
 
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
                 m_blocklistbuffer = new byte[m_options.Blocksize];
@@ -705,14 +700,14 @@ namespace Duplicati.Library.Main.Operation
                 m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
 
                 if (m_blockhasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (m_filehasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
 
                 if (!m_blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
                 if (!m_filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, false);
                 // If there is no filter, we set an empty filter to simplify the code
@@ -722,11 +717,9 @@ namespace Duplicati.Library.Main.Operation
                 
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                 System.Threading.Thread parallelScanner = null;
-
     
                 try
                 {
-
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
@@ -742,10 +735,54 @@ namespace Duplicati.Library.Main.Operation
                                 parallelScanner.Start(snapshot);
                             }
 
-                            PreBackupVerify(backend);
+                            string lasttempfilelist = null;
+                            long lasttempfileid = -1;
+                            if (!m_options.DisableSyntheticFilelist)
+                            {
+                                var candidates = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToArray();
+                                if (candidates.Length > 0)
+                                {
+                                    lasttempfileid = candidates.Last().Key;
+                                    lasttempfilelist = m_database.GetRemoteVolumeFromID(lasttempfileid).Name;
+                                }
+                            }
 
                             // Verify before uploading a synthetic list
-                            UploadSyntheticFilelist(backend);
+                            PreBackupVerify(backend, lasttempfilelist);
+
+                            // If we have an incomplete entry, upload it now
+                            if (!m_options.DisableSyntheticFilelist && !string.IsNullOrWhiteSpace(lasttempfilelist) && lasttempfileid >= 0)
+                            {
+                                // Check that we still need to process this after the cleanup has performed its duties
+                                var syntbase = m_database.GetRemoteVolumeFromID(lasttempfileid);
+                                if (syntbase.Name != null && (syntbase.State == RemoteVolumeState.Uploading || syntbase.State == RemoteVolumeState.Temporary))
+                                {
+                                    UploadSyntheticFilelist(backend);
+
+                                    // Remove the protected file
+                                    if (syntbase.State == RemoteVolumeState.Uploading)
+                                    {
+                                        m_result.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", syntbase.State, syntbase.Name));
+                                        backend.Delete(syntbase.Name, syntbase.Size);
+                                    }
+                                    else if (syntbase.State == RemoteVolumeState.Temporary)
+                                    {
+                                        m_result.AddMessage(string.Format("removing file listed as {0}: {1}", syntbase.State, syntbase.Name));
+                                        m_database.RemoveRemoteVolume(syntbase.Name);
+                                    }
+                                }
+                                else if (syntbase.Name == null || syntbase.State != RemoteVolumeState.Uploaded)
+                                    m_result.AddWarning(string.Format("Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lasttempfileid, lasttempfilelist), null);
+                            }
+
+                            var prevfileset = m_database.FilesetTimes.FirstOrDefault();
+                            if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
+                                throw new UserInformationException(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
+                            
+                            m_lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
+
+                            // Rebuild any index files that are missing
+                            RecreateMissingIndexFiles(backend);
 
                             m_database.BuildLookupTable(m_options);
                             m_transaction = m_database.BeginTransaction();
@@ -848,7 +885,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_options.StoreMetadata)
                 {
-                    metadata = snapshot.GetMetadata(path);
+                    metadata = snapshot.GetMetadata(path, attributes.HasFlag(System.IO.FileAttributes.ReparsePoint), m_symlinkPolicy == Options.SymlinkStrategy.Follow);
                     if (metadata == null)
                         metadata = new Dictionary<string, string>();
 
@@ -974,16 +1011,28 @@ namespace Duplicati.Library.Main.Operation
                 
                 // Last scan time
                 DateTime oldModified;
-                long lastFileSize = -1;
+                long lastFileSize;
                 string oldMetahash;
                 long oldMetasize;
-                var oldId = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                long oldId;
 
                 long filestatsize = -1;
                 try { filestatsize = snapshot.GetFileSize(path); }
                 catch { }
 
                 IMetahash metahashandsize = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options) : EMPTY_METADATA;
+
+                if (m_options.CheckFiletimeOnly || m_options.DisableFiletimeCheck)
+                {
+                    lastFileSize = filestatsize;
+                    oldMetahash = metahashandsize.FileHash;
+                    oldMetasize = metahashandsize.Blob.Length;
+                    oldId = m_database.GetFileLastModified(path, m_lastfilesetid, out oldModified);
+                }
+                else
+                {
+                    oldId = m_database.GetFileEntry(path, m_lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                }
 
                 var timestampChanged = lastwrite != oldModified || lastwrite.Ticks == 0 || oldModified.Ticks == 0;
                 var filesizeChanged = filestatsize < 0 || lastFileSize < 0 || filestatsize != lastFileSize;
@@ -1059,13 +1108,17 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || snapshot.GetFileSize(path) < m_options.SkipFilesLargerThan)                
-                        m_result.AddVerboseMessage("Skipped checking file, because timestamp was not updated {0}", path);
+                    if (tooLargeFile)                
+                        m_result.AddVerboseMessage("Excluding file because the size {0} exceeds limit ({1}): {2}", Library.Utility.Utility.FormatSizeString(filestatsize), Library.Utility.Utility.FormatSizeString(m_options.SkipFilesLargerThan), path);
                     else
-                        m_result.AddVerboseMessage("Skipped checking file, because the size exceeds limit {0}", path);
+                        m_result.AddVerboseMessage("Skipped checking file, because timestamp was not updated {0}", path);
                 }
 
-                if (!changed)
+                // If the file was not previously found, we cannot add it
+                // If the file was too large, we treat it as missing,
+                // otherwise the backups appear to contain the file
+                // but has an old version
+                if (!changed && oldId >= 0 && !tooLargeFile)
                     AddUnmodifiedFile(oldId, lastwrite);
 
                 m_result.SizeOfExaminedFiles += filestatsize;
@@ -1203,8 +1256,6 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_blockvolume.Dispose();
                         m_blockvolume = null;
-                        m_indexvolume.Dispose();
-                        m_indexvolume = null;
                     }
                     else
                     {
@@ -1350,7 +1401,8 @@ namespace Duplicati.Library.Main.Operation
                 finally { m_indexvolume = null; }
             }
 
-            m_result.EndTime = DateTime.UtcNow;
+            if (m_result.EndTime.Ticks == 0)
+                m_result.EndTime = DateTime.UtcNow;
         }
     }
 }

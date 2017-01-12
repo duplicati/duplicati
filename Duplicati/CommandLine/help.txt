@@ -11,8 +11,9 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, repair, affected
-  Debugging: debug, logging, create-report, test-filters, system-info
+  Commands: backup, find, restore, delete, compact, test, compare, purge
+  Reparing: repair, affected, list-broken-files, purge-broken-files
+  Debugging: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
@@ -138,6 +139,8 @@ Usage: delete <storage-URL> [<options>]
     Marks data outdated that is older than <int> versions.
   --version=<int>
     Deletes all files that belong to the specified version(s).
+  --allow-full-removal
+    Disables the protection against removing the final fileset
   
   
   
@@ -193,6 +196,42 @@ Usage: repair <storage-URL> [<options>]
 
 
 
+# =============================================================================
+> duplicati.commandline.exe help purge
+
+Usage: purge <storage-URL> <filenames> [<options>]
+  
+  Purges (removes) files from remote backup data. This command can either take a list of filenames or use the filters to choose which files to purge. The purge process creates new filesets on the remote destination with the purged files removed, and will start the compacting process after a purge. By default, the matching files are purged in all versions, but this can be limited by choosing one or more versions. To test what will happen, use the --dry-run flag.
+
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
+  --version=<int>
+    Selects specific versions to purge from, multiple versions can be specified with commas
+  --time=<time>
+    Selects a specific version to purge from
+  --no-auto-compact
+    Performs a compact process after purging files
+  --include=<filter>
+    Selects files to purge, using filter syntax
+
+
+# =============================================================================
+> duplicati.commandline.exe help broken
+> duplicati.commandline.exe help broken-files
+> duplicati.commandline.exe help list-broken-files
+> duplicati.commandline.exe help purge-broken-files
+
+Usage: list-broken-files <storage-URL> [<options>]
+  
+  Checks the database for missing data that cause files not not be restoreable. Files can become unrestoreable if remote data files are defect or missing. Use the list-broken-files command to see what the purge-broken-files command will remove.
+
+Usage: purge-broken-files <storage-URL> [<options>]
+
+  Removes all files from the database and remote storage that are no longer restoreable. Use this operation with caution, and only if you cannot recover the missing remote files, but want to continue a backup. Even with missing remote files, it may be possible to restore parts of the files that will be removed with this command.
+
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
+    
 
 # =============================================================================
 > duplicati.commandline.exe help test
@@ -385,8 +424,12 @@ Inside scripts and the commandline --parameters-file, where multiple filters are
 # =============================================================================
 > duplicati.commandline.exe help mail
 > duplicati.commandline.exe help email
+> duplicati.commandline.exe help send-mail
 
-Duplicati can send email notifications.
+Duplicati can send email notifications after each operation. Use the send-mail command to test this:
+  
+  %MONO%"%APP_PATH%" send-mail --send-mail-to=<email-address>
+
 
   --send-mail-to=<email-address>
     Send an email to <email-address> after a backup. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
@@ -397,7 +440,7 @@ Duplicati can send email notifications.
   --send-mail-body=<body>
     The content of the email message. This should contain "%RESULT%".
   --send-mail-url=<smtp-url>
-    A URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587" or "smtp://smtp.example.com:25"
+    A URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587", "smtps://smtp.example.com:465" or "smtp://smtp.example.com:25"
   --send-mail-username=<username>
     Required username to authenticate with SMTP server.
   --send-mail-password=<password>

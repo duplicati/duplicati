@@ -54,32 +54,29 @@ namespace Duplicati.GUI.TrayIcon
         {
             set 
             {
+                m_appIndicator.IconName = GetTrayIconFilename(value);
+
                 switch(value)
                 {
-                case TrayIcons.Paused:
-                    m_appIndicator.IconName = "normal-pause";
-                    m_appIndicator.IconDesc = "Paused";
-                    break;
-                case TrayIcons.Running:
-                    m_appIndicator.IconName = "normal-running";
-                    m_appIndicator.IconDesc = "Running";
-                    break;
-                case TrayIcons.IdleError:
-                    m_appIndicator.IconName = "normal-error";
-                    m_appIndicator.IconDesc = "Error";
-                    break;
-                case TrayIcons.RunningError:
-                    m_appIndicator.IconName = "normal-running";
-                    break;
-                case TrayIcons.PausedError:
-                    m_appIndicator.IconName = "normal-pause";
-                    m_appIndicator.IconDesc = "Paused";
-                    break;
-                case TrayIcons.Idle:
-                default:
-                    m_appIndicator.IconName = "normal";
-                    m_appIndicator.IconDesc = "Ready";
-                    break;
+                    case TrayIcons.Paused:
+                        m_appIndicator.IconDesc = "Paused";
+                        break;
+                    case TrayIcons.Running:
+                        m_appIndicator.IconDesc = "Running";
+                        break;
+                    case TrayIcons.IdleError:
+                        m_appIndicator.IconDesc = "Error";
+                        break;
+                    case TrayIcons.RunningError:
+                        m_appIndicator.IconDesc = "Running";
+                        break;
+                    case TrayIcons.PausedError:
+                        m_appIndicator.IconDesc = "Paused";
+                        break;
+                    case TrayIcons.Idle:
+                    default:
+                        m_appIndicator.IconDesc = "Ready";
+                        break;
                 }
             }
         }

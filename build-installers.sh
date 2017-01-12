@@ -36,6 +36,7 @@ MSI32NAME="duplicati-${BUILDTAG_RAW}-x86.msi"
 DMGNAME="duplicati-${BUILDTAG_RAW}.dmg"
 PKGNAME="duplicati-${BUILDTAG_RAW}.pkg"
 SPKNAME="duplicati-${BUILDTAG_RAW}.spk"
+SIGNAME="duplicati-${BUILDTAG_RAW}-signatures.zip"
 
 UPDATE_TARGET="Updates/build/${BUILDTYPE}_target-${VERSION}"
 
@@ -348,7 +349,7 @@ process_installer() {
 cat >> "./tmp/latest-installers.json" <<EOF
 	"$2": {
 		"name": "$1",
-		"url": "http://updates.duplicati.com/${BUILDTYPE}/$1",
+		"url": "https://updates.duplicati.com/${BUILDTYPE}/$1",
 		"md5": "${MD5}",
 		"sha1": "${SHA1}",
 		"sha256": "${SHA256}"
@@ -382,40 +383,38 @@ if [ -d "./tmp" ]; then
 	rm -rf "./tmp"
 fi
 
+SIG_FOLDER="duplicati-${BUILDTAG_RAW}-signatures"
 mkdir tmp
-mkdir "./tmp/duplicati-${BUILDTAG_RAW}-signatures"
+mkdir "./tmp/${SIG_FOLDER}"
 
 for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${ZIPFILE}"; do
-	build_file_signatures "${UPDATE_TARGET}/${FILE}" "./tmp/duplicati-${BUILDTAG_RAW}-signatures/${FILE}"
+	build_file_signatures "${UPDATE_TARGET}/${FILE}" "./tmp/${SIG_FOLDER}/${FILE}"
 done
 
 if [ "z${GPGID}" != "z" ]; then
-	echo "${GPGID}" > "./tmp/duplicati-${BUILDTAG_RAW}-signatures/sign-key.txt"
-	echo "https://pgp.mit.edu/pks/lookup?op=get&search=${GPGID}" >> "./tmp/duplicati-${BUILDTAG_RAW}-signatures/sign-key.txt"
+	echo "${GPGID}" > "./tmp/${SIG_FOLDER}/sign-key.txt"
+	echo "https://pgp.mit.edu/pks/lookup?op=get&search=${GPGID}" >> "./tmp/${SIG_FOLDER}/sign-key.txt"
+fi
+
+if [ -f "${UPDATE_TARGET}/${SIGNAME}" ]; then
+	rm "${UPDATE_TARGET}/${SIGNAME}"
 fi
 
 cd tmp
-zip -r9 "./duplicati-${BUILDTAG_RAW}-signatures.zip" "./duplicati-${BUILDTAG_RAW}-signatures/"
+zip -r9 "./${SIGNAME}" "./${SIG_FOLDER}/"
 cd ..
 
-rm -rf "./tmp/duplicati-${BUILDTAG_RAW}-signatures"
+mv "./tmp/${SIGNAME}" "${UPDATE_TARGET}/${SIGNAME}"
+rm -rf "./tmp/${SIG_FOLDER}"
 
-aws --profile=duplicati-upload s3 cp "./tmp/duplicati-${BUILDTAG_RAW}-signatures.zip" "s3://updates.duplicati.com/${BUILDTYPE}/duplicati-${BUILDTAG_RAW}-signatures.zip"
+aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${SIGNAME}" "s3://updates.duplicati.com/${BUILDTYPE}/${SIGNAME}"
 
 GITHUB_TOKEN=`cat "${GITHUB_TOKEN_FILE}"`
 
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
-	github-release upload \
-	    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
-	    --name "duplicati-${BUILDTAG_RAW}-signatures.zip" \
-	    --repo "duplicati" \
-	    --user "duplicati" \
-	    --security-token "${GITHUB_TOKEN}" \
-	    --file "./tmp/duplicati-${BUILDTAG_RAW}-signatures.zip"
-
-	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}"; do
+	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${SIGNAME}"; do
 		github-release upload \
 		    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
 		    --name "${FILE}" \
@@ -427,3 +426,9 @@ else
 fi
 
 rm -rf "./tmp"
+
+if [ -f ~/.config/duplicati-mirror-sync.sh ]; then
+    bash ~/.config/duplicati-mirror-sync.sh
+else
+    echo "Skipping CDN update"
+fi

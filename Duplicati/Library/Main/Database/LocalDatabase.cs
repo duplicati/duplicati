@@ -365,9 +365,9 @@ namespace Duplicati.Library.Main.Database
             RemoveRemoteVolumes(new string[] { name }, transaction);
         }
 
-        public void RemoveRemoteVolumes(ICollection<string> names, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolumes(IEnumerable<string> names, System.Data.IDbTransaction transaction = null)
         {
-            if (names.Count == 0) return;
+            if (names == null || !names.Any()) return;
 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var deletecmd = m_connection.CreateCommand())
@@ -515,10 +515,10 @@ namespace Duplicati.Library.Main.Database
                     cmd.Parameters.Clear();
                     using(var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                     while (rd.Read())
-                            res.Add(rd.GetInt64(0));
+                        res.Add(rd.ConvertValueToInt64(0));
                     
                     if (res.Count == 0)
-                        throw new Exception("No backup at the specified date");
+                        throw new Duplicati.Library.Interface.UserInformationException("No backup at the specified date");
                     else
                         m_result.AddWarning(string.Format("Restore time or version did not match any existing backups, selecting newest backup"), null);
                 }
@@ -1384,14 +1384,23 @@ ORDER BY
             if (m_connection != null && m_result != null)
             {
                 m_result.FlushLog();
+                if (m_result.EndTime.Ticks == 0)
+                    m_result.EndTime = DateTime.UtcNow;
+
                 LogMessage("Result", 
                     Library.Utility.Utility.PrintSerializeObject(
                         m_result, 
                         (StringBuilder)null, 
-                        x => 
-                            !typeof(IBackendProgressUpdater).IsAssignableFrom(x.PropertyType) && 
-                            !typeof(IMessageSink).IsAssignableFrom(x.PropertyType) && 
-                            !typeof(ILogWriter).IsAssignableFrom(x.PropertyType), 
+                        (prop, item) => 
+                            !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) && 
+                            !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) && 
+                            !typeof(ILogWriter).IsAssignableFrom(prop.PropertyType) &&
+                            prop.Name != "VerboseOutput" && 
+                            prop.Name != "VerboseErrors" &&
+                           !(prop.Name == "MainOperation" && item is BackendWriter) &&
+                           !(prop.Name == "EndTime" && item is BackendWriter) &&
+                           !(prop.Name == "Duration" && item is BackendWriter) &&
+                           !(prop.Name == "BeginTime" && item is BackendWriter), 
                         recurseobjects: true, 
                         collectionlimit: 5
                     ).ToString(),

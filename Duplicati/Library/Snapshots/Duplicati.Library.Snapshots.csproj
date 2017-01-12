@@ -9,7 +9,7 @@
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
     <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -17,6 +17,7 @@
     <UpgradeBackupLocation />
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -44,9 +45,6 @@
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
-    <Reference Include="AlphaFS">
-      <HintPath>..\..\..\packages\AlphaFS.2.0.1\lib\net45\AlphaFS.dll</HintPath>
-    </Reference>
     <Reference Include="AlphaVSS.51.x86">
       <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.51.x86.dll</HintPath>
     </Reference>
@@ -76,9 +74,14 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="AlphaFS">
+      <HintPath>..\..\..\packages\AlphaFS.2.1.2\lib\net45\AlphaFS.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Transactions" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
+    <Compile Include="MSSQLUtility.cs" />
     <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />

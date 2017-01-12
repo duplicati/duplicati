@@ -19,8 +19,11 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             $cookies.remove('ui-locale');
             gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.replace("-", "_"));
         } else {
-            $cookies.put('ui-locale', $scope.uiLanguage);
-            gettextCatalog.setCurrentLanguage($scope.uiLanguage);
+            var now = new Date();
+            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+            $cookies.put('ui-locale', $scope.uiLanguage, { expires: exp });
+
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage.replace("-", "_"));
         }
         $rootScope.$broadcast('ui_language_changed');
     }
@@ -29,8 +32,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
         $scope.rawdata = data.data;
 
-        $scope.requireRemotePassword = data.data[''] != null && data.data.WebserverPassword != '';
-        $scope.remotePassword = data.data.WebserverPassword;
+        $scope.requireRemotePassword = data.data['server-passphrase'] != null && data.data['server-passphrase'] != '';
+        $scope.remotePassword = data.data['server-passphrase'];
         $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);

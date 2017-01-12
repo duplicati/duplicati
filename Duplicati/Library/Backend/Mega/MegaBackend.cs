@@ -66,9 +66,9 @@ namespace Duplicati.Library.Backend.Mega
                 m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
-                throw new Exception(Strings.MegaBackend.NoUsernameError);
+                throw new UserInformationException(Strings.MegaBackend.NoUsernameError);
             if (string.IsNullOrEmpty(m_password))
-                throw new Exception(Strings.MegaBackend.NoPasswordError);
+                throw new UserInformationException(Strings.MegaBackend.NoPasswordError);
 
             m_prefix = uri.HostAndPath ?? "";
         }

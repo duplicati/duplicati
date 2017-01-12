@@ -276,7 +276,14 @@ namespace Duplicati.CommandLine
                     string passphrase;
                     options.TryGetValue("passphrase", out passphrase);
                     if (string.IsNullOrEmpty(passphrase))
-                        options["no-encryption"] = "true";
+                    {
+                        string existing;
+                        options.TryGetValue("disable-module", out existing);
+                        if (string.IsNullOrWhiteSpace(existing))
+                            options["disable-module"] = "console-password-input";
+                        else
+                            options["disable-module"] = string.Join(",", new string[] { existing, "console-password-input" });
+                    }
                 }
 
             
@@ -606,21 +613,21 @@ namespace Duplicati.CommandLine
             using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
                 result = i.Test(tests);
             
-            var totalFiles = result.Changes.Count();
+            var totalFiles = result.Verifications.Count();
             if (totalFiles == 0)
             {
                 Console.WriteLine("No files examined, is the remote destination is empty?");
             }
             else
             {
-                var filtered = from n in result.Changes where n.Value.Count() != 0 select n;
+                var filtered = from n in result.Verifications where n.Value.Count() != 0 select n;
                 if (filtered.Count() == 0)
                     Console.WriteLine("Examined {0} files and found no errors", totalFiles);
                 else
                 {
                     if (Library.Utility.Utility.ParseBoolOption(options, "verbose"))
                     {
-                        foreach(var n in result.Changes)
+                        foreach(var n in result.Verifications)
                         {
                             var changecount = n.Value.Count();
                             if (changecount == 0)
@@ -836,6 +843,102 @@ namespace Duplicati.CommandLine
 
             Console.WriteLine("Know locales: {0}", string.Join(", ", Library.Localization.LocalizationService.AllLocales));
             Console.WriteLine("Translated locales: {0}", string.Join(", ", Library.Localization.LocalizationService.SupportedCultures));
+
+            return 0;
+        }
+
+        public static int PurgeFiles(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count < 1)
+                return PrintWrongNumberOfArguments(args, 1);
+
+            var backend = args[0];
+            var paths = args.Skip(1).ToArray();
+
+            if (paths.Length > 0)
+            {
+                if (filter == null || filter.Empty)
+                    filter = new Library.Utility.FilterExpression(paths);
+                else
+                {
+                    Console.WriteLine("You cannot combine filters and paths on the commandline");
+                    return 200;
+                }
+            }
+            else if (filter == null || filter.Empty)
+            {
+                Console.WriteLine("You must provide either filename filters, or a list of paths to remove");
+                return 200;
+            }
+
+
+            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
+                i.PurgeFiles(filter);
+            
+            return 0;
+        }
+
+        public static int ListBrokenFiles(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(args, 1);
+
+            var con = new ConsoleOutput(options);
+            var previd = -1L;
+            var outputcount = 0L;
+            var verbose = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose");
+
+            using (var i = new Library.Main.Controller(args[0], options, con))
+                i.ListBrokenFiles(filter, (id, time, count, path, size) => 
+                {
+                    if (previd != id)
+                    {
+                        previd = id;
+                        outputcount = 0;
+                        con.MessageEvent(string.Format("{0}\t: {1}\t({2} match(es))", id, time.ToLocalTime(), count));
+                    }
+
+                    con.MessageEvent(string.Format("\t{0} ({1})", path, Library.Utility.Utility.FormatSizeString(size)));
+                    outputcount++;
+                    if (outputcount >= 5 && !verbose && count != outputcount)
+                    {
+                        con.MessageEvent(string.Format("\t ... and {0} more, (use --{1} to list all)", count - outputcount, "verbose"));
+                        return false;
+                    }
+
+                    return true;
+
+                });
+
+            return 0;
+        }
+
+        public static int PurgeBrokenFiles(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(args, 1);
+
+            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(options)))
+            {
+                var res = i.PurgeBrokenFiles(filter);
+            }
+
+            return 0;
+        }
+
+        public static int SendMail(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args != null && args.Count != 0)
+            {
+                Console.WriteLine("Command takes no arguments");
+                return 200;
+            }
+
+            using (var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(options)))
+            {
+                foreach (var l in i.SendMail().Lines)
+                    Console.WriteLine(l);
+            }
 
             return 0;
         }

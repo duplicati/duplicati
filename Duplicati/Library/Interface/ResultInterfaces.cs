@@ -277,7 +277,7 @@ namespace Duplicati.Library.Interface
 
     public interface ITestResults : IBasicResults
     {
-        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get; }
+        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get; }
     }
     
     public interface ITestFilterResults : IBasicResults
@@ -287,6 +287,30 @@ namespace Duplicati.Library.Interface
     }
 
     public interface ISystemInfoResults : IBasicResults
+    {
+        IEnumerable<string> Lines { get; }
+    }
+
+    public interface IPurgeFilesResults : IBasicResults
+    {
+        long RemovedFileCount { get; }
+        long RemovedFileSize { get; }
+        long RewrittenFileLists { get; }
+        ICompactResults CompactResults { get; }
+    }
+
+    public interface IListBrokenFilesResults : IBasicResults
+    {
+        IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; }
+    }
+
+    public interface IPurgeBrokenFilesResults : IBasicResults
+    {
+        IPurgeFilesResults PurgeResults { get; }
+        IDeleteResults DeleteResults { get; }
+    }
+
+    public interface ISendMailResults : IBasicResults
     {
         IEnumerable<string> Lines { get; }
     }
