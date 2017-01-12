@@ -9,7 +9,6 @@
     <RootNamespace>Duplicati.Library.Modules.Builtin</RootNamespace>
     <AssemblyName>Duplicati.Library.Modules.Builtin</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
