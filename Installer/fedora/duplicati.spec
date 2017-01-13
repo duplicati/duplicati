@@ -195,7 +195,7 @@ if [ -f "oem-update-installid.txt" ]; then install -p -m 644 "oem-update-install
 desktop-file-install Installer/debian/%{namer}.desktop 
 
 mv Tools/Verification/DuplicatiVerify.py Tools/
-rmdir Tools/Verification/
+rm -rf Tools/Verification/
 mv Duplicati/Library/Snapshots/lvm-scripts/remove-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/create-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/find-volume.sh Tools/
