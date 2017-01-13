@@ -115,12 +115,14 @@ find -type f -name "*dll" -or -name "*DLL" -or -name "*exe"
 
 %build
 
+nuget restore Duplicati.sln
+
 xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=%{_buildversion}
 
 xbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
 cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
-nuget restore Duplicati.sln
+
 xbuild /property:Configuration=Release Duplicati.sln
 
 # xbuild BuildTools/LocalizationTool/LocalizationTool.sln
@@ -221,6 +223,9 @@ mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 
 
 %changelog
+* Fri Jan 13 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170113.git
+- Fixed NuGet restore
+
 * Sat Apr 23 2016 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20160423.git
 - Updated list of dependencies
 
