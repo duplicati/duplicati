@@ -39,9 +39,10 @@ namespace Duplicati.Library.Main.Database
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
             path = System.IO.Path.GetFullPath(path);
-            var c = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
             if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            
+            var c = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(path);
 
             Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
             

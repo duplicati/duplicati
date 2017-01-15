@@ -91,23 +91,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void FetchLogData(IBackup backup, RequestInfo info)
         {
-            using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
-            {
-                con.ConnectionString = "Data Source=" + backup.DBPath;
-                con.Open();
-
+            using(var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(backup.DBPath))
                 using(var cmd = con.CreateCommand())
                     info.OutputOK(LogData.DumpTable(cmd, "LogData", "ID", info.Request.QueryString["offset"].Value, info.Request.QueryString["pagesize"].Value));
-            }
         }
 
         private void FetchRemoteLogData(IBackup backup, RequestInfo info)
         {
-            using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
-            {
-                con.ConnectionString = "Data Source=" + backup.DBPath;
-                con.Open();
-
+            using(var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(backup.DBPath))
                 using(var cmd = con.CreateCommand())
                 {
                     var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", info.Request.QueryString["offset"].Value, info.Request.QueryString["pagesize"].Value);
@@ -119,7 +110,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     info.OutputOK(dt);
                 }
-            }
         }
         private void IsDBUsedElseWhere(IBackup backup, RequestInfo info)
         {

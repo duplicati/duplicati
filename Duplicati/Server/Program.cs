@@ -332,7 +332,7 @@ namespace Duplicati.Server
                 }
 
                 //Create the connection instance
-                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection();
 
                 try
                 {
