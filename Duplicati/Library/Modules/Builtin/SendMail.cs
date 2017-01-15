@@ -341,9 +341,9 @@ namespace Duplicati.Library.Modules.Builtin
                     foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
                         try 
                         {
-                            foreach (IPAddress dnsAdress in networkInterface.GetIPProperties().DnsAddresses)
-                                if (dnsAdress.AddressFamily == AddressFamily.InterNetwork)
-                                    dnslist.Add(dnsAdress.ToString());
+                            foreach (IPAddress dnsAddress in networkInterface.GetIPProperties().DnsAddresses)
+                                if (dnsAddress.AddressFamily == AddressFamily.InterNetwork)
+                                    dnslist.Add(dnsAddress.ToString());
                         }
                         catch { }
                     
