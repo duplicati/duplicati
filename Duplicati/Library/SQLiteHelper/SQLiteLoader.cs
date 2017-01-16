@@ -61,7 +61,7 @@ namespace Duplicati.Library.SQLiteHelper
                         {
                             using (var cmd = con.CreateCommand())
                             {
-                                cmd.CommandText = string.Format("PRAGMA temp_store_directory = \"{0}\"", tempdir);
+                                cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", tempdir);
                                 cmd.ExecuteNonQuery();
                             }
                         }
