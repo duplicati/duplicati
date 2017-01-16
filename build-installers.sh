@@ -197,6 +197,12 @@ echo ""
 echo ""
 echo "Done building, uploading installers ..."
 
+if [ -d "./tmp" ]; then
+	rm -rf "./tmp"
+fi
+
+mkdir "./tmp"
+
 echo "{" > "./tmp/latest-installers.json"
 
 process_installer() {
