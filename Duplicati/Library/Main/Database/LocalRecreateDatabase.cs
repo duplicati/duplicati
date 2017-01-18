@@ -77,43 +77,40 @@ namespace Duplicati.Library.Main.Database
         // {2} --> Temp-Table
         // {3} --> FullBlocklist-BlockCount [equals ({0} / {1}), if SQLite pays respect to ints]
         private const string SELECT_BLOCKLIST_ENTRIES =
-            @" 
-        SELECT DISTINCT
-            ""E"".""BlocksetID"",
-            ""F"".""Index"" + (""E"".""BlocklistIndex"" * {3}) AS ""FullIndex"",
-            ""F"".""BlockHash"",
-            MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {3})) * {0})) AS ""BlockSize"",
-            ""E"".""Hash"",
-            ""E"".""BlocklistSize"",
-            ""E"".""BlocklistHash""
-        FROM
+            @"
+SELECT
+    ""E"".""BlocksetID"" AS ""BlocksetID"",
+    ""F"".""Index"" + (""E"".""BlocklistIndex"" * {3}) AS ""FullIndex"",
+    MIN({0}, ""E"".""Length"" - ((""F"".""Index"" + (""E"".""BlocklistIndex"" * {3})) * {0})) AS ""BlockSize"",
+    ""F"".""BlockHash"" AS ""BlockHash""
+FROM
+    (
+            SELECT * FROM
             (
-                    SELECT * FROM
-                    (
-                        SELECT 
-                            ""A"".""BlocksetID"",
-                            ""A"".""Index"" AS ""BlocklistIndex"",
-                            MIN({3} * {1}, (((""B"".""Length"" + {0} - 1) / {0}) - (""A"".""Index"" * ({3}))) * {1}) AS ""BlocklistSize"",
-                            ""A"".""Hash"" AS ""BlocklistHash"",
-                            ""B"".""Length""
-                        FROM 
-                            ""BlocklistHash"" A,
-                            ""Blockset"" B
-                        WHERE 
-                            ""B"".""ID"" = ""A"".""BlocksetID""
-                    ) C,
-                    ""Block"" D
-                WHERE
-                   ""C"".""BlocklistHash"" = ""D"".""Hash""
-                   AND
-                   ""C"".""BlocklistSize"" = ""D"".""Size""
-            ) E,
-            ""{2}"" F
+                SELECT
+                    ""A"".""BlocksetID"",
+                    ""A"".""Index"" AS ""BlocklistIndex"",
+                    MIN({3} * {1}, (((""B"".""Length"" + {0} - 1) / {0}) - (""A"".""Index"" * ({3}))) * {1}) AS ""BlocklistSize"",
+                    ""A"".""Hash"" AS ""BlocklistHash"",
+                    ""B"".""Length""
+                FROM 
+                    (SELECT DISTINCT ""BlocksetID"", ""Index"", ""Hash"" FROM ""BlocklistHash"" ) A,
+                    ""Blockset"" B
+                WHERE 
+                    ""B"".""ID"" = ""A"".""BlocksetID""
+            ) C,
+            ""Block"" D
         WHERE
-           ""F"".""BlocklistHash"" = ""E"".""Hash""
-        ORDER BY 
-           ""E"".""BlocksetID"",
-           ""FullIndex""
+           ""C"".""BlocklistHash"" = ""D"".""Hash""
+           AND
+           ""C"".""BlocklistSize"" = ""D"".""Size""
+    ) E,
+    ""{2}"" F
+WHERE
+   ""F"".""BlocklistHash"" = ""E"".""Hash""   
+ORDER BY 
+   ""E"".""BlocksetID"",
+   ""FullIndex""
 ";
 
         public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
@@ -235,9 +232,9 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery(insertBlocksCommand);
                     
                 var selectBlocklistBlocksetEntries = string.Format(
-                    @"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( " +
-                    SELECT_BLOCKLIST_ENTRIES +
-                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
+                    @"SELECT ""G"".""BlocksetID"", ""G"".""FullIndex"" AS ""Index"", ""Block"".""ID"" AS ""BlockID"" FROM (" 
+                        + SELECT_BLOCKLIST_ENTRIES + 
+                    @") G, ""Block"" WHERE  ""G"".""BlockHash"" = ""Block"".""Hash"" AND ""G"".""BlockSize"" = ""Block"".""Size"" ",
                     blocksize,
                     hashsize,
                     m_tempblocklist,
@@ -256,7 +253,7 @@ namespace Duplicati.Library.Main.Database
                     selectBlocksetEntries;
                     
                 var selectFiltered =
-                    @"SELECT DISTINCT ""H"".""BlocksetID"", ""H"".""Index"", ""H"".""BlockID"" FROM (" +
+                    @"SELECT ""H"".""BlocksetID"", ""H"".""Index"", ""H"".""BlockID"" FROM (" +
                     selectAllBlocksetEntries +
                     @") H WHERE (""H"".""BlocksetID"" || ':' || ""H"".""Index"") NOT IN (SELECT (""ExistingBlocksetEntries"".""BlocksetID"" || ':' || ""ExistingBlocksetEntries"".""Index"") FROM ""BlocksetEntry"" ""ExistingBlocksetEntries"" )";
                 
@@ -269,7 +266,7 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch (Exception ex)
                 {
-                    m_result.AddError("Blockset insert failed, this is likely issue #2140, #1699, #2048 or #2178, comitting temporary tables as permanent", ex);
+                    m_result.AddError("Blockset insert failed, comitting temporary tables as permanent for debugging purposes", ex);
 
                     using (var fixcmd = m_connection.CreateCommand())
                     {
@@ -277,8 +274,8 @@ namespace Duplicati.Library.Main.Database
                         fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}-Failure"" AS SELECT * FROM ""{0}"" ", m_tempsmalllist));
                     }
 
-                    throw new Exception("The recreate failed due to a known error, please create a bug-report from this database and send it to the developers for further analysis");
-                }
+                    throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
+                }    
             }
         }
         
