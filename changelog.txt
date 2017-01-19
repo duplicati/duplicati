@@ -1,3 +1,8 @@
+2017-01-19 - 2.0.1.43_canary_2017-01-19
+==========
+* Improved queries that are used to recreate the database
+* Fixed duplicate logging entries when a log file was used
+
 2017-01-16 - 2.0.1.42_canary_2017-01-16
 ==========
 * Added a debugging feature to assist with #1699, #2048, #2140, #2178
