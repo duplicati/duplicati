@@ -1,3 +1,20 @@
+2017-01-16 - 2.0.1.42_canary_2017-01-16
+==========
+* Added a debugging feature to assist with #1699, #2048, #2140, #2178
+* Fixed a problem with listing changes from the commandline
+
+2017-01-16 - 2.0.1.41_canary_2017-01-16
+==========
+* Added a debugging feature to assist with #1699, #2048, #2140, #2178
+* Fixed a problem with listing changes from the commandline
+
+2017-01-12 - 2.0.1.40_canary_2017-01-12
+==========
+* Added extra functionality to the `--allow-full-removal` option
+* Various updates to send-mail
+* Reworked logging support to allow modules to funnel logs back into the current operation
+* Reverted an optimization that cause backup scanning to be really slow
+
 2017-01-08 - 2.0.1.39_canary_2017-01-08
 ==========
 * Fixed some typos, thanks @sfahrenholz

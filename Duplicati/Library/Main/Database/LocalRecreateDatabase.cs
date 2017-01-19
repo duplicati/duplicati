@@ -78,7 +78,7 @@ namespace Duplicati.Library.Main.Database
         // {3} --> FullBlocklist-BlockCount [equals ({0} / {1}), if SQLite pays respect to ints]
         private const string SELECT_BLOCKLIST_ENTRIES =
             @" 
-        SELECT DISTINCT
+        SELECT
             ""E"".""BlocksetID"",
             ""F"".""Index"" + (""E"".""BlocklistIndex"" * {3}) AS ""FullIndex"",
             ""F"".""BlockHash"",
@@ -237,7 +237,12 @@ namespace Duplicati.Library.Main.Database
                 var selectBlocklistBlocksetEntries = string.Format(
                     @"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( " +
                     SELECT_BLOCKLIST_ENTRIES +
-                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
+                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocksetID"" = ""E"".""BlocksetID"" AND ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
+
+                    // TODO: The BlocklistHash join seems to be unnecessary, but the join might be required to work around a from really old versions of Duplicati
+                    // this could be used instead
+                    //@") D, ""Block"" WHERE  ""BlockQuery"".""BlockHash"" = ""Block"".""Hash"" AND ""BlockQuery"".""BlockSize"" = ""Block"".""Size"" ";
+
                     blocksize,
                     hashsize,
                     m_tempblocklist,
@@ -256,9 +261,9 @@ namespace Duplicati.Library.Main.Database
                     selectBlocksetEntries;
                     
                 var selectFiltered =
-                    @"SELECT DISTINCT ""BlocksetID"", ""Index"", ""BlockID"" FROM (" +
+                    @"SELECT DISTINCT ""H"".""BlocksetID"", ""H"".""Index"", ""H"".""BlockID"" FROM (" +
                     selectAllBlocksetEntries +
-                    @") A WHERE (""A"".""BlocksetID"" || ':' || ""A"".""Index"") NOT IN (SELECT (""ExistingBlocksetEntries"".""BlocksetID"" || ':' || ""ExistingBlocksetEntries"".""Index"") FROM ""BlocksetEntry"" ""ExistingBlocksetEntries"" )";
+                    @") H WHERE (""H"".""BlocksetID"" || ':' || ""H"".""Index"") NOT IN (SELECT (""ExistingBlocksetEntries"".""BlocksetID"" || ':' || ""ExistingBlocksetEntries"".""Index"") FROM ""BlocksetEntry"" ""ExistingBlocksetEntries"" )";
                 
                 var insertBlocksetEntriesCommand =
                     @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") " + selectFiltered;
@@ -269,33 +274,15 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch (Exception ex)
                 {
-                    m_result.AddError("Blockset insert failed, this is likely issue #2140, attempting to locate the culprit", ex);
+                    m_result.AddError("Blockset insert failed, comitting temporary tables for trace purposes", ex);
 
-                    var faultcount = 0;
-                    using (var cmd2 = m_connection.CreateCommand(transaction))
+                    using (var fixcmd = m_connection.CreateCommand())
                     {
-                        cmd2.CommandText = @"SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" = ? AND ""Index"" = ? ";
-                        cmd2.AddParameters(2);
-
-                        foreach (var rd in cmd.ExecuteReaderEnumerable(selectFiltered))
-                        {
-                            var blocksetid = rd.ConvertValueToInt64(0);
-                            var index = rd.ConvertValueToInt64(1);
-                            var blockid = rd.ConvertValueToInt64(2);
-
-                            var foundid = cmd2.ExecuteScalarInt64(null, -1, blocksetid, index);
-                            if (foundid != -1)
-                            {
-                                faultcount++;
-                                m_result.AddError(string.Format("Found culprit, attempting to re-insert {0}-{1}, new blockid: {2}, existing block id: {3}", blocksetid, index, blockid, foundid), ex);
-                            }
-                        }
+                        fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}-Failure"" AS SELECT * FROM ""{0}"" ", m_tempblocklist));
+                        fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}-Failure"" AS SELECT * FROM ""{0}"" ", m_tempsmalllist));
                     }
 
-                    if (faultcount != 0)
-                        throw new Exception(string.Format("Detected {0} faults likely the same as issue #2140, please look in the log and report the errors", faultcount));
-
-                    throw;
+                    throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
                 }
             }
         }
