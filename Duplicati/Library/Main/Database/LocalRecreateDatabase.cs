@@ -237,7 +237,7 @@ namespace Duplicati.Library.Main.Database
                 var selectBlocklistBlocksetEntries = string.Format(
                     @"SELECT ""E"".""BlocksetID"" AS ""BlocksetID"", ""D"".""FullIndex"" AS ""Index"", ""F"".""ID"" AS ""BlockID"" FROM ( " +
                     SELECT_BLOCKLIST_ENTRIES +
-                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
+                    @") D, ""BlocklistHash"" E, ""Block"" F, ""Block"" G WHERE ""D"".""BlocksetID"" = ""E"".""BlocksetID"" AND ""D"".""BlocklistHash"" = ""E"".""Hash"" AND ""D"".""BlocklistSize"" = ""G"".""Size"" AND ""D"".""BlocklistHash"" = ""G"".""Hash"" AND ""D"".""Blockhash"" = ""F"".""Hash"" AND ""D"".""BlockSize"" = ""F"".""Size"" ",
                     blocksize,
                     hashsize,
                     m_tempblocklist,
@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch (Exception ex)
                 {
-                    m_result.AddError("Blockset insert failed, this is likely issue #2140, #1699, #2048 or #2178, comitting temporary tables as permanent", ex);
+                    m_result.AddError("Blockset insert failed, comitting temporary tables for trace purposes", ex);
 
                     using (var fixcmd = m_connection.CreateCommand())
                     {
@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main.Database
                         fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}-Failure"" AS SELECT * FROM ""{0}"" ", m_tempsmalllist));
                     }
 
-                    throw new Exception("The recreate failed due to a known error, please create a bug-report from this database and send it to the developers for further analysis");
+                    throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
                 }
             }
         }
