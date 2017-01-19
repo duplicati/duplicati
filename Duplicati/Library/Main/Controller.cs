@@ -704,7 +704,7 @@ namespace Duplicati.Library.Main
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
 
-                m_logfilescope = Logging.Log.StartScope(Logging.Log.CurrentLog = m_logfile = new Library.Logging.StreamLog(m_options.Logfile));
+                m_logfilescope = Logging.Log.StartScope(m_logfile = new Library.Logging.StreamLog(m_options.Logfile));
             }
 
             result.VerboseErrors = m_options.DebugOutput;
