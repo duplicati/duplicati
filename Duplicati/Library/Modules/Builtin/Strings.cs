@@ -5,7 +5,7 @@ using System;
 namespace Duplicati.Library.Modules.Builtin.Strings {
     internal static class ConsolePasswordInput {
         public static string ConfirmPassphrasePrompt { get { return LC.L(@"Confirm encryption passphrase"); } }
-        public static string Description { get { return LC.L(@"This module will ask the user for a encryption password on the commandline unless encryption is disabled or the password is supplied by other means"); } }
+        public static string Description { get { return LC.L(@"This module will ask the user for an encryption password on the command line unless encryption is disabled or the password is supplied by other means"); } }
         public static string Displayname { get { return LC.L(@"Password prompt"); } }
         public static string EmptyPassphraseError { get { return LC.L(@"Empty passphrases are not allowed"); } }
         public static string EnterPassphrasePrompt { get { return LC.L(@"Enter encryption passphrase"); } }
@@ -24,7 +24,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string DescriptionAcceptHashShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
         public static string DisableExpect100Long { get { return LC.L(@"The default HTTP request has the header ""Expect: 100-Continue"" attached, which allows some optimizations when authenticating, but also breaks some web servers, causing them to report ""417 - Expectation failed"""); } }
         public static string DisableExpect100Short { get { return LC.L(@"Disable the expect header"); } }
-        public static string DisableNagleLong { get { return LC.L(@"By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more effeciently."); } }
+        public static string DisableNagleLong { get { return LC.L(@"By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more efficiently."); } }
         public static string DisableNagleShort { get { return LC.L(@"Disable nagling"); } }
         public static string DisplayName { get { return LC.L(@"Configure http requests"); } }
         public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
@@ -69,11 +69,11 @@ In the message body, certain tokens are replaced:
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
-All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
+All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
         public static string OptionPasswordLong { get { return LC.L(@"The password used to authenticate with the SMTP server if required."); } }
         public static string OptionPasswordShort { get { return LC.L(@"SMTP Password"); } }
-        public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.
+        public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.
 Example with 3 recipients: 
 
 Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"); } }
@@ -87,9 +87,9 @@ sender@example.com
 Mail Sender <sender>
 Mail Sender <sender@example.com>"); } }
         public static string OptionSenderShort { get { return LC.L(@"Email sender"); } }
-        public static string OptionSendlevelLong(string success, string warning, string error, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"". You can supply multiple options with a comma seperator, e.g. ""{0},{1}"". The special value ""{3}"" is a shorthand for ""{0},{1},{2}"" and will cause all backup operations to send an email.", success, warning, error, all); }
+        public static string OptionSendlevelLong(string success, string warning, string error, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"". You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{3}"" is a shorthand for ""{0},{1},{2}"" and will cause all backup operations to send an email.", success, warning, error, all); }
         public static string OptionSendlevelShort { get { return LC.L(@"The messages to send"); } }
-        public static string OptionServerLong { get { return LC.L(@"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, seperated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
+        public static string OptionServerLong { get { return LC.L(@"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
 If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
 
 To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections."); } }
@@ -105,7 +105,7 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
     }
     internal static class SendJabberMessage {
         public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
-        public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users seperated with commas"); } }
+        public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users separated with commas"); } }
         public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
         public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If a the file exists, the file contents will be used as the message.
 
@@ -115,14 +115,14 @@ In the message, certain tokens are replaced:
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
-All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
+All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendxmppusernameShort { get { return LC.L(@"The XMPP username"); } }
         public static string SendxmppusernameLong { get { return LC.L(@"The username for the account that will send the message, including the hostname. I.e. ""account@jabber.org/Home"""); } }
         public static string SendxmpppasswordShort { get { return LC.L(@"The XMPP password"); } }
         public static string SendxmpppasswordLong { get { return LC.L(@"The password for the account that will send the message"); } }
         public static string SendxmpplevelShort { get { return LC.L(@"The messages to send"); } }
         public static string SendxmpplevelLong(string success, string warning, string error, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"". 
-You can supply multiple options with a comma seperator, e.g. ""{0},{1}"". The special value ""{3}"" is a shorthand for ""{0},{1},{2}"" and will cause all backup operations to send a message.", success, warning, error, all); }
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{3}"" is a shorthand for ""{0},{1},{2}"" and will cause all backup operations to send a message.", success, warning, error, all); }
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
         public static string DisplayName { get { return LC.L(@"XMPP report module"); } }

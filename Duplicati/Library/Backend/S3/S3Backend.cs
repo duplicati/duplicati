@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("(default)", ""),
             new KeyValuePair<string, string>("Europe (EU, Ireland)", "EU"),
             new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
-            new KeyValuePair<string, string>("US West (Northen California)", "us-west-1"),
+            new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
             new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
             new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
             new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
