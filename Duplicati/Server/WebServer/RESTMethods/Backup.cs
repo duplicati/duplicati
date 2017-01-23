@@ -243,7 +243,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             string[] filters;
             var rawpaths = (paths ?? string.Empty).Trim();
             
-            // We send the file list as a JSON array to avoid encoding issues with the path seperator 
+            // We send the file list as a JSON array to avoid encoding issues with the path separator 
             // as it is an allowed character in file and path names.
             // We also accept the old way, for compatibility with the greeno theme
             if (!string.IsNullOrWhiteSpace(rawpaths) && rawpaths.StartsWith("[", StringComparison.Ordinal) && rawpaths.EndsWith("]", StringComparison.Ordinal))

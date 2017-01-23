@@ -14,7 +14,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionUseRecyclerLong { get { return LC.L(@"Use this option to have files moved to the recycle bin folder instead of removing them permanently when compacting or deleting backups."); } }
         public static string DescriptionUseRecyclerShort { get { return LC.L(@"Move deleted files to the recycle bin"); } }
 
-        public static string DescriptionBinaryDirectModeLong { get { return LC.L(@"Use this option to upload files to SharePoint as a whole with BinaryDirect mode. This is the most efficient way of uploading, but can cause non-recoverable timouts under certain conditions. Use this option only with very fast and stable internet connections."); } }
+        public static string DescriptionBinaryDirectModeLong { get { return LC.L(@"Use this option to upload files to SharePoint as a whole with BinaryDirect mode. This is the most efficient way of uploading, but can cause non-recoverable timeouts under certain conditions. Use this option only with very fast and stable internet connections."); } }
         public static string DescriptionBinaryDirectModeShort { get { return LC.L(@"Upload files using binary direct mode."); } }
 
         public static string DescriptionWebTimeoutLong { get { return LC.L(@"Use this option to specify a custom value for timeouts of web operation when communicating with SharePoint Server. Recommended value is 180s."); } }

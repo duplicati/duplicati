@@ -337,7 +337,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var dnslite = new DnsLib.DnsLite();
                     var dnslist = new List<string>();
 
-                    //Grab all IPv4 adresses
+                    //Grab all IPv4 addresses
                     foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
                         try 
                         {

@@ -48,7 +48,7 @@ Show system information as seen by Duplicati
 
 Make an encrypted backup
 ========================
-  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than onemonth are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
+  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than one month are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
   
   %MONO%"%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
   
@@ -99,7 +99,7 @@ Usage: find <storage-URL> ["<filename>"] [<options>]
   --time=<time>
     Shows what the files looked like at a specific time. Absolute and relative times can be specified.
   --version=<int>
-    Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will besearched automatically.
+    Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will be searched automatically.
   --include=<string>
     Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed. 
   --exclude=<string>

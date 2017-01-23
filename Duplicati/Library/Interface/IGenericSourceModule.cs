@@ -23,7 +23,7 @@ using System.Collections.Generic;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
-    /// An interface for a plugable source module.
+    /// An interface for a pluggable source module.
     /// An instance of a module is loaded prior to a backup or restore operation,
     /// and can perform tasks relating to the source plugins, as
     /// well as modify backup source, the options and filters used in Duplicati.
