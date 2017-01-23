@@ -68,7 +68,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default mail level
         /// </summary>
-        private const MailLevels DEFAULT_LEVEL = MailLevels.All;
+        private const string DEFAULT_LEVEL = "all";
         /// <summary>
         /// The default mail body
         /// </summary>
@@ -79,20 +79,7 @@ namespace Duplicati.Library.Modules.Builtin
         private const string DEFAULT_SENDER = "no-reply";
         #endregion
 
-        /// <summary>
-        /// The allowed mail levels
-        /// </summary>
-        [Flags]
-        private enum MailLevels
-        {
-            Success = 0x1,
-            Warning = 0x2,
-            Error = 0x4,
-            All = Success | Warning | Error
-        }
-
         #region Private variables
-
         /// <summary>
         /// The cached name of the operation
         /// </summary>
@@ -145,7 +132,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The mail send level
         /// </summary>
-        private MailLevels m_level;
+        private string[] m_levels;
         /// <summary>
         /// True to send all operations
         /// </summary>
@@ -193,7 +180,7 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(MailLevels.Success.ToString(), MailLevels.Warning.ToString(), MailLevels.Error.ToString(), MailLevels.All.ToString()), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(MailLevels))),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
                 });
             }
@@ -218,24 +205,24 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(OPTION_BODY, out m_body);
             m_options = commandlineOptions;
 
-            m_level = 0;
-
             string tmp;
             commandlineOptions.TryGetValue(OPTION_SENDLEVEL, out tmp);
             if (!string.IsNullOrEmpty(tmp))
-                foreach(var s in tmp.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (string.IsNullOrEmpty(s))
-                        continue;
+                m_levels = 
+                    tmp
+                    .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+                    .ToArray();
 
-                    MailLevels m;
-                    if (Enum.TryParse(s.Trim(), true, out m))
-                        m_level |= m;
-                }
-
-            if (m_level == 0)
-                m_level = DEFAULT_LEVEL;
-
+            if (m_levels == null || m_levels.Length == 0)
+                m_levels = 
+                    DEFAULT_LEVEL
+                    .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+                    .ToArray();
+                   
             m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDALL);
 
             if (string.IsNullOrEmpty(m_subject))
@@ -279,20 +266,20 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
             {
-                MailLevels level;
+                ParsedResultType level;
                 if (result is Exception)
-                    level = MailLevels.Error;
-                else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
-                    level = MailLevels.Warning;
+                    level = ParsedResultType.Fatal;
+                else if (result != null && result is Library.Interface.IBasicResults)
+                    level = ((IBasicResults)result).ParsedResult;
                 else
-                    level = MailLevels.Success;
+                    level = ParsedResultType.Error;
                 
                 m_parsedresultlevel = level.ToString();
 
-                if (m_level != MailLevels.All)
+                if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
                 {
                     //Check if this level should send mail
-                    if ((m_level & level) == 0)
+                    if (!m_levels.Any(x => string.Equals(x, level.ToString(), StringComparison.OrdinalIgnoreCase)))
                         return;
                 }
             }
