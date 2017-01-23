@@ -145,6 +145,9 @@
             <div class="mainmenu menu" id="mainmenu">
                 <ul>
                     <li>
+                        <a href="#/" class="home" translate>Home</a>
+                    </li>
+                    <li>
                         <a href="#/add" class="add" translate>Add backup</a>
                     </li>
                     <li>
@@ -178,13 +181,16 @@
                         <a href ng-click="resume()" id="resume" class="resume" translate>Resume</a>
                     </li>
                     <li>
-                        <a href="#/settings" class="settings">{{'Settings' | translate}}</a>
+                        <a href="#/settings" class="settings" translate>Settings</a>
                     </li>
                     <li>
-                        <a href="#/log" class="log">{{'Show log' | translate}}</a>
+                        <a href="#/log" class="log" translate>Show log</a>
+                    </li>
+                    <li>
+                        <a href="#/about" class="about" translate>About</a>
                     </li>
                     <li ng-show="isLoggedIn">
-                        <a href ng-click="log_out()" class="logout">{{'Log out' | translate}}</a>
+                        <a href ng-click="log_out()" class="logout" translate>Log out</a>
                     </li>
                 </ul>
             </div>
