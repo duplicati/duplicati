@@ -220,11 +220,18 @@ namespace Duplicati.Library.Utility
         public delegate System.IO.FileAttributes ExtractFileAttributes(string path);
 
         /// <summary>
+        /// A callback delegate used for extracting attributes from a file or folder
+        /// </summary>
+        /// <param name="rootpath">The root folder where the path was found</param>
+        /// <param name="path">The path that produced the error</param>
+        /// <param name="ex">The exception for the error</param>
+        public delegate void ReportAccessError(string rootpath, string path, Exception ex);
+
+        /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
         /// </summary>
         /// <param name="rootpath">The folder to look in</param>
-        /// <param name="filter">An optional filter to apply to the filenames</param>
         /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
@@ -243,7 +250,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
         {
-            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
+            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null, null);
         }
 
         /// <summary>
@@ -255,8 +262,9 @@ namespace Duplicati.Library.Utility
         /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
+        /// <param name="errorCallback">An optional function to call with error messages.</param>
         /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
         {
             Stack<string> lst = new Stack<string>();
         
@@ -269,7 +277,7 @@ namespace Duplicati.Library.Utility
                     isFolder = (attributeReader(rootpath) & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
             }
             catch
-            {
+            {                
             }
         
             if (isFolder)
@@ -286,9 +294,11 @@ namespace Duplicati.Library.Utility
                 {
                     throw;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    callback(rootpath, rootpath, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                    if (errorCallback != null)
+                        errorCallback(rootpath, rootpath, ex);
+                    callback(rootpath, rootpath, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                 }
 
                 while (lst.Count > 0)
@@ -302,18 +312,33 @@ namespace Duplicati.Library.Utility
                         foreach(string s in folderList(f))
                         {
                             var sf = AppendDirSeparator(s);
-                            System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(sf);
-                            if (callback(rootpath, sf, attr))
-                                lst.Push(sf);
+                            try
+                            {
+                                System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(sf);
+                                if (callback(rootpath, sf, attr))
+                                    lst.Push(sf);
+                            }
+                            catch (System.Threading.ThreadAbortException)
+                            {
+                                throw;
+                            }
+                            catch (Exception ex)
+                            {
+                                if (errorCallback != null)
+                                    errorCallback(rootpath, sf, ex);
+                                callback(rootpath, sf, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
+                            }
                         }
                     }
                     catch (System.Threading.ThreadAbortException)
                     {
                         throw;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                        if (errorCallback != null)
+                            errorCallback(rootpath, f, ex);
+                        callback(rootpath, f, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                     }
 
                     string[] files = null;
@@ -326,9 +351,11 @@ namespace Duplicati.Library.Utility
                         {
                             throw;
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            callback(rootpath, f, ATTRIBUTE_ERROR);
+                            if (errorCallback != null)
+                                errorCallback(rootpath, f, ex);
+                            callback(rootpath, f, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                         }
         
                     if (files != null)
@@ -344,8 +371,10 @@ namespace Duplicati.Library.Utility
                             {
                                 throw;
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
+                                if (errorCallback != null)
+                                    errorCallback(rootpath, s, ex);
                                 callback(rootpath, s, ATTRIBUTE_ERROR);
                                 continue;
                             }
@@ -365,8 +394,10 @@ namespace Duplicati.Library.Utility
                 {
                     throw;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    if (errorCallback != null)
+                        errorCallback(rootpath, rootpath, ex);
                     callback(rootpath, rootpath, ATTRIBUTE_ERROR);
                     yield break;
                 }

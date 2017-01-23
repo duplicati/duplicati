@@ -95,15 +95,15 @@ namespace Duplicati.Library.Main.Operation
                 else
                     m_enumeratefilter = m_emitfilter;
             }
-        
+
+            public void ReportError(string rootpath, string path, Exception ex)
+            {
+                if (m_logWriter != null)
+                    m_logWriter.AddWarning(string.Format("Error reported while accessing file: {0}", path), ex);                
+            }
+
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
             {
-                if ((attributes & Library.Utility.Utility.ATTRIBUTE_ERROR) == Library.Utility.Utility.ATTRIBUTE_ERROR)
-                {
-                    if (m_logWriter != null)
-                        m_logWriter.AddWarning(string.Format("Error reported while accessing file {0}", path), null);
-                }
-
                 try
                 {
                     if (m_snapshot.IsBlockDevice(path))
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Main.Operation
 
             public IEnumerable<string> EnumerateFilesAndFolders()
             {
-                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter, this.ReportError))
                 {
                     while (m_mixinqueue.Count > 0)
                         yield return m_mixinqueue.Dequeue();
