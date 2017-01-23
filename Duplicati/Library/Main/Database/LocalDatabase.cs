@@ -725,12 +725,33 @@ namespace Duplicati.Library.Main.Database
 
         public void VerifyConsistency(System.Data.IDbTransaction transaction, long blocksize, long hashsize, bool verifyfilelists)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
-
                 // Calculate the lengths for each blockset                
-                var combinedLengths = @"SELECT ""BlocksetEntry"".""BlocksetID"" AS ""BlocksetID"", SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""BlocksetEntry"".""BlocksetID""";
+                var combinedLengths = @"
+SELECT 
+    ""A"".""ID"" AS ""BlocksetID"", 
+    IFNULL(""B"".""CalcLen"", 0) AS ""CalcLen"", 
+    ""A"".""Length""
+FROM
+    ""Blockset"" A
+LEFT OUTER JOIN
+    (
+        SELECT 
+            ""BlocksetEntry"".""BlocksetID"",
+            SUM(""Block"".""Size"") AS ""CalcLen""
+        FROM
+            ""BlocksetEntry""
+        LEFT OUTER JOIN
+            ""Block""
+        ON
+            ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+        GROUP BY ""BlocksetEntry"".""BlocksetID""
+    ) B
+ON
+    ""A"".""ID"" = ""B"".""BlocksetID""
+
+";
                 // For each blockset with wrong lengths, fetch the file path
                 var reportDetails = @"SELECT ""CalcLen"", ""Length"", ""A"".""BlocksetID"", ""File"".""Path"" FROM (" + combinedLengths + @") A, ""File"" WHERE ""A"".""BlocksetID"" = ""File"".""BlocksetID"" AND ""A"".""CalcLen"" != ""A"".""Length"" ";
                 
