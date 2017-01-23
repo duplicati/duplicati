@@ -250,9 +250,9 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (Errors.Any())
+                if (Errors != null && Errors.Any())
                     return ParsedResultType.Error;
-                else if (Warnings.Any())
+                else if (Warnings != null && Warnings.Any())
                     return ParsedResultType.Warning;
                 else
                     return ParsedResultType.Success;
@@ -799,13 +799,13 @@ namespace Duplicati.Library.Main
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
 
-        public ParsedResultType ParsedResult
+        public override ParsedResultType ParsedResult
         {
             get
             {
-                if (Errors.Any() || FilesWithError > 0)
+                if ((Errors != null && Errors.Any()) || FilesWithError > 0)
                     return ParsedResultType.Error;
-                else if (Warnings.Any() || PartialBackup)
+                else if ((Warnings != null && Warnings.Any()) || PartialBackup)
                     return ParsedResultType.Warning;
                 else
                     return ParsedResultType.Success;                    
@@ -828,13 +828,13 @@ namespace Duplicati.Library.Main
         
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
 
-        public ParsedResultType ParsedResult
+        public override ParsedResultType ParsedResult
         {
             get
             {
-                if (Errors.Any())
+                if (Errors != null && Errors.Any())
                     return ParsedResultType.Error;
-                else if (Warnings.Any() || FilesRestored == 0)
+                else if ((Warnings != null && Warnings.Any()) || FilesRestored == 0)
                     return ParsedResultType.Warning;
                 else
                     return ParsedResultType.Success;
