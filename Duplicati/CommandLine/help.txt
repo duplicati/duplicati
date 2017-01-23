@@ -264,7 +264,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaning what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
+  Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
   
   
 # =============================================================================
@@ -303,7 +303,7 @@ Duplicati offers various options for the used compression and encryption modules
 # =============================================================================
 > duplicati.commandline.exe help gpg
 
-Duplicati is shipped with an interface to GNU Privary Guard. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch.
+Duplicati is shipped with an interface to GNU Privacy Guard. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch.
 
 Options:
 %MODULEOPTIONS%
