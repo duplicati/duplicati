@@ -573,8 +573,12 @@ namespace Duplicati.CommandLine
             if (result.PartialBackup)
                 return 50;
 
+            //Completed with errors = 3
+            if (result.ParsedResult == Library.Interface.ParsedResultType.Error)
+                return 3;
+            
             //Completed with warnings = 2
-            if (result.Warnings.Count() > 0 || result.Errors.Count() > 0)
+            if (result.ParsedResult == Library.Interface.ParsedResultType.Warning)
                 return 2;
 
             //Success, but no upload = 1

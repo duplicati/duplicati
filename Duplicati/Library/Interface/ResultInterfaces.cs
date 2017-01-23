@@ -20,6 +20,15 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface
 {
+    public enum ParsedResultType
+    {
+        Unknown,
+        Success,
+        Warning,
+        Error,
+        Fatal
+    }
+
     public interface IBasicResults
     {
         DateTime BeginTime { get; }
@@ -29,6 +38,7 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Errors { get; }
         IEnumerable<string> Warnings { get; }
         IEnumerable<string> Messages { get; }
+        ParsedResultType ParsedResult { get; }
     }
 
     public interface IBackendStatstics
