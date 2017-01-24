@@ -1,3 +1,14 @@
+2017-01-24 - 2.0.1.44_canary_2017-01-24
+==========
+* Added SSL test tools for Mono debugging
+* Fixed an issue with not reporting the correct error message when listing files
+* Updated logs UI to show the backup name
+* Added extra menu items to the start page
+* Fixed a number of typos
+* Added a more thorough consistency check
+* Added an extra result level "fatal" to reporting
+* Fixed reporting warning status if there were warnings during the backup
+
 2017-01-19 - 2.0.1.43_canary_2017-01-19
 ==========
 * Improved queries that are used to recreate the database
