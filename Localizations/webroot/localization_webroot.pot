@@ -33,7 +33,8 @@ msgstr ""
 msgid "AWS IAM Policy"
 msgstr ""
 
-#: index.html:200
+#: index.html:190
+#: index.html:206
 msgid "About"
 msgstr ""
 
@@ -73,7 +74,7 @@ msgstr ""
 msgid "Add advanced option"
 msgstr ""
 
-#: index.html:148
+#: index.html:151
 msgid "Add backup"
 msgstr ""
 
@@ -388,15 +389,15 @@ msgstr ""
 msgid "Connect"
 msgstr ""
 
-#: index.html:277
+#: index.html:283
 msgid "Connect now"
 msgstr ""
 
-#: index.html:278
+#: index.html:284
 msgid "Connecting..."
 msgstr ""
 
-#: index.html:269
+#: index.html:275
 msgid "Connection lost"
 msgstr ""
 
@@ -405,7 +406,7 @@ msgstr ""
 msgid "Connection worked!"
 msgstr ""
 
-#: index.html:273
+#: index.html:279
 msgid "Connnecting to server ..."
 msgstr ""
 
@@ -585,7 +586,7 @@ msgstr ""
 msgid "Did we help save your files? If so, please consider supporting Duplicati with a donation. We suggest {{smallamount}} for private use and {{largeamount}} for commercial use."
 msgstr ""
 
-#: templates/log.html:30
+#: templates/log.html:31
 msgid "Disabled"
 msgstr ""
 
@@ -603,17 +604,17 @@ msgid "Do you really want to delete the local database for: {{name}}"
 msgstr ""
 
 #: index.html:130
-#: index.html:227
+#: index.html:233
 msgid "Donate"
 msgstr ""
 
 #: index.html:133
-#: index.html:230
+#: index.html:236
 msgid "Donate with Bitcoins"
 msgstr ""
 
 #: index.html:136
-#: index.html:233
+#: index.html:239
 msgid "Donate with PayPal"
 msgstr ""
 
@@ -654,7 +655,7 @@ msgstr ""
 msgid "Duplicate option {{opt}}"
 msgstr ""
 
-#: index.html:221
+#: index.html:227
 msgid "Duplicati Website"
 msgstr ""
 
@@ -860,7 +861,7 @@ msgid "Failed to connect:"
 msgstr ""
 
 #: scripts/controllers/ExportController.js:28
-#: scripts/controllers/LogController.js:74
+#: scripts/controllers/LogController.js:77
 #: scripts/controllers/RestoreController.js:291
 #: scripts/controllers/RestoreController.js:328
 #: scripts/controllers/RestoreController.js:416
@@ -959,7 +960,7 @@ msgstr ""
 
 #: templates/about.html:4
 #: templates/addoredit.html:24
-#: templates/log.html:8
+#: templates/log.html:9
 msgid "General"
 msgstr ""
 
@@ -996,6 +997,7 @@ msgstr ""
 msgid "Hide hidden folders"
 msgstr ""
 
+#: index.html:148
 #: scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr ""
@@ -1172,13 +1174,13 @@ msgstr ""
 msgid "Listing remote files ..."
 msgstr ""
 
-#: templates/log.html:7
+#: templates/log.html:8
 msgid "Live"
 msgstr ""
 
-#: templates/log.html:22
-#: templates/log.html:53
-#: templates/log.html:67
+#: templates/log.html:23
+#: templates/log.html:54
+#: templates/log.html:68
 msgid "Load older data"
 msgstr ""
 
@@ -1186,12 +1188,12 @@ msgstr ""
 #: templates/about.html:49
 #: templates/about.html:55
 #: templates/captcha.html:14
-#: templates/log.html:14
-#: templates/log.html:21
-#: templates/log.html:44
-#: templates/log.html:52
-#: templates/log.html:59
-#: templates/log.html:66
+#: templates/log.html:15
+#: templates/log.html:22
+#: templates/log.html:45
+#: templates/log.html:53
+#: templates/log.html:60
+#: templates/log.html:67
 #: templates/updatechangelog.html:7
 msgid "Loading ..."
 msgstr ""
@@ -1220,11 +1222,15 @@ msgstr ""
 msgid "Location where buckets are created"
 msgstr ""
 
-#: templates/log.html:3
-msgid "Log data"
+#: templates/log.html:4
+msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
 msgstr ""
 
-#: index.html:187
+#: templates/log.html:3
+msgid "Log data from the server"
+msgstr ""
+
+#: index.html:193
 msgid "Log out"
 msgstr ""
 
@@ -1529,7 +1535,7 @@ msgstr ""
 msgid "Path or subfolder in the bucket"
 msgstr ""
 
-#: index.html:154
+#: index.html:157
 #: templates/settings.html:18
 msgid "Pause"
 msgstr ""
@@ -1594,7 +1600,7 @@ msgstr ""
 msgid "Reload"
 msgstr ""
 
-#: templates/log.html:9
+#: templates/log.html:10
 msgid "Remote"
 msgstr ""
 
@@ -1630,7 +1636,7 @@ msgstr ""
 msgid "Restore"
 msgstr ""
 
-#: index.html:151
+#: index.html:154
 msgid "Restore backup"
 msgstr ""
 
@@ -1659,7 +1665,7 @@ msgstr ""
 msgid "Restoring files ..."
 msgstr ""
 
-#: index.html:178
+#: index.html:181
 msgid "Resume"
 msgstr ""
 
@@ -1735,7 +1741,7 @@ msgstr ""
 msgid "Seconds"
 msgstr ""
 
-#: templates/log.html:28
+#: templates/log.html:29
 msgid "Select a log level and see messages as they happen:"
 msgstr ""
 
@@ -1768,7 +1774,7 @@ msgstr ""
 msgid "Server state properties"
 msgstr ""
 
-#: index.html:181
+#: index.html:184
 #: templates/settings.html:2
 msgid "Settings"
 msgstr ""
@@ -1789,7 +1795,7 @@ msgstr ""
 msgid "Show hidden folders"
 msgstr ""
 
-#: index.html:184
+#: index.html:187
 msgid "Show log"
 msgstr ""
 
@@ -1856,7 +1862,7 @@ msgstr ""
 msgid "Storage class for creating a bucket"
 msgstr ""
 
-#: templates/log.html:6
+#: templates/log.html:7
 msgid "Stored"
 msgstr ""
 
@@ -1942,7 +1948,7 @@ msgstr ""
 msgid "The bucket name should start with your username, prepend automatically?"
 msgstr ""
 
-#: index.html:270
+#: index.html:276
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
 
@@ -2059,7 +2065,7 @@ msgstr ""
 msgid "Type to highlight files"
 msgstr ""
 
-#: index.html:173
+#: index.html:176
 msgid "Until resumed"
 msgstr ""
 
@@ -2179,7 +2185,7 @@ msgstr ""
 msgid "Very weak"
 msgstr ""
 
-#: index.html:206
+#: index.html:212
 msgid "Visit us on"
 msgstr ""
 
@@ -2424,14 +2430,14 @@ msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] ""
 msgstr[1] ""
 
-#: index.html:170
+#: index.html:173
 msgid "{{number}} Hour"
 msgstr ""
 
-#: index.html:158
 #: index.html:161
 #: index.html:164
 #: index.html:167
+#: index.html:170
 msgid "{{number}} Minutes"
 msgstr ""
 
