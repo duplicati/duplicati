@@ -62,6 +62,7 @@
     <Compile Include="IConnectionModule.cs" />
     <Compile Include="IRenameEnabledBackend.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="IGenericServerModule.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />

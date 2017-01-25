@@ -4,6 +4,17 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
+        var mods = [];
+        if ($scope.SystemInfo.ServerModules != null)
+            for(var ix in $scope.SystemInfo.ServerModules)
+            {
+                var m = $scope.SystemInfo.ServerModules[ix];
+                if (m.SupportedGlobalCommands != null && m.SupportedGlobalCommands.length > 0)
+                    mods.push(m);
+            }
+
+        $scope.ServerModules = mods;
+        AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
     }
 
     reloadOptionsList();
@@ -41,7 +52,10 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
         $scope.originalUpdateChannel = data.data['update-channel'];
         $scope.usageReporterLevel = data.data['usage-reporter-level'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
+        $scope.servermodulesettings = {};
 
+        AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
+        
     }, AppUtils.connectionError);
 
 
@@ -71,6 +85,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
         }
 
         AppUtils.mergeAdvancedOptions($scope.advancedOptions, patchdata, $scope.rawdata);
+        for(var n in $scope.servermodulesettings)
+            patchdata['--' + n] = $scope.servermodulesettings[n];
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {
