@@ -97,6 +97,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 GenericModules = Serializable.ServerSettings.GenericModules,
                 WebModules = Serializable.ServerSettings.WebModules,
                 ConnectionModules = Serializable.ServerSettings.ConnectionModules,
+                ServerModules = Serializable.ServerSettings.ServerModules,
                 UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
                 LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)),
                 SuppressDonationMessages = Duplicati.Library.Main.Utility.SuppressDonationMessages,

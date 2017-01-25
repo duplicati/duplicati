@@ -334,6 +334,15 @@
                     </div>
                 </div>
 
+                <div ng-repeat="module in ServerModules">
+                    <h2 title="{{module.Description}}">{{module.DisplayName}}</h2>
+                    
+                    <div class="input" ng-repeat="opt in module.SupportedLocalCommands">
+                        <label for="{{module.Key}}-{{opt.Name}}" title="{{opt.LongDescription}}">{{opt.ShortDescription}}</label>
+                        <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />
+                    </div>
+                </div>
+
                 <div class="headerthreedotmenu">
                     <a href ng-click="showAdvanced = !showAdvanced" class="expandable">
                         <h2 translate>Advanced options</h2>
