@@ -14,11 +14,6 @@
 * Improved queries that are used to recreate the database
 * Fixed duplicate logging entries when a log file was used
 
-2017-01-16 - 2.0.1.42_canary_2017-01-16
-==========
-* Added a debugging feature to assist with #1699, #2048, #2140, #2178
-* Fixed a problem with listing changes from the commandline
-
 2017-01-16 - 2.0.1.41_canary_2017-01-16
 ==========
 * Added a debugging feature to assist with #1699, #2048, #2140, #2178
