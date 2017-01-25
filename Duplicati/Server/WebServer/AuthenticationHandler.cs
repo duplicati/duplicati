@@ -264,13 +264,11 @@ namespace Duplicati.Server.WebServer
             }
 
             var limitedAccess =
-                ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase)
-                ||
                 request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
             ;
 
             // Override to allow the CAPTCHA call to go through
-            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI) && request.Method == "GET")
+            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI, StringComparison.InvariantCultureIgnoreCase) && request.Method == "GET")
                 limitedAccess = false;
 
             if (limitedAccess)

@@ -214,8 +214,6 @@ namespace Duplicati.Server.WebServer
 
             server.Add(new AuthenticationHandler());
 
-            server.Add(new ControlHandler());
-
             server.Add(new RESTHandler());
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
