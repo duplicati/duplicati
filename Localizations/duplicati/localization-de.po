@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-09 18:36+0100\n"
+"POT-Creation-Date: 2017-01-26 19:48+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: M D <sq948@live.de>, 2017\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: CommandLine/Program.cs:271
+#: CommandLine/Program.cs:275
 msgid "Toggle automatic updates"
 msgstr "Automatische Updates umschalten"
 
-#: CommandLine/Program.cs:271
+#: CommandLine/Program.cs:275
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -80,15 +80,12 @@ msgid "Supported options:"
 msgstr "Unterstützte Optionen:"
 
 #: CommandLine/Strings.cs:15
-msgid "Module is loaded atomatically, use --disable-module to prevent this"
+msgid "Module is loaded automatically, use --disable-module to prevent this"
 msgstr ""
-"Modul wird automatisch geladen, benutze --disable-module um dies zu "
-"verhindern"
 
 #: CommandLine/Strings.cs:16
-msgid "Module is not loaded atomatically, use --enable-module to load it"
+msgid "Module is not loaded automatically, use --enable-module to load it"
 msgstr ""
-"Modul wird nicht automatisch geladen, benutze --enable-module um es zu laden"
 
 #: CommandLine/Strings.cs:17
 msgid "Supported generic modules:"
@@ -105,13 +102,8 @@ msgid ""
 "Filters cannot be specified on the commandline if filters are also present "
 "in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
 "specify filters inside the parameter file. Each filter must be prefixed with"
-" with either a + or a -, and multiple filters must be joined with {3}"
+" either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
-"Filter können nicht in der Kommandozeile angegeben werden, wenn bereits "
-"Filter in der Parameterdatei enthalten sind. Verwende die Spezialoptionen "
-"--{0}, --{1} oder --{2} um Filter innerhalb der Parameterdatei anzugeben. "
-"Jeder Filter muss als Präfix entweder ein + oder ein - enthalten und mehrere"
-" Filter müssen mit {3} verknüpft werden."
 
 #: CommandLine/Strings.cs:20
 #, csharp-format
@@ -133,20 +125,9 @@ msgid ""
 "precedence over the options provided on the commandline. You cannot specify "
 "filters in both the file and on the commandline. Instead, you can use the "
 "special --{2}, --{3}, or --{4} options to specify filters inside the "
-"parameter file. Each filter must be prefixed with with either a + or a -, "
-"and multiple filters must be joined with {5} "
+"parameter file. Each filter must be prefixed with either a + or a -, and "
+"multiple filters must be joined with {5} "
 msgstr ""
-"Diese Option kann genutzt werden um einige oder alle Optionen des "
-"Kommandozeilen Clients zu speichern. Bei der Datei muss es sich um eine "
-"einfache Textdatei handeln, bestenfalls UTF-8 kodiert. Jede Zeile in der "
-"Datei sollte folgendes Format haben: --option=Wert. Die speziellen Optionen "
-"--{0} und --{1} können verwendet werden um die lokale URL, bzw. die remote "
-"URL zu überschreiben. Die Optionen in der Datei haben Vorrang vor den "
-"Optionen der Kommandozeile. Es ist nicht möglich Filter in der Datei und auf"
-" der Kommandozeile anzugeben. Stattdessen gibt es die Spezialoptionen --{2},"
-" --{3} oder --{4} um die Filter innerhalb der Parameterdatei anzugeben. "
-"Jeder Filter muss als Präfix entweder ein + oder ein - enthalten und mehrere"
-" Filter müssen mit {5} verknüpft werden."
 
 #: CommandLine/Strings.cs:22
 msgid "Path to a file with parameters"
@@ -1157,13 +1138,9 @@ msgstr "Keine \"Amazon S3 userID\" angegeben"
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
 "This flag is only used when creating new buckets. If the flag is set, the "
-"bucket is created on a european server. This flag forces the \"s3-use-new-"
-"style\" flag. Amazon charges slightly more for european buckets."
+"bucket is created on a European server. This flag forces the \"s3-use-new-"
+"style\" flag. Amazon charges slightly more for European buckets."
 msgstr ""
-"Dieses Flag wird nur beim Erstellen neuer Buckets verwendet. Wenn das Flag "
-"gesetzt ist, wird der Bucket auf einem europäischen Server erstellt. Dieses "
-"Flag erzwingt das Flag \"s3-use-new-style\". Amazon verlangt für europäische"
-" Buckets leicht erhöhte Gebühren."
 
 #: Library/Backend/S3/Strings.cs:16
 msgid "Use a European server"
@@ -1344,14 +1321,9 @@ msgstr "Verschiebe gelöschte Dateien in den Papierkorb"
 msgid ""
 "Use this option to upload files to SharePoint as a whole with BinaryDirect "
 "mode. This is the most efficient way of uploading, but can cause non-"
-"recoverable timouts under certain conditions. Use this option only with very"
-" fast and stable internet connections."
+"recoverable timeouts under certain conditions. Use this option only with "
+"very fast and stable internet connections."
 msgstr ""
-"Verwende diese Option zum Hochladen von Dateien in SharePoint als Ganzes mit"
-" BinaryDirect-Modus. Dies ist die effizienteste Methode zum Hochladen, kann "
-"aber unter bestimmten Bedingungen zu nicht wiederherstellbaren "
-"Zeitüberschreitungen führen. Verwende diese Option nur mit sehr schnellen "
-"und stabilen Internetverbindungen."
 
 #: Library/Backend/SharePoint/Strings.cs:18
 msgid "Upload files using binary direct mode."
@@ -1639,7 +1611,7 @@ msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:6
 msgid "Force the use of the HTTP Digest authentication method"
-msgstr "Erzwingen die Verwendung der HTTP-Digest-Authentifizierungsmethode"
+msgstr "Erzwinge die Verwendung der HTTP-Digest-Authentifizierungsmethode"
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
@@ -1689,9 +1661,12 @@ msgstr "Legt den Komprimierungsgrad für die Zip-Datei fest"
 #, csharp-format
 msgid ""
 "This option can be used to set an alternative compressor method, such as "
-"LZMA. Note that using another value then Deflate will cause the {0} option "
+"LZMA. Note that using another value than Deflate will cause the {0} option "
 "to be ignored."
 msgstr ""
+"Mit dieser Option kann eine alternative Komprimierungsmethode wie LZMA "
+"eingestellt werden. Beachte, dass bei Verwendung eines anderen Wertes als "
+"Deflate die Option {0} ignoriert wird."
 
 #: Library/Compression/Strings.cs:8
 msgid "Sets the Zip compression method"
@@ -1730,10 +1705,8 @@ msgstr "7z Archiv"
 #: Library/Compression/Strings.cs:19
 msgid ""
 "The number of threads used in LZMA 2 compression. Defaults to the number of "
-"processor cores.."
+"processor cores."
 msgstr ""
-"Die Anzahl der verwendeten Threads im LZMA-2-Komprimierung. Der Standardwert"
-" ist die Anzahl der Prozessorkerne."
 
 #: Library/Compression/Strings.cs:20
 msgid "Number of threads used in compression"
@@ -1931,8 +1904,8 @@ msgstr "Fehler beim Aufrufen von GnuPG, Programm leert seinen Ausgang nicht."
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Fehler beim Aufrufen von GnuPG, Programm beendet sich nicht."
 
-#: Library/Interface/CustomExceptions.cs:57
-#: Library/Interface/CustomExceptions.cs:65
+#: Library/Interface/CustomExceptions.cs:77
+#: Library/Interface/CustomExceptions.cs:85
 msgid "The requested file does not exist"
 msgstr "Die angefragte Datei existiert nicht"
 
@@ -2473,12 +2446,9 @@ msgstr "Zeige Ordnerinhalt"
 #: Library/Main/Strings.cs:61
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
-"attempting again. This is usefull if the network drops out occasionally "
+"attempting again. This is useful if the network drops out occasionally "
 "during transmissions."
 msgstr ""
-"Nach einer fehlgeschlagenen Übertragung wird Duplicati eine kurze Zeitspanne"
-" warten, bevor es erneut versucht wird. Dies ist sinnvoll, wenn das Netzwerk"
-" bei Übertragungen gelegentlich ausfällt."
 
 #: Library/Main/Strings.cs:62
 msgid "Time to wait between retries"
@@ -2580,16 +2550,11 @@ msgstr "Eine Option, die die Überprüfung des Manifests verhindert"
 
 #: Library/Main/Strings.cs:79
 msgid ""
-"Duplicati supports plugable compression modules. Use this option to select a"
-" module to use for compression. This is only applied when creating new "
+"Duplicati supports pluggable compression modules. Use this option to select "
+"a module to use for compression. This is only applied when creating new "
 "volumes, when reading an existing file, the filename is used to select the "
 "compression module."
 msgstr ""
-"Duplicati unterstützt steckbare Komprimierungsmodule. Verwende diese Option,"
-" um ein Modul auszuwählen, das für die Komprimierung verwendet werden soll. "
-"Dies wird nur beim Erstellen neuer Volumes angewendet, beim Lesen einer "
-"vorhandenen Datei wird der Dateiname zur Auswahl des Komprimierungsmoduls "
-"verwendet."
 
 #: Library/Main/Strings.cs:80
 msgid "Select what module to use for compression"
@@ -2597,16 +2562,11 @@ msgstr "Wähle, welches Modul zur Komprimierung verwendet wird."
 
 #: Library/Main/Strings.cs:81
 msgid ""
-"Duplicati supports plugable encryption modules. Use this option to select a "
-"module to use for encryption. This is only applied when creating new "
+"Duplicati supports pluggable encryption modules. Use this option to select a"
+" module to use for encryption. This is only applied when creating new "
 "volumes, when reading an existing file, the filename is used to select the "
 "encryption module."
 msgstr ""
-"Duplicati unterstützt steckbare Verschlüsselungsmodule. Verwende diese "
-"Option, um ein Modul auszuwählen, das für die Verschlüsselung verwendet "
-"werden soll. Dies wird nur beim Erstellen neuer Volumes angewendet, beim "
-"Lesen einer vorhandenen Datei wird der Dateiname zur Auswahl des "
-"Verschlüsselungsmoduls verwendet."
 
 #: Library/Main/Strings.cs:82
 msgid "Select what module to use for encryption"
@@ -2634,7 +2594,7 @@ msgstr "Eines oder mehrere Module aktiviert"
 
 #: Library/Main/Strings.cs:87
 msgid ""
-"This settings controls the usage of snapshots, which allows Duplicati to "
+"This setting controls the usage of snapshots, which allows Duplicati to "
 "backup files that are locked by other programs. If this is set to \"off\", "
 "Duplicati will not attempt to create a disk snapshot. Setting this to "
 "\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
@@ -2642,7 +2602,7 @@ msgid ""
 "Duplicati attempt to create a snapshot, but will produce a warning message "
 "in the log if it fails. Setting it to \"required\" will make Duplicati abort"
 " the backup if the snapshot creation fails. On windows this uses the Volume "
-"Shadow Copy Services (VSS) and requires administrative privileges. On linux "
+"Shadow Copy Services (VSS) and requires administrative privileges. On Linux "
 "this uses Logical Volume Management (LVM) and requires root privileges."
 msgstr ""
 
@@ -2726,8 +2686,8 @@ msgstr ""
 
 #: Library/Main/Strings.cs:102
 msgid ""
-"This settings controls the usage of NTFS USN numbers, which allows Duplicati"
-" to obtain a list of files and folders much faster. If this is set to "
+"This setting controls the usage of NTFS USN numbers, which allows Duplicati "
+"to obtain a list of files and folders much faster. If this is set to "
 "\"off\", Duplicati will not attempt to use USN. Setting this to \"auto\" "
 "makes Duplicati attempt to use USN, and fail silently if that was not "
 "allowed or supported. A setting of \"on\" will also make Duplicati attempt "
@@ -2870,7 +2830,7 @@ msgstr "Dateien mit folgenden Attributen ausschließen"
 #, csharp-format
 msgid ""
 "Use this option to exclude files with certain attributes. Use a comma "
-"separated list of attribute names to specify more that one. Possible values "
+"separated list of attribute names to specify more than one. Possible values "
 "are: {0}"
 msgstr ""
 
@@ -3280,8 +3240,8 @@ msgstr ""
 #: Library/Main/Strings.cs:200
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
-"verify that the restore was successfull. Use this option to disable the "
-"check and avoid waiting for the verification."
+"verify that the restore was successful. Use this option to disable the check"
+" and avoid waiting for the verification."
 msgstr ""
 
 #: Library/Main/Strings.cs:201
@@ -3402,24 +3362,35 @@ msgid ""
 "structure is preserved, including upper level empty folders."
 msgstr ""
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:223
+msgid "Allow removing all filesets"
+msgstr ""
+
+#: Library/Main/Strings.cs:224
+msgid ""
+"By default, the last fileset cannot be removed. This is a safeguard to make "
+"sure that all remote data is not deleted by a configuration mistake. Use "
+"this flag to disable that protection, such that all filesets can be deleted."
+msgstr ""
+
+#: Library/Main/Strings.cs:229
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:230
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:231
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "Die Passphrase für eine existierende Sicherung kann nicht geändert werden"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Fehler beim Erstellen des Schnappschusses: {0}"
@@ -3430,12 +3401,9 @@ msgstr "Verschlüsselungspassphrase bestätigen"
 
 #: Library/Modules/Builtin/Strings.cs:8
 msgid ""
-"This module will ask the user for a encryption password on the commandline "
-"unless encryption is disabled or the password is supplied by other means"
+"This module will ask the user for an encryption password on the command line"
+" unless encryption is disabled or the password is supplied by other means"
 msgstr ""
-"Dieses Modul fragt den User in der Kommandozeile nach einem "
-"Verschlüsselungs-Passwort , es sei denn Verschlüsselung ist abgeschaltet "
-"oder das Passwort wird durch andere Mittel bereitgestellt."
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid "Password prompt"
@@ -3515,7 +3483,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:27
 msgid ""
 "By default the http requests use the RFC 896 nagling algorithm to support "
-"transfer of small packages more effeciently."
+"transfer of small packages more efficiently."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:28
@@ -3656,7 +3624,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:64
 msgid ""
-"This value can be a filename. If a the file exists, the file contents will be used as the message body.\n"
+"This value can be a filename. If the file exists, the file contents will be used as the message body.\n"
 "\n"
 "In the message body, certain tokens are replaced:\n"
 "%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n"
@@ -3664,7 +3632,7 @@ msgid ""
 "%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n"
 "%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success\n"
 "\n"
-"All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
+"All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:73
@@ -3682,7 +3650,7 @@ msgstr "SMTP-Passwort"
 
 #: Library/Modules/Builtin/Strings.cs:76
 msgid ""
-"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses seperated with commas, and you can use the normal adress format as specified by RFC2822 section 3.4.\n"
+"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients: \n"
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
@@ -3721,10 +3689,10 @@ msgstr "E-Mail-Absender"
 #: Library/Modules/Builtin/Strings.cs:90
 #, csharp-format
 msgid ""
-"You can specify one of \"{0}\", \"{1}\", \"{2}\". You can supply multiple "
-"options with a comma seperator, e.g. \"{0},{1}\". The special value \"{3}\" "
-"is a shorthand for \"{0},{1},{2}\" and will cause all backup operations to "
-"send an email."
+"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". You can supply "
+"multiple options with a comma separator, e.g. \"{0},{1}\". The special value"
+" \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup "
+"operations to send an email."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
@@ -3734,10 +3702,10 @@ msgstr "Die zu sendenden Nachrichten"
 
 #: Library/Modules/Builtin/Strings.cs:92
 msgid ""
-"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, seperated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
+"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
 "\n"
-"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 587 for SSL connections."
+"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:96
@@ -3794,7 +3762,7 @@ msgstr "XMPP-Empfänger-E-Mail"
 #: Library/Modules/Builtin/Strings.cs:108
 msgid ""
 "The users who should have the messages sent, specify multiple users "
-"seperated with commas"
+"separated with commas"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:109
@@ -3803,7 +3771,7 @@ msgstr "Die Nachrichtenvorlage"
 
 #: Library/Modules/Builtin/Strings.cs:110
 msgid ""
-"This value can be a filename. If a the file exists, the file contents will be used as the message.\n"
+"This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
 "In the message, certain tokens are replaced:\n"
 "%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n"
@@ -3811,7 +3779,7 @@ msgid ""
 "%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n"
 "%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success\n"
 "\n"
-"All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
+"All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:119
@@ -3837,8 +3805,8 @@ msgstr "Kennwort für das Konto, das die Nachricht sendet"
 #: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid ""
-"You can specify one of \"{0}\", \"{1}\", \"{2}\". \n"
-"You can supply multiple options with a comma seperator, e.g. \"{0},{1}\". The special value \"{3}\" is a shorthand for \"{0},{1},{2}\" and will cause all backup operations to send a message."
+"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
+"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:126
