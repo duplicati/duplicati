@@ -61,7 +61,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string Description { get { return LC.L(@"This module can send email after an operation completes"); } }
         public static string Displayname { get { return LC.L(@"Send mail"); } }
         public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup, please use the option {0} to specify what smtp server to use.", optionname); }
-        public static string OptionBodyLong { get { return LC.L(@"This value can be a filename. If a the file exists, the file contents will be used as the message body.
+        public static string OptionBodyLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message body.
 
 In the message body, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
@@ -107,7 +107,7 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
         public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
         public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users separated with commas"); } }
         public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
-        public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If a the file exists, the file contents will be used as the message.
+        public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
 In the message, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
