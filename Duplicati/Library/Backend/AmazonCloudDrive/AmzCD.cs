@@ -24,7 +24,7 @@ using System.Net;
 
 namespace Duplicati.Library.Backend.AmazonCloudDrive
 {
-    public class AmzCD : IBackend, IStreamingBackend, IRenameEnabledBackend
+    public class AmzCD : IPagingBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
         private const string LABELS_OPTION = "amzcd-labels";
@@ -317,57 +317,68 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         #endregion
 
-        #region IBackend implementation
-        public List<IFileEntry> List()
+        #region IBackendPaged implementation
+
+        public IPageResults List(IPageResults previous)
         {
             EnforceConsistencyDelay();
 
-            var query = string.Format("{0}/nodes?filters=parents:{1}&limit={2}", MetadataUrl, Utility.Uri.UrlEncode(CurrentDirectory.ID), PAGE_SIZE);
-            var res = new List<IFileEntry>();
-            string nextToken = null;
-            m_filecache = null;
-            var cache = new Dictionary<string, string>();
-
-            do
+            if (previous == null)
             {
-                var lst = m_oauth.GetJSONData<ListResponse>(query + (string.IsNullOrWhiteSpace(nextToken) ? "" : ("&startToken=" + nextToken)));
-                if (lst.Data != null)
+                // clear cache when first page is fetched
+                m_filecache = new Dictionary<string, string>();
+            }
+
+            var query = string.Format("{0}/nodes?filters=parents:{1}&limit={2}", MetadataUrl, Utility.Uri.UrlEncode(CurrentDirectory.ID), PAGE_SIZE);
+            var res = new List<FileEntry>();
+            string nextToken = null;
+
+            var lst = m_oauth.GetJSONData<ListResponse>(query + (previous != null ? "&startToken=" + ((PageResult)previous).NextToken : ""));
+            if (lst.Data != null)
+            {
+                foreach (var n in lst.Data)
                 {
-                    foreach(var n in lst.Data)
+
+                    if (string.Equals(CONTENT_KIND_FOLDER, n.Kind, StringComparison.InvariantCultureIgnoreCase))
+                        res.Add(new FileEntry(n.Name) { IsFolder = true });
+                    else if (string.Equals(CONTENT_KIND_FILE, n.Kind, StringComparison.InvariantCultureIgnoreCase))
                     {
+                        m_filecache[n.Name] = n.ID;
 
-                        if (string.Equals(CONTENT_KIND_FOLDER, n.Kind, StringComparison.InvariantCultureIgnoreCase))
-                            res.Add(new FileEntry(n.Name) { IsFolder = true });
-                        else if (string.Equals(CONTENT_KIND_FILE, n.Kind, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            cache[n.Name] = n.ID;
-
-                            if (n.ContentProperties == null)
-                                res.Add(new FileEntry(n.Name) {
-                                    LastAccess = n.LastModified,
-                                    LastModification = n.LastModified
-                                });
-                            else
-                                res.Add(new FileEntry(n.Name, n.ContentProperties.Size, n.LastModified, n.LastModified));
-                        }
+                        if (n.ContentProperties == null)
+                            res.Add(new FileEntry(n.Name)
+                            {
+                                LastAccess = n.LastModified,
+                                LastModification = n.LastModified
+                            });
+                        else
+                            res.Add(new FileEntry(n.Name, n.ContentProperties.Size, n.LastModified, n.LastModified));
                     }
                 }
+            }
 
-                nextToken = lst.NextToken;
+            nextToken = lst.NextToken;
 
-                // Contrary to the documentation, nextToken is null when the set is done
-                if (lst.Count == 0)
-                    break;
-
-                // Docs say to check for empty response ...
-                //if (lst.Count < PAGE_SIZE)
-                //    break;
-            } while(nextToken != null);
-
-            m_filecache = cache;
-            return res;
+            return new PageResult(res, nextToken);
 
         }
+        #endregion
+
+        #region IBackend implementation
+
+        public List<IFileEntry> List()
+        {
+            // TODO: This should be invoked by BackendManager including backoff etc.
+            var result = new List<IFileEntry>();
+            IPageResults page = null;
+            while (page == null || page.More)
+            {
+                page = List(page);
+                result.AddRange(page.Items);
+            }
+            return result;
+        }
+
         public void Put(string remotename, string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
@@ -439,6 +450,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             }
         }
         #endregion
+
         #region IDisposable implementation
         public void Dispose()
         {

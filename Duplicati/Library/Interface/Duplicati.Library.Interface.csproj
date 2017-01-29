@@ -53,6 +53,8 @@
     <Compile Include="IFileEntry.cs" />
     <Compile Include="IGenericSourceModule.cs" />
     <Compile Include="IGenericModule.cs" />
+    <Compile Include="IPageResults.cs" />
+    <Compile Include="IPagingBackend.cs" />
     <Compile Include="IQuotaEnabledBackend.cs" />
     <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

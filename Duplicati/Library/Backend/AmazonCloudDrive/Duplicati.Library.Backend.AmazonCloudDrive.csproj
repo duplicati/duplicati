@@ -37,6 +37,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PageResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AmzCD.cs" />
     <Compile Include="Strings.cs" />
