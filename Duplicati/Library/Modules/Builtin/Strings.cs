@@ -130,4 +130,31 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
         public static string SendMessageError(string message) { return LC.L(@"Failed to send jabber message: {0}", message); }
     }
+
+    internal static class SendHttpMessage {
+        public static string DisplayName { get { return LC.L(@"HTTP report module"); } }
+        public static string Description { get { return LC.L(@"This module provides support for sending status reports via HTTP messages"); } }
+        public static string SendhttpurlShort { get { return LC.L(@"HTTP report url"); } }
+        public static string SendhttpurlLong { get { return LC.L(@"HTTP report url"); } }
+        public static string SendhttpmessageShort { get { return LC.L(@"The message template"); } }
+        public static string SendhttpmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
+
+In the message, certain tokens are replaced:
+%OPERATIONNAME% - The name of the operation, normally ""Backup""
+%REMOTEURL% - Remote server url
+%LOCALPATH% - The path to the local files or folders involved in the operation (if any)
+%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
+
+All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
+        public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
+        public static string SendhttpmessageparameternameLong { get { return LC.L(@"The name of the parameter to send the message as."); } }
+        public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters to add to the http message"); } }
+        public static string SendhttpextraparametersLong { get { return LC.L(@"Extra parameters to add to the http message. I.e. ""parameter1=value1&parameter2=value2"""); } }
+        public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }
+        public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
+        public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
+        public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
+        public static string SendMessageError(string message) { return LC.L(@"Failed to send http message: {0}", message); }
+    }
 }
