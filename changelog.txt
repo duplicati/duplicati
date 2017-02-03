@@ -1,3 +1,11 @@
+2017-02-03 - 2.0.1.46_canary_2017-02-03
+==========
+* Fixed icon sizes
+* Removed the fake control.cgi entry
+* Added experimental support for setting the SQLite tempdir
+* Added an optimization that makes bug reports faster to create
+* Added a new HTTP reporter module, thanks @vatara
+
 2017-02-03 - 2.0.1.45_experimental_2017-02-03
 ==========
 * This experimental release contains the fixes in the latest canary and some updated translations, and a fix that makes creating a bug-report faster
