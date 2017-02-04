@@ -263,6 +263,38 @@ namespace Duplicati.Server
                 {
                     //Normal release mode uses the systems "Application Data" folder
                     Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName));
+					
+                    //Switching from AppData\Roaming to AppData\Local, only in Windows
+                    if (Library.Utility.Utility.IsClientWindows) {
+						
+						if (System.IO.Directory.Exists(System.IO.Path.Combine((System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)))) {
+							
+						/* 
+							There's still a directory AppData\Roaming\Duplicati. Trying to move it.
+						*/ 
+						
+							try {
+								// Move the directory
+								System.IO.Move(System.IO.Path.Combine((System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)))
+								
+								// Success, we proceed with DUPLICATI_HOME set to AppData\Local\Duplicati
+								Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine((System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)))
+							}
+							catch {
+								// Couldn't move it, we proceed with DUPLICATI_HOME set to AppData\Roaming\Duplicati
+								Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine((System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)))
+							}
+						} else {
+							
+						/*
+							There's no Duplicati directory in AppData\Roaming
+							Proceeding with DUPLICATI_HOME set to AppData\Local\Duplicati
+							If the directory does not exist yet it will be created with 
+							the new Instance below
+						*/
+							Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine((System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)))
+						}
+                
                 }
 #endif
             }
