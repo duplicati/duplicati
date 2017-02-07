@@ -93,6 +93,13 @@ textarea {
     overflow: auto;
 }
 
+.not-clickable {
+    cursor: default !important;
+    > a, span, div {
+        cursor: default !important;
+    }
+}
+
 .ui-match {
     font-weight: bold;
     color: darkgreen;
@@ -368,18 +375,39 @@ ul.notification {
 }
 
 .logo {
+    img.mainlogo {
+        height: 64px;
+        width: 64px;
+        float: left;
+        padding-right: 8px;
+        padding-top: 2px;
+    }
+
+    div.logotext {
+        float: left;
+    }
+
+    a {
+        float: left;
+        display: block;
+        line-height: normal;
+    }
+
     div.build-suffix {
+        clear: both;
         display: inline;
+        float: left;
         font-size: 16px;
+        line-height: 16px;
     }
 
     div.powered-by {
         font-size: 16px;
         margin: 0px;
         line-height: 16px;
+        float: left;
         padding: 0px;
-        margin-top: -25px;
-        margin-left: 10px;
+        margin-left: 5px;
     }
 }
 
@@ -414,10 +442,10 @@ body {
         position: relative;
 
         .header {
-            height: 70px;
             line-height: 70px;
             background: @headerBg;
             overflow: hidden;
+            min-height: 70px;
 
             a {
                 color: @lColor;
@@ -432,8 +460,82 @@ body {
                 font-size: 30px;
                 font-weight: 700;
                 float: left;
-                padding-left: 50px;
+                padding-left: 40px;
             }
+
+            .statepadding {
+                padding-right: 90px;
+                margin-left: 320px;
+            }
+
+            .state {
+                float: left;
+                color: @hColor;
+                width: 545px;
+                padding: 13px 15px;
+                margin: 10px 20px;
+                border: 1px @hColor solid;
+                font-weight: 300;
+                font-size: 18px;
+                overflow: hidden;
+                line-height: normal;
+                display: inline-block;
+                background-color: white;
+                text-overflow: ellipsis;
+
+                strong {
+                    display: inline-block;
+                    margin-right: 10px;
+                }
+
+                .button {
+                    position: static;
+                    margin-top: 70px;
+                }
+            }
+
+            .action-icons {
+                display: inline-block;
+                line-height: normal;
+                margin: 10px 0px;
+                padding: 13px 0px;
+                float: left;
+            }
+
+            .action-icons-small {
+                display: none;
+                float: right;
+                margin-top: 21px;
+                line-height: normal;
+            }
+
+            .action-icons,
+            .action-icons-small {
+                > .pause {
+                    width: 26px;
+                    height: 26px;
+                    display: inline-block;
+                    cursor: pointer;
+                    background: url('../img/pause.png');
+                }
+
+                > .pause.active {
+                    background: url('../img/resume.png');
+                }
+
+                > .throttle {
+                    width: 26px;
+                    height: 26px;
+                    display: inline-block;
+                    cursor: pointer;
+                    background: url('../img/throttle-inactive.png');
+                }
+
+                > pause.active {
+                    background: url('../img/throttle.png');
+                }
+            }
+
 
             .about-header {
                 float: right;
@@ -493,11 +595,6 @@ body {
                 padding-left: 40px;
                 float: left;
 
-                .contextmenu {
-                    left: 260px;
-                    top: 0px;
-                }
-
                 > ul {
                     > li {
                         position: relative;
@@ -509,7 +606,10 @@ body {
                             display: block;
                         }
 
-                        > a:hover,
+                        > a:hover {
+                            color: white;
+                        }
+
                         > a.active {
                             color: white;
                         }
@@ -524,11 +624,6 @@ body {
 
                         > a.pause {
                             background: url('../img/mainmenu/pause.png') no-repeat 8px 7px;
-
-                            > span {
-                                padding-right: 25px;
-                                background: url('../img/mainmenu/arrow_right.png') right center no-repeat;
-                            }
                         }
 
                         > a.resume {
@@ -555,52 +650,102 @@ body {
                             background: url('../img/mainmenu/about.png') no-repeat 8px 7px;
                         }
 
-                        > a.add:hover,
+                        > a.pause {
+                            > span {
+                                padding-right: 25px;
+                                background: url('../img/mainmenu/arrow_right.png') right center no-repeat;
+                            }
+                        }
+
+                        > a.home.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/home.png') no-repeat 8px 7px;
+                        }
+
                         > a.add.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
+                        }
+
+                        > a.restore.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
+                        }
+
+                        > a.pause.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
+                        }
+
+                        > a.resume.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
+                        }
+
+                        > a.settings.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
+                        }
+
+                        > a.log.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
+                        }
+
+                        > a.about.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/about.png') no-repeat 8px 7px;
+                        }
+
+                        > a.pause.open.active {
+                            > span {
+                                background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
+                            }
+                        }                        
+
+                        > a.add:hover {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
                         }
 
-                        > a.restore:hover,
-                        > a.restore.active {
+                        > a.restore:hover {
                             background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
                         }
 
-                        > a.pause:hover,
-                        > a.pause.active {
+                        > a.pause:hover {
                             background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
+                        }
 
+                        > a.pause:hover {
                             > span {
                                 background: url('../img/mainmenu/over/arrow_right.png') right center no-repeat;
                             }
                         }
 
-                        > a.resume:hover,
-                        > a.resume.active {
+                        > a.pause.open:hover {
+                            > span {
+                                background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
+                            }
+                        }
+
+                        > a.pause.open {
+                            > span {
+                                background: url('../img/mainmenu/arrow_down.png') right center no-repeat;
+                            }
+                        }
+
+                        > a.resume:hover {
                             background: @lColor url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
                         }
 
-                        > a.settings:hover,
-                        > a.settings.active {
+                        > a.settings:hover {
                             background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
                         }
 
-                        > a.log:hover,
-                        > a.log.active {
+                        > a.log:hover {
                             background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
                         }
 
-                        > a.logout:hover,
-                        > a.logout.active {
+                        > a.logout:hover {
                             background: @lColor url('../img/mainmenu/over/logout.png') no-repeat 8px 7px;
                         }
 
-                        > a.home:hover,
-                        > a.home.active {
+                        > a.home:hover {
                             background: @lColor url('../img/mainmenu/over/home.png') no-repeat 8px 7px;
                         }
 
-                        > a.about:hover,
-                        > a.about.active {
+                        > a.about:hover {
                             background: @lColor url('../img/mainmenu/over/about.png') no-repeat 8px 7px;
                         }
                     }
@@ -627,6 +772,7 @@ body {
                 padding: 5px;
 
                 li {
+
                     a {
                         color: @lColor;
                         font-size: 15px;
@@ -636,10 +782,12 @@ body {
                         min-width: 200px;
                         padding: 4px 10px;
                         white-space: nowrap;
+                        padding-left: 45px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
 
-                    a:hover,
-                    a.active {
+                    a:hover {
                         background: @lColor;
                         color: white;
                     }
@@ -660,28 +808,7 @@ body {
                     display: inline-block;
                 }
 
-                .state {
-                    color: @hColor;
-                    width: 575px;
-                    padding: 13px 15px;
-                    border: 1px @hColor solid;
-                    font-weight: 300;
-                    font-size: 18px;
-                    overflow: hidden;
-
-                    strong {
-                        display: inline-block;
-                        margin-right: 10px;
-                    }
-
-                    .button {
-                        position: static;
-                        margin-top: 70px;
-                    }
-                }
-
                 .tasks {
-                    padding-top: 20px;
 
                     .tasklist {
                         .task {
@@ -693,6 +820,11 @@ body {
                         .task:last-child {
                             border-bottom: 1px solid #eee;
                             padding-bottom: 20px;
+                        }
+
+                        .task:first-child {
+                            padding-top: 0px;
+                            border-top: 0px none;
                         }
 
                         a {
@@ -1147,7 +1279,7 @@ body {
 
                 div.restore {
                     @legends-steps: 2;
-                    @legends-width: 450px;
+                    @legends-width: 700px;
                     @legends-padding-left: (700px - @legends-width) / 2;
                     @circle-width: 43px;
                     @step-width: @legends-width / @legends-steps;
@@ -1167,7 +1299,41 @@ body {
                             width: @step-width;
                         }
                     }
+                }                
+
+                div.restore.restore-direct {
+                    @legends-steps: 4;
+                    @legends-width: 700px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+
+                    .step:first-child {
+                        padding-left: 0;
+                        background: transparent;
+                    }
+
+                    .steps-legend {
+                        padding-left: 20px;
+                    }
                 }
+
 
                 div.headerthreedotmenu {
                     margin: 20px 0 20px 0;
@@ -1555,6 +1721,51 @@ div.modal-dialog {
     }
 }
 
+.restorewizard,
+.addwizard {
+    form.styled {
+        ul {
+            margin: 20px;
+            margin-left: 0px;
+        }
+
+        input[type="radio"] {
+            width: 20px;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+
+        label {
+            width: auto;
+            line-height: normal;
+        }
+
+        div.subtext {
+            clear: both;
+            margin-left: 30px;
+            padding-top: 5px;
+            color: lightgray;
+
+        }
+    }
+}
+
+.pauseoptions {
+    form.styled {
+        li {
+            line-height: normal;
+            padding: 0px;
+
+            input {
+                height: auto;
+                margin-top: 8px;
+                margin-right: 8px;
+                width: auto;
+            }
+        }
+    }
+}
+
 /* Progress bar styles from Bootstrap */
 .progress-bar-striped {
     background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
@@ -1816,13 +2027,44 @@ div.modal-dialog {
 }
 
 // Smaller screen sizes
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
     body {
         .container {
             .header {
                 .donate {
                     display: none;
                 }
+            }
+        }
+    }
+}
+
+@media (max-width: 1100px) {
+    body {
+        .container {
+            .header {
+                min-height: 140px;
+
+                .statepadding {
+                    padding-right: 90px;
+                    margin-left: 0px;
+                }
+
+                .state {
+                    width: 100%;
+                    margin: 10px 40px;
+                    clear: left;
+                    float: left;
+                }
+
+                .action-icons {
+                    display: none;
+                }
+
+                .action-icons-small {
+                    display: inline-block;
+                }
+
 
                 .menubutton {
                     display: block;
@@ -1837,7 +2079,7 @@ div.modal-dialog {
                     color: #8f8f8f;
                     float: right;
                     top: 10px;
-                    width: 80px;
+                    padding-left: 20px;
                     text-transform: uppercase;
                     text-align: right;
                 }
@@ -1877,7 +2119,7 @@ div.modal-dialog {
 
                 .content {
                     float: none;
-                    padding: 50px 20px;
+                    padding: 20px 20px;
                     margin: 0 auto;
 
                     .state {
@@ -1925,6 +2167,19 @@ div.modal-dialog {
 
     body {
         .container {
+            
+            .header {
+                .logo {
+                    padding-left: 10px;
+                }
+                .statepadding {
+                    padding-right: 60px;
+                }
+                .state {
+                    margin-left: 10px;
+                }
+            }
+
             .body {
                 .content {
                     div.add,
@@ -2013,7 +2268,7 @@ div.modal-dialog {
 
         .container {
             .body {
-                padding-bottom: 0;
+                padding-bottom: 10px;
 
                 .content {
                     div.add,
@@ -2213,12 +2468,23 @@ div.modal-dialog {
         .container {
             .header {
                 .logo {
-                    padding-left: 20px;
+                    padding-left: 5px;
                 }
 
                 .menubutton {
                     margin-right: 5px;
+                }
 
+                .state {
+                    margin-left: 5px;
+                }
+
+                .statepadding {
+                    padding-right: 40px;
+                }
+
+                .menubutton {
+                    padding-left: 10px;
                 }
             }
 

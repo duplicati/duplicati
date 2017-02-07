@@ -1,6 +1,10 @@
 backupApp.service('BrandingService', function() {
 
-    var state = { 'appName': 'Duplicati', 'appSubtitle': null };
+    var state = { 
+        'appName': 'Duplicati', 
+        'appSubtitle': null,
+        'appLogoPath': '../img/logo.png'
+    };
     this.state = state;
 
     this.watch = function(scope, m) {

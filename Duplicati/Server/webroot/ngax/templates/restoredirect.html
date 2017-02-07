@@ -1,4 +1,4 @@
-<div class="restore" ng-controller="RestoreDirectController">
+<div class="restore restore-direct" ng-controller="RestoreDirectController">
     <form id="restore" class="styled">
         <div ng-show="!connecting">
             <div class="steps">
@@ -8,19 +8,27 @@
                 <div class="step step2" ng-class="{active: CurrentStep == 1}"  ng-click="CurrentStep = 1">
                     <span>2</span>
                 </div>
+                <div class="step step3 not-clickable">
+                    <span>3</span>
+                </div>
+                <div class="step step4 not-clickable">
+                    <span>4</span>
+                </div>
             </div>
             <!-- .steps -->
 
             <ol class="steps-legend">
-                <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>Destination</li>
-                <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Options</li>
+                <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>Backup location</li>
+                <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Encryption</li>
+                <li class="step3 not-clickable" translate>Select files</li>
+                <li class="step4 not-clickable" translate>Restore options</li>
             </ol>
             <!-- .steps-legend -->
 
             <div class="steps-boxes">
                 <div class="step step1" ng-class="{active: CurrentStep == 0}">
                     <div class="headerthreedotmenu">
-                        <h2 translate>Backup destination</h2>
+                        <h2 translate>Backup location</h2>
 
                         <div class="contextmenu_container">
                             <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_destination" class="threedotmenubutton"/></a>

@@ -23,6 +23,12 @@ backupApp.config(['$routeProvider',
             when('/add', {
                 templateUrl: 'templates/addoredit.html'
             }).
+            when('/restorestart', {
+                templateUrl: 'templates/restorewizard.html'
+            }).
+            when('/addstart', {
+                templateUrl: 'templates/addwizard.html'
+            }).
             when('/edit/:backupid', {
                 templateUrl: 'templates/addoredit.html'
             }).
@@ -76,3 +82,25 @@ backupApp.run(function($injector) {
         $injector.get('ProxyService');
     } catch(e) {}
 });
+
+// Registers a global parseInt function
+angular.module('backupApp').run(function($rootScope){
+    $rootScope.parseInt = function(str) {
+        return parseInt(str);
+    };  
+});
+
+// Register a global back function
+/*backupApp.run(function ($rootScope, $location) {
+
+    var history = [];
+    $rootScope.$on('$routeChangeSuccess', function() {
+        history.push($location.$$path);
+    });
+
+    $rootScope.back = function () {
+        var prevUrl = history.length > 1 ? history.splice(-2)[0] : "/home";
+        $location.path(prevUrl);
+    };
+
+});*/
