@@ -426,14 +426,14 @@ namespace Duplicati.Library.Main
                 try { shortname = new Library.Utility.Uri(shortname).Scheme; }
                 catch { }
 
-                throw new Exception(string.Format("Backend not supported: {0}", shortname));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Backend not supported: {0}", shortname));
             }
 
             if (!m_options.NoEncryption)
             {
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
                 if (m_encryption == null)
-                    throw new Exception(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule));
+                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule));
             }
 
             if (m_taskControl != null)
@@ -1165,7 +1165,7 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
+        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
         {
             if (m_lastException != null)
                 throw m_lastException;
@@ -1201,14 +1201,14 @@ namespace Duplicati.Library.Main
 
             m_db.FlushDbMessages(true);
             
-            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+            if (m_queue.Enqueue(req) && (m_options.SynchronousUpload || synchronous))
             {
                 req.WaitForComplete();
                 if (req.Exception != null)
                     throw req.Exception;
             }
             
-            if (req2 != null && m_queue.Enqueue(req2) && m_options.SynchronousUpload)
+            if (req2 != null && m_queue.Enqueue(req2) && (m_options.SynchronousUpload || synchronous))
             {
                 req2.WaitForComplete();
                 if (req2.Exception != null)

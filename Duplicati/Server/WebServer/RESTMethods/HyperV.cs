@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Linq;
+using System.Security.Principal;
 using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Server.WebServer.RESTMethods
@@ -40,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var hypervUtility = new HyperVUtility();
 
-            if (!hypervUtility.IsHyperVInstalled)
+            if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
             {
                 info.OutputOK(new string[0]);
                 return;

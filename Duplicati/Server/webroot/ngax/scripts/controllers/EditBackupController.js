@@ -169,7 +169,7 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             Schedule: angular.copy($scope.Schedule)
         };
 
-        var opts = angular.copy($scope.Options);
+        var opts = angular.copy($scope.Options, opts);
 
         if (!$scope.ExcludeLargeFiles)
             delete opts['--skip-files-larger-than'];
@@ -182,6 +182,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
 
         if (!AppUtils.parse_extra_options(scope.ExtendedOptions, opts))
             return false;
+
+        for (var n in $scope.servermodulesettings)
+            opts['--' + n] = $scope.servermodulesettings[n];
 
         var exclattr = ($scope.ExcludeAttributes || []).concat((opts['--exclude-files-attributes'] || '').split(','));
         var exclmap = { '': true };
@@ -505,6 +508,9 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
             delete extopts[delopts[n]];
 
         $scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
+        
+        $scope.servermodulesettings = {};
+        AppUtils.extractServerModuleOptions($scope.ExtendedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedLocalCommands');
 
         $scope.showAdvanced = $scope.ExtendedOptions.length > 0;
 
@@ -539,6 +545,20 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         }
     }
 
+    function setupServerModules()
+    {
+        var mods = [];
+        if ($scope.SystemInfo.ServerModules != null)
+            for(var ix in $scope.SystemInfo.ServerModules)
+            {
+                var m = $scope.SystemInfo.ServerModules[ix];
+                if (m.SupportedLocalCommands != null && m.SupportedLocalCommands.length > 0)
+                    mods.push(m);
+            }
+
+        $scope.ServerModules = mods;
+    };
+
     function reloadOptionsList()
     {
         if ($scope.Options == null)
@@ -551,8 +571,13 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         if (ix > 0)
             backmodule = backmodule.substr(0, ix);
 
-        $scope.ExtendedOptionList = AppUtils.buildOptionList($scope.SystemInfo, encmodule, compmodule, backmodule);
+        $scope.ExtendedOptionList = AppUtils.buildOptionList($scope.SystemInfo, encmodule, compmodule, backmodule);        
+        setupServerModules();
+        
+        AppUtils.extractServerModuleOptions($scope.ExtendedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedLocalCommands');        
     };
+
+    setupServerModules();
 
     $scope.$watch("Options['encryption-module']", reloadOptionsList);
     $scope.$watch("Options['compression-module']", reloadOptionsList);

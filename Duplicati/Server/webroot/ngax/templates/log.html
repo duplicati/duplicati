@@ -1,6 +1,7 @@
 <div ng-controller="LogController" class="logpage">
 
-    <h1 translate>Log data</h1>
+    <h1 ng-show="BackupID == null" translate>Log data from the server</h1>
+    <h1 ng-show="BackupID != null" translate>Log data for <b>{{Backup.Backup.Name}}</b></h1>
 
     <ul class="tabs">
         <li ng-show="BackupID == null" ng-class="{active: Page=='stored'}"><a href ng-click="Page='stored'" translate>Stored</a></li>

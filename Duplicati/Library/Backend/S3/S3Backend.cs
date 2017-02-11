@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("(default)", ""),
             new KeyValuePair<string, string>("Europe (EU, Ireland)", "EU"),
             new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
-            new KeyValuePair<string, string>("US West (Northen California)", "us-west-1"),
+            new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
             new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
             new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
             new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
@@ -154,9 +154,9 @@ namespace Duplicati.Library.Backend
                 awsKey = uri.Password;
 
             if (string.IsNullOrEmpty(awsID))
-                throw new Exception(Strings.S3Backend.NoAMZUserIDError);
+                throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError);
             if (string.IsNullOrEmpty(awsKey))
-                throw new Exception(Strings.S3Backend.NoAMZKeyError);
+                throw new UserInformationException(Strings.S3Backend.NoAMZKeyError);
 
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
             bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Backend
             options.TryGetValue(LOCATION_OPTION, out locationConstraint);
 
             if (!string.IsNullOrEmpty(locationConstraint) && euBuckets)
-                throw new Exception(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION));
+                throw new UserInformationException(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION));
 
             if (euBuckets)
                 locationConstraint = S3_EU_REGION_NAME;
@@ -225,7 +225,7 @@ namespace Duplicati.Library.Backend
                             m_prefix = m_prefix.Substring(1);
                     }
                     else
-                        throw new Exception(Strings.S3Backend.UnableToDecodeBucketnameError(url));
+                        throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url));
                 }
 
                 try { Console.Error.WriteLine(Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); }

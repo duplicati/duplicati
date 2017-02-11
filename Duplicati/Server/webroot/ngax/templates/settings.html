@@ -107,8 +107,20 @@
             <p translate>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p></div>
         </div>
 
+        <div ng-repeat="module in ServerModules">
+            <h2>{{module.DisplayName}}</h2>
+            
+            <p ng-show="(module.ServiceLink || '').length > 0"><a href="{{module.ServiceLink}}" target="_blank">{{module.Description}}</a></p>
+            <p ng-show="(module.ServiceLink || '').length == 0">{{module.Description}}</p>
+
+            <div class="input" ng-repeat="opt in module.SupportedGlobalCommands">
+                <label for="{{module.Key}}-{{opt.Name}}" title="{{opt.LongDescription}}">{{opt.ShortDescription}}</label>
+                <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />
+            </div>
+        </div>
                     
         <h2 translate>Default options</h2>
+        <h3 class="warning">NOTE: These options are not applied to the backups in the current version of Duplicati! This will be fixed in a later version.</h3>
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
             <label for="backupOptions" translate>Options</label>
             <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle" translate>Edit as list</a>

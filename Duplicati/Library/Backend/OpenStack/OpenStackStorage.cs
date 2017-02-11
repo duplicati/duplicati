@@ -202,16 +202,16 @@ namespace Duplicati.Library.Backend.OpenStack
             options.TryGetValue(REGION_OPTION, out m_region);
 
             if (string.IsNullOrWhiteSpace(m_username))
-                throw new Exception(Strings.OpenStack.MissingOptionError(USERNAME_OPTION));
+                throw new UserInformationException(Strings.OpenStack.MissingOptionError(USERNAME_OPTION));
             if (string.IsNullOrWhiteSpace(m_authUri))
-                throw new Exception(Strings.OpenStack.MissingOptionError(AUTHURI_OPTION));
+                throw new UserInformationException(Strings.OpenStack.MissingOptionError(AUTHURI_OPTION));
 
             if (string.IsNullOrWhiteSpace(m_apikey))
             {
                 if (string.IsNullOrWhiteSpace(m_password))
-                    throw new Exception(Strings.OpenStack.MissingOptionError(PASSWORD_OPTION));
+                    throw new UserInformationException(Strings.OpenStack.MissingOptionError(PASSWORD_OPTION));
                 if (string.IsNullOrWhiteSpace(m_tenantName))
-                    throw new Exception(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION));
+                    throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION));
             }
 
             m_helper = new WebHelper(this);

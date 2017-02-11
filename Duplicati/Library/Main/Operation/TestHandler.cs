@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run(long samples)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
                                 
             using(var db = new LocalTestDatabase(m_options.Dbpath))
             using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
@@ -166,9 +166,9 @@ namespace Duplicati.Library.Main.Operation
             var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
  
             if (blockhasher == null)
-                throw new Exception(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
             if (!blockhasher.CanReuseTransform)
-                throw new Exception(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
                 
             var hashsize = blockhasher.HashSize / 8;
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);

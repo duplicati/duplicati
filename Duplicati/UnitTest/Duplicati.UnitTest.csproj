@@ -8,6 +8,7 @@
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
     <AssemblyName>Duplicati.UnitTest</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -44,6 +45,7 @@
     <Compile Include="SizeOmittingBackend.cs" />
     <Compile Include="BorderTests.cs" />
     <Compile Include="Issue1723.cs" />
+    <Compile Include="PurgeTesting.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

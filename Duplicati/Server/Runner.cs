@@ -360,25 +360,7 @@ namespace Duplicati.Server
                 
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
-                        options[k.Key] = k.Value;
-                
-                // Log file is using the internal log-handler 
-                // so we can display output in the GUI as well as log 
-                // into the given file
-                if (options.ContainsKey("log-file"))
-                {
-                    var file = options["log-file"];
-
-                    string o;
-                    Library.Logging.LogMessageType level;
-                    options.TryGetValue("log-level", out o);
-                    Enum.TryParse<Library.Logging.LogMessageType>(o, true, out level);
-
-                    options.Remove("log-file");
-                    options.Remove("log-level");
-
-                    Program.LogHandler.SetOperationFile(file, level);
-                }
+                        options[k.Key] = k.Value;                
 
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
@@ -554,7 +536,6 @@ namespace Duplicati.Server
             finally
             {
                 ((RunnerData)data).Controller = null;
-                Program.LogHandler.RemoveOperationFile();
             }
         }
         
@@ -619,7 +600,7 @@ namespace Duplicati.Server
                 if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
-            
+
             if (o is Duplicati.Library.Interface.IBackupResults)
             {
                 var r = (Duplicati.Library.Interface.IBackupResults)o;
@@ -628,21 +609,22 @@ namespace Duplicati.Server
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
                 backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
                 backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
-                 
-                if (r.FilesWithError > 0 || r.Warnings.Any())
+
+                if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
                     Program.DataConnection.RegisterNotification(
-                        NotificationType.Error, 
-                        backup.IsTemporary ? 
+                        NotificationType.Error,
+                        backup.IsTemporary ?
                             "Warning" : string.Format("Warning while running {0}", backup.Name),
-                            r.FilesWithError > 0 ? 
+                            r.FilesWithError > 0 ?
                                 string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
                                 string.Format("Got {0} warning(s) ", r.Warnings.Count())
                             ,
                         null,
                         backup.ID,
                         "backup:show-log",
-                        (n, a) => {
+                        (n, a) =>
+                        {
                             var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
                             if (existing == null)
                                 return n;
@@ -654,6 +636,36 @@ namespace Duplicati.Server
                         }
                     );
                 }
+            }
+            else if (o is Duplicati.Library.Interface.IBasicResults)
+            {
+                var r = (Duplicati.Library.Interface.IBasicResults)o;
+                if (r.ParsedResult != Library.Interface.ParsedResultType.Success)
+                {
+                    var type = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                ? NotificationType.Warning
+                                : NotificationType.Error;
+
+                    var title = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                 ? (backup.IsTemporary ?
+                                    "Warning" : string.Format("Warning while running {0}", backup.Name))
+                                : (backup.IsTemporary ?
+                                   "Error" : string.Format("Error while running {0}", backup.Name));
+
+                    var message = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                   ? string.Format("Got {0} warning(s) ", r.Warnings.Count())
+                                   : string.Format("Got {0} error(s) ", r.Errors.Count());
+
+                    Program.DataConnection.RegisterNotification(
+                        type,
+                        title,
+                        message,
+                        null,
+                        backup.ID,
+                        "backup:show-log",
+                        (n, a) => n
+                    );
+                }                
             }
             
             if (!backup.IsTemporary)

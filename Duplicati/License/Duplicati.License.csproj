@@ -17,6 +17,7 @@
     <UpgradeBackupLocation />
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -356,6 +357,30 @@
       <Link>licenses\AngularGettext\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\mozroots\Homepage.txt">
+      <Link>licenses\mozroots\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\mozroots\License.txt">
+      <Link>licenses\mozroots\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\mozroots\licensedata.json">
+      <Link>licenses\mozroots\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\TlsTest\Homepage.txt">
+      <Link>licenses\TlsTest\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\TlsTest\License.txt">
+      <Link>licenses\TlsTest\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\TlsTest\licensedata.json">
+      <Link>licenses\TlsTest\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -387,5 +412,7 @@
     <Folder Include="licenses\MimeKit\" />
     <Folder Include="licenses\BouncyCastle\" />
     <Folder Include="licenses\AngularGettext\" />
+    <Folder Include="licenses\mozroots\" />
+    <Folder Include="licenses\TlsTest\" />
   </ItemGroup>
 </Project>

@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 namespace Duplicati.Library.DynamicLoader
 {
     /// <summary>
-    /// An interface class that provides easy loading of plugable setting controls
+    /// An interface class that provides easy loading of pluggable setting controls
     /// </summary>
     public static class GenericLoader
     {

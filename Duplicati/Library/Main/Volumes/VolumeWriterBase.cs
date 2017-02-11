@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main.Volumes
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
             
             if(m_compression == null)
-                throw new Exception(string.Format("Unsupported compression module: {0}", options.CompressionModule));
+                throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule));
             
             if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
                 ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;

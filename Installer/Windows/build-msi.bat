@@ -9,7 +9,7 @@ IF NOT EXIST "%1" (
 	goto EXIT
 )
 
-call "%VS120COMNTOOLS%vsvars32.bat"
+call "%VS140COMNTOOLS%vsvars32.bat"
 
 7z x -oDuplicati %1
 

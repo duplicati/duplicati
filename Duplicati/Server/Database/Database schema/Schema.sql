@@ -2,7 +2,7 @@
  * The primary table that stores all backups.
  *
  * The name and tag are free form user strings.
- * The tags are comma seperated
+ * The tags are comma separated
  * the TargetURL is the url to remote storage,
  * and the DBPath is the path to the local database
  */

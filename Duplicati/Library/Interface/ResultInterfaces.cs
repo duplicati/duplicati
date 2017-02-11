@@ -20,6 +20,15 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface
 {
+    public enum ParsedResultType
+    {
+        Unknown,
+        Success,
+        Warning,
+        Error,
+        Fatal
+    }
+
     public interface IBasicResults
     {
         DateTime BeginTime { get; }
@@ -29,6 +38,7 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Errors { get; }
         IEnumerable<string> Warnings { get; }
         IEnumerable<string> Messages { get; }
+        ParsedResultType ParsedResult { get; }
     }
 
     public interface IBackendStatstics
@@ -287,6 +297,30 @@ namespace Duplicati.Library.Interface
     }
 
     public interface ISystemInfoResults : IBasicResults
+    {
+        IEnumerable<string> Lines { get; }
+    }
+
+    public interface IPurgeFilesResults : IBasicResults
+    {
+        long RemovedFileCount { get; }
+        long RemovedFileSize { get; }
+        long RewrittenFileLists { get; }
+        ICompactResults CompactResults { get; }
+    }
+
+    public interface IListBrokenFilesResults : IBasicResults
+    {
+        IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; }
+    }
+
+    public interface IPurgeBrokenFilesResults : IBasicResults
+    {
+        IPurgeFilesResults PurgeResults { get; }
+        IDeleteResults DeleteResults { get; }
+    }
+
+    public interface ISendMailResults : IBasicResults
     {
         IEnumerable<string> Lines { get; }
     }

@@ -181,7 +181,7 @@ namespace Duplicati.Library.Snapshots
                     var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
 
                     if (writerMetaData == null)
-                        throw new Exception("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
+                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
 
                     foreach (var component in writerMetaData.Components)
                     {

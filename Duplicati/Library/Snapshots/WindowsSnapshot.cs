@@ -186,7 +186,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of filenames to files found in the shadow volumes</returns>
         public List<string> AllFiles()
         {
-            return EnumerateFilesAndFolders(null).ToList();
+            return EnumerateFilesAndFolders(null, null).ToList();
         }
 
 #endif
@@ -297,12 +297,12 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerates all files and folders in the shadow copy
         /// </summary>
-        /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(Utility.Utility.EnumerationFilterDelegate callback)
+        /// <param name="errorCallback">The callback used to report errors</param>
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback, Duplicati.Library.Utility.Utility.ReportAccessError errorCallback)
         {
             return m_sourcepaths.SelectMany(
-                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes, errorCallback)
             );
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {    
@@ -70,9 +71,9 @@ namespace Duplicati.Library.Main.Operation
 
             //TODO: Add prefix and foldercontents
             if (m_options.ListFolderContents)
-                throw new Exception("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+                throw new UserInformationException("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
             else if (m_options.ListPrefixOnly)
-                throw new Exception("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+                throw new UserInformationException("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())
@@ -83,7 +84,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 var filteredList = ParseAndFilterFilesets(backend.List(), m_options);
                 if (filteredList.Count == 0)
-                    throw new Exception("No filesets found on remote target");
+                    throw new UserInformationException("No filesets found on remote target");
 
                 var numberSeq = CreateResultSequence(filteredList);
                 if (parsedfilter.Type == Library.Utility.FilterType.Empty)

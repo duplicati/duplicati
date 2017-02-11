@@ -43,13 +43,14 @@ namespace Duplicati.Library.Main.Database
                     upcmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" ", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) ", tablename), Library.Utility.Utility.IsClientLinux ? "/" : "X:\\", Library.Utility.Utility.DirectorySeparatorString, Library.Utility.Utility.DirectorySeparatorString, Library.Utility.Utility.DirectorySeparatorString, ".bin");
                     
-                    long id = 1;
+                    /*long id = 1;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
                         while(rd.Read())
                         {
                             upcmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", ?, ?), ""Exception"" = replace(""Exception"", ?, ?)", rd.GetValue(0), rd.GetValue(1), rd.GetValue(0), rd.GetValue(1) );
                             id++;
                         }
+                        */
                 }
 
                 cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = ""ERASED!"" WHERE ""Message"" LIKE ""%/%"" OR ""Message"" LIKE ""%:\%"" ");                

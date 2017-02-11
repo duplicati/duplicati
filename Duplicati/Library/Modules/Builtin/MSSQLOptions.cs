@@ -49,7 +49,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public bool LoadAsDefault
         {
-            get { return true; }
+            get { return Utility.Utility.IsClientWindows; }
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
@@ -126,7 +126,7 @@ namespace Duplicati.Library.Modules.Builtin
                 }
             }
 
-            if (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required")
+            if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
                 Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Microsoft SQL Server databases. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
@@ -150,7 +150,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Exception(string.Format("DB name specified in source with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in source with ID {0} cannot be found", dbID));
 
                     dbsForBackup.Add(foundDB.First());
                 }
@@ -161,7 +161,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Exception(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID));
 
                     dbsForBackup.Add(foundDB.First());
                     Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", dbID), Logging.LogMessageType.Information);
@@ -175,7 +175,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = dbsForBackup.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Exception(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID));
 
                     dbsForBackup.Remove(foundDB.First());
                     Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", dbID), Logging.LogMessageType.Information);
@@ -208,10 +208,10 @@ namespace Duplicati.Library.Modules.Builtin
         
         public bool ContainFilesForBackup(string[] paths)
         {
-            if (paths == null)
+            if (paths == null || !Utility.Utility.IsClientWindows)
                 return false;
 
-            return paths.Where(x => x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
+            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
         }
 
         #endregion

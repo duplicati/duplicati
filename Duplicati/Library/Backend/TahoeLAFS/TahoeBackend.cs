@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend
             u.RequireHost();
             
             if (!u.Path.StartsWith("uri/URI:DIR2:") && !u.Path.StartsWith("uri/URI%3ADIR2%3A"))
-                throw new Exception(Strings.TahoeBackend.UnrecognizedUriError);
+                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError);
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 

@@ -8,6 +8,7 @@
     <RootNamespace>Duplicati.Tools</RootNamespace>
     <AssemblyName>Duplicati.Tools</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -75,6 +76,14 @@
     </Content>
     <Content Include="..\..\thirdparty\gpg\zlib1.dll">
       <Link>win-tools\zlib1.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\mozroots\mozroots.exe">
+      <Link>utility-scripts\mozroots.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\TlsTest\TlsTest.exe">
+      <Link>utility-scripts\TlsTest.exe</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,3 +1,79 @@
+2017-02-03 - 2.0.1.46_canary_2017-02-03
+==========
+* Fixed icon sizes
+* Removed the fake control.cgi entry
+* Added experimental support for setting the SQLite tempdir
+* Added an optimization that makes bug reports faster to create
+* Added a new HTTP reporter module, thanks @vatara
+
+2017-02-03 - 2.0.1.45_experimental_2017-02-03
+==========
+* This experimental release contains the fixes in the latest canary and some updated translations, and a fix that makes creating a bug-report faster
+
+2017-01-24 - 2.0.1.44_canary_2017-01-24
+==========
+* Added SSL test tools for Mono debugging
+* Fixed an issue with not reporting the correct error message when listing files
+* Updated logs UI to show the backup name
+* Added extra menu items to the start page
+* Fixed a number of typos
+* Added a more thorough consistency check
+* Added an extra result level "fatal" to reporting
+* Fixed reporting warning status if there were warnings during the backup
+
+2017-01-19 - 2.0.1.43_canary_2017-01-19
+==========
+* Improved queries that are used to recreate the database
+* Fixed duplicate logging entries when a log file was used
+
+2017-01-16 - 2.0.1.41_canary_2017-01-16
+==========
+* Added a debugging feature to assist with #1699, #2048, #2140, #2178
+* Fixed a problem with listing changes from the commandline
+
+2017-01-12 - 2.0.1.40_canary_2017-01-12
+==========
+* Added extra functionality to the `--allow-full-removal` option
+* Various updates to send-mail
+* Reworked logging support to allow modules to funnel logs back into the current operation
+* Reverted an optimization that cause backup scanning to be really slow
+
+2017-01-08 - 2.0.1.39_canary_2017-01-08
+==========
+* Fixed some typos, thanks @sfahrenholz
+* Added webp to compressed file extension list, thanks @dessant
+* Changed aftp backend to use CWD, thanks @seaeagle1
+* Added "purge" command to purge files from the database
+* Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
+* Added additional trace log messages to debug some consistency issues
+* Fixed support for operations across different operating systems
+
+2016-12-27 - 2.0.1.38_canary_2016-12-27
+==========
+* Fixed a problem with login no longer working
+* Updated the login page to use blue colors
+
+2016-12-27 - 2.0.1.37_canary_2016-12-27
+==========
+* Added a check for administrator privileges to avoid HyperV error messages
+
+2016-12-24 - 2.0.1.36_canary_2016-12-24
+==========
+* Fixed a case where excluded gave a warning
+* Removed the "No LSB Modules" messages on Linux
+* Fixed a problem with lon UNC paths on Windows, thanks @quincunx
+* Removed the Greeno theme as it was not maintained
+* Removed some unused options for setting in-memory buffers
+* Added debug output if we hit issue #1400
+
+2016-12-05 - 2.0.1.34_canary_2016-12-05
+==========
+* Fixed an issue with spurious errors in the UI mentioning Hyper-V
+* Fixed an issue where requesting deletion of remote files did not work
+* Improved the status results reported in the log files
+* Fixed some issues with the usage reporter
+* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
+
 2016-11-27 - 2.0.1.33_canary_2016-11-27
 ==========
 * Updated Linux certificate warnings to mention cert-sync instead of Mozroots

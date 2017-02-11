@@ -15,6 +15,7 @@ env:
   matrix:
   - JOB=job1
   - JOB=job2
+  - JOB=job3
 notifications:
   webhooks:
     urls:
@@ -70,6 +71,10 @@ script:
   - echo "travis_fold:start:unit_tests_targeted"
   - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Targeted --workers=1; fi
   - echo "travis_fold:end:unit_tests_targeted"
+  - echo "travis_fold:start:unit_tests_purge"
+  - if [[ "$JOB" == "job3" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Purge --workers=1; fi
+  - echo "travis_fold:end:unit_tests_purge"
 # start server and run gui tests
   - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
-  - if [[ "$JOB" == "job2" ]]; then python guiTests/guiTest.py; fi
+  - if [[ "$JOB" == "job3" ]]; then python guiTests/guiTest.py; fi
+  

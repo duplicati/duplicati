@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -32,7 +33,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var tmp = VolumeBase.ParseFilename(filename);
             if (tmp == null)
-                throw new Exception(string.Format("Unable to parse filename to valid entry: {0}", filename));
+                throw new UserInformationException(string.Format("Unable to parse filename to valid entry: {0}", filename));
 
             return tmp.CompressionModule;
         }
@@ -126,14 +127,14 @@ namespace Duplicati.Library.Main.Operation
                                     blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                                     filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                                     if (blockhasher == null)
-                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                                     if (!blockhasher.CanReuseTransform)
-                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                                     if (filehasher == null)
-                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                                     if (!filehasher.CanReuseTransform)
-                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                                     // Don't run this again
                                     first = false;
@@ -347,14 +348,14 @@ namespace Duplicati.Library.Main.Operation
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                 if (filehasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                 if (!filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 if (!m_options.NoBackendverification)
                 {
@@ -776,7 +777,10 @@ namespace Duplicati.Library.Main.Operation
                 if (!string.IsNullOrEmpty(options.Restorepath))
                 {
                     // Find the largest common prefix
-                    string largest_prefix = database.GetLargestPrefix();
+                    var largest_prefix = options.DontCompressRestorePaths ? "" : database.GetLargestPrefix();
+                    if (options.DontCompressRestorePaths)
+                        largest_prefix = "";
+
                     result.AddVerboseMessage("Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
     
                     // Set the target paths, special care with C:\ and /

@@ -32,7 +32,8 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates all files and folders in the snapshot
         /// </summary>
         /// <param name="callback">The callback to invoke with each found path</param>
-        IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback);
+        /// <param name="errorCallback">The callback used to report errors</param>
+        IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback, Duplicati.Library.Utility.Utility.ReportAccessError errorCallback);
         
         /// <summary>
         /// Gets the last write time of a given file in UTC

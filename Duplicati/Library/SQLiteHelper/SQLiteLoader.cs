@@ -31,6 +31,65 @@ namespace Duplicati.Library.SQLiteHelper
         private static Type m_type = null;
 
         /// <summary>
+        /// Loads an SQLite connection instance, optionally setting the tempfolder and opening the the database
+        /// </summary>
+        /// <returns>The SQLite connection instance.</returns>
+        /// <param name="targetpath">The optional path to the database.</param>
+        /// <param name="tempdir">The optional tempdir to set.</param>
+        public static System.Data.IDbConnection LoadConnection(string targetpath = null, string tempdir = null)
+        {
+            if (string.IsNullOrWhiteSpace(tempdir))
+                tempdir = Library.Utility.TempFolder.SystemTempPath;
+
+            var prev = System.Environment.GetEnvironmentVariable("SQLITE_TMPDIR");
+
+            System.Data.IDbConnection con = null;
+
+            try
+            {
+                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", tempdir);
+                con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                if (!string.IsNullOrWhiteSpace(targetpath))
+                {
+                    con.ConnectionString = "Data Source=" + targetpath;
+                    con.Open();
+
+                    // Try to set the temp_dir even tough it is deprecated
+                    if (!string.IsNullOrWhiteSpace(tempdir))
+                    {
+                        try
+                        {
+                            using (var cmd = con.CreateCommand())
+                            {
+                                cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", tempdir);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+
+            }
+            catch
+            {
+                if (con != null)
+                    try { con.Dispose(); }
+                    catch { }
+
+                throw;
+            }
+            finally
+            {
+                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", prev);
+            }
+
+            
+            return con;
+        }
+
+        /// <summary>
         /// Returns the SQLiteCommand type for the current architecture
         /// </summary>
         public static Type SQLiteConnectionType

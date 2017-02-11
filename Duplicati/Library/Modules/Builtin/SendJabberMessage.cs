@@ -51,28 +51,12 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default mail level
         /// </summary>
-        private const ReportLevels DEFAULT_LEVEL = ReportLevels.All;
+        private const string DEFAULT_LEVEL = "all";
         /// <summary>
-        /// The default mail body
+        /// The default message body
         /// </summary>
         private readonly string DEFAULT_MESSAGE = string.Format("Duplicati %OPERATIONNAME% report for %backup-name%{0}{0}%RESULT%", Environment.NewLine);
-        /// <summary>
-        /// The default mail sender
-        /// </summary>
-        private const string DEFAULT_SENDER = "no-reply";
         #endregion
-
-        /// <summary>
-        /// The allowed mail levels
-        /// </summary>
-        [Flags]
-        private enum ReportLevels
-        {
-            Success = 0x1,
-            Warning = 0x2,
-            Error = 0x4,
-            All = Success | Warning | Error
-        }
 
         #region Private variables
 
@@ -116,7 +100,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The XMPP send level
         /// </summary>
-        private ReportLevels m_level;
+        private string[] m_levels;
         /// <summary>
         /// True to send all operations
         /// </summary>
@@ -161,7 +145,7 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppmessageShort, Strings.SendJabberMessage.SendxmppmessageLong, DEFAULT_MESSAGE),
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppusernameShort, Strings.SendJabberMessage.SendxmppusernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpppasswordShort, Strings.SendJabberMessage.SendxmpppasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendJabberMessage.SendxmpplevelShort, Strings.SendJabberMessage.SendxmpplevelLong(ReportLevels.Success.ToString(), ReportLevels.Warning.ToString(), ReportLevels.Error.ToString(), ReportLevels.All.ToString()), DEFAULT_LEVEL.ToString(), null, Enum.GetNames(typeof(ReportLevels))),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendJabberMessage.SendxmpplevelShort, Strings.SendJabberMessage.SendxmpplevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendJabberMessage.SendxmppanyoperationShort, Strings.SendJabberMessage.SendxmppanyoperationLong),
                 });
             }
@@ -183,23 +167,23 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(OPTION_MESSAGE, out m_body);
             m_options = commandlineOptions;
 
-            m_level = 0;
-
             string tmp;
             commandlineOptions.TryGetValue(OPTION_SENDLEVEL, out tmp);
             if (!string.IsNullOrEmpty(tmp))
-                foreach(var s in tmp.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (string.IsNullOrEmpty(s))
-                        continue;
+                m_levels =
+                    tmp
+                    .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+                    .ToArray();
 
-                    ReportLevels m;
-                    if (Enum.TryParse(s.Trim(), true, out m))
-                        m_level |= m;
-                }
-
-            if (m_level == 0)
-                m_level = DEFAULT_LEVEL;
+            if (m_levels == null || m_levels.Length == 0)
+                m_levels =
+                    DEFAULT_LEVEL
+                    .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+                    .ToArray();
 
             m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDALL);
 
@@ -240,20 +224,20 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
             {
-                ReportLevels level;
+                ParsedResultType level;
                 if (result is Exception)
-                    level = ReportLevels.Error;
-                else if (result != null && result is Library.Interface.IBackupResults && (result as Library.Interface.IBackupResults).Errors.Count() > 0)
-                    level = ReportLevels.Warning;
+                    level = ParsedResultType.Fatal;
+                else if (result != null && result is Library.Interface.IBasicResults)
+                    level = ((IBasicResults)result).ParsedResult;
                 else
-                    level = ReportLevels.Success;
+                    level = ParsedResultType.Error;
 
                 m_parsedresultlevel = level.ToString();
 
-                if (m_level != ReportLevels.All)
+                if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
                 {
                     //Check if this level should send mail
-                    if ((m_level & level) == 0)
+                    if (!m_levels.Any(x => string.Equals(x, level.ToString(), StringComparison.OrdinalIgnoreCase)))
                         return;
                 }
             }

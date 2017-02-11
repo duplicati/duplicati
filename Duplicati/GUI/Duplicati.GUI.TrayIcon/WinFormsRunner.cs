@@ -112,7 +112,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
         public override void Init (string[] args)
         {
             if (WinFormsRunner.Instance != null)
-                throw new Exception("Multiple trayicon instances not allowed!");
+                throw new Duplicati.Library.Interface.UserInformationException("Multiple trayicon instances not allowed!");
 
             WinFormsRunner.Instance = this;
 

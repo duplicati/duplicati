@@ -41,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void SearchFiles(IBackup backup, string filterstring, RequestInfo info)
         {
-            var filter = filterstring.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            var filter = filterstring;
             var timestring = info.Request.QueryString["time"].Value;
             var allversion = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["all-versions"].Value, false);
 
@@ -57,7 +57,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (!allversion)
                 time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-            var r = Runner.Run(Runner.CreateListTask(backup, filter, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
+            var r = Runner.Run(Runner.CreateListTask(backup, new string[] { filter }, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
 
             var result = new Dictionary<string, object>();
 
@@ -91,23 +91,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void FetchLogData(IBackup backup, RequestInfo info)
         {
-            using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
-            {
-                con.ConnectionString = "Data Source=" + backup.DBPath;
-                con.Open();
-
+            using(var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(backup.DBPath))
                 using(var cmd = con.CreateCommand())
                     info.OutputOK(LogData.DumpTable(cmd, "LogData", "ID", info.Request.QueryString["offset"].Value, info.Request.QueryString["pagesize"].Value));
-            }
         }
 
         private void FetchRemoteLogData(IBackup backup, RequestInfo info)
         {
-            using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
-            {
-                con.ConnectionString = "Data Source=" + backup.DBPath;
-                con.Open();
-
+            using(var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(backup.DBPath))
                 using(var cmd = con.CreateCommand())
                 {
                     var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", info.Request.QueryString["offset"].Value, info.Request.QueryString["pagesize"].Value);
@@ -119,7 +110,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     info.OutputOK(dt);
                 }
-            }
         }
         private void IsDBUsedElseWhere(IBackup backup, RequestInfo info)
         {
@@ -243,7 +233,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             string[] filters;
             var rawpaths = (paths ?? string.Empty).Trim();
             
-            // We send the file list as a JSON array to avoid encoding issues with the path seperator 
+            // We send the file list as a JSON array to avoid encoding issues with the path separator 
             // as it is an allowed character in file and path names.
             // We also accept the old way, for compatibility with the greeno theme
             if (!string.IsNullOrWhiteSpace(rawpaths) && rawpaths.StartsWith("[", StringComparison.Ordinal) && rawpaths.EndsWith("]", StringComparison.Ordinal))
@@ -382,7 +372,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "isdbusedelsewhere":
                             IsDBUsedElseWhere(bk, info);
                             return;
-                    case "isactive":
+                        case "isactive":
                             IsActive(bk, info);
                             return;
                         default:

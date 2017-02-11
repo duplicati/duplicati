@@ -49,7 +49,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public bool LoadAsDefault
         {
-            get { return true; }
+            get { return Utility.Utility.IsClientWindows; }
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
@@ -125,8 +125,8 @@ namespace Duplicati.Library.Modules.Builtin
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
                 }
             }
-
-            if (!commandlineOptions.Keys.Contains("snapshot-policy") || commandlineOptions["snapshot-policy"] != "required")
+            
+            if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
                 Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Exception(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Add(foundGuest.First());
                 }
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Exception(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Add(foundGuest.First());
                     Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", guestID), Logging.LogMessageType.Information);
@@ -178,7 +178,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = guestsForBackup.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Exception(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
 
                     guestsForBackup.Remove(foundGuest.First());
                     Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", guestID), Logging.LogMessageType.Information);
@@ -211,10 +211,10 @@ namespace Duplicati.Library.Modules.Builtin
         
         public bool ContainFilesForBackup(string[] paths)
         {
-            if (paths == null)
+            if (paths == null || !Utility.Utility.IsClientWindows)
                 return false;
 
-            return paths.Where(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
+            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
         }
 
         #endregion

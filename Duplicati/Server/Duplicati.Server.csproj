@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <SignAssembly>false</SignAssembly>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -81,7 +82,6 @@
     <Compile Include="WebServer\Server.cs" />
     <Compile Include="WebServer\BodyWriter.cs" />
     <Compile Include="WebServer\IndexHtmlHandler.cs" />
-    <Compile Include="WebServer\ControlHandler.cs" />
     <Compile Include="UpdatePollThread.cs" />
     <Compile Include="LogWriteHandler.cs" />
     <Compile Include="Database\Notification.cs" />

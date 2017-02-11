@@ -107,10 +107,11 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates all files and folders in the snapshot
         /// </summary>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
+        /// <param name="errorCallback">The callback used to report errors</param>
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback, Duplicati.Library.Utility.Utility.ReportAccessError errorCallback)
         {
             return m_sources.SelectMany(
-                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
+                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes, errorCallback)
             );
         }
 

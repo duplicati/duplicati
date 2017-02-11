@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -32,7 +33,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run(string path, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
             if (System.IO.File.Exists(path))
-                throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
+                throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path));
 
             using(var db = new LocalDatabase(path, "Recreate", true))
             {
@@ -51,14 +52,14 @@ namespace Duplicati.Library.Main.Operation
         public void RunUpdate(Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
             if (!m_options.RepairOnlyPaths)
-                throw new Exception(string.Format("Can only update with paths, try setting {0}", "--repair-only-paths"));
+                throw new UserInformationException(string.Format("Can only update with paths, try setting {0}", "--repair-only-paths"));
 
             using(var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
                 m_result.SetDatabase(db);
 
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
-                    throw new Exception(string.Format("The version(s) being updated to, already exists"));
+                    throw new UserInformationException(string.Format("The version(s) being updated to, already exists"));
 
                 // Mark as incomplete
                 db.PartiallyRecreated = true;
@@ -105,7 +106,7 @@ namespace Duplicati.Library.Main.Operation
                 if (remotefiles.Length == 0)
                 {
                     if (rawlist.Count == 0)
-                        throw new Exception("No files were found at the remote location, perhaps the target url is incorrect?");
+                        throw new UserInformationException("No files were found at the remote location, perhaps the target url is incorrect?");
                     else
                     {
                         var tmp = 
@@ -117,11 +118,11 @@ namespace Duplicati.Library.Main.Operation
                 
                         var types = tmp.Distinct().ToArray();
                         if (tmp.Length == 0)
-                            throw new Exception(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count));
+                            throw new UserInformationException(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count));
                         else if (types.Length == 1)
-                            throw new Exception(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup-prefix?", tmp.Length, types[0]));
+                            throw new UserInformationException(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup-prefix?", tmp.Length, types[0]));
                         else
-                            throw new Exception(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup-prefix?", tmp.Length, rawlist.Count, string.Join(", ", types)));
+                            throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup-prefix?", tmp.Length, rawlist.Count, string.Join(", ", types)));
                     }
                 }
 
@@ -134,13 +135,13 @@ namespace Duplicati.Library.Main.Operation
                     select n;
 
                 if (filelists.Count() <= 0)
-                    throw new Exception(string.Format("No filelists found on the remote destination"));
+                    throw new UserInformationException(string.Format("No filelists found on the remote destination"));
                 
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
                 if (filelists.Count() <= 0)
-                    throw new Exception(string.Format("No filelists"));
+                    throw new UserInformationException(string.Format("No filelists"));
 
                 // If we are updating, all files should be accounted for
                 foreach(var fl in remotefiles)
@@ -300,7 +301,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                     if (hashalg == null)
-                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                     var hashsize = hashalg.HashSize / 8;
 
                     //Grab all index files, and update the block table
@@ -475,6 +476,14 @@ namespace Duplicati.Library.Main.Operation
                     // if this fails, the db will not be deleted, so it can be used,
                     // except to continue a backup
                     m_result.EndTime = DateTime.UtcNow;
+
+                    using (var lbfdb = new LocalListBrokenFilesDatabase(restoredb))
+                    {
+                        var broken = lbfdb.GetBrokenFilesets(new DateTime(0), null, null).Count();
+                        if (broken != 0)
+                            throw new UserInformationException(string.Format("Recreated database has missing blocks and {0} broken filelists. Consider using \"{1}\" and \"{2}\" to purge broken data from the remote store and the database.", broken, "list-broken-files", "purge-broken-files"));
+                    }
+
                     restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
 
                     m_result.AddMessage("Recreate completed, and consistency checks completed, marking database as complete");

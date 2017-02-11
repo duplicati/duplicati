@@ -215,7 +215,7 @@ namespace Duplicati.GUI.TrayIcon
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
             else 
-                throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
+                throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit));
         }
         
         //We keep these in functions to avoid attempting to load the instance,
