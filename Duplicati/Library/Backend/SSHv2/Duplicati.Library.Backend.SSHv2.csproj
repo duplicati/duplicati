@@ -10,7 +10,7 @@
     <AssemblyName>Duplicati.Library.Backend.SSHv2</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <SignAssembly>false</SignAssembly>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>

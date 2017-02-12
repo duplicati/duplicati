@@ -9,7 +9,7 @@
     <RootNamespace>Duplicati.Server</RootNamespace>
     <AssemblyName>Duplicati.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <SignAssembly>false</SignAssembly>
     <UseMSBuildEngine>false</UseMSBuildEngine>
@@ -121,7 +121,6 @@
     <Compile Include="WebServer\RESTMethods\Captcha.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="Duplicati.snk" />
     <EmbeddedResource Include="newbackup.json" />
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />

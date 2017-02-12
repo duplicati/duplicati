@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Backend.AlternativeFTP</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.AlternativeFTP</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
@@ -52,7 +52,6 @@
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>

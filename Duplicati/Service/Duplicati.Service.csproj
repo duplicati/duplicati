@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Duplicati.Service</RootNamespace>
     <AssemblyName>Duplicati.Service</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <SignAssembly>true</SignAssembly>
     <UseMSBuildEngine>false</UseMSBuildEngine>
@@ -50,8 +50,5 @@
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
   </ItemGroup>
 </Project>
