@@ -10,7 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
 if "TRAVIS_BUILD_NUMBER" in os.environ:
-    if not "SAUCE_USERNAME" in os.environ:
+    if "SAUCE_USERNAME" not in os.environ:
         print "No sauce labs login credentials found. Stopping tests..."
         sys.exit(0)
 
@@ -89,7 +89,7 @@ time.sleep(5)
 driver.implicitly_wait(10)
 driver.get("http://localhost:8200/ngax/index.html")
 
-if not "Duplicati" in driver.title:
+if "Duplicati" not in driver.title:
     raise Exception("Unable to load duplicati GUI!")
 
 # Create and hash random files in the source folder
