@@ -143,7 +143,7 @@ driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # 
 driver.find_element_by_link_text("Continue").click()
 driver.find_element_by_id("restoretonewpath").click()
 driver.find_element_by_id("restore_path").send_keys(RESTORE_FOLDER)
-driver.find_element_by_xpath("//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]")
+driver.find_element_by_xpath("//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
 # wait for restore to finish
 wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.")
