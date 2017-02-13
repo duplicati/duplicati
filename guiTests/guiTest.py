@@ -136,14 +136,15 @@ wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
 
 # Restore
 driver.find_element_by_link_text(BACKUP_NAME).click()
-driver.find_element_by_xpath("//span[contains(text(),'Restore files ...')]").click()
+[n for n in driver.find_elements_by_xpath("//span[contains(text(),'Restore files ...')]") if n.is_displayed()][0].click()
 driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 time.sleep(1)
 driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
 driver.find_element_by_link_text("Continue").click()
 driver.find_element_by_id("restoretonewpath").click()
 driver.find_element_by_id("restore_path").send_keys(RESTORE_FOLDER)
-driver.find_element_by_link_text("Restore").click()
+driver.find_element_by_xpath("//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]")
+
 # wait for restore to finish
 wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.")
 
