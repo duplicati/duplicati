@@ -100,6 +100,10 @@ sha1_source = sha1_folder(SOURCE_FOLDER)
 # Add new backup
 driver.find_element_by_link_text("Add backup").click()
 
+# Choose the "add new" option
+driver.find_element_by_id("blank").click()
+driver.find_element_by_xpath("//input[@class='submit next']").click()
+
 # Add new backup - General page
 time.sleep(1)
 driver.find_element_by_id("name").send_keys(BACKUP_NAME)
