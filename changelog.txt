@@ -1,3 +1,9 @@
+2017-02-14 - 2.0.1.47_canary_2017-02-14
+==========
+* Updated some localizations
+* Updated the user interface
+* Fixed an issue where the Force Stop action did not work immediately
+
 2017-02-03 - 2.0.1.46_canary_2017-02-03
 ==========
 * Fixed icon sizes
