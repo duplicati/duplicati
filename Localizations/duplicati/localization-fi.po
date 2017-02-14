@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-26 19:48+0100\n"
+"POT-Creation-Date: 2017-02-14 18:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Kari Koskinen <kakoskin@gmail.com>, 2016\n"
+"Last-Translator: Hese <heikki.nikula@iki.fi>, 2017\n"
 "Language-Team: Finnish (https://www.transifex.com/duplicati/teams/67655/fi/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -80,10 +80,14 @@ msgstr "Tuetut valitsimet:"
 #: CommandLine/Strings.cs:15
 msgid "Module is loaded automatically, use --disable-module to prevent this"
 msgstr ""
+"Moduuli ladataan automaattisesti, käytä --disable-module -vipua estääksesi "
+"tämän"
 
 #: CommandLine/Strings.cs:16
 msgid "Module is not loaded automatically, use --enable-module to load it"
 msgstr ""
+"Moduulia ei ladata automaattisesti, käytä --enable-module -vipua ladataksesi"
+" sen"
 
 #: CommandLine/Strings.cs:17
 msgid "Supported generic modules:"
@@ -102,6 +106,11 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"Suodattimia ei voi asettaa komentorivillä, jos asetustiedosto sisältää "
+"suodattimia. Käytä erityisiä valitsimia --{0}, --{1} tai --{2} "
+"määrittääksesi suodattimet asetustiedostossa. Jokaisen suodattimen täytyy "
+"alkaa joko + tai - merkillä. Useat peräkkäiset suodattimet täytyy liittää "
+"merkillä {3}."
 
 #: CommandLine/Strings.cs:20
 #, csharp-format
@@ -1318,7 +1327,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:24
 msgid "Set block size for chunked uploads to SharePoint."
-msgstr ""
+msgstr "Aseta SharePoint-palvelimen lähetyksen lohkokoko."
 
 #: Library/Backend/SharePoint/Strings.cs:26
 #, csharp-format
@@ -1633,6 +1642,8 @@ msgid ""
 "This module provides the industry standard Zip compression. Files created "
 "with this module can be read by any standard-compliant zip application."
 msgstr ""
+"Tämä moduuli käyttää standardia Zip -pakkausta. Tämän moduulin luomia "
+"tiedostoja voidaan lukea millä hyvänsä standardinmukaisella zip-ohjelmalla."
 
 #: Library/Compression/Strings.cs:10
 msgid "Zip compression"
@@ -1663,6 +1674,8 @@ msgid ""
 "The number of threads used in LZMA 2 compression. Defaults to the number of "
 "processor cores."
 msgstr ""
+"LZMA2 -pakkauksessa käytettävien säikeiden määrä. Oletusarvo on "
+"prosessoriytimien määrä."
 
 #: Library/Compression/Strings.cs:20
 msgid "Number of threads used in compression"
@@ -2010,29 +2023,29 @@ msgstr "Toimenpide keskeytettiin"
 msgid "Failed to dispose backend instance: {0}"
 msgstr "Moduulin poistaminen epäonnistui: {0}"
 
-#: Library/Main/BackendManager.cs:602
+#: Library/Main/BackendManager.cs:611
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Tiedostoa {0} ei voitu poistaa. Tarkistetaan, onko tiedosto olemassa."
 
-#: Library/Main/BackendManager.cs:608
+#: Library/Main/BackendManager.cs:617
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr "Toipuminen olemattoman tiedoston \"{0}\" poistamisesta onnistui"
 
-#: Library/Main/BackendManager.cs:613
+#: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Ei voitu toipua virheestä poistettaessa tiedostoa {0}"
 
-#: Library/Main/BackendManager.cs:1094
+#: Library/Main/BackendManager.cs:1103
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 "Tiedoston {0} poistaminen epäonnistui. Virhe oli FileNotFound, listing "
 "contents"
 
-#: Library/Main/BackendManager.cs:1107
+#: Library/Main/BackendManager.cs:1116
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "Listauksen mukaan tiedosto {0} on poistettu"
@@ -2396,6 +2409,9 @@ msgid ""
 "attempting again. This is useful if the network drops out occasionally "
 "during transmissions."
 msgstr ""
+"Epäonnistuneen siirron jälkeen Duplicati odottaa hetken ennen uutta "
+"siirtoyritystä. Tästä on hyötyä, mikäli verkkoyhteys katkeaa satunnaisesti "
+"siirron aikana."
 
 #: Library/Main/Strings.cs:62
 msgid "Time to wait between retries"
@@ -2804,18 +2820,13 @@ msgstr "Symbolisten linkkien tallentaminen"
 #: Library/Main/Strings.cs:120
 #, csharp-format
 msgid ""
-"Using this option to handle symlinks different. The \"{0}\" option will "
+"Use this option to handle symlinks differently. The \"{0}\" option will "
 "simply record a symlink with its name and destination, and a restore will "
 "recreate the symlink as a link. Use the option \"{1}\" to ignore all "
 "symlinks and not store any information about them. Previous versions of "
 "Duplicati used the setting \"{2}\", which will cause symlinked files to be "
 "included and restore as normal files."
 msgstr ""
-"Tämä asetus ohjaa symbolisten linkkien käyttöä. Arvo \"{0}\" tallentaa "
-"symbolisen linkin ja palautettaessa linkki luodaan uudelleen. Arvo \"{1}\" "
-"ohittaa symboliset linkit eikä tallenna mitään tietoja niistä. Aiemmat "
-"versiot Duplicatista käyttivät arvoa \"{2}\", joka tallensi tiedoston, johon"
-" linkki osoitti. Tällöin tiedosto palautettaan linkin paikalle."
 
 #: Library/Main/Strings.cs:121
 msgid "Hardlink handling"
@@ -2824,18 +2835,12 @@ msgstr "Kovien linkkien käsittely"
 #: Library/Main/Strings.cs:122
 #, csharp-format
 msgid ""
-"Using this option to handle hardlinks (only works on Linux/OSX). The \"{0}\""
-" option will record a hardlink ID for each hardlink to avoid storing "
+"Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
+"option will record a hardlink ID for each hardlink to avoid storing "
 "hardlinked paths multiple times. The option \"{1}\" will ignore hardlink "
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
 msgstr ""
-"(Vain Linux ja OS X-järjestelmissä) Tämä asetus ohjaa kovien linkkien "
-"käsittelyä. Arvo \"{0}\" tallentaa tiedon kaikista tiedostoon viittaavista "
-"kovista linkeistä ja tallentaa viitatun tiedoston vain kerran. Arvo \"{1}\" "
-"jättää tiedon kovien linkkien lukumäärästä huomiotta ja tallentaa kunkin "
-"linkin omana tieodostonaan. Arvolla \"{2}\" Duplicati jättää huomiotta "
-"useammat linkit samaan tiedostoon."
 
 #: Library/Main/Strings.cs:123
 msgid "Exclude files by attribute"
@@ -2848,6 +2853,9 @@ msgid ""
 "separated list of attribute names to specify more than one. Possible values "
 "are: {0}"
 msgstr ""
+"Tällä valitsimella voit ohittaa tiedostoja ominaisuuksien perusteella. Voit "
+"antaa useampia ominaisuuksia pilkulla erotettuna. Mahdolliset arvot ovat: "
+"{0}"
 
 #: Library/Main/Strings.cs:125
 msgid ""
@@ -2919,10 +2927,14 @@ msgid ""
 "cause a large overhead on storage of file lists. Note that the value cannot "
 "be changed after remote files are created."
 msgstr ""
+"Lohkokoko määrää sen kuinka varmuuskopiot paloitellaan etäpalvelimella. "
+"Suuri lohkokoko vaatii suurempia muutoksia, kun tiedostoja muutetaan. Pientä"
+" lohkokokoa käytettäessä lohkolistat vievät enemmän tilaa. Huomioi, että "
+"tätä arvoa ei voi muuttaa etätiedostojen luonnin jälkeen."
 
 #: Library/Main/Strings.cs:134
 msgid "Block size used in hashing"
-msgstr ""
+msgstr "Tiivisteen laskennassa käytettävä lohkon koko"
 
 #: Library/Main/Strings.cs:135
 msgid ""
@@ -3341,6 +3353,10 @@ msgid ""
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 msgstr ""
+"Palauttamisen jälkeen tiedostojen eheys tarkastetaan laskemalla "
+"tarkastussumma. Tämä valitsin nopeuttaa palauttamista poistamalla "
+"tarkastussumman laskemisen käytöstä. Tällöin palautettujen tiedostojen "
+"eheyttä ei tarkasteta."
 
 #: Library/Main/Strings.cs:201
 msgid "Activate caches"
@@ -3456,7 +3472,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:218
 msgid "Disables synethic filelist"
-msgstr ""
+msgstr "Poistaa keinotekoisen tiedostolistan käytöstä"
 
 #: Library/Main/Strings.cs:219
 msgid ""
@@ -3484,7 +3500,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:223
 msgid "Allow removing all filesets"
-msgstr ""
+msgstr "Salli kaikkien tiedostojen poisto"
 
 #: Library/Main/Strings.cs:224
 msgid ""
@@ -3524,6 +3540,9 @@ msgid ""
 "This module will ask the user for an encryption password on the command line"
 " unless encryption is disabled or the password is supplied by other means"
 msgstr ""
+"Tämä moduuli pyytää käyttäjää antamaan salasanan komentorivillä, jos "
+"salausta ei ole poistettu käytöstä tai salasanaa ei ole annettu muulla "
+"tavoin."
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid "Password prompt"
@@ -3561,6 +3580,10 @@ msgid ""
 "systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
 "derivatives{0}Read more: {1}"
 msgstr ""
+"Varmennetta ei löytynyt. Voit asentaa varmenteen yhdellä seuraavista komennoista: \n"
+"{0} cert-sync /etc/ssl/certs/ca-certificates.crt #Debian-pohjaisille järjestelmille\n"
+"{0} cert-sync /etc/pki/tls/certs/ca-bundle.crt #RedHat -johdannaisille\n"
+"{0}Lisätietoja: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:20
 msgid ""
@@ -3833,6 +3856,12 @@ msgid ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 msgstr ""
+"Sähköpostin lähettäjän osoite. Jos osoitteen verkkotunnusta ei määritellä, käytetään ensimmäisen vastaanottajan verkkotunnusta. Esimerkkejä sallituista muotoiluista:\n"
+"\n"
+"lähettäjä\n"
+"lähettäjä@esimerkki.com\n"
+"Postin Lähettäjä <lähettäjä>\n"
+"Postin Lähettäjä <lähettäjä@esimerkki.com>"
 
 #: Library/Modules/Builtin/Strings.cs:89
 msgid "Email sender"
@@ -3849,6 +3878,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 #: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:153
 msgid "The messages to send"
 msgstr "Lähetettävä viesti"
 
@@ -3916,12 +3946,16 @@ msgid ""
 "The users who should have the messages sent, specify multiple users "
 "separated with commas"
 msgstr ""
+"Käyttäjät, joille viestit lähetetään. Määritä useampi käyttäjä pilkulla "
+"eroteltuna"
 
 #: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:139
 msgid "The message template"
 msgstr "Viestin malli"
 
 #: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:140
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -3955,17 +3989,24 @@ msgid "The password for the account that will send the message"
 msgstr "Viestin lähettäjän salasana"
 
 #: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:154
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
 "You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
 msgstr ""
+"Voit valita yhden seuraavista: \"{0}\", \"{1}\", \"{2}\", \"{3}\". Voit "
+"valita useamman vaihtoehdon erottamalla ne pilkulla toisistaan, esim. "
+"\"{0},{1}\". Erityinen arvo \"{4}\" on sama kuin \"{0},{1},{2},{3}\", ja sen"
+" valitsemalla jokaisesta varmuuskopiontioperaatiosta lähetetään viesti."
 
 #: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:156
 msgid "Send messages for all operations"
 msgstr "Lähetä viesti kaikkien toimenpiteiden jälkeen"
 
 #: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:157
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
@@ -3985,12 +4026,52 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:130
 msgid "Timeout occurred while logging in to jabber server"
-msgstr ""
+msgstr "kirjautuminen Jabber-palvelimelle aikakatkaistiin "
 
 #: Library/Modules/Builtin/Strings.cs:131
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
 msgstr "Jabber-viestin lähettäminen epäonnistui: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:135
+msgid "HTTP report module"
+msgstr "HTTP -raportointimodulli"
+
+#: Library/Modules/Builtin/Strings.cs:136
+msgid ""
+"This module provides support for sending status reports via HTTP messages"
+msgstr ""
+"Tämä moduuli mahdollistaa tilaraporttien lähetyksen HTTP -viestien avulla."
+
+#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:138
+msgid "HTTP report url"
+msgstr "HTTP-raportin URL"
+
+#: Library/Modules/Builtin/Strings.cs:149
+msgid "The name of the parameter to send the message as"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:150
+msgid "The name of the parameter to send the message as."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:151
+msgid "Extra parameters to add to the http message"
+msgstr "Ylimääräiset parametrit HTTP-viestiin"
+
+#: Library/Modules/Builtin/Strings.cs:152
+msgid ""
+"Extra parameters to add to the http message. I.e. "
+"\"parameter1=value1&parameter2=value2\""
+msgstr ""
+"HTTP-viestiin lisättävät ylimääräiset parametrit, esim. "
+"\"parametri1=arvo1&parametri2=arvo2\""
+
+#: Library/Modules/Builtin/Strings.cs:158
+#, csharp-format
+msgid "Failed to send http message: {0}"
+msgstr "HTTP -viestin lähetys epäonnistui: {0}"
 
 #: Library/Snapshots/Strings.cs:4
 #, csharp-format

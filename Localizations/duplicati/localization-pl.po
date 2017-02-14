@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-26 19:48+0100\n"
+"POT-Creation-Date: 2017-02-14 18:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Jerzy Wartałowicz <juwicz@gmail.com>, 2017\n"
 "Language-Team: Polish (https://www.transifex.com/duplicati/teams/67655/pl/)\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pl\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>=14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
 #: CommandLine/Program.cs:275
 msgid "Toggle automatic updates"
@@ -621,7 +621,7 @@ msgstr ""
 
 #: Library/Backend/File/Strings.cs:13
 msgid "Local folder or drive"
-msgstr ""
+msgstr "Katalog lub dysk lokalny"
 
 #: Library/Backend/File/Strings.cs:14
 #, csharp-format
@@ -717,7 +717,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:23
 msgid "Google Cloud Storage"
-msgstr ""
+msgstr "Google Cloud Storage"
 
 #: Library/Backend/GoogleServices/Strings.cs:25
 #, csharp-format
@@ -790,11 +790,11 @@ msgstr "mega.nz"
 
 #: Library/Backend/Mega/Strings.cs:9
 msgid "No password given"
-msgstr ""
+msgstr "Nie podano hasła"
 
 #: Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
-msgstr ""
+msgstr "Nie podano nazwy użytkownika"
 
 #: Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
@@ -837,12 +837,12 @@ msgstr ""
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
 msgid "Missing the folder: {0}"
-msgstr ""
+msgstr "Brakuje folderu: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:11
 #, csharp-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Nie znaleziono pliku: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:10
 msgid "Microsoft OneDrive"
@@ -863,12 +863,12 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:20
 msgid "OpenStack Simple Storage"
-msgstr ""
+msgstr "OpenStack Simple Storage"
 
 #: Library/Backend/OpenStack/Strings.cs:20
 #, csharp-format
 msgid "Missing required option: {0}"
-msgstr ""
+msgstr "Brakuje wymaganej opcji: {0}"
 
 #: Library/Backend/OpenStack/Strings.cs:20
 #, csharp-format
@@ -943,15 +943,15 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "Amazon S3"
-msgstr ""
+msgstr "Amazon S3"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No Amazon S3 secret key given"
-msgstr ""
+msgstr "Nie podano sekretnego klucza Amazon S3"
 
 #: Library/Backend/S3/Strings.cs:14
 msgid "No Amazon S3 userID given"
-msgstr ""
+msgstr "Nie podano Amazon S3 userID"
 
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
@@ -1061,11 +1061,11 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:37
 msgid "Specify storage class"
-msgstr ""
+msgstr "Określ klasę magazynu"
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
-msgstr ""
+msgstr "Microsoft SharePoint"
 
 #: Library/Backend/SharePoint/Strings.cs:7
 msgid ""
@@ -1152,7 +1152,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:33
 msgid "Microsoft OneDrive for Business"
-msgstr ""
+msgstr "Microsoft OneDrive for Business"
 
 #: Library/Backend/SharePoint/Strings.cs:34
 msgid ""
@@ -1175,7 +1175,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
-msgstr ""
+msgstr "Nazwa użytkownika klucza publicznego"
 
 #: Library/Backend/SSHv2/Strings.cs:7
 msgid "A username to append to the public key"
@@ -1183,7 +1183,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:8
 msgid "The key type"
-msgstr ""
+msgstr "Typ klucza"
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
@@ -1191,7 +1191,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
-msgstr ""
+msgstr "Długość klucza"
 
 #: Library/Backend/SSHv2/Strings.cs:11
 msgid "The length of the key in bits"
@@ -1339,7 +1339,7 @@ msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
-msgstr ""
+msgstr "WebDAV"
 
 #: Library/Backend/WEBDAV/Strings.cs:15
 #, csharp-format
@@ -1394,7 +1394,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:10
 msgid "Zip compression"
-msgstr ""
+msgstr "Kompresja zip"
 
 #: Library/Compression/Strings.cs:14
 msgid "Archive not opened for writing"
@@ -1728,27 +1728,27 @@ msgstr ""
 msgid "Failed to dispose backend instance: {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:602
+#: Library/Main/BackendManager.cs:611
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:608
+#: Library/Main/BackendManager.cs:617
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:613
+#: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1094
+#: Library/Main/BackendManager.cs:1103
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1107
+#: Library/Main/BackendManager.cs:1116
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr ""
@@ -2380,7 +2380,7 @@ msgstr ""
 #: Library/Main/Strings.cs:120
 #, csharp-format
 msgid ""
-"Using this option to handle symlinks different. The \"{0}\" option will "
+"Use this option to handle symlinks differently. The \"{0}\" option will "
 "simply record a symlink with its name and destination, and a restore will "
 "recreate the symlink as a link. Use the option \"{1}\" to ignore all "
 "symlinks and not store any information about them. Previous versions of "
@@ -2395,8 +2395,8 @@ msgstr ""
 #: Library/Main/Strings.cs:122
 #, csharp-format
 msgid ""
-"Using this option to handle hardlinks (only works on Linux/OSX). The \"{0}\""
-" option will record a hardlink ID for each hardlink to avoid storing "
+"Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
+"option will record a hardlink ID for each hardlink to avoid storing "
 "hardlinked paths multiple times. The option \"{1}\" will ignore hardlink "
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
@@ -3257,6 +3257,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 #: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:153
 msgid "The messages to send"
 msgstr ""
 
@@ -3322,10 +3323,12 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:139
 msgid "The message template"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:140
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -3357,6 +3360,7 @@ msgid "The password for the account that will send the message"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:154
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -3364,10 +3368,12 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:156
 msgid "Send messages for all operations"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:157
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
@@ -3389,6 +3395,43 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:131
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:135
+msgid "HTTP report module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:136
+msgid ""
+"This module provides support for sending status reports via HTTP messages"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:138
+msgid "HTTP report url"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:149
+msgid "The name of the parameter to send the message as"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:150
+msgid "The name of the parameter to send the message as."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:151
+msgid "Extra parameters to add to the http message"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:152
+msgid ""
+"Extra parameters to add to the http message. I.e. "
+"\"parameter1=value1&parameter2=value2\""
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:158
+#, csharp-format
+msgid "Failed to send http message: {0}"
 msgstr ""
 
 #: Library/Snapshots/Strings.cs:4
@@ -3460,7 +3503,7 @@ msgstr ""
 #: Library/SQLiteHelper/Strings.cs:5
 #, csharp-format
 msgid "Unable to determine database format: {0}"
-msgstr ""
+msgstr "Nie można określić formatu bazy danych: {0}"
 
 #: Library/SQLiteHelper/Strings.cs:6
 #, csharp-format
@@ -3483,6 +3526,9 @@ msgid ""
 "Error: {1}\n"
 "Database is NOT upgraded."
 msgstr ""
+"Nie można wykonać SQL: {0}\n"
+"Błąd: {1}\n"
+"Baza danych NIE JEST uaktualniona."
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
@@ -3521,57 +3567,58 @@ msgstr ""
 #: Library/Utility/Strings.cs:16
 #, csharp-format
 msgid "Temporary folder does not exist: {0}"
-msgstr ""
+msgstr "Katalog tymczasowy nie istnieje: {0}"
 
 #: Library/Utility/Strings.cs:19
 #, csharp-format
 msgid "Failed to parse the segment: {0}, invalid integer"
 msgstr ""
+"Nie udało się przeanalizować segmentu: {0}, Nieprawidłowa liczba całkowita"
 
 #: Library/Utility/Strings.cs:20
 #, csharp-format
 msgid "Invalid specifier: {0}"
-msgstr ""
+msgstr "Nieprawidłowy specyfikator: {0}"
 
 #: Library/Utility/Strings.cs:21
 #, csharp-format
 msgid "Unparsed data: {0}"
-msgstr ""
+msgstr "Dane nieanalizowane: {0}"
 
 #: Library/Utility/Strings.cs:24
 #, csharp-format
 msgid "The Uri is invalid: {0}"
-msgstr ""
+msgstr "URI jest nieprawidłowy: {0}"
 
 #: Library/Utility/Strings.cs:25
 #, csharp-format
 msgid "The Uri is missing a hostname: {0}"
-msgstr ""
+msgstr "W URI brakuje nazwy hosta: {0}"
 
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr ""
+msgstr "{0} bajtów"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
 msgid "{0:N} GB"
-msgstr ""
+msgstr "{0:N} GB"
 
 #: Library/Utility/Strings.cs:30
 #, csharp-format
 msgid "{0:N} KB"
-msgstr ""
+msgstr "{0:N} KB"
 
 #: Library/Utility/Strings.cs:31
 #, csharp-format
 msgid "{0:N} MB"
-msgstr ""
+msgstr "{0:N} MB"
 
 #: Library/Utility/Strings.cs:32
 #, csharp-format
 msgid "{0:N} TB"
-msgstr ""
+msgstr "{0:N} TB"
 
 #: Library/Utility/Strings.cs:33
 #, csharp-format
@@ -3580,11 +3627,11 @@ msgstr ""
 
 #: Library/Utility/Strings.cs:36
 msgid "Cannot read and write on the same stream"
-msgstr ""
+msgstr "Nie można odczytywać i zapisywać do tego samego strumienia"
 
 #: Server/Strings.cs:7
 msgid "Another instance is running, and was notified"
-msgstr ""
+msgstr "Inny wątek jest uruchomiony i został powiadomiony"
 
 #: Server/Strings.cs:8
 #, csharp-format
@@ -3592,29 +3639,33 @@ msgid ""
 "Failed to create, open or upgrade the database.\n"
 "Error message: {0}"
 msgstr ""
+"Nie można utworzyć, otworzyć lub uaktualnić bazy danych.\n"
+"Komunikat o błędzie: {0}"
 
 #: Server/Strings.cs:10
 msgid "Displays this help"
-msgstr ""
+msgstr "Wyświetla tę pomoc"
 
 #: Server/Strings.cs:11
 msgid ""
 "Supported commandline arguments:\n"
 "\n"
 msgstr ""
+"Obsługiwane argumenty wiersza poleceń:\n"
+"\n"
 
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Server/Strings.cs:15
 msgid "Outputs log information to the file given"
-msgstr ""
+msgstr "Zapisuje informacje dziennika do podanego pliku"
 
 #: Server/Strings.cs:16
 msgid "Determines the amount of information written in the log file"
-msgstr ""
+msgstr "Określa ilość informacji zapisywanych do pliku dziennika"
 
 #: Server/Strings.cs:17
 msgid ""
@@ -3625,7 +3676,7 @@ msgstr ""
 #: Server/Strings.cs:18
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
-msgstr ""
+msgstr "Wystąpił poważny błąd w Duplicati: {0}"
 
 #: Server/Strings.cs:19
 #, csharp-format
@@ -3633,15 +3684,18 @@ msgid ""
 "Unable to start up, perhaps another process is already running?\n"
 "Error message: {0}"
 msgstr ""
+"Nie można uruchomić, możliwe, że inny proces jest już uruchomiony.\n"
+"Komunikat o błędzie: {0}"
 
 #: Server/Strings.cs:21
 msgid "Disables database encryption"
-msgstr ""
+msgstr "Dezaktywuje szyfrowanie bazy danych"
 
 #: Server/Strings.cs:22
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr ""
+"Wykryto nieobsługiwaną wersję SQLite ({0}), wymagane jest {1} lub wyższe"
 
 #: Server/Strings.cs:23
 msgid ""
@@ -3654,15 +3708,17 @@ msgid ""
 "The port the webserver listens on. Multiple values may be supplied with a "
 "comma in between."
 msgstr ""
+"Port serwera web nasłuchuje. Można wprowadzić wiele wartości jednocześnie "
+"oddzielając je przecinkiem."
 
 #: Server/Strings.cs:25
 msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL."
-msgstr ""
+msgstr "Serwer web użyje certyfikat i plik klucza w formacie PKCS #12 do SSL."
 
 #: Server/Strings.cs:26
 msgid "The password for decryption of certificate PKCS #12 file."
-msgstr ""
+msgstr "Hasła do odszyfrowywania pliku certyfikatu PKCS #12."
 
 #: Server/Strings.cs:27
 msgid ""
@@ -3670,6 +3726,9 @@ msgid ""
 " means any interface. The special value \"loopback\" means the loopback "
 "adapter."
 msgstr ""
+"Interfejs serwera web nasłuchuje. Specjalne wartości \"*\" i \"any\" oznacza"
+" dowolny interfejs. Specjalna wartość \"loopback\" oznacza kartę sprzężenia "
+"zwrotnego."
 
 #: Server/Strings.cs:28
 msgid ""
@@ -3677,6 +3736,9 @@ msgid ""
 "do not need to set it on each run. Setting an empty value disables the "
 "password."
 msgstr ""
+"Do uzyskania dostępu do serwera www wymagane jest hasło. Opcja jest "
+"zapisana, więc nie trzeba ustawiać jej przy każdym uruchomieniu. Pusta "
+"wartość dezaktywuje hasło."
 
 #: Server/Strings.cs:29
 msgid "Enables the ping-pong responder"
@@ -3728,6 +3790,8 @@ msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
+"Nie odnaleziono prawidłowej daty, podaj datę rozpoczęcia {0}, interwał "
+"powtórzeń {1} i dozwolonych dni {2}"
 
 #: Server/Strings.cs:44
 #, csharp-format

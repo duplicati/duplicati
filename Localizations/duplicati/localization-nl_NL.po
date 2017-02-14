@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-26 19:48+0100\n"
+"POT-Creation-Date: 2017-02-14 18:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Kees Zaaijer <kees@famzaaijer.nl>, 2016\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -42,7 +42,7 @@ msgstr ""
 msgid ""
 "Found {0} commands but expected {1}, commands: \n"
 "{2}"
-msgstr "{0} commando's gevonen, maar {1} verwacht, commando's: {2}"
+msgstr "{0} commando's gevonden, maar {1} verwacht, commando's: {2}"
 
 #: CommandLine/Strings.cs:7
 #, csharp-format
@@ -51,15 +51,15 @@ msgstr "Commando niet ondersteund: {0}"
 
 #: CommandLine/Strings.cs:8
 msgid "No filesets matched the criteria"
-msgstr "Geen enkele bestandenreeks voldoet aan de criteria"
+msgstr "Geen enkele bestandsverzameling voldoet aan de criteria"
 
 #: CommandLine/Strings.cs:9
 msgid "The following filesets would be deleted:"
-msgstr "De volgende bestandenreeks wordt verwijderd:"
+msgstr "De volgende bestandsverzameling wordt verwijderd:"
 
 #: CommandLine/Strings.cs:10
 msgid "These filesets were deleted:"
-msgstr "Deze bestandenreeks is verwijderd:"
+msgstr "Deze bestandsverzameling is verwijderd:"
 
 #: CommandLine/Strings.cs:11
 msgid "Supported backends:"
@@ -205,9 +205,10 @@ msgid ""
 "list or restore the control files instead of the normal files."
 msgstr ""
 "Als deze optie wordt gebruikt met een back-uptaak, wordt het geïnterpreteerd"
-" als een lijst met bestanden die worden toegevoegd aan de bestandenreeks. "
-"Bij gebruik met lijst of herstellen, zal het de controlebestanden weergeven "
-"of herstellen in plaats van de normale bestanden."
+" als een lijst met bestanden die worden toegevoegd aan de "
+"bestandsverzameling. Bij gebruik met lijst of herstellen, zal het de "
+"controlebestanden weergeven of herstellen in plaats van de normale "
+"bestanden."
 
 #: CommandLine/Strings.cs:30
 msgid "Use control files"
@@ -343,7 +344,7 @@ msgid ""
 "If this flag is set, the FTP data connection type will be changed to the "
 "selected option."
 msgstr ""
-"Als deze vlag is ingesteld, zal het FTP gegevensvervindingtype worden "
+"Als deze vlag is ingesteld, zal het FTP gegevensverbindingtype worden "
 "veranderd in de geselecteerde optie."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:21
@@ -431,7 +432,7 @@ msgstr ""
 #: Library/Backend/GoogleServices/Strings.cs:47
 #, csharp-format
 msgid "There is more than one item named \"{0}\" in the folder \"{1}\""
-msgstr "Er is meer dan éém item met de naam \"{0}\" in de map \"{1}\""
+msgstr "Er is meer dan één item met de naam \"{0}\" in de map \"{1}\""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:31
 msgid "The consistency delay"
@@ -440,7 +441,7 @@ msgstr "De consistentie vertraging"
 #: Library/Backend/AmazonCloudDrive/Strings.cs:32
 msgid "Amazon Cloud drive needs a small delay for results to stay consistent."
 msgstr ""
-"Amazon Cloud Drive heeft een kleine vertaging nodig voor resultaten om "
+"Amazon Cloud Drive heeft een kleine vertraging nodig voor resultaten om "
 "consistent te blijven."
 
 #: Library/Backend/AzureBlob/Strings.cs:4
@@ -516,7 +517,7 @@ msgid ""
 "Backblaze account, this can also be supplied through the \"auth-username\" "
 "property"
 msgstr ""
-"De \"B2 Cloud Storage Account ID\" kan verkegen worden na inloggen op uw "
+"De \"B2 Cloud Storage Account ID\" kan verkregen worden na inloggen op uw "
 "Backblaze account, dit kan eveneens worden gegeven door de \"auth-username\""
 " eigenschap"
 
@@ -581,8 +582,8 @@ msgid ""
 msgstr ""
 "Na het verwijderen van een bestand, kan het bestand in de prullenbak "
 "terechtkomen waarvandaan het wordt verwijderd na een bepaalde periode. "
-"Gebruik dit commando om het onmiddelijk definitief verwijderen van bestanden"
-" te forceren."
+"Gebruik dit commando om het onmiddellijk definitief verwijderen van "
+"bestanden te forceren."
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -896,7 +897,7 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:\n"
 "{0}"
 msgstr ""
-"Deze optie wordt enkel gebruikt als nieuwe buckets worden aangemaakt. Gebruik deze optie om aan te passen welk soort opslag de bucket heeft. Kosten en functionaliteit variëren tussen bucket storage klasses. Bekende storage klasses:\n"
+"Deze optie wordt enkel gebruikt als nieuwe buckets worden aangemaakt. Gebruik deze optie om aan te passen welk soort opslag de bucket heeft. Kosten en functionaliteit variëren tussen bucket storage klassen. Bekende storage klassen:\n"
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:34
@@ -1204,7 +1205,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:21
 msgid "Use Reduced Redundancy Storage"
-msgstr "Gebruik beperkte redundancy opslag (RRS)"
+msgstr "Gebruik Beperkte Redundantie Opslag"
 
 #: Library/Backend/S3/Strings.cs:22
 #, csharp-format
@@ -2098,31 +2099,31 @@ msgstr "Afgebroken"
 msgid "Failed to dispose backend instance: {0}"
 msgstr "Ordenen van de backend instance is mislukt: {0}"
 
-#: Library/Main/BackendManager.cs:602
+#: Library/Main/BackendManager.cs:611
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Verwijderen bestand {0} mislukt, testen of bestand bestaat"
 
-#: Library/Main/BackendManager.cs:608
+#: Library/Main/BackendManager.cs:617
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 "Hersteld van problemen bij een poging om niet-bestaand bestand te "
 "verwijderen {0}"
 
-#: Library/Main/BackendManager.cs:613
+#: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Herstellen van fout bij verwijderen bestand mislukt: {0}"
 
-#: Library/Main/BackendManager.cs:1094
+#: Library/Main/BackendManager.cs:1103
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 "Verwijder-bewerking mislukt voor {0} met BestandNietGevonden, inhoud "
 "weergeven"
 
-#: Library/Main/BackendManager.cs:1107
+#: Library/Main/BackendManager.cs:1116
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "Lijstweergave geeft aan dat bestand {0} correct is verwijderd."
@@ -2345,7 +2346,7 @@ msgid ""
 " operations (Windows/OSX only)"
 msgstr ""
 "Staat toe dat het systeem bij inactiviteit in slaapmodus gaat tijdens back-"
-"up/restore bewerkingen (alleen Windows/OSX)"
+"up/herstel bewerkingen (alleen Windows/OSX)"
 
 #: Library/Main/Strings.cs:41
 msgid ""
@@ -2679,7 +2680,7 @@ msgstr ""
 "programma's. Als dit is ingesteld op \"off\", zal Duplicati niet proberen om"
 " een momentopname van de schijf te maken. Dit instellen op \"auto\" zorgt "
 "ervoor dat Duplicati probeert een momentopname te maken, maar zonder "
-"foutmelding in het logbestand doorgaat als dit niet is toegesataan of wordt "
+"foutmelding in het logbestand doorgaat als dit niet is toegestaan of wordt "
 "ondersteund. De instelling \"on\" zal er eveneens voor zorgen dat Duplicati "
 "probeert een momentopname te maken, maar zal een waarschuwingsbericht "
 "opnemen in het logbestand als dit mislukt. Door het in te stellen op "
@@ -2852,7 +2853,7 @@ msgstr ""
 "hetzelfde tijdstip gemaakt, kan het mogelijk zijn dat de klok iets afwijkt, "
 "waardoor als er precies een week voorbij is, Duplicati oude back-ups eerder "
 "verwijdert dan verwacht. Om dit te voorkomen, zal Duplicati een tolerantie "
-"van 1% (hax 1 uur) aanhouden. Gebruik deze optie om deze tolerantie uit te "
+"van 1% (max 1 uur) aanhouden. Gebruik deze optie om deze tolerantie uit te "
 "schakelen, en het strikt controleren van tijden hanteren."
 
 #: Library/Main/Strings.cs:107
@@ -2944,7 +2945,7 @@ msgstr "Symlink afhandeling"
 #: Library/Main/Strings.cs:120
 #, csharp-format
 msgid ""
-"Using this option to handle symlinks different. The \"{0}\" option will "
+"Use this option to handle symlinks differently. The \"{0}\" option will "
 "simply record a symlink with its name and destination, and a restore will "
 "recreate the symlink as a link. Use the option \"{1}\" to ignore all "
 "symlinks and not store any information about them. Previous versions of "
@@ -2952,9 +2953,9 @@ msgid ""
 "included and restore as normal files."
 msgstr ""
 "Gebruik deze optie om symlinks op een andere manier af te handelen. De "
-"\"{0}\" optie zal simpelweg we symlink opnemen met zijn naam en doel, en een"
-" retugzetbewerking zal de symlink opnieuw als link aanmaken. Gebruik de "
-"optie \"{1}\" om alle symlinks te negeren en geen informatie hierover op te "
+"\"{0}\" optie zal simpelweg de symlink opnemen met zijn naam en doel, en een"
+" herstelbewerking zal de symlink opnieuw als link aanmaken. Gebruik de optie"
+" \"{1}\" om alle symlinks te negeren en geen informatie hierover op te "
 "slaan. Vorige versies van Duplicati gebruikten de instelling \"{2}\", wat "
 "ervoor zal zorgen dat symlink bestanden aan de back-up worden toegevoegd en "
 "hersteld als normale bestanden."
@@ -2966,8 +2967,8 @@ msgstr "Hardlink afhandeling"
 #: Library/Main/Strings.cs:122
 #, csharp-format
 msgid ""
-"Using this option to handle hardlinks (only works on Linux/OSX). The \"{0}\""
-" option will record a hardlink ID for each hardlink to avoid storing "
+"Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
+"option will record a hardlink ID for each hardlink to avoid storing "
 "hardlinked paths multiple times. The option \"{1}\" will ignore hardlink "
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
@@ -3054,7 +3055,7 @@ msgid ""
 "A fragment of memory is used to reduce database lookups. You should not "
 "change this value unless you get warnings in the log."
 msgstr ""
-"Een deel van het gheugen wordt gebruikt om database zoekacties te "
+"Een deel van het geheugen wordt gebruikt om database zoekacties te "
 "verminderen. Verander deze waarde niet tenzij er waarschuwingen verschijnen "
 "in het log."
 
@@ -3111,7 +3112,7 @@ msgid ""
 "This option can be used to supply a list of deleted files. This option will "
 "be ignored unless the option --{0} is also set."
 msgstr ""
-"Deze optie kan worden gberuikt om een lijst met verwijderde bestanden op te "
+"Deze optie kan worden gebruikt om een lijst met verwijderde bestanden op te "
 "geven. Deze optie zal worden genegeerd tenzij de optie --{0} eveneens is "
 "ingesteld."
 
@@ -3431,7 +3432,7 @@ msgstr ""
 "Nadat een back-up is voltooid, worden een aantal bestanden geselecteerd voor"
 " controle op de remote backend. Gebruik deze optie om volledige controle in "
 "te schakelen, wat de bestanden zal ontsleutelen en de inhoud van ieder "
-"volume zal onderzoeken, inplaats van simpelweg de externe hash te "
+"volume zal onderzoeken, in plaats van simpelweg de externe hash te "
 "controleren, als de optie --{0} is ingesteld, worden remote bestanden niet "
 "gecontroleerd"
 
@@ -3461,15 +3462,15 @@ msgstr ""
 
 #: Library/Main/Strings.cs:192
 msgid "List only filesets"
-msgstr "Geef enkel bestandenreeksen weer"
+msgstr "Geef enkel bestandsverzamelingen weer"
 
 #: Library/Main/Strings.cs:193
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
 msgstr ""
-"Gebruik deze optie om enkel bestandenreeksen weer te geven om te voorkomen "
-"dat bestanden andere metadata doorkruisen wat het proces vertraagt"
+"Gebruik deze optie om enkel bestandsverzamelingen weer te geven om te "
+"voorkomen dat bestanden andere metadata doorkruisen wat het proces vertraagt"
 
 #: Library/Main/Strings.cs:195
 msgid "Don't store metadata"
@@ -3570,7 +3571,7 @@ msgid ""
 "locate certain content without needing to reconstruct all information. The "
 "resulting database can be searched, but cannot be used to restore data with."
 msgstr ""
-"Debruik deze optie om een doorzoekbare lokale database op te bouwen die "
+"Gebruik deze optie om een doorzoekbare lokale database op te bouwen die "
 "enkel pad informatie bevat. Deze optie is nuttig voor het snel opbouwen van "
 "een database om bepaalde inhoud te lokaliseren zonder de noodzaak om alle "
 "informatie te reconstrueren. De resulterende database kan worden doorzocht, "
@@ -3651,7 +3652,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:220
 msgid "Checks only file lastmodified"
-msgstr "Controleert alleen laatstbewerkte bestand"
+msgstr "Controleert alleen laatst bewerkte bestand"
 
 #: Library/Main/Strings.cs:221
 msgid "Disables path compresion on restore"
@@ -3672,7 +3673,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:223
 msgid "Allow removing all filesets"
-msgstr "Sta verwijderen van alle bestandenreeksen toe"
+msgstr "Sta verwijderen van alle bestandsverzamelingen toe"
 
 #: Library/Main/Strings.cs:224
 msgid ""
@@ -3680,10 +3681,11 @@ msgid ""
 "sure that all remote data is not deleted by a configuration mistake. Use "
 "this flag to disable that protection, such that all filesets can be deleted."
 msgstr ""
-"Standaard kan de laatste bestandenreeks niet worden verwijderd. Dit dient "
-"als bescherming, zodat niet alle remote gegevens worden verwijderd bij een "
-"vergissing tijdens het configureren. Gebruik deze vlag om deze beveiliging "
-"uit te schakelen, zodat alle bestandenreeksen kunnen worden verwijderd."
+"Standaard kan de laatste bestandsverzameling niet worden verwijderd. Dit "
+"dient als bescherming, zodat niet alle remote gegevens worden verwijderd bij"
+" een vergissing tijdens het configureren. Gebruik deze vlag om deze "
+"beveiliging uit te schakelen, zodat alle bestandsverzamelingen kunnen worden"
+" verwijderd."
 
 #: Library/Main/Strings.cs:229
 #, csharp-format
@@ -4089,6 +4091,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 #: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:153
 msgid "The messages to send"
 msgstr "De berichten die verzonden moeten worden"
 
@@ -4166,10 +4169,12 @@ msgstr ""
 " gescheiden door komma's"
 
 #: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:139
 msgid "The message template"
 msgstr "Het bericht-sjabloon"
 
 #: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:140
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -4212,6 +4217,7 @@ msgid "The password for the account that will send the message"
 msgstr "Het wachtwoord van het account waarmee het bericht verstuurd wordt"
 
 #: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:154
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -4221,10 +4227,12 @@ msgstr ""
 "Meerdere opties kunnen worden opgegeven met een komma als scheidingsteken, bijvoorbeeld \"{0},{1}\". De speciale waarde \"{4}\" is een korte schrijfwijze voor \"{0},{1},{2},{3}\" en zal ervoor zorgen dat voor alle back-up bewerkingen een bericht wordt verstuurd."
 
 #: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:156
 msgid "Send messages for all operations"
 msgstr "Verstuur berichten voor alle bewerkingen"
 
 #: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:157
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
@@ -4251,6 +4259,48 @@ msgstr "Time-out opgetreden tijdens inloggen bij jabber server"
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
 msgstr "Verzenden van jabber bericht mislukt: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:135
+msgid "HTTP report module"
+msgstr "HTTP rapportagemodule"
+
+#: Library/Modules/Builtin/Strings.cs:136
+msgid ""
+"This module provides support for sending status reports via HTTP messages"
+msgstr ""
+"Deze module biedt ondersteuning voor het versturen van statusrapporten via "
+"HTTP-berichten"
+
+#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:138
+msgid "HTTP report url"
+msgstr "HTTP rapportage url"
+
+#: Library/Modules/Builtin/Strings.cs:149
+msgid "The name of the parameter to send the message as"
+msgstr "De naam van de parameter namens wie het bericht verstuurd moet worden"
+
+#: Library/Modules/Builtin/Strings.cs:150
+msgid "The name of the parameter to send the message as."
+msgstr ""
+"De naam van de parameter namens wie het bericht verstuurd moet worden."
+
+#: Library/Modules/Builtin/Strings.cs:151
+msgid "Extra parameters to add to the http message"
+msgstr "Extra parameters die aan het http bericht moeten worden toegevoegd"
+
+#: Library/Modules/Builtin/Strings.cs:152
+msgid ""
+"Extra parameters to add to the http message. I.e. "
+"\"parameter1=value1&parameter2=value2\""
+msgstr ""
+"Extra parameters die aan het http bericht moeten worden toegevoegd, "
+"bijvoorbeeld \"parameter1=waarde1&parameter2=waarde2\""
+
+#: Library/Modules/Builtin/Strings.cs:158
+#, csharp-format
+msgid "Failed to send http message: {0}"
+msgstr "Versturen van dit http bericht mislukt: {0}"
 
 #: Library/Snapshots/Strings.cs:4
 #, csharp-format
@@ -4363,7 +4413,7 @@ msgid ""
 msgstr ""
 "Probleem bij uitvoeren SQL: {0}\n"
 "Fout: {1}\n"
-"Database NIET geüpgradet."
+"Database NIET geüpgraded."
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
