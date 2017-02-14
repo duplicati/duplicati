@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-26 19:48+0100\n"
+"POT-Creation-Date: 2017-02-14 18:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Arnaud COURCOUX <courcoa@hotmail.fr>, 2016\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
@@ -1826,27 +1826,27 @@ msgstr "Annulé"
 msgid "Failed to dispose backend instance: {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:602
+#: Library/Main/BackendManager.cs:611
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:608
+#: Library/Main/BackendManager.cs:617
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:613
+#: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1094
+#: Library/Main/BackendManager.cs:1103
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1107
+#: Library/Main/BackendManager.cs:1116
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr ""
@@ -2478,7 +2478,7 @@ msgstr ""
 #: Library/Main/Strings.cs:120
 #, csharp-format
 msgid ""
-"Using this option to handle symlinks different. The \"{0}\" option will "
+"Use this option to handle symlinks differently. The \"{0}\" option will "
 "simply record a symlink with its name and destination, and a restore will "
 "recreate the symlink as a link. Use the option \"{1}\" to ignore all "
 "symlinks and not store any information about them. Previous versions of "
@@ -2493,8 +2493,8 @@ msgstr ""
 #: Library/Main/Strings.cs:122
 #, csharp-format
 msgid ""
-"Using this option to handle hardlinks (only works on Linux/OSX). The \"{0}\""
-" option will record a hardlink ID for each hardlink to avoid storing "
+"Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
+"option will record a hardlink ID for each hardlink to avoid storing "
 "hardlinked paths multiple times. The option \"{1}\" will ignore hardlink "
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
@@ -3355,6 +3355,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 #: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:153
 msgid "The messages to send"
 msgstr ""
 
@@ -3420,10 +3421,12 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:139
 msgid "The message template"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:140
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -3455,6 +3458,7 @@ msgid "The password for the account that will send the message"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:154
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -3462,10 +3466,12 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:156
 msgid "Send messages for all operations"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:157
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
@@ -3487,6 +3493,43 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:131
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:135
+msgid "HTTP report module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:136
+msgid ""
+"This module provides support for sending status reports via HTTP messages"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:138
+msgid "HTTP report url"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:149
+msgid "The name of the parameter to send the message as"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:150
+msgid "The name of the parameter to send the message as."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:151
+msgid "Extra parameters to add to the http message"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:152
+msgid ""
+"Extra parameters to add to the http message. I.e. "
+"\"parameter1=value1&parameter2=value2\""
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:158
+#, csharp-format
+msgid "Failed to send http message: {0}"
 msgstr ""
 
 #: Library/Snapshots/Strings.cs:4
