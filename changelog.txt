@@ -1,3 +1,10 @@
+2017-02-23 - 2.0.1.48_canary_2017-02-23
+==========
+* Updated translations, thanks @agrajaghh
+* Improved verification script, thanks @mnaiman
+* Support for SSL certificates in server when running with Mono, thanks @mnaiman
+* Improved progress bar updates when processing large files, thanks @asselin
+
 2017-02-14 - 2.0.1.47_canary_2017-02-14
 ==========
 * Updated some localizations
