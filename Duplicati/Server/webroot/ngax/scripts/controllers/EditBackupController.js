@@ -1,4 +1,4 @@
-backupApp.controller('EditBackupController', function ($scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService, gettext, gettextCatalog) {
+backupApp.controller('EditBackupController', function ($rootScope, $scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService, gettext, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -594,13 +594,16 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         AppService.get('/backupdefaults').then(function(data) {
 
             $scope.rawddata = data.data.data;
+
+            if ($location.$$path.indexOf('/add-import') == 0 && $rootScope.importConfig != null)
+                angular.merge($scope.rawddata, $rootScope.importConfig);
+
             setupScope($scope.rawddata);
 
         }, function(data) {
             AppUtils.connectionError(gettextCatalog.getString('Failed to read backup defaults:') + ' ', data);
             $location.path('/');
         });
-
     } else {
 
         AppService.get('/backup/' + $routeParams.backupid).then(function(data) {

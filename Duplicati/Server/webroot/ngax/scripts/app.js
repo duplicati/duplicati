@@ -23,6 +23,9 @@ backupApp.config(['$routeProvider',
             when('/add', {
                 templateUrl: 'templates/addoredit.html'
             }).
+            when('/add-import', {
+                templateUrl: 'templates/addoredit.html'
+            }).
             when('/restorestart', {
                 templateUrl: 'templates/restorewizard.html'
             }).
@@ -33,6 +36,9 @@ backupApp.config(['$routeProvider',
                 templateUrl: 'templates/addoredit.html'
             }).
             when('/restoredirect', {
+                templateUrl: 'templates/restoredirect.html'
+            }).
+            when('/restoredirect-import', {
                 templateUrl: 'templates/restoredirect.html'
             }).
             when('/restore/:backupid', {
@@ -60,6 +66,9 @@ backupApp.config(['$routeProvider',
                 templateUrl: 'templates/export.html'
             }).
             when('/import', {
+                templateUrl: 'templates/import.html'
+            }).
+            when('/restore-import', {
                 templateUrl: 'templates/import.html'
             }).
             when('/localdb/:backupid', {
