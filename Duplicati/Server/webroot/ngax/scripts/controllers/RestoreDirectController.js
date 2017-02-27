@@ -111,4 +111,24 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
             }
         );
     };
+
+    if ($location.$$path.indexOf('/restoredirect-import') == 0 && $rootScope.importConfig != null)
+    {
+        $scope.TargetURL = $rootScope.importConfig.Backup.TargetURL;
+
+        var tmpsettings = angular.copy($rootScope.importConfig.Backup.Settings);
+        var res = {};
+        for (var i = tmpsettings.length - 1; i >= 0; i--) {
+            if (tmpsettings[i].Name == 'passphrase') {
+                $scope.EncryptionPassphrase = tmpsettings[i].Value;
+                tmpsettings.splice(i, 1);
+            } else {
+                res['--' + tmpsettings[i].Name] = tmpsettings[i].Value;
+            }
+        }
+
+        $scope.showAdvanced = true;
+        $scope.ExtendedOptions = AppUtils.serializeAdvancedOptions(res);
+    }
+
 });

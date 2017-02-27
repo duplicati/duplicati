@@ -6,8 +6,10 @@ backupApp.controller('RestoreWizardController', function($scope, $location, Back
     };
 
     $scope.nextPage = function() {
-        if ($scope.selection.backupid == '-1')
+        if ($scope.selection.backupid == 'direct')
             $location.path('/restoredirect');
+        else if ($scope.selection.backupid == 'import')
+            $location.path('/restore-import');
         else
             $location.path('/restore/' + $scope.selection.backupid);
     };
