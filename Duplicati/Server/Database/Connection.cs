@@ -424,6 +424,11 @@ namespace Duplicati.Server.Database
                             return "The blocksize value must be a valid size string";
                         }
                     }
+                    else if (string.Equals(s.Name, "--prefix", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        if (!string.IsNullOrWhiteSpace(s.Value) && s.Value.Contains("-"))
+                            return "The prefix cannot contain hyphens (-)";
+                    }
             }
 
             if (!disabled_encryption && string.IsNullOrWhiteSpace(passphrase))

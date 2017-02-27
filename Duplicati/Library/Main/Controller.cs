@@ -769,6 +769,9 @@ namespace Duplicati.Library.Main
             if (m_options.KeepTime.Ticks > 0 && m_options.KeepVersions > 0)
                 throw new Exception(string.Format("Setting both --{0} and --{1} is not permitted", "keep-versions", "keep-time"));
 
+            if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
+                throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)");
+
             //No point in going through with this if we can't report
             if (log == null)
                 return;
