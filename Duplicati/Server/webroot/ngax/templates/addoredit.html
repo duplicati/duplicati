@@ -216,7 +216,7 @@
                                 name="fileattr_{{attr.value}}"
                                 value="{{attr.value}}"
                                 ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
-                                ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
+                                ng-click="toggleExcludeAttributes(attr.value)"
                               />
                               <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
                             </div>
@@ -275,7 +275,7 @@
                             name="dayofweek_{{day.value}}"
                             value="{{day.value}}"
                             ng-checked="Schedule.AllowedDays.indexOf(day.value) > -1"
-                            ng-click="toggleArraySelection(Schedule.AllowedDays, day.value)"
+                            ng-click="toggleAllowedDays(day.value)"
                           />
                           <label for="dayofweek_{{day.value}}">{{day.name}}</label>
                         </div>                

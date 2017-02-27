@@ -147,16 +147,25 @@ backupApp.controller('EditBackupController', function ($scope, $routeParams, $lo
         }
     };
 
-    $scope.toggleArraySelection = function (lst, value) {
-        if (lst === null)
-          lst = [];
-
+    function toggleArraySelection(lst, value) {
         var ix = lst.indexOf(value);
 
         if (ix > -1)
             lst.splice(ix, 1);
         else
             lst.push(value);
+    };
+
+    $scope.toggleAllowedDays = function(value) {
+        if ($scope.Schedule.AllowedDays == null)
+            $scope.Schedule.AllowedDays = [];
+        toggleArraySelection($scope.Schedule.AllowedDays, value);
+    };
+
+    $scope.toggleExcludeAttributes = function(value) {
+        if ($scope.ExcludeAttributes == null)
+            $scope.ExcludeAttributes = [];
+        toggleArraySelection($scope.ExcludeAttributes, value);
     };
 
     $scope.save = function() {
