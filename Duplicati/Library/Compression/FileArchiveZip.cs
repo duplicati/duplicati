@@ -21,13 +21,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Interface;
-using System.Linq;
 using SharpCompress.Common;
 
-using SharpCompress.Archive;
-using SharpCompress.Archive.Zip;
-using SharpCompress.Writer;
-using SharpCompress.Writer.Zip;
+using SharpCompress.Archives;
+using SharpCompress.Archives.Zip;
+using SharpCompress.Writers;
+using SharpCompress.Writers.Zip;
 
 namespace Duplicati.Library.Compression
 {
@@ -55,7 +54,7 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// The default compression level
         /// </summary>
-        private const SharpCompress.Compressor.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressor.Deflate.CompressionLevel.Level9;
+        private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
 
         /// <summary>
         /// The default compression method
@@ -97,40 +96,19 @@ namespace Duplicati.Library.Compression
         private IWriter m_writer;
 
         /// <summary>
-        /// Instance of the CompresisonInfo class, used to hack in compression hints
-        /// </summary>
-        private CompressionInfo m_compressionInfo;
-
-        /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
         /// </summary>
-        private SharpCompress.Compressor.Deflate.CompressionLevel m_defaultCompressionLevel; 
+        private SharpCompress.Compressors.Deflate.CompressionLevel m_defaultCompressionLevel; 
+
+                /// <summary>
+        /// The compression level applied when the hint does not indicate incompressible
+        /// </summary>
+        private CompressionType m_compressionType;
 
         /// <summary>
         /// The name of the file being read
         /// </summary>
         private string m_filename;
-
-        /// <summary>
-        /// The reflection entry used to manipulate the deflate level on the compressor
-        /// </summary>
-        private static readonly System.Reflection.FieldInfo _zipCompressionInfoField;
-
-        /// <summary>
-        /// Static initializer to read the deflateLevelField
-        /// </summary>
-        static FileArchiveZip()
-        {
-            System.Reflection.FieldInfo fi = null;
-
-            try { fi = typeof(ZipWriter).GetField("zipCompressionInfo", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); }
-            catch { }
-
-            _zipCompressionInfoField = fi;
-
-            if (fi == null)
-                Logging.Log.WriteMessage("DeflateCompressionLevel is not supported, please report to developers", Duplicati.Library.Logging.LogMessageType.Warning);
-        }
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -168,27 +146,29 @@ namespace Duplicati.Library.Compression
             }
             else
             {
-                m_compressionInfo = new CompressionInfo();
-                m_compressionInfo.Type = DEFAULT_COMPRESSION_METHOD;
-                m_compressionInfo.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
+                var compression = new ZipWriterOptions(CompressionType.Deflate);
+
+                compression.CompressionType = DEFAULT_COMPRESSION_METHOD;
+                compression.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
 
                 string cpmethod;
                 CompressionType tmptype;
                 if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))
-                    m_compressionInfo.Type = tmptype;
+                    compression.CompressionType = tmptype;
 
                 string cplvl;
                 int tmplvl;
                 if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out cplvl) && int.TryParse(cplvl, out tmplvl))
-                    m_compressionInfo.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+                    compression.DeflateCompressionLevel = (SharpCompress.Compressors.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
                 else if (options.TryGetValue(COMPRESSION_LEVEL_OPTION_ALIAS, out cplvl) && int.TryParse(cplvl, out tmplvl))
-                    m_compressionInfo.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+                    compression.DeflateCompressionLevel = (SharpCompress.Compressors.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
 
-                m_defaultCompressionLevel = m_compressionInfo.DeflateCompressionLevel;
+                m_defaultCompressionLevel = compression.DeflateCompressionLevel;
+                m_compressionType = compression.CompressionType;
 
                 m_isWriting = true;
                 m_stream = new System.IO.FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read);
-                m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, m_compressionInfo);
+                m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
 
                 //Size of endheader, taken from SharpCompress ZipWriter
                 m_flushBufferSize = 8 + 2 + 2 + 4 + 4 + 2 + 0;
@@ -331,25 +311,13 @@ namespace Duplicati.Library.Compression
                 throw new InvalidOperationException("Cannot write while reading");
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
-            m_compressionInfo.DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressor.Deflate.CompressionLevel.None : m_defaultCompressionLevel;
-            SetStreamCompressionLevel();
-            return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null, m_compressionInfo);
+            return ((ZipWriter)m_writer).WriteToStream(file, new ZipWriterEntryOptions()
+            {
+                DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressors.Deflate.CompressionLevel.None : m_defaultCompressionLevel,
+                ModificationDateTime = lastWrite,
+                CompressionType = m_compressionType
+            });
 
-        }
-
-        /// <summary>
-        /// Hack to set compression level for stream
-        /// </summary>
-        private void SetStreamCompressionLevel()
-        {
-            if (_zipCompressionInfoField != null)
-                try 
-                { 
-                    var compInstance = _zipCompressionInfoField.GetValue(m_writer);
-                    var prop = compInstance.GetType().GetProperty("DeflateCompressionLevel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                    prop.SetValue(compInstance, m_compressionInfo.DeflateCompressionLevel);
-                }
-                catch { }
         }
 
         /// <summary>

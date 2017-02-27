@@ -38,10 +38,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="SharpCompress">
-      <HintPath>..\..\..\thirdparty\SharpCompress\SharpCompress.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="SharpCompress">
+      <HintPath>..\..\..\packages\SharpCompress.0.15.1\lib\net45\SharpCompress.dll</HintPath>
+    </Reference>
     <Reference Include="managed-lzma">
       <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
     </Reference>
@@ -75,6 +75,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
