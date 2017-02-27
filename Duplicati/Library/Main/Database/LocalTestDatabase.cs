@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Database
             using(var cmd = m_connection.CreateCommand())
             {
                 // Select any broken items
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" = ? OR ""State"" = ?) AND (""Hash"" = """" OR ""Hash"" IS NULL OR ""Size"" < 0) ", RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()))
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" = ? OR ""State"" = ?) AND (""Hash"" = """" OR ""Hash"" IS NULL OR ""Size"" <= 0) ", RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()))
                     while (rd.Read())
                         yield return new RemoteVolume(rd);
 
