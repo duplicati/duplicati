@@ -50,7 +50,7 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     };
 
     function updateCurrentPage() {
-        if ($location.$$path == '/')
+        if ($location.$$path == '/' || $location.$$path == '')
             $scope.current_page = 'home';
         else if ($location.$$path == '/addstart' || $location.$$path == '/add' || $location.$$path == '/import')
             $scope.current_page = 'add';
