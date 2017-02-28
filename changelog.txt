@@ -1,3 +1,12 @@
+2017-02-28 - 2.0.1.50_canary_2017-02-28
+==========
+* Added error message if `--prefix` contains hyphens
+* Fixed an issue with editing the allowed days on the schedule page
+* Changed "import" so it just loads the configuration into the editor, allowing the user to edit it before saving
+* Added function to restore that loads setup from a configuration file
+* Updated SharpCompress and S3 libraries
+* Improved crash messages for Windows TrayIcon
+
 2017-02-23 - 2.0.1.49_experimental_2017-02-23
 ==========
 * This build is the same as the canary
