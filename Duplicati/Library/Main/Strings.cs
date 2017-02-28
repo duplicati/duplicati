@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Strings
     {
         public static string AutocleanupLong { get { return LC.L(@"If a backup is interrupted there will likely be partial files present on the backend. Using this flag, Duplicati will automatically remove such files when encountered."); } }
         public static string AutocleanupShort { get { return LC.L(@"A flag indicating that Duplicati should remove unused files"); } }
-        public static string PrefixLong { get { return LC.L(@"A string used to prefix the filenames of the remote volumes, can be used to store multiple backups in the same remote folder."); } }
+        public static string PrefixLong { get { return LC.L(@"A string used to prefix the filenames of the remote volumes, can be used to store multiple backups in the same remote folder. The prefix cannot contain a hyphen (-), but can contain all other characters allowed by the remote storage."); } }
         public static string PrefixShort { get { return LC.L(@"Remote filename prefix"); } }
         public static string DisablefiletimecheckLong { get { return LC.L(@"The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won't work correctly unless this flag is set."); } }
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
