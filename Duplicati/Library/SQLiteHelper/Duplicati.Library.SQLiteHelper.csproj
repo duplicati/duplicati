@@ -57,6 +57,14 @@
       <Link>SQLite\pinvoke\System.Data.SQLite.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\..\thirdparty\SQLite\win32\SQLite.Interop.dll">
+      <Link>SQLite\win32\SQLite.Interop.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\SQLite\win64\SQLite.Interop.dll">
+      <Link>SQLite\win64\SQLite.Interop.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
