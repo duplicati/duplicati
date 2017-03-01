@@ -686,7 +686,17 @@ msgid ""
 " asterisk (*), eg.: \"*:\\backup\", which will examine all drive letters. If"
 " a username and password is supplied, the same credentials are used for all "
 "destinations."
-msgstr ""
+msgstr "Cette option permet de spécifier plusieurs cibles.Le chemin de la première cible"
+" est placé avant la liste des chemins apportés par cette option. Avant"
+"de commencer la sauvegarde, l'existence de chaque dossier présent dans la liste est vérifié et"
+"et falcutativement la présence du marqueur de fichier apporté par ---{0}. Le premier"
+"chemin existant contenant facultativement le marque de fichier est utilisé comme"
+"destination. Les destinations multiple sont séparés par un \"{1}\". Sur Windows,"
+" le chemin peut être un chemin UNC, et la lettre du disque peut etre remplacé par"
+" un asterisque (*), par exemple : \"*:\\backup\", qui examinera toutes les lettres de disques. Si"
+" un nom d'utilisateur et mot de passe est fourni, les mêmes informations seront utilisés pour toutes "
+"les destinations"
+
 
 #: Library/Backend/File/Strings.cs:7
 msgid "A list of secondary target paths"
@@ -760,13 +770,16 @@ msgid ""
 "This backend can read and write data to an FTP based backend. Allowed "
 "formats are \"ftp://hostname/folder\" or "
 "\"ftp://username:password@hostname/folder\""
-msgstr ""
+msgstr "Ce backend peut lire et écrire sur un backend FTP. Les formats autorisés"
+" sont \"ftp://serveur/dossier\" ou "
+"\"ftp://nom utilisateur:mot de passe@serveur/dossier""
 
 #: Library/Backend/FTP/Strings.cs:8
 msgid ""
 "If this flag is set, the FTP connection is made in active mode. Even if the "
 "\"ftp-passive\" flag is also set, the connection will be made in active mode"
-msgstr ""
+msgstr "Si ce parametre est activé, la connexion FTP se fait en mode actif.Si jamais le"
+"paramètre \"ftp-passive\" est aussi activé, la connexion se fera en mode actif"
 
 #: Library/Backend/FTP/Strings.cs:9 Library/Backend/FTP/Strings.cs:11
 msgid "Toggles the FTP connections method"
@@ -777,17 +790,20 @@ msgid ""
 "If this flag is set, the FTP connection is made in passive mode, which works"
 " better with some firewalls. If the \"ftp-regular\" flag is also set, this "
 "flag is ignored"
-msgstr ""
+msgstr "Si ce paramètre est activé, la connexion FTP se fait en mode passe, ce qui fonctionnera"
+"mieux avec certains parefeux. Si le paramètre \"ftp-regular\" est aussi actif, ce"
+"paramètre sera ignoré."
 
 #: Library/Backend/FTP/Strings.cs:16
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
-msgstr ""
+msgstr "Utilisez ce paramètre pour communiquer  avec SSL sur ftp "
+"(ftps)."
 
 #: Library/Backend/FTP/Strings.cs:17
 msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr ""
+msgstr "Indiquer à Duplicati d'utiliser une connexion SSL (ftps)"
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
@@ -797,7 +813,7 @@ msgstr "FTP"
 #: Library/Backend/WEBDAV/Strings.cs:14
 #, csharp-format
 msgid "The folder {0} was not found, message: {1}"
-msgstr ""
+msgstr "Le dossier {0} n'a pas été trouvé, message: {1}"
 
 #: Library/Backend/FTP/Strings.cs:23
 msgid ""
