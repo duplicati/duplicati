@@ -1,3 +1,9 @@
+2017-03-03 - 2.0.1.51_canary_2017-03-03
+==========
+* Updated the bundled version of SQLite for Windows to 1.0.104.0
+* Added deep archive verification when invoking verify
+* Changed the pagination method for GoogleDrive
+
 2017-02-28 - 2.0.1.50_canary_2017-02-28
 ==========
 * Added error message if `--prefix` contains hyphens
