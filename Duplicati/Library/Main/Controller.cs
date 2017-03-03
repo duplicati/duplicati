@@ -406,6 +406,9 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.ITestResults Test(long samples = 1)
         {
+            if (!m_options.RawOptions.ContainsKey("full-remote-verification"))
+                m_options.RawOptions["full-remote-verification"] = "true";
+                
             return RunAction(new TestResults(), (result) => {
                 new Operation.TestHandler(m_backend, m_options, result).Run(samples);
             });
