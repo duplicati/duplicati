@@ -392,7 +392,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private BlockingQueue<FileEntryItem> m_queue;
+        private readonly BlockingQueue<FileEntryItem> m_queue;
         private Options m_options;
         private volatile Exception m_lastException;
         private Library.Interface.IEncryption m_encryption;
@@ -402,7 +402,7 @@ namespace Duplicati.Library.Main
         private IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
         private BasicResults m_taskControl;
-        private DatabaseCollector m_db;
+        private readonly DatabaseCollector m_db;
                 
         public string BackendUrl { get { return m_backendurl; } }
         
