@@ -19,7 +19,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
@@ -27,6 +26,8 @@ namespace Duplicati.Library.Backend
     public class Jottacloud : IBackend, IStreamingBackend
     {
         public const string JFS_ROOT = "https://www.jottacloud.com/jfs";
+        public const string JFS_ROOT_UP = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
+        public const string JFS_DEVICE = "Jotta";
         public const string API_VERSION = "2.2"; // Hard coded per October 2014
         public const string DateTimeFormat = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
@@ -34,6 +35,7 @@ namespace Duplicati.Library.Backend
         private System.Net.NetworkCredential m_userInfo;
         private string m_path;
         private string m_url;
+        private string m_url_up;
 
         public Jottacloud()
         {
@@ -70,13 +72,11 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.Jottacloud.NoUsernameError);
             if (m_userInfo == null || string.IsNullOrEmpty(m_userInfo.Password))
                 throw new UserInformationException(Strings.Jottacloud.NoPasswordError);
-
-            m_url = JFS_ROOT + "/" + m_userInfo.UserName + "/Jotta/" + m_path; // Hard coding device name "Jotta"
-
             //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
             if (m_userInfo != null)
                 m_userInfo.Domain = "";
-
+            m_url = JFS_ROOT + "/" + m_userInfo.UserName + "/" + JFS_DEVICE + "/" + m_path;
+            m_url_up = JFS_ROOT_UP + "/" + m_userInfo.UserName + "/" + JFS_DEVICE + "/" + m_path;
         }
 
         #region IBackend Members
@@ -93,21 +93,18 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            var req = CreateRequest("");
+            var req = CreateRequest("", "", false);
             req.Method = System.Net.WebRequestMethods.Http.Get;
             try
             {
-                var areq = new Utility.AsyncHttpRequest(req);
+                // Send request and load XML response.
                 var doc = new System.Xml.XmlDocument();
+                var areq = new Utility.AsyncHttpRequest(req);
                 using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-                    using (var rs = areq.GetResponseStream())
-                        doc.Load(rs);
-                }
-                // Parse XML response. Note that root element can be "mountPoint" or "folder", but the content is very similar.
+                using (var rs = areq.GetResponseStream())
+                    doc.Load(rs);
+
+                // Handle XML response. Note that root element can be "mountPoint" or "folder", but the content is very similar.
                 List<IFileEntry> files = new List<IFileEntry>();
                 foreach (System.Xml.XmlNode xFolder in doc.SelectNodes("//folders/folder"))
                 {
@@ -124,19 +121,14 @@ namespace Duplicati.Library.Backend
                     if (xRevision != null)
                     {
                         System.Xml.XmlNode xNode = xRevision.SelectSingleNode("size");
-                        long size = 0;
-                        if (xNode != null)
-                        {
-                            size = long.Parse(xNode.InnerText);
-                        }
-                        DateTime lastAccess = new DateTime();
-                        DateTime lastModified = new DateTime();
+                        long size;
+                        if (xNode == null || !long.TryParse(xNode.InnerText, out size))
+                            size = -1;
+                        DateTime lastModified;
                         xNode = xRevision.SelectSingleNode("modified"); // There is also a timestamp for "updated"?
-                        if (xNode != null)
-                        {
-                            lastAccess = lastModified = DateTime.ParseExact(xNode.InnerText, DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture);
-                        }
-                        FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
+                        if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
+                            lastModified = new DateTime();
+                        FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
                         files.Add(fe);
                     }
                 }
@@ -166,28 +158,12 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            try
-            {
-                System.Net.HttpWebRequest req = CreateRequest(remotename);
-                req.Method = "DELETE";
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                {
-                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new FileMissingException();
-
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-                }
-            } 
-            catch (System.Net.WebException wex)
-            {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
-                    throw new FileMissingException(wex);
-                else
-                    throw;
-            }
+            // Assuming remotename specifies a file for deleting a folder we need a different query ("dlDir=true").
+            System.Net.HttpWebRequest req = CreateRequest("", "dl=true", false);
+            req.Method = System.Net.WebRequestMethods.Http.Post;
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            { }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -213,16 +189,11 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            System.Net.HttpWebRequest req = CreateRequest("");
-            req.Method = System.Net.WebRequestMethods.Http.MkCol;
-            req.KeepAlive = false;
+            System.Net.HttpWebRequest req = CreateRequest("", "mkDir=true", false);
+            req.Method = System.Net.WebRequestMethods.Http.Post;
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-            }
+            { }
         }
 
         #endregion
@@ -235,9 +206,9 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private System.Net.HttpWebRequest CreateRequest(string remotename)
+        private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams, bool upload)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20"));
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create((upload ? m_url_up : m_url) + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20") + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
             req.Credentials = m_userInfo;
             //We need this under Mono for some reason,
             // and it appears some servers require this as well
@@ -252,67 +223,95 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public bool SupportsStreaming
         {
-            System.Net.HttpWebRequest req = CreateRequest(remotename);
-            req.Method = System.Net.WebRequestMethods.Http.Put;
-            req.ContentType = "application/octet-stream";
-            try
-            {
-                try { req.ContentLength = stream.Length; }
-                catch { }
-
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream s = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, s, true, m_copybuffer);
-
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-                }
-            }
-            catch (System.Net.WebException wex)
-            {
-                //Convert to better exception
-                if (wex.Response as System.Net.HttpWebResponse != null)
-                    if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new Interface.FolderMissingException(Strings.Jottacloud.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
-
-                throw;
-            }
+            get { return true; }
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            var req = CreateRequest(remotename);
+            var req = CreateRequest(remotename, "mode=bin", false);
             req.Method = System.Net.WebRequestMethods.Http.Get;
+            var areq = new Utility.AsyncHttpRequest(req);
+            using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            using (var s = areq.GetResponseStream())
+                Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
+        }
 
-            try
+        public void Put(string remotename, System.IO.Stream stream)
+        {
+
+            if (stream.CanSeek)
             {
+                // Pre-calculate MD5 hash, we need it in query parameter, in HTTP header and in POST message data!
+                string md5Hash;
+                using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+                    md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", string.Empty);
+                long fileSize = stream.Position; // Assuming ComputeHash has processed the entire stream we should be at the end now.
+                stream.Seek(0, System.IO.SeekOrigin.Begin); // Move stream back to 0, or specified offset, after the MD5 calculation has used it.
+                // Create request, with query parater, and a few custom headers.
+                var req = CreateRequest(remotename, "cphash="+md5Hash, true);
+                req.Method = System.Net.WebRequestMethods.Http.Post;
+                string fileTime = DateTime.Now.ToString("o"); // NB: Cheating by setting current time as created/modified timestamps
+                req.Headers.Add("JMd5", md5Hash);
+                req.Headers.Add("JCreated", fileTime);
+                req.Headers.Add("JModified", fileTime);
+                req.Headers.Add("X-Jfs-DeviceName", JFS_DEVICE);
+                req.Headers.Add("JSize", fileSize.ToString());
+                req.Headers.Add("jx_csid", "");
+                req.Headers.Add("jx_lisence", "");
+
+                // Prepare post data:
+                // First three simple data sections: md5, modified time and created time.
+                // Then a final section with the file contents. We prepare everything,
+                // calculate the total size including the file, and then we write it
+                // to the request. This way we can stream the file directly into the
+                // request without copying the entire file into byte array first etc.
+                string multipartBoundary = string.Format("----------{0:N}", Guid.NewGuid());
+                byte[] multiPartContent = System.Text.Encoding.UTF8.GetBytes(
+                    CreateMultiPartItem("md5", md5Hash, multipartBoundary) + "\r\n"
+                  + CreateMultiPartItem("modified", fileTime, multipartBoundary) + "\r\n"
+                  + CreateMultiPartItem("created", fileTime, multipartBoundary) + "\r\n"
+                  + CreateMultiPartFileHeader("file", remotename, null, multipartBoundary) + "\r\n");
+                byte[] multipartTerminator = System.Text.Encoding.UTF8.GetBytes("\r\n--" + multipartBoundary + "--\r\n");
+                req.ContentType = "multipart/form-data; boundary=" + multipartBoundary;
+                req.ContentLength = multiPartContent.Length + fileSize + multipartTerminator.Length;
+                // Write post data request
                 var areq = new Utility.AsyncHttpRequest(req);
+                using (var rs = areq.GetRequestStream())
+                {
+                    rs.Write(multiPartContent, 0, multiPartContent.Length);
+                    Utility.Utility.CopyStream(stream, rs, true, m_copybuffer);
+                    rs.Write(multipartTerminator, 0, multipartTerminator.Length);
+                }
+                // Send request, and check response
                 using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
-                    using (var s = areq.GetResponseStream())
-                        Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
+                    if (resp.StatusCode != System.Net.HttpStatusCode.Created)
+                        throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, null, System.Net.WebExceptionStatus.ProtocolError, resp);
                 }
-            }
-            catch (System.Net.WebException wex)
-            {
-                if (wex.Response as System.Net.HttpWebResponse != null)
-                {
-                    if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict)
-                        throw new Interface.FolderMissingException(Strings.Jottacloud.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
-                }
-
-                throw;
             }
         }
+
+        private string CreateMultiPartItem(string contentName, string contentValue, string boundary)
+        {
+            // Header and content. Append newline before next section, or footer section.
+            return string.Format("--{0}\r\nContent-Disposition: form-data; name=\"{1}\"\r\n\r\n{2}",
+                boundary,
+                contentName,  //TODO: URLEncod it? HttpUtility.UrlEncode(contentName, System.Text.Encoding.UTF8),
+                contentValue);  //TODO: URLEncod it? HttpUtility.UrlEncode(contentValue, System.Text.Encoding.UTF8));
+        }
+
+        private string CreateMultiPartFileHeader(string contentName, string fileName, string fileType, string boundary)
+        {
+            // Header. Append newline and then file content.
+            return string.Format("--{0}\r\nContent-Disposition: form-data; name=\"{1}\"; filename=\"{2}\";\r\nContent-Type: {3}\r\n",
+                boundary,
+                contentName, //TODO: URLEncod it? HttpUtility.UrlEncode(contentName, System.Text.Encoding.UTF8),
+                fileName,  //TODO: URLEncod it? HttpUtility.UrlEncode(fileName, System.Text.Encoding.UTF8),
+                fileType ?? "application/octet-stream");
+        }
+
 
         #endregion
     }
