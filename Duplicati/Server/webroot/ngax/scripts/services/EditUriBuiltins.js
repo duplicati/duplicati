@@ -23,6 +23,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
     EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
     EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
+	EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/jottacloud.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
 
@@ -355,6 +356,10 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
+    EditUriBackendConfig.parsers['jottacloud'] = function(scope, module, server, port, path, options) {
+        EditUriBackendConfig.mergeServerAndPath(scope);
+    };
+
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function(scope) {
         var opts = {
@@ -503,6 +508,23 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     };
 
     EditUriBackendConfig.builders['mega'] = function(scope) {
+        var opts = { };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        // Slightly better error message
+        scope.Folder = scope.Path;
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
+    EditUriBackendConfig.builders['jottacloud'] = function(scope) {
         var opts = { };
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
@@ -688,6 +710,16 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     };
 
     EditUriBackendConfig.validaters['mega'] = function(scope, continuation) {
+        scope.Path = scope.Path || '';
+        var res =
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
+
+        if (res)
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['jottacloud'] = function(scope, continuation) {
         scope.Path = scope.Path || '';
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
