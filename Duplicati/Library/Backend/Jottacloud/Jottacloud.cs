@@ -1,3 +1,4 @@
+//#define SUPPORT_CUSTOM_MOINT_POINTS
 #region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
@@ -27,13 +28,15 @@ namespace Duplicati.Library.Backend
     {
         private const string JFS_ROOT = "https://www.jottacloud.com/jfs";
         private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
-        private const string API_VERSION = "2.2"; // Hard coded per October 2014
-        private const string JFS_DEVICE = "Jotta";
-        private static readonly string[] JFS_MOUNT_POINTS = { "Archive", "Sync" };
+        private const string API_VERSION = "2.2"; // Hard coded per 05. March 2017.
+        private const string JFS_DEVICE = "Jotta"; // The built-in device used for the generic Sync and Archive mount points.
+        private static readonly string[] JFS_BUILTIN_MOUNT_POINTS = { "Archive", "Sync" }; // Name of builtin mount points in the API that we can use.
+        private static readonly string[] JFS_ILLEGAL_MOUNT_POINTS = { "Backup", "Latest", "Shared" }; // These are treated as mount points in the API, but they are for used for special functionality and we cannot upload files to them! A bit unsure about the "Backup" mount point: I think it is also a built-in mount point, although not for the builtin "Jotta" device. Probably the Jottacloud backup software creates it on demand when setting up backup of real devices. It is probably safest to not allow use of it.
         private static readonly string JFS_DEFAULT_MOUNT_POINT = "Archive";
         private const string JFS_MOUNT_POINT_OPTION = "jottacloud-mountpoint";
+        private const string JFS_USER_DEFINED_MOUNT_POINT_OPTION = "jottacloud-allow-user-defined-mount-point";
         private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
-
+        private const bool ALLOW_USER_DEFINED_MOUNT_POINTS = false;
         private readonly string m_mountPoint;
         private readonly string m_path;
         private readonly string m_url;
@@ -47,14 +50,39 @@ namespace Duplicati.Library.Backend
 
         public Jottacloud(string url, Dictionary<string, string> options)
         {
-            // URL is of format "jottacloud://folder/subfolder", we transform it to "https://www.jotta.no/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]"
+            // Duplicati backend url for Jottacloud is in format "jottacloud://folder/subfolder", we transform them to
+            // Jottaclouds REST API (JFS) url in format "https://www.jotta.no/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]".
             if (options.ContainsKey(JFS_MOUNT_POINT_OPTION))
             {
-                var i = Array.FindIndex(JFS_MOUNT_POINTS, x => x.Equals(options[JFS_MOUNT_POINT_OPTION], StringComparison.OrdinalIgnoreCase));
-                if (i != -1)
-                    m_mountPoint = JFS_MOUNT_POINTS[i];
+                // Custom mount point specified.
+                m_mountPoint = options[JFS_MOUNT_POINT_OPTION];
+
+                // Do we allow user defined mount points?
+#if SUPPORT_CUSTOM_MOINT_POINTS
+                // The JFS API supports creation of custom mount points, but it is not supported via the official web interface,
+                // so you are kind of working in the dark. But maybe for a pure backup storage it could make sense to place
+                // it in a "hidden" location?
+                if (Utility.Utility.ParseBoolOption(options, JFS_USER_DEFINED_MOUNT_POINT_OPTION))
+                {
+                    // Check that it is not set to one of the built-in special mount points that we cannot make use of.
+                    if (Array.FindIndex(JFS_ILLEGAL_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase)) != -1)
+                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint);
+                    // Check if it is one of the legal built-in mount points, just to ensure correct casing (doesn't seem to matter, but in theory it could).
+                    var i = Array.FindIndex(JFS_BUILTIN_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase));
+                    if (i != -1)
+                        m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i];
+                    //else (i==-1): A user defined mount point is specified!
+                }
                 else
-                    throw new UserInformationException(Strings.Jottacloud.UnknownMountPoint);
+#endif
+                {
+                    // Check if it is one of the legal built-in mount points
+                    var i = Array.FindIndex(JFS_BUILTIN_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase));
+                    if (i != -1)
+                        m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i]; // Ensure correct casing. Doesn't seem to matter, but in theory it could.
+                    else
+                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint); // Special built-in mount points and user defined mount points are not allowed.
+                }
             }
             else
             {
@@ -180,7 +208,6 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            // Assuming remotename specifies a file for deleting a folder we need a different query ("dlDir=true").
             System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "dl=true", false);
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
@@ -194,7 +221,12 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.Jottacloud.DescriptionAuthPasswordShort, Strings.Jottacloud.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionAuthUsernameShort, Strings.Jottacloud.DescriptionAuthUsernameLong),
-                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong)
+#if SUPPORT_CUSTOM_MOINT_POINTS
+                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLongWithCustomSupport(JFS_USER_DEFINED_MOUNT_POINT_OPTION)),
+                    new CommandLineArgument(JFS_USER_DEFINED_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Jottacloud.DescriptionAllowUserDefinedMountPointShort, Strings.Jottacloud.DescriptionAllowUserDefinedMountPointLong(JFS_MOUNT_POINT_OPTION))
+#else
+                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong),
+#endif
                 });
             }
         }
@@ -211,6 +243,12 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
+            // The POST request for creating folders creates the complete sub-folder path in the same operation,
+            // and even the mount point if a user defined mount point was specified!
+            // The request returns status code OK if success, but also if the specified folder(s) already exists.
+            // The request for creating mount points actually return CREATED if successfully created and OK
+            // if already exists, but in our backend implementation we require a folder within a mount point so
+            // we will never be only creating a mount point.
             System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
