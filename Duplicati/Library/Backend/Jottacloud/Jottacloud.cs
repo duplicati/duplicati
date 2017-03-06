@@ -328,56 +328,86 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            if (!stream.CanSeek)
-            {
-                throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
-            }
-
-            // Pre-calculate MD5 hash, we need it in query parameter, in HTTP header and in POST message data!
+            // Pre-calculate the MD5 hash, as we we need it in query parameter, in HTTP header and in POST message data.
+            // Since the stream may be throttled we do the same (dirty?) trick as in the Backblaze back-end: Try to get
+            // the underlying stream, with fall-back to temporary file if the stream is does not allow seek.
+            Duplicati.Library.Utility.TempFile tmpFile = null;
+            var baseStream = stream;
+            while (baseStream is Duplicati.Library.Utility.OverrideableStream)
+                baseStream = typeof(Duplicati.Library.Utility.OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(baseStream) as System.IO.Stream;
+            if (baseStream == null)
+                throw new Exception(string.Format("Unable to unwrap stream from: {0}", stream.GetType()));
             string md5Hash;
-            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
-                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", string.Empty);
-            long fileSize = stream.Position; // Assuming ComputeHash has processed the entire stream we should be at the end now.
-            stream.Seek(0, System.IO.SeekOrigin.Begin); // Move stream back to 0, or specified offset, after the MD5 calculation has used it.
-            // Create request, with query parater, and a few custom headers.
-            var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "cphash="+md5Hash, true);
-            string fileTime = DateTime.Now.ToString("o"); // NB: Cheating by setting current time as created/modified timestamps
-            req.Headers.Add("JMd5", md5Hash);
-            req.Headers.Add("JCreated", fileTime);
-            req.Headers.Add("JModified", fileTime);
-            req.Headers.Add("X-Jfs-DeviceName", m_device);
-            req.Headers.Add("JSize", fileSize.ToString());
-            req.Headers.Add("jx_csid", "");
-            req.Headers.Add("jx_lisence", "");
-
-            // Prepare post data:
-            // First three simple data sections: md5, modified time and created time.
-            // Then a final section with the file contents. We prepare everything,
-            // calculate the total size including the file, and then we write it
-            // to the request. This way we can stream the file directly into the
-            // request without copying the entire file into byte array first etc.
-            string multipartBoundary = string.Format("----------{0:N}", Guid.NewGuid());
-            byte[] multiPartContent = System.Text.Encoding.UTF8.GetBytes(
-                CreateMultiPartItem("md5", md5Hash, multipartBoundary) + "\r\n"
-                + CreateMultiPartItem("modified", fileTime, multipartBoundary) + "\r\n"
-                + CreateMultiPartItem("created", fileTime, multipartBoundary) + "\r\n"
-                + CreateMultiPartFileHeader("file", remotename, null, multipartBoundary) + "\r\n");
-            byte[] multipartTerminator = System.Text.Encoding.UTF8.GetBytes("\r\n--" + multipartBoundary + "--\r\n");
-            req.ContentType = "multipart/form-data; boundary=" + multipartBoundary;
-            req.ContentLength = multiPartContent.Length + fileSize + multipartTerminator.Length;
-            // Write post data request
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var rs = areq.GetRequestStream())
+            if (baseStream.CanSeek)
             {
-                rs.Write(multiPartContent, 0, multiPartContent.Length);
-                Utility.Utility.CopyStream(stream, rs, true, m_copybuffer);
-                rs.Write(multipartTerminator, 0, multipartTerminator.Length);
+                var originalPosition = baseStream.Position;
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                    md5Hash = Library.Utility.Utility.ByteArrayAsHexString(md5.ComputeHash(baseStream));
+                baseStream.Position = originalPosition;
             }
-            // Send request, and check response
-            using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            else
             {
-                if (resp.StatusCode != System.Net.HttpStatusCode.Created)
-                    throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                // No seeking possible, use a temp file
+                tmpFile = new Duplicati.Library.Utility.TempFile();
+                using (var os = System.IO.File.OpenWrite(tmpFile))
+                using (var md5 = new Utility.MD5CalculatingStream(baseStream))
+                {
+                    Library.Utility.Utility.CopyStream(md5, os, true, m_copybuffer);
+                    md5Hash = md5.GetFinalHashString();
+                }
+                stream = System.IO.File.OpenRead(tmpFile);
+            }
+            try
+            {
+                // Create request, with query parameter, and a few custom headers.
+                var fileSize = stream.Length;
+                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "cphash="+md5Hash, true);
+                string fileTime = DateTime.Now.ToString("o"); // NB: Cheating by setting current time as created/modified timestamps
+                req.Headers.Add("JMd5", md5Hash);
+                req.Headers.Add("JCreated", fileTime);
+                req.Headers.Add("JModified", fileTime);
+                req.Headers.Add("X-Jfs-DeviceName", m_device);
+                req.Headers.Add("JSize", fileSize.ToString()); // This must be the total size of the original file!
+                req.Headers.Add("jx_csid", "");
+                req.Headers.Add("jx_lisence", "");
+
+                // Prepare post data:
+                // First three simple data sections: md5, modified time and created time.
+                // Then a final section with the file contents. We prepare everything,
+                // calculate the total size including the file, and then we write it
+                // to the request. This way we can stream the file directly into the
+                // request without copying the entire file into byte array first etc.
+                string multipartBoundary = string.Format("----------{0:N}", Guid.NewGuid());
+                byte[] multiPartContent = System.Text.Encoding.UTF8.GetBytes(
+                    CreateMultiPartItem("md5", md5Hash, multipartBoundary) + "\r\n"
+                    + CreateMultiPartItem("modified", fileTime, multipartBoundary) + "\r\n"
+                    + CreateMultiPartItem("created", fileTime, multipartBoundary) + "\r\n"
+                    + CreateMultiPartFileHeader("file", remotename, null, multipartBoundary) + "\r\n");
+                byte[] multipartTerminator = System.Text.Encoding.UTF8.GetBytes("\r\n--" + multipartBoundary + "--\r\n");
+                req.ContentType = "multipart/form-data; boundary=" + multipartBoundary;
+                req.ContentLength = multiPartContent.Length + fileSize + multipartTerminator.Length;
+                // Write post data request
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var rs = areq.GetRequestStream())
+                {
+                    rs.Write(multiPartContent, 0, multiPartContent.Length);
+                    Utility.Utility.CopyStream(stream, rs, true, m_copybuffer);
+                    rs.Write(multipartTerminator, 0, multipartTerminator.Length);
+                }
+                // Send request, and check response
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                {
+                    if (resp.StatusCode != System.Net.HttpStatusCode.Created)
+                        throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (tmpFile != null)
+                        tmpFile.Dispose();
+                } catch { }
             }
         }
 
