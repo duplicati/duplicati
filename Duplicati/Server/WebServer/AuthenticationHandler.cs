@@ -94,11 +94,11 @@ namespace Duplicati.Server.WebServer
             var authform = request.Form["auth-token"] ?? request.Form[Library.Utility.Uri.UrlEncode("auth-token")];
             var authquery = request.QueryString["auth-token"] ?? request.QueryString[Library.Utility.Uri.UrlEncode("auth-token")];
 
-            var auth_token = authcookie == null || string.IsNullOrWhiteSpace(authcookie.Value) ? null : authcookie.Value;
-            if (authquery != null && !string.IsNullOrWhiteSpace(authquery.Value))
-                auth_token = authquery["auth-token"].Value;
-            if (authform != null && !string.IsNullOrWhiteSpace(authform.Value))
-                auth_token = authform["auth-token"].Value;
+            var auth_token = string.IsNullOrWhiteSpace(authcookie?.Value) ? null : authcookie.Value;
+            if (!string.IsNullOrWhiteSpace(authquery?.Value))
+                auth_token = authquery.Value;
+            if (!string.IsNullOrWhiteSpace(authform?.Value))
+                auth_token = authform.Value;
 
             return auth_token;
         }

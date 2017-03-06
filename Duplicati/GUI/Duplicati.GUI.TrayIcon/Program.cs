@@ -22,7 +22,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
-        private const string DEFAULT_HOSTURL = "http://localhost:8080";
+        private const string DEFAULT_HOSTURL = "http://localhost:8200";
         
         private static string _browser_command = null;
         public static string BrowserCommand { get { return _browser_command; } }
