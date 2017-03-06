@@ -1,4 +1,3 @@
-//#define SUPPORT_CUSTOM_MOINT_POINTS
 #region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
@@ -29,16 +28,20 @@ namespace Duplicati.Library.Backend
         private const string JFS_ROOT = "https://www.jottacloud.com/jfs";
         private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
         private const string API_VERSION = "2.2"; // Hard coded per 05. March 2017.
-        private const string JFS_DEVICE = "Jotta"; // The built-in device used for the generic Sync and Archive mount points.
-        private static readonly string[] JFS_BUILTIN_MOUNT_POINTS = { "Archive", "Sync" }; // Name of builtin mount points in the API that we can use.
-        private static readonly string[] JFS_ILLEGAL_MOUNT_POINTS = { "Backup", "Latest", "Shared" }; // These are treated as mount points in the API, but they are for used for special functionality and we cannot upload files to them! A bit unsure about the "Backup" mount point: I think it is also a built-in mount point, although not for the builtin "Jotta" device. Probably the Jottacloud backup software creates it on demand when setting up backup of real devices. It is probably safest to not allow use of it.
-        private static readonly string JFS_DEFAULT_MOUNT_POINT = "Archive";
+        private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
+        private static readonly string JFS_DEFAULT_BUILTIN_MOUNT_POINT = "Archive"; // When using the built-in device we pick this mount point as our default.
+        private static readonly string JFS_DEFAULT_CUSTOM_MOUNT_POINT = "Duplicati"; // When custom device is specified then we pick this mount point as our default.
+        private static readonly string[] JFS_BUILTIN_MOUNT_POINTS = { "Archive", "Sync" }; // Name of built-in mount points that we can use.
+        private static readonly string[] JFS_ILLEGAL_MOUNT_POINTS = { "Latest", "Shared" }; // Name of built-in mount points that we can not use. These are treated as mount points in the API, but they are for used for special functionality and we cannot upload files to them!
+        private const string JFS_DEVICE_OPTION = "jottacloud-device";
         private const string JFS_MOUNT_POINT_OPTION = "jottacloud-mountpoint";
-        private const string JFS_USER_DEFINED_MOUNT_POINT_OPTION = "jottacloud-allow-user-defined-mount-point";
         private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
         private const bool ALLOW_USER_DEFINED_MOUNT_POINTS = false;
+        private readonly string m_device;
+        private readonly bool m_device_builtin;
         private readonly string m_mountPoint;
         private readonly string m_path;
+        private readonly string m_url_device;
         private readonly string m_url;
         private readonly string m_url_upload;
         private System.Net.NetworkCredential m_userInfo;
@@ -50,45 +53,64 @@ namespace Duplicati.Library.Backend
 
         public Jottacloud(string url, Dictionary<string, string> options)
         {
-            // Duplicati backend url for Jottacloud is in format "jottacloud://folder/subfolder", we transform them to
-            // Jottaclouds REST API (JFS) url in format "https://www.jotta.no/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]".
+            // Duplicati back-end url for Jottacloud is in format "jottacloud://folder/subfolder", we transform them to
+            // the Jottacloud REST API (JFS) url format "https://www.jotta.no/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]".
+
+            // Find out what JFS device to use.
+            if (options.ContainsKey(JFS_DEVICE_OPTION))
+            {
+                // Custom device specified.
+                m_device = options[JFS_DEVICE_OPTION];
+                if (string.Equals(m_device, JFS_BUILTIN_DEVICE, StringComparison.OrdinalIgnoreCase))
+                {
+                    m_device_builtin = true; // Device is configured, but value set to the built-in device!
+                    m_device = JFS_BUILTIN_DEVICE; // Ensure correct casing (doesn't seem to matter, but in theory it could).
+                }
+                else
+                {
+                    m_device_builtin = false;
+                }
+            }
+            else
+            {
+                // Use default: The built-in device.
+                m_device = JFS_BUILTIN_DEVICE;
+                m_device_builtin = true;
+            }
+
+            // Find out what JFS mount point to use on the device.
             if (options.ContainsKey(JFS_MOUNT_POINT_OPTION))
             {
                 // Custom mount point specified.
                 m_mountPoint = options[JFS_MOUNT_POINT_OPTION];
 
-                // Do we allow user defined mount points?
-#if SUPPORT_CUSTOM_MOINT_POINTS
-                // The JFS API supports creation of custom mount points, but it is not supported via the official web interface,
-                // so you are kind of working in the dark. But maybe for a pure backup storage it could make sense to place
-                // it in a "hidden" location?
-                if (Utility.Utility.ParseBoolOption(options, JFS_USER_DEFINED_MOUNT_POINT_OPTION))
+                // If we are using the built-in device make sure we have picked a mount point that we can use.
+                if (m_device_builtin)
                 {
-                    // Check that it is not set to one of the built-in special mount points that we cannot make use of.
+                    // Check that it is not set to one of the special built-in mount points that we definitely cannot make use of.
                     if (Array.FindIndex(JFS_ILLEGAL_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase)) != -1)
                         throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint);
-                    // Check if it is one of the legal built-in mount points, just to ensure correct casing (doesn't seem to matter, but in theory it could).
+                    // Check if it is one of the legal built-in mount points.
+                    // What to do if it is not is open for discussion: The JFS API supports creation of custom mount points not only
+                    // for custom (backup) devices, but also for the built-in device. But this will not be visible via the official
+                    // web interface, so you are kind of working in the dark and need to use the REST API to delete it etc. Therefore
+                    // we do not allow this for now, although in future maybe we could consider it, as a "hidden" location?
                     var i = Array.FindIndex(JFS_BUILTIN_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase));
                     if (i != -1)
-                        m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i];
-                    //else (i==-1): A user defined mount point is specified!
-                }
-                else
-#endif
-                {
-                    // Check if it is one of the legal built-in mount points
-                    var i = Array.FindIndex(JFS_BUILTIN_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase));
-                    if (i != -1)
-                        m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i]; // Ensure correct casing. Doesn't seem to matter, but in theory it could.
+                        m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i]; // Ensure correct casing (doesn't seem to matter, but in theory it could).
                     else
-                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint); // Special built-in mount points and user defined mount points are not allowed.
+                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint); // Special built-in mount points and user defined mount points are currently not allowed.
                 }
             }
             else
             {
-                m_mountPoint = JFS_DEFAULT_MOUNT_POINT;
+                if (m_device_builtin)
+                    m_mountPoint = JFS_DEFAULT_BUILTIN_MOUNT_POINT; // Set a suitable built-in mount point for the built-in device.
+                else
+                    m_mountPoint = JFS_DEFAULT_CUSTOM_MOUNT_POINT; // Set a suitable default mount point for custom (backup) devices.
             }
 
+            // Build URL
             var u = new Utility.Uri(url);
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
@@ -118,11 +140,11 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.Jottacloud.NoUsernameError);
             if (m_userInfo == null || string.IsNullOrEmpty(m_userInfo.Password))
                 throw new UserInformationException(Strings.Jottacloud.NoPasswordError);
-            //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
-            if (m_userInfo != null)
+            if (m_userInfo != null) // Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
                 m_userInfo.Domain = "";
-            m_url        = JFS_ROOT        + "/" + m_userInfo.UserName + "/" + JFS_DEVICE + "/" + m_mountPoint + "/" + m_path;
-            m_url_upload = JFS_ROOT_UPLOAD + "/" + m_userInfo.UserName + "/" + JFS_DEVICE + "/" + m_mountPoint + "/" + m_path;
+            m_url_device = JFS_ROOT + "/" + m_userInfo.UserName + "/" + m_device;
+            m_url        = m_url_device + "/" + m_mountPoint + "/" + m_path;
+            m_url_upload = JFS_ROOT_UPLOAD + "/" + m_userInfo.UserName + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
         }
 
         #region IBackend Members
@@ -221,12 +243,8 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.Jottacloud.DescriptionAuthPasswordShort, Strings.Jottacloud.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionAuthUsernameShort, Strings.Jottacloud.DescriptionAuthUsernameLong),
-#if SUPPORT_CUSTOM_MOINT_POINTS
-                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLongWithCustomSupport(JFS_USER_DEFINED_MOUNT_POINT_OPTION)),
-                    new CommandLineArgument(JFS_USER_DEFINED_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Jottacloud.DescriptionAllowUserDefinedMountPointShort, Strings.Jottacloud.DescriptionAllowUserDefinedMountPointLong(JFS_MOUNT_POINT_OPTION))
-#else
-                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong),
-#endif
+                    new CommandLineArgument(JFS_DEVICE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionDeviceShort, Strings.Jottacloud.DescriptionDeviceLong(JFS_MOUNT_POINT_OPTION)),
+                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong(JFS_DEVICE_OPTION)),
                 });
             }
         }
@@ -243,16 +261,21 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            // The POST request for creating folders creates the complete sub-folder path in the same operation,
-            // and even the mount point if a user defined mount point was specified!
-            // The request returns status code OK if success, but also if the specified folder(s) already exists.
-            // The request for creating mount points actually return CREATED if successfully created and OK
-            // if already exists, but in our backend implementation we require a folder within a mount point so
-            // we will never be only creating a mount point.
-            System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-            { }
+            // When using custom (backup) device we must create the device first (if not already exists).
+            if (!m_device_builtin)
+            {
+                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                { }
+            }
+            // Create the folder path, and if using custom mount point it will be created as well in the same operation.
+            {
+                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                { }
+            }
         }
 
         #endregion
@@ -265,20 +288,26 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private System.Net.HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
+        private System.Net.HttpWebRequest CreateRequest(string method, string url, string queryparams)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create((upload ? m_url_upload : m_url) + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20") + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
             req.Method = method;
             req.Credentials = m_userInfo;
             //We need this under Mono for some reason,
             // and it appears some servers require this as well
-            req.PreAuthenticate = true; 
+            req.PreAuthenticate = true;
 
             req.KeepAlive = false;
             req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             req.Headers.Add("X-JottaAPIVersion", API_VERSION);
 
             return req;
+        }
+
+        private System.Net.HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
+        {
+            var url = (upload ? m_url_upload : m_url) + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20");
+            return CreateRequest(method, url, queryparams);
         }
 
         #region IStreamingBackend Members
@@ -316,7 +345,7 @@ namespace Duplicati.Library.Backend
             req.Headers.Add("JMd5", md5Hash);
             req.Headers.Add("JCreated", fileTime);
             req.Headers.Add("JModified", fileTime);
-            req.Headers.Add("X-Jfs-DeviceName", JFS_DEVICE);
+            req.Headers.Add("X-Jfs-DeviceName", m_device);
             req.Headers.Add("JSize", fileSize.ToString());
             req.Headers.Add("jx_csid", "");
             req.Headers.Add("jx_lisence", "");
