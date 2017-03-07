@@ -33,7 +33,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:]+)(\:(?<password>[^@]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
+        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -391,10 +391,10 @@ namespace Duplicati.Library.Utility
         private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){2,4,6,8}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
-        /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
+        /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
         /// </summary>
         /// <returns>The decoded URL</returns>
-        /// <param name="url">The URL fragment to decode</param>
+        /// <param name="value">The URL fragment to decode</param>
         /// <param name="encoding">The encoding to use</param>
         public static string UrlDecode(string value, System.Text.Encoding encoding = null)
         {
