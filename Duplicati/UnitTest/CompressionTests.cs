@@ -37,6 +37,12 @@ namespace Duplicati.UnitTest
             TestCompressionHints("7z");
         }
 
+        [Test]
+        public void TestSZipCompressionHints()
+        {
+            TestCompressionHints("szip");
+        }
+
         public void TestCompressionHints(string module)
         {
             const int TESTSIZE = 1024 * 1024;

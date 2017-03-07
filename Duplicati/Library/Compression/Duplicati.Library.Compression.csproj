@@ -45,6 +45,7 @@
     <Reference Include="managed-lzma">
       <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
     </Reference>
+    <Reference Include="System.IO.Compression" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileArchiveDirectory.cs" />
@@ -53,6 +54,7 @@
     <Compile Include="StreamWrapper.cs" />
     <Compile Include="SevenZipCompression.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="SystemIOZip.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

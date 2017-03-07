@@ -912,7 +912,7 @@ namespace Duplicati.Library.Main
                 if (m_options.ContainsKey("compression-module"))
                     return m_options["compression-module"];
                 else
-                    return "zip";
+                    return "szip";
             }
         }
 
