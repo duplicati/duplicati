@@ -440,7 +440,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
         res.querystring.replace(QUERY_REGEXP, function(str, key, val) {
             if (key)
-                res['--' + key] = decodeURIComponent(val);
+                res['--' + key] = decodeURIComponent((val || '').replace(/\+/g, '%20'));
         });
 
         var backends = {};
