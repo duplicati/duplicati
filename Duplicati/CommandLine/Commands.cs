@@ -621,12 +621,16 @@ namespace Duplicati.CommandLine
             if (totalFiles == 0)
             {
                 Console.WriteLine("No files examined, is the remote destination is empty?");
+                return 100;
             }
             else
             {
                 var filtered = from n in result.Verifications where n.Value.Count() != 0 select n;
                 if (filtered.Count() == 0)
+                {
                     Console.WriteLine("Examined {0} files and found no errors", totalFiles);
+                    return 0;
+                }
                 else
                 {
                     if (Library.Utility.Utility.ParseBoolOption(options, "verbose"))
@@ -652,10 +656,10 @@ namespace Duplicati.CommandLine
                             Console.WriteLine(n.Key);
                         Console.WriteLine();
                     }
-                }
 
+                    return 3;
+                }
             }
-            return 0;
         }
                 
         private static int PrintWrongNumberOfArguments(List<string> args, int expected)
