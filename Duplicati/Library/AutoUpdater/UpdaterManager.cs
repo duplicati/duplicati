@@ -49,6 +49,8 @@ namespace Duplicati.Library.AutoUpdater
 
         public static bool RequiresRespawn { get; set; }
 
+        public static bool IgnoreWebrootFolder { get; set; }
+
         private static KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
 
         public static readonly UpdateInfo SelfVersion;
@@ -602,6 +604,9 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     var relpath = file.Substring(baselen);
                     if (string.IsNullOrWhiteSpace(relpath))
+                        continue;
+
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot"))
                         continue;
 
                     FileEntry fe;

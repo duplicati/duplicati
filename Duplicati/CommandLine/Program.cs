@@ -33,6 +33,7 @@ namespace Duplicati.CommandLine
         [STAThread]
         public static int Main(string[] args)
         {
+            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
@@ -49,6 +50,8 @@ namespace Duplicati.CommandLine
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
                 var options = tmpparsed.Item1;
                 var filter = tmpparsed.Item2;
+
+                Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
 
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
                 verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
