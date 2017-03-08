@@ -187,7 +187,7 @@ namespace Duplicati.UnitTest
             }
 
             var dblock_file = Directory
-                .GetFiles(TARGETFOLDER, "*.dblock.zip.aes")
+                .GetFiles(TARGETFOLDER, "*.dblock.*.aes")
                 .Select(x => new FileInfo(x))
                 .OrderBy(x => x.LastWriteTimeUtc)
                 .Select(x => x.FullName)
