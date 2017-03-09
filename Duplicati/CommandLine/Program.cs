@@ -51,8 +51,6 @@ namespace Duplicati.CommandLine
                 var options = tmpparsed.Item1;
                 var filter = tmpparsed.Item2;
 
-                Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
                 verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
