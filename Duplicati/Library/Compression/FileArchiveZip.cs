@@ -28,6 +28,7 @@ using SharpCompress.Archives.Zip;
 using SharpCompress.Writers;
 using SharpCompress.Writers.Zip;
 using SharpCompress.Readers;
+using System.Linq;
 
 namespace Duplicati.Library.Compression
 {
@@ -183,23 +184,6 @@ namespace Duplicati.Library.Compression
 
         }
 
-        public IEnumerable<IEntry> ListItems()
-        {
-            if (!m_using_reader)
-            {
-                foreach (var e in Archive.Entries)
-                    yield return e;
-            }
-            else
-            {
-                using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
-                    while (rd.MoveToNextEntry())
-                        yield return (IEntry)rd.Entry;
-            }
-
-        }
-
         /// <summary>
         /// Constructs a new zip instance.
         /// If the file exists and has a non-zero length we read it,
@@ -284,24 +268,7 @@ namespace Duplicati.Library.Compression
         /// <returns>A list of files matching the prefix</returns>
         public string[] ListFiles(string prefix)
         {
-            List<string> results = new List<string>();
-            foreach (var e in ListItems())
-            {
-                if (prefix == null)
-                {
-                    results.Add(e.Key);
-                }
-                else
-                {
-                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.Key);
-                    //Some old archives may have been created with windows style paths
-                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.Key);
-                }
-            }
-
-            return results.ToArray();
+            return ListFilesWithSize(prefix).Select(x => x.Key).ToArray();
         }
 
         /// <summary>
@@ -311,25 +278,18 @@ namespace Duplicati.Library.Compression
         /// <returns>A list of files matching the prefix</returns>
         public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
         {
-            List<KeyValuePair<string, long>> results = new List<KeyValuePair<string, long>>();
-            foreach (var e in ListItems())
-            {
-                if (prefix == null)
-                {
-                    results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                }
-                else
-                {
-                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                    //Some old archives may have been created with windows style paths
-                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                }
-            }
+            LoadEntryTable();
+            var q = m_entryDict.Values.AsEnumerable();
+            if (!string.IsNullOrEmpty(prefix))
+                q = q.Where(x =>
+                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            ||
+                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                           );
 
-            return results;
+            return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();
         }
+
         /// <summary>
         /// Opens an file for reading
         /// </summary>
@@ -354,21 +314,16 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
-        /// Internal function that returns a ZipEntry for a filename, or null if no such file exists
+        /// Helper method to load the entry table
         /// </summary>
-        /// <param name="file">The name of the file to find</param>
-        /// <returns>The ZipEntry for the file or null if no such file was found</returns>
-        private IEntry GetEntry(string file)
+        private void LoadEntryTable()
         {
-            if (m_isWriting)
-                throw new InvalidOperationException("Cannot read while writing");
-
             if (m_entryDict == null)
             {
                 try
                 {
                     var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
-                    foreach (var en in ListItems())
+                    foreach (var en in Archive.Entries)
                         d[en.Key] = en;
                     m_entryDict = d;
                 }
@@ -380,9 +335,30 @@ namespace Duplicati.Library.Compression
                         throw;
 
                     SwitchToReader();
-                    return GetEntry(file);
+
+                    var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+
+                    using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
+                        while (rd.MoveToNextEntry())
+                            d[rd.Entry.Key] = rd.Entry;
+                    
+                    m_entryDict = d;
                 }
             }
+        }
+
+        /// <summary>
+        /// Internal function that returns a ZipEntry for a filename, or null if no such file exists
+        /// </summary>
+        /// <param name="file">The name of the file to find</param>
+        /// <returns>The ZipEntry for the file or null if no such file was found</returns>
+        private IEntry GetEntry(string file)
+        {
+            if (m_isWriting)
+                throw new InvalidOperationException("Cannot read while writing");
+
+            LoadEntryTable();
 
             IEntry e;
             if (m_entryDict.TryGetValue(file, out e))
