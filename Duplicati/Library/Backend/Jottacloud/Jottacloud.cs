@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
         private static readonly string JFS_DEFAULT_BUILTIN_MOUNT_POINT = "Archive"; // When using the built-in device we pick this mount point as our default.
         private static readonly string JFS_DEFAULT_CUSTOM_MOUNT_POINT = "Duplicati"; // When custom device is specified then we pick this mount point as our default.
         private static readonly string[] JFS_BUILTIN_MOUNT_POINTS = { "Archive", "Sync" }; // Name of built-in mount points that we can use.
-        private static readonly string[] JFS_ILLEGAL_MOUNT_POINTS = { "Latest", "Shared" }; // Name of built-in mount points that we can not use. These are treated as mount points in the API, but they are for used for special functionality and we cannot upload files to them!
+        private static readonly string[] JFS_BUILTIN_ILLEGAL_MOUNT_POINTS = { "Trash", "Links", "Latest", "Shared" }; // Name of built-in mount points that we can not use. These are treated as mount points in the API, but they are for used for special functionality and we cannot upload files to them!
         private const string JFS_DEVICE_OPTION = "jottacloud-device";
         private const string JFS_MOUNT_POINT_OPTION = "jottacloud-mountpoint";
         private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Backend
                 if (m_device_builtin)
                 {
                     // Check that it is not set to one of the special built-in mount points that we definitely cannot make use of.
-                    if (Array.FindIndex(JFS_ILLEGAL_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase)) != -1)
+                    if (Array.FindIndex(JFS_BUILTIN_ILLEGAL_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase)) != -1)
                         throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint);
                     // Check if it is one of the legal built-in mount points.
                     // What to do if it is not is open for discussion: The JFS API supports creation of custom mount points not only
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Backend
                     if (i != -1)
                         m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i]; // Ensure correct casing (doesn't seem to matter, but in theory it could).
                     else
-                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint); // Special built-in mount points and user defined mount points are currently not allowed.
+                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint); // User defined mount points on built-in device currently not allowed.
                 }
             }
             else
