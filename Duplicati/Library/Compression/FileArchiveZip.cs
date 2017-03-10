@@ -27,6 +27,8 @@ using SharpCompress.Archives;
 using SharpCompress.Archives.Zip;
 using SharpCompress.Writers;
 using SharpCompress.Writers.Zip;
+using SharpCompress.Readers;
+using System.Linq;
 
 namespace Duplicati.Library.Compression
 {
@@ -88,12 +90,17 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// Lookup table for faster access to entries based on their name.
         /// </summary>
-        private Dictionary<string, IArchiveEntry> m_entryDict;
+        private Dictionary<string, IEntry> m_entryDict;
         
         /// <summary>
         /// The writer instance used when creating archives
         /// </summary>
         private IWriter m_writer;
+
+        /// <summary>
+        /// A flag indicating if we are using the fail-over reader interface
+        /// </summary>
+        public bool m_using_reader = false;
 
         /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
@@ -125,6 +132,50 @@ namespace Duplicati.Library.Compression
                     m_archive = ArchiveFactory.Open(m_stream);
                 return m_archive;
             }
+        }
+
+        public void SwitchToReader()
+        {
+            if (!m_using_reader)
+            {
+                // Close what we have
+                using (m_stream)
+                using (m_archive)
+                { }
+
+                m_using_reader = true;
+            }
+        }
+
+        public Stream GetStreamFromReader(IEntry entry)
+        {
+            Stream fs = null;
+            SharpCompress.Readers.Zip.ZipReader rd = null;
+
+            try
+            {
+                fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+                rd = SharpCompress.Readers.Zip.ZipReader.Open(fs);
+
+                while (rd.MoveToNextEntry())
+                    if (entry.Key == rd.Entry.Key)
+                        return new StreamWrapper(rd.OpenEntryStream(), stream => {
+                            rd.Dispose();
+                            fs.Dispose();
+                        });
+
+                throw new Exception(string.Format("Stream not found: {0}", entry.Key));
+            }
+            catch
+            {
+                if (rd != null)
+                    rd.Dispose();
+                if (fs != null)
+                    fs.Dispose();
+                
+                throw;
+            }
+
         }
 
         /// <summary>
@@ -211,24 +262,7 @@ namespace Duplicati.Library.Compression
         /// <returns>A list of files matching the prefix</returns>
         public string[] ListFiles(string prefix)
         {
-            List<string> results = new List<string>();
-            foreach (IArchiveEntry e in Archive.Entries)
-            {
-                if (prefix == null)
-                {
-                    results.Add(e.Key);
-                }
-                else
-                {
-                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.Key);
-                    //Some old archives may have been created with windows style paths
-                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.Key);
-                }
-            }
-
-            return results.ToArray();
+            return ListFilesWithSize(prefix).Select(x => x.Key).ToArray();
         }
 
         /// <summary>
@@ -238,25 +272,18 @@ namespace Duplicati.Library.Compression
         /// <returns>A list of files matching the prefix</returns>
         public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
         {
-            List<KeyValuePair<string, long>> results = new List<KeyValuePair<string, long>>();
-            foreach (IArchiveEntry e in Archive.Entries)
-            {
-                if (prefix == null)
-                {
-                    results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                }
-                else
-                {
-                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                    //Some old archives may have been created with windows style paths
-                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                }
-            }
+            LoadEntryTable();
+            var q = m_entryDict.Values.AsEnumerable();
+            if (!string.IsNullOrEmpty(prefix))
+                q = q.Where(x =>
+                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            ||
+                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                           );
 
-            return results;
+            return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();
         }
+
         /// <summary>
         /// Opens an file for reading
         /// </summary>
@@ -267,9 +294,64 @@ namespace Duplicati.Library.Compression
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-            IArchiveEntry ze = GetEntry(file);
+            var ze = GetEntry(file);
+            if (ze == null)
+                return null;
 
-            return ze == null ? null : ze.OpenEntryStream();
+            if (ze is IArchiveEntry)
+                return ((IArchiveEntry)ze).OpenEntryStream();
+            else if (ze is SharpCompress.Common.Zip.ZipEntry)
+                return GetStreamFromReader(ze);
+
+            throw new Exception(string.Format("Unexpected result: {0}", ze.GetType().FullName));
+
+        }
+
+        /// <summary>
+        /// Helper method to load the entry table
+        /// </summary>
+        private void LoadEntryTable()
+        {
+            if (m_entryDict == null)
+            {
+                try
+                {
+                    var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+                    foreach (var en in Archive.Entries)
+                        d[en.Key] = en;
+                    m_entryDict = d;
+                }
+                catch (Exception ex)
+                {
+                    // If we get an exception here, it may be caused by the Central Header
+                    // being defect, so we switch to the less efficient reader interface
+                    if (m_using_reader)
+                        throw;
+
+                    Logging.Log.WriteMessage("Zip archive appears to have a broken Central Record Header, switching to stream mode", Logging.LogMessageType.Warning, ex);
+                    SwitchToReader();
+
+                    var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+
+                    try
+                    {
+                        using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
+                            while (rd.MoveToNextEntry())
+                                d[rd.Entry.Key] = rd.Entry;
+                    }
+                    catch (Exception ex2)
+                    {
+                        // If we have zero files, or just a manifest, don't bother
+                        if (d.Count < 2)
+                            throw;
+                        
+                        Logging.Log.WriteMessage(string.Format("Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count), Logging.LogMessageType.Warning, ex2);
+                    }
+                    
+                    m_entryDict = d;
+                }
+            }
         }
 
         /// <summary>
@@ -277,19 +359,14 @@ namespace Duplicati.Library.Compression
         /// </summary>
         /// <param name="file">The name of the file to find</param>
         /// <returns>The ZipEntry for the file or null if no such file was found</returns>
-        private IArchiveEntry GetEntry(string file)
+        private IEntry GetEntry(string file)
         {
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-            if (m_entryDict == null)
-            {
-                m_entryDict = new Dictionary<string, IArchiveEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
-                foreach(IArchiveEntry en in Archive.Entries)
-                    m_entryDict[en.Key] = en;
-            }
+            LoadEntryTable();
 
-            IArchiveEntry e;
+            IEntry e;
             if (m_entryDict.TryGetValue(file, out e))
                 return e;
             if (m_entryDict.TryGetValue(file.Replace('/', '\\'), out e))
