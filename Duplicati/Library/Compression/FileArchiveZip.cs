@@ -159,16 +159,10 @@ namespace Duplicati.Library.Compression
 
                 while (rd.MoveToNextEntry())
                     if (entry.Key == rd.Entry.Key)
-                    {
-                        var sr = new StreamWrapper(rd.OpenEntryStream());
-
-                        sr.Disposing += (sender) => {
+                        return new StreamWrapper(rd.OpenEntryStream(), stream => {
                             rd.Dispose();
                             fs.Dispose();
-                        };
-
-                        return sr;
-                    }
+                        });
 
                 throw new Exception(string.Format("Stream not found: {0}", entry.Key));
             }
@@ -327,21 +321,33 @@ namespace Duplicati.Library.Compression
                         d[en.Key] = en;
                     m_entryDict = d;
                 }
-                catch
+                catch (Exception ex)
                 {
                     // If we get an exception here, it may be caused by the Central Header
                     // being defect, so we switch to the less efficient reader interface
                     if (m_using_reader)
                         throw;
 
+                    Logging.Log.WriteMessage("Zip archive appears to have a broken Central Record Header, switching to stream mode", Logging.LogMessageType.Warning, ex);
                     SwitchToReader();
 
                     var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
 
-                    using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
-                        while (rd.MoveToNextEntry())
-                            d[rd.Entry.Key] = rd.Entry;
+                    try
+                    {
+                        using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
+                            while (rd.MoveToNextEntry())
+                                d[rd.Entry.Key] = rd.Entry;
+                    }
+                    catch (Exception ex2)
+                    {
+                        // If we have zero files, or just a manifest, don't bother
+                        if (d.Count < 2)
+                            throw;
+                        
+                        Logging.Log.WriteMessage(string.Format("Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count), Logging.LogMessageType.Warning, ex2);
+                    }
                     
                     m_entryDict = d;
                 }
