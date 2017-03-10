@@ -25,9 +25,9 @@ namespace Duplicati.Library.Backend
 {
     public class Jottacloud : IBackend, IStreamingBackend
     {
-        private const string JFS_ROOT = "https://www.jottacloud.com/jfs";
+        private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
         private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
-        private const string API_VERSION = "2.2"; // Hard coded per 05. March 2017.
+        private const string API_VERSION = "2.4"; // Hard coded per 09. March 2017.
         private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
         private static readonly string JFS_DEFAULT_BUILTIN_MOUNT_POINT = "Archive"; // When using the built-in device we pick this mount point as our default.
         private static readonly string JFS_DEFAULT_CUSTOM_MOUNT_POINT = "Duplicati"; // When custom device is specified then we pick this mount point as our default.
@@ -54,7 +54,7 @@ namespace Duplicati.Library.Backend
         public Jottacloud(string url, Dictionary<string, string> options)
         {
             // Duplicati back-end url for Jottacloud is in format "jottacloud://folder/subfolder", we transform them to
-            // the Jottacloud REST API (JFS) url format "https://www.jotta.no/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]".
+            // the Jottacloud REST API (JFS) url format "https://jfs.jottacloud.com/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]".
 
             // Find out what JFS device to use.
             if (options.ContainsKey(JFS_DEVICE_OPTION))
@@ -197,7 +197,10 @@ namespace Duplicati.Library.Backend
             foreach (System.Xml.XmlNode xFile in xRoot.SelectNodes("files/file[not(@deleted)]"))
             {
                 string name = xFile.Attributes["name"].Value;
-                // Normal files have "currentRevision", incomplete or corrupt files have "latestRevision" or "revision" instead.
+                // Normal files have an "currentRevision", which represent the most recent successfully upload
+                // (could also checked that currentRevision/state is "COMPLETED", but should not be necessary).
+                // There might also be a newer "latestRevision" coming from an incomplete or corrupt upload,
+                // but we ignore that here and use the information about the last valid version.
                 System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
                 if (xRevision != null)
                 {
@@ -206,7 +209,7 @@ namespace Duplicati.Library.Backend
                     if (xNode == null || !long.TryParse(xNode.InnerText, out size))
                         size = -1;
                     DateTime lastModified;
-                    xNode = xRevision.SelectSingleNode("modified"); // There is also a timestamp for "updated"?
+                    xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
                     if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
                         lastModified = new DateTime();
                     FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
@@ -230,7 +233,7 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "dl=true", false);
+            System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "rm=true", false); // rm=true means permanent delete, dl=true would be move to trash.
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
             { }
@@ -293,14 +296,10 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
             req.Method = method;
             req.Credentials = m_userInfo;
-            //We need this under Mono for some reason,
-            // and it appears some servers require this as well
-            req.PreAuthenticate = true;
-
+            req.PreAuthenticate = true; // We need this under Mono for some reason, and it appears some servers require this as well
             req.KeepAlive = false;
             req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            req.Headers.Add("X-JottaAPIVersion", API_VERSION);
-
+            req.Headers.Add("x-jftp-version", API_VERSION);
             return req;
         }
 
@@ -328,9 +327,21 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            // Pre-calculate the MD5 hash, as we we need it in query parameter, in HTTP header and in POST message data.
-            // Since the stream may be throttled we do the same (dirty?) trick as in the Backblaze back-end: Try to get
-            // the underlying stream, with fall-back to temporary file if the stream is does not allow seek.
+            // Some challenges with uploading to Jottacloud:
+            // - Jottacloud supports use of a custom header where we can tell the server the MD5 hash of the file
+            //   we are uploading, and then it will verify the content of our request against it. But the HTTP
+            //   status code we get back indicates success even if there is a mismatch, so we must dig into the
+            //   XML response to see if we were able to correctly upload the new content or not. Another issue 
+            //   is that if the stream is not seek-able we have a challenge pre-calculating MD5 hash on it before
+            //   writing it out on the HTTP request stream. And even if the stream is seek-able it may be throttled.
+            //   One way to avoid using the throttled stream for calculating the MD5 is to try to get the
+            //   underlying stream from the "m_basestream" field, with fall-back to a temporary file.
+            // - We can instead chose to upload the data without setting the MD5 hash header. The server will
+            //   calculate the MD5 on its side and return it in the response back to use. We can then compare it
+            //   with the MD5 hash of the stream (using a MD5CalculatingStream), and if there is a mismatch we can
+            //   request the server to remove the file again and throw an exception. But there is a requirement that
+            //   we specify the file size in a custom header. And if the stream is not seek-able we are not able
+            //   to use stream.Length, so we are back at square one.
             Duplicati.Library.Utility.TempFile tmpFile = null;
             var baseStream = stream;
             while (baseStream is Duplicati.Library.Utility.OverrideableStream)
@@ -360,45 +371,60 @@ namespace Duplicati.Library.Backend
             try
             {
                 // Create request, with query parameter, and a few custom headers.
+                // NB: If we wanted to we could send the same POST request as below but without the file contents
+                // and with "cphash=[md5Hash]" as the only query parameter. Then we will get an HTTP 200 (OK) response
+                // if an identical file already exists, and we can skip uploading the new file. We will get
+                // HTTP 404 (Not Found) if file does not exists or it exists with a different hash, in which
+                // case we must send a new request to upload the new content.
                 var fileSize = stream.Length;
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "cphash="+md5Hash, true);
-                string fileTime = DateTime.Now.ToString("o"); // NB: Cheating by setting current time as created/modified timestamps
-                req.Headers.Add("JMd5", md5Hash);
-                req.Headers.Add("JCreated", fileTime);
-                req.Headers.Add("JModified", fileTime);
-                req.Headers.Add("X-Jfs-DeviceName", m_device);
-                req.Headers.Add("JSize", fileSize.ToString()); // This must be the total size of the original file!
-                req.Headers.Add("jx_csid", "");
-                req.Headers.Add("jx_lisence", "");
-
-                // Prepare post data:
-                // First three simple data sections: md5, modified time and created time.
-                // Then a final section with the file contents. We prepare everything,
-                // calculate the total size including the file, and then we write it
-                // to the request. This way we can stream the file directly into the
-                // request without copying the entire file into byte array first etc.
-                string multipartBoundary = string.Format("----------{0:N}", Guid.NewGuid());
-                byte[] multiPartContent = System.Text.Encoding.UTF8.GetBytes(
-                    CreateMultiPartItem("md5", md5Hash, multipartBoundary) + "\r\n"
-                    + CreateMultiPartItem("modified", fileTime, multipartBoundary) + "\r\n"
-                    + CreateMultiPartItem("created", fileTime, multipartBoundary) + "\r\n"
-                    + CreateMultiPartFileHeader("file", remotename, null, multipartBoundary) + "\r\n");
-                byte[] multipartTerminator = System.Text.Encoding.UTF8.GetBytes("\r\n--" + multipartBoundary + "--\r\n");
-                req.ContentType = "multipart/form-data; boundary=" + multipartBoundary;
-                req.ContentLength = multiPartContent.Length + fileSize + multipartTerminator.Length;
+                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "umode=nomultipart", true);
+                req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
+                req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
+                // File time stamp headers: Since we are working with a stream here we do not know the local file's timestamps,
+                // and then we can just omit the JCreated and JModified and let the server automatically set the current time.
+                //req.Headers.Add("JCreated", timeCreated);
+                //req.Headers.Add("JModified", timeModified);
+                req.ContentType = "application/octet-stream";
+                req.ContentLength = fileSize;
                 // Write post data request
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var rs = areq.GetRequestStream())
-                {
-                    rs.Write(multiPartContent, 0, multiPartContent.Length);
                     Utility.Utility.CopyStream(stream, rs, true, m_copybuffer);
-                    rs.Write(multipartTerminator, 0, multipartTerminator.Length);
-                }
                 // Send request, and check response
                 using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     if (resp.StatusCode != System.Net.HttpStatusCode.Created)
                         throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+                    // Request seems to be successful, but we must verify the response XML content to be sure that the file
+                    // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
+                    // there was mismatch, and it will verify the JMd5 header and mark the file as corrupt if there was a hash
+                    // mismatch. The returned XML contains a file element, and if upload was error free it contains a single
+                    // child element "currentRevision", which has a "state" child element with the string "COMPLETED".
+                    // If there was a problem we should have a "latestRevision" child element (as the only child if the file
+                    // was new or had no previous complete versions, or together with a "currentRevision" if there was a previous
+                    // complete version), and this will have state with value "INCOMPLETE" or "CORRUPT".
+                    using (var rs = areq.GetResponseStream())
+                    {
+                        var doc = new System.Xml.XmlDocument();
+                        try { doc.Load(rs); }
+                        catch (System.Xml.XmlException)
+                        {
+                            throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
+                        }
+                        bool uploadCompletedSuccessfully = false;
+                        var xFile = doc["file"];
+                        if (xFile != null)
+                        {
+                            var xRevState = xFile.SelectSingleNode("latestRevision/state");
+                            if (xRevState == null)
+                                xRevState = xFile.SelectSingleNode("currentRevision/state");
+                            if (xRevState != null)
+                                uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED";
+                        }
+                        if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
+                            throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
+                    }
                 }
             }
             finally
@@ -407,27 +433,9 @@ namespace Duplicati.Library.Backend
                 {
                     if (tmpFile != null)
                         tmpFile.Dispose();
-                } catch { }
+                }
+                catch { }
             }
-        }
-
-        private string CreateMultiPartItem(string contentName, string contentValue, string boundary)
-        {
-            // Header and content. Append newline before next section, or footer section.
-            return string.Format("--{0}\r\nContent-Disposition: form-data; name=\"{1}\"\r\n\r\n{2}",
-                boundary,
-                contentName,
-                contentValue);
-        }
-
-        private string CreateMultiPartFileHeader(string contentName, string fileName, string fileType, string boundary)
-        {
-            // Header. Append newline and then file content.
-            return string.Format("--{0}\r\nContent-Disposition: form-data; name=\"{1}\"; filename=\"{2}\";\r\nContent-Type: {3}\r\n",
-                boundary,
-                contentName,
-                fileName,
-                fileType ?? "application/octet-stream");
         }
 
         #endregion
