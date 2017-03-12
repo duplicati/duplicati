@@ -338,7 +338,14 @@ namespace Duplicati.Library.Compression
                         using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
                         using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
                             while (rd.MoveToNextEntry())
+                            {
                                 d[rd.Entry.Key] = rd.Entry;
+
+                                // Some streams require this
+                                // to correctly find the next entry
+                                using (rd.OpenEntryStream())
+                                { }
+                            }
                     }
                     catch (Exception ex2)
                     {
