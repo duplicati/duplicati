@@ -1,3 +1,15 @@
+2017-03-13 - 2.0.1.52_canary_2017-03-13
+==========
+* Added fail-over to read zip files with invalid central directory
+* Improved the login page for compatibility with password managers, thanks @johenning
+* Improved the URL parser for better commandline import
+* Improved the URL parsing when importing a saved configuration
+* Added exit/status codes to the verification command
+* Added IBM Bluemix COS to list of S3 providers, thanks @greyhoundforty
+* Improved startup time for commandline, thanks @frelis
+* Improved non-hosted mode for TrayIcon, thanks @mnaiman
+* Added a Jottacloud backend, thanks @albertony
+
 2017-03-03 - 2.0.1.51_canary_2017-03-03
 ==========
 * Updated the bundled version of SQLite for Windows to 1.0.104.0
