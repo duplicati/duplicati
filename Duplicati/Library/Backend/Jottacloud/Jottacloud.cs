@@ -204,16 +204,20 @@ namespace Duplicati.Library.Backend
                 System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
                 if (xRevision != null)
                 {
-                    System.Xml.XmlNode xNode = xRevision.SelectSingleNode("size");
-                    long size;
-                    if (xNode == null || !long.TryParse(xNode.InnerText, out size))
-                        size = -1;
-                    DateTime lastModified;
-                    xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
-                    if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
-                        lastModified = new DateTime();
-                    FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
-                    files.Add(fe);
+                    System.Xml.XmlNode xNode = xRevision.SelectSingleNode("state");
+                    if (xNode.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
+                    {
+                        xNode = xRevision.SelectSingleNode("size");
+                        long size;
+                        if (xNode == null || !long.TryParse(xNode.InnerText, out size))
+                            size = -1;
+                        DateTime lastModified;
+                        xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
+                        if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
+                            lastModified = new DateTime();
+                        FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
+                        files.Add(fe);
+                    }
                 }
             }
             return files;
@@ -318,6 +322,9 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
+            // Downloading from Jottacloud: Will only succeed if the file has a completed revision,
+            // and if there are multiple versions of the file we will only get the latest completed version,
+            // ignoring any incomplete or corrupt versions.
             var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
@@ -401,9 +408,11 @@ namespace Duplicati.Library.Backend
                     // there was mismatch, and it will verify the JMd5 header and mark the file as corrupt if there was a hash
                     // mismatch. The returned XML contains a file element, and if upload was error free it contains a single
                     // child element "currentRevision", which has a "state" child element with the string "COMPLETED".
-                    // If there was a problem we should have a "latestRevision" child element (as the only child if the file
-                    // was new or had no previous complete versions, or together with a "currentRevision" if there was a previous
-                    // complete version), and this will have state with value "INCOMPLETE" or "CORRUPT".
+                    // If there was a problem we should have a "latestRevision" child element, and this will have state with
+                    // value "INCOMPLETE" or "CORRUPT". If the file was new or had no previous complete versions the latestRevision
+                    // will be the only child, but if not there may also be a "currentRevision" representing the previous
+                    // complete version - and then we need to detect the case where our upload failed but there was an existing
+                    // complete version!
                     using (var rs = areq.GetResponseStream())
                     {
                         var doc = new System.Xml.XmlDocument();
@@ -416,11 +425,12 @@ namespace Duplicati.Library.Backend
                         var xFile = doc["file"];
                         if (xFile != null)
                         {
-                            var xRevState = xFile.SelectSingleNode("latestRevision/state");
-                            if (xRevState == null)
+                            var xRevState = xFile.SelectSingleNode("latestRevision");
+                            if (xRevState == null) {
                                 xRevState = xFile.SelectSingleNode("currentRevision/state");
-                            if (xRevState != null)
-                                uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED";
+                                if (xRevState != null)
+                                    uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED"; // Success: There is no "latestRevision", only a "currentRevision" (and it specifies the file is complete, but I think it always will).
+                            }
                         }
                         if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
                             throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
