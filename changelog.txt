@@ -1,3 +1,7 @@
+2017-03-13 - 2.0.1.53_experimental_2017-03-13
+==========
+* This update contains the same fixes as canary 2.0.1.51
+
 2017-03-03 - 2.0.1.51_canary_2017-03-03
 ==========
 * Updated the bundled version of SQLite for Windows to 1.0.104.0
