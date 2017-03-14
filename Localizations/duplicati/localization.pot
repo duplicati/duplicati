@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-02-14 18:50+0100\n"
+"POT-Creation-Date: 2017-03-14 19:21+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: CommandLine/Program.cs:275
+#: CommandLine/Program.cs:276
 msgid "Toggle automatic updates"
 msgstr ""
 
-#: CommandLine/Program.cs:275
+#: CommandLine/Program.cs:276
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -190,9 +190,10 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:13
 #: Library/Backend/Backblaze/Strings.cs:9
 #: Library/Backend/CloudFiles/Strings.cs:6 Library/Backend/File/Strings.cs:9
-#: Library/Backend/FTP/Strings.cs:12 Library/Backend/Mega/Strings.cs:5
-#: Library/Backend/S3/Strings.cs:9 Library/Backend/SharePoint/Strings.cs:8
-#: Library/Backend/SSHv2/Strings.cs:23 Library/Backend/WEBDAV/Strings.cs:7
+#: Library/Backend/FTP/Strings.cs:12 Library/Backend/Jottacloud/Strings.cs:15
+#: Library/Backend/Mega/Strings.cs:5 Library/Backend/S3/Strings.cs:9
+#: Library/Backend/SharePoint/Strings.cs:8 Library/Backend/SSHv2/Strings.cs:23
+#: Library/Backend/WEBDAV/Strings.cs:7
 msgid ""
 "The password used to connect to the server. This may also be supplied as the "
 "environment variable \"AUTH_PASSWORD\"."
@@ -202,10 +203,10 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:14
 #: Library/Backend/Backblaze/Strings.cs:10
 #: Library/Backend/CloudFiles/Strings.cs:7 Library/Backend/File/Strings.cs:10
-#: Library/Backend/FTP/Strings.cs:13 Library/Backend/Mega/Strings.cs:6
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/S3/Strings.cs:10
-#: Library/Backend/SharePoint/Strings.cs:9 Library/Backend/SSHv2/Strings.cs:24
-#: Library/Backend/WEBDAV/Strings.cs:8
+#: Library/Backend/FTP/Strings.cs:13 Library/Backend/Jottacloud/Strings.cs:14
+#: Library/Backend/Mega/Strings.cs:6 Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/S3/Strings.cs:10 Library/Backend/SharePoint/Strings.cs:9
+#: Library/Backend/SSHv2/Strings.cs:24 Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
 msgstr ""
 
@@ -213,10 +214,10 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:15
 #: Library/Backend/Backblaze/Strings.cs:11
 #: Library/Backend/CloudFiles/Strings.cs:8 Library/Backend/File/Strings.cs:11
-#: Library/Backend/FTP/Strings.cs:14 Library/Backend/Mega/Strings.cs:7
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/S3/Strings.cs:11
-#: Library/Backend/SharePoint/Strings.cs:10 Library/Backend/SSHv2/Strings.cs:25
-#: Library/Backend/WEBDAV/Strings.cs:9
+#: Library/Backend/FTP/Strings.cs:14 Library/Backend/Jottacloud/Strings.cs:13
+#: Library/Backend/Mega/Strings.cs:7 Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/S3/Strings.cs:11 Library/Backend/SharePoint/Strings.cs:10
+#: Library/Backend/SSHv2/Strings.cs:25 Library/Backend/WEBDAV/Strings.cs:9
 msgid ""
 "The username used to connect to the server. This may also be supplied as the "
 "environment variable \"AUTH_USERNAME\"."
@@ -226,10 +227,10 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:16
 #: Library/Backend/Backblaze/Strings.cs:12
 #: Library/Backend/CloudFiles/Strings.cs:9 Library/Backend/File/Strings.cs:12
-#: Library/Backend/FTP/Strings.cs:15 Library/Backend/Mega/Strings.cs:8
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/S3/Strings.cs:12
-#: Library/Backend/SharePoint/Strings.cs:11 Library/Backend/SSHv2/Strings.cs:26
-#: Library/Backend/WEBDAV/Strings.cs:10
+#: Library/Backend/FTP/Strings.cs:15 Library/Backend/Jottacloud/Strings.cs:12
+#: Library/Backend/Mega/Strings.cs:8 Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/S3/Strings.cs:12 Library/Backend/SharePoint/Strings.cs:11
+#: Library/Backend/SSHv2/Strings.cs:26 Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
 msgstr ""
 
@@ -535,6 +536,7 @@ msgid "Failed to delete file"
 msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:20
+#: Library/Backend/Jottacloud/Strings.cs:11
 msgid "Failed to upload file"
 msgstr ""
 
@@ -772,20 +774,61 @@ msgstr ""
 msgid "HubiC"
 msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:4
-msgid "mega.nz"
+#: Library/Backend/Jottacloud/Strings.cs:5
+msgid "Jottacloud"
 msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:9
-msgid "No password given"
+#: Library/Backend/Jottacloud/Strings.cs:6
+msgid ""
+"This backend can read and write data to Jottacloud using it's REST protocol. "
+"Allowed format is \"jottacloud://folder/subfolder\"."
 msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:10
+#: Library/Backend/Jottacloud/Strings.cs:7 Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
 msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:11
+#: Library/Backend/Jottacloud/Strings.cs:8 Library/Backend/Mega/Strings.cs:9
+msgid "No password given"
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:9 Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:10
+msgid "Illegal mount point given."
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:16
+msgid "Supplies the backup device to use"
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:17
+#, csharp-format
+msgid ""
+"The backup device to use. Will be created if not already exists. You can "
+"manage your devices from the backup panel in the Jottacloud web interface. "
+"When you specify a custom device you should also specify the mount point to "
+"use on this device with the \"{0}\" option."
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:18
+msgid "Supplies the mount point to use on the server"
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:19
+#, csharp-format
+msgid ""
+"The mount point to use on the server. The default is \"Archive\" for using "
+"the built-in archive mount point. Set this option to \"Sync\" to use the "
+"built-in synchronization mount point instead, or if you have specified a "
+"custom device with option \"{0}\" you are free to name the mount point as "
+"you like."
+msgstr ""
+
+#: Library/Backend/Mega/Strings.cs:4
+msgid "mega.nz"
 msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:12
@@ -1453,7 +1496,7 @@ msgid "AES-256 encryption, built in"
 msgstr ""
 
 #: Library/Encryption/Strings.cs:6
-msgid "Blank or empty passphrase not allowed"
+msgid "Empty passphrase not allowed"
 msgstr ""
 
 #: Library/Encryption/Strings.cs:7
@@ -1894,7 +1937,9 @@ msgstr ""
 #: Library/Main/Strings.cs:33
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
-"store multiple backups in the same remote folder."
+"store multiple backups in the same remote folder. The prefix cannot contain "
+"a hyphen (-), but can contain all other characters allowed by the remote "
+"storage."
 msgstr ""
 
 #: Library/Main/Strings.cs:34
@@ -2734,7 +2779,8 @@ msgid ""
 "remote backend. Use this option to turn on full verification, which will "
 "decrypt the files and examine the insides of each volume, instead of simply "
 "verifying the external hash, If the option --{0} is set, no remote files are "
-"verified"
+"verified. This option is automatically set when then verification is "
+"performed directly."
 msgstr ""
 
 #: Library/Main/Strings.cs:188
@@ -3712,7 +3758,8 @@ msgstr ""
 
 #: Server/Strings.cs:25
 msgid ""
-"The certificate and key file in PKCS #12 format the webserver use for SSL."
+"The certificate and key file in PKCS #12 format the webserver use for SSL. "
+"Only RSA/DSA keys are supported."
 msgstr ""
 
 #: Server/Strings.cs:26
