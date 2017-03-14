@@ -196,9 +196,6 @@ namespace Duplicati.Library.Main
                 try
                 {
                     var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    if (!Directory.Exists(folder))
-                        Directory.CreateDirectory(folder);
-                    
                     return File.Exists(Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME));
                 }
                 catch
