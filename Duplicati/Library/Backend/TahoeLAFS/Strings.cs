@@ -6,6 +6,6 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
         public static string Displayname { get { return LC.L(@"Tahoe-LAFS"); } }
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found, message: {1}", foldername, message); }
-        public static string UnrecognizedUriError { get { return LC.L(@"Unsupported URL format, must start with ""/uri/URI:DIR2:"""); } }
+        public static string UnrecognizedUriError { get { return LC.L(@"Unsupported URL format, must start with ""uri/URI:DIR2:"""); } }
     }
 }
