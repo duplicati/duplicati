@@ -55,7 +55,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
 
-            m_oauth = new OAuthHelper(authid, this.ProtocolKey) { AutoAuthHeader = true };
+            m_oauth = authid==null || authid == ""? new GoogleOAuthHelper():
+                new OAuthHelper(authid, this.ProtocolKey) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
         }
 
