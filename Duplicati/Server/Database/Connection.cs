@@ -403,7 +403,7 @@ namespace Duplicati.Server.Database
                         try
                         {
                             var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
-                            if (ds <= 1024 * 1024)
+                            if (ds < 1024 * 1024)
                                 return "DBlock size must be at least 1MB";
                         }
                         catch
