@@ -403,7 +403,7 @@ namespace Duplicati.Server.Database
                         try
                         {
                             var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
-                            if (ds <= 1024 * 1024)
+                            if (ds < 1024 * 1024)
                                 return "DBlock size must be at least 1MB";
                         }
                         catch
@@ -411,12 +411,12 @@ namespace Duplicati.Server.Database
                             return "DBlock value must be a valid size string";
                         }
                     }
-                    else if (string.Equals(s.Name, "blocksize", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "--blocksize", StringComparison.InvariantCultureIgnoreCase))
                     {
                         try
                         {
                             var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
-                            if (ds <= 1024 || ds > int.MaxValue)
+                            if (ds < 1024 || ds > int.MaxValue)
                                 return "The blocksize must be at least 1KB";
                         }
                         catch
