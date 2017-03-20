@@ -38,8 +38,8 @@ namespace Duplicati.Library.Main.Operation
         {
             var ext = System.IO.Path.GetExtension(m_targetpath);
             var module = m_options.CompressionModule;
-            
-            if (ext != module)
+
+            if (ext == "" || string.Compare(ext, 1, module, 0, module.Length, StringComparison.OrdinalIgnoreCase) != 0)
                 m_targetpath = m_targetpath + "." + module;
         
             if (System.IO.File.Exists(m_targetpath))
