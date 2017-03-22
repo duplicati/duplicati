@@ -586,6 +586,24 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         AppUtils.extractServerModuleOptions($scope.ExtendedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedLocalCommands');        
     };
 
+    function checkAllowedDaysConfig()
+    {
+        if ($scope.Schedule == null || $scope.Schedule.AllowedDays == null)
+            return;
+
+        // Remove invalid values
+        var alldays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        for (var i = $scope.Schedule.AllowedDays.length - 1; i >= 0; i--)
+            if (alldays.indexOf($scope.Schedule.AllowedDays[i]) < 0)
+                $scope.Schedule.AllowedDays.splice(i, 1);
+
+        // Empty and all are the same, but the UI confuses if no days are selected
+        if ($scope.Schedule.AllowedDays.length == 0)
+            $timeout(function() {
+                $scope.Schedule.AllowedDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            });
+    };
+
     setupServerModules();
 
     $scope.$watch("Options['encryption-module']", reloadOptionsList);
@@ -597,6 +615,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         if ($scope.Options != null && $scope.Options['--skip-files-larger-than'] == null)
             $scope.Options['--skip-files-larger-than'] = '100MB';
     });
+    $scope.$watch("Schedule.AllowedDays", checkAllowedDaysConfig, true);
 
     if ($routeParams.backupid == null) {
 
