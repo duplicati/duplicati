@@ -129,7 +129,7 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 // Previous locations that we don't want to use,
-                // but we keep them active to avoid breaking the update syste
+                // but we keep them active to avoid breaking the update system
                 var legacypaths = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(programfiles))
