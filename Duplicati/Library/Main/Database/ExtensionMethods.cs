@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
+            using(new Logging.Timer(LC.L("ExecuteScalarInt64: {0}", self.CommandText)))
                 using(var rd = self.ExecuteReader())
                     if (rd.Read())
                         return ConvertValueToInt64(rd, 0, defaultvalue);
