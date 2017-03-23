@@ -838,7 +838,6 @@ namespace Duplicati.Library.Main.Operation
                                 m_transaction.Commit();
                                 
                             m_transaction = null;
-                            m_database.Vacuum();
 
 							if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
 							{

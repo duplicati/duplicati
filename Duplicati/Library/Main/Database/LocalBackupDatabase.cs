@@ -86,8 +86,6 @@ namespace Duplicati.Library.Main.Database
         
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
         
-        private long m_missingBlockHashes;
-        
         private long m_filesetId;
 
         public LocalBackupDatabase(string path, Options options)
@@ -243,8 +241,6 @@ namespace Duplicati.Library.Main.Database
                     {
                         throw new InvalidDataException("Duplicate file entries detected, run repair to fix it", ex);
                     }
-                                                        
-                m_missingBlockHashes = cmd.ExecuteScalarInt64(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", 0, RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
 
                 var tc = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"") AND ""State"" NOT IN (?, ?, ?, ?);", 0, RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
                 if (tc > 0)
