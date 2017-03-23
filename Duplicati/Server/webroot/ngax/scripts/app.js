@@ -74,6 +74,12 @@ backupApp.config(['$routeProvider',
             when('/localdb/:backupid', {
                 templateUrl: 'templates/localdatabase.html'
             }).
+            when('/commandline', {
+                templateUrl: 'templates/commandline.html'
+            }).
+            when('/commandline/:backupid', {
+                templateUrl: 'templates/commandline.html'
+            }).
             otherwise({
                 templateUrl: 'templates/home.html'
                 //redirectTo: '/home'

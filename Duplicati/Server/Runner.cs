@@ -339,6 +339,43 @@ namespace Duplicati.Server
 
             return cmd.ToString();
         }
+
+        public static string[] GetCommandLineParts(IRunnerData data)
+        {
+            var backup = data.Backup;
+
+            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            if (data.ExtraOptions != null)
+                foreach (var k in data.ExtraOptions)
+                    options[k.Key] = k.Value;
+
+            var cf = Program.DataConnection.Filters;
+            var bf = backup.Filters;
+
+            var sources =
+                (from n in backup.Sources
+                 let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                 where !string.IsNullOrWhiteSpace(p)
+                 select p).ToArray();
+
+            var parts = new List<string>();
+
+            parts.Add(backup.TargetURL);
+            parts.AddRange(sources);
+
+            foreach (var opt in options)
+                parts.Add(string.Format("--{0}={1}", opt.Key, opt.Value));
+
+            if (cf != null)
+                foreach (var f in cf)
+                    parts.Add(string.Format("--{0}={1}", f.Include ? "include" : "exclude", f.Expression));
+
+            if (bf != null)
+                foreach (var f in bf)
+                    parts.Add(string.Format("--{0}={1}", f.Include ? "include" : "exclude", f.Expression));
+
+            return parts.ToArray();
+        }
         
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
