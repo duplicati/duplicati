@@ -1,3 +1,10 @@
+2017-03-26 - 2.0.1.54_canary_2017-03-26
+==========
+* Fixed an unwanted empty folder creation, thanks @albertony
+* Fixed logic issues with volumesize minimum bounds, thanks @albertony
+* Fixed importing config files with AllowedDays set
+* Improved database performance on backups, thanks @danstahr
+
 2017-03-13 - 2.0.1.53_experimental_2017-03-13
 ==========
 * This update contains the same fixes as canary 2.0.1.51
